@@ -1,0 +1,370 @@
+""" Base csgo demo data classes.
+
+Author: Peter Xenopoulos
+"""
+
+class Grenade():
+    """ An object to detail a round's grenade events
+
+    [TODO]
+    """
+
+    def __init__(self, tick=0, player_name="", steam_id=0, side="", trajectory=[]):
+        """ Create a grenade trajectory object
+        """
+        self.tick = tick
+        self.player_name = player_name
+        self.steam_id = steam_id
+        self.side = side
+        self.trajectory = trajectory
+        raise NotImplementedError
+
+
+class BombEvent():
+    """ An object to detail a Bomb Plant/Defuse event
+
+    Attributes:
+        - tick (int)          : Game tick at time of event
+        - player_name (string): Player's username
+        - steam_id (int)      : Player's steam id
+        - team (string)       : Player's team/clan name
+        - x (float)           : X position of bomb event
+        - y (float)           : Y position of bomb event
+        - z (float)           : Z position of bomb event
+        - area_id (int)       : Location of event as nav file area id
+        - bomb_site (string)  : Bomb site (A or B)
+        - event_type (string) : Plant, defuse, explode
+    """
+
+    def __init__(
+        self,
+        tick=0,
+        player_name="",
+        steam_id=0,
+        team="",
+        x=0,
+        y=0,
+        z=0,
+        area_id=0,
+        bomb_site="",
+        event_type="",
+    ):
+        """ Create a bomb event object
+        """
+        self.tick = tick
+        self.player_name = player_name
+        self.steam_id = steam_id
+        self.team = team
+        self.x = x
+        self.y = y
+        self.z = z
+        self.area_id = area_id
+        self.bomb_site = bomb_site
+        self.event_type = event_type
+
+
+class Footstep():
+    """ An object to detail a Footstep event
+
+    Attributes:
+        - tick (int)          : Game tick at time of step
+        - player_name (string): Player's username
+        - steam_id (int)      : Player's steam id
+        - team (string)       : Player's team/clan name
+        - side (string)       : Player's side (T or CT)
+        - x (float)           : Player's X position
+        - y (float)           : Player's Y position
+        - z (float)           : Player's Z position
+        - view_x (float)      : Player's view X direction
+        - view_y (float)      : Player's view Y direction
+        - area_id (int)       : Player's location as nav file area id
+        - area_name (string)  : Player's location as area name from nav file
+    """
+
+    def __init__(
+        self,
+        tick=0,
+        player_name="",
+        steam_id=0,
+        team="",
+        side="",
+        x=0,
+        y=0,
+        z=0,
+        view_x=0,
+        view_y=0,
+        area_id=0,
+        area_name="",
+    ):
+        """ Create a footstep (X,Y,Z) object
+        """
+        self.tick = tick
+        self.player_name = player_name
+        self.steam_id = steam_id
+        self.team = team
+        self.side = side
+        self.x = x
+        self.y = y
+        self.z = z
+        self.view_x = view_x
+        self.view_y = view_y
+        self.area_id = area_id
+        self.area_name = area_name
+
+
+class Round():
+    """ An object to detail a round
+
+    Attributes:
+        - map_name (string)         : Round's map
+        - start_tick (int)          : Tick on ROUND START event
+        - end_tick (int)            : Tick on ROUND END event
+        - end_ct_score (int)        : Ending CT score
+        - end_t_score (int)         : Ending T score
+        - start_t_score (int)       : Starting T score
+        - start_ct_score (int)      : Starting CT score
+        - round_winner_side (string): T/CT for round winner
+        - round_winner (string)     : Winning team name
+        - round_loser (string)      : Losing team name
+        - reason (int)              : Corresponds to how the team won (defuse, killed other team, etc.)
+        - bomb_events (list)        : List of BombEvent objects
+        - damages (list)            : List of Damage objects
+        - kills (list)              : List of Kill objects
+        - footstep (list)           : List of Footstep objects
+    """
+
+    def __init__(
+        self,
+        map_name="",
+        start_tick=0,
+        end_tick=0,
+        end_ct_score=0,
+        end_t_score=0,
+        start_ct_score=0,
+        start_t_score=0,
+        round_winner_side="",
+        round_winner="",
+        round_loser="",
+        reason=0,
+        players=[],
+        kills=[],
+        damages=[],
+        footsteps=[],
+        bomb_events=[],
+    ):
+        """ Initialize a CSGO round
+        """
+        self.map_name = map_name
+        self.start_tick = start_tick
+        self.end_tick = end_tick
+        self.end_ct_score = end_ct_score
+        self.end_t_score = end_t_score
+        self.start_ct_score = start_ct_score
+        self.start_t_score = start_t_score
+        self.round_winner_side = round_winner_side
+        self.round_winner = round_winner
+        self.round_loser = round_loser
+        self.reason = reason
+        self.players = players
+        self.kills = kills
+        self.damages = damages
+        self.footsteps = footsteps
+        self.bomb_events = bomb_events
+        if self.round_winner_side == "CT":
+            self.start_ct_score = self.end_ct_score - 1
+            self.start_t_score = self.start_t_score
+        if self.round_winner_side == "T":
+            self.start_ct_score = self.end_ct_score
+            self.start_t_score = self.start_t_score - 1
+
+
+class Kill():
+    """ An object to detail a kill event
+
+    Attributes:
+        - tick (int)                : Game tick at time of kill
+        - victim_x (float)          : Victim's X position
+        - victim_y (float)          : Victim's Y position
+        - victim_z (float)          : Victim's Z position
+        - victim_view_x (float)     : Victim's X view
+        - victim_view_y (float)     : Victim's Y view
+        - victim_area_id (int)      : Victim's area id from nav file
+        - victim_area_name (int)    : Victim's area name from nav file
+        - attacker_x (float)        : Attacker's X position
+        - attacker_y (float)        : Attacker's Y position
+        - attacker_z (float)        : Attacker's Z position
+        - attacker_view_x (float)   : Attacker's X view
+        - attacker_view_y (float)   : Attacker's Y view
+        - attacker_area_id (int)    : Attacker's area id from nav file
+        - attacker_area_name (int)  : Attacker's area name from nav file
+        - victim_id (int)           : Victim's steam id
+        - victim_name (string)      : Victim's username
+        - victim_team (string)      : Victim's team/clan name
+        - victim_side (string)      : Victim's side (T or CT)
+        - victim_team_eq_val (int)  : Victim team's starting equipment value
+        - attacker_id (int)         : Attacker's steam id
+        - attacker_name (int)       : Attacker's username
+        - attacker_team (string)    : Attacker's team/clan name
+        - attacker_side (string)    : Attacker's side (T or CT)
+        - attacker_team_eq_val (int): Attacker team's starting equipment value
+        - weapon_id (int)           : Weapon id
+        - is_wallshot (boolean)     : If kill was a wallshot then 1, 0 otherwise
+        - is_headshot (boolean)     : If kill was a headshot then 1, 0 otherwise
+    """
+
+    def __init__(
+        self,
+        tick=0,
+        victim_x=0,
+        victim_y=0,
+        victim_z=0,
+        victim_view_x=0,
+        victim_view_y=0,
+        victim_area_id=0,
+        victim_area_name="",
+        attacker_x=0,
+        attacker_y=0,
+        attacker_z=0,
+        attacker_view_x=0,
+        attacker_view_y=0,
+        attacker_area_id=0,
+        attacker_area_name="",
+        victim_id=0,
+        victim_name="",
+        victim_team="",
+        victim_side="",
+        victim_team_eq_val=0,
+        attacker_id=0,
+        attacker_name="",
+        attacker_team="",
+        attacker_side="",
+        attacker_team_eq_val=0,
+        weapon_id=0,
+        is_wallshot=False,
+        is_headshot=False,
+    ):
+        self.tick = tick
+        self.victim_x = victim_x
+        self.victim_y = victim_y
+        self.victim_z = victim_z
+        self.victim_view_x = victim_view_x
+        self.victim_view_y = victim_view_y
+        self.victim_area_id = victim_area_id
+        self.victim_area_name = victim_area_name
+        self.attacker_x = attacker_x
+        self.attacker_y = attacker_y
+        self.attacker_z = attacker_z
+        self.attacker_view_x = attacker_view_x
+        self.attacker_view_y = attacker_view_y
+        self.attacker_area_id = attacker_area_id
+        self.attacker_area_name = attacker_area_name
+        self.victim_id = victim_id
+        self.victim_name = victim_name
+        self.victim_side = victim_side
+        self.victim_team_eq_val = victim_team_eq_val
+        self.attacker_id = attacker_id
+        self.attacker_name = attacker_name
+        self.attacker_team = attacker_team
+        self.attacker_side = attacker_side
+        self.attacker_team_eq_val = attacker_team_eq_val
+        self.weapon_id = weapon_id
+        self.is_wallshot = is_wallshot
+        self.is_headshot = is_headshot
+
+
+class Damage():
+    """ An object to detail a damage event
+
+    Attributes:
+        - tick (int)                : Game tick at time of kill
+        - victim_x (float)          : Victim's X position
+        - victim_y (float)          : Victim's Y position
+        - victim_z (float)          : Victim's Z position
+        - victim_view_x (float)     : Victim's X view
+        - victim_view_y (float)     : Victim's Y view
+        - victim_area_id (int)      : Victim's area id from nav file
+        - victim_area_name (int)    : Victim's area name from nav file
+        - attacker_x (float)        : Attacker's X position
+        - attacker_y (float)        : Attacker's Y position
+        - attacker_z (float)        : Attacker's Z position
+        - attacker_view_x (float)   : Attacker's X view
+        - attacker_view_y (float)   : Attacker's Y view
+        - attacker_area_id (int)    : Attacker's area id from nav file
+        - attacker_area_name (int)  : Attacker's area name from nav file
+        - victim_id (int)           : Victim's steam id
+        - victim_name (string)      : Victim's username
+        - victim_team (string)      : Victim's team/clan name
+        - victim_side (string)      : Victim's side (T or CT)
+        - victim_team_eq_val (int)  : Victim team's starting equipment value
+        - attacker_id (int)         : Attacker's steam id
+        - attacker_name (int)       : Attacker's username
+        - attacker_team (string)    : Attacker's team/clan name
+        - attacker_side (string)    : Attacker's side (T or CT)
+        - attacker_team_eq_val (int): Attacker team's starting equipment value
+        - hp_damage (int)           : HP damage dealt
+        - armor_damage (int)        : Armor damage dealt
+        - weapon_id (int)           : Weapon id
+        - hit_group (int)           : Hit group
+    """
+
+    def __init__(
+        self,
+        tick=0,
+        victim_x=0,
+        victim_y=0,
+        victim_z=0,
+        victim_view_x=0,
+        victim_view_y=0,
+        victim_area_id=0,
+        victim_area_name="",
+        attacker_x=0,
+        attacker_y=0,
+        attacker_z=0,
+        attacker_view_x=0,
+        attacker_view_y=0,
+        attacker_area_id=0,
+        attacker_area_name="",
+        victim_id=0,
+        victim_name="",
+        victim_team="",
+        victim_side="",
+        victim_team_eq_val=0,
+        attacker_id=0,
+        attacker_name="",
+        attacker_team="",
+        attacker_side="",
+        attacker_team_eq_val=0,
+        hp_damage=0,
+        armor_damage=0,
+        weapon_id=0,
+        hit_group=0,
+    ):
+        self.tick = tick
+        self.victim_x = victim_x
+        self.victim_y = victim_y
+        self.victim_z = victim_z
+        self.victim_view_x = victim_view_x
+        self.victim_view_y = victim_view_y
+        self.victim_area_id = victim_area_id
+        self.victim_area_name = victim_area_name
+        self.attacker_x = attacker_x
+        self.attacker_y = attacker_y
+        self.attacker_z = attacker_z
+        self.attacker_view_x = attacker_view_x
+        self.attacker_view_y = attacker_view_y
+        self.attacker_area_id = attacker_area_id
+        self.attacker_area_name = attacker_area_name
+        self.victim_id = victim_id
+        self.victim_name = victim_name
+        self.victim_team = victim_team
+        self.victim_side = victim_side
+        self.victim_team_eq_val = victim_team_eq_val
+        self.attacker_id = attacker_id
+        self.attacker_name = attacker_name
+        self.attacker_team = attacker_team
+        self.attacker_side = attacker_side
+        self.attacker_team_eq_val = attacker_team_eq_val
+        self.hp_damage = hp_damage
+        self.armor_damage = armor_damage
+        self.weapon_id = weapon_id
+        self.hit_group = hit_group
