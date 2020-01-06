@@ -1,4 +1,9 @@
 *.dem
 .DS_Store
 *.log
-
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+*.pyo
+build/
+dist/
