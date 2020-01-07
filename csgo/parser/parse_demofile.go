@@ -39,7 +39,7 @@ func main() {
 		- de_train
 	*/
 	current_map := header.MapName
-	f_nav, _ := os.Open("../data/original_nav_files/" + current_map + ".nav")
+	f_nav, _ := os.Open("../../data/original_nav_files/" + current_map + ".nav")
 	parser_nav := gonav.Parser{Reader: f_nav}
 	mesh, _ := parser_nav.Parse()
 

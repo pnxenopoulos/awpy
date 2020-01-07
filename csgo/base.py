@@ -3,7 +3,8 @@
 Author: Peter Xenopoulos
 """
 
-class Grenade():
+
+class Grenade:
     """ An object to detail a round's grenade events
 
     [TODO]
@@ -20,7 +21,7 @@ class Grenade():
         raise NotImplementedError
 
 
-class BombEvent():
+class BombEvent:
     """ An object to detail a Bomb Plant/Defuse event
 
     Attributes:
@@ -63,7 +64,7 @@ class BombEvent():
         self.event_type = event_type
 
 
-class Footstep():
+class Footstep:
     """ An object to detail a Footstep event
 
     Attributes:
@@ -112,7 +113,7 @@ class Footstep():
         self.area_name = area_name
 
 
-class Round():
+class Round:
     """ An object to detail a round
 
     Attributes:
@@ -178,7 +179,7 @@ class Round():
             self.start_t_score = self.start_t_score - 1
 
 
-class Kill():
+class Kill:
     """ An object to detail a kill event
 
     Attributes:
@@ -272,7 +273,7 @@ class Kill():
         self.is_headshot = is_headshot
 
 
-class Damage():
+class Damage:
     """ An object to detail a damage event
 
     Attributes:

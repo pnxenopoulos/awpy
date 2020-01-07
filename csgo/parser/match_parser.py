@@ -6,7 +6,8 @@ import pandas as pd
 
 from csgo.base import BombEvent, Footstep, Round, Kill, Damage
 
-class CSGOMatchParser():
+
+class CSGOMatchParser:
     """ This class can parse a CSGO match to output events in a logical structure
 
     Attributes:
@@ -16,7 +17,7 @@ class CSGOMatchParser():
         rounds: A list of Round objects in the match
     """
 
-    def __init__(self, demofile="", logfile="parser_log.log"):
+    def __init__(self, demofile="", logfile="parser.log"):
         """ Initialize a CSGOMatchParser object
         """
         self.demofile = demofile
@@ -127,10 +128,9 @@ class CSGOMatchParser():
             "Starting CSGO Go demofile parser, reading in " + self.demofile
         )
         self.match_event_id = self.demofile[self.demofile.rfind("/") + 1 : -4]
-        path = os.path.join(os.path.dirname(__file__), 'parse_demofile.go')
+        path = os.path.join(os.path.dirname(__file__), "parse_demofile.go")
         proc = subprocess.Popen(
-            ["go", "run", path, "-demo", self.demofile],
-            stdout=subprocess.PIPE,
+            ["go", "run", path, "-demo", self.demofile], stdout=subprocess.PIPE
         )
         self.parsed_text = proc.stdout.read().splitlines()
         self.parsed_text = [event.decode("utf-8") for event in self.parsed_text]
@@ -148,7 +148,7 @@ class CSGOMatchParser():
             for i, line in enumerate(self.parsed_text):
                 if "MATCH START" in line:
                     self.match_start = i
-        self.parsed_text = self.parsed_text[self.match_start:]
+        self.parsed_text = self.parsed_text[self.match_start :]
         if self.match_start == 0:
             self.logger.warning("Match start at 0...likely wrong")
         else:

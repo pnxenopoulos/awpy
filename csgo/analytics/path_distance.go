@@ -30,16 +30,18 @@ func main() {
 	end_x := *endXPtr
 	end_y := *endYPtr
 	end_z := *endZPtr
+
 	// Read in args
 	//current_map, start_x, start_y, start_z, end_x, end_y, end_z = DemoPathFromArgs()
 	// Read in parser
-	f_nav, _ := os.Open("../data/original_nav_files/" + current_map + ".nav")
+	f_nav, _ := os.Open("../../data/original_nav_files/" + current_map + ".nav")
 	parser_nav := gonav.Parser{Reader: f_nav}
 	mesh, _ := parser_nav.Parse()
 	start_location := gonav.Vector3{X: float32(start_x), Y: float32(start_y), Z: float32(start_z)}
 	end_location := gonav.Vector3{X: float32(end_x), Y: float32(end_y), Z: float32(end_z)}
 	start_area := mesh.GetNearestArea(start_location, false)
 	end_area := mesh.GetNearestArea(end_location, false)
+
 	path, _ := gonav.SimpleBuildShortestPath(start_area, end_area)
 	var areas_visited int = 0
 	for _, currNode := range path.Nodes {
