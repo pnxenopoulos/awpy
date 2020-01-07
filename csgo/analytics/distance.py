@@ -1,11 +1,12 @@
 import os
 import subprocess
+import numpy as np
 
 from scipy.spatial import distance
 
 
 def point_distance(point_a, point_b, type="graph", map="de_dust2"):
-    """ This function returns the distance between two points
+    """ Returns the distance between two points using a given method on a given map (if needed)
 
     Attributes:
         point_a: A list of floats or ints containing the position of point A
@@ -46,3 +47,12 @@ def point_distance(point_a, point_b, type="graph", map="de_dust2"):
         return distance.canberra(point_a, point_b)
     elif type == "cosine":
         return distance.cosine(point_a, point_b)
+
+def polygon_area(x, y):
+    """ Returns area of a polygon given x,y coordinates of vertices
+
+    Attributes:
+        x: A list of floats indicating x index of vertices
+        y: A list of floats indicating y index of vertices
+    """
+    return 0.5*np.abs(np.dot(x, np.roll(y,1)) - np.dot(y, np.roll(x,1)))
