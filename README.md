@@ -11,7 +11,7 @@ go get github.com/markus-wa/demoinfocs-golang
 ```
 
 ### Installation
-To install `csgo`, clone the repository and install it from source by doing `python setup.py sdist`.
+To install `csgo`, clone the repository and install it from source by doing `python setup.py install --user`.
 
 ## Structure
 This repository contains code for CSGO analysis. It is structured as follows:

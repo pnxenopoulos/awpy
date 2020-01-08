@@ -4,13 +4,12 @@ setup(
     name="csgo",
     version="0.1",
     packages=find_packages(),
-    scripts=["say_hello.py"],
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires=[
         "pandas>=0.25.3",
         "numpy>=1.18.1",
-        "scipy>=1.18.1",
+        "scipy>=1.4.1",
         "matplotlib>=3.1.2",
     ],
     package_data={
