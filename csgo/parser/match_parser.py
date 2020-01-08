@@ -234,10 +234,12 @@ class CSGOMatchParser:
                 current_footstep.x = float(third_block[0])
                 current_footstep.y = float(third_block[1].strip())
                 current_footstep.z = float(third_block[2].strip())
-                current_footstep.view_x = float(third_block[3].strip())
-                current_footstep.view_y = float(third_block[4].strip())
-                current_footstep.area_id = int(third_block[5].strip())
-                current_footstep.area_name = third_block[6].replace("]", "").strip()
+                current_footstep.x_viz = float(third_block[3].strip())
+                current_footstep.y_viz = float(third_block[4].strip())
+                current_footstep.view_x = float(third_block[5].strip())
+                current_footstep.view_y = float(third_block[6].strip())
+                current_footstep.area_id = int(third_block[7].strip())
+                current_footstep.area_name = third_block[8].replace("]", "").strip()
                 current_footstep_list.append(current_footstep)
             if "[DAMAGE]" in event:
                 current_damage = Damage()
@@ -249,19 +251,23 @@ class CSGOMatchParser:
                 current_damage.victim_x = float(second_block[0])
                 current_damage.victim_y = float(second_block[1].strip())
                 current_damage.victim_z = float(second_block[2].strip())
-                current_damage.victim_view_x = float(second_block[3].strip())
-                current_damage.victim_view_y = float(second_block[4].strip())
-                current_damage.victim_area_id = int(second_block[5].strip())
-                current_damage.victim_area_name = second_block[6].strip()
+                current_damage.victim_x_viz = float(second_block[3].strip())
+                current_damage.victim_y_viz = float(second_block[4].strip())
+                current_damage.victim_view_x = float(second_block[5].strip())
+                current_damage.victim_view_y = float(second_block[6].strip())
+                current_damage.victim_area_id = int(second_block[7].strip())
+                current_damage.victim_area_name = second_block[8].strip()
                 # Third block
                 third_block = split_line[3].split(",")
                 current_damage.attacker_x = float(third_block[0])
                 current_damage.attacker_y = float(third_block[1].strip())
                 current_damage.attacker_z = float(third_block[2].strip())
-                current_damage.attacker_view_x = float(third_block[3].strip())
-                current_damage.attacker_view_y = float(third_block[4].strip())
-                current_damage.attacker_area_id = int(third_block[5].strip())
-                current_damage.attacker_area_name = third_block[6].strip()
+                current_damage.attacker_x_viz = float(third_block[3].strip())
+                current_damage.attacker_y_viz = float(third_block[4].strip())
+                current_damage.attacker_view_x = float(third_block[5].strip())
+                current_damage.attacker_view_y = float(third_block[6].strip())
+                current_damage.attacker_area_id = int(third_block[7].strip())
+                current_damage.attacker_area_name = third_block[8].strip()
                 # Fourth block
                 fourth_block = split_line[4].split(",")
                 current_damage.victim_id = int(fourth_block[0])
@@ -298,19 +304,23 @@ class CSGOMatchParser:
                 current_kill.victim_x = float(second_block[0])
                 current_kill.victim_y = float(second_block[1].strip())
                 current_kill.victim_z = float(second_block[2].strip())
-                current_kill.victim_view_x = float(second_block[3].strip())
-                current_kill.victim_view_y = float(second_block[4].strip())
-                current_kill.victim_area_id = int(second_block[5].strip())
-                current_kill.victim_area_name = second_block[6].strip()
+                current_kill.victim_x_viz = float(second_block[3].strip())
+                current_kill.victim_y_viz = float(second_block[4].strip())
+                current_kill.victim_view_x = float(second_block[5].strip())
+                current_kill.victim_view_y = float(second_block[6].strip())
+                current_kill.victim_area_id = int(second_block[7].strip())
+                current_kill.victim_area_name = second_block[8].strip()
                 # Third block
                 third_block = split_line[3].split(",")
                 current_kill.attacker_x = float(third_block[0])
                 current_kill.attacker_y = float(third_block[1].strip())
                 current_kill.attacker_z = float(third_block[2].strip())
-                current_kill.attacker_view_x = float(third_block[3].strip())
-                current_kill.attacker_view_y = float(third_block[4].strip())
-                current_kill.attacker_area_id = int(third_block[5].strip())
-                current_kill.attacker_area_name = third_block[6].strip()
+                current_kill.attacker_x_viz = float(third_block[3].strip())
+                current_kill.attacker_y_viz = float(third_block[4].strip())
+                current_kill.attacker_view_x = float(third_block[5].strip())
+                current_kill.attacker_view_y = float(third_block[6].strip())
+                current_kill.attacker_area_id = int(third_block[7].strip())
+                current_kill.attacker_area_name = third_block[8].strip()
                 # Fourth block
                 fourth_block = split_line[4].split(",")
                 current_kill.victim_id = int(fourth_block[0])
@@ -414,6 +424,8 @@ class CSGOMatchParser:
                         f.x,
                         f.y,
                         f.z,
+                        f.x_viz,
+                        f.y_viz,
                         f.view_x,
                         f.view_y,
                         f.area_id,
@@ -434,6 +446,8 @@ class CSGOMatchParser:
                 "X",
                 "Y",
                 "Z",
+                "XViz",
+                "YViz",
                 "ViewX",
                 "ViewY",
                 "AreaID",
@@ -458,6 +472,8 @@ class CSGOMatchParser:
                         f.victim_x,
                         f.victim_y,
                         f.victim_z,
+                        f.victim_x_viz,
+                        f.victim_y_viz,
                         f.victim_view_x,
                         f.victim_view_y,
                         f.victim_area_id,
@@ -465,6 +481,8 @@ class CSGOMatchParser:
                         f.attacker_x,
                         f.attacker_y,
                         f.attacker_z,
+                        f.attacker_x_viz,
+                        f.attacker_y_viz,
                         f.attacker_view_x,
                         f.attacker_view_y,
                         f.attacker_area_id,
@@ -494,6 +512,8 @@ class CSGOMatchParser:
                 "VictimX",
                 "VictimY",
                 "VictimZ",
+                "VictimXViz",
+                "VictimYViz",
                 "VictimViewX",
                 "VictimViewY",
                 "VictimAreaID",
@@ -501,6 +521,8 @@ class CSGOMatchParser:
                 "AttackerX",
                 "AttackerY",
                 "AttackerZ",
+                "AttackerXViz",
+                "AttackerYViz",
                 "AttackerViewX",
                 "AttackerViewY",
                 "AttackerAreaID",
@@ -538,6 +560,8 @@ class CSGOMatchParser:
                         f.victim_x,
                         f.victim_y,
                         f.victim_z,
+                        f.victim_x_viz,
+                        f.victim_y_viz,
                         f.victim_view_x,
                         f.victim_view_y,
                         f.victim_area_id,
@@ -545,6 +569,8 @@ class CSGOMatchParser:
                         f.attacker_x,
                         f.attacker_y,
                         f.attacker_z,
+                        f.attacker_x_viz,
+                        f.attacker_y_viz,
                         f.attacker_view_x,
                         f.attacker_view_y,
                         f.attacker_area_id,
@@ -575,6 +601,8 @@ class CSGOMatchParser:
                 "VictimX",
                 "VictimY",
                 "VictimZ",
+                "VictimXViz",
+                "VictimYViz",
                 "VictimViewX",
                 "VictimViewY",
                 "VictimAreaID",
@@ -582,6 +610,8 @@ class CSGOMatchParser:
                 "AttackerX",
                 "AttackerY",
                 "AttackerZ",
+                "AttackerXViz",
+                "AttackerYViz",
                 "AttackerViewX",
                 "AttackerViewY",
                 "AttackerAreaID",

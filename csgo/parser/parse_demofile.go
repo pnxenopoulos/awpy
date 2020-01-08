@@ -8,6 +8,7 @@ import (
 	common "github.com/markus-wa/demoinfocs-golang/common"
 	events "github.com/markus-wa/demoinfocs-golang/events"
 	ex "github.com/markus-wa/demoinfocs-golang/examples"
+	metadata "github.com/markus-wa/demoinfocs-golang/metadata"
 	"github.com/mrazza/gonav"
 )
 
@@ -39,6 +40,8 @@ func main() {
 		- de_train
 	*/
 	current_map := header.MapName
+	mapMetadata := metadata.MapNameToMap[current_map]
+
 	f_nav, _ := os.Open("../../data/original_nav_files/" + current_map + ".nav")
 	parser_nav := gonav.Parser{Reader: f_nav}
 	mesh, _ := parser_nav.Parse()
@@ -75,6 +78,8 @@ func main() {
 			var victim_x float64 = 0.0
 			var victim_y float64 = 0.0
 			var victim_z float64 = 0.0
+			var victim_x_viz float64 = 0.0
+			var victim_y_viz float64 = 0.0
 			var victim_closest_area_id uint32 = 0
 			var victim_closest_area_name string = "NA"
 			var victim_view_x float32 = 0.0
@@ -84,6 +89,8 @@ func main() {
 			var attacker_x float64 = 0.0
 			var attacker_y float64 = 0.0
 			var attacker_z float64 = 0.0
+			var attacker_x_viz float64 = 0.0
+			var attacker_y_viz float64 = 0.0
 			var attacker_closest_area_id uint32 = 0
 			var attacker_closest_area_name string = "NA"
 			var attacker_view_x float32 = 0.0
@@ -125,6 +132,7 @@ func main() {
 				victim_x = e.Player.Position.X
 				victim_y = e.Player.Position.Y
 				victim_z = e.Player.Position.Z
+				victim_x_viz, victim_y_viz = mapMetadata.TranslateScale(victim_x, victim_y)
 				victim_view_x = e.Player.ViewDirectionX
 				victim_view_y = e.Player.ViewDirectionY
 				victim_location := gonav.Vector3{X: float32(victim_x), Y: float32(victim_y), Z: float32(victim_z)}
@@ -154,6 +162,7 @@ func main() {
 				attacker_x = e.Attacker.Position.X
 				attacker_y = e.Attacker.Position.Y
 				attacker_z = e.Attacker.Position.Z
+				attacker_x_viz, attacker_y_viz = mapMetadata.TranslateScale(attacker_x, attacker_y)
 				attacker_view_x = e.Attacker.ViewDirectionX
 				attacker_view_y = e.Attacker.ViewDirectionY
 				attacker_location := gonav.Vector3{X: float32(attacker_x), Y: float32(attacker_y), Z: float32(attacker_z)}
@@ -176,10 +185,10 @@ func main() {
 			}
 
 			// Print a line of the damage information
-			fmt.Printf("[DAMAGE] [%s, %d] [%f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %d, %d] \n",
+			fmt.Printf("[DAMAGE] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %d, %d] \n",
 			map_name, game_tick,
-			victim_x, victim_y, victim_z, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
-			attacker_x, attacker_y, attacker_z, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
+			victim_x, victim_y, victim_z, victim_x_viz, victim_y_viz, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
+			attacker_x, attacker_y, attacker_z, attacker_x_viz, attacker_y_viz, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
 			victim_id, victim_name, victim_team, victim_side_string, victim_team_eq_val,
 			attacker_id, attacker_name, attacker_team, attacker_side_string, attacker_team_eq_val,
 			hp_damage, armor_damage, weapon_id, hit_group)
@@ -212,6 +221,8 @@ func main() {
 			var victim_x float64 = 0.0
 			var victim_y float64 = 0.0
 			var victim_z float64 = 0.0
+			var victim_x_viz float64 = 0.0
+			var victim_y_viz float64 = 0.0
 			var victim_closest_area_id uint32 = 0
 			var victim_closest_area_name string = "NA"
 			var victim_view_x float32 = 0.0
@@ -221,6 +232,8 @@ func main() {
 			var attacker_x float64 = 0.0
 			var attacker_y float64 = 0.0
 			var attacker_z float64 = 0.0
+			var attacker_x_viz float64 = 0.0
+			var attacker_y_viz float64 = 0.0
 			var attacker_closest_area_id uint32 = 0
 			var attacker_closest_area_name string = "NA"
 			var attacker_view_x float32 = 0.0
@@ -255,6 +268,7 @@ func main() {
 				victim_x = e.Victim.Position.X
 				victim_y = e.Victim.Position.Y
 				victim_z = e.Victim.Position.Z
+				victim_x_viz, victim_y_viz = mapMetadata.TranslateScale(victim_x, victim_y)
 				victim_view_x = e.Victim.ViewDirectionX
 				victim_view_y = e.Victim.ViewDirectionY
 				victim_location := gonav.Vector3{X: float32(victim_x), Y: float32(victim_y), Z: float32(victim_z)}
@@ -284,6 +298,7 @@ func main() {
 				attacker_x = e.Killer.Position.X
 				attacker_y = e.Killer.Position.Y
 				attacker_z = e.Killer.Position.Z
+				attacker_x_viz, attacker_y_viz = mapMetadata.TranslateScale(attacker_x, attacker_y)
 				attacker_view_x = e.Killer.ViewDirectionX
 				attacker_view_y = e.Killer.ViewDirectionY
 				attacker_location := gonav.Vector3{X: float32(attacker_x), Y: float32(attacker_y), Z: float32(attacker_z)}
@@ -306,10 +321,10 @@ func main() {
 			}
 
 			// Print a line of the kill information
-			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %t] \n",
+			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %t] \n",
 			map_name, game_tick,
-			victim_x, victim_y, victim_z, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
-			attacker_x, attacker_y, attacker_z, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
+			victim_x, victim_y, victim_z, victim_x_viz, victim_y_viz, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
+			attacker_x, attacker_y, attacker_z, attacker_x_viz, attacker_y_viz, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
 			victim_id, victim_name, victim_team, victim_side_string, victim_team_eq_val,
 			attacker_id, attacker_name, attacker_team, attacker_side_string, attacker_team_eq_val,
 			weapon_id, is_wallshot, is_headshot)
@@ -543,6 +558,8 @@ func main() {
 			var player_x float64 = 0.0
 			var player_y float64 = 0.0
 			var player_z float64 = 0.0
+			var player_x_viz float64 = 0.0
+			var player_y_viz float64 = 0.0
 			var player_view_x float32 = 0.0
 			var player_view_y float32 = 0.0
 			var player_side common.Team
@@ -561,6 +578,7 @@ func main() {
 				player_z = e.Player.Position.Z
 				player_view_x = e.Player.ViewDirectionX
 				player_view_y = e.Player.ViewDirectionY
+				player_x_viz, player_y_viz = mapMetadata.TranslateScale(player_x, player_y)
 				player_side = e.Player.Team
 				player_team = e.Player.TeamState.ClanName
 				player_name = e.Player.Name
@@ -582,10 +600,10 @@ func main() {
 				player_side_string = "CT"
 			}
 
-			fmt.Printf("[FOOTSTEP] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %d, %s] \n",
+			fmt.Printf("[FOOTSTEP] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] \n",
 			header.MapName, gs.IngameTick(),
 			player_id, player_name, player_team, player_side_string,
-			player_x, player_y, player_z, player_view_x, player_view_y,
+			player_x, player_y, player_z, player_x_viz, player_y_viz, player_view_x, player_view_y,
 			area_id, area_place)
 		}
 	})

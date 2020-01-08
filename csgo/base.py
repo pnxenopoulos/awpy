@@ -76,6 +76,8 @@ class Footstep:
         - x (float)           : Player's X position
         - y (float)           : Player's Y position
         - z (float)           : Player's Z position
+        - x_viz (float)       : Player's X position for visualization
+        - y_viz (float)       : Player's Y position for visualization
         - view_x (float)      : Player's view X direction
         - view_y (float)      : Player's view Y direction
         - area_id (int)       : Player's location as nav file area id
@@ -92,6 +94,8 @@ class Footstep:
         x=0,
         y=0,
         z=0,
+        x_viz=0,
+        y_viz=0,
         view_x=0,
         view_y=0,
         area_id=0,
@@ -107,6 +111,8 @@ class Footstep:
         self.x = x
         self.y = y
         self.z = z
+        self.x_viz = x_viz
+        self.y_viz = y_viz
         self.view_x = view_x
         self.view_y = view_y
         self.area_id = area_id
@@ -187,6 +193,8 @@ class Kill:
         - victim_x (float)          : Victim's X position
         - victim_y (float)          : Victim's Y position
         - victim_z (float)          : Victim's Z position
+        - victim_x_viz (float)      : Victim's X position for visualization
+        - victim_y_viz (float)      : Victim's Y position for visualization
         - victim_view_x (float)     : Victim's X view
         - victim_view_y (float)     : Victim's Y view
         - victim_area_id (int)      : Victim's area id from nav file
@@ -194,6 +202,8 @@ class Kill:
         - attacker_x (float)        : Attacker's X position
         - attacker_y (float)        : Attacker's Y position
         - attacker_z (float)        : Attacker's Z position
+        - attacker_x_viz (float)    : Attacker's X position for visualization
+        - attacker_y_viz (float)    : Attacker's Y position for visualization
         - attacker_view_x (float)   : Attacker's X view
         - attacker_view_y (float)   : Attacker's Y view
         - attacker_area_id (int)    : Attacker's area id from nav file
@@ -219,6 +229,8 @@ class Kill:
         victim_x=0,
         victim_y=0,
         victim_z=0,
+        victim_x_viz=0,
+        victim_y_viz=0,
         victim_view_x=0,
         victim_view_y=0,
         victim_area_id=0,
@@ -226,6 +238,8 @@ class Kill:
         attacker_x=0,
         attacker_y=0,
         attacker_z=0,
+        attacker_x_viz=0,
+        attacker_y_viz=0,
         attacker_view_x=0,
         attacker_view_y=0,
         attacker_area_id=0,
@@ -248,6 +262,8 @@ class Kill:
         self.victim_x = victim_x
         self.victim_y = victim_y
         self.victim_z = victim_z
+        self.victim_x_viz = victim_x_viz
+        self.victim_y_viz = victim_y_viz
         self.victim_view_x = victim_view_x
         self.victim_view_y = victim_view_y
         self.victim_area_id = victim_area_id
@@ -255,6 +271,8 @@ class Kill:
         self.attacker_x = attacker_x
         self.attacker_y = attacker_y
         self.attacker_z = attacker_z
+        self.attacker_x_viz = attacker_x_viz
+        self.attacker_y_viz = attacker_y_viz
         self.attacker_view_x = attacker_view_x
         self.attacker_view_y = attacker_view_y
         self.attacker_area_id = attacker_area_id
@@ -281,6 +299,8 @@ class Damage:
         - victim_x (float)          : Victim's X position
         - victim_y (float)          : Victim's Y position
         - victim_z (float)          : Victim's Z position
+        - victim_x_viz (float)      : Victim's X position for visualization
+        - victim_y_viz (float)      : Victim's Y position for visualization
         - victim_view_x (float)     : Victim's X view
         - victim_view_y (float)     : Victim's Y view
         - victim_area_id (int)      : Victim's area id from nav file
@@ -288,6 +308,8 @@ class Damage:
         - attacker_x (float)        : Attacker's X position
         - attacker_y (float)        : Attacker's Y position
         - attacker_z (float)        : Attacker's Z position
+        - attacker_x_viz (float)    : Attacker's X position for visualization
+        - attacker_y_viz (float)    : Attacker's Y position for visualization
         - attacker_view_x (float)   : Attacker's X view
         - attacker_view_y (float)   : Attacker's Y view
         - attacker_area_id (int)    : Attacker's area id from nav file
@@ -314,6 +336,8 @@ class Damage:
         victim_x=0,
         victim_y=0,
         victim_z=0,
+        victim_x_viz=0,
+        victim_y_viz=0,
         victim_view_x=0,
         victim_view_y=0,
         victim_area_id=0,
@@ -321,6 +345,8 @@ class Damage:
         attacker_x=0,
         attacker_y=0,
         attacker_z=0,
+        attacker_x_viz=0,
+        attacker_y_viz=0,
         attacker_view_x=0,
         attacker_view_y=0,
         attacker_area_id=0,
@@ -344,6 +370,8 @@ class Damage:
         self.victim_x = victim_x
         self.victim_y = victim_y
         self.victim_z = victim_z
+        self.victim_x_viz = victim_x_viz
+        self.victim_y_viz = victim_y_viz
         self.victim_view_x = victim_view_x
         self.victim_view_y = victim_view_y
         self.victim_area_id = victim_area_id
@@ -351,6 +379,8 @@ class Damage:
         self.attacker_x = attacker_x
         self.attacker_y = attacker_y
         self.attacker_z = attacker_z
+        self.attacker_x_viz = attacker_x_viz
+        self.attacker_y_viz = attacker_y_viz
         self.attacker_view_x = attacker_view_x
         self.attacker_view_y = attacker_view_y
         self.attacker_area_id = attacker_area_id
