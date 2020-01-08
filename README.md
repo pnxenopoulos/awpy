@@ -1,5 +1,17 @@
 # Counter-Strike: Global Offensive Analytics
-This repository contains code pertaining to multiple parts of Counter-Strike: Global Offensive (CS:GO/CSGO) analytics. This repository contains the code necessary to parse and manage CSGO data.
+The `csgo` package provides data parsing, analytics and visualization data structures and functions. In this repository, you will find the source code, issue tracker and useful information pertaining to the `csgo` package.
+
+## Setup
+### Requirements
+`csgo` requires [Python 3](https://www.python.org/downloads/). Additionally, it requires installing [Go](https://golang.org/), which some of the backend parsing code uses. After installing Go, run
+
+```
+go get github.com/mrazza/gonav
+go get github.com/markus-wa/demoinfocs-golang
+```
+
+### Installation
+To install `csgo`, clone the repository and install it from source by doing `python setup.py sdist`.
 
 ## Structure
 This repository contains code for CSGO analysis. It is structured as follows:
@@ -30,8 +42,5 @@ Each issue can be given a priority level by a repo-maintainer, such as High (red
 
 Please direct current queries to Peter Xenopoulos, at [xenopoulos@nyu.edu](mailto:xenopoulos@nyu.edu)
 
-## Code Requirements
-Todo...
-
-## Development Timeline:
+## Changelog:
 Todo...
