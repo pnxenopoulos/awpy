@@ -409,7 +409,7 @@ class CSGOMatchParser:
         """ Write bomb events to a Pandas dataframe
         """
         bomb_df_list = []
-        for i, rounds in enumerate(self.rounds):
+        for i, round in enumerate(self.rounds):
             bomb_events = round.bomb_events
             for be in bomb_events:
                 bombs_df_list.append(
