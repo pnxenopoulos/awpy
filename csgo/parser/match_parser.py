@@ -427,7 +427,7 @@ class CSGOMatchParser:
                         be.event_type,
                     ]
                 )
-        self.bomb_df = pd.Dataframe(
+        self.bomb_df = pd.DataFrame(
             bomb_df_list,
             columns=[
                 "CompetitionName",
