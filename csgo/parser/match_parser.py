@@ -412,7 +412,7 @@ class CSGOMatchParser:
         for i, round in enumerate(self.rounds):
             bomb_events = round.bomb_events
             for be in bomb_events:
-                bombs_df_list.append(
+                bomb_df_list.append(
                     [
                         self.competition,
                         self.match_name,
