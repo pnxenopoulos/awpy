@@ -412,7 +412,7 @@ class CSGOMatchParser:
         for i, rounds in enumerate(self.rounds):
             bomb_events = round.bomb_events
             for be in bomb_events:
-                bomb_df_list.append(
+                bombs_df_list.append(
                     [
                         self.competition,
                         self.match_name,
@@ -475,7 +475,7 @@ class CSGOMatchParser:
                         f.area_name,
                     ]
                 )
-        self.footstep_df = pd.DataFrame(
+        self.footsteps_df = pd.DataFrame(
             footstep_df_list,
             columns=[
                 "CompetitionName",
