@@ -17,10 +17,11 @@ class CSGOMatchParser:
         rounds: A list of Round objects in the match
     """
 
-    def __init__(self, demofile="", logfile="parser.log"):
+    def __init__(self, demofile="", logfile="parser.log", competition=""):
         """ Initialize a CSGOMatchParser object
         """
         self.demofile = demofile
+        self.competition = competition
         self.match_start = 0
         self.rounds = []
         self.logfile = logfile
@@ -404,6 +405,47 @@ class CSGOMatchParser:
                 current_bomb_event.event_type = "Explode"
                 current_bomb_events_list.append(current_bomb_event)
 
+    def write_bomb_events(self):
+        """ Write bomb events to a Pandas dataframe
+        """
+        bomb_df_list = []
+        for i, rounds in enumerate(self.rounds):
+            bomb_events = round.bomb_events
+            for be in bomb_events:
+                bomb_df_list.append(
+                    [
+                        self.competition,
+                        self.match_name,
+                        round.map_name,
+                        i,
+                        be.tick,
+                        be.steam_id,
+                        be.player_name,
+                        be.team,
+                        be.side,
+                        be.area_id,
+                        be.bomb_site,
+                        be.event_type,
+                    ]
+                )
+        self.bomb_df = pd.Dataframe(
+            bomb_df_list,
+            columns=[
+                "CompetitionName",
+                "MatchName",
+                "MapName",
+                "Round",
+                "Tick",
+                "SteamID",
+                "PlayerName",
+                "Team",
+                "Side",
+                "AreaID",
+                "BombSite",
+                "EventType",
+            ],
+        )
+
     def write_footsteps(self):
         """ Write footsteps to a Pandas dataframe
         """
@@ -413,6 +455,7 @@ class CSGOMatchParser:
             for f in footsteps:
                 footstep_df_list.append(
                     [
+                        self.competition,
                         self.match_name,
                         round.map_name,
                         i,
@@ -435,6 +478,7 @@ class CSGOMatchParser:
         self.footstep_df = pd.DataFrame(
             footstep_df_list,
             columns=[
+                "CompetitionName",
                 "MatchName",
                 "MapName",
                 "RoundNum",
@@ -465,6 +509,7 @@ class CSGOMatchParser:
             for f in kills:
                 kills_df_list.append(
                     [
+                        self.competition,
                         self.match_name,
                         round.map_name,
                         i,
@@ -505,6 +550,7 @@ class CSGOMatchParser:
         self.kills_df = pd.DataFrame(
             kills_df_list,
             columns=[
+                "CompetitionName",
                 "MatchName",
                 "MapName",
                 "RoundNum",
@@ -553,6 +599,7 @@ class CSGOMatchParser:
             for f in damages:
                 damages_df_list.append(
                     [
+                        self.competition,
                         self.match_name,
                         round.map_name,
                         i,
@@ -594,6 +641,7 @@ class CSGOMatchParser:
         self.damages_df = pd.DataFrame(
             damages_df_list,
             columns=[
+                "CompetitionName",
                 "MatchName",
                 "MapName",
                 "RoundNum",
@@ -641,6 +689,7 @@ class CSGOMatchParser:
         for i, round in enumerate(self.rounds):
             round_df_list.append(
                 [
+                    self.competition,
                     self.match_name,
                     round.map_name,
                     i,
@@ -659,6 +708,7 @@ class CSGOMatchParser:
         self.rounds_df = pd.DataFrame(
             round_df_list,
             columns=[
+                "CompetitionName",
                 "MatchName",
                 "MapName",
                 "RoundNum",
