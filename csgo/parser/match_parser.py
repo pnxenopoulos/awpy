@@ -129,10 +129,11 @@ class CSGOMatchParser:
             "Starting CSGO Go demofile parser, reading in " + self.demofile
         )
         self.match_event_id = self.demofile[self.demofile.rfind("/") + 1 : -4]
-        print(os.path)
+        print(os.getcwd())
+        self.logger.error(os.getcwd())
         path = os.path.join(os.path.dirname(__file__), "")
         proc = subprocess.Popen(
-            ["go", "run", path + "parse_demofile.go", "-demo", os.getcwd() + "/" + self.demofile], stdout=subprocess.PIPE
+            ["go", "run", "parse_demofile.go", "-demo", os.getcwd() + "/" + self.demofile], stdout=subprocess.PIPE, cwd=path
         )
         self.parsed_text = proc.stdout.read().splitlines()
         self.parsed_text = [event.decode("utf-8") for event in self.parsed_text]
