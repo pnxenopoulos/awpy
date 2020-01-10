@@ -133,7 +133,7 @@ class CSGOMatchParser:
         print(path)
         self.logger.error(path)
         proc = subprocess.Popen(
-            ["go", "run", path + "parse_demofile.go", "-demo", self.demofile], stdout=subprocess.PIPE
+            ["go", "run", "parse_demofile.go", "-demo", self.demofile], stdout=subprocess.PIPE
         )
         self.parsed_text = proc.stdout.read().splitlines()
         self.parsed_text = [event.decode("utf-8") for event in self.parsed_text]
