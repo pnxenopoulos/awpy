@@ -151,7 +151,7 @@ func main() {
 				} else if victim_side == 3 {
 					victim_side_string = "CT"
 				}
-				victim_team_eq_val = e.Player.TeamState.CurrentEquipmentValue()
+				victim_team_eq_val = e.Player.TeamState.RoundStartEquipmentValue()
 			}
 
 			// Find attacker values
@@ -181,7 +181,7 @@ func main() {
 				} else if attacker_side == 3 {
 					attacker_side_string = "CT"
 				}
-				attacker_team_eq_val = e.Attacker.TeamState.CurrentEquipmentValue()
+				attacker_team_eq_val = e.Attacker.TeamState.RoundStartEquipmentValue()
 			}
 
 			// Print a line of the damage information
@@ -287,7 +287,7 @@ func main() {
 				} else if victim_side == 3 {
 					victim_side_string = "CT"
 				}
-				victim_team_eq_val = e.Victim.TeamState.CurrentEquipmentValue()
+				victim_team_eq_val = e.Victim.TeamState.RoundStartEquipmentValue()
 			}
 
 			// Find attacker values
@@ -317,7 +317,7 @@ func main() {
 				} else if attacker_side == 3 {
 					attacker_side_string = "CT"
 				}
-				attacker_team_eq_val = e.Killer.TeamState.CurrentEquipmentValue()
+				attacker_team_eq_val = e.Killer.TeamState.RoundStartEquipmentValue()
 			}
 
 			// Print a line of the kill information
