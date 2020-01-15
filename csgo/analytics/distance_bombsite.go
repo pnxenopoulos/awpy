@@ -30,21 +30,19 @@ func main() {
 	// Read in args
 	//current_map, start_x, start_y, start_z, end_x, end_y, end_z = DemoPathFromArgs()
 	// Read in parser
-	f_nav, _ := os.Open("../../data/original_nav_files/" + current_map + ".nav")
+	f_nav, _ := os.Open("../data/original_nav_files/" + current_map + ".nav")
 	parser_nav := gonav.Parser{Reader: f_nav}
 	mesh, _ := parser_nav.Parse()
 	start_location := gonav.Vector3{X: float32(start_x), Y: float32(start_y), Z: float32(start_z)}
-	end_location := gonav.Vector3{X: float32(end_x), Y: float32(end_y), Z: float32(end_z)}
 	start_area := mesh.GetNearestArea(start_location, true)
 
-	if bombsite == "A" {
-		bombsite_mesh := mesh.GetPlaceByName("BombsiteA")
-		bombsite_center, _ := bombsite_mesh.GetEstimatedCenter()
-		bombsite_area := mesh.GetNearestArea(bombsite_center, false)
-	} else {
-		bombsite_mesh := mesh.GetPlaceByName("BombsiteB")
-		bombsite_center, _ := bombsite_mesh.GetEstimatedCenter()
-		bombsite_area := mesh.GetNearestArea(bombsite_center, false)
+	bombsite_mesh := mesh.GetPlaceByName("BombsiteA")
+	bombsite_center, _ := bombsite_mesh.GetEstimatedCenter()
+	bombsite_area := mesh.GetNearestArea(bombsite_center, false)
+	if bombsite == "B" {
+		bombsite_mesh = mesh.GetPlaceByName("BombsiteB")
+		bombsite_center, _ = bombsite_mesh.GetEstimatedCenter()
+		bombsite_area = mesh.GetNearestArea(bombsite_center, false)
 	}
 
 	path, _ := gonav.SimpleBuildShortestPath(start_area, bombsite_area)
