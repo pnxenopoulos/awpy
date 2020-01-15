@@ -52,5 +52,5 @@ func main() {
 			areas_visited = areas_visited + 1
 		}
 	}
-	fmt.Printf("%d\n", areas_visited)
+	fmt.Printf("%d", areas_visited)
 }
