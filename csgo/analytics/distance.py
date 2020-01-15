@@ -13,20 +13,20 @@ def bombsite_distance(location, bombsite="A", map="de_dust2"):
         type: A string that is one of 'euclidean', 'manhattan', 'canberra', 'cosine' or 'graph'. Using 'graph' will use A* to find the shortest path and counts the discrete areas it travels.
         map: A string indicating the map
     """
-    path = os.path.join(os.path.dirname(__file__), "path_distance.go")
+    path = os.path.join(os.path.dirname(__file__), "")
     proc = subprocess.Popen(
         [
             "go",
             "run",
-            path,
+            "distance_bombsite.go",
             "-map",
             map,
             "-start_x",
-            str(point_a[0]),
+            str(location[0]),
             "-start_y",
-            str(point_a[1]),
+            str(location[1]),
             "-start_z",
-            str(point_a[2]),
+            str(location[2]),
             "-bombsite",
             bombsite
         ],
