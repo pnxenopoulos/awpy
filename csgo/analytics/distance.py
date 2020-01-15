@@ -30,6 +30,7 @@ def bombsite_distance(location, bombsite="A", map="de_dust2"):
             bombsite
         ],
         stdout=subprocess.PIPE,
+        cwd=path,
     )
     return int(proc.stdout.read().decode("utf-8"))
 
