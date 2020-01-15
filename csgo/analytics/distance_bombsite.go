@@ -14,9 +14,7 @@ func main() {
 	startXPtr := fl.Float64("start_x", 0, "Start X")
 	startYPtr := fl.Float64("start_y", 0, "Start Y")
 	startZPtr := fl.Float64("start_z", 0, "Start Z")
-	endXPtr := fl.Float64("end_x", 0, "End X")
-	endYPtr := fl.Float64("end_y", 0, "End Y")
-	endZPtr := fl.Float64("end_z", 0, "End Z")
+	bombsitePtr := fl.String("bombsite", "A", "A or B")
 
 	err := fl.Parse(os.Args[1:])
 	if err != nil {
@@ -27,9 +25,7 @@ func main() {
 	start_x := *startXPtr
 	start_y := *startYPtr
 	start_z := *startZPtr
-	end_x := *endXPtr
-	end_y := *endYPtr
-	end_z := *endZPtr
+	bombsite := *bombsitePtr
 
 	// Read in args
 	//current_map, start_x, start_y, start_z, end_x, end_y, end_z = DemoPathFromArgs()
@@ -40,9 +36,18 @@ func main() {
 	start_location := gonav.Vector3{X: float32(start_x), Y: float32(start_y), Z: float32(start_z)}
 	end_location := gonav.Vector3{X: float32(end_x), Y: float32(end_y), Z: float32(end_z)}
 	start_area := mesh.GetNearestArea(start_location, true)
-	end_area := mesh.GetNearestArea(end_location, true)
 
-	path, _ := gonav.SimpleBuildShortestPath(start_area, end_area)
+	if bombsite == "A" {
+		bombsite_mesh := mesh.GetPlaceByName("BombsiteA")
+		bombsite_center, _ := bombsite_mesh.GetEstimatedCenter()
+		bombsite_area := mesh.GetNearestArea(bombsite_center, false)
+	} else {
+		bombsite_mesh := mesh.GetPlaceByName("BombsiteB")
+		bombsite_center, _ := bombsite_mesh.GetEstimatedCenter()
+		bombsite_area := mesh.GetNearestArea(bombsite_center, false)
+	}
+
+	path, _ := gonav.SimpleBuildShortestPath(start_area, bombsite_area)
 	var areas_visited int = 0
 	for _, currNode := range path.Nodes {
 		if currNode != nil {
