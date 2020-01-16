@@ -567,6 +567,8 @@ func main() {
 			var player_team string = "NA"
 			var area_id uint32 = 0
 			var area_place string = "NA"
+			var distance_bombsite_a int = 999
+			var distance_bombsite_b int = 999
 
 			if e.Player == nil {
 				player_id = 0
@@ -592,6 +594,30 @@ func main() {
 						area_place = area.Place.Name
 					}
 				}
+				// Bombsite A distance
+				bombsite_mesh_a := mesh.GetPlaceByName("BombsiteA")
+				bombsite_center_a, _ := bombsite_mesh_a.GetEstimatedCenter()
+				bombsite_area_a := mesh.GetNearestArea(bombsite_center_a, false)
+				path_a, _ := gonav.SimpleBuildShortestPath(area, bombsite_area_a)
+				var areas_visited_a int = 0
+				for _, currNode := range path_a.Nodes {
+					if currNode != nil {
+						areas_visited_a = areas_visited_a + 1
+					}
+				}
+				distance_bombsite_a = areas_visited_a
+				// Bombsite B distance
+				bombsite_mesh_b := mesh.GetPlaceByName("BombsiteB")
+				bombsite_center_a, _ := bombsite_mesh_b.GetEstimatedCenter()
+				bombsite_area_b := mesh.GetNearestArea(bombsite_center_b, false)
+				path_b, _ := gonav.SimpleBuildShortestPath(area, bombsite_area_b)
+				var areas_visited_b int = 0
+				for _, currNode := range path_b.Nodes {
+					if currNode != nil {
+						areas_visited_b = areas_visited_b + 1
+					}
+				}
+				distance_bombsite_b = areas_visited_b
 			}
 
 			if player_side == 2 {
@@ -600,11 +626,11 @@ func main() {
 				player_side_string = "CT"
 			}
 
-			fmt.Printf("[FOOTSTEP] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] \n",
+			fmt.Printf("[FOOTSTEP] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s, %d, %d] \n",
 			header.MapName, gs.IngameTick(),
 			player_id, player_name, player_team, player_side_string,
 			player_x, player_y, player_z, player_x_viz, player_y_viz, player_view_x, player_view_y,
-			area_id, area_place)
+			area_id, area_place, distance_bombsite_a, distance_bombsite_b)
 		}
 	})
 

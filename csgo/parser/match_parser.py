@@ -240,7 +240,9 @@ class CSGOMatchParser:
                 current_footstep.view_x = float(third_block[5].strip())
                 current_footstep.view_y = float(third_block[6].strip())
                 current_footstep.area_id = int(third_block[7].strip())
-                current_footstep.area_name = third_block[8].replace("]", "").strip()
+                current_footstep.area_name = third_block[8].strip()
+                current_footstep.distance_bombsite_a = int(third_block[9].strip())
+                current_footstep.distance_bombsite_b = int(third_block[10].replace("]", "").strip())
                 current_footstep_list.append(current_footstep)
             if "[DAMAGE]" in event:
                 current_damage = Damage()
@@ -471,6 +473,8 @@ class CSGOMatchParser:
                         f.view_y,
                         f.area_id,
                         f.area_name,
+                        f.distance_bombsite_a,
+                        f.distance_bombsite_b,
                     ]
                 )
         self.footsteps_df = pd.DataFrame(
@@ -494,6 +498,8 @@ class CSGOMatchParser:
                 "ViewY",
                 "AreaID",
                 "AreaName",
+                "DistanceBombsiteA",
+                "DistanceBombsiteB",
             ],
         )
         # self.footstep_df.to_csv("player_traj.csv", index=False)

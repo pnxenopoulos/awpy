@@ -68,20 +68,22 @@ class Footstep:
     """ An object to detail a Footstep event
 
     Attributes:
-        - tick (int)          : Game tick at time of step
-        - player_name (string): Player's username
-        - steam_id (int)      : Player's steam id
-        - team (string)       : Player's team/clan name
-        - side (string)       : Player's side (T or CT)
-        - x (float)           : Player's X position
-        - y (float)           : Player's Y position
-        - z (float)           : Player's Z position
-        - x_viz (float)       : Player's X position for visualization
-        - y_viz (float)       : Player's Y position for visualization
-        - view_x (float)      : Player's view X direction
-        - view_y (float)      : Player's view Y direction
-        - area_id (int)       : Player's location as nav file area id
-        - area_name (string)  : Player's location as area name from nav file
+        - tick (int)                : Game tick at time of step
+        - player_name (string)      : Player's username
+        - steam_id (int)            : Player's steam id
+        - team (string)             : Player's team/clan name
+        - side (string)             : Player's side (T or CT)
+        - x (float)                 : Player's X position
+        - y (float)                 : Player's Y position
+        - z (float)                 : Player's Z position
+        - x_viz (float)             : Player's X position for visualization
+        - y_viz (float)             : Player's Y position for visualization
+        - view_x (float)            : Player's view X direction
+        - view_y (float)            : Player's view Y direction
+        - area_id (int)             : Player's location as nav file area id
+        - area_name (string)        : Player's location as area name from nav file
+        - distance_bombsite_a (int) : Player's graph distance from bombsite A
+        - distance_bombsite_b (int) : Player's graph distance from bombsite B
     """
 
     def __init__(
@@ -100,6 +102,8 @@ class Footstep:
         view_y=0,
         area_id=0,
         area_name="",
+        distance_bombsite_a=999,
+        distance_bombsite_b=999,
     ):
         """ Create a footstep (X,Y,Z) object
         """
@@ -117,6 +121,8 @@ class Footstep:
         self.view_y = view_y
         self.area_id = area_id
         self.area_name = area_name
+        self.distance_bombsite_a = distance_bombsite_a
+        self.distance_bombsite_b = distance_bombsite_b
 
 
 class Round:
