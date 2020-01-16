@@ -608,7 +608,7 @@ func main() {
 				distance_bombsite_a = areas_visited_a
 				// Bombsite B distance
 				bombsite_mesh_b := mesh.GetPlaceByName("BombsiteB")
-				bombsite_center_a, _ := bombsite_mesh_b.GetEstimatedCenter()
+				bombsite_center_b, _ := bombsite_mesh_b.GetEstimatedCenter()
 				bombsite_area_b := mesh.GetNearestArea(bombsite_center_b, false)
 				path_b, _ := gonav.SimpleBuildShortestPath(area, bombsite_area_b)
 				var areas_visited_b int = 0
