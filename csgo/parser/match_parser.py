@@ -17,11 +17,11 @@ class CSGOMatchParser:
         rounds: A list of Round objects in the match
     """
 
-    def __init__(self, demofile="", logfile="parser.log", competition="", match_name=""):
+    def __init__(self, demofile="", logfile="parser.log", competition_name="", match_name=""):
         """ Initialize a CSGOMatchParser object
         """
         self.demofile = demofile
-        self.competition = competition
+        self.competition = competition_name
         self.match_start = 0
         self.rounds = []
         self.logfile = logfile
