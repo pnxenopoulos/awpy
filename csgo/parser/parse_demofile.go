@@ -642,6 +642,6 @@ func main() {
 // Function to handle errors
 func checkError(err error) {
 	if err != nil {
-		panic(err)
+		fmt.Printf("[ERROR] Demo Stream Error")
 	}
 }

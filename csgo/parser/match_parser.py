@@ -32,6 +32,7 @@ class CSGOMatchParser:
             datefmt="%H:%M:%S",
         )
         self.match_name = match_name
+        self.demo_error = False
         self.logger = logging.getLogger("CSGOMatchParser")
         self.logger.info("Initialized CSGOMatchParser with demofile " + self.demofile)
 
@@ -136,6 +137,8 @@ class CSGOMatchParser:
         self.parsed_text = proc.stdout.read().splitlines()
         self.parsed_text = [event.decode("utf-8") for event in self.parsed_text]
         self.parsed_text = [event[:-1] for event in self.parsed_text]
+        if "[ERROR]" in self.parsed_text:
+            self.demo_error = True
         self.logger.info("Demofile parsing complete")
 
     def find_match_start(self):
