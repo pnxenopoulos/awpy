@@ -1,5 +1,5 @@
-# Counter-Strike: Global Offensive Analytics
-The `csgo` package provides data parsing, analytics and visualization data structures and functions. In this repository, you will find the source code, issue tracker and useful information pertaining to the `csgo` package.
+# The `csgo` Package
+The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and useful information pertaining to the `csgo` package.
 
 ## Setup
 ### Requirements
@@ -42,5 +42,5 @@ Each issue can be given a priority level by a repo-maintainer, such as High (red
 
 Please direct current queries to Peter Xenopoulos, at [xenopoulos@nyu.edu](mailto:xenopoulos@nyu.edu)
 
-## Changelog:
-Todo...
+## Acknowledgements
+This project is made possible by the great work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages.
