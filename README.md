@@ -18,7 +18,10 @@ This repository contains code for CSGO analysis. It is structured as follows:
 
 ```
 .
-├── csgo                           
+├── csgo              
+|   ├── data
+│   |   ├── map_img               # Map images
+│   |   └── original_nav_files    # Map navigation files             
 |   ├── parser                    # Code for CSGO demo parser
 |   ├── analytics                 # Code for CSGO analysis
 │   └── visualization             # Code for CSGO visualization
