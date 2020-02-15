@@ -45,10 +45,9 @@ match_parser.parse_demofile()
 
 # If there is no demo error, start to parse
 if not match_parser.demo_error:
-	# Find the demo start line
-	match_parser.find_match_start()
-
-	# Parse the match
+    # Find the demo start line
+    match_parser.find_match_start()
+    # Parse the match
     match_parser.parse_match()
 
     # Write the data frames
