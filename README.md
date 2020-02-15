@@ -1,4 +1,4 @@
-# The `csgo` Package
+# The csgo Python package
 The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and useful information pertaining to the `csgo` package.
 
 ## Setup
@@ -20,8 +20,8 @@ This repository contains code for CSGO analysis. It is structured as follows:
 .
 ├── csgo              
 |   ├── data
-│   |   ├── map_img               # Map images
-│   |   └── original_nav_files    # Map navigation files             
+│       ├── map_img               # Map images
+│       └── original_nav_files    # Map navigation files             
 |   ├── parser                    # Code for CSGO demo parser
 |   ├── analytics                 # Code for CSGO analysis
 │   └── visualization             # Code for CSGO visualization
@@ -30,6 +30,41 @@ This repository contains code for CSGO analysis. It is structured as follows:
 │   └── original_nav_files        # Map navigation files
 ├── doc                           # Contains documentation, such as data dictionaries, etc.
 └── examples                      # Contains Jupyter Notebooks showing example code
+```
+
+## Example Code
+Using the `csgo` package is easy. Just pick a demofile, and have a set of Pandas dataframes in seconds.
+
+```python
+from csgo.parser.match_parser import CSGOMatchParser
+
+# Create parser object
+match_parser = CSGOMatchParser(demofile = "demofile.dem", logfile = "parser.log", competition_name = "CompetitionName", match_name = "MatchName")
+
+# Parse the demofile
+p.parse_demofile()
+
+# If there is no demo error, start to parse
+if not p.demo_error:
+	# Find the demo start line
+	p.find_match_start()
+
+	# Parse the match
+    p.parse_match()
+
+    # Write the data frames
+    p.write_rounds()
+    p.write_kills()
+    p.write_damages()
+    p.write_bomb_events()
+    p.write_footsteps()
+
+    # Access the data frames
+    rounds = p.rounds_df
+    kills = p.kills_df
+    damages = p.damages_df
+    bomb_events = p.bomb_df
+    footsteps = p.footsteps_df
 ```
 
 ## Requests and Issues
@@ -46,4 +81,4 @@ Each issue can be given a priority level by a repo-maintainer, such as High (red
 Please direct current queries to Peter Xenopoulos, at [xenopoulos@nyu.edu](mailto:xenopoulos@nyu.edu)
 
 ## Acknowledgements
-This project is made possible by the great work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages.
+This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages.
