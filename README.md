@@ -18,16 +18,13 @@ This repository contains code for CSGO analysis. It is structured as follows:
 
 ```
 .
-├── csgo              
-|   ├── data
-│       ├── map_img               # Map images
-│       └── original_nav_files    # Map navigation files             
-|   ├── parser                    # Code for CSGO demo parser
-|   ├── analytics                 # Code for CSGO analysis
-│   └── visualization             # Code for CSGO visualization
-├── data
-│   ├── map_img                   # Map images
-│   └── original_nav_files        # Map navigation files
+├── csgo
+│   ├── analytics                 # Code for CSGO analysis
+│   ├── data                      
+│   │   ├── map_img               # Map images
+│   │   └── original_nav_files    # Map navigation files
+│   ├── parser                    # Code for CSGO demo parser
+│   └── visualization             # Code for CSGO visualization
 ├── doc                           # Contains documentation, such as data dictionaries, etc.
 └── examples                      # Contains Jupyter Notebooks showing example code
 ```
