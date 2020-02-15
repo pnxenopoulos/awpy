@@ -10,6 +10,8 @@ go get github.com/mrazza/gonav
 go get github.com/markus-wa/demoinfocs-golang
 ```
 
+which downloads the necessary Go packages for the parsing backend.
+
 ### Installation
 To install `csgo`, clone the repository and install it from source by doing `python setup.py install --user`.
 
@@ -39,29 +41,29 @@ from csgo.parser.match_parser import CSGOMatchParser
 match_parser = CSGOMatchParser(demofile = "demofile.dem", logfile = "parser.log", competition_name = "CompetitionName", match_name = "MatchName")
 
 # Parse the demofile
-p.parse_demofile()
+match_parser.parse_demofile()
 
 # If there is no demo error, start to parse
-if not p.demo_error:
+if not match_parser.demo_error:
 	# Find the demo start line
-	p.find_match_start()
+	match_parser.find_match_start()
 
 	# Parse the match
-    p.parse_match()
+    match_parser.parse_match()
 
     # Write the data frames
-    p.write_rounds()
-    p.write_kills()
-    p.write_damages()
-    p.write_bomb_events()
-    p.write_footsteps()
+    match_parser.write_rounds()
+    match_parser.write_kills()
+    match_parser.write_damages()
+    match_parser.write_bomb_events()
+    match_parser.write_footsteps()
 
     # Access the data frames
-    rounds = p.rounds_df
-    kills = p.kills_df
-    damages = p.damages_df
-    bomb_events = p.bomb_df
-    footsteps = p.footsteps_df
+    rounds = match_parser.rounds_df
+    kills = match_parser.kills_df
+    damages = match_parser.damages_df
+    bomb_events = match_parser.bomb_df
+    footsteps = match_parser.footsteps_df
 ```
 
 ## Requests and Issues
@@ -74,8 +76,6 @@ The types of issues are
 - **QUESTION**: Indicates a question about the parser or code
 
 Each issue can be given a priority level by a repo-maintainer, such as High (red), Medium (yellow) and Low (green).
-
-Please direct current queries to Peter Xenopoulos, at [xenopoulos@nyu.edu](mailto:xenopoulos@nyu.edu)
 
 ## Acknowledgements
 This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages.
