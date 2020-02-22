@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/pnxenopoulos/csgo.svg?branch=master)](https://travis-ci.com/pnxenopoulos/csgo)
+[![Build Status](https://travis-ci.com/pnxenopoulos/csgo.svg?branch=master)](https://travis-ci.com/pnxenopoulos/csgo) [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php)
 
 # Analyzing Counter-Strike: Global Offensive Data
 The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and useful information pertaining to the `csgo` package.
@@ -77,7 +77,8 @@ The types of issues are
 - **FEATURE REQUEST**: Indicates a request for a new feature in the code
 - **QUESTION**: Indicates a question about the parser or code
 
-Each issue can be given a priority level by a repo-maintainer, such as High (red), Medium (yellow) and Low (green).
-
 ## Acknowledgements
 This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages.
+
+## License
+Our project is licensed using the [MIT License](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE).
