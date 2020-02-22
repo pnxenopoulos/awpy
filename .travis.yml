@@ -1,0 +1,18 @@
+language: python
+
+python:
+    - 3.6
+    - 3.7
+    - 3.8
+
+before_install:
+    - python --version
+    - pip install pip
+    - pip install pytest
+    - pip install codecov
+
+install: 
+    - pip install -r requirements.txt
+
+script:
+    - python -m pytest -vv
