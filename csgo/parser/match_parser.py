@@ -17,11 +17,14 @@ class CSGOMatchParser:
         rounds: A list of Round objects in the match
     """
 
-    def __init__(self, demofile="", logfile="parser.log", competition_name="", match_name=""):
+    def __init__(self, demofile="", logfile="parser.log", competition_name="", match_name="", game_date="", game_time=""):
         """ Initialize a CSGOMatchParser object
         """
         self.demofile = demofile
-        self.competition = competition_name
+        self.competition_name = competition_name
+        self.match_name = match_name
+        self.game_date = game_date
+        self.game_time = game_time
         self.match_start = 0
         self.rounds = []
         self.logfile = logfile
@@ -31,7 +34,6 @@ class CSGOMatchParser:
             format="%(asctime)s [%(levelname)s] %(message)s",
             datefmt="%H:%M:%S",
         )
-        self.match_name = match_name
         self.demo_error = False
         self.logger = logging.getLogger("CSGOMatchParser")
         self.logger.info("Initialized CSGOMatchParser with demofile " + self.demofile)
@@ -419,8 +421,10 @@ class CSGOMatchParser:
             for be in bomb_events:
                 bomb_df_list.append(
                     [
-                        self.competition,
+                        self.competition_name,
                         self.match_name,
+                        self.game_date,
+                        self.game_time,
                         round.map_name,
                         i,
                         be.tick,
@@ -437,6 +441,8 @@ class CSGOMatchParser:
             columns=[
                 "CompetitionName",
                 "MatchName",
+                "GameDate",
+                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -458,8 +464,10 @@ class CSGOMatchParser:
             for f in footsteps:
                 footstep_df_list.append(
                     [
-                        self.competition,
+                        self.competition_name,
                         self.match_name,
+                        self.game_date,
+                        self.game_time,
                         round.map_name,
                         i,
                         f.tick,
@@ -485,6 +493,8 @@ class CSGOMatchParser:
             columns=[
                 "CompetitionName",
                 "MatchName",
+                "GameDate",
+                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -516,8 +526,10 @@ class CSGOMatchParser:
             for f in kills:
                 kills_df_list.append(
                     [
-                        self.competition,
+                        self.competition_name,
                         self.match_name,
+                        self.game_date,
+                        self.game_time,
                         round.map_name,
                         i,
                         f.tick,
@@ -559,6 +571,8 @@ class CSGOMatchParser:
             columns=[
                 "CompetitionName",
                 "MatchName",
+                "GameDate",
+                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -606,8 +620,10 @@ class CSGOMatchParser:
             for f in damages:
                 damages_df_list.append(
                     [
-                        self.competition,
+                        self.competition_name,
                         self.match_name,
+                        self.game_date,
+                        self.game_time,
                         round.map_name,
                         i,
                         f.tick,
@@ -650,6 +666,8 @@ class CSGOMatchParser:
             columns=[
                 "CompetitionName",
                 "MatchName",
+                "GameDate",
+                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -696,8 +714,10 @@ class CSGOMatchParser:
         for i, round in enumerate(self.rounds):
             round_df_list.append(
                 [
-                    self.competition,
+                    self.competition_name,
                     self.match_name,
+                    self.game_date,
+                    self.game_time,
                     round.map_name,
                     i,
                     round.start_tick,
@@ -717,6 +737,8 @@ class CSGOMatchParser:
             columns=[
                 "CompetitionName",
                 "MatchName",
+                "GameDate",
+                "GameTime",
                 "MapName",
                 "RoundNum",
                 "StartTick",
