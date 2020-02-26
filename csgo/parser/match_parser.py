@@ -4,7 +4,7 @@ import re
 import subprocess
 import pandas as pd
 
-from csgo.base import BombEvent, Footstep, Round, Kill, Damage
+from csgo.events import BombEvent, Footstep, Round, Kill, Damage
 
 
 class CSGOMatchParser:
@@ -25,6 +25,7 @@ class CSGOMatchParser:
         self.match_name = match_name
         self.game_date = game_date
         self.game_time = game_time
+        self.game_id = competition_name + "_" + match_name + "_" + game_date + "_" + game_time
         self.match_start = 0
         self.rounds = []
         self.logfile = logfile
@@ -421,6 +422,7 @@ class CSGOMatchParser:
             for be in bomb_events:
                 bomb_df_list.append(
                     [
+                        self.game_id,
                         self.competition_name,
                         self.match_name,
                         self.game_date,
@@ -439,6 +441,7 @@ class CSGOMatchParser:
         self.bomb_df = pd.DataFrame(
             bomb_df_list,
             columns=[
+                "GameID",
                 "CompetitionName",
                 "MatchName",
                 "GameDate",
@@ -464,6 +467,7 @@ class CSGOMatchParser:
             for f in footsteps:
                 footstep_df_list.append(
                     [
+                        self.game_id,
                         self.competition_name,
                         self.match_name,
                         self.game_date,
@@ -491,6 +495,7 @@ class CSGOMatchParser:
         self.footsteps_df = pd.DataFrame(
             footstep_df_list,
             columns=[
+                "GameID",
                 "CompetitionName",
                 "MatchName",
                 "GameDate",
@@ -526,6 +531,7 @@ class CSGOMatchParser:
             for f in kills:
                 kills_df_list.append(
                     [
+                        self.game_id,
                         self.competition_name,
                         self.match_name,
                         self.game_date,
@@ -569,6 +575,7 @@ class CSGOMatchParser:
         self.kills_df = pd.DataFrame(
             kills_df_list,
             columns=[
+                "GameID",
                 "CompetitionName",
                 "MatchName",
                 "GameDate",
@@ -620,6 +627,7 @@ class CSGOMatchParser:
             for f in damages:
                 damages_df_list.append(
                     [
+                        self.game_id,
                         self.competition_name,
                         self.match_name,
                         self.game_date,
@@ -664,6 +672,7 @@ class CSGOMatchParser:
         self.damages_df = pd.DataFrame(
             damages_df_list,
             columns=[
+                "GameID",
                 "CompetitionName",
                 "MatchName",
                 "GameDate",
@@ -714,6 +723,7 @@ class CSGOMatchParser:
         for i, round in enumerate(self.rounds):
             round_df_list.append(
                 [
+                    self.game_id,
                     self.competition_name,
                     self.match_name,
                     self.game_date,
@@ -735,6 +745,7 @@ class CSGOMatchParser:
         self.rounds_df = pd.DataFrame(
             round_df_list,
             columns=[
+                "GameID"
                 "CompetitionName",
                 "MatchName",
                 "GameDate",

@@ -1,4 +1,4 @@
-""" Base csgo demo data classes.
+""" csgo Event classes.
 
 Author: Peter Xenopoulos
 """
