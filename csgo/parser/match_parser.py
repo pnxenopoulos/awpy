@@ -745,7 +745,7 @@ class CSGOMatchParser:
         self.rounds_df = pd.DataFrame(
             round_df_list,
             columns=[
-                "GameID"
+                "GameID",
                 "CompetitionName",
                 "MatchName",
                 "GameDate",
