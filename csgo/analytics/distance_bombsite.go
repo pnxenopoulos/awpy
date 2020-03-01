@@ -28,7 +28,7 @@ func main() {
 	bombsite := *bombsitePtr
 
 	// Read in args
-	//current_map, start_x, start_y, start_z, end_x, end_y, end_z = DemoPathFromArgs()
+	// current_map, start_x, start_y, start_z, end_x, end_y, end_z = DemoPathFromArgs()
 	// Read in parser
 	f_nav, _ := os.Open("../data/original_nav_files/" + current_map + ".nav")
 	parser_nav := gonav.Parser{Reader: f_nav}

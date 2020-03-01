@@ -1,8 +1,5 @@
-""" csgo Event classes.
-
-Author: Peter Xenopoulos
+""" Classes for CSGO events
 """
-
 
 class Grenade:
     """ An object to detail a round's grenade events

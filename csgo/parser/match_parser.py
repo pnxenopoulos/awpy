@@ -1,3 +1,6 @@
+""" Parsing class for demofile
+"""
+
 import logging
 import os
 import re
@@ -13,8 +16,10 @@ class CSGOMatchParser:
     Attributes:
         demofile: A string denoting the path to the demo file, which ends in .dem
         logfile: A string denoting the path to the output log file
-        match_start: An integer denoting at what line the match starts the parsed text
-        rounds: A list of Round objects in the match
+        competition_name: A string denoting the competition name of the demo
+        match_name: A string denoting the match name of the demo
+        game_date: A string denoting the date of the demo
+        game_time: A string denoting the time of day of the demo
     """
 
     def __init__(self, demofile="", logfile="parser.log", competition_name="", match_name="", game_date="", game_time=""):
@@ -28,14 +33,14 @@ class CSGOMatchParser:
         self.game_id = competition_name + "_" + match_name + "_" + game_date + "_" + game_time
         self.match_start = 0
         self.rounds = []
+        self.demo_error = False
         self.logfile = logfile
         logging.basicConfig(
-            filename=logfile,
+            filename=self.logfile,
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(message)s",
             datefmt="%H:%M:%S",
         )
-        self.demo_error = False
         self.logger = logging.getLogger("CSGOMatchParser")
         self.logger.info("Initialized CSGOMatchParser with demofile " + self.demofile)
 
@@ -373,7 +378,8 @@ class CSGOMatchParser:
                 current_bomb_event.area_id = int(third_block[3].strip())
                 current_bomb_event.bomb_site = third_block[4].replace("]", "").strip()
                 current_bomb_event.event_type = "Plant"
-                current_bomb_events_list.append(current_bomb_event)
+                if len(current_bomb_events_list) < 2:
+                    current_bomb_events_list.append(current_bomb_event)
             if "[BOMB DEFUSE]" in event:
                 current_bomb_event = BombEvent()
                 split_line = event.split("] [")
@@ -392,7 +398,8 @@ class CSGOMatchParser:
                 current_bomb_event.area_id = int(third_block[3].strip())
                 current_bomb_event.bomb_site = third_block[4].replace("]", "").strip()
                 current_bomb_event.event_type = "Defuse"
-                current_bomb_events_list.append(current_bomb_event)
+                if len(current_bomb_events_list) < 2:
+                    current_bomb_events_list.append(current_bomb_event)
             if "[BOMB EXPLODE]" in event:
                 current_bomb_event = BombEvent()
                 split_line = event.split("] [")
@@ -411,7 +418,8 @@ class CSGOMatchParser:
                 current_bomb_event.area_id = int(third_block[3].strip())
                 current_bomb_event.bomb_site = third_block[4].replace("]", "").strip()
                 current_bomb_event.event_type = "Explode"
-                current_bomb_events_list.append(current_bomb_event)
+                if len(current_bomb_events_list) < 2:
+                    current_bomb_events_list.append(current_bomb_event)
 
     def write_bomb_events(self):
         """ Write bomb events to a Pandas dataframe

@@ -17,6 +17,8 @@ which downloads the necessary Go packages for the parsing backend.
 ### Installation
 To install `csgo`, clone the repository and install it from source by doing `python setup.py install --user`.
 
+To run the tests, go to the root directory and run `python -m pytest -vv`.
+
 ## Structure
 This repository contains code for CSGO analysis. It is structured as follows:
 

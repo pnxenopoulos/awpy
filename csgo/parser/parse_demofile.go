@@ -12,10 +12,6 @@ import (
 	"github.com/mrazza/gonav"
 )
 
-/* TODO:
-	- Be sure that if location area ID and name doesn't show, it's probably a problem with nav file paths
-*/
-
 // Run parser as follows: go run parse_demofile.go -demo /path/to/demo.dem
 func main() {
 	// Read in demofile
@@ -39,6 +35,7 @@ func main() {
 		- de_overpass
 		- de_train
 	*/
+
 	current_map := header.MapName
 	mapMetadata := metadata.MapNameToMap[current_map]
 
@@ -46,25 +43,12 @@ func main() {
 	parser_nav := gonav.Parser{Reader: f_nav}
 	mesh, _ := parser_nav.Parse()
 
-	//bombsiteB := mesh.GetPlaceByName("BombsiteB")
-	//bCenter, _ := bombsiteB.GetEstimatedCenter()
-	//bArea := mesh.GetNearestArea(bCenter, false)
-	//fmt.Printf(bArea.Place.Name)
-
 	p.RegisterEventHandler(func(e events.PlayerHurt) {
 		/* Parse player damage events
 
 		Player damage events are defined in the parser as a PlayerHurt event. These
 		events occur when a player has been damaged, whether by another player or
-		the world. We output the following line to the output when we parse a
-		PlayerHurt event:
-
-		[MAP_NAME, GAME_TICK] [VICTIM_X, VICTIM_Y, VICTIM_Z, VICTIM_VIEW_X, VICTIM_VIEW_Y, VICTIM_CLOSEST_AREA_ID,
-		VICTIM_CLOSEST_AREA_NAME] [ATTACKER_X, ATTACKER_Y, ATTACKER_Z, ATTACKER_VIEW_X, ATTACKER_VIEW_Y,
-		ATTACKER_CLOSEST_AREA_ID, ATTACKER_CLOSEST_AREA_NAME] [VICTIM_ID,
-		VICTIM_NAME, VICTIM_TEAM, VICTIM_SIDE, VICTIM_TEAM_EQ_VAL] [ATTACKER_ID,
-		ATTACKER_NAME, ATTACKER_TEAM, ATTACKER_SIDE, ATTACKER_TEAM_EQ_VAL] [HP_DMG,
-		ARMOR_DMG, WEAPON, HIT_GROUP]
+		the world. 
 		*/
 		warmup := p.GameState().IsWarmupPeriod()
 		started := p.GameState().IsMatchStarted()
@@ -115,9 +99,11 @@ func main() {
 
 			// Sixth block (Damage/Weapon)
 			hp_damage := e.HealthDamage
+			
 			/* If a player has more than 100 damage taken, squash this value back
 			down to 100. This may need to be changed in the future. [NOTE]
 			*/
+
 			if hp_damage > 100 {
 				hp_damage = 100
 			}
@@ -201,14 +187,6 @@ func main() {
 
 		Player kill events are defined in the parser as a Kill event. These
 		events occur when a player has been reached 0 HP, through a damage event.
-		We output the following line to the output when we parse a Kill event:
-
-		[MAP_NAME, GAME_TICK] [VICTIM_X, VICTIM_Y, VICTIM_Z, VICTIM_VIEW_X, VICTIM_VIEW_Y, VICTIM_CLOSEST_AREA_ID,
-		VICTIM_CLOSEST_AREA_NAME] [ATTACKER_X, ATTACKER_Y, ATTACKER_Z, ATTACKER_VIEW_X, ATTACKER_VIEW_Y,
-		ATTACKER_CLOSEST_AREA_ID, ATTACKER_CLOSEST_AREA_NAME] [VICTIM_ID,
-		VICTIM_NAME, VICTIM_TEAM, VICTIM_SIDE, VICTIM_TEAM_EQ_VAL] [ATTACKER_ID,
-		ATTACKER_NAME, ATTACKER_TEAM, ATTACKER_SIDE, ATTACKER_TEAM_EQ_VAL] [
-		WEAPON_ID, IS_WALLSHOT, IS_HEADSHOT]
 		*/
 		warmup := p.GameState().IsWarmupPeriod()
 
@@ -335,10 +313,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.RoundStart) {
 		/* Parse round start events
 
-		Round start events happen when a round starts. We output round end events
-		as:
-
-		[MAP_NAME, GAME_TICK] [T_SCORE, CT_SCORE]
+		Round start events happen when a round starts.
 		*/
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
@@ -353,10 +328,7 @@ func main() {
 		/* Parse round end events
 
 		Round end events happen when a round is ended, such as through a successful
-		bomb plant or through eliminating the other side. We output round end events
-		as:
-
-		[MAP_NAME, GAME_TICK] [T_SCORE, CT_SCORE] [WIN_SIDE, WIN_TEAM_NAME, REASON]
+		bomb plant or through eliminating the other side. 
 		*/
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
@@ -381,10 +353,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.MatchStart) {
 		/* Parse match start events
 
-		Match start events happen when a match officially starts. We output match
-		start events as:
-
-		[MAP_NAME, GAME_TICK]
+		Match start events happen when a match officially starts.
 		*/
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
@@ -446,11 +415,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.BombDefused) {
 		/* Parse bomb defuse events
 
-		Bomb defuse events happen when a bomb is successfully defused. We output
-		bomb defuse events as:
-
-		[MAP_NAME, GAME_TICK] [PLAYER_ID, PLAYER_NAME, PLAYER_TEAM] [PLAYER_X,
-		PLAYER_Y, PLAYER_Z, AREA_ID, BOMB_SITE]
+		Bomb defuse events happen when a bomb is successfully defused.
 		*/
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
@@ -494,11 +459,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.BombDefused) {
 		/* Parse bomb explode events
 
-		Bomb explode events happen when a bomb explodes. We output
-		bomb explode events as:
-
-		[MAP_NAME, GAME_TICK] [PLAYER_ID, PLAYER_NAME, PLAYER_TEAM] [PLAYER_X,
-		PLAYER_Y, PLAYER_Z, AREA_ID, BOMB_SITE]
+		Bomb explode events happen when a bomb explodes.
 		*/
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
@@ -544,10 +505,6 @@ func main() {
 
 		Player footstep events are defined in the parser as a Footstep event. These
 		events occur when a player moves in game.
-		We output the following line to the output when we parse a Footstep event:
-
-		[MAP_NAME, GAME_TICK] [PLAYER_ID, PLAYER_NAME, PLAYER_TEAM, PLAYER_SIDE] [
-		PLAYER_X, PLAYER_Y, PLAYER_Z, PLAYER_VIEW_X, PLAYER_VIEW_Y, CLOSEST_AREA_ID, CLOSEST_AREA_NAME]
 		*/
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
