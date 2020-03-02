@@ -11,6 +11,7 @@ before_install:
     - pip install pytest
     - pip install codecov
     - wget -O tests/natus-vincere-vs-astralis-m1-dust2.dem http://www.peterxeno.com/csgo/natus-vincere-vs-astralis-m1-dust2.dem
+    - ls -alh tests/
 
 install: 
     - pip install -r requirements.txt
