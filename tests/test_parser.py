@@ -24,6 +24,7 @@ class TestCSGOParser:
         not corrupted, this test should have parser.demo_error as FALSE
         """
         self.parser.parse_demofile()
+        print(self.parser.parsed_text)
         assert not self.parser.demo_error 
 
     def test_parse_match(self):
