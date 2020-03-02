@@ -15,7 +15,7 @@ def plot_trajectory(df, map):
     plt.plot(df["XViz"]+map_adjustments[map][0], df["YViz"]+map_adjustments[map][1], color = "orange", zorder=1, linestyle = "solid")
     plt.imshow(map_bg, zorder=0)
     plt.show()
-    raise fig
+    return fig
 
 # def plot_kills(df, map):
 #     """ Plots kills given a map
