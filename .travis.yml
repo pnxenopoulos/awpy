@@ -10,8 +10,6 @@ before_install:
     - pip install pip
     - pip install pytest
     - pip install codecov
-    - go get github.com/mrazza/gonav
-    - go get github.com/markus-wa/demoinfocs-golang
 
 install: 
     - pip install -r requirements.txt
