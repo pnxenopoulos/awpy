@@ -6,7 +6,7 @@ import pandas as pd
 from csgo.analytics.distance import point_distance
 
 
-def clean_footsteps(df, max_dist = 30):
+def clean_footsteps(df, max_dist = 500):
     """ A function to clean a dataframe of footsteps, as created by the match_parser
     """
     for r in range(0, df.RoundNum.max()+1):
