@@ -434,7 +434,7 @@ class CSGOMatchParser:
             if i == 0 and (score == 1 or score == 0) and round_score_total[i+1] == 2:
                 start_round_idx = i
             else:
-                if i != len(starting_round_score_total)-1 and (score == 1 or score == 0) and starting_round_score_total[i+1] == 1:
+                if i != len(round_score_total)-1 and (score == 1 or score == 0) and starting_round_score_total[i+1] == 1:
                     start_round_idx = i
         self.rounds = self.rounds[start_round_idx:]
         total_popped = 0
@@ -443,8 +443,6 @@ class CSGOMatchParser:
             if (score == 0 or score == 1) and i > 0:
                 self.rounds.pop(i-total_popped)
                 total_popped = total_popped + 1
-
-
 
     def write_bomb_events(self):
         """ Write bomb events to a Pandas dataframe
