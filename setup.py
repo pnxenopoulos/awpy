@@ -25,7 +25,7 @@ setup(
     project_urls={
         "Issues": "https://github.com/pnxenopoulos/csgo/issues",
         "Documentation": "https://github.com/pnxenopoulos/csgo/",
-        "Github": "https://github.com/pnxenopoulos/csgo",
+        "Github": "https://github.com/pnxenopoulos/csgo/",
     },
     classifiers=["License :: OSI Approved :: Python Software Foundation License"],
 )

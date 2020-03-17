@@ -17,23 +17,8 @@ which downloads the necessary Go packages for the parsing backend.
 ### Installation
 To install `csgo`, clone the repository and install it from source by doing `python setup.py install --user`.
 
+### Tests
 To run the tests, go to the root directory and run `python -m pytest -vv`.
-
-## Structure
-This repository contains code for CSGO analysis. It is structured as follows:
-
-```
-.
-├── csgo
-│   ├── analytics                 # Code for CSGO analysis
-│   ├── data                      
-│   │   ├── map_img               # Map images
-│   │   └── original_nav_files    # Map navigation files
-│   ├── parser                    # Code for CSGO demo parser
-│   └── visualization             # Code for CSGO visualization
-├── doc                           # Contains documentation, such as data dictionaries, etc.
-└── examples                      # Contains Jupyter Notebooks showing example code
-```
 
 ## Example Code
 Using the `csgo` package is easy. Just pick a demofile, and have a set of Pandas dataframes in seconds.
@@ -68,6 +53,22 @@ if not match_parser.demo_error:
     damages = match_parser.damages_df
     bomb_events = match_parser.bomb_df
     footsteps = match_parser.footsteps_df
+```
+
+## Structure
+This repository contains code for CSGO analysis. It is structured as follows:
+
+```
+.
+├── csgo
+│   ├── analytics                 # Code for CSGO analysis
+│   ├── data                      
+│   │   ├── map_img               # Map images
+│   │   └── original_nav_files    # Map navigation files
+│   ├── parser                    # Code for CSGO demo parser
+│   └── visualization             # Code for CSGO visualization
+├── doc                           # Contains documentation, such as data dictionaries, etc.
+└── examples                      # Contains Jupyter Notebooks showing example code
 ```
 
 ## Requests and Issues
