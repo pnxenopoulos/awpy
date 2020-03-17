@@ -35,7 +35,6 @@ class TestCSGOParser:
     def test_clean_match(self):
         """ Tests if the clean_rounds works. Should still return 21.
         """
-        self.parser.parse_match()
         self.parser.clean_rounds()
         assert len(self.parser.rounds) == 21
 

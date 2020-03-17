@@ -170,6 +170,7 @@ class CSGOMatchParser:
         """ Parse match event text data and structure it in logical format
         """
         self.logger.info("Parsing match text")
+        self.rounds = []
         for i, event in enumerate(self.parsed_text):
             if self.match_start == 0 and i == 0:
                 current_round = Round()
