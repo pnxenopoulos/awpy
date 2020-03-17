@@ -32,6 +32,13 @@ class TestCSGOParser:
         self.parser.parse_match()
         assert len(self.parser.rounds) == 21
 
+    def test_clean_match(self):
+        """ Tests if the clean_rounds works. Should still return 21.
+        """
+        self.parser.parse_match()
+        self.parser.clean_rounds()
+        assert len(self.parser.rounds) == 21
+
     def test_last_round_reason(self):
         """ Tests if the last round had the correct win reason. It should be "CTWin".
         """
@@ -51,12 +58,3 @@ class TestCSGOParser:
         self.parser.write_bomb_events()
         bomb_df = self.parser.bomb_df
         assert bomb_df.loc[bomb_df["RoundNum"] == 15,["Tick", "EventType"]].shape[0] == 2
-
-    def test_clean_rounds(self):
-        """ Tests for cleaning rounds
-        """
-        self.parser = CSGOMatchParser(demofile="pact-vs-big-dust2.dem")
-        self.parser.parse_demofile()
-        self.parser.parse_match()
-        self.parser.clean_rounds()
-        assert len(self.parser.rounds) == 23
