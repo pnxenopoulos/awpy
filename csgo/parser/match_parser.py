@@ -434,7 +434,7 @@ class CSGOMatchParser:
             if i == 0 and (score == 1 or score == 0) and round_score_total[i+1] == 2:
                 start_round_idx = i
             else:
-                if i != len(round_score_total)-1 and (score == 1 or score == 0) and starting_round_score_total[i+1] == 1:
+                if i != len(round_score_total)-1 and (score == 1 or score == 0) and round_score_total[i+1] == 1:
                     start_round_idx = i
         self.rounds = self.rounds[start_round_idx:]
         total_popped = 0

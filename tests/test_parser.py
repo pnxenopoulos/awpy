@@ -29,7 +29,6 @@ class TestCSGOParser:
     def test_parse_match(self):
         """ Tests if the parser parses the match without issue. Our test demo had 21 total rounds.
         """
-        self.parser.find_match_start()
         self.parser.parse_match()
         assert len(self.parser.rounds) == 21
 
@@ -52,3 +51,12 @@ class TestCSGOParser:
         self.parser.write_bomb_events()
         bomb_df = self.parser.bomb_df
         assert bomb_df.loc[bomb_df["RoundNum"] == 15,["Tick", "EventType"]].shape[0] == 2
+
+    def test_clean_rounds(self):
+        """ Tests for cleaning rounds
+        """
+        self.parser = CSGOMatchParser(demofile="pact-vs-big-dust2.dem")
+        self.parser.parse_demofile()
+        self.parser.parse_match()
+        self.parser.clean_rounds()
+        assert len(self.parser.rounds) == 23
