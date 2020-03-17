@@ -48,13 +48,13 @@ func main() {
 
 		Player damage events are defined in the parser as a PlayerHurt event. These
 		events occur when a player has been damaged, whether by another player or
-		the world. 
+		the world.
 		*/
 		warmup := p.GameState().IsWarmupPeriod()
 		started := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup player hurt events
-		if (warmup == false && started == true) {
+		if warmup == false && started == true {
 			// First block (game state)
 			game_tick := p.GameState().IngameTick()
 			var map_name string = header.MapName
@@ -99,13 +99,14 @@ func main() {
 
 			// Sixth block (Damage/Weapon)
 			hp_damage := e.HealthDamage
-			
+			kill_hp_damage := hp_damage
+
 			/* If a player has more than 100 damage taken, squash this value back
 			down to 100. This may need to be changed in the future. [NOTE]
 			*/
 
 			if hp_damage > 100 {
-				hp_damage = 100
+				kill_hp_damage = 100
 			}
 			armor_damage := e.ArmorDamage
 			weapon_id := e.Weapon.Weapon
@@ -172,13 +173,13 @@ func main() {
 			}
 
 			// Print a line of the damage information
-			fmt.Printf("[DAMAGE] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %d, %d] \n",
-			map_name, game_tick,
-			victim_x, victim_y, victim_z, victim_x_viz, victim_y_viz, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
-			attacker_x, attacker_y, attacker_z, attacker_x_viz, attacker_y_viz, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
-			victim_id, victim_name, victim_team, victim_side_string, victim_team_eq_val,
-			attacker_id, attacker_name, attacker_team, attacker_side_string, attacker_team_eq_val,
-			hp_damage, armor_damage, weapon_id, hit_group)
+			fmt.Printf("[DAMAGE] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %d, %d, %d] \n",
+				map_name, game_tick,
+				victim_x, victim_y, victim_z, victim_x_viz, victim_y_viz, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
+				attacker_x, attacker_y, attacker_z, attacker_x_viz, attacker_y_viz, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
+				victim_id, victim_name, victim_team, victim_side_string, victim_team_eq_val,
+				attacker_id, attacker_name, attacker_team, attacker_side_string, attacker_team_eq_val,
+				hp_damage, kill_hp_damage, armor_damage, weapon_id, hit_group)
 		}
 	})
 
@@ -301,12 +302,12 @@ func main() {
 
 			// Print a line of the kill information
 			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %t] \n",
-			map_name, game_tick,
-			victim_x, victim_y, victim_z, victim_x_viz, victim_y_viz, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
-			attacker_x, attacker_y, attacker_z, attacker_x_viz, attacker_y_viz, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
-			victim_id, victim_name, victim_team, victim_side_string, victim_team_eq_val,
-			attacker_id, attacker_name, attacker_team, attacker_side_string, attacker_team_eq_val,
-			weapon_id, is_wallshot, is_headshot)
+				map_name, game_tick,
+				victim_x, victim_y, victim_z, victim_x_viz, victim_y_viz, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
+				attacker_x, attacker_y, attacker_z, attacker_x_viz, attacker_y_viz, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
+				victim_id, victim_name, victim_team, victim_side_string, victim_team_eq_val,
+				attacker_id, attacker_name, attacker_team, attacker_side_string, attacker_team_eq_val,
+				weapon_id, is_wallshot, is_headshot)
 		}
 	})
 
@@ -328,7 +329,7 @@ func main() {
 		/* Parse round end events
 
 		Round end events happen when a round is ended, such as through a successful
-		bomb plant or through eliminating the other side. 
+		bomb plant or through eliminating the other side.
 		*/
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
@@ -406,9 +407,9 @@ func main() {
 				bomb_site = "B"
 			}
 			fmt.Printf("[BOMB PLANT] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
-			header.MapName, gs.IngameTick(),
-			player_id, player_name, player_team,
-			player_x, player_y, player_z, area_id, bomb_site)
+				header.MapName, gs.IngameTick(),
+				player_id, player_name, player_team,
+				player_x, player_y, player_z, area_id, bomb_site)
 		}
 	})
 
@@ -450,9 +451,9 @@ func main() {
 				bomb_site = "B"
 			}
 			fmt.Printf("[BOMB DEFUSE] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
-			header.MapName, gs.IngameTick(),
-			player_id, player_name, player_team,
-			player_x, player_y, player_z, area_id, bomb_site)
+				header.MapName, gs.IngameTick(),
+				player_id, player_name, player_team,
+				player_x, player_y, player_z, area_id, bomb_site)
 		}
 	})
 
@@ -494,9 +495,9 @@ func main() {
 				bomb_site = "B"
 			}
 			fmt.Printf("[BOMB EXPLODE] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
-			header.MapName, gs.IngameTick(),
-			player_id, player_name, player_team,
-			player_x, player_y, player_z, area_id, bomb_site)
+				header.MapName, gs.IngameTick(),
+				player_id, player_name, player_team,
+				player_x, player_y, player_z, area_id, bomb_site)
 		}
 	})
 
@@ -585,10 +586,10 @@ func main() {
 			}
 
 			fmt.Printf("[FOOTSTEP] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s, %d, %d] \n",
-			header.MapName, gs.IngameTick(),
-			player_id, player_name, player_team, player_side_string,
-			player_x, player_y, player_z, player_x_viz, player_y_viz, player_view_x, player_view_y,
-			area_id, area_place, distance_bombsite_a, distance_bombsite_b)
+				header.MapName, gs.IngameTick(),
+				player_id, player_name, player_team, player_side_string,
+				player_x, player_y, player_z, player_x_viz, player_y_viz, player_view_x, player_view_y,
+				area_id, area_place, distance_bombsite_a, distance_bombsite_b)
 		}
 	})
 

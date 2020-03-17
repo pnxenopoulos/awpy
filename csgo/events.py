@@ -328,6 +328,7 @@ class Damage:
         - attacker_side (string)    : Attacker's side (T or CT)
         - attacker_team_eq_val (int): Attacker team's starting equipment value
         - hp_damage (int)           : HP damage dealt
+        - kill_hp_damage (int)      : HP damage dealt normalized to 100.
         - armor_damage (int)        : Armor damage dealt
         - weapon_id (int)           : Weapon id
         - hit_group (int)           : Hit group
@@ -365,6 +366,7 @@ class Damage:
         attacker_side="",
         attacker_team_eq_val=0,
         hp_damage=0,
+        kill_hp_damage=0,
         armor_damage=0,
         weapon_id=0,
         hit_group=0,
@@ -399,6 +401,7 @@ class Damage:
         self.attacker_side = attacker_side
         self.attacker_team_eq_val = attacker_team_eq_val
         self.hp_damage = hp_damage
+        self.kill_hp_damage = kill_hp_damage
         self.armor_damage = armor_damage
         self.weapon_id = weapon_id
         self.hit_group = hit_group

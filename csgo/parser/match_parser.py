@@ -299,12 +299,13 @@ class CSGOMatchParser:
                 # Sixth block
                 sixth_block = split_line[6].split(",")
                 current_damage.hp_damage = int(sixth_block[0])
-                current_damage.armor_damage = int(sixth_block[1].strip())
+                current_damage.kill_hp_damage = int(sixth_block[1])
+                current_damage.armor_damage = int(sixth_block[2].strip())
                 current_damage.weapon_id = CSGOMatchParser.get_weapon(
-                    int(sixth_block[2].strip())
+                    int(sixth_block[3].strip())
                 )
                 current_damage.hit_group = CSGOMatchParser.get_hit_group(
-                    int(sixth_block[3].replace("]", "").strip())
+                    int(sixth_block[4].replace("]", "").strip())
                 )
                 # Add current damage to round
                 current_damages_list.append(current_damage)
@@ -420,6 +421,30 @@ class CSGOMatchParser:
                 current_bomb_event.event_type = "Explode"
                 if len(current_bomb_events_list) < 2:
                     current_bomb_events_list.append(current_bomb_event)
+
+    def clean_rounds(self):
+        """ Function to clean the rounds list
+        """
+        # Round cleaning
+        round_score_total = []
+        for i, r in enumerate(self.rounds):
+            round_score_total.append(r.end_ct_score + r.end_t_score)
+        start_round_idx = 0
+        for i, score in enumerate(round_score_total):
+            if i == 0 and (score == 1 or score == 0) and round_score_total[i+1] == 2:
+                start_round_idx = i
+            else:
+                if i != len(starting_round_score_total)-1 and (score == 1 or score == 0) and starting_round_score_total[i+1] == 1:
+                    start_round_idx = i
+        self.rounds = self.rounds[start_round_idx:]
+        total_popped = 0
+        for i, r in enumerate(self.rounds):
+            score = r.end_ct_score + r.end_t_score
+            if (score == 0 or score == 1) and i > 0:
+                self.rounds.pop(i-total_popped)
+                total_popped = total_popped + 1
+
+
 
     def write_bomb_events(self):
         """ Write bomb events to a Pandas dataframe
@@ -672,6 +697,7 @@ class CSGOMatchParser:
                         f.attacker_side,
                         f.attacker_team_eq_val,
                         f.hp_damage,
+                        f.kill_hp_damage,
                         f.armor_damage,
                         f.weapon_id,
                         f.hit_group,
@@ -717,6 +743,7 @@ class CSGOMatchParser:
                 "AttackerSide",
                 "AttackerTeamEqVal",
                 "HpDamage",
+                "KillHpDamage",
                 "ArmorDamage",
                 "WeaponID",
                 "HitGroup",
