@@ -57,3 +57,14 @@ class TestCSGOParser:
         self.parser.write_bomb_events()
         bomb_df = self.parser.bomb_df
         assert bomb_df.loc[bomb_df["RoundNum"] == 15,["Tick", "EventType"]].shape[0] == 2
+
+    def test_damage_total(self):
+        """ Tests for correct damage per round.
+        """
+        self.parser.write_damages()
+        damage_df = self.parser.damages_df
+        damage_df["Damage"] = damage_df["HpDamage"] + damage_df["ArmorDamage"]
+        damage_df["KillDamage"] = damage_df["KillHpDamage"] + damage_df["ArmorDamage"]
+        dmg = (damage_df.groupby(["AttackerName"]).Damage.sum()/21).reset_index().iloc[0, 1]
+        kill_dmg = (damage_df.groupby(["AttackerName"]).KillDamage.sum()/21).reset_index().iloc[0, 1]
+        assert (dmg == 94.9047619047619) and (kill_dmg == 88.23809523809524)
