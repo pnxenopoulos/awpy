@@ -183,6 +183,68 @@ func main() {
 		}
 	})
 
+	p.RegisterEventHandler(func(e events.GrenadeEventIf) {
+		/* Parse grenade events
+		 */
+		warmup := p.GameState().IsWarmupPeriod()
+
+		// Only parse non-warmup grenade events
+		if warmup == false {
+			// First block (game state)
+			game_tick := p.GameState().IngameTick()
+			var map_name string = header.MapName
+
+			// Second block (player info)
+			var player_id int64 = 0
+			var player_name string = "NA"
+			var player_x float64 = 0.0
+			var player_y float64 = 0.0
+			var player_z float64 = 0.0
+			var player_x_viz float64 = 0.0
+			var player_y_viz float64 = 0.0
+			var player_side common.Team
+			var player_side_string string = "NA"
+			var player_team string = "NA"
+			var area_id uint32 = 0
+			var area_place string = "NA"
+
+			if e.Base().Thrower == nil {
+				player_id = 0
+			} else {
+				player_id = e.Base().Thrower.SteamID
+				//player_name = e.Player.Name
+				player_x = e.Base().Thrower.Position.X
+				player_y = e.Base().Thrower.Position.Y
+				player_z = e.Base().Thrower.Position.Z
+				player_x_viz, player_y_viz = mapMetadata.TranslateScale(player_x, player_y)
+				player_side = e.Base().Thrower.Team
+				player_team = e.Base().Thrower.TeamState.ClanName
+				player_name = e.Base().Thrower.Name
+				player_point := gonav.Vector3{X: float32(player_x), Y: float32(player_y), Z: float32(player_z)}
+				area := mesh.GetNearestArea(player_point, true)
+				if area != nil {
+					area_id = area.ID
+					if area.Place != nil {
+						area_place = area.Place.Name
+					}
+				}
+
+				if player_side == 2 {
+					player_side_string = "T"
+				} else if player_side == 3 {
+					player_side_string = "CT"
+				}
+			}
+			grenade_type := e.Base().GrenadeType
+
+			fmt.Printf("[GRENADE] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %d, %s, %d]\n",
+				map_name, game_tick,
+				player_id, player_name, player_team, player_side_string,
+				player_x, player_y, player_z, player_x_viz, player_y_viz,
+				area_id, area_place, grenade_type)
+		}
+	})
+
 	p.RegisterEventHandler(func(e events.Kill) {
 		/* Parse player kill events
 

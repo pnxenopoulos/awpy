@@ -4,18 +4,52 @@
 class Grenade:
     """ An object to detail a round's grenade events
 
-    [TODO]
+    Attributes:
+        - tick (int)            : Game tick at time of event
+        - player_name (string)  : Player's username
+        - steam_id (int)        : Player's steam id
+        - team (string)         : Player's team/clan name
+        - side (string)         : Player's side (T or CT)
+        - x (float)             : X position of grenade
+        - y (float)             : Y position of grenade
+        - z (float)             : Z position of grenade
+        - x_viz (float)         : Grenade's X position for visualization
+        - y_viz (float)         : Grenade's Y position for visualization
+        - area_id (int)         : Grenade's location as nav file area id
+        - area_name (string)    : Grenade's location as area name from nav file
+        - grenade_type (string) : Grenade type
     """
 
-    def __init__(self, tick=0, player_name="", steam_id=0, side="", trajectory=[]):
+    def __init__(
+        self, 
+        tick=0, 
+        player_name="", 
+        steam_id=0, 
+        team="",
+        side="", 
+        x=0,
+        y=0,
+        z=0,
+        x_viz=0,
+        y_viz=0,
+        area_id=0,
+        area_name="",
+        grenade_type=""):
         """ Create a grenade trajectory object
         """
         self.tick = tick
         self.player_name = player_name
         self.steam_id = steam_id
+        self.team = team
         self.side = side
-        self.trajectory = trajectory
-        raise NotImplementedError
+        self.x = x
+        self.y = y
+        self.z = z
+        self.x_viz = x_viz
+        self.y_viz = y_viz
+        self.area_id = area_id
+        self.area_name = area_name
+        self.grenade_type = grenade_type
 
 
 class BombEvent:
@@ -141,6 +175,7 @@ class Round:
         - damages (list)            : List of Damage objects
         - kills (list)              : List of Kill objects
         - footstep (list)           : List of Footstep objects
+        - grenades (list)            : List of Grenade objects
     """
 
     def __init__(
@@ -161,6 +196,7 @@ class Round:
         damages=[],
         footsteps=[],
         bomb_events=[],
+        grenades=[],
     ):
         """ Initialize a CSGO round
         """
@@ -180,6 +216,7 @@ class Round:
         self.damages = damages
         self.footsteps = footsteps
         self.bomb_events = bomb_events
+        self.grenades = grenades
         if self.round_winner_side == "CT":
             self.start_ct_score = self.end_ct_score - 1
             self.start_t_score = self.start_t_score

@@ -7,7 +7,7 @@ import re
 import subprocess
 import pandas as pd
 
-from csgo.events import BombEvent, Footstep, Round, Kill, Damage
+from csgo.events import BombEvent, Footstep, Round, Kill, Damage, Grenade
 
 
 class CSGOMatchParser:
@@ -178,6 +178,7 @@ class CSGOMatchParser:
                 current_kills_list = []
                 current_damages_list = []
                 current_bomb_events_list = []
+                current_grenade_list = []
                 current_round.start_tick = 0
             if "[MATCH START]" in event:
                 current_round = Round()
@@ -225,10 +226,12 @@ class CSGOMatchParser:
                 current_round.kills = current_kills_list
                 current_round.damages = current_damages_list
                 current_round.bomb_events = current_bomb_events_list
+                current_round.grenades = current_grenade_list
                 current_footstep_list = []
                 current_kills_list = []
                 current_damages_list = []
                 current_bomb_events_list = []
+                current_grenade_list = []
                 self.rounds.append(current_round)
                 self.logger.info("Parsed round " + str(len(self.rounds)))
             if "[FOOTSTEP]" in event:
@@ -422,6 +425,31 @@ class CSGOMatchParser:
                 current_bomb_event.event_type = "Explode"
                 if len(current_bomb_events_list) < 2:
                     current_bomb_events_list.append(current_bomb_event)
+            if "[GRENADE]" in event:
+                current_grenade = Grenade()
+                split_line = event.split("] [")
+                # First block
+                current_grenade.tick = int(split_line[1].split(",")[1].strip())
+                # Second block
+                second_block = split_line[2].split(",")
+                current_grenade.steam_id = int(second_block[0])
+                current_grenade.player_name = second_block[1].strip()
+                current_grenade.team = second_block[2].strip()
+                current_grenade.side = second_block[3].strip()
+                # Third block
+                third_block = split_line[3].split(",")
+                current_grenade.x = float(third_block[0])
+                current_grenade.y = float(third_block[1].strip())
+                current_grenade.z = float(third_block[2].strip())
+                current_grenade.x_viz = float(third_block[3].strip())
+                current_grenade.y_viz = float(third_block[4].strip())
+                current_grenade.area_id = int(third_block[5].strip())
+                current_grenade.area_name = third_block[6].strip()
+                current_grenade.grenade_type = CSGOMatchParser.get_weapon(int(third_block[7].replace("]", "").strip()))
+                # Add current grenades to round
+                current_grenade_list.append(current_grenade)
+        # Clean the rounds info
+        self.clean_rounds()
 
     def clean_rounds(self):
         """ Function to clean the rounds list
@@ -444,6 +472,63 @@ class CSGOMatchParser:
             if (score == 0 or score == 1) and i > 0:
                 self.rounds.pop(i-total_popped)
                 total_popped = total_popped + 1
+
+    def write_grenades(self):
+        """ Write grenade events to a Pandas dataframe
+        """
+        grenade_df_list = []
+        for i, r in enumerate(self.rounds):
+            grenades = r.grenades
+            for g in grenades:
+                grenade_df_list.append(
+                    [
+                        self.game_id,
+                        self.competition_name,
+                        self.match_name,
+                        self.game_date,
+                        self.game_time,
+                        r.map_name,
+                        i,
+                        g.tick,
+                        g.steam_id,
+                        g.player_name,
+                        g.team,
+                        g.side,
+                        g.x,
+                        g.y,
+                        g.z,
+                        g.x_viz,
+                        g.y_viz,
+                        g.area_id,
+                        g.area_name,
+                        g.grenade_type
+                    ]
+                )
+        self.grenades_df = pd.DataFrame(
+            grenade_df_list,
+            columns=[
+                "GameID",
+                "CompetitionName",
+                "MatchName",
+                "GameDate",
+                "GameTime",
+                "MapName",
+                "RoundNum",
+                "Tick",
+                "SteamID",
+                "PlayerName",
+                "Team",
+                "Side",
+                "X",
+                "Y",
+                "Z",
+                "XViz",
+                "YViz",
+                "AreaID",
+                "AreaName",
+                "GrenadeType",
+            ],
+        )
 
     def write_bomb_events(self):
         """ Write bomb events to a Pandas dataframe
@@ -798,3 +883,21 @@ class CSGOMatchParser:
                 "Reason",
             ],
         )
+
+    def write_data(self):
+        """ Wrapper function to write a dictionary of Pandas dataframes
+        """
+        self.dataframes = {}
+        self.write_rounds()
+        self.write_footsteps()
+        self.write_damages()
+        self.write_kills()
+        self.write_bomb_events()
+        self.write_grenades()
+        self.dataframes["Rounds"] = self.rounds_df
+        self.dataframes["Footsteps"] = self.footsteps_df
+        self.dataframes["Damages"] = self.damages_df
+        self.dataframes["Kills"] = self.kills_df
+        self.dataframes["BombEvents"] = self.bomb_df
+        self.dataframes["Grenades"] = self.grenades_df
+        return self.dataframes

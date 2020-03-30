@@ -68,3 +68,16 @@ class TestCSGOParser:
         dmg = (damage_df.groupby(["AttackerName"]).Damage.sum()/21).reset_index().iloc[0, 1]
         kill_dmg = (damage_df.groupby(["AttackerName"]).KillDamage.sum()/21).reset_index().iloc[0, 1]
         assert (dmg == 94.9047619047619) and (kill_dmg == 88.23809523809524)
+
+    def test_grenade_total(self):
+        """ Tests for correct number of grenade events.
+        """
+        self.parser.write_grenades()
+        grenades_df = self.parser.grenades_df
+        assert grenades_df.shape[0] == 974
+
+    def test_write_data(self):
+        """ Tests write data method.
+        """
+        df_dict = self.parser.write_data()
+        assert(len(df_dict.keys()) == 6)

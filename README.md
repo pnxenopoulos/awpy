@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/pnxenopoulos/csgo.svg?branch=master)](https://travis-ci.com/pnxenopoulos/csgo) [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php) [![codecov](https://codecov.io/gh/pnxenopoulos/csgo/branch/master/graph/badge.svg)](https://codecov.io/gh/pnxenopoulos/csgo)
+[![Build Status](https://travis-ci.com/pnxenopoulos/csgo.svg?branch=master)](https://travis-ci.com/pnxenopoulos/csgo) [![codecov](https://codecov.io/gh/pnxenopoulos/csgo/branch/master/graph/badge.svg)](https://codecov.io/gh/pnxenopoulos/csgo) [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE)
 
 # Analyzing Counter-Strike: Global Offensive Data
 The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and useful information pertaining to the `csgo` package.
@@ -43,6 +43,7 @@ if not match_parser.demo_error:
     match_parser.write_damages()
     match_parser.write_bomb_events()
     match_parser.write_footsteps()
+    match_parser.write_grenades()
 
     # Access the data frames
     rounds = match_parser.rounds_df
@@ -50,6 +51,10 @@ if not match_parser.demo_error:
     damages = match_parser.damages_df
     bomb_events = match_parser.bomb_df
     footsteps = match_parser.footsteps_df
+    grenades = match_parser.grenades_df
+
+    # Alternatively, write all of them out to a dictionary via
+    match_parser.write_data()
 ```
 
 ## Structure
