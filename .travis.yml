@@ -22,7 +22,4 @@ script:
     - python -m pytest -vv
 
 after_success:
-    - coverage run -m pytest
-    - coverage report
-    - coverage xml
-    - bash < (curl -s https://codecov.io/bash) -t b62377eb-93cb-4d5d-82c9-d385b04a3c63
+    - codecov
