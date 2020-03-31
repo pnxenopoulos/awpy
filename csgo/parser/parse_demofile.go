@@ -387,7 +387,7 @@ func main() {
 		}
 	})
 
-	p.RegisterEventHandler(func(e events.RoundEndOfficial) {
+	p.RegisterEventHandler(func(e events.RoundEnd) {
 		/* Parse round end events
 
 		Round end events happen when a round is ended, such as through a successful
@@ -410,6 +410,19 @@ func main() {
 				*/
 				fmt.Printf("[ROUND END] [%s, %d] DRAW \n", header.MapName, gs.IngameTick())
 			}
+		}
+	})
+
+	p.RegisterEventHandler(func(e events.RoundEndOfficial) {
+		/* Parse official round end
+		 */
+
+		gs := p.GameState()
+		warmup := p.GameState().IsWarmupPeriod()
+
+		// Only parse non-warmup rounds
+		if warmup == false {
+			fmt.Printf("[ROUND END OFFICIAL] [%s, %d] \n", header.MapName, gs.IngameTick())
 		}
 	})
 
