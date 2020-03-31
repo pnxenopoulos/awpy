@@ -534,8 +534,8 @@ class CSGOMatchParser:
         """ Write bomb events to a Pandas dataframe
         """
         bomb_df_list = []
-        for i, round in enumerate(self.rounds):
-            bomb_events = round.bomb_events
+        for i, r in enumerate(self.rounds):
+            bomb_events = r.bomb_events
             for be in bomb_events:
                 bomb_df_list.append(
                     [
@@ -544,7 +544,7 @@ class CSGOMatchParser:
                         self.match_name,
                         self.game_date,
                         self.game_time,
-                        round.map_name,
+                        r.map_name,
                         i,
                         be.tick,
                         be.steam_id,
@@ -579,8 +579,8 @@ class CSGOMatchParser:
         """ Write footsteps to a Pandas dataframe
         """
         footstep_df_list = []
-        for i, round in enumerate(self.rounds):
-            footsteps = round.footsteps
+        for i, r in enumerate(self.rounds):
+            footsteps = r.footsteps
             for f in footsteps:
                 footstep_df_list.append(
                     [
@@ -589,7 +589,7 @@ class CSGOMatchParser:
                         self.match_name,
                         self.game_date,
                         self.game_time,
-                        round.map_name,
+                        r.map_name,
                         i,
                         f.tick,
                         f.steam_id,
@@ -643,8 +643,8 @@ class CSGOMatchParser:
         """ Write kills to a Pandas dataframe
         """
         kills_df_list = []
-        for i, round in enumerate(self.rounds):
-            kills = round.kills
+        for i, r in enumerate(self.rounds):
+            kills = r.kills
             for f in kills:
                 kills_df_list.append(
                     [
@@ -653,7 +653,7 @@ class CSGOMatchParser:
                         self.match_name,
                         self.game_date,
                         self.game_time,
-                        round.map_name,
+                        r.map_name,
                         i,
                         f.tick,
                         f.victim_x,
@@ -739,8 +739,8 @@ class CSGOMatchParser:
         """ Write damages to a Pandas dataframe
         """
         damages_df_list = []
-        for i, round in enumerate(self.rounds):
-            damages = round.damages
+        for i, r in enumerate(self.rounds):
+            damages = r.damages
             for f in damages:
                 damages_df_list.append(
                     [
@@ -749,7 +749,7 @@ class CSGOMatchParser:
                         self.match_name,
                         self.game_date,
                         self.game_time,
-                        round.map_name,
+                        r.map_name,
                         i,
                         f.tick,
                         f.victim_x,
@@ -839,7 +839,7 @@ class CSGOMatchParser:
         """ Write rounds to Pandas dataframe
         """
         round_df_list = []
-        for i, round in enumerate(self.rounds):
+        for i, r in enumerate(self.rounds):
             round_df_list.append(
                 [
                     self.game_id,
@@ -847,18 +847,18 @@ class CSGOMatchParser:
                     self.match_name,
                     self.game_date,
                     self.game_time,
-                    round.map_name,
+                    r.map_name,
                     i,
-                    round.start_tick,
-                    round.end_tick,
-                    round.end_ct_score,
-                    round.end_t_score,
-                    round.start_t_score,
-                    round.start_ct_score,
-                    round.round_winner_side,
-                    round.round_winner,
-                    round.round_loser,
-                    round.reason,
+                    r.start_tick,
+                    r.end_tick,
+                    r.end_ct_score,
+                    r.end_t_score,
+                    r.start_t_score,
+                    r.start_ct_score,
+                    r.round_winner_side,
+                    r.round_winner,
+                    r.round_loser,
+                    r.reason,
                 ]
             )
         self.rounds_df = pd.DataFrame(

@@ -387,7 +387,7 @@ func main() {
 		}
 	})
 
-	p.RegisterEventHandler(func(e events.RoundEnd) {
+	p.RegisterEventHandler(func(e events.RoundEndOfficial) {
 		/* Parse round end events
 
 		Round end events happen when a round is ended, such as through a successful
