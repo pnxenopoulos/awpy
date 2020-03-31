@@ -254,7 +254,8 @@ class CSGOMatchParser:
                 current_bomb_events_list = []
                 current_grenade_list = []
                 # Add round to list
-                self.rounds[-1] = current_round
+                if len(self.rounds) > 0:
+                    self.rounds[-1] = current_round
                 self.logger.info("Parsed round end official " + str(len(self.rounds)))
             if "[FOOTSTEP]" in event:
                 current_footstep = Footstep()
