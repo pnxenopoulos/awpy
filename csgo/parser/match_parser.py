@@ -223,7 +223,7 @@ class CSGOMatchParser:
                 # First block
                 first_block = split_line[1].split(",")
                 current_round.map_name = first_block[0]
-                current_round.end_tick = int(first_block[1].strip())
+                current_round.end_tick = int(first_block[1].replace("]", "").strip())
                 # Add events to round
                 current_round.footsteps = current_footstep_list
                 current_round.kills = current_kills_list
