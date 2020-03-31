@@ -20,7 +20,8 @@ install:
     - pip install -r requirements.txt
 
 script:
-    - pytest --cov-report term --cov=csgo tests/
+    - coverage run -m pytest
 
 after_success:
-    - codecov
+    - coverage report -m
+    - bash <(curl -s https://codecov.io/bash)
