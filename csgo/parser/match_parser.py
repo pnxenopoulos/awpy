@@ -186,6 +186,7 @@ class CSGOMatchParser:
                 current_kills_list = []
                 current_damages_list = []
                 current_bomb_events_list = []
+                current_grenade_list = []
                 parsed_line = event.split("] [")[1].replace("]", "").split(",")
                 current_round.map_name = parsed_line[0]
                 current_round.start_tick = int(parsed_line[1].strip())
@@ -195,6 +196,7 @@ class CSGOMatchParser:
                 current_kills_list = []
                 current_damages_list = []
                 current_bomb_events_list = []
+                current_grenade_list = []
                 split_line = event.split("] [")
                 # First block
                 first_block = split_line[1].split(",")
@@ -228,11 +230,6 @@ class CSGOMatchParser:
                 current_round.damages = current_damages_list
                 current_round.bomb_events = current_bomb_events_list
                 current_round.grenades = current_grenade_list
-                current_footstep_list = []
-                current_kills_list = []
-                current_damages_list = []
-                current_bomb_events_list = []
-                current_grenade_list = []
                 # Add round to list
                 self.rounds.append(current_round)
                 self.logger.info("Parsed round end " + str(len(self.rounds)))
@@ -248,11 +245,6 @@ class CSGOMatchParser:
                 current_round.damages = current_damages_list
                 current_round.bomb_events = current_bomb_events_list
                 current_round.grenades = current_grenade_list
-                current_footstep_list = []
-                current_kills_list = []
-                current_damages_list = []
-                current_bomb_events_list = []
-                current_grenade_list = []
                 # Add round to list
                 if len(self.rounds) > 0:
                     self.rounds[-1] = current_round
