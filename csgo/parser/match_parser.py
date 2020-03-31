@@ -206,6 +206,10 @@ class CSGOMatchParser:
                 current_round.start_ct_score = int(second_block[1].strip())
             if "[ROUND END]" in event and "DRAW" not in event:
                 split_line = event.split("] [")
+                # First block
+                first_block = split_line[1].split(",")
+                current_round.map_name = first_block[0]
+                current_round.end_tick = int(first_block[1].strip())
                 # Second block
                 second_block = split_line[2].split(",")
                 current_round.end_t_score = int(second_block[0])
@@ -218,6 +222,20 @@ class CSGOMatchParser:
                 current_round.reason = CSGOMatchParser.get_round_reason(
                     int(third_block[3].strip())
                 )
+                # Add events to round
+                current_round.footsteps = current_footstep_list
+                current_round.kills = current_kills_list
+                current_round.damages = current_damages_list
+                current_round.bomb_events = current_bomb_events_list
+                current_round.grenades = current_grenade_list
+                current_footstep_list = []
+                current_kills_list = []
+                current_damages_list = []
+                current_bomb_events_list = []
+                current_grenade_list = []
+                # Add round to list
+                self.rounds.append(current_round)
+                self.logger.info("Parsed round end " + str(len(self.rounds)))
             if "[ROUND END OFFICIAL]" in event:
                 split_line = event.split("] [")
                 # First block
@@ -235,8 +253,9 @@ class CSGOMatchParser:
                 current_damages_list = []
                 current_bomb_events_list = []
                 current_grenade_list = []
-                self.rounds.append(current_round)
-                self.logger.info("Parsed round " + str(len(self.rounds)))
+                # Add round to list
+                self.rounds[-1] = current_round
+                self.logger.info("Parsed round end official " + str(len(self.rounds)))
             if "[FOOTSTEP]" in event:
                 current_footstep = Footstep()
                 split_line = event.split("] [")
