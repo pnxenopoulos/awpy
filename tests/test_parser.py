@@ -74,7 +74,7 @@ class TestCSGOParser:
         """
         self.parser.write_grenades()
         grenades_df = self.parser.grenades_df
-        assert grenades_df.shape[0] == 720
+        assert grenades_df.shape[0] == 550
 
     def test_write_data(self):
         """ Tests write data method.
