@@ -10,6 +10,7 @@ before_install:
     - pip install pip
     - pip install pytest
     - pip install codecov
+    - pip install pytest-cov
     - wget -O tests/natus-vincere-vs-astralis-m1-dust2.dem http://www.peterxeno.com/csgo/natus-vincere-vs-astralis-m1-dust2.dem
     - sudo apt-get -y install golang
     - go get github.com/mrazza/gonav
@@ -19,7 +20,7 @@ install:
     - pip install -r requirements.txt
 
 script:
-    - python -m pytest -vv
+    - pytest --cov-report term --cov=csgo tests/
 
 after_success:
     - codecov
