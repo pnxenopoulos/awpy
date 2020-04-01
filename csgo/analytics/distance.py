@@ -69,6 +69,7 @@ def point_distance(point_a, point_b, type="graph", map="de_dust2"):
                 str(point_b[2]),
             ],
             stdout=subprocess.PIPE,
+            cwd=path,
         )
         return int(proc.stdout.read())
     elif type == "euclidean":

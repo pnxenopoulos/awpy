@@ -20,8 +20,10 @@ class TestCSGOAnalytics:
         assert point_distance([0,0],[1,1], type="manhattan") == 2
         assert point_distance([0,0],[1,1], type="canberra") == 2.0
         assert point_distance([-1,5],[2,1], type="cosine") == 0.7368825942078912
+        assert point_distance([0,0,0], [100,100,100]) == 4
+        assert point_distance([0,0,0], [100,100,100], map="de_vertigo") == 1
 
     def test_polygon_area(self):
         """ Test polygon area function
         """
-        assert polygon_area([0,1,2], [0,1,0]) == 2.0
+        assert polygon_area([0,1,2], [0,1,0]) == 1.0
