@@ -47,12 +47,12 @@ def point_distance(point_a, point_b, type="graph", map="de_dust2"):
         map: A string indicating the map
     """
     if type == "graph":
-        path = os.path.join(os.path.dirname(__file__), "path_distance.go")
+        path = os.path.join(os.path.dirname(__file__), "")
         proc = subprocess.Popen(
             [
                 "go",
                 "run",
-                path,
+                "path_distance.go",
                 "-map",
                 map,
                 "-start_x",

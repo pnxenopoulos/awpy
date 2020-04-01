@@ -9,3 +9,4 @@ def clean_trajectory():
 def clean_locations(df):
     """ Function to assign appropriate AreaNames and IDs. Adds flag for imputed location.
     """
+    return NotImplementedError
