@@ -29,32 +29,16 @@ from csgo.parser.match_parser import CSGOMatchParser
 # Create parser object
 match_parser = CSGOMatchParser(demofile = "demofile.dem", logfile = "parser.log", competition_name = "CompetitionName", match_name = "MatchName")
 
-# Parse the demofile
-match_parser.parse_demofile()
+# Parse the demofile, output results to dictionary with df name as key
+data = match_parser.parse()
 
-# If there is no demo error, start to parse
-if not match_parser.demo_error:
-    # Parse the match
-    match_parser.parse_match()
-
-    # Write the data frames
-    match_parser.write_rounds()
-    match_parser.write_kills()
-    match_parser.write_damages()
-    match_parser.write_bomb_events()
-    match_parser.write_footsteps()
-    match_parser.write_grenades()
-
-    # Access the data frames
-    rounds = match_parser.rounds_df
-    kills = match_parser.kills_df
-    damages = match_parser.damages_df
-    bomb_events = match_parser.bomb_df
-    footsteps = match_parser.footsteps_df
-    grenades = match_parser.grenades_df
-
-    # Alternatively, write all of them out to a dictionary via
-    match_parser.write_data()
+# The following keys exist
+data["Rounds"]
+data["Kills"]
+data["Damages"]
+data["Grenades"]
+data["BombEvents"]
+data["Footsteps"]
 ```
 
 ## Structure

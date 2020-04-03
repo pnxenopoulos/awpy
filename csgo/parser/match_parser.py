@@ -149,23 +149,6 @@ class CSGOMatchParser:
             self.demo_error = True
         self.logger.info("Demofile parsing complete")
 
-    def find_match_start(self):
-        """ Determine the match start line in our txt file, since it is not found in our Go parser.
-        """
-        self.logger.info("Finding match start line")
-        for i, event in enumerate(self.parsed_text):
-            if "ROUND START" in event and "[0, 0]" in event:
-                self.match_start = i
-        if self.match_start == 0:
-            for i, line in enumerate(self.parsed_text):
-                if "MATCH START" in line:
-                    self.match_start = i
-        self.parsed_text = self.parsed_text[self.match_start :]
-        if self.match_start == 0:
-            self.logger.warning("Match start at 0...likely wrong")
-        else:
-            self.logger.info("Match start line found at " + str(self.match_start))
-
     def parse_match(self):
         """ Parse match event text data and structure it in logical format
         """
@@ -465,6 +448,17 @@ class CSGOMatchParser:
                 current_grenade_list.append(current_grenade)
         # Clean the rounds info
         self.clean_rounds()
+
+    def parse(self):
+        """ Parse wrapper function
+        """
+        self.parse_demofile()
+        if not self.demo_error:
+            self.parse_match()
+            self.write_data()
+            return self.dataframes
+        else:
+            return "Match has parsing error"
 
     def clean_rounds(self):
         """ Function to clean the rounds list
