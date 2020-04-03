@@ -248,8 +248,8 @@ class CSGOMatchParser:
                 current_footstep.x = float(third_block[0])
                 current_footstep.y = float(third_block[1].strip())
                 current_footstep.z = float(third_block[2].strip())
-                current_footstep.x_viz = float(third_block[3].strip())
-                current_footstep.y_viz = float(third_block[4].strip())
+                current_footstep.x_viz = float(third_block[3].strip())*-1
+                current_footstep.y_viz = float(third_block[4].strip())*-1
                 current_footstep.view_x = float(third_block[5].strip())
                 current_footstep.view_y = float(third_block[6].strip())
                 current_footstep.area_id = int(third_block[7].strip())
@@ -267,8 +267,8 @@ class CSGOMatchParser:
                 current_damage.victim_x = float(second_block[0])
                 current_damage.victim_y = float(second_block[1].strip())
                 current_damage.victim_z = float(second_block[2].strip())
-                current_damage.victim_x_viz = float(second_block[3].strip())
-                current_damage.victim_y_viz = float(second_block[4].strip())
+                current_damage.victim_x_viz = float(second_block[3].strip())*-1
+                current_damage.victim_y_viz = float(second_block[4].strip())*-1
                 current_damage.victim_view_x = float(second_block[5].strip())
                 current_damage.victim_view_y = float(second_block[6].strip())
                 current_damage.victim_area_id = int(second_block[7].strip())
@@ -278,8 +278,8 @@ class CSGOMatchParser:
                 current_damage.attacker_x = float(third_block[0])
                 current_damage.attacker_y = float(third_block[1].strip())
                 current_damage.attacker_z = float(third_block[2].strip())
-                current_damage.attacker_x_viz = float(third_block[3].strip())
-                current_damage.attacker_y_viz = float(third_block[4].strip())
+                current_damage.attacker_x_viz = float(third_block[3].strip())*-1
+                current_damage.attacker_y_viz = float(third_block[4].strip())*-1
                 current_damage.attacker_view_x = float(third_block[5].strip())
                 current_damage.attacker_view_y = float(third_block[6].strip())
                 current_damage.attacker_area_id = int(third_block[7].strip())
@@ -321,8 +321,8 @@ class CSGOMatchParser:
                 current_kill.victim_x = float(second_block[0])
                 current_kill.victim_y = float(second_block[1].strip())
                 current_kill.victim_z = float(second_block[2].strip())
-                current_kill.victim_x_viz = float(second_block[3].strip())
-                current_kill.victim_y_viz = float(second_block[4].strip())
+                current_kill.victim_x_viz = float(second_block[3].strip())*-1
+                current_kill.victim_y_viz = float(second_block[4].strip())*-1
                 current_kill.victim_view_x = float(second_block[5].strip())
                 current_kill.victim_view_y = float(second_block[6].strip())
                 current_kill.victim_area_id = int(second_block[7].strip())
@@ -332,8 +332,8 @@ class CSGOMatchParser:
                 current_kill.attacker_x = float(third_block[0])
                 current_kill.attacker_y = float(third_block[1].strip())
                 current_kill.attacker_z = float(third_block[2].strip())
-                current_kill.attacker_x_viz = float(third_block[3].strip())
-                current_kill.attacker_y_viz = float(third_block[4].strip())
+                current_kill.attacker_x_viz = float(third_block[3].strip())*-1
+                current_kill.attacker_y_viz = float(third_block[4].strip())*-1
                 current_kill.attacker_view_x = float(third_block[5].strip())
                 current_kill.attacker_view_y = float(third_block[6].strip())
                 current_kill.attacker_area_id = int(third_block[7].strip())
@@ -439,8 +439,8 @@ class CSGOMatchParser:
                 current_grenade.x = float(third_block[0])
                 current_grenade.y = float(third_block[1].strip())
                 current_grenade.z = float(third_block[2].strip())
-                current_grenade.x_viz = float(third_block[3].strip())
-                current_grenade.y_viz = float(third_block[4].strip())
+                current_grenade.x_viz = float(third_block[3].strip())*-1
+                current_grenade.y_viz = float(third_block[4].strip())*-1
                 current_grenade.area_id = int(third_block[5].strip())
                 current_grenade.area_name = third_block[6].strip()
                 current_grenade.grenade_type = CSGOMatchParser.get_weapon(int(third_block[7].replace("]", "").strip()))

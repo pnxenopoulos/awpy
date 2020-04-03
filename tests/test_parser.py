@@ -84,6 +84,19 @@ class TestCSGOParser:
         grenades_df = self.parser.grenades_df
         assert grenades_df.shape[0] == 550
 
+    def test_footsteps(self):
+        """ Tests for correct trajectory parsing.
+        """
+        self.parser.write_footsteps()
+        footsteps_df = self.parser.footsteps_df
+        assert footsteps_df.iloc[777,:].X == -1165.50769
+        assert footsteps_df.iloc[777,:].Y == 2586.70752
+        assert footsteps_df.iloc[777,:].Z == 59.774727
+        assert footsteps_df.iloc[777,:].XViz == 297.839161
+        assert footsteps_df.iloc[777,:].YViz == -148.248291
+        assert footsteps_df.iloc[777,:].AreaID == 8345
+        assert footsteps_df.iloc[777,:].YViz == "BDoors"
+
     def test_write_data(self):
         """ Tests write data method.
         """

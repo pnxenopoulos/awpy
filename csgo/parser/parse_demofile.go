@@ -649,7 +649,6 @@ func main() {
 				playerID = 0
 			} else {
 				playerID = e.Player.SteamID
-				//playerName = e.Player.Name
 				playerX = e.Player.Position.X
 				playerY = e.Player.Position.Y
 				playerZ = e.Player.Position.Z
