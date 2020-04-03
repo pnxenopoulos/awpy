@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"os"
+
 	"github.com/mrazza/gonav"
 )
 
@@ -23,31 +24,31 @@ func main() {
 		panic(err)
 	}
 
-	current_map := *navPathPtr
-	start_x := *startXPtr
-	start_y := *startYPtr
-	start_z := *startZPtr
-	end_x := *endXPtr
-	end_y := *endYPtr
-	end_z := *endZPtr
+	currentMap := *navPathPtr
+	startX := *startXPtr
+	startY := *startYPtr
+	startZ := *startZPtr
+	endX := *endXPtr
+	endY := *endYPtr
+	endZ := *endZPtr
 
 	// Read in args
-	//current_map, start_x, start_y, start_z, end_x, end_y, end_z = DemoPathFromArgs()
+	//currentMap, startX, startY, startZ, endX, endY, endZ = DemoPathFromArgs()
 	// Read in parser
-	f_nav, _ := os.Open("../data/original_nav_files/" + current_map + ".nav")
-	parser_nav := gonav.Parser{Reader: f_nav}
-	mesh, _ := parser_nav.Parse()
-	start_location := gonav.Vector3{X: float32(start_x), Y: float32(start_y), Z: float32(start_z)}
-	end_location := gonav.Vector3{X: float32(end_x), Y: float32(end_y), Z: float32(end_z)}
-	start_area := mesh.GetNearestArea(start_location, true)
-	end_area := mesh.GetNearestArea(end_location, true)
+	fNav, _ := os.Open("../data/original_nav_files/" + currentMap + ".nav")
+	parserNav := gonav.Parser{Reader: fNav}
+	mesh, _ := parserNav.Parse()
+	startLoc := gonav.Vector3{X: float32(startX), Y: float32(startY), Z: float32(startZ)}
+	endLoc := gonav.Vector3{X: float32(endX), Y: float32(endY), Z: float32(endZ)}
+	startArea := mesh.GetNearestArea(startLoc, true)
+	endArea := mesh.GetNearestArea(endLoc, true)
 
-	path, _ := gonav.SimpleBuildShortestPath(start_area, end_area)
-	var areas_visited int = 0
+	path, _ := gonav.SimpleBuildShortestPath(startArea, endArea)
+	var areasVisited int = 0
 	for _, currNode := range path.Nodes {
 		if currNode != nil {
-			areas_visited = areas_visited + 1
+			areasVisited = areasVisited + 1
 		}
 	}
-	fmt.Printf("%d\n", areas_visited)
+	fmt.Printf("%d\n", areasVisited)
 }

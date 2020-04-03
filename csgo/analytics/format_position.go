@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"flag"
 
 	metadata "github.com/markus-wa/demoinfocs-golang/metadata"
 )
@@ -24,17 +24,17 @@ func main() {
 		panic(err)
 	}
 
-	map_name := *MapPtr
+	mapName := *MapPtr
 	x := *XPtr
 	y := *YPtr
 
 	// Get metadata for the map that the game was played on for coordinate translations
-	mapMetadata := metadata.MapNameToMap[map_name]
+	mapMetadata := metadata.MapNameToMap[mapName]
 
-	new_x, new_y := mapMetadata.TranslateScale(x, y)
+	newX, newY := mapMetadata.TranslateScale(x, y)
 
-	fmt.Println(new_x)
-	fmt.Println(new_y)
+	fmt.Println(newX)
+	fmt.Println(newY)
 }
 
 func checkError(err error) {

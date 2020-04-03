@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"os"
+
 	"github.com/mrazza/gonav"
 )
 
@@ -21,36 +22,36 @@ func main() {
 		panic(err)
 	}
 
-	current_map := *navPathPtr
-	start_x := *startXPtr
-	start_y := *startYPtr
-	start_z := *startZPtr
+	currentMap := *navPathPtr
+	startX := *startXPtr
+	startY := *startYPtr
+	startZ := *startZPtr
 	bombsite := *bombsitePtr
 
 	// Read in args
-	//current_map, start_x, start_y, start_z, end_x, end_y, end_z = DemoPathFromArgs()
+	//currentMap, startX, startY, startZ, end_x, end_y, end_z = DemoPathFromArgs()
 	// Read in parser
-	f_nav, _ := os.Open("../data/original_nav_files/" + current_map + ".nav")
-	parser_nav := gonav.Parser{Reader: f_nav}
-	mesh, _ := parser_nav.Parse()
-	start_location := gonav.Vector3{X: float32(start_x), Y: float32(start_y), Z: float32(start_z)}
-	start_area := mesh.GetNearestArea(start_location, true)
+	fNav, _ := os.Open("../data/original_nav_files/" + currentMap + ".nav")
+	parserNav := gonav.Parser{Reader: fNav}
+	mesh, _ := parserNav.Parse()
+	startLoc := gonav.Vector3{X: float32(startX), Y: float32(startY), Z: float32(startZ)}
+	startArea := mesh.GetNearestArea(startLoc, true)
 
-	bombsite_mesh := mesh.GetPlaceByName("BombsiteA")
-	bombsite_center, _ := bombsite_mesh.GetEstimatedCenter()
-	bombsite_area := mesh.GetNearestArea(bombsite_center, false)
+	bombsiteMesh := mesh.GetPlaceByName("BombsiteA")
+	bombsiteCenter, _ := bombsiteMesh.GetEstimatedCenter()
+	bombsitArea := mesh.GetNearestArea(bombsiteCenter, false)
 	if bombsite == "B" {
-		bombsite_mesh = mesh.GetPlaceByName("BombsiteB")
-		bombsite_center, _ = bombsite_mesh.GetEstimatedCenter()
-		bombsite_area = mesh.GetNearestArea(bombsite_center, false)
+		bombsiteMesh = mesh.GetPlaceByName("BombsiteB")
+		bombsiteCenter, _ = bombsiteMesh.GetEstimatedCenter()
+		bombsitArea = mesh.GetNearestArea(bombsiteCenter, false)
 	}
 
-	path, _ := gonav.SimpleBuildShortestPath(start_area, bombsite_area)
-	var areas_visited int = 0
+	path, _ := gonav.SimpleBuildShortestPath(startArea, bombsitArea)
+	var areasVisited int = 0
 	for _, currNode := range path.Nodes {
 		if currNode != nil {
-			areas_visited = areas_visited + 1
+			areasVisited = areasVisited + 1
 		}
 	}
-	fmt.Printf("%d", areas_visited)
+	fmt.Printf("%d", areasVisited)
 }
