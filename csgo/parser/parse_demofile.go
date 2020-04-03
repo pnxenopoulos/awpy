@@ -28,422 +28,415 @@ func main() {
 
 	/* Get nav mesh given the map name
 	Keep in mind that original nav files only exists for the following maps:
+		- de_cbble
 		- de_dust2
 		- de_inferno
 		- de_mirage
 		- de_nuke
 		- de_overpass
 		- de_train
+		- de_vertigo
 	*/
 
-	current_map := header.MapName
-	mapMetadata := metadata.MapNameToMap[current_map]
+	currentMap := header.MapName
+	mapMetadata := metadata.MapNameToMap[currentMap]
 
-	f_nav, _ := os.Open("../data/original_nav_files/" + current_map + ".nav")
-	parser_nav := gonav.Parser{Reader: f_nav}
-	mesh, _ := parser_nav.Parse()
+	fNav, _ := os.Open("../data/original_nav_files/" + currentMap + ".nav")
+	parserNav := gonav.Parser{Reader: fNav}
+	mesh, _ := parserNav.Parse()
 
 	p.RegisterEventHandler(func(e events.PlayerHurt) {
 		/* Parse player damage events
-
-		Player damage events are defined in the parser as a PlayerHurt event. These
-		events occur when a player has been damaged, whether by another player or
-		the world.
-		*/
+		 */
 		warmup := p.GameState().IsWarmupPeriod()
 		started := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup player hurt events
 		if warmup == false && started == true {
 			// First block (game state)
-			game_tick := p.GameState().IngameTick()
-			var map_name string = header.MapName
+			gameTick := p.GameState().IngameTick()
+			var mapName string = header.MapName
 
 			// Second block (victim location)
-			var victim_x float64 = 0.0
-			var victim_y float64 = 0.0
-			var victim_z float64 = 0.0
-			var victim_x_viz float64 = 0.0
-			var victim_y_viz float64 = 0.0
-			var victim_closest_area_id uint32 = 0
-			var victim_closest_area_name string = "NA"
-			var victim_view_x float32 = 0.0
-			var victim_view_y float32 = 0.0
+			var victimX float64 = 0.0
+			var victimY float64 = 0.0
+			var victimZ float64 = 0.0
+			var VictimXViz float64 = 0.0
+			var VictimYViz float64 = 0.0
+			var VictimClosestAreaID uint32 = 0
+			var VictimClosestAreaName string = "NA"
+			var VictimViewX float32 = 0.0
+			var VictimViewY float32 = 0.0
 
 			// Third block (attacker location)
-			var attacker_x float64 = 0.0
-			var attacker_y float64 = 0.0
-			var attacker_z float64 = 0.0
-			var attacker_x_viz float64 = 0.0
-			var attacker_y_viz float64 = 0.0
-			var attacker_closest_area_id uint32 = 0
-			var attacker_closest_area_name string = "NA"
-			var attacker_view_x float32 = 0.0
-			var attacker_view_y float32 = 0.0
+			var attackerX float64 = 0.0
+			var attackerY float64 = 0.0
+			var attackerZ float64 = 0.0
+			var attackerXViz float64 = 0.0
+			var attackerYViz float64 = 0.0
+			var attackerClosestAreaID uint32 = 0
+			var attackerClosestAreaName string = "NA"
+			var attackerViewX float32 = 0.0
+			var attackerViewY float32 = 0.0
 
 			// Fourth block (victim player/team)
-			var victim_id int64 = 0
-			var victim_name string = "NA"
-			var victim_team string = "NA"
-			var victim_side common.Team
-			var victim_side_string string = "NA"
-			var victim_team_eq_val int = 0
+			var victimID int64 = 0
+			var victimName string = "NA"
+			var victimTeam string = "NA"
+			var victimSide common.Team
+			var victimSideString string = "NA"
+			var victimTeamEqVal int = 0
 
 			// Fifth block (attacker player/team)
-			var attacker_id int64 = 0
-			var attacker_name string = "NA"
-			var attacker_team string = "NA"
-			var attacker_side common.Team
-			var attacker_side_string string = "NA"
-			var attacker_team_eq_val int = 0
+			var attackerID int64 = 0
+			var attackerName string = "NA"
+			var attackerTeam string = "NA"
+			var attackerSide common.Team
+			var attackerSideString string = "NA"
+			var attackerTeamEqVal int = 0
 
 			// Sixth block (Damage/Weapon)
-			hp_damage := e.HealthDamage
-			kill_hp_damage := hp_damage
+			hpDmg := e.HealthDamage
+			KillHpDmg := hpDmg
 
 			/* If a player has more than 100 damage taken, squash this value back
 			down to 100. This may need to be changed in the future. [NOTE]
 			*/
 
-			if hp_damage > 100 {
-				kill_hp_damage = 100
+			if hpDmg > 100 {
+				KillHpDmg = 100
 			}
-			armor_damage := e.ArmorDamage
-			weapon_id := e.Weapon.Weapon
-			hit_group := e.HitGroup
+			armorDmg := e.ArmorDamage
+			weaponID := e.Weapon.Weapon
+			hitGroup := e.HitGroup
 
 			// Find victim values
 			if e.Player == nil {
-				victim_id = 0
+				victimID = 0
 			} else {
-				victim_id = e.Player.SteamID
-				victim_x = e.Player.Position.X
-				victim_y = e.Player.Position.Y
-				victim_z = e.Player.Position.Z
-				victim_x_viz, victim_y_viz = mapMetadata.TranslateScale(victim_x, victim_y)
-				victim_view_x = e.Player.ViewDirectionX
-				victim_view_y = e.Player.ViewDirectionY
-				victim_location := gonav.Vector3{X: float32(victim_x), Y: float32(victim_y), Z: float32(victim_z)}
-				victim_area := mesh.GetNearestArea(victim_location, true)
-				if victim_area != nil {
-					victim_closest_area_id = victim_area.ID
-					if victim_area.Place != nil {
-						victim_closest_area_name = victim_area.Place.Name
+				victimID = e.Player.SteamID
+				victimX = e.Player.Position.X
+				victimY = e.Player.Position.Y
+				victimZ = e.Player.Position.Z
+				VictimXViz, VictimYViz = mapMetadata.TranslateScale(victimX, victimY)
+				VictimViewX = e.Player.ViewDirectionX
+				VictimViewY = e.Player.ViewDirectionY
+				victimLoc := gonav.Vector3{X: float32(victimX), Y: float32(victimY), Z: float32(victimZ)}
+				victimArea := mesh.GetNearestArea(victimLoc, true)
+				if victimArea != nil {
+					VictimClosestAreaID = victimArea.ID
+					if victimArea.Place != nil {
+						VictimClosestAreaName = victimArea.Place.Name
 					}
 				}
-				victim_name = e.Player.Name
-				victim_team = e.Player.TeamState.ClanName
-				victim_side = e.Player.Team
-				if victim_side == 2 {
-					victim_side_string = "T"
-				} else if victim_side == 3 {
-					victim_side_string = "CT"
+				victimName = e.Player.Name
+				victimTeam = e.Player.TeamState.ClanName
+				victimSide = e.Player.Team
+				if victimSide == 2 {
+					victimSideString = "T"
+				} else if victimSide == 3 {
+					victimSideString = "CT"
 				}
-				victim_team_eq_val = e.Player.TeamState.RoundStartEquipmentValue()
+				victimTeamEqVal = e.Player.TeamState.RoundStartEquipmentValue()
 			}
 
 			// Find attacker values
 			if e.Attacker == nil {
-				attacker_id = 0
+				attackerID = 0
 			} else {
-				attacker_id = e.Attacker.SteamID
-				attacker_x = e.Attacker.Position.X
-				attacker_y = e.Attacker.Position.Y
-				attacker_z = e.Attacker.Position.Z
-				attacker_x_viz, attacker_y_viz = mapMetadata.TranslateScale(attacker_x, attacker_y)
-				attacker_view_x = e.Attacker.ViewDirectionX
-				attacker_view_y = e.Attacker.ViewDirectionY
-				attacker_location := gonav.Vector3{X: float32(attacker_x), Y: float32(attacker_y), Z: float32(attacker_z)}
-				attacker_area := mesh.GetNearestArea(attacker_location, true)
-				if attacker_area != nil {
-					attacker_closest_area_id = attacker_area.ID
-					if attacker_area.Place != nil {
-						attacker_closest_area_name = attacker_area.Place.Name
+				attackerID = e.Attacker.SteamID
+				attackerX = e.Attacker.Position.X
+				attackerY = e.Attacker.Position.Y
+				attackerZ = e.Attacker.Position.Z
+				attackerXViz, attackerYViz = mapMetadata.TranslateScale(attackerX, attackerY)
+				attackerViewX = e.Attacker.ViewDirectionX
+				attackerViewY = e.Attacker.ViewDirectionY
+				attackerLoc := gonav.Vector3{X: float32(attackerX), Y: float32(attackerY), Z: float32(attackerZ)}
+				attackerArea := mesh.GetNearestArea(attackerLoc, true)
+				if attackerArea != nil {
+					attackerClosestAreaID = attackerArea.ID
+					if attackerArea.Place != nil {
+						attackerClosestAreaName = attackerArea.Place.Name
 					}
 				}
-				attacker_name = e.Attacker.Name
-				attacker_team = e.Attacker.TeamState.ClanName
-				attacker_side = e.Attacker.Team
-				if attacker_side == 2 {
-					attacker_side_string = "T"
-				} else if attacker_side == 3 {
-					attacker_side_string = "CT"
+				attackerName = e.Attacker.Name
+				attackerTeam = e.Attacker.TeamState.ClanName
+				attackerSide = e.Attacker.Team
+				if attackerSide == 2 {
+					attackerSideString = "T"
+				} else if attackerSide == 3 {
+					attackerSideString = "CT"
 				}
-				attacker_team_eq_val = e.Attacker.TeamState.RoundStartEquipmentValue()
+				attackerTeamEqVal = e.Attacker.TeamState.RoundStartEquipmentValue()
 			}
 
 			// Print a line of the damage information
 			fmt.Printf("[DAMAGE] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %d, %d, %d] \n",
-				map_name, game_tick,
-				victim_x, victim_y, victim_z, victim_x_viz, victim_y_viz, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
-				attacker_x, attacker_y, attacker_z, attacker_x_viz, attacker_y_viz, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
-				victim_id, victim_name, victim_team, victim_side_string, victim_team_eq_val,
-				attacker_id, attacker_name, attacker_team, attacker_side_string, attacker_team_eq_val,
-				hp_damage, kill_hp_damage, armor_damage, weapon_id, hit_group)
+				mapName, gameTick,
+				victimX, victimY, victimZ, VictimXViz, VictimYViz, VictimViewX, VictimViewY, VictimClosestAreaID, VictimClosestAreaName,
+				attackerX, attackerY, attackerZ, attackerXViz, attackerYViz, attackerViewX, attackerViewY, attackerClosestAreaID, attackerClosestAreaName,
+				victimID, victimName, victimTeam, victimSideString, victimTeamEqVal,
+				attackerID, attackerName, attackerTeam, attackerSideString, attackerTeamEqVal,
+				hpDmg, KillHpDmg, armorDmg, weaponID, hitGroup)
 		}
 	})
 
 	p.RegisterEventHandler(func(e events.GrenadeEventIf) {
-		/* Parse grenade events
+		/* Parse grenade events (except incendiary)
 		 */
 		warmup := p.GameState().IsWarmupPeriod()
 
 		// Only parse non-warmup grenade events
 		if warmup == false {
 			// First block (game state)
-			game_tick := p.GameState().IngameTick()
-			var map_name string = header.MapName
+			gameTick := p.GameState().IngameTick()
+			var mapName string = header.MapName
 
 			// Second block (player info)
-			var player_id int64 = 0
-			var player_name string = "NA"
-			var pos_x float64 = 0.0
-			var pos_y float64 = 0.0
-			var pos_z float64 = 0.0
-			var pos_x_viz float64 = 0.0
-			var pos_y_viz float64 = 0.0
-			var player_side common.Team
-			var player_side_string string = "NA"
-			var player_team string = "NA"
-			var area_id uint32 = 0
-			var area_place string = "NA"
+			var playerID int64 = 0
+			var playerName string = "NA"
+			var posX float64 = 0.0
+			var posY float64 = 0.0
+			var posZ float64 = 0.0
+			var posXViz float64 = 0.0
+			var posYViz float64 = 0.0
+			var playerSide common.Team
+			var playerSideString string = "NA"
+			var playerTeam string = "NA"
+			var areaID uint32 = 0
+			var areaPlace string = "NA"
 
 			if e.Base().Thrower == nil {
-				player_id = 0
+				playerID = 0
 			} else {
-				player_id = e.Base().Thrower.SteamID
-				//player_name = e.Player.Name
-				pos_x = e.Base().Position.X
-				pos_y = e.Base().Position.Y
-				pos_z = e.Base().Position.Z
-				pos_x_viz, pos_y_viz = mapMetadata.TranslateScale(pos_x, pos_y)
-				player_side = e.Base().Thrower.Team
-				player_team = e.Base().Thrower.TeamState.ClanName
-				player_name = e.Base().Thrower.Name
-				pos_point := gonav.Vector3{X: float32(pos_x), Y: float32(pos_y), Z: float32(pos_z)}
-				area := mesh.GetNearestArea(pos_point, true)
+				playerID = e.Base().Thrower.SteamID
+				//playerName = e.Player.Name
+				posX = e.Base().Position.X
+				posY = e.Base().Position.Y
+				posZ = e.Base().Position.Z
+				posXViz, posYViz = mapMetadata.TranslateScale(posX, posY)
+				playerSide = e.Base().Thrower.Team
+				playerTeam = e.Base().Thrower.TeamState.ClanName
+				playerName = e.Base().Thrower.Name
+				posPoint := gonav.Vector3{X: float32(posX), Y: float32(posY), Z: float32(posZ)}
+				area := mesh.GetNearestArea(posPoint, true)
 				if area != nil {
-					area_id = area.ID
+					areaID = area.ID
 					if area.Place != nil {
-						area_place = area.Place.Name
+						areaPlace = area.Place.Name
 					}
 				}
 
-				if player_side == 2 {
-					player_side_string = "T"
-				} else if player_side == 3 {
-					player_side_string = "CT"
+				if playerSide == 2 {
+					playerSideString = "T"
+				} else if playerSide == 3 {
+					playerSideString = "CT"
 				}
 			}
-			grenade_type := e.Base().GrenadeType
+			grenadeType := e.Base().GrenadeType
 
-			if grenade_type != 503 {
+			if grenadeType != 503 {
 				fmt.Printf("[GRENADE] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %d, %s, %d]\n",
-					map_name, game_tick,
-					player_id, player_name, player_team, player_side_string,
-					pos_x, pos_y, pos_z, pos_x_viz, pos_y_viz,
-					area_id, area_place, grenade_type)
+					mapName, gameTick,
+					playerID, playerName, playerTeam, playerSideString,
+					posX, posY, posZ, posXViz, posYViz,
+					areaID, areaPlace, grenadeType)
 			}
 		}
 	})
 
 	p.RegisterEventHandler(func(e events.GrenadeProjectileDestroy) {
-		/* Parse grenade events
+		/* Parse incendiary grenade events
 		 */
 		warmup := p.GameState().IsWarmupPeriod()
 
 		// Only parse non-warmup grenade events
 		if warmup == false {
 			// First block (game state)
-			game_tick := p.GameState().IngameTick()
-			var map_name string = header.MapName
+			gameTick := p.GameState().IngameTick()
+			var mapName string = header.MapName
 
 			// Second block (player info)
-			var player_id int64 = 0
-			var player_name string = "NA"
-			var pos_x float64 = 0.0
-			var pos_y float64 = 0.0
-			var pos_z float64 = 0.0
-			var pos_x_viz float64 = 0.0
-			var pos_y_viz float64 = 0.0
-			var player_side common.Team
-			var player_side_string string = "NA"
-			var player_team string = "NA"
-			var area_id uint32 = 0
-			var area_place string = "NA"
+			var playerID int64 = 0
+			var playerName string = "NA"
+			var posX float64 = 0.0
+			var posY float64 = 0.0
+			var posZ float64 = 0.0
+			var posXViz float64 = 0.0
+			var posYViz float64 = 0.0
+			var playerSide common.Team
+			var playerSideString string = "NA"
+			var playerTeam string = "NA"
+			var areaID uint32 = 0
+			var areaPlace string = "NA"
 
 			if e.Projectile.Thrower == nil {
-				player_id = 0
+				playerID = 0
 			} else {
-				player_id = e.Projectile.Thrower.SteamID
-				//player_name = e.Player.Name
-				pos_x = e.Projectile.Position.X
-				pos_y = e.Projectile.Position.Y
-				pos_z = e.Projectile.Position.Z
-				pos_x_viz, pos_y_viz = mapMetadata.TranslateScale(pos_x, pos_y)
-				player_side = e.Projectile.Thrower.Team
-				player_team = e.Projectile.Thrower.TeamState.ClanName
-				player_name = e.Projectile.Thrower.Name
-				pos_point := gonav.Vector3{X: float32(pos_x), Y: float32(pos_y), Z: float32(pos_z)}
-				area := mesh.GetNearestArea(pos_point, true)
+				playerID = e.Projectile.Thrower.SteamID
+				//playerName = e.Player.Name
+				posX = e.Projectile.Position.X
+				posY = e.Projectile.Position.Y
+				posZ = e.Projectile.Position.Z
+				posXViz, posYViz = mapMetadata.TranslateScale(posX, posY)
+				playerSide = e.Projectile.Thrower.Team
+				playerTeam = e.Projectile.Thrower.TeamState.ClanName
+				playerName = e.Projectile.Thrower.Name
+				posPoint := gonav.Vector3{X: float32(posX), Y: float32(posY), Z: float32(posZ)}
+				area := mesh.GetNearestArea(posPoint, true)
 				if area != nil {
-					area_id = area.ID
+					areaID = area.ID
 					if area.Place != nil {
-						area_place = area.Place.Name
+						areaPlace = area.Place.Name
 					}
 				}
 
-				if player_side == 2 {
-					player_side_string = "T"
-				} else if player_side == 3 {
-					player_side_string = "CT"
+				if playerSide == 2 {
+					playerSideString = "T"
+				} else if playerSide == 3 {
+					playerSideString = "CT"
 				}
 			}
-			grenade_type := e.Projectile.WeaponInstance.Weapon
+			grenadeType := e.Projectile.WeaponInstance.Weapon
 
-			if grenade_type == 503 {
+			if grenadeType == 503 {
 				fmt.Printf("[GRENADE] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %d, %s, %d]\n",
-					map_name, game_tick,
-					player_id, player_name, player_team, player_side_string,
-					pos_x, pos_y, pos_z, pos_x_viz, pos_y_viz,
-					area_id, area_place, grenade_type)
+					mapName, gameTick,
+					playerID, playerName, playerTeam, playerSideString,
+					posX, posY, posZ, posXViz, posYViz,
+					areaID, areaPlace, grenadeType)
 			}
 		}
 	})
 
 	p.RegisterEventHandler(func(e events.Kill) {
 		/* Parse player kill events
-
-		Player kill events are defined in the parser as a Kill event. These
-		events occur when a player has been reached 0 HP, through a damage event.
-		*/
+		 */
 		warmup := p.GameState().IsWarmupPeriod()
 
 		// Only parse non-warmup kill events
 		if warmup == false {
 			// First block (game state)
-			game_tick := p.GameState().IngameTick()
-			var map_name string = header.MapName
+			gameTick := p.GameState().IngameTick()
+			var mapName string = header.MapName
 
 			// Second block (victim location)
-			var victim_x float64 = 0.0
-			var victim_y float64 = 0.0
-			var victim_z float64 = 0.0
-			var victim_x_viz float64 = 0.0
-			var victim_y_viz float64 = 0.0
-			var victim_closest_area_id uint32 = 0
-			var victim_closest_area_name string = "NA"
-			var victim_view_x float32 = 0.0
-			var victim_view_y float32 = 0.0
+			var victimX float64 = 0.0
+			var victimY float64 = 0.0
+			var victimZ float64 = 0.0
+			var VictimXViz float64 = 0.0
+			var VictimYViz float64 = 0.0
+			var VictimClosestAreaID uint32 = 0
+			var VictimClosestAreaName string = "NA"
+			var VictimViewX float32 = 0.0
+			var VictimViewY float32 = 0.0
 
 			// Third block (attacker location)
-			var attacker_x float64 = 0.0
-			var attacker_y float64 = 0.0
-			var attacker_z float64 = 0.0
-			var attacker_x_viz float64 = 0.0
-			var attacker_y_viz float64 = 0.0
-			var attacker_closest_area_id uint32 = 0
-			var attacker_closest_area_name string = "NA"
-			var attacker_view_x float32 = 0.0
-			var attacker_view_y float32 = 0.0
+			var attackerX float64 = 0.0
+			var attackerY float64 = 0.0
+			var attackerZ float64 = 0.0
+			var attackerXViz float64 = 0.0
+			var attackerYViz float64 = 0.0
+			var attackerClosestAreaID uint32 = 0
+			var attackerClosestAreaName string = "NA"
+			var attackerViewX float32 = 0.0
+			var attackerViewY float32 = 0.0
 
 			// Fourth block (victim player/team)
-			var victim_id int64 = 0
-			var victim_name string = "NA"
-			var victim_team string = "NA"
-			var victim_side common.Team
-			var victim_side_string string = "NA"
-			var victim_team_eq_val int = 0
+			var victimID int64 = 0
+			var victimName string = "NA"
+			var victimTeam string = "NA"
+			var victimSide common.Team
+			var victimSideString string = "NA"
+			var victimTeamEqVal int = 0
 
 			// Fifth block (attacker player/team)
-			var attacker_id int64 = 0
-			var attacker_name string = "NA"
-			var attacker_team string = "NA"
-			var attacker_side common.Team
-			var attacker_side_string string = "NA"
-			var attacker_team_eq_val int = 0
+			var attackerID int64 = 0
+			var attackerName string = "NA"
+			var attackerTeam string = "NA"
+			var attackerSide common.Team
+			var attackerSideString string = "NA"
+			var attackerTeamEqVal int = 0
 
 			// Sixth block (weapon/wallshot/headshot)
-			weapon_id := e.Weapon.Weapon
-			is_wallshot := e.PenetratedObjects
-			is_headshot := e.IsHeadshot
+			weaponID := e.Weapon.Weapon
+			isWallshot := e.PenetratedObjects
+			isHeadshot := e.IsHeadshot
 
 			// Find victim values
 			if e.Victim == nil {
-				victim_id = 0
+				victimID = 0
 			} else {
-				victim_id = e.Victim.SteamID
-				victim_x = e.Victim.Position.X
-				victim_y = e.Victim.Position.Y
-				victim_z = e.Victim.Position.Z
-				victim_x_viz, victim_y_viz = mapMetadata.TranslateScale(victim_x, victim_y)
-				victim_view_x = e.Victim.ViewDirectionX
-				victim_view_y = e.Victim.ViewDirectionY
-				victim_location := gonav.Vector3{X: float32(victim_x), Y: float32(victim_y), Z: float32(victim_z)}
-				victim_area := mesh.GetNearestArea(victim_location, true)
-				if victim_area != nil {
-					victim_closest_area_id = victim_area.ID
-					if victim_area.Place != nil {
-						victim_closest_area_name = victim_area.Place.Name
+				victimID = e.Victim.SteamID
+				victimX = e.Victim.Position.X
+				victimY = e.Victim.Position.Y
+				victimZ = e.Victim.Position.Z
+				VictimXViz, VictimYViz = mapMetadata.TranslateScale(victimX, victimY)
+				VictimViewX = e.Victim.ViewDirectionX
+				VictimViewY = e.Victim.ViewDirectionY
+				victimLoc := gonav.Vector3{X: float32(victimX), Y: float32(victimY), Z: float32(victimZ)}
+				victimArea := mesh.GetNearestArea(victimLoc, true)
+				if victimArea != nil {
+					VictimClosestAreaID = victimArea.ID
+					if victimArea.Place != nil {
+						VictimClosestAreaName = victimArea.Place.Name
 					}
 				}
-				victim_name = e.Victim.Name
-				victim_team = e.Victim.TeamState.ClanName
-				victim_side = e.Victim.Team
-				if victim_side == 2 {
-					victim_side_string = "T"
-				} else if victim_side == 3 {
-					victim_side_string = "CT"
+				victimName = e.Victim.Name
+				victimTeam = e.Victim.TeamState.ClanName
+				victimSide = e.Victim.Team
+				if victimSide == 2 {
+					victimSideString = "T"
+				} else if victimSide == 3 {
+					victimSideString = "CT"
 				}
-				victim_team_eq_val = e.Victim.TeamState.RoundStartEquipmentValue()
+				victimTeamEqVal = e.Victim.TeamState.RoundStartEquipmentValue()
 			}
 
 			// Find attacker values
 			if e.Killer == nil {
-				attacker_id = 0
+				attackerID = 0
 			} else {
-				attacker_id = e.Killer.SteamID
-				attacker_x = e.Killer.Position.X
-				attacker_y = e.Killer.Position.Y
-				attacker_z = e.Killer.Position.Z
-				attacker_x_viz, attacker_y_viz = mapMetadata.TranslateScale(attacker_x, attacker_y)
-				attacker_view_x = e.Killer.ViewDirectionX
-				attacker_view_y = e.Killer.ViewDirectionY
-				attacker_location := gonav.Vector3{X: float32(attacker_x), Y: float32(attacker_y), Z: float32(attacker_z)}
-				attacker_area := mesh.GetNearestArea(attacker_location, true)
-				if attacker_area != nil {
-					attacker_closest_area_id = attacker_area.ID
-					if attacker_area.Place != nil {
-						attacker_closest_area_name = attacker_area.Place.Name
+				attackerID = e.Killer.SteamID
+				attackerX = e.Killer.Position.X
+				attackerY = e.Killer.Position.Y
+				attackerZ = e.Killer.Position.Z
+				attackerXViz, attackerYViz = mapMetadata.TranslateScale(attackerX, attackerY)
+				attackerViewX = e.Killer.ViewDirectionX
+				attackerViewY = e.Killer.ViewDirectionY
+				attackerLoc := gonav.Vector3{X: float32(attackerX), Y: float32(attackerY), Z: float32(attackerZ)}
+				attackerArea := mesh.GetNearestArea(attackerLoc, true)
+				if attackerArea != nil {
+					attackerClosestAreaID = attackerArea.ID
+					if attackerArea.Place != nil {
+						attackerClosestAreaName = attackerArea.Place.Name
 					}
 				}
-				attacker_name = e.Killer.Name
-				attacker_team = e.Killer.TeamState.ClanName
-				attacker_side = e.Killer.Team
-				if attacker_side == 2 {
-					attacker_side_string = "T"
-				} else if attacker_side == 3 {
-					attacker_side_string = "CT"
+				attackerName = e.Killer.Name
+				attackerTeam = e.Killer.TeamState.ClanName
+				attackerSide = e.Killer.Team
+				if attackerSide == 2 {
+					attackerSideString = "T"
+				} else if attackerSide == 3 {
+					attackerSideString = "CT"
 				}
-				attacker_team_eq_val = e.Killer.TeamState.RoundStartEquipmentValue()
+				attackerTeamEqVal = e.Killer.TeamState.RoundStartEquipmentValue()
 			}
 
 			// Print a line of the kill information
 			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %t] \n",
-				map_name, game_tick,
-				victim_x, victim_y, victim_z, victim_x_viz, victim_y_viz, victim_view_x, victim_view_y, victim_closest_area_id, victim_closest_area_name,
-				attacker_x, attacker_y, attacker_z, attacker_x_viz, attacker_y_viz, attacker_view_x, attacker_view_y, attacker_closest_area_id, attacker_closest_area_name,
-				victim_id, victim_name, victim_team, victim_side_string, victim_team_eq_val,
-				attacker_id, attacker_name, attacker_team, attacker_side_string, attacker_team_eq_val,
-				weapon_id, is_wallshot, is_headshot)
+				mapName, gameTick,
+				victimX, victimY, victimZ, VictimXViz, VictimYViz, VictimViewX, VictimViewY, VictimClosestAreaID, VictimClosestAreaName,
+				attackerX, attackerY, attackerZ, attackerXViz, attackerYViz, attackerViewX, attackerViewY, attackerClosestAreaID, attackerClosestAreaName,
+				victimID, victimName, victimTeam, victimSideString, victimTeamEqVal,
+				attackerID, attackerName, attackerTeam, attackerSideString, attackerTeamEqVal,
+				weaponID, isWallshot, isHeadshot)
 		}
 	})
 
 	p.RegisterEventHandler(func(e events.RoundStart) {
 		/* Parse round start events
-
-		Round start events happen when a round starts.
-		*/
+		 */
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
@@ -455,10 +448,7 @@ func main() {
 
 	p.RegisterEventHandler(func(e events.RoundEnd) {
 		/* Parse round end events
-
-		Round end events happen when a round is ended, such as through a successful
-		bomb plant or through eliminating the other side.
-		*/
+		 */
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
@@ -494,9 +484,7 @@ func main() {
 
 	p.RegisterEventHandler(func(e events.MatchStart) {
 		/* Parse match start events
-
-		Match start events happen when a match officially starts.
-		*/
+		 */
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
@@ -508,229 +496,216 @@ func main() {
 
 	p.RegisterEventHandler(func(e events.BombPlanted) {
 		/* Parse bomb plant events
-
-		Bomb plant events happen when a bomb is successfully planted. We output
-		bomb plant events as:
-
-		[MAP_NAME, GAME_TICK] [PLAYER_ID, PLAYER_NAME, PLAYER_TEAM] [PLAYER_X,
-		PLAYER_Y, PLAYER_Z, AREA_ID, BOMB_SITE]
-		*/
+		 */
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
 		// Only parse non-warmup events
 		if warmup == false {
-			var bomb_site = "None"
-			var player_id int64 = 0
-			var player_name string = "NA"
-			var player_team string = "NA"
-			var player_x float64 = 0
-			var player_y float64 = 0
-			var player_z float64 = 0
-			var area_id uint32 = 0
+			var bombSite = "None"
+			var playerID int64 = 0
+			var playerName string = "NA"
+			var playerTeam string = "NA"
+			var playerX float64 = 0
+			var playerY float64 = 0
+			var playerZ float64 = 0
+			var areaID uint32 = 0
 
-			player_id = e.BombEvent.Player.SteamID
-			player_name = e.BombEvent.Player.Name
-			player_team = e.BombEvent.Player.TeamState.ClanName
-			player_x = e.BombEvent.Player.Position.X
-			player_y = e.BombEvent.Player.Position.Y
-			player_z = e.BombEvent.Player.Position.Z
+			playerID = e.BombEvent.Player.SteamID
+			playerName = e.BombEvent.Player.Name
+			playerTeam = e.BombEvent.Player.TeamState.ClanName
+			playerX = e.BombEvent.Player.Position.X
+			playerY = e.BombEvent.Player.Position.Y
+			playerZ = e.BombEvent.Player.Position.Z
 
-			player_point := gonav.Vector3{X: float32(player_x), Y: float32(player_y), Z: float32(player_z)}
-			area := mesh.GetNearestArea(player_point, true)
+			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
+			area := mesh.GetNearestArea(playerPoint, true)
 			if area != nil {
-				area_id = area.ID
+				areaID = area.ID
 			}
 
 			if e.Site == 65 {
-				bomb_site = "A"
+				bombSite = "A"
 			} else if e.Site == 66 {
-				bomb_site = "B"
+				bombSite = "B"
 			}
 			fmt.Printf("[BOMB PLANT] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
 				header.MapName, gs.IngameTick(),
-				player_id, player_name, player_team,
-				player_x, player_y, player_z, area_id, bomb_site)
+				playerID, playerName, playerTeam,
+				playerX, playerY, playerZ, areaID, bombSite)
 		}
 	})
 
 	p.RegisterEventHandler(func(e events.BombDefused) {
 		/* Parse bomb defuse events
-
-		Bomb defuse events happen when a bomb is successfully defused.
-		*/
+		 */
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
 		// Only parse non-warmup events
 		if warmup == false {
-			var bomb_site = "None"
-			var player_id int64 = 0
-			var player_name string = "NA"
-			var player_team string = "NA"
-			var player_x float64 = 0
-			var player_y float64 = 0
-			var player_z float64 = 0
-			var area_id uint32 = 0
+			var bombSite = "None"
+			var playerID int64 = 0
+			var playerName string = "NA"
+			var playerTeam string = "NA"
+			var playerX float64 = 0
+			var playerY float64 = 0
+			var playerZ float64 = 0
+			var areaID uint32 = 0
 
-			player_id = e.BombEvent.Player.SteamID
-			player_name = e.BombEvent.Player.Name
-			player_team = e.BombEvent.Player.TeamState.ClanName
-			player_x = e.BombEvent.Player.Position.X
-			player_y = e.BombEvent.Player.Position.Y
-			player_z = e.BombEvent.Player.Position.Z
+			playerID = e.BombEvent.Player.SteamID
+			playerName = e.BombEvent.Player.Name
+			playerTeam = e.BombEvent.Player.TeamState.ClanName
+			playerX = e.BombEvent.Player.Position.X
+			playerY = e.BombEvent.Player.Position.Y
+			playerZ = e.BombEvent.Player.Position.Z
 
-			player_point := gonav.Vector3{X: float32(player_x), Y: float32(player_y), Z: float32(player_z)}
-			area := mesh.GetNearestArea(player_point, true)
+			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
+			area := mesh.GetNearestArea(playerPoint, true)
 			if area != nil {
-				area_id = area.ID
+				areaID = area.ID
 			}
 
 			if e.Site == 65 {
-				bomb_site = "A"
+				bombSite = "A"
 			} else if e.Site == 66 {
-				bomb_site = "B"
+				bombSite = "B"
 			}
 			fmt.Printf("[BOMB DEFUSE] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
 				header.MapName, gs.IngameTick(),
-				player_id, player_name, player_team,
-				player_x, player_y, player_z, area_id, bomb_site)
+				playerID, playerName, playerTeam,
+				playerX, playerY, playerZ, areaID, bombSite)
 		}
 	})
 
 	p.RegisterEventHandler(func(e events.BombDefused) {
 		/* Parse bomb explode events
-
-		Bomb explode events happen when a bomb explodes.
-		*/
+		 */
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
 		// Only parse non-warmup events
 		if warmup == false {
-			var bomb_site = "None"
-			var player_id int64 = 0
-			var player_name string = "NA"
-			var player_team string = "NA"
-			var player_x float64 = 0
-			var player_y float64 = 0
-			var player_z float64 = 0
-			var area_id uint32 = 0
+			var bombSite = "None"
+			var playerID int64 = 0
+			var playerName string = "NA"
+			var playerTeam string = "NA"
+			var playerX float64 = 0
+			var playerY float64 = 0
+			var playerZ float64 = 0
+			var areaID uint32 = 0
 
-			player_id = e.BombEvent.Player.SteamID
-			player_name = e.BombEvent.Player.Name
-			player_team = e.BombEvent.Player.TeamState.ClanName
-			player_x = e.BombEvent.Player.Position.X
-			player_y = e.BombEvent.Player.Position.Y
-			player_z = e.BombEvent.Player.Position.Z
+			playerID = e.BombEvent.Player.SteamID
+			playerName = e.BombEvent.Player.Name
+			playerTeam = e.BombEvent.Player.TeamState.ClanName
+			playerX = e.BombEvent.Player.Position.X
+			playerY = e.BombEvent.Player.Position.Y
+			playerZ = e.BombEvent.Player.Position.Z
 
-			player_point := gonav.Vector3{X: float32(player_x), Y: float32(player_y), Z: float32(player_z)}
-			area := mesh.GetNearestArea(player_point, true)
+			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
+			area := mesh.GetNearestArea(playerPoint, true)
 			if area != nil {
-				area_id = area.ID
+				areaID = area.ID
 			}
 
 			if e.Site == 65 {
-				bomb_site = "A"
+				bombSite = "A"
 			} else if e.Site == 66 {
-				bomb_site = "B"
+				bombSite = "B"
 			}
 			fmt.Printf("[BOMB EXPLODE] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
 				header.MapName, gs.IngameTick(),
-				player_id, player_name, player_team,
-				player_x, player_y, player_z, area_id, bomb_site)
+				playerID, playerName, playerTeam,
+				playerX, playerY, playerZ, areaID, bombSite)
 		}
 	})
 
 	p.RegisterEventHandler(func(e events.Footstep) {
 		/* Parse player footstep events
-
-		Player footstep events are defined in the parser as a Footstep event. These
-		events occur when a player moves in game.
-		*/
+		 */
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
 		// Only parse non-warmup footsteps
 		if warmup == false {
-			var player_id int64 = 0
-			var player_name string = "NA"
-			var player_x float64 = 0.0
-			var player_y float64 = 0.0
-			var player_z float64 = 0.0
-			var player_x_viz float64 = 0.0
-			var player_y_viz float64 = 0.0
-			var player_view_x float32 = 0.0
-			var player_view_y float32 = 0.0
-			var player_side common.Team
-			var player_side_string string = "NA"
-			var player_team string = "NA"
-			var area_id uint32 = 0
-			var area_place string = "NA"
-			var distance_bombsite_a int = 999
-			var distance_bombsite_b int = 999
+			var playerID int64 = 0
+			var playerName string = "NA"
+			var playerX float64 = 0.0
+			var playerY float64 = 0.0
+			var playerZ float64 = 0.0
+			var playerXViz float64 = 0.0
+			var playerYViz float64 = 0.0
+			var playerViewX float32 = 0.0
+			var playerViewY float32 = 0.0
+			var playerSide common.Team
+			var playerSideString string = "NA"
+			var playerTeam string = "NA"
+			var areaID uint32 = 0
+			var areaPlace string = "NA"
+			var distanceBombsiteA int = 999
+			var distanceBombsiteB int = 999
 
 			if e.Player == nil {
-				player_id = 0
+				playerID = 0
 			} else {
-				player_id = e.Player.SteamID
-				//player_name = e.Player.Name
-				player_x = e.Player.Position.X
-				player_y = e.Player.Position.Y
-				player_z = e.Player.Position.Z
-				player_view_x = e.Player.ViewDirectionX
-				player_view_y = e.Player.ViewDirectionY
-				player_x_viz, player_y_viz = mapMetadata.TranslateScale(player_x, player_y)
-				player_side = e.Player.Team
-				player_team = e.Player.TeamState.ClanName
-				player_name = e.Player.Name
-				player_point := gonav.Vector3{X: float32(player_x), Y: float32(player_y), Z: float32(player_z)}
-				//area := mesh.GetNearestArea(player_point, false)
-				//player_point := gonav.Vector3{X: float32(1293.267944), Y: float32(1532.817139), Z: float32(1.031250)}
-				area := mesh.GetNearestArea(player_point, true)
+				playerID = e.Player.SteamID
+				//playerName = e.Player.Name
+				playerX = e.Player.Position.X
+				playerY = e.Player.Position.Y
+				playerZ = e.Player.Position.Z
+				playerViewX = e.Player.ViewDirectionX
+				playerViewY = e.Player.ViewDirectionY
+				playerXViz, playerYViz = mapMetadata.TranslateScale(playerX, playerY)
+				playerSide = e.Player.Team
+				playerTeam = e.Player.TeamState.ClanName
+				playerName = e.Player.Name
+				playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
+				//area := mesh.GetNearestArea(playerPoint, false)
+				//playerPoint := gonav.Vector3{X: float32(1293.267944), Y: float32(1532.817139), Z: float32(1.031250)}
+				area := mesh.GetNearestArea(playerPoint, true)
 				if area != nil {
-					area_id = area.ID
+					areaID = area.ID
 					if area.Place != nil {
-						area_place = area.Place.Name
+						areaPlace = area.Place.Name
 					}
 				}
 				// Bombsite A distance
-				bombsite_mesh_a := mesh.GetPlaceByName("BombsiteA")
-				bombsite_center_a, _ := bombsite_mesh_a.GetEstimatedCenter()
-				bombsite_area_a := mesh.GetNearestArea(bombsite_center_a, false)
-				path_a, _ := gonav.SimpleBuildShortestPath(area, bombsite_area_a)
-				var areas_visited_a int = 0
-				for _, currNode := range path_a.Nodes {
+				bombsiteMeshA := mesh.GetPlaceByName("BombsiteA")
+				bombsiteCenterA, _ := bombsiteMeshA.GetEstimatedCenter()
+				bombsiteAreaA := mesh.GetNearestArea(bombsiteCenterA, false)
+				pathA, _ := gonav.SimpleBuildShortestPath(area, bombsiteAreaA)
+				var areasVisitedA int = 0
+				for _, currNode := range pathA.Nodes {
 					if currNode != nil {
-						areas_visited_a = areas_visited_a + 1
+						areasVisitedA = areasVisitedA + 1
 					}
 				}
-				distance_bombsite_a = areas_visited_a
+				distanceBombsiteA = areasVisitedA
 				// Bombsite B distance
-				bombsite_mesh_b := mesh.GetPlaceByName("BombsiteB")
-				bombsite_center_b, _ := bombsite_mesh_b.GetEstimatedCenter()
-				bombsite_area_b := mesh.GetNearestArea(bombsite_center_b, false)
-				path_b, _ := gonav.SimpleBuildShortestPath(area, bombsite_area_b)
-				var areas_visited_b int = 0
-				for _, currNode := range path_b.Nodes {
+				bombsiteMeshB := mesh.GetPlaceByName("BombsiteB")
+				bombsiteCenterB, _ := bombsiteMeshB.GetEstimatedCenter()
+				bombsiteAreaB := mesh.GetNearestArea(bombsiteCenterB, false)
+				pathB, _ := gonav.SimpleBuildShortestPath(area, bombsiteAreaB)
+				var areasVisitedB int = 0
+				for _, currNode := range pathB.Nodes {
 					if currNode != nil {
-						areas_visited_b = areas_visited_b + 1
+						areasVisitedB = areasVisitedB + 1
 					}
 				}
-				distance_bombsite_b = areas_visited_b
+				distanceBombsiteB = areasVisitedB
 			}
 
-			if player_side == 2 {
-				player_side_string = "T"
-			} else if player_side == 3 {
-				player_side_string = "CT"
+			if playerSide == 2 {
+				playerSideString = "T"
+			} else if playerSide == 3 {
+				playerSideString = "CT"
 			}
 
 			fmt.Printf("[FOOTSTEP] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s, %d, %d] \n",
 				header.MapName, gs.IngameTick(),
-				player_id, player_name, player_team, player_side_string,
-				player_x, player_y, player_z, player_x_viz, player_y_viz, player_view_x, player_view_y,
-				area_id, area_place, distance_bombsite_a, distance_bombsite_b)
+				playerID, playerName, playerTeam, playerSideString,
+				playerX, playerY, playerZ, playerXViz, playerYViz, playerViewX, playerViewY,
+				areaID, areaPlace, distanceBombsiteA, distanceBombsiteB)
 		}
 	})
 
