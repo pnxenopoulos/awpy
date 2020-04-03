@@ -95,10 +95,11 @@ class TestCSGOParser:
         assert footsteps_df.iloc[777,:].XViz == 695.284979
         assert footsteps_df.iloc[777,:].YViz == -601.46766
         assert footsteps_df.iloc[777,:].AreaID == 1432
-        assert footsteps_df.iloc[777,:].YViz == "LongDoors"
+        assert footsteps_df.iloc[777,:].AreaName == "LongDoors"
 
     def test_write_data(self):
         """ Tests write data method.
         """
         df_dict = self.parser.write_data()
-        assert(len(df_dict.keys()) == 6)
+        assert len(df_dict.keys()) == 6
+        assert df_dict["Rounds"].shape[0] == 21
