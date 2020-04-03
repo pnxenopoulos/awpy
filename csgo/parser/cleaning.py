@@ -6,10 +6,10 @@ import pandas as pd
 from csgo.analytics.distance import point_distance
 
 
-def clean_footsteps(df, max_dist = 500):
+def clean_footsteps(df, max_dist=500):
     """ A function to clean a dataframe of footsteps, as created by the match_parser
     """
-    for r in range(0, df.RoundNum.max()+1):
+    for r in range(0, df.RoundNum.max() + 1):
         for p in df.SteamID.unique():
             player_df = df[(df["RoundNum"] == r) & (df["SteamID"] == p)]
             player_pos = []
@@ -20,5 +20,7 @@ def clean_footsteps(df, max_dist = 500):
                 if i == 0:
                     player_pos_clean.append(0)
                 else:
-                    player_pos_clean.append(distance.euclidean(list(pos), list(player_pos[i-1])))
+                    player_pos_clean.append(
+                        distance.euclidean(list(pos), list(player_pos[i - 1]))
+                    )
     return NotImplementedError

@@ -22,7 +22,15 @@ class CSGOMatchParser:
         game_time: A string denoting the time of day of the demo
     """
 
-    def __init__(self, demofile="", logfile="parser.log", competition_name="", match_name="", game_date="", game_time=""):
+    def __init__(
+        self,
+        demofile="",
+        logfile="parser.log",
+        competition_name="",
+        match_name="",
+        game_date="",
+        game_time="",
+    ):
         """ Initialize a CSGOMatchParser object
         """
         self.demofile = demofile
@@ -30,7 +38,9 @@ class CSGOMatchParser:
         self.match_name = match_name
         self.game_date = game_date
         self.game_time = game_time
-        self.game_id = competition_name + "_" + match_name + "_" + game_date + "_" + game_time
+        self.game_id = (
+            competition_name + "_" + match_name + "_" + game_date + "_" + game_time
+        )
         self.match_start = 0
         self.rounds = []
         self.demo_error = False
@@ -140,7 +150,15 @@ class CSGOMatchParser:
         self.match_event_id = self.demofile[self.demofile.rfind("/") + 1 : -4]
         path = os.path.join(os.path.dirname(__file__), "")
         proc = subprocess.Popen(
-            ["go", "run", "parse_demofile.go", "-demo", os.getcwd() + "/" + self.demofile], stdout=subprocess.PIPE, cwd=path
+            [
+                "go",
+                "run",
+                "parse_demofile.go",
+                "-demo",
+                os.getcwd() + "/" + self.demofile,
+            ],
+            stdout=subprocess.PIPE,
+            cwd=path,
         )
         self.parsed_text = proc.stdout.read().splitlines()
         self.parsed_text = [event.decode("utf-8") for event in self.parsed_text]
@@ -248,14 +266,16 @@ class CSGOMatchParser:
                 current_footstep.x = float(third_block[0])
                 current_footstep.y = float(third_block[1].strip())
                 current_footstep.z = float(third_block[2].strip())
-                current_footstep.x_viz = float(third_block[3].strip())*-1
-                current_footstep.y_viz = float(third_block[4].strip())*-1
+                current_footstep.x_viz = float(third_block[3].strip())
+                current_footstep.y_viz = float(third_block[4].strip()) * -1
                 current_footstep.view_x = float(third_block[5].strip())
                 current_footstep.view_y = float(third_block[6].strip())
                 current_footstep.area_id = int(third_block[7].strip())
                 current_footstep.area_name = third_block[8].strip()
                 current_footstep.distance_bombsite_a = int(third_block[9].strip())
-                current_footstep.distance_bombsite_b = int(third_block[10].replace("]", "").strip())
+                current_footstep.distance_bombsite_b = int(
+                    third_block[10].replace("]", "").strip()
+                )
                 current_footstep_list.append(current_footstep)
             if "[DAMAGE]" in event:
                 current_damage = Damage()
@@ -267,8 +287,8 @@ class CSGOMatchParser:
                 current_damage.victim_x = float(second_block[0])
                 current_damage.victim_y = float(second_block[1].strip())
                 current_damage.victim_z = float(second_block[2].strip())
-                current_damage.victim_x_viz = float(second_block[3].strip())*-1
-                current_damage.victim_y_viz = float(second_block[4].strip())*-1
+                current_damage.victim_x_viz = float(second_block[3].strip())
+                current_damage.victim_y_viz = float(second_block[4].strip()) * -1
                 current_damage.victim_view_x = float(second_block[5].strip())
                 current_damage.victim_view_y = float(second_block[6].strip())
                 current_damage.victim_area_id = int(second_block[7].strip())
@@ -278,8 +298,8 @@ class CSGOMatchParser:
                 current_damage.attacker_x = float(third_block[0])
                 current_damage.attacker_y = float(third_block[1].strip())
                 current_damage.attacker_z = float(third_block[2].strip())
-                current_damage.attacker_x_viz = float(third_block[3].strip())*-1
-                current_damage.attacker_y_viz = float(third_block[4].strip())*-1
+                current_damage.attacker_x_viz = float(third_block[3].strip())
+                current_damage.attacker_y_viz = float(third_block[4].strip()) * -1
                 current_damage.attacker_view_x = float(third_block[5].strip())
                 current_damage.attacker_view_y = float(third_block[6].strip())
                 current_damage.attacker_area_id = int(third_block[7].strip())
@@ -321,8 +341,8 @@ class CSGOMatchParser:
                 current_kill.victim_x = float(second_block[0])
                 current_kill.victim_y = float(second_block[1].strip())
                 current_kill.victim_z = float(second_block[2].strip())
-                current_kill.victim_x_viz = float(second_block[3].strip())*-1
-                current_kill.victim_y_viz = float(second_block[4].strip())*-1
+                current_kill.victim_x_viz = float(second_block[3].strip())
+                current_kill.victim_y_viz = float(second_block[4].strip()) * -1
                 current_kill.victim_view_x = float(second_block[5].strip())
                 current_kill.victim_view_y = float(second_block[6].strip())
                 current_kill.victim_area_id = int(second_block[7].strip())
@@ -332,8 +352,8 @@ class CSGOMatchParser:
                 current_kill.attacker_x = float(third_block[0])
                 current_kill.attacker_y = float(third_block[1].strip())
                 current_kill.attacker_z = float(third_block[2].strip())
-                current_kill.attacker_x_viz = float(third_block[3].strip())*-1
-                current_kill.attacker_y_viz = float(third_block[4].strip())*-1
+                current_kill.attacker_x_viz = float(third_block[3].strip())
+                current_kill.attacker_y_viz = float(third_block[4].strip()) * -1
                 current_kill.attacker_view_x = float(third_block[5].strip())
                 current_kill.attacker_view_y = float(third_block[6].strip())
                 current_kill.attacker_area_id = int(third_block[7].strip())
@@ -439,11 +459,13 @@ class CSGOMatchParser:
                 current_grenade.x = float(third_block[0])
                 current_grenade.y = float(third_block[1].strip())
                 current_grenade.z = float(third_block[2].strip())
-                current_grenade.x_viz = float(third_block[3].strip())*-1
-                current_grenade.y_viz = float(third_block[4].strip())*-1
+                current_grenade.x_viz = float(third_block[3].strip())
+                current_grenade.y_viz = float(third_block[4].strip()) * -1
                 current_grenade.area_id = int(third_block[5].strip())
                 current_grenade.area_name = third_block[6].strip()
-                current_grenade.grenade_type = CSGOMatchParser.get_weapon(int(third_block[7].replace("]", "").strip()))
+                current_grenade.grenade_type = CSGOMatchParser.get_weapon(
+                    int(third_block[7].replace("]", "").strip())
+                )
                 # Add current grenades to round
                 current_grenade_list.append(current_grenade)
         # Clean the rounds info
@@ -469,17 +491,21 @@ class CSGOMatchParser:
             round_score_total.append(r.end_ct_score + r.end_t_score)
         start_round_idx = 0
         for i, score in enumerate(round_score_total):
-            if i == 0 and (score == 1 or score == 0) and round_score_total[i+1] == 2:
+            if i == 0 and (score == 1 or score == 0) and round_score_total[i + 1] == 2:
                 start_round_idx = i
             else:
-                if i != len(round_score_total)-1 and (score == 1 or score == 0) and round_score_total[i+1] == 1:
+                if (
+                    i != len(round_score_total) - 1
+                    and (score == 1 or score == 0)
+                    and round_score_total[i + 1] == 1
+                ):
                     start_round_idx = i
         self.rounds = self.rounds[start_round_idx:]
         total_popped = 0
         for i, r in enumerate(self.rounds):
             score = r.end_ct_score + r.end_t_score
             if (score == 0 or score == 1) and i > 0:
-                self.rounds.pop(i-total_popped)
+                self.rounds.pop(i - total_popped)
                 total_popped = total_popped + 1
 
     def write_grenades(self):
@@ -510,7 +536,7 @@ class CSGOMatchParser:
                         g.y_viz,
                         g.area_id,
                         g.area_name,
-                        g.grenade_type
+                        g.grenade_type,
                     ]
                 )
         self.grenades_df = pd.DataFrame(

@@ -7,6 +7,7 @@ import numpy as np
 
 from scipy.spatial import distance
 
+
 def bombsite_distance(location, bombsite="A", map="de_dust2"):
     """ Returns the distance between a location and a given bombsite
 
@@ -30,12 +31,13 @@ def bombsite_distance(location, bombsite="A", map="de_dust2"):
             "-start_z",
             str(location[2]),
             "-bombsite",
-            bombsite
+            bombsite,
         ],
         stdout=subprocess.PIPE,
         cwd=path,
     )
     return int(proc.stdout.read().decode("utf-8"))
+
 
 def point_distance(point_a, point_b, type="graph", map="de_dust2"):
     """ Returns the distance between two points using a given method on a given map (if needed)
@@ -81,6 +83,7 @@ def point_distance(point_a, point_b, type="graph", map="de_dust2"):
     elif type == "cosine":
         return distance.cosine(point_a, point_b)
 
+
 def polygon_area(x, y):
     """ Returns area of a polygon given x,y coordinates of vertices
 
@@ -88,4 +91,4 @@ def polygon_area(x, y):
         x: A list of floats indicating x index of vertices
         y: A list of floats indicating y index of vertices
     """
-    return 0.5*np.abs(np.dot(x, np.roll(y,1)) - np.dot(y, np.roll(x,1)))
+    return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))

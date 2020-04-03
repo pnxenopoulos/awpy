@@ -1,6 +1,7 @@
 """ Classes for CSGO events
 """
 
+
 class Grenade:
     """ An object to detail a round's grenade events
 
@@ -21,12 +22,12 @@ class Grenade:
     """
 
     def __init__(
-        self, 
-        tick=0, 
-        player_name="", 
-        steam_id=0, 
+        self,
+        tick=0,
+        player_name="",
+        steam_id=0,
         team="",
-        side="", 
+        side="",
         x=0,
         y=0,
         z=0,
@@ -34,7 +35,8 @@ class Grenade:
         y_viz=0,
         area_id=0,
         area_name="",
-        grenade_type=""):
+        grenade_type="",
+    ):
         """ Create a grenade trajectory object
         """
         self.tick = tick
