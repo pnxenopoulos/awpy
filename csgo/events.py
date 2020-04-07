@@ -260,6 +260,10 @@ class Kill:
         - attacker_team (string)    : Attacker's team/clan name
         - attacker_side (string)    : Attacker's side (T or CT)
         - attacker_team_eq_val (int): Attacker team's starting equipment value
+        - assister_id (int)         : Assister's steam id
+        - assister_name (int)       : Assister's username
+        - assister_team (string)    : Assister's team/clan name
+        - assister_side (string)    : Assister's side (T or CT)
         - weapon_id (int)           : Weapon id
         - is_wallshot (boolean)     : If kill was a wallshot then 1, 0 otherwise
         - is_headshot (boolean)     : If kill was a headshot then 1, 0 otherwise
@@ -296,6 +300,10 @@ class Kill:
         attacker_team="",
         attacker_side="",
         attacker_team_eq_val=0,
+        assister_id=0,
+        assister_name="",
+        assister_team="",
+        assister_side="",
         weapon_id=0,
         is_wallshot=False,
         is_headshot=False,
@@ -328,6 +336,10 @@ class Kill:
         self.attacker_team = attacker_team
         self.attacker_side = attacker_side
         self.attacker_team_eq_val = attacker_team_eq_val
+        self.assister_id = assister_id
+        self.assister_name = assister_name
+        self.assister_team = assister_team
+        self.assister_side = assister_side
         self.weapon_id = weapon_id
         self.is_wallshot = is_wallshot
         self.is_headshot = is_headshot

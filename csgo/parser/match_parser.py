@@ -162,7 +162,7 @@ class CSGOMatchParser:
         self.parsed_text = proc.stdout.read().splitlines()
         self.parsed_text = [event.decode("utf-8") for event in self.parsed_text]
         self.parsed_text = [event[:-1] for event in self.parsed_text]
-        if "[ERROR]" in self.parsed_text:
+        if "[ERROR]" in self.parsed_text[0]:
             self.demo_error = True
         self.logger.info("Demofile parsing complete")
 
@@ -373,9 +373,15 @@ class CSGOMatchParser:
                 current_kill.attacker_team_eq_val = int(fifth_block[4].strip())
                 # Sixth block
                 sixth_block = split_line[6].split(",")
-                current_kill.weapon_id = CSGOMatchParser.get_weapon(int(sixth_block[0]))
-                current_kill.is_wallshot = int(sixth_block[1].strip())
-                current_kill.is_headshot = sixth_block[2].replace("]", "").strip()
+                current_kill.assister_id = int(fsixth_block[0])
+                current_kill.assister_name = sixth_block[1].strip()
+                current_kill.assister_team = sixth_block[2].strip()
+                current_kill.assister_side = sixth_block[3].strip()
+                # Seventh block
+                seventh_block = split_line[7].split(",")
+                current_kill.weapon_id = CSGOMatchParser.get_weapon(int(seventh_block[0]))
+                current_kill.is_wallshot = int(seventh_block[1].strip())
+                current_kill.is_headshot = seventh_block[2].replace("]", "").strip()
                 if current_kill.is_headshot == "true":
                     current_kill.is_headshot = 1
                 else:

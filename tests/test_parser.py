@@ -64,7 +64,7 @@ class TestCSGOParser:
         """
         self.parser.write_bomb_events()
         bomb_df = self.parser.bomb_df
-        assert bomb_df.loc[bomb_df["RoundNum"] == 14,["Tick", "EventType"]].shape[0] == 2
+        assert bomb_df.loc[bomb_df["RoundNum"] == 16,["Tick", "EventType"]].shape[0] == 2
 
     def test_damage_total(self):
         """ Tests for correct damage per round.

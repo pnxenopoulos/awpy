@@ -357,6 +357,11 @@ func main() {
 			var attackerSide common.Team
 			var attackerSideString string = "NA"
 			var attackerTeamEqVal int = 0
+			var attackerAssistID int64 = 0
+			var attackerAssistName string = "NA"
+			var attackerAssistTeam string = "NA"
+			var attackerAssistSide common.Team
+			var attackerAssistSideString string = "NA"
 
 			// Sixth block (weapon/wallshot/headshot)
 			weaponID := e.Weapon.Weapon
@@ -423,13 +428,29 @@ func main() {
 				attackerTeamEqVal = e.Killer.TeamState.RoundStartEquipmentValue()
 			}
 
+			// Find assister values
+			if e.Assister == nil {
+				attackerAssistID = 0
+			} else {
+				attackerAssistID = e.Assister.SteamID
+				attackerAssistName = e.Assister.Name
+				attackerAssistTeam = e.Assister.TeamState.ClanName
+				attackerAssistSide = e.Assister.Team
+				if attackerAssistSide == 2 {
+					attackerAssistSideString = "T"
+				} else {
+					attackerAssistSideString = "CT"
+				}
+			}
+
 			// Print a line of the kill information
-			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %d, %t] \n",
+			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %s, %s, %s]  [%d, %d, %t] \n",
 				mapName, gameTick,
 				victimX, victimY, victimZ, VictimXViz, VictimYViz, VictimViewX, VictimViewY, VictimClosestAreaID, VictimClosestAreaName,
 				attackerX, attackerY, attackerZ, attackerXViz, attackerYViz, attackerViewX, attackerViewY, attackerClosestAreaID, attackerClosestAreaName,
 				victimID, victimName, victimTeam, victimSideString, victimTeamEqVal,
 				attackerID, attackerName, attackerTeam, attackerSideString, attackerTeamEqVal,
+				attackerAssistID, attackerAssistName, attackerAssistTeam, attackerAssistSideString,
 				weaponID, isWallshot, isHeadshot)
 		}
 	})
