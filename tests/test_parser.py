@@ -32,6 +32,13 @@ class TestCSGOParser:
         self.parser.parse_match()
         assert len(self.parser.rounds) == 21
 
+    def test_parse_error(self):
+        """ Tests if parser errors on bad file
+        """
+        self.parser = CSGOMatchParser(demofile="tests/file-no-exist.dem", competition_name="IEM-Katowice-2020", match_name="Natus-Vincere-vs-Astralis", game_date="02-29-2020", game_time="13:35")
+        self.parser.parse_demofile()
+        assert self.parser.demo_error == True
+
     def test_parse(self):
         """ Tests if parse wrapper method works
         """

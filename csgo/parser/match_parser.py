@@ -41,7 +41,6 @@ class CSGOMatchParser:
         self.game_id = (
             competition_name + "_" + match_name + "_" + game_date + "_" + game_time
         )
-        self.match_start = 0
         self.rounds = []
         self.demo_error = False
         self.logfile = logfile
@@ -172,15 +171,15 @@ class CSGOMatchParser:
         """
         self.logger.info("Parsing match text")
         self.rounds = []
-        for i, event in enumerate(self.parsed_text):
-            if self.match_start == 0 and i == 0:
-                current_round = Round()
-                current_footstep_list = []
-                current_kills_list = []
-                current_damages_list = []
-                current_bomb_events_list = []
-                current_grenade_list = []
-                current_round.start_tick = 0
+        # Set default round stuff
+        current_round = Round()
+        current_footstep_list = []
+        current_kills_list = []
+        current_damages_list = []
+        current_bomb_events_list = []
+        current_grenade_list = []
+        current_round.start_tick = 0
+        for event in self.parsed_text:
             if "[MATCH START]" in event:
                 current_round = Round()
                 current_footstep_list = []
@@ -523,7 +522,7 @@ class CSGOMatchParser:
                         self.game_date,
                         self.game_time,
                         r.map_name,
-                        i,
+                        i + 1,
                         g.tick,
                         g.steam_id,
                         g.player_name,
@@ -580,7 +579,7 @@ class CSGOMatchParser:
                         self.game_date,
                         self.game_time,
                         r.map_name,
-                        i,
+                        i + 1,
                         be.tick,
                         be.steam_id,
                         be.player_name,
@@ -625,7 +624,7 @@ class CSGOMatchParser:
                         self.game_date,
                         self.game_time,
                         r.map_name,
-                        i,
+                        i + 1,
                         f.tick,
                         f.steam_id,
                         f.player_name,
@@ -689,7 +688,7 @@ class CSGOMatchParser:
                         self.game_date,
                         self.game_time,
                         r.map_name,
-                        i,
+                        i + 1,
                         f.tick,
                         f.victim_x,
                         f.victim_y,
@@ -785,7 +784,7 @@ class CSGOMatchParser:
                         self.game_date,
                         self.game_time,
                         r.map_name,
-                        i,
+                        i + 1,
                         f.tick,
                         f.victim_x,
                         f.victim_y,
@@ -883,7 +882,7 @@ class CSGOMatchParser:
                     self.game_date,
                     self.game_time,
                     r.map_name,
-                    i,
+                    i + 1,
                     r.start_tick,
                     r.end_tick,
                     r.end_ct_score,
