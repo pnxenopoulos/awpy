@@ -373,7 +373,7 @@ class CSGOMatchParser:
                 current_kill.attacker_team_eq_val = int(fifth_block[4].strip())
                 # Sixth block
                 sixth_block = split_line[6].split(",")
-                current_kill.assister_id = int(fsixth_block[0])
+                current_kill.assister_id = int(sixth_block[0])
                 current_kill.assister_name = sixth_block[1].strip()
                 current_kill.assister_team = sixth_block[2].strip()
                 current_kill.assister_side = sixth_block[3].strip()
