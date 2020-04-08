@@ -373,10 +373,8 @@ func main() {
 			if e.Victim == nil {
 				victimID = 0
 			} else {
-				flashDuration := e.Victim.FlashDuration
-				if flashDuration > 0 {
-					isFlashed = true
-				}
+				isFlashed = e.Victim.IsBlinded()
+
 				victimID = e.Victim.SteamID
 				victimX = e.Victim.Position.X
 				victimY = e.Victim.Position.Y
