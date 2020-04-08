@@ -137,7 +137,7 @@ func main() {
 				} else if victimSide == 3 {
 					victimSideString = "CT"
 				}
-				victimTeamEqVal = e.Player.TeamState.RoundStartEquipmentValue()
+				victimTeamEqVal = e.Player.TeamState.CurrentEquipmentValue()
 			}
 
 			// Find attacker values
@@ -167,7 +167,7 @@ func main() {
 				} else if attackerSide == 3 {
 					attackerSideString = "CT"
 				}
-				attackerTeamEqVal = e.Attacker.TeamState.RoundStartEquipmentValue()
+				attackerTeamEqVal = e.Attacker.TeamState.CurrentEquipmentValue()
 			}
 
 			// Print a line of the damage information
@@ -395,7 +395,7 @@ func main() {
 				} else if victimSide == 3 {
 					victimSideString = "CT"
 				}
-				victimTeamEqVal = e.Victim.TeamState.RoundStartEquipmentValue()
+				victimTeamEqVal = e.Victim.TeamState.CurrentEquipmentValue()
 			}
 
 			// Find attacker values
@@ -425,7 +425,7 @@ func main() {
 				} else if attackerSide == 3 {
 					attackerSideString = "CT"
 				}
-				attackerTeamEqVal = e.Killer.TeamState.RoundStartEquipmentValue()
+				attackerTeamEqVal = e.Killer.TeamState.CurrentEquipmentValue()
 			}
 
 			// Find assister values
@@ -475,6 +475,17 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if warmup == false {
+
+			fmt.Printf("[ROUND PURCHASE] [%s, %d] [T, %d, %d, %d] [CT, %d, %d, %d] \n",
+				header.MapName, gs.IngameTick(),
+				gs.TeamTerrorists().CashSpentTotal(),
+				gs.TeamTerrorists().CashSpentThisRound(),
+				gs.TeamTerrorists().FreezeTimeEndEquipmentValue(),
+				gs.TeamCounterTerrorists().CashSpentTotal(),
+				gs.TeamCounterTerrorists().CashSpentThisRound(),
+				gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue(),
+			)
+
 			switch e.Winner {
 			case common.TeamTerrorists:
 				// Winner's score + 1 because it hasn't actually been updated yet
@@ -487,6 +498,7 @@ func main() {
 				*/
 				fmt.Printf("[ROUND END] [%s, %d] DRAW \n", header.MapName, gs.IngameTick())
 			}
+
 		}
 	})
 

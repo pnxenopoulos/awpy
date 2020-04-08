@@ -233,6 +233,21 @@ class CSGOMatchParser:
                 # Add round to list
                 self.rounds.append(current_round)
                 self.logger.info("Parsed round end " + str(len(self.rounds)))
+            if "[ROUND PURCHASE]" in event:
+                split_line = event.split("] [")
+                # First block
+                first_block = split_line[1].split(",")
+                current_round.map_name = first_block[0]
+                # Second block
+                second_block = split_line[2].split(",")
+                current_round.t_cash_spent_total = int(second_block[1])
+                current_round.t_cash_spent_round = int(second_block[2])
+                current_round.t_eq_val = int(second_block[3])
+                # Third block
+                third_block = split_line[3].replace("]", "").split(",")
+                current_round.ct_cash_spent_total = int(third_block[1])
+                current_round.ct_cash_spent_round = int(third_block[2])
+                current_round.ct_eq_val = int(third_block[3])
             if "[ROUND END OFFICIAL]" in event:
                 split_line = event.split("] [")
                 # First block
@@ -899,6 +914,12 @@ class CSGOMatchParser:
                     r.round_winner,
                     r.round_loser,
                     r.reason,
+                    r.ct_cash_spent_total,
+                    r.ct_cash_spent_round,
+                    r.ct_eq_val,
+                    r.t_cash_spent_total,
+                    r.t_cash_spent_round,
+                    r.t_eq_val,
                 ]
             )
         self.rounds_df = pd.DataFrame(
@@ -921,6 +942,12 @@ class CSGOMatchParser:
                 "RoundWinner",
                 "RoundLoser",
                 "Reason",
+                "CTCashSpentTotal",
+                "CTCashSpentRound",
+                "CTEqVal",
+                "TCashSpentTotal",
+                "TCashSpentRound",
+                "TEqVal",
             ],
         )
 

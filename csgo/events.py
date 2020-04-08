@@ -173,6 +173,12 @@ class Round:
         - round_winner (string)     : Winning team name
         - round_loser (string)      : Losing team name
         - reason (int)              : Corresponds to how the team won (defuse, killed other team, etc.)
+        - ct_cash_spent_total (int) : CT total cash spent by this point of the game
+        - ct_cash_spent_round (int) : CT total cash spent in current round
+        - ct_eq_val (int)           : CT equipment value at end of freezetime
+        - t_cash_spent_total (int)  : T total cash spent by this point of the game
+        - t_cash_spent_round (int)  : T total cash spent in current round
+        - t_eq_val (int)            : T equipment value at end of freezetime
         - bomb_events (list)        : List of BombEvent objects
         - damages (list)            : List of Damage objects
         - kills (list)              : List of Kill objects
@@ -193,6 +199,12 @@ class Round:
         round_winner="",
         round_loser="",
         reason=0,
+        ct_cash_spent_total=0,
+        ct_cash_spent_round=0,
+        ct_eq_val=0,
+        t_cash_spent_total=0,
+        t_cash_spent_round=0,
+        t_eq_val=0,
         players=[],
         kills=[],
         damages=[],
