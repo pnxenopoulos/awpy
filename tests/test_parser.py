@@ -51,6 +51,16 @@ class TestCSGOParser:
         """
         assert self.parser.rounds[-1].reason == "CTWin"
 
+    def test_round_cash_eq(self):
+        """ Tests if cash and equipment values are parsing properly.
+        """
+        assert self.parser.rounds[0].t_eq_val == 4050
+        assert self.parser.rounds[0].ct_eq_val == 4400
+        assert self.parser.rounds[0].t_cash_spent_total == 3550
+        assert self.parser.rounds[0].ct_cash_spent_total == 3650
+        assert self.parser.rounds[0].t_cash_spent_round == 3550
+        assert self.parser.rounds[0].ct_cash_spent_round == 3650
+
     def test_kills_total(self):
         """ Tests if the kill totals are correct. s1mple should have 25 kills.
         """
