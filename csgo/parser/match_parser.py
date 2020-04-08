@@ -396,7 +396,12 @@ class CSGOMatchParser:
                 seventh_block = split_line[7].split(",")
                 current_kill.weapon_id = CSGOMatchParser.get_weapon(int(seventh_block[0]))
                 current_kill.is_wallshot = int(seventh_block[1].strip())
-                current_kill.is_headshot = seventh_block[2].replace("]", "").strip()
+                current_kill.is_flashed = int(seventh_block[2].strip())
+                if current_kill.is_flashed == "true":
+                    current_kill.is_flashed = 1
+                else:
+                    current_kill.is_flashed = 0
+                current_kill.is_headshot = seventh_block[3].replace("]", "").strip()
                 if current_kill.is_headshot == "true":
                     current_kill.is_headshot = 1
                 else:
@@ -739,8 +744,13 @@ class CSGOMatchParser:
                         f.attacker_team,
                         f.attacker_side,
                         f.attacker_team_eq_val,
+                        f.assister_id,
+                        f.assister_name,
+                        f.assister_team,
+                        f.assister_side,
                         f.weapon_id,
                         f.is_wallshot,
+                        f.is_flashed,
                         f.is_headshot,
                     ]
                 )
@@ -783,8 +793,13 @@ class CSGOMatchParser:
                 "AttackerTeam",
                 "AttackerSide",
                 "AttackerTeamEqVal",
+                "AssisterID",
+                "AssisterName",
+                "AssisterTeam",
+                "AssisterSide",
                 "WeaponID",
                 "IsWallshot",
+                "IsFlashed",
                 "IsHeadshot",
             ],
         )

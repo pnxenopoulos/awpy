@@ -367,11 +367,16 @@ func main() {
 			weaponID := e.Weapon.Weapon
 			isWallshot := e.PenetratedObjects
 			isHeadshot := e.IsHeadshot
+			var isFlashed bool = false
 
 			// Find victim values
 			if e.Victim == nil {
 				victimID = 0
 			} else {
+				flashDuration := e.Victim.FlashDuration
+				if flashDuration > 0 {
+					isFlashed = true
+				}
 				victimID = e.Victim.SteamID
 				victimX = e.Victim.Position.X
 				victimY = e.Victim.Position.Y
@@ -444,14 +449,14 @@ func main() {
 			}
 
 			// Print a line of the kill information
-			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %s, %s, %s] [%d, %d, %t] \n",
+			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %s, %s, %s] [%d, %d, %t, %t] \n",
 				mapName, gameTick,
 				victimX, victimY, victimZ, VictimXViz, VictimYViz, VictimViewX, VictimViewY, VictimClosestAreaID, VictimClosestAreaName,
 				attackerX, attackerY, attackerZ, attackerXViz, attackerYViz, attackerViewX, attackerViewY, attackerClosestAreaID, attackerClosestAreaName,
 				victimID, victimName, victimTeam, victimSideString, victimTeamEqVal,
 				attackerID, attackerName, attackerTeam, attackerSideString, attackerTeamEqVal,
 				attackerAssistID, attackerAssistName, attackerAssistTeam, attackerAssistSideString,
-				weaponID, isWallshot, isHeadshot)
+				weaponID, isWallshot, isFlashed, isHeadshot)
 		}
 	})
 

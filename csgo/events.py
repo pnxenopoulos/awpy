@@ -278,6 +278,7 @@ class Kill:
         - assister_side (string)    : Assister's side (T or CT)
         - weapon_id (int)           : Weapon id
         - is_wallshot (boolean)     : If kill was a wallshot then 1, 0 otherwise
+        - is_flashed (boolean)      : If kill victim was flashed then 1, 0 otherwise
         - is_headshot (boolean)     : If kill was a headshot then 1, 0 otherwise
     """
 
@@ -318,6 +319,7 @@ class Kill:
         assister_side="",
         weapon_id=0,
         is_wallshot=False,
+        is_flashed=False,
         is_headshot=False,
     ):
         self.tick = tick
@@ -354,6 +356,7 @@ class Kill:
         self.assister_side = assister_side
         self.weapon_id = weapon_id
         self.is_wallshot = is_wallshot
+        self.is_flashed = is_flashed
         self.is_headshot = is_headshot
 
 
