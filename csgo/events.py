@@ -8,7 +8,7 @@ class Grenade:
     Attributes:
         - tick (int)            : Game tick at time of event
         - player_name (string)  : Player's username
-        - steam_id (int)        : Player's steam id
+        - player_id (int)       : Player's steam id
         - team (string)         : Player's team/clan name
         - side (string)         : Player's side (T or CT)
         - x (float)             : X position of grenade
@@ -25,7 +25,7 @@ class Grenade:
         self,
         tick=0,
         player_name="",
-        steam_id=0,
+        player_id=0,
         team="",
         side="",
         x=0,
@@ -41,7 +41,7 @@ class Grenade:
         """
         self.tick = tick
         self.player_name = player_name
-        self.steam_id = steam_id
+        self.player_id = player_id
         self.team = team
         self.side = side
         self.x = x
@@ -60,7 +60,7 @@ class BombEvent:
     Attributes:
         - tick (int)          : Game tick at time of event
         - player_name (string): Player's username
-        - steam_id (int)      : Player's steam id
+        - player_id (int)     : Player's steam id
         - team (string)       : Player's team/clan name
         - x (float)           : X position of bomb event
         - y (float)           : Y position of bomb event
@@ -74,7 +74,7 @@ class BombEvent:
         self,
         tick=0,
         player_name="",
-        steam_id=0,
+        player_id=0,
         team="",
         x=0,
         y=0,
@@ -87,7 +87,7 @@ class BombEvent:
         """
         self.tick = tick
         self.player_name = player_name
-        self.steam_id = steam_id
+        self.player_id = player_id
         self.team = team
         self.x = x
         self.y = y
@@ -103,7 +103,7 @@ class Footstep:
     Attributes:
         - tick (int)                : Game tick at time of step
         - player_name (string)      : Player's username
-        - steam_id (int)            : Player's steam id
+        - player_id (int)           : Player's steam id
         - team (string)             : Player's team/clan name
         - side (string)             : Player's side (T or CT)
         - x (float)                 : Player's X position
@@ -123,7 +123,7 @@ class Footstep:
         self,
         tick=0,
         player_name="",
-        steam_id=0,
+        player_id=0,
         team="",
         side="",
         x=0,
@@ -142,7 +142,7 @@ class Footstep:
         """
         self.tick = tick
         self.player_name = player_name
-        self.steam_id = steam_id
+        self.player_id = player_id
         self.team = team
         self.side = side
         self.x = x

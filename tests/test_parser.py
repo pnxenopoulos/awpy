@@ -11,7 +11,13 @@ class TestCSGOParser:
     def setup_class(self):
         """ Setup class by instantiating parser
         """
-        self.parser = CSGOMatchParser(demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem", competition_name="IEM-Katowice-2020", match_name="Natus-Vincere-vs-Astralis", game_date="02-29-2020", game_time="13:35")
+        self.parser = CSGOMatchParser(
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            competition_name="IEM-Katowice-2020",
+            match_name="Natus-Vincere-vs-Astralis",
+            game_date="02-29-2020",
+            game_time="13:35",
+        )
 
     def teardown_class(self):
         """ Set parser to none
@@ -24,7 +30,7 @@ class TestCSGOParser:
         not corrupted, this test should have parser.demo_error as FALSE
         """
         self.parser.parse_demofile()
-        assert not self.parser.demo_error 
+        assert not self.parser.demo_error
 
     def test_parse_match(self):
         """ Tests if the parser parses the match without issue. Our test demo had 21 total rounds.
@@ -74,7 +80,9 @@ class TestCSGOParser:
         """
         self.parser.write_bomb_events()
         bomb_df = self.parser.bomb_df
-        assert bomb_df.loc[bomb_df["RoundNum"] == 16,["Tick", "EventType"]].shape[0] == 2
+        assert (
+            bomb_df.loc[bomb_df["RoundNum"] == 16, ["Tick", "EventType"]].shape[0] == 2
+        )
 
     def test_damage_total(self):
         """ Tests for correct damage per round.
@@ -83,8 +91,16 @@ class TestCSGOParser:
         damage_df = self.parser.damages_df
         damage_df["Damage"] = damage_df["HpDamage"] + damage_df["ArmorDamage"]
         damage_df["KillDamage"] = damage_df["KillHpDamage"] + damage_df["ArmorDamage"]
-        dmg = (damage_df.groupby(["AttackerName"]).Damage.sum()/21).reset_index().iloc[0, 1]
-        kill_dmg = (damage_df.groupby(["AttackerName"]).KillDamage.sum()/21).reset_index().iloc[0, 1]
+        dmg = (
+            (damage_df.groupby(["AttackerName"]).Damage.sum() / 21)
+            .reset_index()
+            .iloc[0, 1]
+        )
+        kill_dmg = (
+            (damage_df.groupby(["AttackerName"]).KillDamage.sum() / 21)
+            .reset_index()
+            .iloc[0, 1]
+        )
         assert (dmg == 94.9047619047619) and (kill_dmg == 88.23809523809524)
 
     def test_grenade_total(self):
@@ -99,13 +115,13 @@ class TestCSGOParser:
         """
         self.parser.write_footsteps()
         footsteps_df = self.parser.footsteps_df
-        assert footsteps_df.iloc[777,:].X == 583.253906
-        assert footsteps_df.iloc[777,:].Y == 592.542297
-        assert footsteps_df.iloc[777,:].Z == 2.59956
-        assert footsteps_df.iloc[777,:].XViz == 695.284979
-        assert footsteps_df.iloc[777,:].YViz == -601.46766
-        assert footsteps_df.iloc[777,:].AreaID == 1432
-        assert footsteps_df.iloc[777,:].AreaName == "LongDoors"
+        assert footsteps_df.iloc[777, :].X == 583.253906
+        assert footsteps_df.iloc[777, :].Y == 592.542297
+        assert footsteps_df.iloc[777, :].Z == 2.59956
+        assert footsteps_df.iloc[777, :].XViz == 695.284979
+        assert footsteps_df.iloc[777, :].YViz == -601.46766
+        assert footsteps_df.iloc[777, :].AreaID == 1432
+        assert footsteps_df.iloc[777, :].AreaName == "LongDoors"
 
     def test_write_data(self):
         """ Tests write data method.
@@ -117,6 +133,12 @@ class TestCSGOParser:
     def test_parse_error(self):
         """ Tests if parser errors on bad file
         """
-        self.parser = CSGOMatchParser(demofile="tests/file-no-exist.dem", competition_name="IEM-Katowice-2020", match_name="Natus-Vincere-vs-Astralis", game_date="02-29-2020", game_time="13:35")
+        self.parser = CSGOMatchParser(
+            demofile="tests/file-no-exist.dem",
+            competition_name="IEM-Katowice-2020",
+            match_name="Natus-Vincere-vs-Astralis",
+            game_date="02-29-2020",
+            game_time="13:35",
+        )
         self.parser.parse_demofile()
         assert self.parser.demo_error == True

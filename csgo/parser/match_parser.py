@@ -271,7 +271,7 @@ class CSGOMatchParser:
                 current_footstep.tick = int(split_line[1].split(",")[1].strip())
                 # Second block
                 second_block = split_line[2].split(",")
-                current_footstep.steam_id = int(second_block[0])
+                current_footstep.player_id = int(second_block[0])
                 current_footstep.player_name = second_block[1].strip()
                 current_footstep.team = second_block[2].strip()
                 current_footstep.side = second_block[3].strip()
@@ -394,7 +394,9 @@ class CSGOMatchParser:
                 current_kill.assister_side = sixth_block[3].strip()
                 # Seventh block
                 seventh_block = split_line[7].split(",")
-                current_kill.weapon_id = CSGOMatchParser.get_weapon(int(seventh_block[0]))
+                current_kill.weapon_id = CSGOMatchParser.get_weapon(
+                    int(seventh_block[0])
+                )
                 current_kill.is_wallshot = int(seventh_block[1].strip())
                 current_kill.is_flashed = seventh_block[2].strip()
                 if current_kill.is_flashed == "true":
@@ -415,7 +417,7 @@ class CSGOMatchParser:
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
                 # Second block
                 second_block = split_line[2].split(",")
-                current_bomb_event.steam_id = int(second_block[0])
+                current_bomb_event.player_id = int(second_block[0])
                 current_bomb_event.player_name = second_block[1].strip()
                 current_bomb_event.team = second_block[2].strip()
                 # Third block
@@ -435,7 +437,7 @@ class CSGOMatchParser:
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
                 # Second block
                 second_block = split_line[2].split(",")
-                current_bomb_event.steam_id = int(second_block[0])
+                current_bomb_event.player_id = int(second_block[0])
                 current_bomb_event.player_name = second_block[1].strip()
                 current_bomb_event.team = second_block[2].strip()
                 # Third block
@@ -455,7 +457,7 @@ class CSGOMatchParser:
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
                 # Second block
                 second_block = split_line[2].split(",")
-                current_bomb_event.steam_id = int(second_block[0])
+                current_bomb_event.player_id = int(second_block[0])
                 current_bomb_event.player_name = second_block[1].strip()
                 current_bomb_event.team = second_block[2].strip()
                 # Third block
@@ -475,7 +477,7 @@ class CSGOMatchParser:
                 current_grenade.tick = int(split_line[1].split(",")[1].strip())
                 # Second block
                 second_block = split_line[2].split(",")
-                current_grenade.steam_id = int(second_block[0])
+                current_grenade.player_id = int(second_block[0])
                 current_grenade.player_name = second_block[1].strip()
                 current_grenade.team = second_block[2].strip()
                 current_grenade.side = second_block[3].strip()
@@ -550,7 +552,7 @@ class CSGOMatchParser:
                         r.map_name,
                         i + 1,
                         g.tick,
-                        g.steam_id,
+                        g.player_id,
                         g.player_name,
                         g.team,
                         g.side,
@@ -607,7 +609,7 @@ class CSGOMatchParser:
                         r.map_name,
                         i + 1,
                         be.tick,
-                        be.steam_id,
+                        be.player_id,
                         be.player_name,
                         be.team,
                         be.area_id,
@@ -652,7 +654,7 @@ class CSGOMatchParser:
                         r.map_name,
                         i + 1,
                         f.tick,
-                        f.steam_id,
+                        f.player_id,
                         f.player_name,
                         f.team,
                         f.side,
