@@ -396,7 +396,7 @@ class CSGOMatchParser:
                 seventh_block = split_line[7].split(",")
                 current_kill.weapon_id = CSGOMatchParser.get_weapon(int(seventh_block[0]))
                 current_kill.is_wallshot = int(seventh_block[1].strip())
-                current_kill.is_flashed = int(seventh_block[2].strip())
+                current_kill.is_flashed = seventh_block[2].strip()
                 if current_kill.is_flashed == "true":
                     current_kill.is_flashed = 1
                 else:
