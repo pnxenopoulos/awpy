@@ -628,7 +628,7 @@ class CSGOMatchParser:
                 "MapName",
                 "RoundNum",
                 "Tick",
-                "SteamID",
+                "PlayerID",
                 "PlayerName",
                 "Team",
                 "AreaID",
