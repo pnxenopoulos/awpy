@@ -231,6 +231,12 @@ class Round:
         self.footsteps = footsteps
         self.bomb_events = bomb_events
         self.grenades = grenades
+        self.ct_cash_spent_total = ct_cash_spent_total,
+        self.ct_cash_spent_round = ct_cash_spent_round,
+        self.ct_eq_val = ct_eq_val,
+        self.t_cash_spent_total = t_cash_spent_total,
+        self.t_cash_spent_round = t_cash_spent_round,
+        self.t_eq_val = t_eq_val
         if self.round_winner_side == "CT":
             self.start_ct_score = self.end_ct_score - 1
             self.start_t_score = self.start_t_score
