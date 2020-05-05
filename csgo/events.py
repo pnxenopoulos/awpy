@@ -162,27 +162,27 @@ class Round:
     """ An object to detail a round
 
     Attributes:
-        - map_name (string)         : Round's map
-        - start_tick (int)          : Tick on ROUND START event
-        - end_tick (int)            : Tick on ROUND END event
-        - end_ct_score (int)        : Ending CT score
-        - end_t_score (int)         : Ending T score
-        - start_t_score (int)       : Starting T score
-        - start_ct_score (int)      : Starting CT score
-        - round_winner_side (string): T/CT for round winner
-        - round_winner (string)     : Winning team name
-        - round_loser (string)      : Losing team name
-        - reason (int)              : Corresponds to how the team won (defuse, killed other team, etc.)
-        - ct_cash_spent_total (int) : CT total cash spent by this point of the game
-        - ct_cash_spent_round (int) : CT total cash spent in current round
-        - ct_eq_val (int)           : CT equipment value at end of freezetime
-        - t_cash_spent_total (int)  : T total cash spent by this point of the game
-        - t_cash_spent_round (int)  : T total cash spent in current round
-        - t_eq_val (int)            : T equipment value at end of freezetime
-        - bomb_events (list)        : List of BombEvent objects
-        - damages (list)            : List of Damage objects
-        - kills (list)              : List of Kill objects
-        - footstep (list)           : List of Footstep objects
+        - map_name (string)          : Round's map
+        - start_tick (int)           : Tick on ROUND START event
+        - end_tick (int)             : Tick on ROUND END event
+        - end_ct_score (int)         : Ending CT score
+        - end_t_score (int)          : Ending T score
+        - start_t_score (int)        : Starting T score
+        - start_ct_score (int)       : Starting CT score
+        - round_winner_side (string) : T/CT for round winner
+        - round_winner (string)      : Winning team name
+        - round_loser (string)       : Losing team name
+        - reason (int)               : Corresponds to how the team won (defuse, killed other team, etc.)
+        - ct_cash_spent_total (int)  : CT total cash spent by this point of the game
+        - ct_cash_spent_round (int)  : CT total cash spent in current round
+        - ct_eq_val (int)            : CT equipment value at end of freezetime
+        - t_cash_spent_total (int)   : T total cash spent by this point of the game
+        - t_cash_spent_round (int)   : T total cash spent in current round
+        - t_eq_val (int)             : T equipment value at end of freezetime
+        - bomb_events (list)         : List of BombEvent objects
+        - damages (list)             : List of Damage objects
+        - kills (list)               : List of Kill objects
+        - footstep (list)            : List of Footstep objects
         - grenades (list)            : List of Grenade objects
     """
 
@@ -231,11 +231,11 @@ class Round:
         self.footsteps = footsteps
         self.bomb_events = bomb_events
         self.grenades = grenades
-        self.ct_cash_spent_total = ct_cash_spent_total,
-        self.ct_cash_spent_round = ct_cash_spent_round,
-        self.ct_eq_val = ct_eq_val,
-        self.t_cash_spent_total = t_cash_spent_total,
-        self.t_cash_spent_round = t_cash_spent_round,
+        self.ct_cash_spent_total = (ct_cash_spent_total,)
+        self.ct_cash_spent_round = (ct_cash_spent_round,)
+        self.ct_eq_val = (ct_eq_val,)
+        self.t_cash_spent_total = (t_cash_spent_total,)
+        self.t_cash_spent_round = (t_cash_spent_round,)
         self.t_eq_val = t_eq_val
         if self.round_winner_side == "CT":
             self.start_ct_score = self.end_ct_score - 1
