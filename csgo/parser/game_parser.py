@@ -50,6 +50,7 @@ class GameParser:
         self.game_id = (
             competition_name + "_" + match_name + "_" + game_date + "_" + game_time
         )
+        self.game_data = {}
         self.logfile = logfile
         logging.basicConfig(
             filename=self.logfile,
@@ -59,3 +60,18 @@ class GameParser:
         )
         self.logger = logging.getLogger("GameParser")
         self.logger.info("Initialized CSGO GameParser in path " + self.match_dir)
+
+    def parse(self):
+        """ Parses the demofiles in self.match_dir
+        """
+        for f in self.demofiles:
+            map_name = f[3:-4]
+            parser = CSGOMatchParser(
+                demofile = self.match_dir+f, 
+                competition_name = self.competition_name, 
+                match_name = self.match_name,
+                game_date = self.game_date,
+                game_time = self.game_time
+            )
+            self.game_data[map_name] = parser.parse()
+        return self.game_data

@@ -52,3 +52,10 @@ class TestGameParser:
         """ Tests if the game parser finds all demofiles
         """
         assert len(self.parser.demofiles) == 1
+
+    def test_game_parse(self):
+        """ Tests if the game parser can parse the demofiles
+        """
+        game_data = self.parser.parse()
+        assert type(game_data) == type({})
+        assert len(game_data.keys()) == 1
