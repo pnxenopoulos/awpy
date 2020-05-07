@@ -1074,16 +1074,16 @@ class CSGOMatchParser:
         self.game_json["Rounds"] = rounds_df_filtered.to_dict("index")
         for r in self.game_json["Rounds"].keys():
             round_kills = self.kills_df[self.kills_df["RoundNum"] == int(r)]
-            round_kills.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1)
+            round_kills.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1, inplace=True)
             self.game_json["Rounds"][r]["Kills"] = round_kills.to_dict("records")
             round_damages = self.damages_df[self.damages_df["RoundNum"] == int(r)]
-            round_kills.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1)
+            round_damages.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1, inplace=True)
             self.game_json["Rounds"][r]["Damages"] = round_damages.to_dict("records")
             round_grenades = self.grenades_df[self.grenades_df["RoundNum"] == int(r)]
-            round_grenades.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1)
+            round_grenades.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1, inplace=True)
             self.game_json["Rounds"][r]["Grenades"] = round_grenades.to_dict("records")
             round_bomb_events = self.bomb_df[self.bomb_df["RoundNum"] == int(r)]
-            round_bomb_events.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1)
+            round_bomb_events.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1, inplace=True)
             self.game_json["Rounds"][r]["BombEvents"] = round_bomb_events.to_dict("records")
         # Player stats
         player_kills = self.kills_df.groupby(["AttackerID", "AttackerName", "AttackerTeam"]).size().reset_index()
