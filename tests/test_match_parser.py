@@ -1,3 +1,4 @@
+import os
 import pytest
 import pandas as pd
 
@@ -142,3 +143,9 @@ class TestCSGOParser:
         )
         self.parser.parse_demofile()
         assert self.parser.demo_error == True
+
+    def test_json_write(self):
+        """ Tests if parser can write to JSON
+        """
+        self.parser.write_json()
+        assert os.path.exists("IEM-Katowice-2020_Natus-Vincere-vs-Astralis_02-29-2020_13:35_de_dust2.json")

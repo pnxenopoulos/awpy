@@ -34,7 +34,7 @@ class GameParser:
         """ Initialize a GameParser object
         """
         if not exists(match_dir):
-            raise ValueError("Given match directory does not exist!")
+            raise NotADirectoryError("Given match directory does not exist!")
         dir_files = [f for f in listdir(match_dir) if isfile(join(match_dir, f))]
         self.demofiles = []
         for file in dir_files:
@@ -61,8 +61,11 @@ class GameParser:
         self.logger = logging.getLogger("GameParser")
         self.logger.info("Initialized CSGO GameParser in path " + self.match_dir)
 
-    def parse(self):
+    def parse(self, write_json=False):
         """ Parses the demofiles in self.match_dir
+
+        Attributes:
+            - write_json (bool) : Boolean indicating if JSON will write
         """
         for f in self.demofiles:
             map_name = f[3:-4]
@@ -74,4 +77,6 @@ class GameParser:
                 game_time = self.game_time
             )
             self.game_data[map_name] = parser.parse()
+            if write_json:
+                parser.write_data_json()
         return self.game_data

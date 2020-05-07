@@ -1,3 +1,4 @@
+import os
 import pytest
 import pandas as pd
 
@@ -27,7 +28,7 @@ class TestGameParser:
     def test_nonexistant_dir(self):
         """ Tests if the game parser issues a ValueError on a nonexistant directory
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(NotADirectoryError):
             test_parser = GameParser(
                 match_dir="fake_dir/",
                 competition_name="IEM-Katowice-2020",
@@ -59,3 +60,9 @@ class TestGameParser:
         game_data = self.parser.parse()
         assert type(game_data) == type({})
         assert len(game_data.keys()) == 1
+
+    def test_game_parse_write_json(self):
+        """ Tests if the game parser writes JSON files
+        """
+        game_data = self.parser.parse(write_json=True)
+        assert os.path.exists("IEM-Katowice-2020_Natus-Vincere-vs-Astralis_02-29-2020_13:35_de_dust2.json")

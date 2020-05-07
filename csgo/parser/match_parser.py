@@ -1,6 +1,7 @@
 """ Parsing class for demofile
 """
 
+import json
 import logging
 import os
 import re
@@ -8,7 +9,7 @@ import subprocess
 import pandas as pd
 
 from csgo.events import BombEvent, Footstep, Round, Kill, Damage, Grenade
-
+from csgo.utils import NpEncoder
 
 class CSGOMatchParser:
     """ This class can parse a CSGO match to output events in a logical structure
@@ -54,7 +55,50 @@ class CSGOMatchParser:
         self.logger.info("Initialized CSGOMatchParser with demofile " + self.demofile)
 
     @staticmethod
-    def get_hit_group(x):
+    def get_seconds(start_tick, tick):
+        """ Finds seconds since start of round
+
+        Attributes:
+            - start_tick (int) : Round start tick
+            - tick (int)       : Tick of event
+        """
+        return (tick-start_tick)/128
+    
+    @staticmethod
+    def get_round_type(ct_equip, ct_spend, t_equip, t_spend, round_num):
+        """ Return team round types for a given dollar amount
+        """
+        round_types = {}
+        # Pistol Round
+        if (round_num == 1) or (round_num == 16):
+            round_types["CT"] = "Pistol"
+            round_types["T"] = "Pistol"
+            return round_types
+        # Full Eco
+        if ct_equip < 3000:
+            round_types["CT"] = "Full Eco"
+        if t_equip < 3000:
+            round_types["CT"] = "Full Eco"
+        # Eco
+        if (ct_equip >= 3000) and (ct_equip < 8500):
+            round_types["CT"] = "Eco"
+        if (t_equip >= 3000) and (t_equip < 8500):
+            round_types["T"] = "Eco"
+        # Anti-Eco
+        if (t_equip < 12500) and (ct_equip < 18500) and (ct_equip > 12500):
+            round_types["CT"] = "Anti-Eco"
+        if (ct_equip < 12500) and (t_equip < 18500) and (t_equip > 12500):
+            round_types["T"] = "Anti-Eco"
+        # Half Buy
+        # Force Buy
+        # Full Buy
+        if ct_equip > 20500:
+            round_types["CT"] = "Full Buy"
+        if t_equip > 20500:
+            round_types["T"] = "Full Buy"
+        
+    @staticmethod
+    def get_hit_group(hitgroup_id):
         """ Return hitgroup in string
         """
         hit_groups = {
@@ -68,10 +112,10 @@ class CSGOMatchParser:
             8: "RightLeg",
             9: "Gear",
         }
-        return hit_groups.get(x, "NA")
+        return hit_groups.get(hitgroup_id, "NA")
 
     @staticmethod
-    def get_weapon(x):
+    def get_weapon(weapon_id):
         """ Return weapon name
         """
         weapon_ids = {
@@ -124,7 +168,7 @@ class CSGOMatchParser:
             505: "Smoke",
             506: "HE",
         }
-        return weapon_ids.get(x, "NA")
+        return weapon_ids.get(weapon_id, "NA")
 
     @staticmethod
     def get_round_reason(x):
@@ -146,7 +190,6 @@ class CSGOMatchParser:
         self.logger.info(
             "Starting CSGO Go demofile parser, reading in " + self.demofile
         )
-        self.match_event_id = self.demofile[self.demofile.rfind("/") + 1 : -4]
         path = os.path.join(os.path.dirname(__file__), "")
         proc = subprocess.Popen(
             [
@@ -269,6 +312,7 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_footstep.tick = int(split_line[1].split(",")[1].strip())
+                current_footstep.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_footstep.tick)
                 # Second block
                 second_block = split_line[2].split(",")
                 current_footstep.player_id = int(second_block[0])
@@ -296,6 +340,7 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_damage.tick = int(split_line[1].split(",")[1].strip())
+                current_damage.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_damage.tick)
                 # Second block
                 second_block = split_line[2].split(",")
                 current_damage.victim_x = float(second_block[0])
@@ -350,6 +395,7 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_kill.tick = int(split_line[1].split(",")[1].strip())
+                current_kill.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_kill.tick)
                 # Second block
                 second_block = split_line[2].split(",")
                 current_kill.victim_x = float(second_block[0])
@@ -415,6 +461,7 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
+                current_bomb_event.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_bomb_event.tick)
                 # Second block
                 second_block = split_line[2].split(",")
                 current_bomb_event.player_id = int(second_block[0])
@@ -435,6 +482,7 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
+                current_bomb_event.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_bomb_event.tick)
                 # Second block
                 second_block = split_line[2].split(",")
                 current_bomb_event.player_id = int(second_block[0])
@@ -455,6 +503,7 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
+                current_bomb_event.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_bomb_event.tick)
                 # Second block
                 second_block = split_line[2].split(",")
                 current_bomb_event.player_id = int(second_block[0])
@@ -475,6 +524,7 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_grenade.tick = int(split_line[1].split(",")[1].strip())
+                current_grenade.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_grenade.tick)
                 # Second block
                 second_block = split_line[2].split(",")
                 current_grenade.player_id = int(second_block[0])
@@ -937,6 +987,8 @@ class CSGOMatchParser:
                     r.t_cash_spent_total,
                     r.t_cash_spent_round,
                     r.t_eq_val,
+                    r.ct_round_type,
+                    r.t_round_type
                 ]
             )
         self.rounds_df = pd.DataFrame(
@@ -965,6 +1017,8 @@ class CSGOMatchParser:
                 "TCashSpentTotal",
                 "TCashSpentRound",
                 "TEqVal",
+                "CTRoundType",
+                "TRoundType"
             ],
         )
 
@@ -985,3 +1039,74 @@ class CSGOMatchParser:
         self.dataframes["BombEvents"] = self.bomb_df
         self.dataframes["Grenades"] = self.grenades_df
         return self.dataframes
+
+    def write_json(self, filename=""):
+        """ Wrapper function to write the data in JSON
+
+        Attributes:
+            - filename (string) : Filename for JSON file
+        """
+        self.game_json = {}
+        # Set game metadata
+        self.game_json["GameID"] = self.game_id
+        self.game_json["CompetitionName"] = self.competition_name
+        self.game_json["MatchName"] = self.match_name
+        self.game_json["GameDate"] = self.game_date
+        self.game_json["GameTime"] = self.game_time
+        self.game_json["MapName"] = self.rounds_df.MapName.values[0]
+        self.game_json["Stats"] = {}
+        if (filename) == "" or (filename is None):
+            filename = self.game_json["GameID"] + "_" + self.game_json["MapName"] + ".json"
+        # Set final score
+        score_df = self.rounds_df.groupby("RoundWinner").size().reset_index()
+        score_df.columns = ["Team", "Score"]
+        self.game_json["Result"] = {}
+        for _, row in score_df.iterrows():
+            self.game_json["Result"][row["Team"]] = row["Score"]
+        # Set overtime flag
+        if self.rounds_df.shape[0] >= 30:
+            self.game_json["IsOvertime"] = 1
+        else:
+            self.game_json["IsOvertime"] = 0
+        # Set rounds
+        rounds_df_filtered = self.rounds_df.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName"], axis = 1)
+        rounds_df_filtered.set_index("RoundNum", inplace=True)
+        self.game_json["Rounds"] = rounds_df_filtered.to_dict("index")
+        for r in self.game_json["Rounds"].keys():
+            round_kills = self.kills_df[self.kills_df["RoundNum"] == int(r)]
+            round_kills.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1)
+            self.game_json["Rounds"][r]["Kills"] = round_kills.to_dict("records")
+            round_damages = self.damages_df[self.damages_df["RoundNum"] == int(r)]
+            round_kills.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1)
+            self.game_json["Rounds"][r]["Damages"] = round_damages.to_dict("records")
+            round_grenades = self.grenades_df[self.grenades_df["RoundNum"] == int(r)]
+            round_grenades.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1)
+            self.game_json["Rounds"][r]["Grenades"] = round_grenades.to_dict("records")
+            round_bomb_events = self.bomb_df[self.bomb_df["RoundNum"] == int(r)]
+            round_bomb_events.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1)
+            self.game_json["Rounds"][r]["BombEvents"] = round_bomb_events.to_dict("records")
+        # Player stats
+        player_kills = self.kills_df.groupby(["AttackerID", "AttackerName", "AttackerTeam"]).size().reset_index()
+        player_kills.columns = ["PlayerID", "PlayerName", "PlayerTeam", "Kills"]
+        player_kills = player_kills[player_kills["PlayerID"] != 0]
+        player_deaths = self.kills_df.groupby(["VictimID", "VictimName", "VictimTeam"]).size().reset_index()
+        player_deaths.columns = ["PlayerID", "PlayerName", "PlayerTeam", "Deaths"]
+        player_adr = (self.damages_df.groupby(["AttackerID", "AttackerName", "AttackerTeam"]).KillHpDamage.sum()/len(self.game_json["Rounds"])).reset_index()
+        player_adr.columns = ["PlayerID", "PlayerName", "PlayerTeam", "ADR"]
+        player_adr = player_adr[player_adr["PlayerID"] != 0]
+        player_adr.ADR = player_adr.ADR.round()
+        stat_results = player_kills.merge(player_deaths).merge(player_adr)
+        # Set player stats
+        for team in stat_results.PlayerTeam.unique():
+            team_stats = stat_results[stat_results["PlayerTeam"] == team]
+            self.game_json["Stats"][team] = {}
+            for player in team_stats.PlayerID.unique():
+                player_team_df = team_stats[team_stats["PlayerID"] == player]
+                player_name = player_team_df.PlayerName.unique()[0]
+                self.game_json["Stats"][team][str(player)] = {}
+                self.game_json["Stats"][team][str(player)]["Name"] = player_name
+                self.game_json["Stats"][team][str(player)]["Kills"] = player_team_df.Kills.unique()[0]
+                self.game_json["Stats"][team][str(player)]["Deaths"] = player_team_df.Deaths.unique()[0]
+                self.game_json["Stats"][team][str(player)]["ADR"] = player_team_df.ADR.unique()[0]
+        with open(filename, "w") as game_json_file:
+            json.dump(self.game_json, game_json_file, cls=NpEncoder, indent=4)

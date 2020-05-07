@@ -9,6 +9,7 @@ class Game:
         - game_id (string)  : Game id
         - map_name (string) : Map name
         - rounds (list)     : List of round objects
+        - players (dict)    : Dictionary where key is player SteamID
     """
 
     def __init__(self, game_id="", map_name=""):
@@ -17,6 +18,7 @@ class Game:
         self.game_id = game_id
         self.map_name = map_name
         self.rounds = []
+        self.players = {}
 
 
 class Round:
@@ -86,3 +88,46 @@ class Round:
         if self.round_winner_side == "T":
             self.start_ct_score = self.end_ct_score
             self.start_t_score = self.start_t_score - 1
+
+class GameFrame:
+    """ Discrete round snapshot
+
+    Attributes:
+        - tick (int)            : Tick corresponding to game frame
+        - seconds_elapsed (int) : Seconds elapsed since round start
+        - clock_time (string)   : Clock time
+        - ct (Team)             : Team object corresponding to Counter-Terrorists
+        - t (Team)              : Team object corresponding to Terrorists
+        - bomb_planted (bool)   : Flag for if the bomb is planted
+        - plant_site (string)   : String indicating the plant site
+        - has_ended (bool)      : Flag for when the round has ended, but not officially
+    """
+
+    def __init__(self, tick=0, seconds_elapsed=0, clock_time="00:00", ct=None, t=None, bomb_planted=False, plant_site=""):
+        """ Initialize a game frame
+        """
+        self.tick = tick
+        self.seconds_elapsed = seconds_elapsed
+        self.clock_time = clock_time
+        self.ct = ct
+        self.t = t
+        self.bomb_planted = bomb_planted
+        self.plant_site = plant_site
+
+class Team:
+    """ Hold team information
+
+    Attributes:
+        - name (string)        : Team name
+        - players (dict)       : Dictionary where key is SteamID, value is player name
+        - alive_players (dict) : Dictionary where key is SteamID, value is Player object
+        - dead_players (dict)  : Dictionary where key is SteamID, value is Player object
+    """
+
+    def __init__(self, name="", players={}, alive_players={}, dead_players={}):
+        """ Initialize a team
+        """
+        self.name = name
+        self.players = players
+        self.alive_players = alive_players
+        self.dead_players = dead_players

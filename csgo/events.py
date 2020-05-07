@@ -7,6 +7,7 @@ class Grenade:
 
     Attributes:
         - tick (int)            : Game tick at time of event
+        - sec (float)           : Seconds since round start
         - player_name (string)  : Player's username
         - player_id (int)       : Player's steam id
         - team (string)         : Player's team/clan name
@@ -24,6 +25,7 @@ class Grenade:
     def __init__(
         self,
         tick=0,
+        sec=0,
         player_name="",
         player_id=0,
         team="",
@@ -40,6 +42,7 @@ class Grenade:
         """ Create a grenade trajectory object
         """
         self.tick = tick
+        self.sec = sec
         self.player_name = player_name
         self.player_id = player_id
         self.team = team
@@ -59,6 +62,7 @@ class BombEvent:
 
     Attributes:
         - tick (int)          : Game tick at time of event
+        - sec (float)         : Seconds since round start
         - player_name (string): Player's username
         - player_id (int)     : Player's steam id
         - team (string)       : Player's team/clan name
@@ -73,6 +77,7 @@ class BombEvent:
     def __init__(
         self,
         tick=0,
+        sec=0,
         player_name="",
         player_id=0,
         team="",
@@ -86,6 +91,7 @@ class BombEvent:
         """ Create a bomb event object
         """
         self.tick = tick
+        self.sec = sec
         self.player_name = player_name
         self.player_id = player_id
         self.team = team
@@ -102,6 +108,7 @@ class Footstep:
 
     Attributes:
         - tick (int)                : Game tick at time of step
+        - sec (float)               : Seconds since round start
         - player_name (string)      : Player's username
         - player_id (int)           : Player's steam id
         - team (string)             : Player's team/clan name
@@ -122,6 +129,7 @@ class Footstep:
     def __init__(
         self,
         tick=0,
+        sec=0,
         player_name="",
         player_id=0,
         team="",
@@ -141,6 +149,7 @@ class Footstep:
         """ Create a footstep (X,Y,Z) object
         """
         self.tick = tick
+        self.sec = sec
         self.player_name = player_name
         self.player_id = player_id
         self.team = team
@@ -179,6 +188,9 @@ class Round:
         - t_cash_spent_total (int)   : T total cash spent by this point of the game
         - t_cash_spent_round (int)   : T total cash spent in current round
         - t_eq_val (int)             : T equipment value at end of freezetime
+        - ct_round_type (string)     : CT round buy type
+        - t_round_type (string)      : T round buy type
+        - bomb_plant_tick            : Bomb plant tick
         - bomb_events (list)         : List of BombEvent objects
         - damages (list)             : List of Damage objects
         - kills (list)               : List of Kill objects
@@ -205,6 +217,9 @@ class Round:
         t_cash_spent_total=0,
         t_cash_spent_round=0,
         t_eq_val=0,
+        ct_round_type="",
+        t_round_type="",
+        bomb_plant_tick=0,
         players=[],
         kills=[],
         damages=[],
@@ -237,6 +252,9 @@ class Round:
         self.t_cash_spent_total = (t_cash_spent_total,)
         self.t_cash_spent_round = (t_cash_spent_round,)
         self.t_eq_val = t_eq_val
+        self.ct_round_type = ct_round_type
+        self.t_round_type = t_round_type
+        self.bomb_plant_tick = bomb_plant_tick
         if self.round_winner_side == "CT":
             self.start_ct_score = self.end_ct_score - 1
             self.start_t_score = self.start_t_score
@@ -250,6 +268,7 @@ class Kill:
 
     Attributes:
         - tick (int)                : Game tick at time of kill
+        - sec (float)               : Seconds since round start
         - victim_x (float)          : Victim's X position
         - victim_y (float)          : Victim's Y position
         - victim_z (float)          : Victim's Z position
@@ -291,6 +310,7 @@ class Kill:
     def __init__(
         self,
         tick=0,
+        sec=0,
         victim_x=0,
         victim_y=0,
         victim_z=0,
@@ -329,6 +349,7 @@ class Kill:
         is_headshot=False,
     ):
         self.tick = tick
+        self.sec = sec
         self.victim_x = victim_x
         self.victim_y = victim_y
         self.victim_z = victim_z
@@ -371,6 +392,7 @@ class Damage:
 
     Attributes:
         - tick (int)                : Game tick at time of kill
+        - sec (float)               : Seconds since round start
         - victim_x (float)          : Victim's X position
         - victim_y (float)          : Victim's Y position
         - victim_z (float)          : Victim's Z position
@@ -409,6 +431,7 @@ class Damage:
     def __init__(
         self,
         tick=0,
+        sec=0,
         victim_x=0,
         victim_y=0,
         victim_z=0,
@@ -444,6 +467,7 @@ class Damage:
         hit_group=0,
     ):
         self.tick = tick
+        self.sec = sec
         self.victim_x = victim_x
         self.victim_y = victim_y
         self.victim_z = victim_z
