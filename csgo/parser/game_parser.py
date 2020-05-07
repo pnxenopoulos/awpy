@@ -78,5 +78,5 @@ class GameParser:
             )
             self.game_data[map_name] = parser.parse()
             if write_json:
-                parser.write_data_json()
+                parser.write_json()
         return self.game_data
