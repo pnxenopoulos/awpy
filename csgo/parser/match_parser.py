@@ -53,6 +53,10 @@ class CSGOMatchParser:
                 datefmt="%H:%M:%S",
             )
             self.logger = logging.getLogger("CSGOMatchParser")
+            self.logger.handlers = []
+            fh = logging.FileHandler("csgo_parser.log")
+            fh.setLevel(logging.INFO)
+            self.logger.addHandler(fh)
             self.logger.info(
                 "Initialized CSGOMatchParser with demofile " + self.demofile
             )
