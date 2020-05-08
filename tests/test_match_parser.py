@@ -14,6 +14,7 @@ class TestCSGOParser:
         """
         self.parser = CSGOMatchParser(
             demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            log=True,
             competition_name="IEM-Katowice-2020",
             match_name="Natus-Vincere-vs-Astralis",
             game_date="02-29-2020",
