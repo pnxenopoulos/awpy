@@ -46,9 +46,8 @@ class CSGOMatchParser:
         self.rounds = []
         self.demo_error = False
         if log:
-            self.logfile = "csgo_parser.log"
             logging.basicConfig(
-                filename=self.logfile,
+                filename="csgo_parser.log",
                 level=logging.INFO,
                 format="%(asctime)s [%(levelname)s] %(message)s",
                 datefmt="%H:%M:%S",
