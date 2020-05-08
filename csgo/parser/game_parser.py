@@ -70,11 +70,11 @@ class GameParser:
         for f in self.demofiles:
             map_name = f[3:-4]
             parser = CSGOMatchParser(
-                demofile = self.match_dir+f, 
-                competition_name = self.competition_name, 
-                match_name = self.match_name,
-                game_date = self.game_date,
-                game_time = self.game_time
+                demofile=self.match_dir + f,
+                competition_name=self.competition_name,
+                match_name=self.match_name,
+                game_date=self.game_date,
+                game_time=self.game_time,
             )
             self.game_data[map_name] = parser.parse()
             if write_json:

@@ -89,6 +89,7 @@ class Round:
             self.start_ct_score = self.end_ct_score
             self.start_t_score = self.start_t_score - 1
 
+
 class GameFrame:
     """ Discrete round snapshot
 
@@ -103,7 +104,16 @@ class GameFrame:
         - has_ended (bool)      : Flag for when the round has ended, but not officially
     """
 
-    def __init__(self, tick=0, seconds_elapsed=0, clock_time="00:00", ct=None, t=None, bomb_planted=False, plant_site=""):
+    def __init__(
+        self,
+        tick=0,
+        seconds_elapsed=0,
+        clock_time="00:00",
+        ct=None,
+        t=None,
+        bomb_planted=False,
+        plant_site="",
+    ):
         """ Initialize a game frame
         """
         self.tick = tick
@@ -113,6 +123,7 @@ class GameFrame:
         self.t = t
         self.bomb_planted = bomb_planted
         self.plant_site = plant_site
+
 
 class Team:
     """ Hold team information

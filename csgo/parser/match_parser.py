@@ -11,12 +11,13 @@ import pandas as pd
 from csgo.events import BombEvent, Footstep, Round, Kill, Damage, Grenade
 from csgo.utils import NpEncoder
 
+
 class CSGOMatchParser:
     """ This class can parse a CSGO match to output events in a logical structure
 
     Attributes:
         demofile: A string denoting the path to the demo file, which ends in .dem
-        logfile: A string denoting the path to the output log file
+        log: A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
         competition_name: A string denoting the competition name of the demo
         match_name: A string denoting the match name of the demo
         game_date: A string denoting the date of the demo
@@ -26,7 +27,7 @@ class CSGOMatchParser:
     def __init__(
         self,
         demofile="",
-        logfile="parser.log",
+        log=False,
         competition_name="",
         match_name="",
         game_date="",
@@ -44,26 +45,39 @@ class CSGOMatchParser:
         )
         self.rounds = []
         self.demo_error = False
-        self.logfile = logfile
-        logging.basicConfig(
-            filename=self.logfile,
-            level=logging.INFO,
-            format="%(asctime)s [%(levelname)s] %(message)s",
-            datefmt="%H:%M:%S",
-        )
-        self.logger = logging.getLogger("CSGOMatchParser")
-        self.logger.info("Initialized CSGOMatchParser with demofile " + self.demofile)
+        if log:
+            self.logfile = "csgo_parser.log"
+            logging.basicConfig(
+                filename=self.logfile,
+                level=logging.INFO,
+                format="%(asctime)s [%(levelname)s] %(message)s",
+                datefmt="%H:%M:%S",
+            )
+            self.logger = logging.getLogger("CSGOMatchParser")
+            self.logger.info(
+                "Initialized CSGOMatchParser with demofile " + self.demofile
+            )
+        else:
+            logging.basicConfig(
+                level=logging.INFO,
+                format="%(asctime)s [%(levelname)s] %(message)s",
+                datefmt="%H:%M:%S",
+            )
+            self.logger = logging.getLogger("CSGOMatchParser")
+            self.logger.info(
+                "Initialized CSGOMatchParser with demofile " + self.demofile
+            )
 
     @staticmethod
     def get_seconds(start_tick, tick):
         """ Finds seconds since start of round
 
-        Attributes:
+        Parameters:
             - start_tick (int) : Round start tick
             - tick (int)       : Tick of event
         """
-        return (tick-start_tick)/128
-    
+        return (tick - start_tick) / 128
+
     @staticmethod
     def get_round_type(ct_equip, ct_spend, t_equip, t_spend, round_num):
         """ Return team round types for a given dollar amount
@@ -96,10 +110,13 @@ class CSGOMatchParser:
             round_types["CT"] = "Full Buy"
         if t_equip > 20500:
             round_types["T"] = "Full Buy"
-        
+
     @staticmethod
     def get_hit_group(hitgroup_id):
         """ Return hitgroup in string
+
+        Parameters:
+            - hitgroup_id (int) : Hitgroup identifier
         """
         hit_groups = {
             1: "Generic",
@@ -117,6 +134,9 @@ class CSGOMatchParser:
     @staticmethod
     def get_weapon(weapon_id):
         """ Return weapon name
+
+        Parameters:
+            - weapon_id (int) : Weapon identifier
         """
         weapon_ids = {
             0: "Unknown",
@@ -171,8 +191,11 @@ class CSGOMatchParser:
         return weapon_ids.get(weapon_id, "NA")
 
     @staticmethod
-    def get_round_reason(x):
+    def get_round_reason(reason_id):
         """ Return round reason name
+
+        Attributes:
+            - reason_id (int) : Round reason identifier
         """
         round_reasons = {
             1: "TargetBombed",
@@ -182,7 +205,7 @@ class CSGOMatchParser:
             10: "Draw",
             12: "TargetSaved",
         }
-        return round_reasons.get(x, "NA")
+        return round_reasons.get(reason_id, "NA")
 
     def parse_demofile(self):
         """ Parse a demofile using the Go script parse_demofile.go
@@ -212,7 +235,7 @@ class CSGOMatchParser:
     def parse_match(self):
         """ Parse match event text data and structure it in logical format
         """
-        self.logger.info("Parsing match text")
+        self.logger.info("Parsing match events")
         self.rounds = []
         # Set default round stuff
         current_round = Round()
@@ -312,7 +335,9 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_footstep.tick = int(split_line[1].split(",")[1].strip())
-                current_footstep.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_footstep.tick)
+                current_footstep.sec = CSGOMatchParser.get_seconds(
+                    current_round.start_tick, current_footstep.tick
+                )
                 # Second block
                 second_block = split_line[2].split(",")
                 current_footstep.player_id = int(second_block[0])
@@ -340,7 +365,9 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_damage.tick = int(split_line[1].split(",")[1].strip())
-                current_damage.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_damage.tick)
+                current_damage.sec = CSGOMatchParser.get_seconds(
+                    current_round.start_tick, current_damage.tick
+                )
                 # Second block
                 second_block = split_line[2].split(",")
                 current_damage.victim_x = float(second_block[0])
@@ -395,7 +422,9 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_kill.tick = int(split_line[1].split(",")[1].strip())
-                current_kill.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_kill.tick)
+                current_kill.sec = CSGOMatchParser.get_seconds(
+                    current_round.start_tick, current_kill.tick
+                )
                 # Second block
                 second_block = split_line[2].split(",")
                 current_kill.victim_x = float(second_block[0])
@@ -461,7 +490,9 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
-                current_bomb_event.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_bomb_event.tick)
+                current_bomb_event.sec = CSGOMatchParser.get_seconds(
+                    current_round.start_tick, current_bomb_event.tick
+                )
                 # Second block
                 second_block = split_line[2].split(",")
                 current_bomb_event.player_id = int(second_block[0])
@@ -482,7 +513,9 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
-                current_bomb_event.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_bomb_event.tick)
+                current_bomb_event.sec = CSGOMatchParser.get_seconds(
+                    current_round.start_tick, current_bomb_event.tick
+                )
                 # Second block
                 second_block = split_line[2].split(",")
                 current_bomb_event.player_id = int(second_block[0])
@@ -503,7 +536,9 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
-                current_bomb_event.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_bomb_event.tick)
+                current_bomb_event.sec = CSGOMatchParser.get_seconds(
+                    current_round.start_tick, current_bomb_event.tick
+                )
                 # Second block
                 second_block = split_line[2].split(",")
                 current_bomb_event.player_id = int(second_block[0])
@@ -524,7 +559,9 @@ class CSGOMatchParser:
                 split_line = event.split("] [")
                 # First block
                 current_grenade.tick = int(split_line[1].split(",")[1].strip())
-                current_grenade.sec = CSGOMatchParser.get_seconds(current_round.start_tick, current_grenade.tick)
+                current_grenade.sec = CSGOMatchParser.get_seconds(
+                    current_round.start_tick, current_grenade.tick
+                )
                 # Second block
                 second_block = split_line[2].split(",")
                 current_grenade.player_id = int(second_block[0])
@@ -549,7 +586,7 @@ class CSGOMatchParser:
         self.clean_rounds()
 
     def parse(self):
-        """ Parse wrapper function
+        """ Parse wrapper function, called by user, and returns dictionary of data frames
         """
         self.parse_demofile()
         if not self.demo_error:
@@ -560,9 +597,8 @@ class CSGOMatchParser:
             return "Match has parsing error"
 
     def clean_rounds(self):
-        """ Function to clean the rounds list
+        """ Function to clean the rounds list to remove rounds recorded before the real match start
         """
-        # Round cleaning
         round_score_total = []
         for i, r in enumerate(self.rounds):
             round_score_total.append(r.end_ct_score + r.end_t_score)
@@ -755,7 +791,6 @@ class CSGOMatchParser:
                 "DistanceBombsiteB",
             ],
         )
-        # self.footstep_df.to_csv("player_traj.csv", index=False)
 
     def write_kills(self):
         """ Write kills to a Pandas dataframe
@@ -763,7 +798,7 @@ class CSGOMatchParser:
         kills_df_list = []
         for i, r in enumerate(self.rounds):
             kills = r.kills
-            for f in kills:
+            for k in kills:
                 kills_df_list.append(
                     [
                         self.game_id,
@@ -773,44 +808,44 @@ class CSGOMatchParser:
                         self.game_time,
                         r.map_name,
                         i + 1,
-                        f.tick,
-                        f.sec,
-                        f.victim_x,
-                        f.victim_y,
-                        f.victim_z,
-                        f.victim_x_viz,
-                        f.victim_y_viz,
-                        f.victim_view_x,
-                        f.victim_view_y,
-                        f.victim_area_id,
-                        f.victim_area_name,
-                        f.attacker_x,
-                        f.attacker_y,
-                        f.attacker_z,
-                        f.attacker_x_viz,
-                        f.attacker_y_viz,
-                        f.attacker_view_x,
-                        f.attacker_view_y,
-                        f.attacker_area_id,
-                        f.attacker_area_name,
-                        f.victim_id,
-                        f.victim_name,
-                        f.victim_team,
-                        f.victim_side,
-                        f.victim_team_eq_val,
-                        f.attacker_id,
-                        f.attacker_name,
-                        f.attacker_team,
-                        f.attacker_side,
-                        f.attacker_team_eq_val,
-                        f.assister_id,
-                        f.assister_name,
-                        f.assister_team,
-                        f.assister_side,
-                        f.weapon_id,
-                        f.is_wallshot,
-                        f.is_flashed,
-                        f.is_headshot,
+                        k.tick,
+                        k.sec,
+                        k.victim_x,
+                        k.victim_y,
+                        k.victim_z,
+                        k.victim_x_viz,
+                        k.victim_y_viz,
+                        k.victim_view_x,
+                        k.victim_view_y,
+                        k.victim_area_id,
+                        k.victim_area_name,
+                        k.attacker_x,
+                        k.attacker_y,
+                        k.attacker_z,
+                        k.attacker_x_viz,
+                        k.attacker_y_viz,
+                        k.attacker_view_x,
+                        k.attacker_view_y,
+                        k.attacker_area_id,
+                        k.attacker_area_name,
+                        k.victim_id,
+                        k.victim_name,
+                        k.victim_team,
+                        k.victim_side,
+                        k.victim_team_eq_val,
+                        k.attacker_id,
+                        k.attacker_name,
+                        k.attacker_team,
+                        k.attacker_side,
+                        k.attacker_team_eq_val,
+                        k.assister_id,
+                        k.assister_name,
+                        k.assister_team,
+                        k.assister_side,
+                        k.weapon_id,
+                        k.is_wallshot,
+                        k.is_flashed,
+                        k.is_headshot,
                     ]
                 )
         self.kills_df = pd.DataFrame(
@@ -863,7 +898,6 @@ class CSGOMatchParser:
                 "IsHeadshot",
             ],
         )
-        # self.kills_df.to_csv("kills.csv", index=False)
 
     def write_damages(self):
         """ Write damages to a Pandas dataframe
@@ -871,7 +905,7 @@ class CSGOMatchParser:
         damages_df_list = []
         for i, r in enumerate(self.rounds):
             damages = r.damages
-            for f in damages:
+            for d in damages:
                 damages_df_list.append(
                     [
                         self.game_id,
@@ -881,41 +915,41 @@ class CSGOMatchParser:
                         self.game_time,
                         r.map_name,
                         i + 1,
-                        f.tick,
-                        f.sec,
-                        f.victim_x,
-                        f.victim_y,
-                        f.victim_z,
-                        f.victim_x_viz,
-                        f.victim_y_viz,
-                        f.victim_view_x,
-                        f.victim_view_y,
-                        f.victim_area_id,
-                        f.victim_area_name,
-                        f.attacker_x,
-                        f.attacker_y,
-                        f.attacker_z,
-                        f.attacker_x_viz,
-                        f.attacker_y_viz,
-                        f.attacker_view_x,
-                        f.attacker_view_y,
-                        f.attacker_area_id,
-                        f.attacker_area_name,
-                        f.victim_id,
-                        f.victim_name,
-                        f.victim_team,
-                        f.victim_side,
-                        f.victim_team_eq_val,
-                        f.attacker_id,
-                        f.attacker_name,
-                        f.attacker_team,
-                        f.attacker_side,
-                        f.attacker_team_eq_val,
-                        f.hp_damage,
-                        f.kill_hp_damage,
-                        f.armor_damage,
-                        f.weapon_id,
-                        f.hit_group,
+                        d.tick,
+                        d.sec,
+                        d.victim_x,
+                        d.victim_y,
+                        d.victim_z,
+                        d.victim_x_viz,
+                        d.victim_y_viz,
+                        d.victim_view_x,
+                        d.victim_view_y,
+                        d.victim_area_id,
+                        d.victim_area_name,
+                        d.attacker_x,
+                        d.attacker_y,
+                        d.attacker_z,
+                        d.attacker_x_viz,
+                        d.attacker_y_viz,
+                        d.attacker_view_x,
+                        d.attacker_view_y,
+                        d.attacker_area_id,
+                        d.attacker_area_name,
+                        d.victim_id,
+                        d.victim_name,
+                        d.victim_team,
+                        d.victim_side,
+                        d.victim_team_eq_val,
+                        d.attacker_id,
+                        d.attacker_name,
+                        d.attacker_team,
+                        d.attacker_side,
+                        d.attacker_team_eq_val,
+                        d.hp_damage,
+                        d.kill_hp_damage,
+                        d.armor_damage,
+                        d.weapon_id,
+                        d.hit_group,
                     ]
                 )
         self.damages_df = pd.DataFrame(
@@ -998,7 +1032,7 @@ class CSGOMatchParser:
                     r.t_cash_spent_round,
                     r.t_eq_val,
                     r.ct_round_type,
-                    r.t_round_type
+                    r.t_round_type,
                 ]
             )
         self.rounds_df = pd.DataFrame(
@@ -1028,7 +1062,7 @@ class CSGOMatchParser:
                 "TCashSpentRound",
                 "TEqVal",
                 "CTRoundType",
-                "TRoundType"
+                "TRoundType",
             ],
         )
 
@@ -1053,7 +1087,7 @@ class CSGOMatchParser:
     def write_json(self, filename=""):
         """ Wrapper function to write the data in JSON
 
-        Attributes:
+        Parameters:
             - filename (string) : Filename for JSON file
         """
         self.game_json = {}
@@ -1066,7 +1100,9 @@ class CSGOMatchParser:
         self.game_json["MapName"] = self.rounds_df.MapName.values[0]
         self.game_json["Stats"] = {}
         if (filename) == "" or (filename is None):
-            filename = self.game_json["GameID"] + "_" + self.game_json["MapName"] + ".json"
+            filename = (
+                self.game_json["GameID"] + "_" + self.game_json["MapName"] + ".json"
+            )
         # Set final score
         score_df = self.rounds_df.groupby("RoundWinner").size().reset_index()
         score_df.columns = ["Team", "Score"]
@@ -1079,29 +1115,102 @@ class CSGOMatchParser:
         else:
             self.game_json["IsOvertime"] = 0
         # Set rounds
-        rounds_df_filtered = self.rounds_df.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName"], axis = 1)
+        rounds_df_filtered = self.rounds_df.drop(
+            [
+                "GameID",
+                "CompetitionName",
+                "MatchName",
+                "GameDate",
+                "GameTime",
+                "MapName",
+            ],
+            axis=1,
+        )
         rounds_df_filtered.set_index("RoundNum", inplace=True)
         self.game_json["Rounds"] = rounds_df_filtered.to_dict("index")
         for r in self.game_json["Rounds"].keys():
             round_kills = self.kills_df[self.kills_df["RoundNum"] == int(r)]
-            round_kills.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1, inplace=True)
+            round_kills.drop(
+                [
+                    "GameID",
+                    "CompetitionName",
+                    "MatchName",
+                    "GameDate",
+                    "GameTime",
+                    "MapName",
+                    "RoundNum",
+                ],
+                axis=1,
+                inplace=True,
+            )
             self.game_json["Rounds"][r]["Kills"] = round_kills.to_dict("records")
             round_damages = self.damages_df[self.damages_df["RoundNum"] == int(r)]
-            round_damages.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1, inplace=True)
+            round_damages.drop(
+                [
+                    "GameID",
+                    "CompetitionName",
+                    "MatchName",
+                    "GameDate",
+                    "GameTime",
+                    "MapName",
+                    "RoundNum",
+                ],
+                axis=1,
+                inplace=True,
+            )
             self.game_json["Rounds"][r]["Damages"] = round_damages.to_dict("records")
             round_grenades = self.grenades_df[self.grenades_df["RoundNum"] == int(r)]
-            round_grenades.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1, inplace=True)
+            round_grenades.drop(
+                [
+                    "GameID",
+                    "CompetitionName",
+                    "MatchName",
+                    "GameDate",
+                    "GameTime",
+                    "MapName",
+                    "RoundNum",
+                ],
+                axis=1,
+                inplace=True,
+            )
             self.game_json["Rounds"][r]["Grenades"] = round_grenades.to_dict("records")
             round_bomb_events = self.bomb_df[self.bomb_df["RoundNum"] == int(r)]
-            round_bomb_events.drop(["GameID", "CompetitionName", "MatchName", "GameDate", "GameTime", "MapName", "RoundNum"], axis=1, inplace=True)
-            self.game_json["Rounds"][r]["BombEvents"] = round_bomb_events.to_dict("records")
+            round_bomb_events.drop(
+                [
+                    "GameID",
+                    "CompetitionName",
+                    "MatchName",
+                    "GameDate",
+                    "GameTime",
+                    "MapName",
+                    "RoundNum",
+                ],
+                axis=1,
+                inplace=True,
+            )
+            self.game_json["Rounds"][r]["BombEvents"] = round_bomb_events.to_dict(
+                "records"
+            )
         # Player stats
-        player_kills = self.kills_df.groupby(["AttackerID", "AttackerName", "AttackerTeam"]).size().reset_index()
+        player_kills = (
+            self.kills_df.groupby(["AttackerID", "AttackerName", "AttackerTeam"])
+            .size()
+            .reset_index()
+        )
         player_kills.columns = ["PlayerID", "PlayerName", "PlayerTeam", "Kills"]
         player_kills = player_kills[player_kills["PlayerID"] != 0]
-        player_deaths = self.kills_df.groupby(["VictimID", "VictimName", "VictimTeam"]).size().reset_index()
+        player_deaths = (
+            self.kills_df.groupby(["VictimID", "VictimName", "VictimTeam"])
+            .size()
+            .reset_index()
+        )
         player_deaths.columns = ["PlayerID", "PlayerName", "PlayerTeam", "Deaths"]
-        player_adr = (self.damages_df.groupby(["AttackerID", "AttackerName", "AttackerTeam"]).KillHpDamage.sum()/len(self.game_json["Rounds"])).reset_index()
+        player_adr = (
+            self.damages_df.groupby(
+                ["AttackerID", "AttackerName", "AttackerTeam"]
+            ).KillHpDamage.sum()
+            / len(self.game_json["Rounds"])
+        ).reset_index()
         player_adr.columns = ["PlayerID", "PlayerName", "PlayerTeam", "ADR"]
         player_adr = player_adr[player_adr["PlayerID"] != 0]
         player_adr.ADR = player_adr.ADR.round()
@@ -1115,8 +1224,14 @@ class CSGOMatchParser:
                 player_name = player_team_df.PlayerName.unique()[0]
                 self.game_json["Stats"][team][str(player)] = {}
                 self.game_json["Stats"][team][str(player)]["Name"] = player_name
-                self.game_json["Stats"][team][str(player)]["Kills"] = player_team_df.Kills.unique()[0]
-                self.game_json["Stats"][team][str(player)]["Deaths"] = player_team_df.Deaths.unique()[0]
-                self.game_json["Stats"][team][str(player)]["ADR"] = player_team_df.ADR.unique()[0]
+                self.game_json["Stats"][team][str(player)][
+                    "Kills"
+                ] = player_team_df.Kills.unique()[0]
+                self.game_json["Stats"][team][str(player)][
+                    "Deaths"
+                ] = player_team_df.Deaths.unique()[0]
+                self.game_json["Stats"][team][str(player)][
+                    "ADR"
+                ] = player_team_df.ADR.unique()[0]
         with open(filename, "w") as game_json_file:
             json.dump(self.game_json, game_json_file, cls=NpEncoder, indent=4)

@@ -33,6 +33,12 @@ class TestCSGOParser:
         self.parser.parse_demofile()
         assert not self.parser.demo_error
 
+    def test_logger(self):
+        """ Tests if the parser logs correctly.
+        """
+        self.parser.parse_demofile()
+        assert os.path.exists("csgo_parser.log")
+
     def test_parse_match(self):
         """ Tests if the parser parses the match without issue. Our test demo had 21 total rounds.
         """
@@ -148,4 +154,6 @@ class TestCSGOParser:
         """ Tests if parser can write to JSON
         """
         self.parser.write_json()
-        assert os.path.exists("IEM-Katowice-2020_Natus-Vincere-vs-Astralis_02-29-2020_13:35_de_dust2.json")
+        assert os.path.exists(
+            "IEM-Katowice-2020_Natus-Vincere-vs-Astralis_02-29-2020_13:35_de_dust2.json"
+        )

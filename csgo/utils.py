@@ -4,9 +4,11 @@
 import json
 import numpy as np
 
+
 class NpEncoder(json.JSONEncoder):
     """ Class to change numpy encodings for JSON file writing
     """
+
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)

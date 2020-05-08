@@ -65,4 +65,6 @@ class TestGameParser:
         """ Tests if the game parser writes JSON files
         """
         game_data = self.parser.parse(write_json=True)
-        assert os.path.exists("IEM-Katowice-2020_Natus-Vincere-vs-Astralis_02-29-2020_13:35_de_dust2.json")
+        assert os.path.exists(
+            "IEM-Katowice-2020_Natus-Vincere-vs-Astralis_02-29-2020_13:35_de_dust2.json"
+        )

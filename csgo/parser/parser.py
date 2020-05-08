@@ -8,6 +8,7 @@ import subprocess
 
 from csgo.entities import Game, Round
 
+
 class MatchParser:
     """ This class can parse a CSGO match to output events in a logical structure
 
@@ -68,18 +69,10 @@ class MatchParser:
     def parse_demofile(self):
         """ Parse a demofile using the Go script parse_demo.go
         """
-        self.logger.info(
-            "Starting CSGO Go demofile parser on " + self.demofile
-        )
+        self.logger.info("Starting CSGO Go demofile parser on " + self.demofile)
         path = os.path.join(os.path.dirname(__file__), "")
         proc = subprocess.Popen(
-            [
-                "go",
-                "run",
-                "parse_demo.go",
-                "-demo",
-                os.getcwd() + "/" + self.demofile,
-            ],
+            ["go", "run", "parse_demo.go", "-demo", os.getcwd() + "/" + self.demofile],
             stdout=subprocess.PIPE,
             cwd=path,
         )
@@ -151,7 +144,9 @@ class MatchParser:
                 # Add round to list
                 if len(self.game.rounds) > 0:
                     self.game.rounds[-1] = current_round
-                self.logger.info("Parsed round end official " + str(len(self.game.rounds)))
+                self.logger.info(
+                    "Parsed round end official " + str(len(self.game.rounds))
+                )
             if "[NEW PLAYER]" in event:
                 player_info = split_line[1].replace("]", "").strip()
                 player_info_list = player_info.split(" ")
