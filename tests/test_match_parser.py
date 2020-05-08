@@ -37,7 +37,7 @@ class TestCSGOParser:
     def test_logger(self):
         """ Tests if the parser logs correctly.
         """
-        self.parser.parse_demofile()
+        data = self.parser.parse()
         assert os.path.exists("csgo_parser.log")
 
     def test_parse_match(self):
