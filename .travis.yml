@@ -22,6 +22,9 @@ install:
 script:
     - coverage run -m pytest
 
+after_script:
+    - ls
+
 after_success:
     - coverage report -m
     - bash <(curl -s https://codecov.io/bash)
