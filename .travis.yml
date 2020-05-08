@@ -24,6 +24,7 @@ script:
 
 after_script:
     - ls
+    - find . -name csgo_parser.log
 
 after_success:
     - coverage report -m
