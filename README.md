@@ -9,7 +9,7 @@ The `csgo` package provides data parsing, analytics and visualization capabiliti
 
 ```
 go get github.com/mrazza/gonav
-go get github.com/markus-wa/demoinfocs-golang
+go get -u github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs
 ```
 
 which downloads the necessary Go packages for the parsing backend.

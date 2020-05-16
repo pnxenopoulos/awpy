@@ -107,14 +107,14 @@ func main() {
 				KillHpDmg = 100
 			}
 			armorDmg := e.ArmorDamage
-			weaponID := e.Weapon.Weapon
+			weaponID := e.Weapon.Type
 			hitGroup := e.HitGroup
 
 			// Find victim values
 			if e.Player == nil {
 				victimID = 0
 			} else {
-				victimID = e.Player.SteamID
+				victimID = e.Player.SteamID64
 				victimX = e.Player.Position.X
 				victimY = e.Player.Position.Y
 				victimZ = e.Player.Position.Z
@@ -144,7 +144,7 @@ func main() {
 			if e.Attacker == nil {
 				attackerID = 0
 			} else {
-				attackerID = e.Attacker.SteamID
+				attackerID = e.Attacker.SteamID64
 				attackerX = e.Attacker.Position.X
 				attackerY = e.Attacker.Position.Y
 				attackerZ = e.Attacker.Position.Z
@@ -209,7 +209,7 @@ func main() {
 			if e.Base().Thrower == nil {
 				playerID = 0
 			} else {
-				playerID = e.Base().Thrower.SteamID
+				playerID = e.Base().Thrower.SteamID64
 				//playerName = e.Player.Name
 				posX = e.Base().Position.X
 				posY = e.Base().Position.Y
@@ -273,7 +273,7 @@ func main() {
 			if e.Projectile.Thrower == nil {
 				playerID = 0
 			} else {
-				playerID = e.Projectile.Thrower.SteamID
+				playerID = e.Projectile.Thrower.SteamID64
 				//playerName = e.Player.Name
 				posX = e.Projectile.Position.X
 				posY = e.Projectile.Position.Y
@@ -364,7 +364,7 @@ func main() {
 			var attackerAssistSideString string = "NA"
 
 			// Sixth block (weapon/wallshot/headshot)
-			weaponID := e.Weapon.Weapon
+			weaponID := e.Weapon.Type
 			isWallshot := e.PenetratedObjects
 			isHeadshot := e.IsHeadshot
 			var isFlashed bool = false
@@ -375,7 +375,7 @@ func main() {
 			} else {
 				isFlashed = e.Victim.IsBlinded()
 
-				victimID = e.Victim.SteamID
+				victimID = e.Victim.SteamID64
 				victimX = e.Victim.Position.X
 				victimY = e.Victim.Position.Y
 				victimZ = e.Victim.Position.Z
@@ -405,7 +405,7 @@ func main() {
 			if e.Killer == nil {
 				attackerID = 0
 			} else {
-				attackerID = e.Killer.SteamID
+				attackerID = e.Killer.SteamID64
 				attackerX = e.Killer.Position.X
 				attackerY = e.Killer.Position.Y
 				attackerZ = e.Killer.Position.Z
@@ -435,7 +435,7 @@ func main() {
 			if e.Assister == nil {
 				attackerAssistID = 0
 			} else {
-				attackerAssistID = e.Assister.SteamID
+				attackerAssistID = e.Assister.SteamID64
 				attackerAssistName = e.Assister.Name
 				attackerAssistTeam = e.Assister.TeamState.ClanName
 				attackerAssistSide = e.Assister.Team
@@ -547,7 +547,7 @@ func main() {
 			var playerZ float64 = 0
 			var areaID uint32 = 0
 
-			playerID = e.BombEvent.Player.SteamID
+			playerID = e.BombEvent.Player.SteamID64
 			playerName = e.BombEvent.Player.Name
 			playerTeam = e.BombEvent.Player.TeamState.ClanName
 			playerX = e.BombEvent.Player.Position.X
@@ -589,7 +589,7 @@ func main() {
 			var playerZ float64 = 0
 			var areaID uint32 = 0
 
-			playerID = e.BombEvent.Player.SteamID
+			playerID = e.BombEvent.Player.SteamID64
 			playerName = e.BombEvent.Player.Name
 			playerTeam = e.BombEvent.Player.TeamState.ClanName
 			playerX = e.BombEvent.Player.Position.X
@@ -631,7 +631,7 @@ func main() {
 			var playerZ float64 = 0
 			var areaID uint32 = 0
 
-			playerID = e.BombEvent.Player.SteamID
+			playerID = e.BombEvent.Player.SteamID64
 			playerName = e.BombEvent.Player.Name
 			playerTeam = e.BombEvent.Player.TeamState.ClanName
 			playerX = e.BombEvent.Player.Position.X
@@ -684,7 +684,7 @@ func main() {
 			if e.Player == nil {
 				playerID = 0
 			} else {
-				playerID = e.Player.SteamID
+				playerID = e.Player.SteamID64
 				playerX = e.Player.Position.X
 				playerY = e.Player.Position.Y
 				playerZ = e.Player.Position.Z
