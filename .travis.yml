@@ -14,7 +14,9 @@ before_install:
     - wget -O tests/natus-vincere-vs-astralis-m1-dust2.dem http://www.peterxeno.com/csgo/natus-vincere-vs-astralis-m1-dust2.dem
     - sudo apt-get -y install golang
     - go get github.com/mrazza/gonav
-    - go get -u github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs
+    - cd csgo/csgo/parser
+    - go mod init github.com/test/demoinfocs  
+    - go get github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs
 
 install: 
     - pip install -r requirements.txt
