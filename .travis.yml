@@ -6,7 +6,6 @@ python:
     - 3.8
 
 before_install:
-    - pwd
     - python --version
     - pip install pip
     - pip install pytest
@@ -23,7 +22,7 @@ before_install:
     - export GOPATH=$HOME/go
     - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
     - source ~/.profile
-    - cd ~/pnxenopoulos/csgo
+    - cd /home/travis/build/pnxenopoulos/csgo
     - go get github.com/mrazza/gonav
     - cd csgo/parser
     - go mod init github.com/test/demoinfocs  
