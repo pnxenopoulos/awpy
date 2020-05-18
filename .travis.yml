@@ -6,6 +6,7 @@ python:
     - 3.8
 
 before_install:
+    - ls
     - python --version
     - pip install pip
     - pip install pytest
