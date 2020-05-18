@@ -27,6 +27,7 @@ before_install:
     - cd csgo/parser
     - go mod init github.com/test/demoinfocs  
     - go get github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs
+    - cd /home/travis/build/pnxenopoulos/csgo
 
 install: 
     - pip install -r requirements.txt
