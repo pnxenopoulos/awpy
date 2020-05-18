@@ -466,7 +466,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if warmup == false {
-			fmt.Printf("[ROUND START] [%s, %d] [%d, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score, gs.TeamCounterTerrorists().Score)
+			fmt.Printf("[ROUND START] [%s, %d] [%d, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
 		}
 	})
 
@@ -492,9 +492,9 @@ func main() {
 			switch e.Winner {
 			case common.TeamTerrorists:
 				// Winner's score + 1 because it hasn't actually been updated yet
-				fmt.Printf("[ROUND END] [%s, %d] [%d, %d] [T, %s, %s, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score+1, gs.TeamCounterTerrorists().Score, gs.TeamTerrorists().ClanName, gs.TeamCounterTerrorists().ClanName, e.Reason)
+				fmt.Printf("[ROUND END] [%s, %d] [%d, %d] [T, %s, %s, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score()+1, gs.TeamCounterTerrorists().Score(), gs.TeamTerrorists().ClanName, gs.TeamCounterTerrorists().ClanName, e.Reason)
 			case common.TeamCounterTerrorists:
-				fmt.Printf("[ROUND END] [%s, %d] [%d, %d] [CT, %s, %s, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score, gs.TeamCounterTerrorists().Score+1, gs.TeamCounterTerrorists().ClanName, gs.TeamTerrorists().ClanName, e.Reason)
+				fmt.Printf("[ROUND END] [%s, %d] [%d, %d] [CT, %s, %s, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score()+1, gs.TeamCounterTerrorists().ClanName, gs.TeamTerrorists().ClanName, e.Reason)
 			default:
 				/* It is currently unknown why rounds may end as draws. Markuswa
 				suggested that it may be due to match medic. [NOTE]
