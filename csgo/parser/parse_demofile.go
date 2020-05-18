@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	dem "github.com/markus-wa/demoinfocs-golang"
-	common "github.com/markus-wa/demoinfocs-golang/common"
-	events "github.com/markus-wa/demoinfocs-golang/events"
-	ex "github.com/markus-wa/demoinfocs-golang/examples"
-	metadata "github.com/markus-wa/demoinfocs-golang/metadata"
+	dem "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs"
+	common "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/common"
+	events "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/events"
+	ex "github.com/markus-wa/demoinfocs-golang/v2/examples"
+	metadata "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/metadata"
 	"github.com/mrazza/gonav"
 )
 
@@ -80,7 +80,7 @@ func main() {
 			var attackerViewY float32 = 0.0
 
 			// Fourth block (victim player/team)
-			var victimID int64 = 0
+			var victimID uint64 = 0
 			var victimName string = "NA"
 			var victimTeam string = "NA"
 			var victimSide common.Team
@@ -88,7 +88,7 @@ func main() {
 			var victimTeamEqVal int = 0
 
 			// Fifth block (attacker player/team)
-			var attackerID int64 = 0
+			var attackerID uint64 = 0
 			var attackerName string = "NA"
 			var attackerTeam string = "NA"
 			var attackerSide common.Team
@@ -115,12 +115,12 @@ func main() {
 				victimID = 0
 			} else {
 				victimID = e.Player.SteamID64
-				victimX = e.Player.Position.X
-				victimY = e.Player.Position.Y
-				victimZ = e.Player.Position.Z
+				victimX = e.Player.Position().X
+				victimY = e.Player.Position().Y
+				victimZ = e.Player.Position().Z
 				VictimXViz, VictimYViz = mapMetadata.TranslateScale(victimX, victimY)
-				VictimViewX = e.Player.ViewDirectionX
-				VictimViewY = e.Player.ViewDirectionY
+				VictimViewX = e.Player.ViewDirectionX()
+				VictimViewY = e.Player.ViewDirectionY()
 				victimLoc := gonav.Vector3{X: float32(victimX), Y: float32(victimY), Z: float32(victimZ)}
 				victimArea := mesh.GetNearestArea(victimLoc, true)
 				if victimArea != nil {
@@ -130,7 +130,7 @@ func main() {
 					}
 				}
 				victimName = e.Player.Name
-				victimTeam = e.Player.TeamState.ClanName
+				victimTeam = e.Player.TeamState.ClanName()
 				victimSide = e.Player.Team
 				if victimSide == 2 {
 					victimSideString = "T"
@@ -145,12 +145,12 @@ func main() {
 				attackerID = 0
 			} else {
 				attackerID = e.Attacker.SteamID64
-				attackerX = e.Attacker.Position.X
-				attackerY = e.Attacker.Position.Y
-				attackerZ = e.Attacker.Position.Z
+				attackerX = e.Attacker.Position().X
+				attackerY = e.Attacker.Position().Y
+				attackerZ = e.Attacker.Position().Z
 				attackerXViz, attackerYViz = mapMetadata.TranslateScale(attackerX, attackerY)
-				attackerViewX = e.Attacker.ViewDirectionX
-				attackerViewY = e.Attacker.ViewDirectionY
+				attackerViewX = e.Attacker.ViewDirectionX()
+				attackerViewY = e.Attacker.ViewDirectionY()
 				attackerLoc := gonav.Vector3{X: float32(attackerX), Y: float32(attackerY), Z: float32(attackerZ)}
 				attackerArea := mesh.GetNearestArea(attackerLoc, true)
 				if attackerArea != nil {
@@ -160,7 +160,7 @@ func main() {
 					}
 				}
 				attackerName = e.Attacker.Name
-				attackerTeam = e.Attacker.TeamState.ClanName
+				attackerTeam = e.Attacker.TeamState.ClanName()
 				attackerSide = e.Attacker.Team
 				if attackerSide == 2 {
 					attackerSideString = "T"
@@ -193,7 +193,7 @@ func main() {
 			var mapName string = header.MapName
 
 			// Second block (player info)
-			var playerID int64 = 0
+			var playerID uint64 = 0
 			var playerName string = "NA"
 			var posX float64 = 0.0
 			var posY float64 = 0.0
@@ -211,12 +211,12 @@ func main() {
 			} else {
 				playerID = e.Base().Thrower.SteamID64
 				//playerName = e.Player.Name
-				posX = e.Base().Position.X
-				posY = e.Base().Position.Y
-				posZ = e.Base().Position.Z
+				posX = e.Base().Position().X
+				posY = e.Base().Position().Y
+				posZ = e.Base().Position().Z
 				posXViz, posYViz = mapMetadata.TranslateScale(posX, posY)
 				playerSide = e.Base().Thrower.Team
-				playerTeam = e.Base().Thrower.TeamState.ClanName
+				playerTeam = e.Base().Thrower.TeamState.ClanName()
 				playerName = e.Base().Thrower.Name
 				posPoint := gonav.Vector3{X: float32(posX), Y: float32(posY), Z: float32(posZ)}
 				area := mesh.GetNearestArea(posPoint, true)
@@ -257,7 +257,7 @@ func main() {
 			var mapName string = header.MapName
 
 			// Second block (player info)
-			var playerID int64 = 0
+			var playerID unit64 = 0
 			var playerName string = "NA"
 			var posX float64 = 0.0
 			var posY float64 = 0.0
@@ -275,12 +275,12 @@ func main() {
 			} else {
 				playerID = e.Projectile.Thrower.SteamID64
 				//playerName = e.Player.Name
-				posX = e.Projectile.Position.X
-				posY = e.Projectile.Position.Y
-				posZ = e.Projectile.Position.Z
+				posX = e.Projectile.Position().X
+				posY = e.Projectile.Position().Y
+				posZ = e.Projectile.Position().Z
 				posXViz, posYViz = mapMetadata.TranslateScale(posX, posY)
 				playerSide = e.Projectile.Thrower.Team
-				playerTeam = e.Projectile.Thrower.TeamState.ClanName
+				playerTeam = e.Projectile.Thrower.TeamState.ClanName()
 				playerName = e.Projectile.Thrower.Name
 				posPoint := gonav.Vector3{X: float32(posX), Y: float32(posY), Z: float32(posZ)}
 				area := mesh.GetNearestArea(posPoint, true)
@@ -343,7 +343,7 @@ func main() {
 			var attackerViewY float32 = 0.0
 
 			// Fourth block (victim player/team)
-			var victimID int64 = 0
+			var victimID unit64 = 0
 			var victimName string = "NA"
 			var victimTeam string = "NA"
 			var victimSide common.Team
@@ -351,13 +351,13 @@ func main() {
 			var victimTeamEqVal int = 0
 
 			// Fifth block (attacker player/team)
-			var attackerID int64 = 0
+			var attackerID unit64 = 0
 			var attackerName string = "NA"
 			var attackerTeam string = "NA"
 			var attackerSide common.Team
 			var attackerSideString string = "NA"
 			var attackerTeamEqVal int = 0
-			var attackerAssistID int64 = 0
+			var attackerAssistID unit64 = 0
 			var attackerAssistName string = "NA"
 			var attackerAssistTeam string = "NA"
 			var attackerAssistSide common.Team
@@ -376,12 +376,12 @@ func main() {
 				isFlashed = e.Victim.IsBlinded()
 
 				victimID = e.Victim.SteamID64
-				victimX = e.Victim.Position.X
-				victimY = e.Victim.Position.Y
-				victimZ = e.Victim.Position.Z
+				victimX = e.Victim.Position().X
+				victimY = e.Victim.Position().Y
+				victimZ = e.Victim.Position().Z
 				VictimXViz, VictimYViz = mapMetadata.TranslateScale(victimX, victimY)
-				VictimViewX = e.Victim.ViewDirectionX
-				VictimViewY = e.Victim.ViewDirectionY
+				VictimViewX = e.Victim.ViewDirectionX()
+				VictimViewY = e.Victim.ViewDirectionY()
 				victimLoc := gonav.Vector3{X: float32(victimX), Y: float32(victimY), Z: float32(victimZ)}
 				victimArea := mesh.GetNearestArea(victimLoc, true)
 				if victimArea != nil {
@@ -391,7 +391,7 @@ func main() {
 					}
 				}
 				victimName = e.Victim.Name
-				victimTeam = e.Victim.TeamState.ClanName
+				victimTeam = e.Victim.TeamState.ClanName()
 				victimSide = e.Victim.Team
 				if victimSide == 2 {
 					victimSideString = "T"
@@ -406,12 +406,12 @@ func main() {
 				attackerID = 0
 			} else {
 				attackerID = e.Killer.SteamID64
-				attackerX = e.Killer.Position.X
-				attackerY = e.Killer.Position.Y
-				attackerZ = e.Killer.Position.Z
+				attackerX = e.Killer.Position().X
+				attackerY = e.Killer.Position().Y
+				attackerZ = e.Killer.Position().Z
 				attackerXViz, attackerYViz = mapMetadata.TranslateScale(attackerX, attackerY)
-				attackerViewX = e.Killer.ViewDirectionX
-				attackerViewY = e.Killer.ViewDirectionY
+				attackerViewX = e.Killer.ViewDirectionX()
+				attackerViewY = e.Killer.ViewDirectionY()
 				attackerLoc := gonav.Vector3{X: float32(attackerX), Y: float32(attackerY), Z: float32(attackerZ)}
 				attackerArea := mesh.GetNearestArea(attackerLoc, true)
 				if attackerArea != nil {
@@ -421,7 +421,7 @@ func main() {
 					}
 				}
 				attackerName = e.Killer.Name
-				attackerTeam = e.Killer.TeamState.ClanName
+				attackerTeam = e.Killer.TeamState.ClanName()
 				attackerSide = e.Killer.Team
 				if attackerSide == 2 {
 					attackerSideString = "T"
@@ -437,7 +437,7 @@ func main() {
 			} else {
 				attackerAssistID = e.Assister.SteamID64
 				attackerAssistName = e.Assister.Name
-				attackerAssistTeam = e.Assister.TeamState.ClanName
+				attackerAssistTeam = e.Assister.TeamState.ClanName()
 				attackerAssistSide = e.Assister.Team
 				if attackerAssistSide == 2 {
 					attackerAssistSideString = "T"
@@ -539,7 +539,7 @@ func main() {
 		// Only parse non-warmup events
 		if warmup == false {
 			var bombSite = "None"
-			var playerID int64 = 0
+			var playerID unit64 = 0
 			var playerName string = "NA"
 			var playerTeam string = "NA"
 			var playerX float64 = 0
@@ -549,10 +549,10 @@ func main() {
 
 			playerID = e.BombEvent.Player.SteamID64
 			playerName = e.BombEvent.Player.Name
-			playerTeam = e.BombEvent.Player.TeamState.ClanName
-			playerX = e.BombEvent.Player.Position.X
-			playerY = e.BombEvent.Player.Position.Y
-			playerZ = e.BombEvent.Player.Position.Z
+			playerTeam = e.BombEvent.Player.TeamState.ClanName()
+			playerX = e.BombEvent.Player.Position().X
+			playerY = e.BombEvent.Player.Position().Y
+			playerZ = e.BombEvent.Player.Position().Z
 
 			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
 			area := mesh.GetNearestArea(playerPoint, true)
@@ -581,7 +581,7 @@ func main() {
 		// Only parse non-warmup events
 		if warmup == false {
 			var bombSite = "None"
-			var playerID int64 = 0
+			var playerID unit64 = 0
 			var playerName string = "NA"
 			var playerTeam string = "NA"
 			var playerX float64 = 0
@@ -591,10 +591,10 @@ func main() {
 
 			playerID = e.BombEvent.Player.SteamID64
 			playerName = e.BombEvent.Player.Name
-			playerTeam = e.BombEvent.Player.TeamState.ClanName
-			playerX = e.BombEvent.Player.Position.X
-			playerY = e.BombEvent.Player.Position.Y
-			playerZ = e.BombEvent.Player.Position.Z
+			playerTeam = e.BombEvent.Player.TeamState.ClanName()
+			playerX = e.BombEvent.Player.Position().X
+			playerY = e.BombEvent.Player.Position().Y
+			playerZ = e.BombEvent.Player.Position().Z
 
 			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
 			area := mesh.GetNearestArea(playerPoint, true)
@@ -623,7 +623,7 @@ func main() {
 		// Only parse non-warmup events
 		if warmup == false {
 			var bombSite = "None"
-			var playerID int64 = 0
+			var playerID unit64 = 0
 			var playerName string = "NA"
 			var playerTeam string = "NA"
 			var playerX float64 = 0
@@ -633,10 +633,10 @@ func main() {
 
 			playerID = e.BombEvent.Player.SteamID64
 			playerName = e.BombEvent.Player.Name
-			playerTeam = e.BombEvent.Player.TeamState.ClanName
-			playerX = e.BombEvent.Player.Position.X
-			playerY = e.BombEvent.Player.Position.Y
-			playerZ = e.BombEvent.Player.Position.Z
+			playerTeam = e.BombEvent.Player.TeamState.ClanName()
+			playerX = e.BombEvent.Player.Position().X
+			playerY = e.BombEvent.Player.Position().Y
+			playerZ = e.BombEvent.Player.Position().Z
 
 			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
 			area := mesh.GetNearestArea(playerPoint, true)
@@ -664,7 +664,7 @@ func main() {
 
 		// Only parse non-warmup footsteps
 		if warmup == false {
-			var playerID int64 = 0
+			var playerID unit64 = 0
 			var playerName string = "NA"
 			var playerX float64 = 0.0
 			var playerY float64 = 0.0
@@ -685,14 +685,14 @@ func main() {
 				playerID = 0
 			} else {
 				playerID = e.Player.SteamID64
-				playerX = e.Player.Position.X
-				playerY = e.Player.Position.Y
-				playerZ = e.Player.Position.Z
-				playerViewX = e.Player.ViewDirectionX
-				playerViewY = e.Player.ViewDirectionY
+				playerX = e.Player.Position().X
+				playerY = e.Player.Position().Y
+				playerZ = e.Player.Position().Z
+				playerViewX = e.Player.ViewDirectionX()
+				playerViewY = e.Player.ViewDirectionY()
 				playerXViz, playerYViz = mapMetadata.TranslateScale(playerX, playerY)
 				playerSide = e.Player.Team
-				playerTeam = e.Player.TeamState.ClanName
+				playerTeam = e.Player.TeamState.ClanName()
 				playerName = e.Player.Name
 				playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
 				//area := mesh.GetNearestArea(playerPoint, false)
