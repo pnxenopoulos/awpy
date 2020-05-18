@@ -211,9 +211,9 @@ func main() {
 			} else {
 				playerID = e.Base().Thrower.SteamID64
 				//playerName = e.Player.Name
-				posX = e.Base().Position().X
-				posY = e.Base().Position().Y
-				posZ = e.Base().Position().Z
+				posX = e.Base().Position.X
+				posY = e.Base().Position.Y
+				posZ = e.Base().Position.Z
 				posXViz, posYViz = mapMetadata.TranslateScale(posX, posY)
 				playerSide = e.Base().Thrower.Team
 				playerTeam = e.Base().Thrower.TeamState.ClanName()
@@ -257,7 +257,7 @@ func main() {
 			var mapName string = header.MapName
 
 			// Second block (player info)
-			var playerID unit64 = 0
+			var playerID uint64 = 0
 			var playerName string = "NA"
 			var posX float64 = 0.0
 			var posY float64 = 0.0
@@ -297,7 +297,7 @@ func main() {
 					playerSideString = "CT"
 				}
 			}
-			grenadeType := e.Projectile.WeaponInstance.Weapon
+			grenadeType := e.Projectile.WeaponInstance.Type
 
 			if grenadeType == 503 {
 				fmt.Printf("[GRENADE] [%s, %d] [%d, %s, %s, %s] [%f, %f, %f, %f, %f, %d, %s, %d]\n",
@@ -343,7 +343,7 @@ func main() {
 			var attackerViewY float32 = 0.0
 
 			// Fourth block (victim player/team)
-			var victimID unit64 = 0
+			var victimID uint64 = 0
 			var victimName string = "NA"
 			var victimTeam string = "NA"
 			var victimSide common.Team
@@ -351,13 +351,13 @@ func main() {
 			var victimTeamEqVal int = 0
 
 			// Fifth block (attacker player/team)
-			var attackerID unit64 = 0
+			var attackerID uint64 = 0
 			var attackerName string = "NA"
 			var attackerTeam string = "NA"
 			var attackerSide common.Team
 			var attackerSideString string = "NA"
 			var attackerTeamEqVal int = 0
-			var attackerAssistID unit64 = 0
+			var attackerAssistID uint64 = 0
 			var attackerAssistName string = "NA"
 			var attackerAssistTeam string = "NA"
 			var attackerAssistSide common.Team
@@ -481,11 +481,11 @@ func main() {
 
 			fmt.Printf("[ROUND PURCHASE] [%s, %d] [T, %d, %d, %d] [CT, %d, %d, %d] \n",
 				header.MapName, gs.IngameTick(),
-				gs.TeamTerrorists().CashSpentTotal(),
-				gs.TeamTerrorists().CashSpentThisRound(),
+				gs.TeamTerrorists().MoneySpentTotal(),
+				gs.TeamTerrorists().MoneySpentThisRound(),
 				gs.TeamTerrorists().FreezeTimeEndEquipmentValue(),
-				gs.TeamCounterTerrorists().CashSpentTotal(),
-				gs.TeamCounterTerrorists().CashSpentThisRound(),
+				gs.TeamCounterTerrorists().MoneySpentTotal(),
+				gs.TeamCounterTerrorists().MoneySpentThisRound(),
 				gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue(),
 			)
 
@@ -539,7 +539,7 @@ func main() {
 		// Only parse non-warmup events
 		if warmup == false {
 			var bombSite = "None"
-			var playerID unit64 = 0
+			var playerID uint64 = 0
 			var playerName string = "NA"
 			var playerTeam string = "NA"
 			var playerX float64 = 0
@@ -581,7 +581,7 @@ func main() {
 		// Only parse non-warmup events
 		if warmup == false {
 			var bombSite = "None"
-			var playerID unit64 = 0
+			var playerID uint64 = 0
 			var playerName string = "NA"
 			var playerTeam string = "NA"
 			var playerX float64 = 0
@@ -623,7 +623,7 @@ func main() {
 		// Only parse non-warmup events
 		if warmup == false {
 			var bombSite = "None"
-			var playerID unit64 = 0
+			var playerID uint64 = 0
 			var playerName string = "NA"
 			var playerTeam string = "NA"
 			var playerX float64 = 0
@@ -664,7 +664,7 @@ func main() {
 
 		// Only parse non-warmup footsteps
 		if warmup == false {
-			var playerID unit64 = 0
+			var playerID uint64 = 0
 			var playerName string = "NA"
 			var playerX float64 = 0.0
 			var playerY float64 = 0.0
