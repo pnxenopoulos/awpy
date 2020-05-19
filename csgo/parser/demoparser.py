@@ -234,6 +234,7 @@ class DemoParser:
             "Starting CSGO Golang demofile parser, reading in " + self.demofile
         )
         path = os.path.join(os.path.dirname(__file__), "")
+        self.logger.info("Running Golang parser in " + path)
         proc = subprocess.Popen(
             [
                 "go",

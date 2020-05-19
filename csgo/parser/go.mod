@@ -1,4 +1,4 @@
-module github.com/test/demoinfocs
+module github.com/csgo/csgo
 
 go 1.14
 

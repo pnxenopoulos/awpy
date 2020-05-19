@@ -80,6 +80,8 @@ class TestDemoParser:
         """
         assert self.parser.rounds[0].ct_round_type == "Pistol"
         assert self.parser.rounds[0].t_round_type == "Pistol"
+        assert self.parser.rounds[1].ct_round_type == "Half Buy"
+        assert self.parser.rounds[2].ct_round_type == "Eco"
 
     def test_kills_total(self):
         """ Tests if the kill totals are correct. s1mple should have 25 kills.

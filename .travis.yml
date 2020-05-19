@@ -23,8 +23,6 @@ before_install:
     - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
     - source ~/.profile
     - cd /home/travis/build/pnxenopoulos/csgo
-    - cd csgo/parser
-    - cd /home/travis/build/pnxenopoulos/csgo
 
 install: 
     - pip install -r requirements.txt
