@@ -24,9 +24,6 @@ before_install:
     - source ~/.profile
     - cd /home/travis/build/pnxenopoulos/csgo
     - cd csgo/parser
-    - go mod init github.com/test/demoinfocs  
-    - go get github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs
-    - go get github.com/mrazza/gonav
     - cd /home/travis/build/pnxenopoulos/csgo
 
 install: 

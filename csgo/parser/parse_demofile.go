@@ -9,7 +9,7 @@ import (
 	events "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/events"
 	ex "github.com/markus-wa/demoinfocs-golang/v2/examples"
 	metadata "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/metadata"
-	"github.com/mrazza/gonav"
+	gonav "github.com/pnxenopoulos/csgonavparse"
 )
 
 // Run parser as follows: go run parse_demofile.go -demo /path/to/demo.dem
@@ -492,9 +492,9 @@ func main() {
 			switch e.Winner {
 			case common.TeamTerrorists:
 				// Winner's score + 1 because it hasn't actually been updated yet
-				fmt.Printf("[ROUND END] [%s, %d] [%d, %d] [T, %s, %s, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score()+1, gs.TeamCounterTerrorists().Score(), gs.TeamTerrorists().ClanName, gs.TeamCounterTerrorists().ClanName, e.Reason)
+				fmt.Printf("[ROUND END] [%s, %d] [%d, %d] [T, %d, %d, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score()+1, gs.TeamCounterTerrorists().Score(), gs.TeamTerrorists().ClanName, gs.TeamCounterTerrorists().ClanName, e.Reason)
 			case common.TeamCounterTerrorists:
-				fmt.Printf("[ROUND END] [%s, %d] [%d, %d] [CT, %s, %s, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score()+1, gs.TeamCounterTerrorists().ClanName, gs.TeamTerrorists().ClanName, e.Reason)
+				fmt.Printf("[ROUND END] [%s, %d] [%d, %d] [CT, %d, %d, %d] \n", header.MapName, gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score()+1, gs.TeamCounterTerrorists().ClanName, gs.TeamTerrorists().ClanName, e.Reason)
 			default:
 				/* It is currently unknown why rounds may end as draws. Markuswa
 				suggested that it may be due to match medic. [NOTE]
