@@ -82,6 +82,50 @@ class DemoParser:
         return (tick - start_tick) / 128
 
     @staticmethod
+    def get_round_type(ct_equip, t_equip, round_num):
+        """ Return team round types for a given dollar amount
+        """
+        round_types = {"CT": "None", "T": "None"}
+        # Pistol Round
+        if (round_num == 1) or (round_num == 16):
+            round_types["CT"] = "Pistol"
+            round_types["T"] = "Pistol"
+            return round_types
+        # Full Eco
+        if ct_equip < 2000:
+            round_types["CT"] = "Full Eco"
+        if t_equip < 2000:
+            round_types["CT"] = "Full Eco"
+        # Eco
+        if (ct_equip >= 2000) and (ct_equip < 8500):
+            round_types["CT"] = "Eco"
+        if (t_equip >= 2000) and (t_equip < 8500):
+            round_types["T"] = "Eco"
+        # Anti-Eco
+        if (
+            (round_types["T"] == "Eco" or round_types["T"] == "Full Eco")
+            and (ct_equip < 18500)
+            and (ct_equip >= 8500)
+        ):
+            round_types["CT"] = "Anti-Eco"
+        if (
+            (round_types["CT"] == "Eco" or round_types["CT"] == "Full Eco")
+            and (t_equip < 18500)
+            and (t_equip >= 8500)
+        ):
+            round_types["T"] = "Anti-Eco"
+        # Half Buy
+        if (ct_equip >= 8500) and (ct_equip < 22000):
+            round_types["CT"] = "Half Buy"
+        if (t_equip >= 8500) and (t_equip < 20000):
+            round_types["T"] = "Half Buy"
+        # Full Buy
+        if ct_equip >= 22000:
+            round_types["CT"] = "Full Buy"
+        if t_equip > 20000:
+            round_types["T"] = "Full Buy"
+
+    @staticmethod
     def get_hit_group(hitgroup_id):
         """ Return hitgroup in string
 
@@ -284,6 +328,13 @@ class DemoParser:
                 current_round.ct_cash_spent_total = int(third_block[1])
                 current_round.ct_cash_spent_round = int(third_block[2])
                 current_round.ct_eq_val = int(third_block[3])
+                round_types = DemoParser.get_round_type(
+                    current_round.ct_eq_val,
+                    current_round.t_eq_val,
+                    len(self.rounds) + 1,
+                )
+                current_round.ct_round_type = round_types["CT"]
+                current_round.t_round_type = round_types["T"]
             if "[ROUND END OFFICIAL]" in event:
                 split_line = event.split("] [")
                 # First block
@@ -999,6 +1050,8 @@ class DemoParser:
                     r.t_cash_spent_total,
                     r.t_cash_spent_round,
                     r.t_eq_val,
+                    r.ct_round_type,
+                    r.t_round_type,
                 ]
             )
         self.rounds_df = pd.DataFrame(
@@ -1027,6 +1080,8 @@ class DemoParser:
                 "TCashSpentTotal",
                 "TCashSpentRound",
                 "TEqVal",
+                "CTRoundType",
+                "TRoundType",
             ],
         )
 

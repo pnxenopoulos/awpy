@@ -75,6 +75,12 @@ class TestDemoParser:
         assert self.parser.rounds[0].t_cash_spent_round == 3550
         assert self.parser.rounds[0].ct_cash_spent_round == 3650
 
+    def test_round_type(self):
+        """ Tests if round types are properly functioning.
+        """
+        assert self.parser.rounds[0].ct_round_type == "Pistol"
+        assert self.parser.rounds[0].t_round_type == "Pistol"
+
     def test_kills_total(self):
         """ Tests if the kill totals are correct. s1mple should have 25 kills.
         """
