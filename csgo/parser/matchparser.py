@@ -6,10 +6,10 @@ import logging
 from os import listdir
 from os.path import exists, isfile, join
 
-from csgo.parser.match_parser import CSGOMatchParser
+from csgo.parser import DemoParser
 
 
-class GameParser:
+class MatchParser:
     """ This class parses a folder of CSGO demofiles and outputs a dictionary
     with the keys as the maps.
 
@@ -69,7 +69,7 @@ class GameParser:
         """
         for f in self.demofiles:
             map_name = f[3:-4]
-            parser = CSGOMatchParser(
+            parser = DemoParser(
                 demofile=self.match_dir + f,
                 competition_name=self.competition_name,
                 match_name=self.match_name,
