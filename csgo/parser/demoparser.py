@@ -84,6 +84,11 @@ class DemoParser:
     @staticmethod
     def get_round_type(ct_equip, t_equip, round_num):
         """ Return team round types for a given dollar amount
+
+        Parameters:
+            - ct_equip (int)  : CT side equipment value
+            - t_equip (int)   : T side equipment value
+            - round_num (int) : Round number
         """
         round_types = {"CT": "None", "T": "None"}
         # Pistol Round
@@ -124,6 +129,7 @@ class DemoParser:
             round_types["CT"] = "Full Buy"
         if t_equip > 20000:
             round_types["T"] = "Full Buy"
+        return round_types
 
     @staticmethod
     def get_hit_group(hitgroup_id):
@@ -208,7 +214,7 @@ class DemoParser:
     def get_round_reason(reason_id):
         """ Return round reason name
 
-        Attributes:
+        Parameters:
             - reason_id (int) : Round reason identifier
         """
         round_reasons = {
@@ -225,7 +231,7 @@ class DemoParser:
         """ Parse a demofile using the Go script parse_demofile.go
         """
         self.logger.info(
-            "Starting CSGO Go demofile parser, reading in " + self.demofile
+            "Starting CSGO Golang demofile parser, reading in " + self.demofile
         )
         path = os.path.join(os.path.dirname(__file__), "")
         proc = subprocess.Popen(
