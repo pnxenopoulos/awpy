@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mrazza/gonav"
+	gonav "github.com/pnxenopoulos/csgonavparse"
 )
 
 func main() {

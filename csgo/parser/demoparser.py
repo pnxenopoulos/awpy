@@ -290,7 +290,7 @@ class DemoParser:
                 current_round.round_winner_side = third_block[0]
                 current_round.round_winner = third_block[1].strip()
                 current_round.round_loser = third_block[2].strip()
-                current_round.reason = CSGODemoParser.get_round_reason(
+                current_round.reason = DemoParser.get_round_reason(
                     int(third_block[3].strip())
                 )
                 # Add events to round
@@ -338,7 +338,7 @@ class DemoParser:
                 split_line = event.split("] [")
                 # First block
                 current_footstep.tick = int(split_line[1].split(",")[1].strip())
-                current_footstep.sec = CSGODemoParser.get_seconds(
+                current_footstep.sec = DemoParser.get_seconds(
                     current_round.start_tick, current_footstep.tick
                 )
                 # Second block
@@ -368,7 +368,7 @@ class DemoParser:
                 split_line = event.split("] [")
                 # First block
                 current_damage.tick = int(split_line[1].split(",")[1].strip())
-                current_damage.sec = CSGODemoParser.get_seconds(
+                current_damage.sec = DemoParser.get_seconds(
                     current_round.start_tick, current_damage.tick
                 )
                 # Second block
@@ -412,10 +412,10 @@ class DemoParser:
                 current_damage.hp_damage = int(sixth_block[0])
                 current_damage.kill_hp_damage = int(sixth_block[1])
                 current_damage.armor_damage = int(sixth_block[2].strip())
-                current_damage.weapon_id = CSGODemoParser.get_weapon(
+                current_damage.weapon_id = DemoParser.get_weapon(
                     int(sixth_block[3].strip())
                 )
-                current_damage.hit_group = CSGODemoParser.get_hit_group(
+                current_damage.hit_group = DemoParser.get_hit_group(
                     int(sixth_block[4].replace("]", "").strip())
                 )
                 # Add current damage to round
@@ -425,7 +425,7 @@ class DemoParser:
                 split_line = event.split("] [")
                 # First block
                 current_kill.tick = int(split_line[1].split(",")[1].strip())
-                current_kill.sec = CSGODemoParser.get_seconds(
+                current_kill.sec = DemoParser.get_seconds(
                     current_round.start_tick, current_kill.tick
                 )
                 # Second block
@@ -472,9 +472,7 @@ class DemoParser:
                 current_kill.assister_side = sixth_block[3].strip()
                 # Seventh block
                 seventh_block = split_line[7].split(",")
-                current_kill.weapon_id = CSGODemoParser.get_weapon(
-                    int(seventh_block[0])
-                )
+                current_kill.weapon_id = DemoParser.get_weapon(int(seventh_block[0]))
                 current_kill.is_wallshot = int(seventh_block[1].strip())
                 current_kill.is_flashed = seventh_block[2].strip()
                 if current_kill.is_flashed == "true":
@@ -493,7 +491,7 @@ class DemoParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
-                current_bomb_event.sec = CSGODemoParser.get_seconds(
+                current_bomb_event.sec = DemoParser.get_seconds(
                     current_round.start_tick, current_bomb_event.tick
                 )
                 # Second block
@@ -516,7 +514,7 @@ class DemoParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
-                current_bomb_event.sec = CSGODemoParser.get_seconds(
+                current_bomb_event.sec = DemoParser.get_seconds(
                     current_round.start_tick, current_bomb_event.tick
                 )
                 # Second block
@@ -539,7 +537,7 @@ class DemoParser:
                 split_line = event.split("] [")
                 # First block
                 current_bomb_event.tick = int(split_line[1].split(",")[1].strip())
-                current_bomb_event.sec = CSGODemoParser.get_seconds(
+                current_bomb_event.sec = DemoParser.get_seconds(
                     current_round.start_tick, current_bomb_event.tick
                 )
                 # Second block
@@ -562,7 +560,7 @@ class DemoParser:
                 split_line = event.split("] [")
                 # First block
                 current_grenade.tick = int(split_line[1].split(",")[1].strip())
-                current_grenade.sec = CSGODemoParser.get_seconds(
+                current_grenade.sec = DemoParser.get_seconds(
                     current_round.start_tick, current_grenade.tick
                 )
                 # Second block
@@ -580,7 +578,7 @@ class DemoParser:
                 current_grenade.y_viz = float(third_block[4].strip()) * -1
                 current_grenade.area_id = int(third_block[5].strip())
                 current_grenade.area_name = third_block[6].strip()
-                current_grenade.grenade_type = CSGODemoParser.get_weapon(
+                current_grenade.grenade_type = DemoParser.get_weapon(
                     int(third_block[7].replace("]", "").strip())
                 )
                 # Add current grenades to round
