@@ -188,8 +188,6 @@ class Round:
         - t_cash_spent_total (int)   : T total cash spent by this point of the game
         - t_cash_spent_round (int)   : T total cash spent in current round
         - t_eq_val (int)             : T equipment value at end of freezetime
-        - ct_round_type (string)     : CT round buy type
-        - t_round_type (string)      : T round buy type
         - bomb_plant_tick            : Bomb plant tick
         - bomb_events (list)         : List of BombEvent objects
         - damages (list)             : List of Damage objects
@@ -217,8 +215,6 @@ class Round:
         t_cash_spent_total=0,
         t_cash_spent_round=0,
         t_eq_val=0,
-        ct_round_type="",
-        t_round_type="",
         bomb_plant_tick=0,
         players=[],
         kills=[],
@@ -246,14 +242,12 @@ class Round:
         self.footsteps = footsteps
         self.bomb_events = bomb_events
         self.grenades = grenades
-        self.ct_cash_spent_total = (ct_cash_spent_total,)
-        self.ct_cash_spent_round = (ct_cash_spent_round,)
-        self.ct_eq_val = (ct_eq_val,)
-        self.t_cash_spent_total = (t_cash_spent_total,)
-        self.t_cash_spent_round = (t_cash_spent_round,)
+        self.ct_cash_spent_total = ct_cash_spent_total
+        self.ct_cash_spent_round = ct_cash_spent_round
+        self.ct_eq_val = ct_eq_val
+        self.t_cash_spent_total = t_cash_spent_total
+        self.t_cash_spent_round = t_cash_spent_round
         self.t_eq_val = t_eq_val
-        self.ct_round_type = ct_round_type
-        self.t_round_type = t_round_type
         self.bomb_plant_tick = bomb_plant_tick
         if self.round_winner_side == "CT":
             self.start_ct_score = self.end_ct_score - 1

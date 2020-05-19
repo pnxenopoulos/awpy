@@ -82,39 +82,6 @@ class DemoParser:
         return (tick - start_tick) / 128
 
     @staticmethod
-    def get_round_type(ct_equip, ct_spend, t_equip, t_spend, round_num):
-        """ Return team round types for a given dollar amount
-        """
-        round_types = {}
-        # Pistol Round
-        if (round_num == 1) or (round_num == 16):
-            round_types["CT"] = "Pistol"
-            round_types["T"] = "Pistol"
-            return round_types
-        # Full Eco
-        if ct_equip < 3000:
-            round_types["CT"] = "Full Eco"
-        if t_equip < 3000:
-            round_types["CT"] = "Full Eco"
-        # Eco
-        if (ct_equip >= 3000) and (ct_equip < 8500):
-            round_types["CT"] = "Eco"
-        if (t_equip >= 3000) and (t_equip < 8500):
-            round_types["T"] = "Eco"
-        # Anti-Eco
-        if (t_equip < 12500) and (ct_equip < 18500) and (ct_equip > 12500):
-            round_types["CT"] = "Anti-Eco"
-        if (ct_equip < 12500) and (t_equip < 18500) and (t_equip > 12500):
-            round_types["T"] = "Anti-Eco"
-        # Half Buy
-        # Force Buy
-        # Full Buy
-        if ct_equip > 20500:
-            round_types["CT"] = "Full Buy"
-        if t_equip > 20500:
-            round_types["T"] = "Full Buy"
-
-    @staticmethod
     def get_hit_group(hitgroup_id):
         """ Return hitgroup in string
 
@@ -1032,8 +999,6 @@ class DemoParser:
                     r.t_cash_spent_total,
                     r.t_cash_spent_round,
                     r.t_eq_val,
-                    r.ct_round_type,
-                    r.t_round_type,
                 ]
             )
         self.rounds_df = pd.DataFrame(
@@ -1062,8 +1027,6 @@ class DemoParser:
                 "TCashSpentTotal",
                 "TCashSpentRound",
                 "TEqVal",
-                "CTRoundType",
-                "TRoundType",
             ],
         )
 
