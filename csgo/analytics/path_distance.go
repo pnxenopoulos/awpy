@@ -35,7 +35,7 @@ func main() {
 	// Read in args
 	//currentMap, startX, startY, startZ, endX, endY, endZ = DemoPathFromArgs()
 	// Read in parser
-	fNav, _ := os.Open("../data/original_nav_files/" + currentMap + ".nav")
+	fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 	parserNav := gonav.Parser{Reader: fNav}
 	mesh, _ := parserNav.Parse()
 	startLoc := gonav.Vector3{X: float32(startX), Y: float32(startY), Z: float32(startZ)}

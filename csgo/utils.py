@@ -31,7 +31,7 @@ def check_go_version():
         raise ValueError("Error finding Go version")
     else:
         go_version_text = parsed_resp[0].decode("utf-8")
-        go_version = re.findall("\d\.\d+\.\d", go_version_text)
+        go_version = re.findall(r"\d\.\d+\.\d", go_version_text)
         if int(go_version[0].replace(".", "")) >= 1140:
             return True
         else:
