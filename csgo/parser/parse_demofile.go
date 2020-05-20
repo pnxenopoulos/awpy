@@ -26,17 +26,7 @@ func main() {
 	header, err := p.ParseHeader()
 	checkError(err)
 
-	/* Get nav mesh given the map name
-	Keep in mind that original nav files only exists for the following maps:
-		- de_cbble
-		- de_dust2
-		- de_inferno
-		- de_mirage
-		- de_nuke
-		- de_overpass
-		- de_train
-		- de_vertigo
-	*/
+	// Get nav mesh given the map name
 
 	currentMap := header.MapName
 	mapMetadata := metadata.MapNameToMap[currentMap]

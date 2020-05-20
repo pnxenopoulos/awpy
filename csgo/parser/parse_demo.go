@@ -10,6 +10,28 @@ import (
 	ex "github.com/markus-wa/demoinfocs-golang/examples"
 )
 
+type PlayerInfo struct {
+	SteamID64         uint64
+	LastAlivePosition r3.Vector
+	Name              string
+	Inventory         map[int]*common.Equipment
+	FlashDuration     float32
+	FlashTick         int
+	TeamState         *common.TeamState
+	Team              common.Team
+	Armor             int
+	Health            int
+	ViewDirectionX    float32
+	ViewDirectionY    float32
+}
+
+type gameFrame struct {
+	Tick   int
+	Round  int
+	CTSide []common.Player
+	TSide  []common.Player
+}
+
 // Run parser as follows: go run parse_demofile.go -demo /path/to/demo.dem
 func main() {
 	// Read in demofile
