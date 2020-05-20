@@ -41,7 +41,7 @@ func main() {
 	currentMap := header.MapName
 	mapMetadata := metadata.MapNameToMap[currentMap]
 
-	fNav, _ := os.Open("../data/original_nav_files/" + currentMap + ".nav")
+	fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 	parserNav := gonav.Parser{Reader: fNav}
 	mesh, _ := parserNav.Parse()
 

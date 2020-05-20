@@ -9,7 +9,7 @@ import subprocess
 import pandas as pd
 
 from csgo.events import BombEvent, Footstep, Round, Kill, Damage, Grenade
-from csgo.utils import NpEncoder
+from csgo.utils import NpEncoder, check_go_version
 
 
 class DemoParser:
@@ -70,6 +70,9 @@ class DemoParser:
             self.logger.info(
                 "Initialized CSGODemoParser with demofile " + self.demofile
             )
+        acceptable_go = check_go_version()
+        if not acceptable_go:
+            raise ValueError("Go version too low! Needs 1.14.0")
 
     @staticmethod
     def get_seconds(start_tick, tick):
@@ -231,7 +234,10 @@ class DemoParser:
         """ Parse a demofile using the Go script parse_demofile.go
         """
         self.logger.info(
-            "Starting CSGO Golang demofile parser, reading in " + os.getcwd() + "/" + self.demofile
+            "Starting CSGO Golang demofile parser, reading in "
+            + os.getcwd()
+            + "/"
+            + self.demofile
         )
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
