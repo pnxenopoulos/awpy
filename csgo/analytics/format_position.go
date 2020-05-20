@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	metadata "github.com/markus-wa/demoinfocs-golang/metadata"
+	metadata "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/metadata"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/csgo/csgo
+module github.com/csgo/parse
 
 go 1.14
 
