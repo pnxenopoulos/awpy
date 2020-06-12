@@ -29,25 +29,13 @@ class TestMatchParser:
         """ Tests if the game parser issues a ValueError on a nonexistant directory
         """
         with pytest.raises(NotADirectoryError):
-            test_parser = MatchParser(
-                match_dir="fake_dir/",
-                competition_name="IEM-Katowice-2020",
-                match_name="Natus-Vincere-vs-Astralis",
-                game_date="02-29-2020",
-                game_time="13:35",
-            )
+            test_parser = MatchParser(match_dir="fake_dir/", demo_name="test",)
 
     def test_no_demofiles_dir(self):
         """ Tests if the game parser issues a ValueError on a dir with no demofiles
         """
         with pytest.raises(ValueError):
-            test_parser = MatchParser(
-                match_dir="csgo/",
-                competition_name="IEM-Katowice-2020",
-                match_name="Natus-Vincere-vs-Astralis",
-                game_date="02-29-2020",
-                game_time="13:35",
-            )
+            test_parser = MatchParser(match_dir="csgo/", demo_name="test",)
 
     def test_demofile_list(self):
         """ Tests if the game parser finds all demofiles
@@ -65,6 +53,4 @@ class TestMatchParser:
         """ Tests if the game parser writes JSON files
         """
         game_data = self.parser.parse(write_json=True)
-        assert os.path.exists(
-            "IEM-Katowice-2020_Natus-Vincere-vs-Astralis_02-29-2020_13:35_de_dust2.json"
-        )
+        assert os.path.exists("test_de_dust2.json")

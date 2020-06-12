@@ -16,20 +16,11 @@ class MatchParser:
     Attributes:
         match_dir: Directory to match with multiple demofiles
         logfile: A string denoting the path to the output log file
-        competition_name: A string denoting the competition name of the demo
-        match_name: A string denoting the match name of the demo
-        game_date: A string denoting the date of the demo
-        game_time: A string denoting the time of day of the demo
+        demo_name: A unique demo name/game id
     """
 
     def __init__(
-        self,
-        match_dir="",
-        logfile="parser.log",
-        competition_name="",
-        match_name="",
-        game_date="",
-        game_time="",
+        self, match_dir="", logfile="parser.log", demo_name="",
     ):
         """ Initialize a GameParser object
         """
@@ -43,13 +34,7 @@ class MatchParser:
         if len(self.demofiles) == 0:
             raise ValueError("Given match directory has no demofiles!")
         self.match_dir = match_dir
-        self.competition_name = competition_name
-        self.match_name = match_name
-        self.game_date = game_date
-        self.game_time = game_time
-        self.game_id = (
-            competition_name + "_" + match_name + "_" + game_date + "_" + game_time
-        )
+        self.game_id = demo_name
         self.game_data = {}
         self.logfile = logfile
         logging.basicConfig(
@@ -69,13 +54,7 @@ class MatchParser:
         """
         for f in self.demofiles:
             map_name = f[3:-4]
-            parser = DemoParser(
-                demofile=self.match_dir + f,
-                competition_name=self.competition_name,
-                match_name=self.match_name,
-                game_date=self.game_date,
-                game_time=self.game_time,
-            )
+            parser = DemoParser(demofile=self.match_dir + f, demo_name=self.game_id)
             self.game_data[map_name] = parser.parse()
             if write_json:
                 parser.write_json()

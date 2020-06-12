@@ -18,31 +18,16 @@ class DemoParser:
     Attributes:
         demofile: A string denoting the path to the demo file, which ends in .dem
         log: A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
-        competition_name: A string denoting the competition name of the demo
-        match_name: A string denoting the match name of the demo
-        game_date: A string denoting the date of the demo
-        game_time: A string denoting the time of day of the demo
+        demo_name: A unique demo name/game id
     """
 
     def __init__(
-        self,
-        demofile="",
-        log=False,
-        competition_name="",
-        match_name="",
-        game_date="",
-        game_time="",
+        self, demofile="", log=False, demo_name="",
     ):
         """ Initialize a CSGODemoParser object
         """
         self.demofile = demofile
-        self.competition_name = competition_name
-        self.match_name = match_name
-        self.game_date = game_date
-        self.game_time = game_time
-        self.game_id = (
-            competition_name + "_" + match_name + "_" + game_date + "_" + game_time
-        )
+        self.game_id = demo_name
         self.rounds = []
         self.demo_error = False
         if log:
@@ -663,10 +648,6 @@ class DemoParser:
                 grenade_df_list.append(
                     [
                         self.game_id,
-                        self.competition_name,
-                        self.match_name,
-                        self.game_date,
-                        self.game_time,
                         r.map_name,
                         i + 1,
                         g.tick,
@@ -689,10 +670,6 @@ class DemoParser:
             grenade_df_list,
             columns=[
                 "GameID",
-                "CompetitionName",
-                "MatchName",
-                "GameDate",
-                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -722,10 +699,6 @@ class DemoParser:
                 bomb_df_list.append(
                     [
                         self.game_id,
-                        self.competition_name,
-                        self.match_name,
-                        self.game_date,
-                        self.game_time,
                         r.map_name,
                         i + 1,
                         be.tick,
@@ -742,10 +715,6 @@ class DemoParser:
             bomb_df_list,
             columns=[
                 "GameID",
-                "CompetitionName",
-                "MatchName",
-                "GameDate",
-                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -769,10 +738,6 @@ class DemoParser:
                 footstep_df_list.append(
                     [
                         self.game_id,
-                        self.competition_name,
-                        self.match_name,
-                        self.game_date,
-                        self.game_time,
                         r.map_name,
                         i + 1,
                         f.tick,
@@ -798,10 +763,6 @@ class DemoParser:
             footstep_df_list,
             columns=[
                 "GameID",
-                "CompetitionName",
-                "MatchName",
-                "GameDate",
-                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -834,10 +795,6 @@ class DemoParser:
                 kills_df_list.append(
                     [
                         self.game_id,
-                        self.competition_name,
-                        self.match_name,
-                        self.game_date,
-                        self.game_time,
                         r.map_name,
                         i + 1,
                         k.tick,
@@ -884,10 +841,6 @@ class DemoParser:
             kills_df_list,
             columns=[
                 "GameID",
-                "CompetitionName",
-                "MatchName",
-                "GameDate",
-                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -941,10 +894,6 @@ class DemoParser:
                 damages_df_list.append(
                     [
                         self.game_id,
-                        self.competition_name,
-                        self.match_name,
-                        self.game_date,
-                        self.game_time,
                         r.map_name,
                         i + 1,
                         d.tick,
@@ -988,10 +937,6 @@ class DemoParser:
             damages_df_list,
             columns=[
                 "GameID",
-                "CompetitionName",
-                "MatchName",
-                "GameDate",
-                "GameTime",
                 "MapName",
                 "RoundNum",
                 "Tick",
@@ -1041,10 +986,6 @@ class DemoParser:
             round_df_list.append(
                 [
                     self.game_id,
-                    self.competition_name,
-                    self.match_name,
-                    self.game_date,
-                    self.game_time,
                     r.map_name,
                     i + 1,
                     r.start_tick,
@@ -1071,10 +1012,6 @@ class DemoParser:
             round_df_list,
             columns=[
                 "GameID",
-                "CompetitionName",
-                "MatchName",
-                "GameDate",
-                "GameTime",
                 "MapName",
                 "RoundNum",
                 "StartTick",
@@ -1125,10 +1062,6 @@ class DemoParser:
         self.game_json = {}
         # Set game metadata
         self.game_json["GameID"] = self.game_id
-        self.game_json["CompetitionName"] = self.competition_name
-        self.game_json["MatchName"] = self.match_name
-        self.game_json["GameDate"] = self.game_date
-        self.game_json["GameTime"] = self.game_time
         self.game_json["MapName"] = self.rounds_df.MapName.values[0]
         self.game_json["Stats"] = {}
         if (filename) == "" or (filename is None):
@@ -1147,78 +1080,28 @@ class DemoParser:
         else:
             self.game_json["IsOvertime"] = 0
         # Set rounds
-        rounds_df_filtered = self.rounds_df.drop(
-            [
-                "GameID",
-                "CompetitionName",
-                "MatchName",
-                "GameDate",
-                "GameTime",
-                "MapName",
-            ],
-            axis=1,
-        )
+        rounds_df_filtered = self.rounds_df.drop(["GameID", "MapName",], axis=1,)
         rounds_df_filtered.set_index("RoundNum", inplace=True)
         self.game_json["Rounds"] = rounds_df_filtered.to_dict("index")
         for r in self.game_json["Rounds"].keys():
             round_kills = self.kills_df[self.kills_df["RoundNum"] == int(r)]
             round_kills.drop(
-                [
-                    "GameID",
-                    "CompetitionName",
-                    "MatchName",
-                    "GameDate",
-                    "GameTime",
-                    "MapName",
-                    "RoundNum",
-                ],
-                axis=1,
-                inplace=True,
+                ["GameID", "MapName", "RoundNum",], axis=1, inplace=True,
             )
             self.game_json["Rounds"][r]["Kills"] = round_kills.to_dict("records")
             round_damages = self.damages_df[self.damages_df["RoundNum"] == int(r)]
             round_damages.drop(
-                [
-                    "GameID",
-                    "CompetitionName",
-                    "MatchName",
-                    "GameDate",
-                    "GameTime",
-                    "MapName",
-                    "RoundNum",
-                ],
-                axis=1,
-                inplace=True,
+                ["GameID", "MapName", "RoundNum",], axis=1, inplace=True,
             )
             self.game_json["Rounds"][r]["Damages"] = round_damages.to_dict("records")
             round_grenades = self.grenades_df[self.grenades_df["RoundNum"] == int(r)]
             round_grenades.drop(
-                [
-                    "GameID",
-                    "CompetitionName",
-                    "MatchName",
-                    "GameDate",
-                    "GameTime",
-                    "MapName",
-                    "RoundNum",
-                ],
-                axis=1,
-                inplace=True,
+                ["GameID", "MapName", "RoundNum",], axis=1, inplace=True,
             )
             self.game_json["Rounds"][r]["Grenades"] = round_grenades.to_dict("records")
             round_bomb_events = self.bomb_df[self.bomb_df["RoundNum"] == int(r)]
             round_bomb_events.drop(
-                [
-                    "GameID",
-                    "CompetitionName",
-                    "MatchName",
-                    "GameDate",
-                    "GameTime",
-                    "MapName",
-                    "RoundNum",
-                ],
-                axis=1,
-                inplace=True,
+                ["GameID", "MapName", "RoundNum",], axis=1, inplace=True,
             )
             self.game_json["Rounds"][r]["BombEvents"] = round_bomb_events.to_dict(
                 "records"

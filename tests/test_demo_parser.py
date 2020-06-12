@@ -15,10 +15,7 @@ class TestDemoParser:
         self.parser = DemoParser(
             demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
             log=True,
-            competition_name="IEM-Katowice-2020",
-            match_name="Natus-Vincere-vs-Astralis",
-            game_date="02-29-2020",
-            game_time="13:35",
+            demo_name="test",
         )
 
     def teardown_class(self):
@@ -149,13 +146,7 @@ class TestDemoParser:
     def test_parse_error(self):
         """ Tests if parser errors on bad file
         """
-        self.parser = DemoParser(
-            demofile="tests/file-no-exist.dem",
-            competition_name="IEM-Katowice-2020",
-            match_name="Natus-Vincere-vs-Astralis",
-            game_date="02-29-2020",
-            game_time="13:35",
-        )
+        self.parser = DemoParser(demofile="tests/file-no-exist.dem", demo_name="test",)
         self.parser.parse_demofile()
         assert self.parser.demo_error == True
 
@@ -163,6 +154,4 @@ class TestDemoParser:
         """ Tests if parser can write to JSON
         """
         self.parser.write_json()
-        assert os.path.exists(
-            "IEM-Katowice-2020_Natus-Vincere-vs-Astralis_02-29-2020_13:35_de_dust2.json"
-        )
+        assert os.path.exists("test_de_dust2.json")
