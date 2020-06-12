@@ -12,7 +12,7 @@ class TestMatchParser:
     def setup_class(self):
         """ Setup class by instantiating parser
         """
-        self.parser = MatchParser(match_dir="tests/", demo_name="test",)
+        self.parser = MatchParser(match_dir="tests/", match_id="test",)
 
     def teardown_class(self):
         """ Set parser to none
@@ -23,13 +23,13 @@ class TestMatchParser:
         """ Tests if the game parser issues a ValueError on a nonexistant directory
         """
         with pytest.raises(NotADirectoryError):
-            test_parser = MatchParser(match_dir="fake_dir/", demo_name="test",)
+            test_parser = MatchParser(match_dir="fake_dir/", match_id="test",)
 
     def test_no_demofiles_dir(self):
         """ Tests if the game parser issues a ValueError on a dir with no demofiles
         """
         with pytest.raises(ValueError):
-            test_parser = MatchParser(match_dir="csgo/", demo_name="test",)
+            test_parser = MatchParser(match_dir="csgo/", match_id="test",)
 
     def test_demofile_list(self):
         """ Tests if the game parser finds all demofiles
