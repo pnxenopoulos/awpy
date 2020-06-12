@@ -12,13 +12,7 @@ class TestMatchParser:
     def setup_class(self):
         """ Setup class by instantiating parser
         """
-        self.parser = MatchParser(
-            match_dir="tests/",
-            competition_name="IEM-Katowice-2020",
-            match_name="Natus-Vincere-vs-Astralis",
-            game_date="02-29-2020",
-            game_time="13:35",
-        )
+        self.parser = MatchParser(match_dir="tests/", demo_name="test",)
 
     def teardown_class(self):
         """ Set parser to none
