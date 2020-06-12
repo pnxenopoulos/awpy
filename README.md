@@ -21,8 +21,9 @@ easy. Just pick a demofile, and have a set of Pandas dataframes in seconds.
 from csgo.parser import DemoParser
 
 # Create parser object
-demo_parser = DemoParser(demofile = "demofile.dem", competition_name = "CompetitionName", match_name = "MatchName", game_date="00-00-0000", game_time="00:00")
-# Set arg log=True above if you want to produce a logfile for the parser
+# Set log=True above if you want to produce a logfile for the parser
+demo_parser = DemoParser(demofile = "astralis-vs-liquid-m1-inferno.dem", match_id = "astralis-vs-liquid-m1-inferno.dem")
+
 
 # Parse the demofile, output results to dictionary with df name as key
 data = demo_parser.parse()
@@ -38,29 +39,6 @@ data["Footsteps"]
 # You can also write the demofile data to JSON using
 demo_parser.write_json()
 # which writes to competitionName_matchName_gameDate_gameTime_mapName.json
-```
-
-Alternatively, sites like HLTV release compressed folders with multiple demofiles corresponding to a single match. The `csgo` package can handle these as well.
-
-```python
-from csgo.parser import MatchParser
-
-# Create MatchParser, pass the uncompressed directory of demofiles to the arg match_dir
-match_parser = MatchParser(match_dir="demoDir/", competition_name = "CompetitionName", match_name = "MatchName", game_date="00-00-0000", game_time="00:00")
-
-# Parse the directory
-match_data = match_parser.parse()
-
-# Data will be accessible in the keys of match_data, which correspond to the map of each parsed demofile. 
-# For example, say the match took place over three maps, de_dust2, de_nuke and de_train, then we could access the data by doing
-match_data["de_nuke"]
-match_data["de_dust2"]
-match_data["de_train"]
-
-# We can write a JSON when we parse by doing
-game_data = match_parser.parse(write_json=True)
-# which writes to competitionName_matchName_gameDate_gameTime.json
-# and has the game data in each of the keys corresponding to each map
 ```
 
 ## Structure
