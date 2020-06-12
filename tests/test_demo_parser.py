@@ -15,7 +15,7 @@ class TestDemoParser:
         self.parser = DemoParser(
             demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
             log=True,
-            demo_name="test",
+            match_id="test",
         )
 
     def teardown_class(self):
@@ -146,7 +146,7 @@ class TestDemoParser:
     def test_parse_error(self):
         """ Tests if parser errors on bad file
         """
-        self.parser = DemoParser(demofile="tests/file-no-exist.dem", demo_name="test",)
+        self.parser = DemoParser(demofile="tests/file-no-exist.dem", match_id="test",)
         self.parser.parse_demofile()
         assert self.parser.demo_error == True
 

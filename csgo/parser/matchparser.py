@@ -54,7 +54,7 @@ class MatchParser:
         """
         for f in self.demofiles:
             map_name = f[3:-4]
-            parser = DemoParser(demofile=self.match_dir + f, demo_name=self.match_id)
+            parser = DemoParser(demofile=self.match_dir + f, match_id=self.match_id)
             self.game_data[map_name] = parser.parse()
             if write_json:
                 parser.write_json()
