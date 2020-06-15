@@ -1053,11 +1053,12 @@ class DemoParser:
         self.dataframes["Grenades"] = self.grenades_df
         return self.dataframes
 
-    def write_json(self, filename=""):
+    def write_json(self, filename="", write_footsteps=False):
         """ Wrapper function to write the data in JSON
 
         Parameters:
-            - filename (string) : Filename for JSON file
+            - filename (string)      : Filename for JSON file
+            - write_footsteps (bool) : Boolean for whether or not write the footsteps, since they can balloon the file size.
         """
         self.game_json = {}
         # Set game metadata
@@ -1106,6 +1107,16 @@ class DemoParser:
             self.game_json["Rounds"][r]["BombEvents"] = round_bomb_events.to_dict(
                 "records"
             )
+            if write_footsteps:
+                round_footsteps = self.footsteps_df[
+                    self.footsteps_df["RoundNum"] == int(r)
+                ]
+                round_footsteps.drop(
+                    ["MatchId", "MapName", "RoundNum"], axis=1, inplace=True
+                )
+                self.game_json["Rounds"][r]["Footsteps"] = round_footsteps.to_dict(
+                    "records"
+                )
         # Player stats
         player_kills = (
             self.kills_df.groupby(["AttackerID", "AttackerName", "AttackerTeam"])

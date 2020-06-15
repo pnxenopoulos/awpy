@@ -38,7 +38,7 @@ data["Footsteps"]
 
 # You can also write the demofile data to JSON using
 demo_parser.write_json()
-# which writes to competitionName_matchName_gameDate_gameTime_mapName.json
+# which writes to matcId_mapName.json
 ```
 
 ## Structure
