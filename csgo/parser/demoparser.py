@@ -1,6 +1,3 @@
-""" Parsing class for demofile
-"""
-
 import json
 import logging
 import os
@@ -13,19 +10,20 @@ from csgo.utils import NpEncoder, check_go_version
 
 
 class DemoParser:
-    """ This class can parse a CSGO demofile to output game data in a logical structure
+    """ This class can parse a CSGO demofile to output game data in a logical structure. Accessible via csgo.parser import DemoParser
 
     Attributes:
-        demofile: A string denoting the path to the demo file, which ends in .dem
-        log: A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
-        match_id: A unique demo name/game id
+        demofile (string) : A string denoting the path to the demo file, which ends in .dem
+        log (boolean)     : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
+        match_id (string) : A unique demo name/game id
+    
+    Raises:
+        ValueError : Raises a ValueError if the Golang version is lower than 1.14
     """
 
     def __init__(
         self, demofile="", log=False, match_id="",
     ):
-        """ Initialize a CSGODemoParser object
-        """
         self.demofile = demofile
         self.match_id = match_id
         self.rounds = []
@@ -63,9 +61,9 @@ class DemoParser:
     def get_seconds(start_tick, tick):
         """ Finds seconds since start of round
 
-        Parameters:
-            - start_tick (int) : Round start tick
-            - tick (int)       : Tick of event
+        Args:
+            start_tick (int) : Round start tick
+            tick (int)       : Tick of event
         """
         return (tick - start_tick) / 128
 
@@ -73,10 +71,10 @@ class DemoParser:
     def get_round_type(ct_equip, t_equip, round_num):
         """ Return team round types for a given dollar amount
 
-        Parameters:
-            - ct_equip (int)  : CT side equipment value
-            - t_equip (int)   : T side equipment value
-            - round_num (int) : Round number
+        Args:
+            ct_equip (int)  : CT side equipment value
+            t_equip (int)   : T side equipment value
+            round_num (int) : Round number
         """
         round_types = {"CT": "None", "T": "None"}
         # Pistol Round
@@ -121,10 +119,13 @@ class DemoParser:
 
     @staticmethod
     def get_hit_group(hitgroup_id):
-        """ Return hitgroup in string
+        """ Return hitgroup in string. The mapping is:
 
-        Parameters:
-            - hitgroup_id (int) : Hitgroup identifier
+        Args:
+            hitgroup_id (int) : Hitgroup identifier
+
+        Returns:
+            String corresponding to the hitgroup id
         """
         hit_groups = {
             1: "Generic",
@@ -141,10 +142,13 @@ class DemoParser:
 
     @staticmethod
     def get_weapon(weapon_id):
-        """ Return weapon name
+        """ Return weapon name given a weapon_id. The mapping is:
 
-        Parameters:
-            - weapon_id (int) : Weapon identifier
+        Args:
+            weapon_id (int) : Weapon identifier
+
+        returns:
+            String corresponding to the weapon id
         """
         weapon_ids = {
             0: "Unknown",
@@ -200,10 +204,13 @@ class DemoParser:
 
     @staticmethod
     def get_round_reason(reason_id):
-        """ Return round reason name
+        """ Return round reason name. The mapping is:
 
-        Parameters:
-            - reason_id (int) : Round reason identifier
+        Args:
+            reason_id (int) : Round reason identifier
+
+        Returns:
+            String corresponding to the round win reason
         """
         round_reasons = {
             1: "TargetBombed",
@@ -215,8 +222,11 @@ class DemoParser:
         }
         return round_reasons.get(reason_id, "NA")
 
-    def parse_demofile(self):
-        """ Parse a demofile using the Go script parse_demofile.go
+    def _parse_demofile(self):
+        """ Parse a demofile using the Go script parse_demofile.go -- this function takes no arguments
+
+        Returns:
+            Returns a list of strings to the "parsed_text" attribute of the DemoParser class.
         """
         self.logger.info(
             "Starting CSGO Golang demofile parser, reading in "
@@ -244,8 +254,8 @@ class DemoParser:
             self.demo_error = True
         self.logger.info("Demofile parsing complete")
 
-    def parse_match(self):
-        """ Parse match event text data and structure it in logical format
+    def _parse_match(self):
+        """ Parse match event text data and structure it in logical format.
         """
         self.logger.info("Parsing match events")
         self.rounds = []
@@ -600,10 +610,10 @@ class DemoParser:
                 # Add current grenades to round
                 current_grenade_list.append(current_grenade)
         # Clean the rounds info
-        self.clean_rounds()
+        self._clean_rounds()
 
     def parse(self):
-        """ Parse wrapper function, called by user, and returns dictionary of data frames
+        """ Parse wrapper function, called by user, and returns dictionary of data frames. Takes no arguments.
         """
         self.parse_demofile()
         if not self.demo_error:
@@ -613,7 +623,7 @@ class DemoParser:
         else:
             return "Match has parsing error"
 
-    def clean_rounds(self):
+    def _clean_rounds(self):
         """ Function to clean the rounds list to remove rounds recorded before the real match start
         """
         round_score_total = []
