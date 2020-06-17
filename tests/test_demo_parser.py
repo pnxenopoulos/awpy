@@ -147,7 +147,7 @@ class TestDemoParser:
         """ Tests if parser errors on bad file
         """
         self.parser = DemoParser(demofile="tests/file-no-exist.dem", match_id="test",)
-        self.parser.parse_demofile()
+        self.parser._parse_demofile()
         assert self.parser.demo_error == True
 
     def test_json_write(self):

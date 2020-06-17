@@ -615,9 +615,9 @@ class DemoParser:
     def parse(self):
         """ Parse wrapper function, called by user, and returns dictionary of data frames. Takes no arguments.
         """
-        self.parse_demofile()
+        self._parse_demofile()
         if not self.demo_error:
-            self.parse_match()
+            self._parse_match()
             self.write_data()
             return self.dataframes
         else:
