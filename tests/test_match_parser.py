@@ -48,3 +48,9 @@ class TestMatchParser:
         """
         game_data = self.parser.parse(write_json=True)
         assert os.path.exists("test_de_dust2.json")
+
+    def test_logger(self):
+        """ Tests if the parser logs correctly.
+        """
+        assert self.parser.logger.name == "CSGODemoParser"
+        assert os.path.exists("csgo_parser.log")

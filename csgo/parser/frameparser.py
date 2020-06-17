@@ -1,3 +1,10 @@
+import logging
+import os
+import subprocess
+
+from csgo.utils import NpEncoder, check_go_version
+
+
 class FrameParser:
     """ This class can parse a CSGO demofile to output game data in a logical structure. Accessible via csgo.parser import FrameParser
 
@@ -46,14 +53,14 @@ class FrameParser:
         if not acceptable_go:
             raise ValueError("Go version too low! Needs 1.14.0")
 
-    def parse_demofile(self, output_file=""):
-        """ Parse a demofile using the Go script parse_demofile.go -- this function takes no arguments
+    def parse(self):
+        """ Parse a demofile using the Go script parse_frames.go -- this function takes no arguments
 
         Args:
         output_file (string) : The output file path for the resulting XML file
 
         Returns:
-            Returns a list of strings to the "parsed_text" attribute of the DemoParser class.
+            Returns a written file named match_id.xml
         """
         self.logger.info(
             "Starting CSGO Golang demofile parser, reading in "
@@ -71,7 +78,7 @@ class FrameParser:
                 "-demo",
                 os.getcwd() + "/" + self.demofile,
                 ">",
-                output_file,
+                "match_id" + ".xml",
             ],
             stdout=subprocess.PIPE,
             cwd=path,
