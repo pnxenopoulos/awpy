@@ -28,7 +28,7 @@ class TestDemoParser:
         parser would set the `demo_error` attribute to True. Since this demofile is
         not corrupted, this test should have parser.demo_error as FALSE
         """
-        self.parser.parse_demofile()
+        self.parser._parse_demofile()
         assert not self.parser.demo_error
 
     def test_logger(self):
@@ -40,7 +40,7 @@ class TestDemoParser:
     def test_parse_match(self):
         """ Tests if the parser parses the match without issue. Our test demo had 21 total rounds.
         """
-        self.parser.parse_match()
+        self.parser._parse_match()
         assert len(self.parser.rounds) == 21
 
     def test_parse(self):
@@ -54,7 +54,7 @@ class TestDemoParser:
     def test_clean_match(self):
         """ Tests if the clean_rounds works. Should still return 21.
         """
-        self.parser.clean_rounds()
+        self.parser._clean_rounds()
         assert len(self.parser.rounds) == 21
 
     def test_last_round_reason(self):
