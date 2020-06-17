@@ -47,7 +47,7 @@ class MatchParser:
             fh.setLevel(logging.INFO)
             self.logger.addHandler(fh)
             self.logger.info(
-                "Initialized CSGODemoParser with demofile " + self.demofile
+                "Initialized CSGODemoParser for " + self.match_dir
             )
         else:
             logging.basicConfig(
@@ -57,7 +57,7 @@ class MatchParser:
             )
             self.logger = logging.getLogger("CSGODemoParser")
             self.logger.info(
-                "Initialized CSGODemoParser with demofile " + self.demofile
+                "Initialized CSGODemoParser for " + self.match_dir
             )
         acceptable_go = check_go_version()
         if not acceptable_go:
