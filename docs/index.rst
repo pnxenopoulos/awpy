@@ -18,6 +18,11 @@ Events
 .. automodule:: csgo.events
     :members:
 
+Entities
+===================
+.. automodule:: csgo.entities
+    :members:
+
 Indices and tables
 ==================
 
