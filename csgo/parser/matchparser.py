@@ -4,6 +4,7 @@ from os import listdir
 from os.path import exists, isfile, join
 
 from csgo.parser import DemoParser
+from csgo.utils import check_go_version
 
 
 class MatchParser:
