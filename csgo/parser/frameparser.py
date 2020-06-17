@@ -83,4 +83,6 @@ class FrameParser:
             stdout=subprocess.PIPE,
             cwd=path,
         )
-        self.logger.info("Demofile parsing complete, output written to " + output_file)
+        self.logger.info(
+            "Demofile parsing complete, output written to " + self.match_id + ".xml"
+        )
