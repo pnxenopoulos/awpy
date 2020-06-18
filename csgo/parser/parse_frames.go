@@ -62,14 +62,14 @@ func main() {
 	// Get nav mesh given the map name
 
 	currentMap := header.MapName
-	mapMetadata := metadata.MapNameToMap[currentMap]
+	//mapMetadata := metadata.MapNameToMap[currentMap]
 
 	fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 	parserNav := gonav.Parser{Reader: fNav}
 	mesh, _ := parserNav.Parse()
 
 	// Create flags
-	endOfRound := 0
+	//endOfRound := 0
 	roundStarted := 0
 
 	// [PRINT] Starter <game> tag
