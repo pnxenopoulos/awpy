@@ -76,8 +76,7 @@ func main() {
 	fmt.Printf("<game map='%s'> \n", currentMap)
 
 	// [PRINT] Round starts
-	p.RegisterEventHandler(func(e events.RoundStart) {
-		roundStarted = 1
+	p.RegisterEventHandler(func(e events.RoundStart) {		
 
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
@@ -85,6 +84,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (matchStarted == true) {
+			roundStarted = 1
 			fmt.Printf("<round startTick='%d' tScore='%d' ctScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
 		}
 	})

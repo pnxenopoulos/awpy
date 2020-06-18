@@ -22,9 +22,17 @@ class TestFrameParser:
         """
         self.parser = None
 
-    def test_logger(self):
+    def test_logger_not_write(self):
+        """ Tests if the parser doesn't write a file when log=False
+        """
+        self.parser.log = False
+        assert self.parser.logger.name == "CSGODemoParser"
+        assert not os.path.exists("csgo_parser.log")
+
+    def test_logger_write(self):
         """ Tests if the parser logs correctly.
         """
+        self.parser.log = True
         assert self.parser.logger.name == "CSGODemoParser"
         assert os.path.exists("csgo_parser.log")
 
