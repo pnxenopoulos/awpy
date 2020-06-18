@@ -14,8 +14,7 @@ To install `csgo`, clone the repository and install it from source by doing `pyt
 To run the tests, go to the root directory and run `python -m pytest -vv`.
 
 ## Example Code
-Using the `csgo` package is straightforward. 
-easy. Just pick a demofile, and have a set of Pandas dataframes in seconds.
+Using the `csgo` package is straightforward. Just pick a demofile and have a set of Pandas dataframes in seconds. Use the example below to get started.
 
 ```python
 from csgo.parser import DemoParser
@@ -38,8 +37,27 @@ data["Footsteps"]
 
 # You can also write the demofile data to JSON using
 demo_parser.write_json()
-# which writes to matcId_mapName.json
+# which writes to matchId_mapName.json
 ```
+
+Alternatively, you can create an XML of the game, frame-by-frame, by doing
+```python
+from csgo.parser import FrameParser
+
+# Create parser object
+# Set log=True above if you want to produce a logfile for the parser
+demo_frame_parser = FrameParser(demofile = "astralis-vs-liquid-m1-inferno.dem", match_id = "astralis-vs-liquid-m1-inferno.dem")
+
+# Parse the demofile, output results match_id.xml
+demo_frame_parser.parse()
+```
+
+## Examples
+Take a look at the following Jupyter notebooks provided in our `examples/` directory.
+
+- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/master/examples/00_Parsing_a_CSGO_demofile.ipynb)
+- [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/master/examples/01_Basic_statistical_analysis.ipynb)
+- [Creating game frames](https://github.com/pnxenopoulos/csgo/blob/master/examples/02_Generating_game_frames.ipynb)
 
 ## Structure
 This repository contains code for CSGO analysis. It is structured as follows:
@@ -54,7 +72,8 @@ This repository contains code for CSGO analysis. It is structured as follows:
 │   ├── parser                    # Code for CSGO demo parser
 │   └── visualization             # Code for CSGO visualization
 ├── doc                           # Contains documentation, such as data dictionaries, etc.
-└── examples                      # Contains Jupyter Notebooks showing example code
+├── examples                      # Contains Jupyter Notebooks showing example code
+└── tests                         # Contains tests for the csgo package
 ```
 
 ## Requests and Issues
