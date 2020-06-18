@@ -107,3 +107,12 @@ class FrameParser:
                 start_round_elem = round_elem
         tree.write(open(self.match_id + ".xml", "w"), encoding="unicode")
         self.logger.info("Cleaned the round XML to remove noisy rounds")
+
+    def parse(self):
+        """ Parse the given demofile into an XML file of game "frames"
+
+        Returns:
+            Returns a written file named match_id.xml
+        """
+        self._parse_xml()
+        self._clean_xml()
