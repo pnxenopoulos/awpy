@@ -95,14 +95,14 @@ class FrameParser:
         game = tree.getroot()
         start_round = 0
         start_round_elem = None
-        for i, round_elem in enumerate(root):
+        for i, round_elem in enumerate(game):
             if (
                 int(round_elem.attrib["ctScore"]) + int(round_elem.attrib["tScore"])
                 == 0
             ):
                 print("removing...")
                 if start_round < i:
-                    root.remove(start_round_elem)
+                    game.remove(start_round_elem)
                 start_round = i
                 start_round_elem = round_elem
         tree.write(open(self.match_id + ".xml", "w"), encoding="unicode")
