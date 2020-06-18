@@ -81,6 +81,7 @@ class FrameParser:
             stdout=f,
             cwd=path,
         )
+        f.close()
         self.logger.info(
             "Demofile parsing complete, output written to " + self.match_id + ".xml"
         )
