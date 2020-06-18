@@ -12,7 +12,7 @@ class TestMatchParser:
     def setup_class(self):
         """ Setup class by instantiating parser
         """
-        self.parser = MatchParser(match_dir="tests/", match_id="test",)
+        self.parser = MatchParser(match_dir="tests/", match_id="test", log=True)
 
     def teardown_class(self):
         """ Set parser to none
@@ -49,16 +49,8 @@ class TestMatchParser:
         game_data = self.parser.parse(write_json=True)
         assert os.path.exists("test_de_dust2.json")
 
-    def test_logger_not_write(self):
-        """ Tests if the parser logs correctly.
-        """
-        self.parser.log = False
-        assert self.parser.logger.name == "CSGODemoParser"
-        assert not os.path.exists("csgo_parser.log")
-
     def test_logger_write(self):
         """ Tests if the parser logs correctly.
         """
-        self.parser.log = True
         assert self.parser.logger.name == "CSGODemoParser"
         assert os.path.exists("csgo_parser.log")
