@@ -69,21 +69,23 @@ class FrameParser:
         )
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang frame parser from " + path)
-        with open(self.match_id + ".xml", "w") as f:
-            proc = subprocess.Popen(
-                [
-                    "go",
-                    "run",
-                    "parse_frames.go",
-                    "-demo",
-                    os.getcwd() + "/" + self.demofile,
-                ],
-                stdout=f,
-                cwd=path,
-            )
-            self.logger.info(
-                "Demofile parsing complete, output written to " + self.match_id + ".xml"
-            )
+        f = open(self.match_id + ".xml", "w")
+        proc = subprocess.Popen(
+            [
+                "go",
+                "run",
+                "parse_frames.go",
+                "-demo",
+                os.getcwd() + "/" + self.demofile,
+            ],
+            stdout=f,
+            cwd=path,
+        )
+        ret_code = proc.wait()
+        f.flush()  
+        self.logger.info(
+            "Demofile parsing complete, output written to " + self.match_id + ".xml"
+        )
 
     def _clean_xml(self):
         """ Clean the XML file from ._parse_xml()
