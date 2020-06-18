@@ -2,6 +2,8 @@ import logging
 import os
 import subprocess
 
+import xml.etree.ElementTree as ET
+
 from csgo.utils import NpEncoder, check_go_version
 
 
@@ -53,11 +55,8 @@ class FrameParser:
         if not acceptable_go:
             raise ValueError("Go version too low! Needs 1.14.0")
 
-    def parse(self):
+    def _parse_xml(self):
         """ Parse a demofile using the Go script parse_frames.go -- this function takes no arguments
-
-        Args:
-        output_file (string) : The output file path for the resulting XML file
 
         Returns:
             Returns a written file named match_id.xml
@@ -85,3 +84,26 @@ class FrameParser:
         self.logger.info(
             "Demofile parsing complete, output written to " + self.match_id + ".xml"
         )
+
+    def _clean_xml(self):
+        """ Clean the XML file from ._parse_xml()
+
+        Returns:
+            Returns a written file named match_id.xml
+        """
+        tree = ET.parse(self.match_id + ".xml")
+        game = tree.getroot()
+        start_round = 0
+        start_round_elem = None
+        for i, round_elem in enumerate(root):
+            if (
+                int(round_elem.attrib["ctScore"]) + int(round_elem.attrib["tScore"])
+                == 0
+            ):
+                print("removing...")
+                if start_round < i:
+                    root.remove(start_round_elem)
+                start_round = i
+                start_round_elem = round_elem
+        tree.write(open(self.match_id + ".xml", "w"), encoding="unicode")
+        self.logger.info("Cleaned the round XML to remove noisy rounds")
