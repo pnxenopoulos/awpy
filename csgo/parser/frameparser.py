@@ -70,6 +70,7 @@ class FrameParser:
         )
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang frame parser from " + path)
+        f = open(self.match_id + ".xml", "w")
         proc = subprocess.Popen(
             [
                 "go",
@@ -77,10 +78,8 @@ class FrameParser:
                 "parse_frames.go",
                 "-demo",
                 os.getcwd() + "/" + self.demofile,
-                ">",
-                "match_id" + ".xml",
             ],
-            stdout=subprocess.PIPE,
+            stdout=f,
             cwd=path,
         )
         self.logger.info(

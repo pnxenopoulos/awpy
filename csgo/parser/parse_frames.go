@@ -8,7 +8,7 @@ import (
 	common "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/common"
 	events "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/events"
 	ex "github.com/markus-wa/demoinfocs-golang/v2/examples"
-	metadata "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/metadata"
+	//metadata "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/metadata"
 	gonav "github.com/pnxenopoulos/csgonavparse"
 )
 
