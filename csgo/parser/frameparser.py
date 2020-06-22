@@ -107,7 +107,7 @@ class FrameParser:
                 start_round = i
         for j, round_elem in enumerate(game):
             if start_round < j:
-                game.remove(start_round_elem)
+                game.remove(round_elem)
         tree.write(open(self.match_id + ".xml", "w"), encoding="unicode")
         self.logger.info("Cleaned the round XML to remove noisy rounds")
 
