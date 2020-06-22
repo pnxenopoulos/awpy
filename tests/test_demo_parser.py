@@ -163,3 +163,17 @@ class TestDemoParser:
         """
         self.parser.write_json()
         assert os.path.exists("natus-vincere-vs-astralis-m1-dust2_de_dust2.json")
+        assert (
+            os.path.getsize("natus-vincere-vs-astralis-m1-dust2_de_dust2.json")
+            < 10000000
+        )
+
+    def test_json_write_with_footsteps(self):
+        """ Tests if parser can write to JSON, including footsteps
+        """
+        self.parser.write_json(write_footsteps=True)
+        assert os.path.exists("natus-vincere-vs-astralis-m1-dust2_de_dust2.json")
+        assert (
+            os.path.getsize("natus-vincere-vs-astralis-m1-dust2_de_dust2.json")
+            > 10000000
+        )

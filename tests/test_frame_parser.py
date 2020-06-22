@@ -26,7 +26,7 @@ class TestFrameParser:
         """ Tests if a match_id is not given is parsed properly
         """
         self.parser = FrameParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem", log=True,
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem", log=False,
         )
         assert self.parser.match_id == "natus-vincere-vs-astralis-m1-dust2"
 

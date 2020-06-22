@@ -13,7 +13,7 @@ class MatchParser:
 
     Attributes:
         match_dir (string) : Directory to match with multiple demofiles
-        logfile (boolean)  : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
+        log (boolean)      : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
         match_id (string)  : A unique demo name/game id
 
     Raises:
@@ -47,9 +47,7 @@ class MatchParser:
             fh = logging.FileHandler("csgo_parser.log")
             fh.setLevel(logging.INFO)
             self.logger.addHandler(fh)
-            self.logger.info(
-                "Initialized CSGODemoParser for " + self.match_dir
-            )
+            self.logger.info("Initialized CSGODemoParser for " + self.match_dir)
         else:
             logging.basicConfig(
                 level=logging.INFO,
@@ -57,9 +55,7 @@ class MatchParser:
                 datefmt="%H:%M:%S",
             )
             self.logger = logging.getLogger("CSGODemoParser")
-            self.logger.info(
-                "Initialized CSGODemoParser for " + self.match_dir
-            )
+            self.logger.info("Initialized CSGODemoParser for " + self.match_dir)
         acceptable_go = check_go_version()
         if not acceptable_go:
             raise ValueError("Go version too low! Needs 1.14.0")
