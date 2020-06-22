@@ -14,13 +14,21 @@ class TestFrameParser:
         self.parser = FrameParser(
             demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
             log=True,
-            match_id="test",
+            match_id="natus-vincere-vs-astralis-m1-dust2",
         )
 
     def teardown_class(self):
         """ Set parser to none
         """
         self.parser = None
+
+    def test_match_id(self):
+        """ Tests if a match_id is not given is parsed properly
+        """
+        self.parser = DemoParser(
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem", log=True,
+        )
+        assert self.parser.match_id == "natus-vincere-vs-astralis-m1-dust2"
 
     def test_logger_write(self):
         """ Tests if the parser logs correctly.
@@ -33,4 +41,4 @@ class TestFrameParser:
         """ Tests if the parser parses the match and writes the XML file
         """
         self.parser.parse()
-        assert os.path.exists("test.xml")
+        assert os.path.exists("natus-vincere-vs-astralis-m1-dust2.xml")

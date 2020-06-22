@@ -15,13 +15,21 @@ class TestDemoParser:
         self.parser = DemoParser(
             demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
             log=True,
-            match_id="test",
+            match_id="natus-vincere-vs-astralis-m1-dust2",
         )
 
     def teardown_class(self):
         """ Set parser to none
         """
         self.parser = None
+
+    def test_match_id(self):
+        """ Tests if a match_id is not given is parsed properly
+        """
+        self.parser = DemoParser(
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem", log=True,
+        )
+        assert self.parser.match_id == "natus-vincere-vs-astralis-m1-dust2"
 
     def test_demo_error(self):
         """ Tests if the parser encountered a corrupted demofile. If it did, the
@@ -154,4 +162,4 @@ class TestDemoParser:
         """ Tests if parser can write to JSON
         """
         self.parser.write_json()
-        assert os.path.exists("test_de_dust2.json")
+        assert os.path.exists("natus-vincere-vs-astralis-m1-dust2_de_dust2.json")

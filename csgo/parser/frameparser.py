@@ -23,9 +23,11 @@ class FrameParser:
         self, demofile="", log=False, match_id="",
     ):
         self.demofile = demofile
-        self.match_id = match_id
-        self.rounds = []
         self.demo_error = False
+        if match_id == "":
+            self.match_id = demofile[demofile.rfind("/") + 1 : -4]
+        else:
+            self.match_id = match_id
         if log:
             logging.basicConfig(
                 filename="csgo_parser.log",
@@ -82,7 +84,7 @@ class FrameParser:
             cwd=path,
         )
         ret_code = proc.wait()
-        f.flush()  
+        f.flush()
         self.logger.info(
             "Demofile parsing complete, output written to " + self.match_id + ".xml"
         )
@@ -102,11 +104,10 @@ class FrameParser:
                 int(round_elem.attrib["ctScore"]) + int(round_elem.attrib["tScore"])
                 == 0
             ):
-                print("removing...")
-                if start_round < i:
-                    game.remove(start_round_elem)
                 start_round = i
-                start_round_elem = round_elem
+        for j, round_elem in enumerate(game):
+            if start_round < j:
+                game.remove(start_round_elem)
         tree.write(open(self.match_id + ".xml", "w"), encoding="unicode")
         self.logger.info("Cleaned the round XML to remove noisy rounds")
 

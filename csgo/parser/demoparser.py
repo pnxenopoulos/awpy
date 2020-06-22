@@ -25,9 +25,12 @@ class DemoParser:
         self, demofile="", log=False, match_id="",
     ):
         self.demofile = demofile
-        self.match_id = match_id
         self.rounds = []
         self.demo_error = False
+        if match_id == "":
+            self.match_id = demofile[demofile.rfind("/") + 1 : -4]
+        else:
+            self.match_id = match_id
         if log:
             logging.basicConfig(
                 filename="csgo_parser.log",
