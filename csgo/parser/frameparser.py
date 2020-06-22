@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 
+import pandas as pd
 import xml.etree.ElementTree as ET
 
 from csgo.utils import NpEncoder, check_go_version
@@ -111,11 +112,33 @@ class FrameParser:
         tree.write(open(self.match_id + ".xml", "w"), encoding="unicode")
         self.logger.info("Cleaned the round XML to remove noisy rounds")
 
-    def parse(self):
+    def parse(self, df=True):
         """ Parse the given demofile into an XML file of game "frames"
 
         Returns:
             Returns a written file named match_id.xml
+            If df==True, returns a Pandas dataframe of the frames
         """
         self._parse_xml()
         self._clean_xml()
+        if df == True:
+            i = 0
+            all_frames = []
+            game_map = etree.getroot().attrib["map"]
+            for idx, game_round in enumerate(etree.getroot()):
+                frames = []
+                for frame in game_round:
+                    if frame.tag == "roundEnd":
+                        round_winner = frame.attrib["winningTeam"]
+                    for team in frame:
+                        for player in team:
+                            # wow this is efficient
+                            infos_dict = {"gameRound": idx}
+                            infos_dict.update(team.attrib)
+                            infos_dict.update(player.attrib)
+                            infos_dict.update(frame.attrib)
+                            frames.append(infos_dict)
+                [frame.update({"winningTeam": round_winner}) for frame in frames]
+                all_frames.extend(frames)
+            df = pd.DataFrame.from_dict(all_frames)
+            return df

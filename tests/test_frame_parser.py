@@ -40,5 +40,11 @@ class TestFrameParser:
     def test_parse(self):
         """ Tests if the parser parses the match and writes the XML file
         """
-        self.parser.parse()
+        self.parser.parse(df=False)
         assert os.path.exists("natus-vincere-vs-astralis-m1-dust2.xml")
+
+    def test_parse(self):
+        """ Tests if the parser returns a full Pandas dataframe
+        """
+        df = self.parser.parse(df=True)
+        assert df.shape[0] > 0
