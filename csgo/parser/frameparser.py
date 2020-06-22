@@ -96,19 +96,19 @@ class FrameParser:
         Returns:
             Returns a written file named match_id.xml
         """
-        tree = ET.parse(self.match_id + ".xml")
-        game = tree.getroot()
+        self.tree = ET.parse(self.match_id + ".xml")
+        self.game = self.tree.getroot()
         start_round = 0
         start_round_elem = None
-        for i, round_elem in enumerate(game):
+        for i, round_elem in enumerate(self.game):
             if (
                 int(round_elem.attrib["ctScore"]) + int(round_elem.attrib["tScore"])
                 == 0
             ):
                 start_round = i
-        for j, round_elem in enumerate(game):
+        for j, round_elem in enumerate(self.game):
             if start_round < j:
-                game.remove(round_elem)
+                self.game.remove(round_elem)
         tree.write(open(self.match_id + ".xml", "w"), encoding="unicode")
         self.logger.info("Cleaned the round XML to remove noisy rounds")
 
@@ -124,8 +124,8 @@ class FrameParser:
         if df == True:
             i = 0
             all_frames = []
-            game_map = etree.getroot().attrib["map"]
-            for idx, game_round in enumerate(etree.getroot()):
+            game_map = self.game.attrib["map"]
+            for idx, game_round in enumerate(self.game):
                 frames = []
                 for frame in game_round:
                     if frame.tag == "roundEnd":
