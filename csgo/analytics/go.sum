@@ -27,6 +27,8 @@ github.com/markus-wa/quickhull-go/v2 v2.1.0/go.mod h1:bOlBUpIzGSMMhHX0f9N8CQs0VZ
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pnxenopoulos/csgonavparse v0.0.0-20200519025756-75a89188962a h1:PfvU7i46dPdpPonhoQ87QFB64QYlGRctf1bkLIYqY1I=
 github.com/pnxenopoulos/csgonavparse v0.0.0-20200519025756-75a89188962a/go.mod h1:BrVTeWKMxq4qxi4QZFUVA0VyAJYtmUZyYvIdnfBLbww=
+github.com/pnxenopoulos/csgonavparse v0.0.0-20200623055419-d62dc1d79ee1 h1:bNCnmPJ1AFhcjkrYn+Hsnb+XIIAkEjoFTaqHbddWgeE=
+github.com/pnxenopoulos/csgonavparse v0.0.0-20200623055419-d62dc1d79ee1/go.mod h1:BrVTeWKMxq4qxi4QZFUVA0VyAJYtmUZyYvIdnfBLbww=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=

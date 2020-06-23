@@ -1,6 +1,11 @@
 import pytest
 
-from csgo.analytics.distance import bombsite_distance, point_distance, polygon_area
+from csgo.analytics.distance import (
+    bombsite_distance,
+    point_distance,
+    polygon_area,
+    area_distance,
+)
 
 
 class TestCSGOAnalytics:
@@ -33,7 +38,6 @@ class TestCSGOAnalytics:
         """
         Test bombsite function with an invalid map.
         """
-
         with pytest.raises(ValueError):
             bombsite_distance([0, 0, 0], map="dust2")
 
@@ -41,6 +45,18 @@ class TestCSGOAnalytics:
         """
         Test point distance function with an invalid map.
         """
-
         with pytest.raises(ValueError):
             point_distance([0, 0, 0], [1, 1, 1], map="dust2")
+
+    def test_area_invalid_map(self):
+        """
+        Test area distance function with an invalid map.
+        """
+        with pytest.raises(ValueError):
+            area_distance([0, 0, 0], [1, 1, 1], map="dust2")
+
+    def test_area_dist(self):
+        """
+        Tests that area distance returns correct value.
+        """
+        assert area_distance("de_mirage", 26, 42) == 26

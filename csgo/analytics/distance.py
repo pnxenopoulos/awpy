@@ -8,15 +8,55 @@ import numpy as np
 from scipy.spatial import distance
 
 
+def area_distance(map="de_dust2", area_one=0, area_two=0):
+    """ Returns the distance given two area ids
+
+    Args:
+        map: A string indicating the map
+        area_one: An integer indicating the first area
+        area_two: An integer indicating the second area
+    """
+    if map not in [
+        "de_dust2",
+        "de_cbble",
+        "de_inferno",
+        "de_mirage",
+        "de_nuke",
+        "de_overpass",
+        "de_train",
+        "de_vertigo",
+    ]:
+        raise ValueError(
+            f'Invalid map name: got {map}, expected one of: "de_dust2", "de_cbble", "de_inferno", "de_mirage", "de_nuke", "de_overpass", "de_train", "de_vertigo"'
+        )
+
+    path = os.path.join(os.path.dirname(__file__), "")
+    proc = subprocess.Popen(
+        [
+            "go",
+            "run",
+            "path_distance_area.go",
+            "-map",
+            map,
+            "-area_x",
+            str(area_one),
+            "-area_y",
+            str(area_two),
+        ],
+        stdout=subprocess.PIPE,
+        cwd=path,
+    )
+    return int(proc.stdout.read().decode("utf-8"))
+
+
 def bombsite_distance(location, bombsite="A", map="de_dust2"):
     """ Returns the distance between a location and a given bombsite
 
-    Attributes:
+    Args:
         Location: A list of floats or ints containing the starting position
         bombsite: A string indicating the bombsite (A or B)
         map: A string indicating the map
     """
-
     if map not in [
         "de_dust2",
         "de_cbble",
@@ -57,13 +97,12 @@ def bombsite_distance(location, bombsite="A", map="de_dust2"):
 def point_distance(point_a, point_b, type="graph", map="de_dust2"):
     """ Returns the distance between two points using a given method on a given map (if needed)
 
-    Attributes:
+    Args:
         point_a: A list of floats or ints containing the position of point A
         point_b: A list of floats or ints containing the position of point B
         type: A string that is one of 'euclidean', 'manhattan', 'canberra', 'cosine' or 'graph'. Using 'graph' will use A* to find the shortest path and counts the discrete areas it travels.
         map: A string indicating the map
     """
-
     if map not in [
         "de_dust2",
         "de_cbble",
@@ -117,7 +156,7 @@ def point_distance(point_a, point_b, type="graph", map="de_dust2"):
 def polygon_area(x, y):
     """ Returns area of a polygon given x,y coordinates of vertices
 
-    Attributes:
+    Args:
         x: A list of floats indicating x index of vertices
         y: A list of floats indicating y index of vertices
     """
