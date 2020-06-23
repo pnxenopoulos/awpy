@@ -28,3 +28,19 @@ class TestCSGOAnalytics:
         """ Test polygon area function
         """
         assert polygon_area([0, 1, 2], [0, 1, 0]) == 1.0
+
+    def test_bombsite_invalid_map(self):
+        """
+        Test bombsite function with an invalid map.
+        """
+
+        with pytest.raises(ValueError):
+            bombsite_distance([0, 0, 0], map="dust2")
+
+    def test_point_invalid_map(self):
+        """
+        Test point distance function with an invalid map.
+        """
+
+        with pytest.raises(ValueError):
+            point_distance([0, 0, 0], [1, 1, 1], map="dust2")
