@@ -16,6 +16,21 @@ def bombsite_distance(location, bombsite="A", map="de_dust2"):
         bombsite: A string indicating the bombsite (A or B)
         map: A string indicating the map
     """
+
+    if map not in [
+        "de_dust2",
+        "de_cbble",
+        "de_inferno",
+        "de_mirage",
+        "de_nuke",
+        "de_overpass",
+        "de_train",
+        "de_vertigo",
+    ]:
+        raise ValueError(
+            f'Invalid map name: got {map}, expected one of: "de_dust2", "de_cbble", "de_inferno", "de_mirage", "de_nuke", "de_overpass", "de_train", "de_vertigo"'
+        )
+
     path = os.path.join(os.path.dirname(__file__), "")
     proc = subprocess.Popen(
         [
@@ -48,6 +63,21 @@ def point_distance(point_a, point_b, type="graph", map="de_dust2"):
         type: A string that is one of 'euclidean', 'manhattan', 'canberra', 'cosine' or 'graph'. Using 'graph' will use A* to find the shortest path and counts the discrete areas it travels.
         map: A string indicating the map
     """
+
+    if map not in [
+        "de_dust2",
+        "de_cbble",
+        "de_inferno",
+        "de_mirage",
+        "de_nuke",
+        "de_overpass",
+        "de_train",
+        "de_vertigo",
+    ]:
+        raise ValueError(
+            f'Invalid map name: got {map}, expected one of: "de_dust2", "de_cbble", "de_inferno", "de_mirage", "de_nuke", "de_overpass", "de_train", "de_vertigo"'
+        )
+
     if type == "graph":
         path = os.path.join(os.path.dirname(__file__), "")
         proc = subprocess.Popen(
