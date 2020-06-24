@@ -8,7 +8,7 @@ import os
 import subprocess
 import numpy as np
 
-
+from csgo.utils import AutoVivification
 from scipy.spatial import distance
 
 
