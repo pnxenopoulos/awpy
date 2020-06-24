@@ -1,9 +1,6 @@
 """ Distance functions for csgo
 """
 
-import lzma
-import pickle
-import brotli
 import os
 import subprocess
 import numpy as np

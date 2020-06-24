@@ -2,7 +2,7 @@ import lzma
 import pickle
 import brotli
 
-from utils import AutoVivification
+from csgo.utils import AutoVivification
 
 path = os.path.join(os.path.dirname(__file__), "")
 DIST_DICT = pickle.load(lzma.open(path + "/data/nav/distances.xz", "rb"))
