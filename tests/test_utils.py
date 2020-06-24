@@ -20,4 +20,4 @@ class TestUtils:
         """
         a = AutoVivification()
         a["Ping"]["Pong"] = "Test"
-        assert a["Ping"]["Pong"] = "Test"
+        assert a["Ping"]["Pong"] == "Test"
