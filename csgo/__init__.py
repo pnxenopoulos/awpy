@@ -1,4 +1,5 @@
 import lzma
+import os
 import pickle
 import brotli
 
