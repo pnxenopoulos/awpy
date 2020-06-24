@@ -6,6 +6,7 @@ from csgo.analytics.distance import (
     polygon_area,
     area_distance,
 )
+from csgo.utils import AutoVivification
 
 
 class TestCSGOAnalytics:
