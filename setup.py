@@ -14,7 +14,14 @@ setup(
     ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
-        "": ["*.go", "data/map/*.png", "data/nav/*.nav", "*.mod", "*.sum",]
+        "": [
+            "*.go",
+            "data/map/*.png",
+            "data/nav/*.nav",
+            "data/nav/*.xz",
+            "*.mod",
+            "*.sum",
+        ]
     },
     # metadata to display on PyPI
     author="Peter Xenopoulos",
