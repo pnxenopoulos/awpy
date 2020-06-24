@@ -53,10 +53,10 @@ class TestCSGOAnalytics:
         Test area distance function with an invalid map.
         """
         with pytest.raises(ValueError):
-            area_distance("mirage", 26, 42)
+            area_distance(26, 42, map="dust2")
 
     def test_area_dist(self):
         """
         Tests that area distance returns correct value.
         """
-        assert area_distance("de_mirage", 26, 42) == 26
+        assert area_distance(26, 42, map="de_mirage") == 26

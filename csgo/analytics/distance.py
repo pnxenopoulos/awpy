@@ -34,9 +34,9 @@ def area_distance(area_one=0, area_two=0, map="de_dust2"):
             f'Invalid map name: got {map}, expected one of: "de_dust2", "de_cbble", "de_inferno", "de_mirage", "de_nuke", "de_overpass", "de_train", "de_vertigo"'
         )
     path = os.path.join(os.path.dirname(__file__), "")
-    dist_dict = pickle.load(lzma.open(path + "../data/nav/distances.xz", "rb")
+    dist_dict = pickle.load(lzma.open(path + "../data/nav/distances.xz", "rb"))
     return dist_dict[map][area_one][area_two]
-    
+
 
 def bombsite_distance(location, bombsite="A", map="de_dust2"):
     """ Returns the distance between a location and a given bombsite
