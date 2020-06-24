@@ -1,14 +1,18 @@
 """ Distance functions for csgo
 """
 
+import lzma
+import pickle
+import brotli
 import os
 import subprocess
 import numpy as np
 
+
 from scipy.spatial import distance
 
 
-def area_distance(map="de_dust2", area_one=0, area_two=0):
+def area_distance(area_one=0, area_two=0, map="de_dust2"):
     """ Returns the distance given two area ids
 
     Args:
@@ -29,25 +33,10 @@ def area_distance(map="de_dust2", area_one=0, area_two=0):
         raise ValueError(
             f'Invalid map name: got {map}, expected one of: "de_dust2", "de_cbble", "de_inferno", "de_mirage", "de_nuke", "de_overpass", "de_train", "de_vertigo"'
         )
-
     path = os.path.join(os.path.dirname(__file__), "")
-    proc = subprocess.Popen(
-        [
-            "go",
-            "run",
-            "path_distance_area.go",
-            "-map",
-            map,
-            "-area_x",
-            str(area_one),
-            "-area_y",
-            str(area_two),
-        ],
-        stdout=subprocess.PIPE,
-        cwd=path,
-    )
-    return int(proc.stdout.read().decode("utf-8"))
-
+    dist_dict = pickle.load(lzma.open(path + "../data/nav/distances.xz", "rb")
+    return dist_dict[map][area_one][area_two]
+    
 
 def bombsite_distance(location, bombsite="A", map="de_dust2"):
     """ Returns the distance between a location and a given bombsite
