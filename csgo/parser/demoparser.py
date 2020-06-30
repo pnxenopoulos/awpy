@@ -31,6 +31,7 @@ class DemoParser:
             self.match_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
             self.match_id = match_id
+        acceptable_go = check_go_version()
         if log:
             logging.basicConfig(
                 filename="csgo_parser.log",
@@ -46,6 +47,11 @@ class DemoParser:
             self.logger.info(
                 "Initialized CSGODemoParser with demofile " + self.demofile
             )
+            if not acceptable_go:
+                self.logger.error("Go version too low! Needs 1.14.0")
+                raise ValueError("Go version too low! Needs 1.14.0")
+            else:
+                self.logger.info("Go version>=1.14.0")
         else:
             logging.basicConfig(
                 level=logging.INFO,
@@ -56,9 +62,11 @@ class DemoParser:
             self.logger.info(
                 "Initialized CSGODemoParser with demofile " + self.demofile
             )
-        acceptable_go = check_go_version()
-        if not acceptable_go:
-            raise ValueError("Go version too low! Needs 1.14.0")
+            if not acceptable_go:
+                self.logger.error("Go version too low! Needs 1.14.0")
+                raise ValueError("Go version too low! Needs 1.14.0")
+            else:
+                self.logger.info("Go version>=1.14.0")
 
     @staticmethod
     def get_seconds(start_tick, tick):
