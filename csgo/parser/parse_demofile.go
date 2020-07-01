@@ -464,7 +464,7 @@ func main() {
 				mapName, gameTick,
 				victimX, victimY, victimZ, VictimXViz, VictimYViz, VictimViewX, VictimViewY, VictimClosestAreaID, VictimClosestAreaName,
 				attackerX, attackerY, attackerZ, attackerXViz, attackerYViz, attackerViewX, attackerViewY, attackerClosestAreaID, attackerClosestAreaName,
-				attackerAssistX, attackerAssistY, attackerAssistZ, attackerAssistXViz, attackerAssistYViz, attackerAssistViewX, attackerAssistViewY, attackerClosestAreaID, attackerAssistClosestAreaName,
+				attackerAssistX, attackerAssistY, attackerAssistZ, attackerAssistXViz, attackerAssistYViz, attackerAssistViewX, attackerAssistViewY, attackerAssistClosestAreaID, attackerAssistClosestAreaName,
 				victimID, victimName, victimTeam, victimSideString, victimTeamEqVal,
 				attackerID, attackerName, attackerTeam, attackerSideString, attackerTeamEqVal,
 				attackerAssistID, attackerAssistName, attackerAssistTeam, attackerAssistSideString,
