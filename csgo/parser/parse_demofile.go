@@ -327,10 +327,19 @@ func main() {
 			var attackerZ float64 = 0.0
 			var attackerXViz float64 = 0.0
 			var attackerYViz float64 = 0.0
+			var attackerAssistX float64 = 0.0
+			var attackerAssistY float64 = 0.0
+			var attackerAssistZ float64 = 0.0
+			var attackerAssistXViz float64 = 0.0
+			var attackerAssistYViz float64 = 0.0
 			var attackerClosestAreaID uint32 = 0
 			var attackerClosestAreaName string = "NA"
 			var attackerViewX float32 = 0.0
 			var attackerViewY float32 = 0.0
+			var attackerAssistViewX float32 = 0.0
+			var attackerAssistViewY float32 = 0.0
+			var attackerAssistClosestAreaID uint32 = 0
+			var attackerAssistClosestAreaName string = "NA"
 
 			// Fourth block (victim player/team)
 			var victimID uint64 = 0
@@ -429,6 +438,20 @@ func main() {
 				attackerAssistName = e.Assister.Name
 				attackerAssistTeam = e.Assister.TeamState.ClanName()
 				attackerAssistSide = e.Assister.Team
+				attackerAssistX = e.Assister.Position().X
+				attackerAssistY = e.Assister.Position().Y
+				attackerAssistZ = e.Assister.Position().Z
+				attackerAssistXViz, attackerAssistYViz = mapMetadata.TranslateScale(attackerX, attackerY)
+				attackerAssistViewX = e.Assister.ViewDirectionX()
+				attackerAssistViewY = e.Assister.ViewDirectionY()
+				attackerAssistLoc := gonav.Vector3{X: float32(attackerAssistX), Y: float32(attackerAssistY), Z: float32(attackerAssistZ)}
+				attackerAssistArea := mesh.GetNearestArea(attackerAssistLoc, true)
+				if attackerAssistArea != nil {
+					attackerClosestAreaID = attackerAssistArea.ID
+					if attackerAssistArea.Place != nil {
+						attackerAssistClosestAreaName = attackerAssistArea.Place.Name
+					}
+				}
 				if attackerAssistSide == 2 {
 					attackerAssistSideString = "T"
 				} else {
@@ -437,10 +460,11 @@ func main() {
 			}
 
 			// Print a line of the kill information
-			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %s, %s, %s] [%d, %d, %t, %t] \n",
+			fmt.Printf("[KILL] [%s, %d] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%f, %f, %f, %f, %f, %f, %f, %d, %s] [%d, %s, %s, %s, %d] [%d, %s, %s, %s, %d] [%d, %s, %s, %s] [%d, %d, %t, %t] \n",
 				mapName, gameTick,
 				victimX, victimY, victimZ, VictimXViz, VictimYViz, VictimViewX, VictimViewY, VictimClosestAreaID, VictimClosestAreaName,
 				attackerX, attackerY, attackerZ, attackerXViz, attackerYViz, attackerViewX, attackerViewY, attackerClosestAreaID, attackerClosestAreaName,
+				attackerAssistX, attackerAssistY, attackerAssistZ, attackerAssistXViz, attackerAssistYViz, attackerAssistViewX, attackerAssistViewY, attackerClosestAreaID, attackerAssistClosestAreaName,
 				victimID, victimName, victimTeam, victimSideString, victimTeamEqVal,
 				attackerID, attackerName, attackerTeam, attackerSideString, attackerTeamEqVal,
 				attackerAssistID, attackerAssistName, attackerAssistTeam, attackerAssistSideString,

@@ -489,34 +489,45 @@ class DemoParser:
                 current_kill.attacker_area_name = third_block[8].strip()
                 # Fourth block
                 fourth_block = split_line[4].split(",")
-                current_kill.victim_id = int(fourth_block[0])
-                current_kill.victim_name = fourth_block[1].strip()
-                current_kill.victim_team = fourth_block[2].strip()
-                current_kill.victim_side = fourth_block[3].strip()
-                current_kill.victim_team_eq_val = int(fourth_block[4].strip())
+                current_kill.assister_x = float(fourth_block[0])
+                current_kill.assister_y = float(fourth_block[1].strip())
+                current_kill.assister_z = float(fourth_block[2].strip())
+                current_kill.assister_x_viz = float(fourth_block[3].strip())
+                current_kill.assister_y_viz = float(fourth_block[4].strip()) * -1
+                current_kill.assister_view_x = float(fourth_block[5].strip())
+                current_kill.assister_view_y = float(fourth_block[6].strip())
+                current_kill.assister_area_id = int(fourth_block[7].strip())
+                current_kill.assister_area_name = fourth_block[8].strip()
                 # Fifth block
                 fifth_block = split_line[5].split(",")
-                current_kill.attacker_id = int(fifth_block[0])
-                current_kill.attacker_name = fifth_block[1].strip()
-                current_kill.attacker_team = fifth_block[2].strip()
-                current_kill.attacker_side = fifth_block[3].strip()
-                current_kill.attacker_team_eq_val = int(fifth_block[4].strip())
+                current_kill.victim_id = int(fifth_block[0])
+                current_kill.victim_name = fifth_block[1].strip()
+                current_kill.victim_team = fifth_block[2].strip()
+                current_kill.victim_side = fifth_block[3].strip()
+                current_kill.victim_team_eq_val = int(fifth_block[4].strip())
                 # Sixth block
                 sixth_block = split_line[6].split(",")
-                current_kill.assister_id = int(sixth_block[0])
-                current_kill.assister_name = sixth_block[1].strip()
-                current_kill.assister_team = sixth_block[2].strip()
-                current_kill.assister_side = sixth_block[3].strip()
+                current_kill.attacker_id = int(sixth_block[0])
+                current_kill.attacker_name = sixth_block[1].strip()
+                current_kill.attacker_team = sixth_block[2].strip()
+                current_kill.attacker_side = sixth_block[3].strip()
+                current_kill.attacker_team_eq_val = int(sixth_block[4].strip())
                 # Seventh block
                 seventh_block = split_line[7].split(",")
-                current_kill.weapon_id = DemoParser.get_weapon(int(seventh_block[0]))
-                current_kill.is_wallshot = int(seventh_block[1].strip())
-                current_kill.is_flashed = seventh_block[2].strip()
+                current_kill.assister_id = int(seventh_block[0])
+                current_kill.assister_name = seventh_block[1].strip()
+                current_kill.assister_team = seventh_block[2].strip()
+                current_kill.assister_side = seventh_block[3].strip()
+                # Eigth block
+                eigth_block = split_line[8].split(",")
+                current_kill.weapon_id = DemoParser.get_weapon(int(eigth_block[0]))
+                current_kill.is_wallshot = int(eigth_block[1].strip())
+                current_kill.is_flashed = eigth_block[2].strip()
                 if current_kill.is_flashed == "true":
                     current_kill.is_flashed = 1
                 else:
                     current_kill.is_flashed = 0
-                current_kill.is_headshot = seventh_block[3].replace("]", "").strip()
+                current_kill.is_headshot = eigth_block[3].replace("]", "").strip()
                 if current_kill.is_headshot == "true":
                     current_kill.is_headshot = 1
                 else:
@@ -854,6 +865,15 @@ class DemoParser:
                         k.attacker_view_y,
                         k.attacker_area_id,
                         k.attacker_area_name,
+                        k.assister_x,
+                        k.assister_y,
+                        k.assister_z,
+                        k.assister_x_viz,
+                        k.assister_y_viz,
+                        k.assister_view_x,
+                        k.assister_view_y,
+                        k.assister_area_id,
+                        k.assister_area_name,
                         k.victim_id,
                         k.victim_name,
                         k.victim_team,
@@ -900,6 +920,15 @@ class DemoParser:
                 "AttackerViewY",
                 "AttackerAreaId",
                 "AttackerAreaName",
+                "AssisterX",
+                "AssisterY",
+                "AssisterZ",
+                "AssisterXViz",
+                "AssisterYViz",
+                "AssisterViewX",
+                "AssisterViewY",
+                "AssisterAreaId",
+                "AssisterAreaName",
                 "VictimSteamId",
                 "VictimName",
                 "VictimTeam",

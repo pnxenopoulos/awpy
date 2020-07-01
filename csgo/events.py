@@ -281,6 +281,15 @@ class Kill:
         attacker_view_y (float)   : Attacker's Y view
         attacker_area_id (int)    : Attacker's area id from nav file
         attacker_area_name (int)  : Attacker's area name from nav file
+        assister_x (float)        : Assister's X position
+        assister_y (float)        : Assister's Y position
+        assister_z (float)        : Assister's Z position
+        assister_x_viz (float)    : Assister's X position for visualization
+        assister_y_viz (float)    : Assister's Y position for visualization
+        assister_view_x (float)   : Assister's X view
+        assister_view_y (float)   : Assister's Y view
+        assister_area_id (int)    : Assister's area id from nav file
+        assister_area_name (int)  : Assister's area name from nav file
         victim_id (int)           : Victim's steam id
         victim_name (string)      : Victim's username
         victim_team (string)      : Victim's team/clan name
