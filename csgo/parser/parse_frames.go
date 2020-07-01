@@ -23,11 +23,11 @@ func printPlayer(p *common.Player, m gonav.NavMesh) {
 			areaPlace = area.Place.Name
 		}
 	}
-	fmt.Printf("<player id='%d' name='%s' hp='%d' armor='%d' eqVal='%d' hasDefuse='%v' hasHelmet='%v' posX='%f' posY='%f' posZ='%f' areaName='%s' areaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
+	fmt.Printf("<player SteamId='%d' Name='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' PosX='%f' PosY='%f' PosZ='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
 }
 
 func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
-	fmt.Printf("<team side='%s' name='%s' eqVal='%d' startEqVal ='%d'> \n", side, ts.ClanName(), ts.CurrentEquipmentValue(), ts.FreezeTimeEndEquipmentValue())
+	fmt.Printf("<team Side='%s' Name='%s' EqVal='%d' StartEqVal ='%d'> \n", side, ts.ClanName(), ts.CurrentEquipmentValue(), ts.FreezeTimeEndEquipmentValue())
 	teamPlayers := ts.Members()
 	for _, p := range teamPlayers {
 		printPlayer(p, m)
@@ -36,7 +36,7 @@ func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
 }
 	
 func printGameFrame(gs dem.GameState, m gonav.NavMesh) {
-	fmt.Printf("<frame tick='%d'> \n", gs.IngameTick())
+	fmt.Printf("<frame Tick='%d'> \n", gs.IngameTick())
 	ctSide := gs.TeamCounterTerrorists()
 	tSide := gs.TeamTerrorists()
 	printTeam(ctSide, "CT", m)
@@ -82,7 +82,7 @@ func main() {
 		// Only parse non-warmup rounds
 		if (warmup == false) && (matchStarted == true) {
 			roundStarted = 1
-			fmt.Printf("<round startTick='%d' tScore='%d' ctScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
+			fmt.Printf("<round StartTick='%d' TScore='%d' CTScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
 		}
 	})
 
@@ -103,7 +103,7 @@ func main() {
 			default:
 				winningTeam = "CT"
 			}
-			fmt.Printf("<roundEnd endTick='%d' winningTeam='%s' reason='%d' /> \n", gs.IngameTick(), winningTeam, e.Reason)
+			fmt.Printf("<roundEnd EndTick='%d' WinningTeam='%s' reason='%d' /> \n", gs.IngameTick(), winningTeam, e.Reason)
 			fmt.Printf("</round> \n")
 			roundStarted = 0
 		}
