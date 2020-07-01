@@ -102,7 +102,7 @@ class FrameParser:
         start_round_elem = None
         for i, round_elem in enumerate(self.game):
             if (
-                int(round_elem.attrib["ctScore"]) + int(round_elem.attrib["tScore"])
+                int(round_elem.attrib["CTScore"]) + int(round_elem.attrib["TScore"])
                 == 0
             ):
                 start_round = i
@@ -124,21 +124,21 @@ class FrameParser:
         if df == True:
             i = 0
             all_frames = []
-            game_map = self.game.attrib["map"]
+            game_map = self.game.attrib["Map"]
             for idx, game_round in enumerate(self.game):
                 frames = []
                 for frame in game_round:
-                    if frame.tag == "roundEnd":
-                        round_winner = frame.attrib["winningTeam"]
+                    if frame.tag == "RoundEnd":
+                        round_winner = frame.attrib["WinningTeam"]
                     for team in frame:
                         for player in team:
                             # wow this is efficient
-                            infos_dict = {"gameRound": idx}
+                            infos_dict = {"GameRound": idx}
                             infos_dict.update(team.attrib)
                             infos_dict.update(player.attrib)
                             infos_dict.update(frame.attrib)
                             frames.append(infos_dict)
-                [frame.update({"winningTeam": round_winner}) for frame in frames]
+                [frame.update({"WinningTeam": round_winner}) for frame in frames]
                 all_frames.extend(frames)
             df = pd.DataFrame.from_dict(all_frames)
             return df

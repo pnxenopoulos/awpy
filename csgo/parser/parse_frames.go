@@ -23,25 +23,25 @@ func printPlayer(p *common.Player, m gonav.NavMesh) {
 			areaPlace = area.Place.Name
 		}
 	}
-	fmt.Printf("<player SteamId='%d' Name='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' PosX='%f' PosY='%f' PosZ='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
+	fmt.Printf("<Player SteamId='%d' Name='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' PosX='%f' PosY='%f' PosZ='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
 }
 
 func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
-	fmt.Printf("<team Side='%s' Name='%s' EqVal='%d' StartEqVal ='%d'> \n", side, ts.ClanName(), ts.CurrentEquipmentValue(), ts.FreezeTimeEndEquipmentValue())
+	fmt.Printf("<Team Side='%s' Name='%s' EqVal='%d' StartEqVal ='%d'> \n", side, ts.ClanName(), ts.CurrentEquipmentValue(), ts.FreezeTimeEndEquipmentValue())
 	teamPlayers := ts.Members()
 	for _, p := range teamPlayers {
 		printPlayer(p, m)
 	}
-	fmt.Printf("</team> \n")
+	fmt.Printf("</Team> \n")
 }
 	
 func printGameFrame(gs dem.GameState, m gonav.NavMesh) {
-	fmt.Printf("<frame Tick='%d'> \n", gs.IngameTick())
+	fmt.Printf("<Frame Tick='%d'> \n", gs.IngameTick())
 	ctSide := gs.TeamCounterTerrorists()
 	tSide := gs.TeamTerrorists()
 	printTeam(ctSide, "CT", m)
 	printTeam(tSide, "T", m)
-	fmt.Printf("</frame> \n")
+	fmt.Printf("</Frame> \n")
 }
 
 // Run parser as follows: go run parse_demo.go -demo /path/to/demo.dem
@@ -70,7 +70,7 @@ func main() {
 	roundStarted := 0
 
 	// [PRINT] Starter <game> tag
-	fmt.Printf("<game map='%s'> \n", currentMap)
+	fmt.Printf("<Game Map='%s'> \n", currentMap)
 
 	// [PRINT] Round starts
 	p.RegisterEventHandler(func(e events.RoundStart) {		
@@ -82,7 +82,7 @@ func main() {
 		// Only parse non-warmup rounds
 		if (warmup == false) && (matchStarted == true) {
 			roundStarted = 1
-			fmt.Printf("<round StartTick='%d' TScore='%d' CTScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
+			fmt.Printf("<Round StartTick='%d' TScore='%d' CTScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
 		}
 	})
 
@@ -103,8 +103,8 @@ func main() {
 			default:
 				winningTeam = "CT"
 			}
-			fmt.Printf("<roundEnd EndTick='%d' WinningTeam='%s' reason='%d' /> \n", gs.IngameTick(), winningTeam, e.Reason)
-			fmt.Printf("</round> \n")
+			fmt.Printf("<RoundEnd EndTick='%d' WinningTeam='%s' Reason='%d' /> \n", gs.IngameTick(), winningTeam, e.Reason)
+			fmt.Printf("</Round> \n")
 			roundStarted = 0
 		}
 	})
@@ -126,7 +126,7 @@ func main() {
 	checkError(err)
 
 	// Print end game
-	fmt.Printf("</game>")
+	fmt.Printf("</Game>")
 }
 
 // Function to handle errors

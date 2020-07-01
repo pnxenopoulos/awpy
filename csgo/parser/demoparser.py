@@ -1145,7 +1145,7 @@ class DemoParser:
             .reset_index()
         )
         player_kills.columns = ["SteamId", "PlayerName", "PlayerTeam", "Kills"]
-        player_kills = player_kills[player_kills["PlayerID"] != 0]
+        player_kills = player_kills[player_kills["SteamId"] != 0]
         player_deaths = (
             self.kills_df.groupby(["VictimSteamId", "VictimName", "VictimTeam"])
             .size()
@@ -1166,7 +1166,7 @@ class DemoParser:
         for team in stat_results.PlayerTeam.unique():
             team_stats = stat_results[stat_results["PlayerTeam"] == team]
             self.game_json["Stats"][team] = {}
-            for player in team_stats.PlayerID.unique():
+            for player in team_stats.SteamId.unique():
                 player_team_df = team_stats[team_stats["SteamId"] == player]
                 player_name = player_team_df.PlayerName.unique()[0]
                 self.game_json["Stats"][team][str(player)] = {}
