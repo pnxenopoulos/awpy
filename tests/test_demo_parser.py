@@ -141,7 +141,7 @@ class TestDemoParser:
         assert footsteps_df.iloc[777, :].Z == 2.59956
         assert footsteps_df.iloc[777, :].XViz == 695.284979
         assert footsteps_df.iloc[777, :].YViz == -601.46766
-        assert footsteps_df.iloc[777, :].AreaID == 1432
+        assert footsteps_df.iloc[777, :].AreaId == 1432
         assert footsteps_df.iloc[777, :].AreaName == "LongDoors"
 
     def test_write_data(self):

@@ -1140,26 +1140,26 @@ class DemoParser:
                 )
         # Player stats
         player_kills = (
-            self.kills_df.groupby(["AttackerID", "AttackerName", "AttackerTeam"])
+            self.kills_df.groupby(["AttackerSteamId", "AttackerName", "AttackerTeam"])
             .size()
             .reset_index()
         )
-        player_kills.columns = ["PlayerID", "PlayerName", "PlayerTeam", "Kills"]
+        player_kills.columns = ["SteamId", "PlayerName", "PlayerTeam", "Kills"]
         player_kills = player_kills[player_kills["PlayerID"] != 0]
         player_deaths = (
-            self.kills_df.groupby(["VictimID", "VictimName", "VictimTeam"])
+            self.kills_df.groupby(["VictimSteamId", "VictimName", "VictimTeam"])
             .size()
             .reset_index()
         )
-        player_deaths.columns = ["PlayerID", "PlayerName", "PlayerTeam", "Deaths"]
+        player_deaths.columns = ["SteamId", "PlayerName", "PlayerTeam", "Deaths"]
         player_adr = (
             self.damages_df.groupby(
-                ["AttackerID", "AttackerName", "AttackerTeam"]
+                ["AttackerSteamId", "AttackerName", "AttackerTeam"]
             ).KillHpDamage.sum()
             / len(self.game_json["Rounds"])
         ).reset_index()
-        player_adr.columns = ["PlayerID", "PlayerName", "PlayerTeam", "ADR"]
-        player_adr = player_adr[player_adr["PlayerID"] != 0]
+        player_adr.columns = ["SteamId", "PlayerName", "PlayerTeam", "ADR"]
+        player_adr = player_adr[player_adr["SteamId"] != 0]
         player_adr.ADR = player_adr.ADR.round()
         stat_results = player_kills.merge(player_deaths).merge(player_adr)
         # Set player stats
@@ -1167,7 +1167,7 @@ class DemoParser:
             team_stats = stat_results[stat_results["PlayerTeam"] == team]
             self.game_json["Stats"][team] = {}
             for player in team_stats.PlayerID.unique():
-                player_team_df = team_stats[team_stats["PlayerID"] == player]
+                player_team_df = team_stats[team_stats["SteamId"] == player]
                 player_name = player_team_df.PlayerName.unique()[0]
                 self.game_json["Stats"][team][str(player)] = {}
                 self.game_json["Stats"][team][str(player)]["Name"] = player_name
