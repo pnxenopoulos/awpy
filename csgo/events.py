@@ -80,6 +80,8 @@ class BombEvent:
         x=0,
         y=0,
         z=0,
+        x_viz=0,
+        y_viz=0,
         area_id=0,
         bomb_site="",
         event_type="",
@@ -92,6 +94,8 @@ class BombEvent:
         self.x = x
         self.y = y
         self.z = z
+        self.x = x_viz
+        self.y = y_viz
         self.area_id = area_id
         self.bomb_site = bomb_site
         self.event_type = event_type

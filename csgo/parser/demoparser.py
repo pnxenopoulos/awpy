@@ -541,8 +541,10 @@ class DemoParser:
                 current_bomb_event.x = float(third_block[0])
                 current_bomb_event.y = float(third_block[1].strip())
                 current_bomb_event.z = float(third_block[2].strip())
-                current_bomb_event.area_id = int(third_block[3].strip())
-                current_bomb_event.bomb_site = third_block[4].replace("]", "").strip()
+                current_bomb_event.x_viz = float(third_block[3].strip())
+                current_bomb_event.y_viz = float(third_block[4].strip())
+                current_bomb_event.area_id = int(third_block[5].strip())
+                current_bomb_event.bomb_site = third_block[6].replace("]", "").strip()
                 current_bomb_event.event_type = "Plant"
                 if len(current_bomb_events_list) < 2:
                     current_bomb_events_list.append(current_bomb_event)
@@ -564,8 +566,10 @@ class DemoParser:
                 current_bomb_event.x = float(third_block[0])
                 current_bomb_event.y = float(third_block[1].strip())
                 current_bomb_event.z = float(third_block[2].strip())
-                current_bomb_event.area_id = int(third_block[3].strip())
-                current_bomb_event.bomb_site = third_block[4].replace("]", "").strip()
+                current_bomb_event.x_viz = float(third_block[3].strip())
+                current_bomb_event.y_viz = float(third_block[4].strip())
+                current_bomb_event.area_id = int(third_block[5].strip())
+                current_bomb_event.bomb_site = third_block[6].replace("]", "").strip()
                 current_bomb_event.event_type = "Defuse"
                 if len(current_bomb_events_list) < 2:
                     current_bomb_events_list.append(current_bomb_event)
@@ -587,8 +591,10 @@ class DemoParser:
                 current_bomb_event.x = float(third_block[0])
                 current_bomb_event.y = float(third_block[1].strip())
                 current_bomb_event.z = float(third_block[2].strip())
-                current_bomb_event.area_id = int(third_block[3].strip())
-                current_bomb_event.bomb_site = third_block[4].replace("]", "").strip()
+                current_bomb_event.x_viz = float(third_block[3].strip())
+                current_bomb_event.y_viz = float(third_block[4].strip())
+                current_bomb_event.area_id = int(third_block[5].strip())
+                current_bomb_event.bomb_site = third_block[6].replace("]", "").strip()
                 current_bomb_event.event_type = "Explode"
                 if len(current_bomb_events_list) < 2:
                     current_bomb_events_list.append(current_bomb_event)
@@ -730,6 +736,8 @@ class DemoParser:
                         be.x,
                         be.y,
                         be.z,
+                        be.x_viz,
+                        be.y_viz,
                         be.area_id,
                         be.bomb_site,
                         be.event_type,
@@ -749,6 +757,8 @@ class DemoParser:
                 "X",
                 "Y",
                 "Z",
+                "XViz",
+                "YViz",
                 "AreaId",
                 "BombSite",
                 "EventType",

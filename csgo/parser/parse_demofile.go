@@ -535,6 +535,8 @@ func main() {
 			var playerX float64 = 0
 			var playerY float64 = 0
 			var playerZ float64 = 0
+			var playerXViz float64 = 0.0
+			var playerYViz float64 = 0.0
 			var areaID uint32 = 0
 
 			playerID = e.BombEvent.Player.SteamID64
@@ -543,6 +545,7 @@ func main() {
 			playerX = e.BombEvent.Player.Position().X
 			playerY = e.BombEvent.Player.Position().Y
 			playerZ = e.BombEvent.Player.Position().Z
+			playerXViz, playerYViz = mapMetadata.TranslateScale(playerX, playerY)
 
 			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
 			area := mesh.GetNearestArea(playerPoint, true)
@@ -555,10 +558,10 @@ func main() {
 			} else if e.Site == 66 {
 				bombSite = "B"
 			}
-			fmt.Printf("[BOMB PLANT] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
+			fmt.Printf("[BOMB PLANT] [%s, %d] [%d, %s, %s] [%f, %f, %f, %f, %f, %d, %s] \n",
 				header.MapName, gs.IngameTick(),
 				playerID, playerName, playerTeam,
-				playerX, playerY, playerZ, areaID, bombSite)
+				playerX, playerY, playerZ, playerXViz, playerYViz, areaID, bombSite)
 		}
 	})
 
@@ -577,6 +580,8 @@ func main() {
 			var playerX float64 = 0
 			var playerY float64 = 0
 			var playerZ float64 = 0
+			var playerXViz float64 = 0.0
+			var playerYViz float64 = 0.0
 			var areaID uint32 = 0
 
 			playerID = e.BombEvent.Player.SteamID64
@@ -585,6 +590,7 @@ func main() {
 			playerX = e.BombEvent.Player.Position().X
 			playerY = e.BombEvent.Player.Position().Y
 			playerZ = e.BombEvent.Player.Position().Z
+			playerXViz, playerYViz = mapMetadata.TranslateScale(playerX, playerY)
 
 			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
 			area := mesh.GetNearestArea(playerPoint, true)
@@ -597,14 +603,14 @@ func main() {
 			} else if e.Site == 66 {
 				bombSite = "B"
 			}
-			fmt.Printf("[BOMB DEFUSE] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
+			fmt.Printf("[BOMB DEFUSE] [%s, %d] [%d, %s, %s] [%f, %f, %f, %f, %f, %d, %s] \n",
 				header.MapName, gs.IngameTick(),
 				playerID, playerName, playerTeam,
-				playerX, playerY, playerZ, areaID, bombSite)
+				playerX, playerY, playerZ, playerXViz, playerYViz, areaID, bombSite)
 		}
 	})
 
-	p.RegisterEventHandler(func(e events.BombDefused) {
+	p.RegisterEventHandler(func(e events.BombExplode) {
 		/* Parse bomb explode events
 		 */
 		gs := p.GameState()
@@ -619,6 +625,8 @@ func main() {
 			var playerX float64 = 0
 			var playerY float64 = 0
 			var playerZ float64 = 0
+			var playerXViz float64 = 0.0
+			var playerYViz float64 = 0.0
 			var areaID uint32 = 0
 
 			playerID = e.BombEvent.Player.SteamID64
@@ -627,6 +635,7 @@ func main() {
 			playerX = e.BombEvent.Player.Position().X
 			playerY = e.BombEvent.Player.Position().Y
 			playerZ = e.BombEvent.Player.Position().Z
+			playerXViz, playerYViz = mapMetadata.TranslateScale(playerX, playerY)
 
 			playerPoint := gonav.Vector3{X: float32(playerX), Y: float32(playerY), Z: float32(playerZ)}
 			area := mesh.GetNearestArea(playerPoint, true)
@@ -639,10 +648,10 @@ func main() {
 			} else if e.Site == 66 {
 				bombSite = "B"
 			}
-			fmt.Printf("[BOMB EXPLODE] [%s, %d] [%d, %s, %s] [%f, %f, %f, %d, %s] \n",
+			fmt.Printf("[BOMB EXPLODE] [%s, %d] [%d, %s, %s] [%f, %f, %f, %f, %f, %d, %s] \n",
 				header.MapName, gs.IngameTick(),
 				playerID, playerName, playerTeam,
-				playerX, playerY, playerZ, areaID, bombSite)
+				playerX, playerY, playerZ, playerXViz, playerYViz, areaID, bombSite)
 		}
 	})
 
