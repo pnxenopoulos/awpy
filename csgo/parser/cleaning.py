@@ -57,3 +57,16 @@ def associate_entities(game_names=[], entity_names=[], metric="LCSS"):
             name_distances.append(dist_metric(p, gn))
         entity_dict[game_names[np.argmin(name_distances)]] = p
     return entity_dict
+
+def replace_entities(df, col_name, entity_dict):
+    """ A function to replace values in a Pandas df column given an entity dict, as created in associate_entities()
+
+    Args:
+        df (DataFrame)     : A Pandas DataFrame
+        col_name (string)  : A column in the Pandas DataFrame
+        entity_dict (dict) : A dictionary as created in the associate_entities() function
+    """
+    if col_name not in df.columns:
+        raise ValueError("Column does not exist!")
+    df[col_name].replace(entity_dict, inplace=True)
+    return df
