@@ -23,11 +23,11 @@ func printPlayer(p *common.Player, m gonav.NavMesh) {
 			areaPlace = area.Place.Name
 		}
 	}
-	fmt.Printf("<Player SteamId='%d' Name='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' PosX='%f' PosY='%f' PosZ='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
+	fmt.Printf("<Player SteamId='%d' PlayerName='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' PosX='%f' PosY='%f' PosZ='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
 }
 
 func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
-	fmt.Printf("<Team Side='%s' Name='%s' EqVal='%d' StartEqVal ='%d'> \n", side, ts.ClanName(), ts.CurrentEquipmentValue(), ts.FreezeTimeEndEquipmentValue())
+	fmt.Printf("<Team Side='%s' TeamName='%s' EqVal='%d'> \n", side, ts.ClanName(), ts.CurrentEquipmentValue())
 	teamPlayers := ts.Members()
 	for _, p := range teamPlayers {
 		printPlayer(p, m)

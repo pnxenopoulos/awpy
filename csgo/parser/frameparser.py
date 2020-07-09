@@ -128,17 +128,13 @@ class FrameParser:
             for idx, game_round in enumerate(self.game):
                 frames = []
                 for frame in game_round:
-                    if frame.tag == "RoundEnd":
-                        round_winner = frame.attrib["WinningTeam"]
                     for team in frame:
                         for player in team:
-                            # wow this is efficient
                             infos_dict = {"GameRound": idx}
                             infos_dict.update(team.attrib)
                             infos_dict.update(player.attrib)
                             infos_dict.update(frame.attrib)
                             frames.append(infos_dict)
-                [frame.update({"WinningTeam": round_winner}) for frame in frames]
                 all_frames.extend(frames)
             df = pd.DataFrame.from_dict(all_frames)
             return df
