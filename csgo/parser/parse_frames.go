@@ -35,8 +35,8 @@ func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
 	fmt.Printf("</Team> \n")
 }
 	
-func printGameFrame(gs dem.GameState, m gonav.NavMesh) {
-	fmt.Printf("<Frame Tick='%d'> \n", gs.IngameTick())
+func printGameFrame(gs dem.GameState, m gonav.NavMesh, st int) {
+	fmt.Printf("<Frame Tick='%d' Second='%f'> \n", gs.IngameTick(), (gs.IngameTick()-st) / 128)
 	ctSide := gs.TeamCounterTerrorists()
 	tSide := gs.TeamTerrorists()
 	printTeam(ctSide, "CT", m)
@@ -68,6 +68,7 @@ func main() {
 
 	// Create flags
 	roundStarted := 0
+	roundStartTick := 0
 
 	// [PRINT] Starter <game> tag
 	fmt.Printf("<Game Map='%s'> \n", currentMap)
@@ -82,6 +83,7 @@ func main() {
 		// Only parse non-warmup rounds
 		if (warmup == false) && (matchStarted == true) {
 			roundStarted = 1
+			roundStartTick = gs.IngameTick()
 			fmt.Printf("<Round StartTick='%d' TScore='%d' CTScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
 		}
 	})
@@ -117,7 +119,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (matchStarted == true) && (roundStarted == 1) {
-			printGameFrame(gs, mesh)
+			printGameFrame(gs, mesh, roundStartTick)
 		}
 	})
 
