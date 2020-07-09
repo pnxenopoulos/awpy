@@ -105,7 +105,7 @@ func main() {
 			default:
 				winningTeam = "CT"
 			}
-			fmt.Printf("<RoundEnd EndTick='%d' WinningTeam='%s' Reason='%d' /> \n", gs.IngameTick(), winningTeam, e.Reason)
+			fmt.Printf("<RoundEnd EndTick='%d' WinningSide='%s' Reason='%d' /> \n", gs.IngameTick(), winningTeam, e.Reason)
 			fmt.Printf("</Round> \n")
 			roundStarted = 0
 		}
@@ -128,6 +128,9 @@ func main() {
 	checkError(err)
 
 	// Print end game
+	if (roundStarted == true) {
+		fmt.Printf("</Round> \n"
+	}
 	fmt.Printf("</Game>")
 }
 
