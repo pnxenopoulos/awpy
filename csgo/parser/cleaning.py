@@ -40,13 +40,13 @@ def associate_entities(game_names=[], entity_names=[], metric="LCSS"):
     """
     if len(game_names) != len(entity_names):
         raise ValueError("Need both entity lists to have same number of entries.")
-    elif metric.tolower() == "lcss":
+    elif metric.lower() == "lcss":
         dist_metric = textdistance.lcsseq.distance
-    elif metric.tolower() == "hamming":
+    elif metric.lower() == "hamming":
         dist_metric = textdistance.hamming.distance
-    elif metric.tolower() == "levenshtein":
+    elif metric.lower() == "levenshtein":
         dist_metric = textdistance.levenshtein.distance
-    elif metric.tolower() == "jaro":
+    elif metric.lower() == "jaro":
         dist_metric = textdistance.jaro.distance
     else:
         raise ValueError("Metric can only be LCSS, Hamming, Levenshtein or Jaro")
