@@ -128,8 +128,8 @@ func main() {
 	checkError(err)
 
 	// Print end game
-	if (roundStarted == true) {
-		fmt.Printf("</Round> \n"
+	if (roundStarted == 1) {
+		fmt.Printf("</Round> \n")
 	}
 	fmt.Printf("</Game>")
 }
