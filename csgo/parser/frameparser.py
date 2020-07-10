@@ -115,6 +115,9 @@ class FrameParser:
     def parse(self, df=True):
         """ Parse the given demofile into an XML file of game "frames"
 
+        Args:
+            df (bool) : True if DataFrame is to be returned
+
         Returns:
             Returns a written file named match_id.xml
             If df==True, returns a Pandas dataframe of the frames

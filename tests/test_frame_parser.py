@@ -43,7 +43,7 @@ class TestFrameParser:
         self.parser.parse(df=False)
         assert os.path.exists("natus-vincere-vs-astralis-m1-dust2.xml")
 
-    def test_parse(self):
+    def test_parse_df(self):
         """ Tests if the parser returns a full Pandas dataframe
         """
         df = self.parser.parse(df=True)
