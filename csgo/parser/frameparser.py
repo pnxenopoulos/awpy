@@ -140,4 +140,5 @@ class FrameParser:
                             frames.append(infos_dict)
                 all_frames.extend(frames)
             df = pd.DataFrame.from_dict(all_frames)
+            df = df.groupby(["SteamId", "Tick"]).last().reset_index()
             return df

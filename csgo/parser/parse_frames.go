@@ -36,7 +36,7 @@ func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
 }
 	
 func printGameFrame(gs dem.GameState, m gonav.NavMesh, st int) {
-	fmt.Printf("<Frame Tick='%d' Second='%f'> \n", gs.IngameTick(), (gs.IngameTick()-st) / 128)
+	fmt.Printf("<Frame Tick='%d' Second='%f'> \n", gs.IngameTick(), (gs.IngameTick()-st)/128.0)
 	ctSide := gs.TeamCounterTerrorists()
 	tSide := gs.TeamTerrorists()
 	printTeam(ctSide, "CT", m)
@@ -113,6 +113,26 @@ func main() {
 
 	// [PRINT] Events
 	p.RegisterEventHandler(func(e events.PlayerHurt) {
+		gs := p.GameState()
+		warmup := p.GameState().IsWarmupPeriod()
+		matchStarted := p.GameState().IsMatchStarted()
+
+		// Only parse non-warmup rounds
+		if (warmup == false) && (matchStarted == true) && (roundStarted == 1) {
+			printGameFrame(gs, mesh, roundStartTick)
+		}
+	})
+	p.RegisterEventHandler(func(e events.Footstep) {
+		gs := p.GameState()
+		warmup := p.GameState().IsWarmupPeriod()
+		matchStarted := p.GameState().IsMatchStarted()
+
+		// Only parse non-warmup rounds
+		if (warmup == false) && (matchStarted == true) && (roundStarted == 1) {
+			printGameFrame(gs, mesh, roundStartTick)
+		}
+	})
+	p.RegisterEventHandler(func(e events.WeaponFire) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 		matchStarted := p.GameState().IsMatchStarted()
