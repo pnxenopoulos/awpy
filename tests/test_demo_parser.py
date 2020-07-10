@@ -57,7 +57,7 @@ class TestDemoParser:
         output = self.parser.parse()
         assert not self.parser.demo_error
         assert len(self.parser.rounds) == 21
-        assert len(output.keys()) == 6
+        assert len(output.keys()) == 7
 
     def test_clean_match(self):
         """ Tests if the clean_rounds works. Should still return 21.
@@ -148,7 +148,7 @@ class TestDemoParser:
         """ Tests write data method.
         """
         df_dict = self.parser.write_data()
-        assert len(df_dict.keys()) == 6
+        assert len(df_dict.keys()) == 7
         assert df_dict["Rounds"].shape[0] == 21
 
     def test_parse_error(self):
