@@ -1111,6 +1111,7 @@ class DemoParser:
         self.write_kills()
         self.write_bomb_events()
         self.write_grenades()
+        self.dataframes["Map"] = self.rounds[0].map_name
         self.dataframes["Rounds"] = self.rounds_df
         self.dataframes["Footsteps"] = self.footsteps_df
         self.dataframes["Damages"] = self.damages_df

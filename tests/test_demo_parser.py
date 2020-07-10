@@ -177,3 +177,9 @@ class TestDemoParser:
             os.path.getsize("natus-vincere-vs-astralis-m1-dust2_de_dust2.json")
             > 10000000
         )
+
+    def test_write_map_name(self):
+        """ Tests if the parser writes the map name to a dictionary
+        """
+        df_dict = self.parser.write_data()
+        assert df_dict["Map"] == "de_dust2"
