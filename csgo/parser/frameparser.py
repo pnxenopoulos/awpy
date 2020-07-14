@@ -142,6 +142,7 @@ class FrameParser:
             df = pd.DataFrame.from_dict(all_frames)
             df = df.groupby(["SteamId", "Tick"]).last().reset_index()
             df["MatchId"] = self.match_id
+            df["MapName"] = game_map
             df["Seconds"] = pd.to_numeric(df["TicksSinceStart"]) / 128
             df["SteamId"] = df["SteamId"].astype(int)
             df["Tick"] = df["Tick"].astype(int)
