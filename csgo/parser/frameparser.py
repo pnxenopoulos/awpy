@@ -133,7 +133,7 @@ class FrameParser:
                 for frame in game_round:
                     for team in frame:
                         for player in team:
-                            infos_dict = {"GameRound": idx}
+                            infos_dict = {"RoundNum": idx}
                             infos_dict.update(team.attrib)
                             infos_dict.update(player.attrib)
                             infos_dict.update(frame.attrib)
@@ -142,4 +142,16 @@ class FrameParser:
             df = pd.DataFrame.from_dict(all_frames)
             df = df.groupby(["SteamId", "Tick"]).last().reset_index()
             df["MatchId"] = self.match_id
+            df["Seconds"] = pd.to_numeric(df["TicksSinceStart"]) / 128
+            df["SteamId"] = df["SteamId"].astype(int)
+            df["Tick"] = df["Tick"].astype(int)
+            df["EqVal"] = df["EqVal"].astype(int)
+            df["Hp"] = df["Hp"].astype(int)
+            df["Armor"] = df["Armor"].astype(int)
+            df["X"] = pd.to_numeric(df["X"])
+            df["Y"] = pd.to_numeric(df["Y"])
+            df["Z"] = pd.to_numeric(df["Z"])
+            df["AreaId"] = df["AreaId"].astype(int)
+            df["HasHelmet"] = df["HasHelmet"].astype(bool)
+            df["HasDefuse"] = df["HasDefuse"].astype(bool)
             return df

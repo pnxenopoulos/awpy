@@ -23,7 +23,7 @@ func printPlayer(p *common.Player, m gonav.NavMesh) {
 			areaPlace = area.Place.Name
 		}
 	}
-	fmt.Printf("<Player SteamId='%d' PlayerName='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' PosX='%f' PosY='%f' PosZ='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
+	fmt.Printf("<Player SteamId='%d' PlayerName='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' X='%f' Y='%f' Z='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
 }
 
 func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
@@ -36,7 +36,7 @@ func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
 }
 	
 func printGameFrame(gs dem.GameState, m gonav.NavMesh, st int) {
-	fmt.Printf("<Frame Tick='%d' Second='%f'> \n", gs.IngameTick(), (gs.IngameTick()-st)/128.0)
+	fmt.Printf("<Frame Tick='%d' TicksSinceStart='%d'> \n", gs.IngameTick(), (gs.IngameTick()-st))
 	ctSide := gs.TeamCounterTerrorists()
 	tSide := gs.TeamTerrorists()
 	printTeam(ctSide, "CT", m)
