@@ -133,7 +133,7 @@ class FrameParser:
                 for frame in game_round:
                     for team in frame:
                         for player in team:
-                            infos_dict = {"RoundNum": idx}
+                            infos_dict = {"RoundNum": idx + 1}
                             infos_dict.update(team.attrib)
                             infos_dict.update(player.attrib)
                             infos_dict.update(frame.attrib)
