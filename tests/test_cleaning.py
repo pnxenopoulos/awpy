@@ -17,14 +17,6 @@ class TestCleaning:
         c = associate_entities(a, b)
         assert c["misutaaa-"] == "misuta"
 
-    def test_association_length(self):
-        """ Tests association function errors on lists on unequal length.
-        """
-        a = ["misutaaa-", "ZyW0o//"]
-        b = ["misuta", "Zywoo", "peter"]
-        with pytest.raises(ValueError):
-            associate_entities(a, b)
-
     def test_wrong_metric(self):
         """ Tests if submitting a wrong metric raises an error. 
         """
@@ -36,7 +28,9 @@ class TestCleaning:
     def test_entity_replace(self):
         """ Tests if entity replacement works for a dataframe.
         """
-        df = pd.DataFrame({"Person": ["sid", "peter", "joao"], "Country": ["DE", "US", "BR"]})
+        df = pd.DataFrame(
+            {"Person": ["sid", "peter", "joao"], "Country": ["DE", "US", "BR"]}
+        )
         entities = {"DE": "Germany", "US": "USA", "BR": "Brazil"}
         new_df = replace_entities(df, "Country", entities)
         assert new_df.Country.tolist() == ["Germany", "USA", "Brazil"]
@@ -44,7 +38,9 @@ class TestCleaning:
     def test_entity_replace_no_col(self):
         """ Tests if entity replacement fails on a non-contained column.
         """
-        df = pd.DataFrame({"Person": ["sid", "peter", "joao"], "Country": ["DE", "US", "BR"]})
+        df = pd.DataFrame(
+            {"Person": ["sid", "peter", "joao"], "Country": ["DE", "US", "BR"]}
+        )
         entities = {"DE": "Germany", "US": "USA", "BR": "Brazil"}
         with pytest.raises(ValueError):
             replace_entities(df, "Countryyy", entities)

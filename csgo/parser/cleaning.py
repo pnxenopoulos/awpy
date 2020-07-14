@@ -38,9 +38,7 @@ def associate_entities(game_names=[], entity_names=[], metric="LCSS"):
     Returns:
         entity_dict (dict) : A dictionary where the keys are entries in game_names
     """
-    if len(game_names) != len(entity_names):
-        raise ValueError("Need both entity lists to have same number of entries.")
-    elif metric.lower() == "lcss":
+    if metric.lower() == "lcss":
         dist_metric = textdistance.lcsseq.distance
     elif metric.lower() == "hamming":
         dist_metric = textdistance.hamming.distance
@@ -57,6 +55,7 @@ def associate_entities(game_names=[], entity_names=[], metric="LCSS"):
             name_distances.append(dist_metric(p, gn))
         entity_dict[game_names[np.argmin(name_distances)]] = p
     return entity_dict
+
 
 def replace_entities(df, col_name, entity_dict):
     """ A function to replace values in a Pandas df column given an entity dict, as created in associate_entities()
