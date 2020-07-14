@@ -141,4 +141,5 @@ class FrameParser:
                 all_frames.extend(frames)
             df = pd.DataFrame.from_dict(all_frames)
             df = df.groupby(["SteamId", "Tick"]).last().reset_index()
+            df["MatchId"] = self.match_id
             return df
