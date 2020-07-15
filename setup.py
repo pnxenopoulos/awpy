@@ -11,6 +11,7 @@ setup(
         "numpy>=1.18.1",
         "scipy>=1.4.1",
         "matplotlib>=3.1.2",
+        "textdistance>=4.2.0",
     ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
