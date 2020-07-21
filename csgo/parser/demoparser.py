@@ -1136,6 +1136,7 @@ class DemoParser:
             filename = (
                 self.game_json["MatchId"] + "_" + self.game_json["MapName"] + ".json"
             )
+        self.logger.info("Writing JSON output to " + filename)
         # Set final score
         score_df = self.rounds_df.groupby("RoundWinner").size().reset_index()
         score_df.columns = ["Team", "Score"]
@@ -1226,5 +1227,6 @@ class DemoParser:
                 self.game_json["Stats"][team][str(player)][
                     "ADR"
                 ] = player_team_df.ADR.unique()[0]
+        self.logger.info("JSON generated, outputting to " + filename)
         with open(filename, "w") as game_json_file:
             json.dump(self.game_json, game_json_file, cls=NpEncoder, indent=4)
