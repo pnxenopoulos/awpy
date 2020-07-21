@@ -49,12 +49,14 @@ def associate_entities(game_names=[], entity_names=[], metric="LCSS"):
     else:
         raise ValueError("Metric can only be LCSS, Hamming, Levenshtein or Jaro")
     entity_dict = {}
-    for p in entity_names:
+    for gn in game_names:
         name_distances = []
-        for gn in game_names:
+        names = []
+        for p in entity_names:
             if gn is not None and gn is not np.nan:
-                name_distances.append(dist_metric(p, gn))
-        entity_dict[game_names[np.argmin(name_distances)]] = p
+                name_distances.append(dist_metric(gn, p))
+                names.append(p)
+        entity_dict[gn] = names[np.argmin(name_distances)]
     return entity_dict
 
 
