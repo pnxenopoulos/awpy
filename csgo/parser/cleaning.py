@@ -72,3 +72,13 @@ def replace_entities(df, col_name, entity_dict):
         raise ValueError("Column does not exist!")
     df[col_name].replace(entity_dict, inplace=True)
     return df
+
+
+def remove_dupes(df, cols):
+    """ A function to remove duplicates by taking the first occurence
+
+    Args:
+        df (DataFrame) : A Pandas DataFrame
+        cols (list)    : A list of columns to groupby on
+    """
+    return df.groupby(cols).first().reset_index()
