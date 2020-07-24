@@ -72,7 +72,7 @@ func main() {
 	// Create flags
 	roundStarted := 0
 	roundStartTick := 0
-	bombPlanted := 0
+	bombPlanted := false
 
 	// [PRINT] Starter <game> tag
 	fmt.Printf("<Game Map='%s'> \n", currentMap)
@@ -86,7 +86,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 0) {
-			bombPlanted = 0
+			bombPlanted = false
 			roundStarted = 1
 			roundStartTick = gs.IngameTick()
 			fmt.Printf("<Round StartTick='%d' TScore='%d' CTScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
@@ -101,7 +101,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
-			bombPlanted = 0
+			bombPlanted = false
 			winningTeam := "CT"
 			switch e.Winner {
 			case common.TeamTerrorists:
@@ -124,7 +124,7 @@ func main() {
 
 		// Only parse non-warmup bomb plants
 		if (warmup == false) && (roundStarted == 1) {
-			bombPlanted = 1
+			bombPlanted = true
 		}
 	})
 
