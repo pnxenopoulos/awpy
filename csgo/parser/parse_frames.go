@@ -8,6 +8,7 @@ import (
 	common "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/common"
 	events "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/events"
 	ex "github.com/markus-wa/demoinfocs-golang/v2/examples"
+	metadata "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/metadata"
 	gonav "github.com/pnxenopoulos/csgonavparse"
 )
 
@@ -15,6 +16,7 @@ func printPlayer(p *common.Player, m gonav.NavMesh) {
 	playerPos := p.Position()
 	playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 	area := m.GetNearestArea(playerPoint, true)
+	XViz, YViz = mapMetadata.TranslateScale(playerPos.X, playerPos.X)
 	var areaId uint32 = 0
 	areaPlace := ""
 	if area != nil {
@@ -23,7 +25,7 @@ func printPlayer(p *common.Player, m gonav.NavMesh) {
 			areaPlace = area.Place.Name
 		}
 	}
-	fmt.Printf("<Player SteamId='%d' PlayerName='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' X='%f' Y='%f' Z='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, areaPlace, areaId)
+	fmt.Printf("<Player SteamId='%d' PlayerName='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' X='%f' Y='%f' Z='%f' XViz='%f' YViz='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, XViz, YViz, areaPlace, areaId)
 }
 
 func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
@@ -61,6 +63,7 @@ func main() {
 	// Get nav mesh given the map name
 
 	currentMap := header.MapName
+	mapMetadata := metadata.MapNameToMap[currentMap]
 
 	fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 	parserNav := gonav.Parser{Reader: fNav}
