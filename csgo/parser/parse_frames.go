@@ -118,7 +118,7 @@ func main() {
 	})
 
 	// [PRINT] Events
-	p.RegisterEventHandler(func(e events.BombPlanted)) {
+	p.RegisterEventHandler(func(e events.BombPlanted) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
