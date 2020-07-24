@@ -37,8 +37,8 @@ func printTeam(ts *common.TeamState, side string, m gonav.NavMesh, mapMetadata m
 	fmt.Printf("</Team> \n")
 }
 	
-func printGameFrame(gs dem.GameState, m gonav.NavMesh, st int, mapMetadata metadata.Map, bp bool) {
-	fmt.Printf("<Frame Tick='%d' TicksSinceStart='%d' BombPlanted='%v'> \n", gs.IngameTick(), (gs.IngameTick()-st), bp)
+func printGameFrame(gs dem.GameState, m gonav.NavMesh, st int, mapMetadata metadata.Map, bp bool, bs string) {
+	fmt.Printf("<Frame Tick='%d' TicksSinceStart='%d' BombPlanted='%v' BombSite='%s'> \n", gs.IngameTick(), (gs.IngameTick()-st), bp, bs)
 	ctSide := gs.TeamCounterTerrorists()
 	tSide := gs.TeamTerrorists()
 	printTeam(ctSide, "CT", m, mapMetadata)
@@ -73,6 +73,7 @@ func main() {
 	roundStarted := 0
 	roundStartTick := 0
 	bombPlanted := false
+	bombSite := ""
 
 	// [PRINT] Starter <game> tag
 	fmt.Printf("<Game Map='%s'> \n", currentMap)
@@ -87,6 +88,7 @@ func main() {
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 0) {
 			bombPlanted = false
+			bombSite = ""
 			roundStarted = 1
 			roundStartTick = gs.IngameTick()
 			fmt.Printf("<Round StartTick='%d' TScore='%d' CTScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
@@ -124,6 +126,11 @@ func main() {
 		// Only parse non-warmup bomb plants
 		if (warmup == false) && (roundStarted == 1) {
 			bombPlanted = true
+			if e.Site == 65 {
+				bombSite = "A"
+			} else if e.Site == 66 {
+				bombSite = "B"
+			}
 		}
 	})
 
@@ -134,7 +141,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
-			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted)
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
 		}
 	})
 
@@ -145,7 +152,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
-			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted)
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
 		}
 	})
 
@@ -156,7 +163,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
-			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted)
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
 		}
 	})
 

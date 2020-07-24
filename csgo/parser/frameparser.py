@@ -155,4 +155,5 @@ class FrameParser:
             df["AreaId"] = df["AreaId"].astype(int)
             df["HasHelmet"] = df["HasHelmet"].astype(bool)
             df["HasDefuse"] = df["HasDefuse"].astype(bool)
+            df["BombPlanted"] = df["BombPlanted"].astype(bool)
             return df
