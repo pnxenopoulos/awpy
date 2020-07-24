@@ -140,7 +140,7 @@ class FrameParser:
                             frames.append(infos_dict)
                 all_frames.extend(frames)
             df = pd.DataFrame.from_dict(all_frames)
-            df = df.groupby(["SteamId", "Tick"]).last().reset_index()
+            df = df.groupby(["SteamId", "RoundNum", "Tick"]).last().reset_index()
             df["MatchId"] = self.match_id
             df["MapName"] = game_map
             df["Seconds"] = pd.to_numeric(df["TicksSinceStart"]) / 128

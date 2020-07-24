@@ -48,3 +48,10 @@ class TestFrameParser:
         """
         df = self.parser.parse(df=True)
         assert df.shape[0] > 0
+
+    def test_correct_round_num(self):
+        """ Tests if the parser returns the correct number of rounds
+        """
+        df = self.parser.parse(df=True)
+        assert len(df.RoundNum.unique()) == 21
+
