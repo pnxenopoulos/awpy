@@ -12,11 +12,11 @@ import (
 	gonav "github.com/pnxenopoulos/csgonavparse"
 )
 
-func printPlayer(p *common.Player, m gonav.NavMesh) {
+func printPlayer(p *common.Player, m gonav.NavMesh, mapMetadata metadata.Map) {
 	playerPos := p.Position()
 	playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 	area := m.GetNearestArea(playerPoint, true)
-	XViz, YViz = mapMetadata.TranslateScale(playerPos.X, playerPos.X)
+	XViz, YViz := mapMetadata.TranslateScale(playerPos.X, playerPos.X)
 	var areaId uint32 = 0
 	areaPlace := ""
 	if area != nil {
