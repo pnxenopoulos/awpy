@@ -78,10 +78,10 @@ func main() {
 
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
-		matchStarted := p.GameState().IsMatchStarted()
+		// matchStarted := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup rounds
-		if (warmup == false) && (matchStarted == true) {
+		if (warmup == false) {
 			roundStarted = 1
 			roundStartTick = gs.IngameTick()
 			fmt.Printf("<Round StartTick='%d' TScore='%d' CTScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
@@ -92,10 +92,10 @@ func main() {
 	p.RegisterEventHandler(func(e events.RoundEnd) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
-		matchStarted := p.GameState().IsMatchStarted()
+		// matchStarted := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup rounds
-		if (warmup == false) && (matchStarted == true) && (roundStarted == 1) {
+		if (warmup == false) && (roundStarted == 1) {
 			winningTeam := "CT"
 			switch e.Winner {
 			case common.TeamTerrorists:
@@ -115,30 +115,30 @@ func main() {
 	p.RegisterEventHandler(func(e events.PlayerHurt) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
-		matchStarted := p.GameState().IsMatchStarted()
+		// matchStarted := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup rounds
-		if (warmup == false) && (matchStarted == true) && (roundStarted == 1) {
+		if (warmup == false) && (roundStarted == 1) {
 			printGameFrame(gs, mesh, roundStartTick)
 		}
 	})
 	p.RegisterEventHandler(func(e events.Footstep) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
-		matchStarted := p.GameState().IsMatchStarted()
+		//matchStarted := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup rounds
-		if (warmup == false) && (matchStarted == true) && (roundStarted == 1) {
+		if (warmup == false) && (roundStarted == 1) {
 			printGameFrame(gs, mesh, roundStartTick)
 		}
 	})
 	p.RegisterEventHandler(func(e events.WeaponFire) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
-		matchStarted := p.GameState().IsMatchStarted()
+		//matchStarted := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup rounds
-		if (warmup == false) && (matchStarted == true) && (roundStarted == 1) {
+		if (warmup == false) && (roundStarted == 1) {
 			printGameFrame(gs, mesh, roundStartTick)
 		}
 	})

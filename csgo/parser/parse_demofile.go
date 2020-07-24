@@ -39,10 +39,10 @@ func main() {
 		/* Parse player damage events
 		 */
 		warmup := p.GameState().IsWarmupPeriod()
-		started := p.GameState().IsMatchStarted()
+		// started := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup player hurt events
-		if warmup == false && started == true {
+		if warmup == false {
 			// First block (game state)
 			gameTick := p.GameState().IngameTick()
 			var mapName string = header.MapName
