@@ -84,7 +84,7 @@ func main() {
 		// matchStarted := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup rounds
-		if (warmup == false) {
+		if (warmup == false) && (roundStarted == 0) {
 			roundStarted = 1
 			roundStartTick = gs.IngameTick()
 			fmt.Printf("<Round StartTick='%d' TScore='%d' CTScore='%d'> \n", gs.IngameTick(), gs.TeamTerrorists().Score(), gs.TeamCounterTerrorists().Score())
