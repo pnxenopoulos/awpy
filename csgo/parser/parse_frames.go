@@ -28,21 +28,21 @@ func printPlayer(p *common.Player, m gonav.NavMesh, mapMetadata metadata.Map) {
 	fmt.Printf("<Player SteamId='%d' PlayerName='%s' Hp='%d' Armor='%d' EqVal='%d' HasDefuse='%v' HasHelmet='%v' X='%f' Y='%f' Z='%f' XViz='%f' YViz='%f' AreaName='%s' AreaId='%d' /> \n", p.SteamID64, p.Name, p.Health(), p.Armor(), p.EquipmentValueCurrent(), p.HasDefuseKit(), p.HasHelmet(), playerPos.X, playerPos.Y, playerPos.Z, XViz, YViz, areaPlace, areaId)
 }
 
-func printTeam(ts *common.TeamState, side string, m gonav.NavMesh) {
+func printTeam(ts *common.TeamState, side string, m gonav.NavMesh, mapMetadata metadata.Map) {
 	fmt.Printf("<Team Side='%s' TeamName='%s' EqVal='%d'> \n", side, ts.ClanName(), ts.CurrentEquipmentValue())
 	teamPlayers := ts.Members()
 	for _, p := range teamPlayers {
-		printPlayer(p, m)
+		printPlayer(p, m, mapMetadata)
 	}
 	fmt.Printf("</Team> \n")
 }
 	
-func printGameFrame(gs dem.GameState, m gonav.NavMesh, st int) {
+func printGameFrame(gs dem.GameState, m gonav.NavMesh, st int, mapMetadata metadata.Map) {
 	fmt.Printf("<Frame Tick='%d' TicksSinceStart='%d'> \n", gs.IngameTick(), (gs.IngameTick()-st))
 	ctSide := gs.TeamCounterTerrorists()
 	tSide := gs.TeamTerrorists()
-	printTeam(ctSide, "CT", m)
-	printTeam(tSide, "T", m)
+	printTeam(ctSide, "CT", m, mapMetadata)
+	printTeam(tSide, "T", m, mapMetadata)
 	fmt.Printf("</Frame> \n")
 }
 
@@ -122,7 +122,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
-			printGameFrame(gs, mesh, roundStartTick)
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata)
 		}
 	})
 	p.RegisterEventHandler(func(e events.Footstep) {
@@ -132,7 +132,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
-			printGameFrame(gs, mesh, roundStartTick)
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata)
 		}
 	})
 	p.RegisterEventHandler(func(e events.WeaponFire) {
@@ -142,7 +142,7 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
-			printGameFrame(gs, mesh, roundStartTick)
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata)
 		}
 	})
 
