@@ -126,7 +126,7 @@ func main() {
 		if (warmup == false) && (roundStarted == 1) {
 			bombPlanted = 1
 		}
-	}
+	})
 
 	p.RegisterEventHandler(func(e events.PlayerHurt) {
 		gs := p.GameState()
