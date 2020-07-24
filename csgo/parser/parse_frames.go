@@ -119,7 +119,6 @@ func main() {
 
 	// [PRINT] Events
 	p.RegisterEventHandler(func(e events.BombPlanted) {
-		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
 		// Only parse non-warmup bomb plants
