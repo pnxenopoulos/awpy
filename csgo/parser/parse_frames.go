@@ -16,7 +16,7 @@ func printPlayer(p *common.Player, m gonav.NavMesh, mapMetadata metadata.Map) {
 	playerPos := p.Position()
 	playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 	area := m.GetNearestArea(playerPoint, true)
-	XViz, YViz := mapMetadata.TranslateScale(playerPos.X, playerPos.X)
+	XViz, YViz := mapMetadata.TranslateScale(playerPos.X, playerPos.Y)
 	var areaId uint32 = 0
 	areaPlace := ""
 	if area != nil {
@@ -103,7 +103,6 @@ func main() {
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
-			bombPlanted = false
 			winningTeam := "CT"
 			switch e.Winner {
 			case common.TeamTerrorists:
@@ -115,6 +114,8 @@ func main() {
 			}
 			fmt.Printf("<RoundEnd EndTick='%d' WinningSide='%s' Reason='%d' /> \n", gs.IngameTick(), winningTeam, e.Reason)
 			fmt.Printf("</Round> \n")
+			bombPlanted = false
+			bombSite = ""
 			roundStarted = 0
 		}
 	})
@@ -134,7 +135,7 @@ func main() {
 		}
 	})
 
-	p.RegisterEventHandler(func(e events.PlayerHurt) {
+	p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 		// matchStarted := p.GameState().IsMatchStarted()
@@ -143,9 +144,20 @@ func main() {
 		if (warmup == false) && (roundStarted == 1) {
 			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
 		}
-	})
+	}) 
 
-	p.RegisterEventHandler(func(e events.Footstep) {
+	/* p.RegisterEventHandler(func(e events.PlayerHurt) {
+		gs := p.GameState()
+		warmup := p.GameState().IsWarmupPeriod()
+		// matchStarted := p.GameState().IsMatchStarted()
+
+		// Only parse non-warmup rounds
+		if (warmup == false) && (roundStarted == 1) {
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
+		}
+	}) */
+
+	/* p.RegisterEventHandler(func(e events.Footstep) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 		//matchStarted := p.GameState().IsMatchStarted()
@@ -154,18 +166,7 @@ func main() {
 		if (warmup == false) && (roundStarted == 1) {
 			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
 		}
-	})
-
-	p.RegisterEventHandler(func(e events.WeaponFire) {
-		gs := p.GameState()
-		warmup := p.GameState().IsWarmupPeriod()
-		//matchStarted := p.GameState().IsMatchStarted()
-
-		// Only parse non-warmup rounds
-		if (warmup == false) && (roundStarted == 1) {
-			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
-		}
-	})
+	}) */
 
 	// Parse demofile to end
 	err = p.ParseToEnd()
