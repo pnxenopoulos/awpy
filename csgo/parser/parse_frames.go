@@ -176,7 +176,7 @@ func main() {
 		}
 	})
 
-	p.RegisterEventHandler(func(e events.Jump) {
+	p.RegisterEventHandler(func(e events.PlayerJump) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 
