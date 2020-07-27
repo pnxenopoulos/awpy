@@ -135,18 +135,7 @@ func main() {
 		}
 	})
 
-	p.RegisterEventHandler(func(e events.FrameDone) {
-		gs := p.GameState()
-		warmup := p.GameState().IsWarmupPeriod()
-		// matchStarted := p.GameState().IsMatchStarted()
-
-		// Only parse non-warmup rounds
-		if (warmup == false) && (roundStarted == 1) {
-			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
-		}
-	}) 
-
-	/* p.RegisterEventHandler(func(e events.PlayerHurt) {
+	/* p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
 		// matchStarted := p.GameState().IsMatchStarted()
@@ -157,16 +146,55 @@ func main() {
 		}
 	}) */
 
-	/* p.RegisterEventHandler(func(e events.Footstep) {
+	p.RegisterEventHandler(func(e events.PlayerHurt) {
 		gs := p.GameState()
 		warmup := p.GameState().IsWarmupPeriod()
-		//matchStarted := p.GameState().IsMatchStarted()
 
 		// Only parse non-warmup rounds
 		if (warmup == false) && (roundStarted == 1) {
 			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
 		}
-	}) */
+	})
+
+	p.RegisterEventHandler(func(e events.Footstep) {
+		gs := p.GameState()
+		warmup := p.GameState().IsWarmupPeriod()
+
+		// Only parse non-warmup rounds
+		if (warmup == false) && (roundStarted == 1) {
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
+		}
+	})
+
+	p.RegisterEventHandler(func(e events.Kill) {
+		gs := p.GameState()
+		warmup := p.GameState().IsWarmupPeriod()
+
+		// Only parse non-warmup rounds
+		if (warmup == false) && (roundStarted == 1) {
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
+		}
+	})
+
+	p.RegisterEventHandler(func(e events.Jump) {
+		gs := p.GameState()
+		warmup := p.GameState().IsWarmupPeriod()
+
+		// Only parse non-warmup rounds
+		if (warmup == false) && (roundStarted == 1) {
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
+		}
+	})
+
+	p.RegisterEventHandler(func(e events.ItemPickup) {
+		gs := p.GameState()
+		warmup := p.GameState().IsWarmupPeriod()
+
+		// Only parse non-warmup rounds
+		if (warmup == false) && (roundStarted == 1) {
+			printGameFrame(gs, mesh, roundStartTick, mapMetadata, bombPlanted, bombSite)
+		}
+	})
 
 	// Parse demofile to end
 	err = p.ParseToEnd()
