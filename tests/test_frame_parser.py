@@ -42,7 +42,7 @@ class TestFrameParser:
         """
         self.parser.parse(df=False)
         assert os.path.exists("natus-vincere-vs-astralis-m1-dust2.xml")
-        assert self.demo_map == "de_dust2"
+        assert self.parser.demo_map == "de_dust2"
 
     def test_parse_df(self):
         """ Tests if the parser returns a full Pandas dataframe
