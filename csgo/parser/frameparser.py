@@ -98,6 +98,7 @@ class FrameParser:
         """
         self.tree = ET.parse(self.match_id + ".xml")
         self.game = self.tree.getroot()
+        self.demo_map = self.game.attrib["Map"]
         start_round = 0
         start_round_elem = None
         for i, round_elem in enumerate(self.game):
@@ -127,8 +128,7 @@ class FrameParser:
         if df == True:
             i = 0
             all_frames = []
-            game_map = self.game.attrib["Map"]
-            self.demo_map = game_map
+            game_map = self.demo_map
             for idx, game_round in enumerate(self.game):
                 frames = []
                 for frame in game_round:

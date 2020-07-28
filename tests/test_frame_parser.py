@@ -42,13 +42,13 @@ class TestFrameParser:
         """
         self.parser.parse(df=False)
         assert os.path.exists("natus-vincere-vs-astralis-m1-dust2.xml")
+        assert self.demo_map == "de_dust2"
 
     def test_parse_df(self):
         """ Tests if the parser returns a full Pandas dataframe
         """
         df = self.parser.parse(df=True)
         assert df.shape[0] > 0
-        assert self.demo_map == "de_dust2"
 
     def test_correct_round_num(self):
         """ Tests if the parser returns the correct number of rounds
