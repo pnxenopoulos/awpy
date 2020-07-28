@@ -128,6 +128,7 @@ class FrameParser:
             i = 0
             all_frames = []
             game_map = self.game.attrib["Map"]
+            self.game_map = game_map
             for idx, game_round in enumerate(self.game):
                 frames = []
                 for frame in game_round:
