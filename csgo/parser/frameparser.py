@@ -98,27 +98,17 @@ class FrameParser:
         """
         self.tree = ET.parse(self.match_id + ".xml")
         self.game = self.tree.getroot()
-        round_score_total = []
-        for i, r in enumerate(self.game):
-            round_score_total.append(int(r.attrib["CTScore"]) + int(r.attrib["TScore"]))
-        start_round_idx = 0
-        for i, score in enumerate(round_score_total):
-            if i == 0 and (score == 1 or score == 0) and round_score_total[i + 1] == 2:
-                start_round_idx = i
-            else:
-                if (
-                    i != len(round_score_total) - 1
-                    and (score == 1 or score == 0)
-                    and round_score_total[i + 1] == 1
-                ):
-                    start_round_idx = i
-        self.game = self.game[start_round_idx:]
-        total_popped = 0
-        for i, r in enumerate(self.game):
-            score = int(r.attrib["CTScore"]) + int(r.attrib["TScore"])
-            if (score == 0 or score == 1) and i > 0:
-                self.game.pop(i - total_popped)
-                total_popped = total_popped + 1
+        start_round = 0
+        start_round_elem = None
+        for i, round_elem in enumerate(self.game):
+            if (
+                int(round_elem.attrib["CTScore"]) + int(round_elem.attrib["TScore"])
+                == 0
+            ):
+                start_round = i
+        for j, round_elem in enumerate(self.game):
+            if start_round > j:
+                self.game.remove(round_elem)
         self.tree.write(open(self.match_id + ".xml", "w"), encoding="unicode")
         self.logger.info("Cleaned the round XML to remove noisy rounds")
 
