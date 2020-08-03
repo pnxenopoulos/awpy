@@ -18,6 +18,6 @@ class TestCSGOCoords:
         """
         Tests that coords to area returns correctly.
         """
-        s = coords_to_area(x=0, y=0, z=64, map="de_dust2")
-        s = s.split("[")[0].strip()
-        assert s == "AreaID: 7760"
+        coord = coords_to_area(x=0, y=0, z=64, map="de_dust2")
+        assert coord["AreaId"] == 7760
+        assert coord["AreaName"] == "OutsideLong"
