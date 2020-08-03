@@ -1,6 +1,6 @@
 import pytest
 
-from csgo.analytics.coorrds import coords_to_area
+from csgo.analytics.coords import coords_to_area
 
 
 class TestCSGOCoords:
