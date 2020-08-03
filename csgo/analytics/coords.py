@@ -50,4 +50,4 @@ def coords_to_area(x=0, y=0, z=0, map="de_dust2"):
     output = {}
     output["AreaId"] = int(output_string.split("[")[0].strip().split(":")[1].strip())
     output["AreaName"] = output_string.split("[")[1].strip().split("]")[0]
-    return
+    return output
