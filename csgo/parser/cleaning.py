@@ -56,7 +56,9 @@ def associate_entities(game_names=[], entity_names=[], metric="LCSS"):
             if gn is not None and gn is not np.nan:
                 name_distances.append(dist_metric(gn, p))
                 names.append(p)
-        entity_dict[gn] = names[np.argmin(name_distances)]
+        if gn is not None and gn is not np.nan:
+            entity_dict[gn] = names[np.argmin(name_distances)]
+    entity_dict[None] = None
     return entity_dict
 
 
