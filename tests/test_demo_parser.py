@@ -86,6 +86,18 @@ class TestDemoParser:
         assert self.parser.logger.name == "CSGODemoParser"
         assert os.path.exists("csgo_demoparser.log")
 
+    def test_parse_output_file(self):
+        """ Tests if parse actually outputs a file
+        """
+        self.parser = DemoParser(
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            log=True,
+            demo_id="test",
+            parse_rate=32,
+        )
+        self.parser.parse_demo()
+        assert os.path.exists("test.json")
+
     #####
     # def test_demo_error(self):
     #     """ Tests if the parser encountered a corrupted demofile. If it did, the
