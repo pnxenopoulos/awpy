@@ -73,7 +73,7 @@ class DemoParser:
             self.parse_rate = 32
         else:
             self.parse_rate = parse_rate
-        self.logger.info("Setting parse rate to " + self.parse_rate)
+        self.logger.info("Setting parse rate to " + str(self.parse_rate))
 
     def parse_demo(self):
         """ Parse a demofile using the Go script parse_demo.go -- this function takes no arguments, all arguments are set in initialization.
