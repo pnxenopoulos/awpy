@@ -636,7 +636,7 @@ func main() {
 	currentMap := header.MapName
 	currentMap = cleanMapName(currentMap)
 
-	fNav, _ := os.Open("nav/" + currentMap + ".nav")
+	fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 	parserNav := gonav.Parser{Reader: fNav}
 	mesh, _ := parserNav.Parse()
 
@@ -764,7 +764,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) && (len(currentGame.Rounds) > 0) {
 			// Replace the last round object
 			currentGame.Rounds[len(currentGame.Rounds)-1].ScoreUpdatedTick = int64(gs.IngameTick())
 		}
