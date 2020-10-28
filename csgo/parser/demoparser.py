@@ -51,9 +51,7 @@ class DemoParser:
 
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = demofile
-        self.logger.info(
-            "Initialized CSGODemoParser with demofile " + self.demofile
-        )
+        self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
         if demo_id is None:
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
@@ -64,13 +62,17 @@ class DemoParser:
         if parse_rate is None:
             self.logger.warning("No parse rate set")
             self.parse_rate = 32
-        elif parse_rate is not in [1,2,4,8,16,32,64,128]:
-            self.logger.warning("Parse rate of " + str(parse_rate) + " not acceptable! Parse rate must be between 2^0 and 2^7. Setting to DEFAULT value of 32.")
+        elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128]:
+            self.logger.warning(
+                "Parse rate of "
+                + str(parse_rate)
+                + " not acceptable! Parse rate must be between 2^0 and 2^7. Setting to DEFAULT value of 32."
+            )
             self.parse_rate = 32
         else:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + self.parse_rate)
-        
+
     def parse_demo(self):
         """ Parse a demofile using the Go script parse_demo.go -- this function takes no arguments, all arguments are set in initialization.
 
@@ -95,12 +97,14 @@ class DemoParser:
                 "-parserate",
                 str(self.parse_rate),
                 "-demoid",
-                str(self.demo_id)
+                str(self.demo_id),
             ],
             stdout=subprocess.PIPE,
             cwd=path,
         )
         if os.path.isfile(str(self.demo_id) + ".json"):
-            self.logger.info("Wrote demo parse output to " + str(self.demo_id) + ".json")
+            self.logger.info(
+                "Wrote demo parse output to " + str(self.demo_id) + ".json"
+            )
         else:
             self.logger.warning("No file produced, error in calling Golang")
