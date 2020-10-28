@@ -93,7 +93,7 @@ class TestDemoParser:
             demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
             log=True,
             demo_id="test",
-            parse_rate=32,
+            parse_rate=128,
         )
         self.parser.parse_demo()
         assert os.path.exists("test.json")
