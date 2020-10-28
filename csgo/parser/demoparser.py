@@ -5,6 +5,8 @@ import re
 import subprocess
 import pandas as pd
 
+from csgo.utils import NpEncoder, check_go_version
+
 
 class DemoParser:
     """ This class can parse a CSGO demofile to various outputs, such as JSON or CSV. Accessible via csgo.parser import DemoParser
