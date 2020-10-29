@@ -118,6 +118,7 @@ class DemoParser:
         json_path = str(self.demo_id) + ".json"
         with open(json_path) as f:
             demo_data = json.load(f)
+        self.json = demo_data
         return demo_data
 
     def parse(self):
@@ -127,5 +128,5 @@ class DemoParser:
             A dictionary of JSON output
         """
         self._parse_demo()
-        self.json = self._read_json()
+        self._read_json()
         return self.json
