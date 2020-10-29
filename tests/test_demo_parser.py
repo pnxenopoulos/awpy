@@ -15,7 +15,7 @@ class TestDemoParser:
         self.parser = DemoParser(
             demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
             log=False,
-            demo_id="natus-vincere-vs-astralis-m1-dust2",
+            demo_id="test",
             parse_rate=32,
         )
 
@@ -101,6 +101,13 @@ class TestDemoParser:
     def test_read_json(self):
         """ Tests if the JSON output from _parse_demo() can be read
         """
+        self.parser = DemoParser(
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            log=True,
+            demo_id="test",
+            parse_rate=128,
+        )
+        self.parser._parse_demo()
         output_json = self.parser._read_json()
         assert type(output_json) is dict
 
