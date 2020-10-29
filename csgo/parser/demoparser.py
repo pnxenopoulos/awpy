@@ -116,9 +116,13 @@ class DemoParser:
             A dictionary of the JSON output of _parse_demo()
         """
         json_path = str(self.demo_id) + ".json"
+        self.logger.info("Reading in JSON from " + json_path)
         with open(json_path) as f:
             demo_data = json.load(f)
         self.json = demo_data
+        self.logger.info(
+            "JSON data loaded, available in the `json` attribute to parser"
+        )
         return demo_data
 
     def parse(self):
@@ -129,4 +133,30 @@ class DemoParser:
         """
         self._parse_demo()
         self._read_json()
-        return self.json
+        if self.json:
+            self.logger.info("Successfully returned JSON output")
+            return self.json
+        else:
+            self.logger.error("JSON couldn't be returned")
+            return None
+
+    def _parse_kills(self, return_type):
+        """ Returns kills as either a list or Pandas dataframe
+
+        Args:
+            return_type (string) : Either "list" or "df"
+
+        Returns:
+            A list or Pandas dataframe
+        """
+        if self.json:
+            self.logger.info("Parsed kills")
+            if return_type == "list":
+                kills = []
+                for r in self.json["GameRounds"]:
+                    for k in r["Kills"]:
+                        kills.append(k)
+                return kills
+        else:
+            self.logger.error("JSON not found")
+            return None
