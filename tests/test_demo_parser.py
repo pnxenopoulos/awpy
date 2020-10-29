@@ -133,7 +133,7 @@ class TestDemoParser:
             parse_rate=128,
         )
         data = self.parser.parse()
-        assert data["MatchId"] == self.demo_id
+        assert data["MatchId"] == self.parser.demo_id
         assert data["ClientName"] == "GOTV Demo"
         assert data["MapName"] == "de_dust2"
         assert data["PlaybackTicks"] == 414812
