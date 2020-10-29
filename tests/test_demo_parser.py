@@ -126,7 +126,13 @@ class TestDemoParser:
     def test_parsed_json(self):
         """ Tests if the parsed JSON is correct
         """
-        data = self.json
+        self.parser = DemoParser(
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            log=True,
+            demo_id="test",
+            parse_rate=128,
+        )
+        data = self.parser.parse()
         assert data["MatchId"] == self.demo_id
         assert data["ClientName"] == "GOTV Demo"
         assert data["MapName"] == "de_dust2"
