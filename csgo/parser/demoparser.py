@@ -119,3 +119,13 @@ class DemoParser:
         with open(json_path) as f:
             demo_data = json.load(f)
         return demo_data
+
+    def parse(self):
+        """ Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
+
+        Returns:
+            A dictionary of JSON output
+        """
+        self._parse_demo()
+        self.json = self._read_json()
+        return self.json

@@ -16,7 +16,7 @@ class TestDemoParser:
             demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
             log=False,
             demo_id="test",
-            parse_rate=32,
+            parse_rate=128,
         )
 
     def teardown_class(self):
@@ -110,6 +110,40 @@ class TestDemoParser:
         self.parser._parse_demo()
         output_json = self.parser._read_json()
         assert type(output_json) is dict
+
+    def test_parse(self):
+        """ Tests if the JSON output from parse is a dict
+        """
+        self.parser = DemoParser(
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            log=True,
+            demo_id="test",
+            parse_rate=128,
+        )
+        output_json = self.parser.parse()
+        assert type(output_json) is dict
+
+    def test_parsed_json(self):
+        """ Tests if the parsed JSON is correct
+        """
+        data = self.json
+        assert data["MatchId"] == self.demo_id
+        assert data["ClientName"] == "GOTV Demo"
+        assert data["MapName"] == "de_dust2"
+        assert data["PlaybackTicks"] == 414812
+        assert data["ParseRate"] == 128
+        assert len(data["GameRounds"]) == 21
+        assert data["GameRounds"][0]["RoundNum"] == 1
+        assert data["GameRounds"][0]["StartTick"] == 1790
+        assert data["GameRounds"][0]["EndTick"] == 14023
+        assert data["GameRounds"][0]["TScore"] == 0
+        assert data["GameRounds"][0]["CTScore"] == 0
+        assert data["GameRounds"][0]["CTBuyType"] == "Pistol"
+        assert data["GameRounds"][0]["TBuyType"] == "Pistol"
+        assert data["GameRounds"][0]["RoundEndReason"] == "TerroristsWin"
+        assert data["GameRounds"][0]["CTStartEqVal"] == 4400
+        assert data["GameRounds"][0]["TStartEqVal"] == 4350
+        assert data["GameRounds"][-1]["RoundEndReason"] == "CTWin"
 
     #####
     # def test_demo_error(self):
