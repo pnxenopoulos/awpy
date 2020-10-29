@@ -1562,7 +1562,7 @@ func main() {
 		// currentGame.MatchName + ".json"
 		_ = ioutil.WriteFile(outpath + "/" + currentGame.MatchName + ".json", file, 0644)
 		
-		InfoLogger.Println("Wrote to JSON file")
+		InfoLogger.Println("Wrote to JSON file to: " + outpath + "/" + currentGame.MatchName + ".json")
 		fmt.Printf("Wrote %s\n", currentGame.MatchName + ".json")
 	}
 }
