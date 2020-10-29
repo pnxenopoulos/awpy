@@ -75,11 +75,11 @@ class DemoParser:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
 
-    def parse_demo(self):
+    def _parse_demo(self):
         """ Parse a demofile using the Go script parse_demo.go -- this function takes no arguments, all arguments are set in initialization.
 
         Returns:
-            Returns a dictionary...
+            Outputs a JSON file to current working directory.
         """
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
@@ -108,3 +108,14 @@ class DemoParser:
             )
         else:
             self.logger.error("No file produced, error in calling Golang")
+
+    def _read_json(self):
+        """ Reads the JSON file created by _parse_demo()
+
+        Returns:
+            A dictionary of the JSON output of _parse_demo()
+        """
+        json_path = str(self.demo_id) + ".json"
+        with open(json_path) as f:
+            demo_data = json.load(f)
+        return demo_data

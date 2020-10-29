@@ -86,7 +86,7 @@ class TestDemoParser:
         assert self.parser.logger.name == "CSGODemoParser"
         assert os.path.exists("csgo_demoparser.log")
 
-    def test_parse_output_file(self):
+    def test_parse_demo(self):
         """ Tests if parse actually outputs a file
         """
         self.parser = DemoParser(
@@ -95,8 +95,14 @@ class TestDemoParser:
             demo_id="test",
             parse_rate=128,
         )
-        self.parser.parse_demo()
+        self.parser._parse_demo()
         assert os.path.exists("test.json")
+
+    def test_read_json(self):
+        """ Tests if the JSON output from _parse_demo() can be read
+        """
+        output_json = self.parser._read_json()
+        assert type(output_json) is dict
 
     #####
     # def test_demo_error(self):
