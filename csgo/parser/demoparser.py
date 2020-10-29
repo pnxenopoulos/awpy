@@ -88,15 +88,18 @@ class DemoParser:
             [
                 "go",
                 "run",
-                path + "/parse_demo.go",
+                "parse_demo.go",
                 "-demo",
                 os.getcwd() + "/" + self.demofile,
                 "-parserate",
                 str(self.parse_rate),
                 "-demoid",
                 str(self.demo_id),
+                "-out",
+                os.getcwd(),
             ],
             stdout=subprocess.PIPE,
+            cwd=path,
         )
         if os.path.isfile(str(self.demo_id) + ".json"):
             self.logger.info(

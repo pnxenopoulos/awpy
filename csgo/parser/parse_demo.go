@@ -607,6 +607,7 @@ func main() {
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 1, "Parse rate, indicates spacing between ticks")
 	demoIdPtr := fl.String("demoid", "", "Demo string ID")
+	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
 	if err != nil {
@@ -617,6 +618,7 @@ func main() {
 
 	demPath := *demoPathPtr
 	parseRate := *parseRatePtr
+	outpath := *outpathPtr
 
 	InfoLogger.Printf("Parsed arguments, reading in %s and a parse rate of %d \n", demPath, parseRate)
 
@@ -1557,7 +1559,8 @@ func main() {
 
 		// Write the JSON
 		file, _ := json.MarshalIndent(currentGame, "", " ")
-		_ = ioutil.WriteFile(currentGame.MatchName + ".json", file, 0644)
+		// currentGame.MatchName + ".json"
+		_ = ioutil.WriteFile(outpath + "/" + currentGame.MatchName + ".json", file, 0644)
 		
 		InfoLogger.Println("Wrote to JSON file")
 		fmt.Printf("Wrote %s\n", currentGame.MatchName + ".json")
