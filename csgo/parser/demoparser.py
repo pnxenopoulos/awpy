@@ -101,8 +101,7 @@ class DemoParser:
             stdout=subprocess.PIPE,
             cwd=path,
         )
-        ret_code = proc.wait()
-        f.flush()
+        output = proc.stdout.read().splitlines()
         if os.path.isfile(str(self.demo_id) + ".json"):
             self.logger.info(
                 "Wrote demo parse output to " + str(self.demo_id) + ".json"
