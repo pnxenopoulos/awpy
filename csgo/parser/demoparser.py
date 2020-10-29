@@ -81,12 +81,6 @@ class DemoParser:
         Returns:
             Returns a dictionary...
         """
-        self.logger.info(
-            "Starting CSGO Golang demofile parser, reading in "
-            + os.getcwd()
-            + "/"
-            + self.demofile
-        )
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + os.getcwd() + "/" + self.demofile)
@@ -94,7 +88,7 @@ class DemoParser:
             [
                 "go",
                 "run",
-                "parse_demo.go",
+                path + "/parse_demo.go",
                 "-demo",
                 os.getcwd() + "/" + self.demofile,
                 "-parserate",
@@ -103,7 +97,6 @@ class DemoParser:
                 str(self.demo_id),
             ],
             stdout=subprocess.PIPE,
-            cwd=path,
         )
         if os.path.isfile(str(self.demo_id) + ".json"):
             self.logger.info(
