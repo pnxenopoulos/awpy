@@ -89,6 +89,7 @@ class DemoParser:
         )
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
+        self.logger.info("Looking for file at " + os.getcwd() + "/" + self.demofile)
         proc = subprocess.Popen(
             [
                 "go",
@@ -109,4 +110,4 @@ class DemoParser:
                 "Wrote demo parse output to " + str(self.demo_id) + ".json"
             )
         else:
-            self.logger.warning("No file produced, error in calling Golang")
+            self.logger.error("No file produced, error in calling Golang")
