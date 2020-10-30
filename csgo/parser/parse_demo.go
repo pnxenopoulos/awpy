@@ -692,7 +692,6 @@ func main() {
 	// Parse round starts, which sometimes happen when MatchStartedChanged
 	p.RegisterEventHandler(func(e events.MatchStartedChanged) {	
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) && (roundStarted == 0) && (e.NewIsStarted == true) {
 			roundStarted = 1
@@ -706,22 +705,11 @@ func main() {
 		}
 	})
 
-	p.RegisterEventHandler(func(e events.TeamSideSwitch) {
-		gs := p.GameState()
-		fmt.Printf("Team side switch at tick: %d \n", gs.IngameTick())
-	})
-	p.RegisterEventHandler(func(e events.GameHalfEnded) {
-		gs := p.GameState()
-		fmt.Printf("Game half end at tick: %d \n", gs.IngameTick())
-	})
-
 	// Parse round starts
 	p.RegisterEventHandler(func(e events.RoundStart) {	
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
-			fmt.Printf("Round STARTED at tick: %d \n", gs.IngameTick())
 			roundStarted = 1
 			roundInFreezetime = 1
 			currentRound = GameRound{}
@@ -735,7 +723,6 @@ func main() {
 	// Parse round freezetime ends
 	p.RegisterEventHandler(func(e events.RoundFreezetimeEnd) {		
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			roundInFreezetime = 0
@@ -746,8 +733,7 @@ func main() {
 	// Parse round ends
 	p.RegisterEventHandler(func(e events.RoundEnd) {
 		gs := p.GameState()
-		// warmup := gs.IsWarmupPeriod()
-		fmt.Printf("Round ENDED at tick: %d with reason %s \n", gs.IngameTick(), convertRoundEndReason(e.Reason))
+
 		if (acceptableGamePhase(gs)) {
 			winningTeam := "CT"
 			switch e.Winner {
@@ -766,7 +752,6 @@ func main() {
 			currentRound.WinningTeam = e.WinnerState.ClanName()
 			// Parse the start eq values
 			frameIdx := (currentGame.TickRate*3)/int64(currentGame.ParseRate)
-			fmt.Printf("FrameIdx is: %d, Len of Frames is: %d \n", frameIdx, int64(len(currentRound.Frames)))
 			if frameIdx < int64(len(currentRound.Frames)) {
 				startFrame := currentRound.Frames[frameIdx-1]
 				currentRound.CTStartEqVal = startFrame.CT.CurrentEqVal
@@ -780,18 +765,14 @@ func main() {
 				}
 				// add to round slice
 				currentGame.Rounds = append(currentGame.Rounds, currentRound)
-				fmt.Printf("--- Added to slice \n")
 			}
 		}
-		fmt.Printf("------- \n")
 	})
 
 	// Parse score changes
 	p.RegisterEventHandler(func(e events.ScoreUpdated) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
-		fmt.Printf("Score updated at tick: %d \n", gs.IngameTick())
 		if (acceptableGamePhase(gs)) && (len(currentGame.Rounds) > 0) {
 			// Replace the last round object
 			currentGame.Rounds[len(currentGame.Rounds)-1].ScoreUpdatedTick = int64(gs.IngameTick())
@@ -803,7 +784,7 @@ func main() {
 	// Parse official round ends. Before this, players can still move around.
 	p.RegisterEventHandler(func(e events.RoundEndOfficial) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
+
 		// && (roundStarted == 1)
 		if (acceptableGamePhase(gs))  {
 			// Replace the last round object
@@ -814,7 +795,6 @@ func main() {
 	// Parse bomb defuses
 	p.RegisterEventHandler(func(e events.BombDefused) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			currentBomb := BombAction{}
@@ -838,7 +818,6 @@ func main() {
 	// Parse weapon fires
 	p.RegisterEventHandler(func(e events.WeaponFire) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			currentWeaponFire := WeaponFireAction{}
@@ -891,7 +870,6 @@ func main() {
 	// Parse player flashes
 	p.RegisterEventHandler(func(e events.PlayerFlashed) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			currentFlash := FlashAction{}
@@ -995,7 +973,6 @@ func main() {
 	// Parse bomb plants
 	p.RegisterEventHandler(func(e events.BombPlanted) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			currentBomb := BombAction{}
@@ -1019,7 +996,6 @@ func main() {
 	// Parse molotov events
 	p.RegisterEventHandler(func(e events.GrenadeProjectileDestroy) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			if (e.Projectile.Thrower != nil) && ((e.Projectile.WeaponInstance.String() == "Molotov") || (e.Projectile.WeaponInstance.String() == "Incendiary Grenade")) {
@@ -1091,7 +1067,6 @@ func main() {
 	// Parse grenade events
 	p.RegisterEventHandler(func(e events.GrenadeEventIf) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			if e.Base().Thrower != nil {
@@ -1163,7 +1138,6 @@ func main() {
 	// Parse kill events
 	p.RegisterEventHandler(func(e events.Kill) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			currentKill := KillAction{}
@@ -1315,7 +1289,6 @@ func main() {
 	// Parse damage events
 	p.RegisterEventHandler(func(e events.PlayerHurt) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) {
 			currentDamage := DamageAction{}
@@ -1427,7 +1400,6 @@ func main() {
 	// Parse a demo frame. If parse rate is 1, then every frame is parsed. If parse rate is 2, then every 2 frames is parsed, and so on
 	p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
 
 		if (acceptableGamePhase(gs)) && (roundInFreezetime == 0) && (currentFrameIdx == 0) {
 			currentFrame := GameFrame{}
@@ -1565,9 +1537,6 @@ func main() {
 			currentGame.Rounds = currentGame.Rounds[1:len(currentGame.Rounds)]
 		}
 
-		for _, r := range currentGame.Rounds {
-			fmt.Printf("Round START [%d] | END [%d] | REASON [%s] \n", r.StartTick, r.EndTick, r.Reason)
-		}
 		// Set first round scores to 0
 		if currentGame.Rounds[0].TScore != 0 {
 			currentGame.Rounds[0].TScore = 0
@@ -1613,7 +1582,6 @@ func main() {
 		_ = ioutil.WriteFile(outpath + "/" + currentGame.MatchName + ".json", file, 0644)
 		
 		InfoLogger.Println("Wrote to JSON file to: " + outpath + "/" + currentGame.MatchName + ".json")
-		fmt.Printf("Wrote %s\n", currentGame.MatchName + ".json")
 	}
 }
 

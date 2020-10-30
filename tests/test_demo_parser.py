@@ -15,7 +15,7 @@ class TestDemoParser:
         """ Setup class by instantiating parser
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
             parse_rate=128,
@@ -30,15 +30,15 @@ class TestDemoParser:
         """ Tests if a demo_id is correctly inferred
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem", log=False,
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False,
         )
-        assert self.parser.demo_id == "natus-vincere-vs-astralis-m1-dust2"
+        assert self.parser.demo_id == "og-vs-natus-vincere-m1-dust2"
 
     def test_demo_id_given(self):
         """ Tests if a demo_id is correctly inferred
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
         )
@@ -48,7 +48,7 @@ class TestDemoParser:
         """ Tests if bad parse rates fail
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
             parse_rate=129,
@@ -59,7 +59,7 @@ class TestDemoParser:
         """ Tests if good parse rates are set
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
             parse_rate=16,
@@ -70,7 +70,7 @@ class TestDemoParser:
         """ Tests if good parse rates are set
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
         )
@@ -80,7 +80,7 @@ class TestDemoParser:
         """ Tests if log file is created
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
             parse_rate=32,
@@ -92,7 +92,7 @@ class TestDemoParser:
         """ Tests if parse actually outputs a file
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
             parse_rate=128,
@@ -104,7 +104,7 @@ class TestDemoParser:
         """ Tests if the JSON output from _parse_demo() can be read
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
             parse_rate=128,
@@ -117,7 +117,7 @@ class TestDemoParser:
         """ Tests if the JSON output from parse is a dict
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
             parse_rate=128,
@@ -129,7 +129,7 @@ class TestDemoParser:
         """ Tests if the parsed JSON is correct
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
             parse_rate=128,
@@ -160,7 +160,7 @@ class TestDemoParser:
         """ Tests if kills parse correctly
         """
         self.parser = DemoParser(
-            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
             parse_rate=128,
