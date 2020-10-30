@@ -11,7 +11,7 @@ before_install:
     - pip install pytest
     - pip install codecov
     - pip install pytest-cov
-    - wget -O tests/natus-vincere-vs-astralis-m1-dust2.dem http://www.peterxeno.com/csgo/natus-vincere-vs-astralis-m1-dust2.dem
+    - wget -O tests/og-vs-natus-vincere-m1-dust2.dem http://www.peterxeno.com/csgo/og-vs-natus-vincere-m1-dust2.dem
     - cd
     - mkdir tmp
     - cd tmp
@@ -24,7 +24,7 @@ before_install:
     - source ~/.profile
     - cd /home/travis/build/pnxenopoulos/csgo
 
-install: 
+install:
     - pip install -r requirements.txt
 
 script:
@@ -36,3 +36,4 @@ after_success:
 
 after_failure:
     - ls
+    - ls tests/
