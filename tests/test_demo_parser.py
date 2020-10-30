@@ -154,7 +154,7 @@ class TestDemoParser:
             demo_id="test",
         )
         with pytest.raises(ValueError):
-            self.parsernot_parsed._parse_kills(return_type="list")
+            self.parser_not_parsed._parse_kills(return_type="list")
 
     def test_generate_stats(self):
         """ Tests if stats are generated correctly
