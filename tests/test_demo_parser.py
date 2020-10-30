@@ -148,8 +148,13 @@ class TestDemoParser:
     def test_parsed_kills_not_parsed(self):
         """ Tests if kills parse correctly if not parsed
         """
+        self.parser_not_parsed = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+        )
         with pytest.raises(ValueError):
-            self.parser._parse_kills(return_type="list")
+            self.parsernot_parsed._parse_kills(return_type="list")
 
     def test_generate_stats(self):
         """ Tests if stats are generated correctly
