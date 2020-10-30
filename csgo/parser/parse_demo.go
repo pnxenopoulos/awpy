@@ -5,6 +5,12 @@ TODO:
 	Fix name finding alg in csgo - this is in the csgo library 
 	Fix the team parsing - this is in the data scraper
 	Build go file instead of Go run?
+
+	Add automatic round end after a certain time period
+	first and last round of match
+	rounds where total score is same
+	11 - 13
+	11 - 13
 */
 
 package main
@@ -483,8 +489,14 @@ func parseTeamBuy(eqVal int64, side string) string {
 	}
 }
 
-func acceptableGamePhase(gp common.GamePhase) bool {
-	return true
+func acceptableGamePhase(gs dem.GameState) bool {
+	warmup := gs.IsWarmupPeriod()
+	if warmup == false {
+		return true
+	} else {
+		return false
+	}
+	//return true
 	//if (gp == 2) || (gp == 3) || (gp == 4) {
 	//	return true
 	//} else {
@@ -682,7 +694,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 0) && (e.NewIsStarted == true) {
+		if (acceptableGamePhase(gs)) && (roundStarted == 0) && (e.NewIsStarted == true) {
 			roundStarted = 1
 			roundInFreezetime = 0 // When match starts, the freezetime is usually good to go
 			currentRound = GameRound{}
@@ -694,12 +706,22 @@ func main() {
 		}
 	})
 
+	p.RegisterEventHandler(func(e events.TeamSideSwitch) {
+		gs := p.GameState()
+		fmt.Printf("Team side switch at tick: %d \n", gs.IngameTick())
+	})
+	p.RegisterEventHandler(func(e events.GameHalfEnded) {
+		gs := p.GameState()
+		fmt.Printf("Game half end at tick: %d \n", gs.IngameTick())
+	})
+
 	// Parse round starts
 	p.RegisterEventHandler(func(e events.RoundStart) {	
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 0) {
+		if (acceptableGamePhase(gs)) {
+			fmt.Printf("Round STARTED at tick: %d \n", gs.IngameTick())
 			roundStarted = 1
 			roundInFreezetime = 1
 			currentRound = GameRound{}
@@ -715,7 +737,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			roundInFreezetime = 0
 			currentRound.FreezeTimeEnd = int64(gs.IngameTick())
 		}
@@ -724,9 +746,9 @@ func main() {
 	// Parse round ends
 	p.RegisterEventHandler(func(e events.RoundEnd) {
 		gs := p.GameState()
-		//warmup := gs.IsWarmupPeriod()
-
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		// warmup := gs.IsWarmupPeriod()
+		fmt.Printf("Round ENDED at tick: %d with reason %s \n", gs.IngameTick(), convertRoundEndReason(e.Reason))
+		if (acceptableGamePhase(gs)) {
 			winningTeam := "CT"
 			switch e.Winner {
 			case common.TeamTerrorists:
@@ -744,6 +766,7 @@ func main() {
 			currentRound.WinningTeam = e.WinnerState.ClanName()
 			// Parse the start eq values
 			frameIdx := (currentGame.TickRate*3)/int64(currentGame.ParseRate)
+			fmt.Printf("FrameIdx is: %d, Len of Frames is: %d \n", frameIdx, int64(len(currentRound.Frames)))
 			if frameIdx < int64(len(currentRound.Frames)) {
 				startFrame := currentRound.Frames[frameIdx-1]
 				currentRound.CTStartEqVal = startFrame.CT.CurrentEqVal
@@ -755,10 +778,12 @@ func main() {
 					currentRound.CTBuyType = parseTeamBuy(currentRound.CTStartEqVal, "CT")
 					currentRound.TBuyType = parseTeamBuy(currentRound.TStartEqVal, "T")
 				}
-				// add
+				// add to round slice
 				currentGame.Rounds = append(currentGame.Rounds, currentRound)
+				fmt.Printf("--- Added to slice \n")
 			}
 		}
+		fmt.Printf("------- \n")
 	})
 
 	// Parse score changes
@@ -766,9 +791,12 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) && (len(currentGame.Rounds) > 0) {
+		fmt.Printf("Score updated at tick: %d \n", gs.IngameTick())
+		if (acceptableGamePhase(gs)) && (len(currentGame.Rounds) > 0) {
 			// Replace the last round object
 			currentGame.Rounds[len(currentGame.Rounds)-1].ScoreUpdatedTick = int64(gs.IngameTick())
+			// reset
+			roundStarted = 0
 		}
 	})
 
@@ -776,12 +804,10 @@ func main() {
 	p.RegisterEventHandler(func(e events.RoundEndOfficial) {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
-
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		// && (roundStarted == 1)
+		if (acceptableGamePhase(gs))  {
 			// Replace the last round object
 			currentGame.Rounds[len(currentGame.Rounds)-1].EndOfficialTick = int64(gs.IngameTick())
-			// reset
-			roundStarted = 0
 		}
 	})
 
@@ -790,7 +816,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			currentBomb := BombAction{}
 			currentBomb.Tick = int64(gs.IngameTick())
 			currentBomb.Second = (float64(currentBomb.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
@@ -814,7 +840,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
 			currentWeaponFire.Second = (float64(currentWeaponFire.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
@@ -867,7 +893,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			currentFlash := FlashAction{}
 			currentFlash.Tick = int64(gs.IngameTick())
 			currentFlash.Second = (float64(currentFlash.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
@@ -971,7 +997,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			currentBomb := BombAction{}
 			currentBomb.Tick = int64(gs.IngameTick())
 			currentBomb.Second = (float64(currentBomb.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
@@ -995,7 +1021,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			if (e.Projectile.Thrower != nil) && ((e.Projectile.WeaponInstance.String() == "Molotov") || (e.Projectile.WeaponInstance.String() == "Incendiary Grenade")) {
 				currentGrenade := GrenadeAction{}
 				currentGrenade.Tick = int64(gs.IngameTick())
@@ -1067,7 +1093,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			if e.Base().Thrower != nil {
 				currentGrenade := GrenadeAction{}
 				currentGrenade.Tick = int64(gs.IngameTick())
@@ -1139,7 +1165,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			currentKill := KillAction{}
 			currentKill.Tick = int64(gs.IngameTick())
 			currentKill.Second = (float64(currentKill.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
@@ -1291,7 +1317,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) {
+		if (acceptableGamePhase(gs)) {
 			currentDamage := DamageAction{}
 			currentDamage.Tick = int64(gs.IngameTick())
 			currentDamage.Second = (float64(currentDamage.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
@@ -1403,7 +1429,7 @@ func main() {
 		gs := p.GameState()
 		//warmup := gs.IsWarmupPeriod()
 
-		if (acceptableGamePhase(gs.GamePhase())) && (roundStarted == 1) && (roundInFreezetime == 0) && (currentFrameIdx == 0) {
+		if (acceptableGamePhase(gs)) && (roundInFreezetime == 0) && (currentFrameIdx == 0) {
 			currentFrame := GameFrame{}
 			currentFrame.Tick = int64(gs.IngameTick())
 			currentFrame.Second = (float64(currentFrame.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
@@ -1527,6 +1553,21 @@ func main() {
 	if len(currentGame.Rounds) > 0 {
 		InfoLogger.Println("Cleaning data")
 
+		// Remove knife round if there
+		firstRound := currentGame.Rounds[0]
+		knifeKills := 0
+		for _, k := range firstRound.Kills {
+			if k.Weapon == "Knife" {
+				knifeKills = knifeKills + 1
+			}
+		}
+		if knifeKills >= 3 {
+			currentGame.Rounds = currentGame.Rounds[1:len(currentGame.Rounds)]
+		}
+
+		for _, r := range currentGame.Rounds {
+			fmt.Printf("Round START [%d] | END [%d] | REASON [%s] \n", r.StartTick, r.EndTick, r.Reason)
+		}
 		// Set first round scores to 0
 		if currentGame.Rounds[0].TScore != 0 {
 			currentGame.Rounds[0].TScore = 0
@@ -1549,6 +1590,15 @@ func main() {
 		for i, _ := range currentGame.Rounds {
 			currentGame.Rounds[i].RoundNum = int64(i+1)
 		}
+		/* Fix the rounds to have pistol rounds instead of ecos
+		*/
+		for i, _ := range currentGame.Rounds {
+			if (i == 0 || i == 15) {
+				currentGame.Rounds[i].CTBuyType = "Pistol"
+				currentGame.Rounds[i].TBuyType = "Pistol"
+			}
+		}
+
 		/* Now see if there are any remaining weird rounds
 		*/
 		//if (currentGame.Rounds[len(currentGame.Rounds)-1].TScore + currentGame.Rounds[len(currentGame.Rounds)-1].CTScore) < (currentGame.Rounds[len(currentGame.Rounds)-2].TScore + currentGame.Rounds[len(currentGame.Rounds)-2].CTScore) {

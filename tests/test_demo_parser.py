@@ -7,6 +7,8 @@ from csgo.parser import DemoParser
 
 class TestDemoParser:
     """ Class to test the match parser
+
+    Uses https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
     """
 
     def setup_class(self):
@@ -136,20 +138,40 @@ class TestDemoParser:
         assert data["MatchId"] == self.parser.demo_id
         assert data["ClientName"] == "GOTV Demo"
         assert data["MapName"] == "de_dust2"
-        assert data["PlaybackTicks"] == 414812
+        assert data["PlaybackTicks"] == 466670
         assert data["ParseRate"] == 128
-        assert len(data["GameRounds"]) == 21
+        assert len(data["GameRounds"]) == 25
         assert data["GameRounds"][0]["RoundNum"] == 1
-        assert data["GameRounds"][0]["StartTick"] == 1790
-        assert data["GameRounds"][0]["EndTick"] == 14023
+        assert data["GameRounds"][0]["StartTick"] == 890
+        assert data["GameRounds"][0]["EndTick"] == 43177
         assert data["GameRounds"][0]["TScore"] == 0
         assert data["GameRounds"][0]["CTScore"] == 0
         assert data["GameRounds"][0]["CTBuyType"] == "Pistol"
         assert data["GameRounds"][0]["TBuyType"] == "Pistol"
-        assert data["GameRounds"][0]["RoundEndReason"] == "TerroristsWin"
+        assert data["GameRounds"][15]["CTBuyType"] == "Pistol"
+        assert data["GameRounds"][15]["TBuyType"] == "Pistol"
+        assert data["GameRounds"][0]["RoundEndReason"] == "CTWin"
         assert data["GameRounds"][0]["CTStartEqVal"] == 4400
-        assert data["GameRounds"][0]["TStartEqVal"] == 4350
-        assert data["GameRounds"][-1]["RoundEndReason"] == "CTWin"
+        assert data["GameRounds"][0]["TStartEqVal"] == 4250
+        assert data["GameRounds"][-1]["RoundEndReason"] == "TerroristsWin"
+        assert data["GameRounds"][15]["RoundEndReason"] == "BombDefused"
+
+    def test_parsed_kills(self):
+        """ Tests if kills parse correctly
+        """
+        self.parser = DemoParser(
+            demofile="tests/natus-vincere-vs-astralis-m1-dust2.dem",
+            log=True,
+            demo_id="test",
+            parse_rate=128,
+        )
+        data = self.parser.parse()
+        assert True == True
+
+    def test_generate_stats(self):
+        """ Tests if stats are generated correctly
+        """
+        assert True
 
     #####
     # def test_demo_error(self):

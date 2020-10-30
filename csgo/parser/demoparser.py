@@ -125,6 +125,15 @@ class DemoParser:
         )
         return demo_data
 
+    def _generate_stats(self):
+        """ Generates stats based on the JSON file created from _parse_demo and _read_json
+
+        Returns:
+            A dictionary with a "Stats" key
+        """
+        self.json["Stats"] = dict()
+        return NotImplementedError
+
     def parse(self):
         """ Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
 
