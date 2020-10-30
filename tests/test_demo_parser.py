@@ -153,7 +153,7 @@ class TestDemoParser:
         assert data["ParseRate"] == 128
         assert len(data["GameRounds"]) == 25
         assert data["GameRounds"][0]["RoundNum"] == 1
-        assert data["GameRounds"][0]["StartTick"] == 890
+        assert data["GameRounds"][0]["StartTick"] == 9308
         assert data["GameRounds"][0]["EndTick"] == 43177
         assert data["GameRounds"][0]["TScore"] == 0
         assert data["GameRounds"][0]["CTScore"] == 0
