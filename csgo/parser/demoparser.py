@@ -179,7 +179,8 @@ class DemoParser:
                 self.logger.info("Parsed kills to Pandas DataFrame")
                 return pd.DataFrame(kills)
         else:
-            self.logger.error("JSON not found")
+            self.logger.error("JSON not found. Run .parse()")
+            raise ValueError("JSON not found. Run .parse()")
             return None
 
     def _parse_damages(self, return_type):
@@ -191,6 +192,10 @@ class DemoParser:
         Returns:
             A list or Pandas dataframe
         """
+        if return_type not in ["list", "df"]:
+            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            raise ValueError("return_type must be either 'list' or 'df'")
+
         if self.json:
             damages = []
             for r in self.json["GameRounds"]:
@@ -203,7 +208,8 @@ class DemoParser:
                 self.logger.info("Parsed damages to Pandas DataFrame")
                 return pd.DataFrame(damages)
         else:
-            self.logger.error("JSON not found")
+            self.logger.error("JSON not found. Run .parse()")
+            raise ValueError("JSON not found. Run .parse()")
             return None
 
     def _parse_grenades(self, return_type):
@@ -215,6 +221,10 @@ class DemoParser:
         Returns:
             A list or Pandas dataframe
         """
+        if return_type not in ["list", "df"]:
+            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            raise ValueError("return_type must be either 'list' or 'df'")
+
         if self.json:
             grenades = []
             for r in self.json["GameRounds"]:
@@ -227,7 +237,8 @@ class DemoParser:
                 self.logger.info("Parsed grenades to Pandas DataFrame")
                 return pd.DataFrame(grenades)
         else:
-            self.logger.error("JSON not found")
+            self.logger.error("JSON not found. Run .parse()")
+            raise ValueError("JSON not found. Run .parse()")
             return None
 
     def _parse_bomb_events(self, return_type):
@@ -239,6 +250,10 @@ class DemoParser:
         Returns:
             A list or Pandas dataframe
         """
+        if return_type not in ["list", "df"]:
+            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            raise ValueError("return_type must be either 'list' or 'df'")
+
         if self.json:
             bomb_events = []
             for r in self.json["GameRounds"]:
@@ -251,9 +266,9 @@ class DemoParser:
                 self.logger.info("Parsed bomb_events to Pandas DataFrame")
                 return pd.DataFrame(bomb_events)
         else:
-            self.logger.error("JSON not found")
+            self.logger.error("JSON not found. Run .parse()")
+            raise ValueError("JSON not found. Run .parse()")
             return None
-        return NotImplementedError
 
     def _parse_flashes(self, return_type):
         """ Returns flashes as either a list or Pandas dataframe
@@ -264,6 +279,10 @@ class DemoParser:
         Returns:
             A list or Pandas dataframe
         """
+        if return_type not in ["list", "df"]:
+            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            raise ValueError("return_type must be either 'list' or 'df'")
+        
         if self.json:
             flashes = []
             for r in self.json["GameRounds"]:
@@ -276,5 +295,6 @@ class DemoParser:
                 self.logger.info("Parsed flashes to Pandas DataFrame")
                 return pd.DataFrame(flashes)
         else:
-            self.logger.error("JSON not found")
+            self.logger.error("JSON not found. Run .parse()")
+            raise ValueError("JSON not found. Run .parse()")
             return None

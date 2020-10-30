@@ -16,7 +16,7 @@ class TestDemoParser:
         """
         self.parser = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=False,
+            log=True,
             demo_id="test",
             parse_rate=128,
         )
@@ -29,26 +29,21 @@ class TestDemoParser:
     def test_demo_id_inferred(self):
         """ Tests if a demo_id is correctly inferred
         """
-        self.parser = DemoParser(
+        self.parser_inferred = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False,
         )
-        assert self.parser.demo_id == "og-vs-natus-vincere-m1-dust2"
+        assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
 
     def test_demo_id_given(self):
         """ Tests if a demo_id is correctly inferred
         """
-        self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=False,
-            demo_id="test",
-        )
         assert self.parser.demo_id == "test"
 
     def test_wrong_demo_path(self):
         """ Tests if failure on wrong demofile path
         """
         with pytest.raises(ValueError):
-            self.parser = DemoParser(
+            self.parser_wrong_demo_path = DemoParser(
                 demofile="bad.dem",
                 log=False,
                 demo_id="test",
@@ -58,68 +53,50 @@ class TestDemoParser:
     def test_parse_rate_bad(self):
         """ Tests if bad parse rates fail
         """
-        self.parser = DemoParser(
+        self.parser_bad_parse_rate = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
             parse_rate=129,
         )
-        assert self.parser.parse_rate == 32
+        assert self.parser_bad_parse_rate.parse_rate == 32
 
     def test_parse_rate_good(self):
         """ Tests if good parse rates are set
         """
-        self.parser = DemoParser(
+        self.parser_diff_parse_rate = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
             parse_rate=16,
         )
-        assert self.parser.parse_rate == 16
+        assert self.parser_diff_parse_rate.parse_rate == 16
 
     def test_parse_rate_inferred(self):
         """ Tests if good parse rates are set
         """
-        self.parser = DemoParser(
+        self.parser_inferred_parse_rate = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
         )
-        assert self.parser.parse_rate == 32
+        assert self.parser_inferred_parse_rate.parse_rate == 32
 
     def test_logger_set(self):
         """ Tests if log file is created
         """
-        self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=True,
-            demo_id="test",
-            parse_rate=32,
-        )
         assert self.parser.logger.name == "CSGODemoParser"
         assert os.path.exists("csgo_demoparser.log")
 
     def test_parse_demo(self):
         """ Tests if parse actually outputs a file
         """
-        self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=True,
-            demo_id="test",
-            parse_rate=128,
-        )
         self.parser._parse_demo()
         assert os.path.exists("test.json")
 
     def test_read_json(self):
         """ Tests if the JSON output from _parse_demo() can be read
         """
-        self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=True,
-            demo_id="test",
-            parse_rate=128,
-        )
         self.parser._parse_demo()
         output_json = self.parser._read_json()
         assert type(output_json) is dict
@@ -127,24 +104,12 @@ class TestDemoParser:
     def test_parse(self):
         """ Tests if the JSON output from parse is a dict
         """
-        self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=True,
-            demo_id="test",
-            parse_rate=128,
-        )
         output_json = self.parser.parse()
         assert type(output_json) is dict
 
     def test_parsed_json(self):
         """ Tests if the parsed JSON is correct
         """
-        self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=True,
-            demo_id="test",
-            parse_rate=128,
-        )
         data = self.parser.parse()
         assert data["MatchId"] == self.parser.demo_id
         assert data["ClientName"] == "GOTV Demo"
@@ -170,12 +135,7 @@ class TestDemoParser:
     def test_parsed_kills(self):
         """ Tests if kills parse correctly
         """
-        self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=True,
-            demo_id="test",
-            parse_rate=128,
-        )
+        data = self.parser.parse()
         kills_list = self.parser._parse_kills(return_type="list")
         kills_df = self.parser._parse_kills(return_type="df")
         assert type(kills_list) == list
@@ -184,6 +144,12 @@ class TestDemoParser:
         assert kills_df.shape[0] == 161
         with pytest.raises(ValueError):
             self.parser._parse_kills(return_type="notalist")
+
+    def test_parsed_kills_not_parsed(self):
+        """ Tests if kills parse correctly if not parsed
+        """
+        with pytest.raises(ValueError):
+            self.parser._parse_kills(return_type="list")
 
     def test_generate_stats(self):
         """ Tests if stats are generated correctly
