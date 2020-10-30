@@ -44,6 +44,17 @@ class TestDemoParser:
         )
         assert self.parser.demo_id == "test"
 
+    def test_wrong_demo_path(self):
+        """ Tests if failure on wrong demofile path
+        """
+        with pytest.raises(ValueError):
+            self.parser = DemoParser(
+                demofile="bad.dem",
+                log=False,
+                demo_id="test",
+                parse_rate=128,
+            )
+
     def test_parse_rate_bad(self):
         """ Tests if bad parse rates fail
         """

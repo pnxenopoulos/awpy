@@ -51,6 +51,11 @@ class DemoParser:
         else:
             self.logger.info("Go version>=1.14.0")
 
+        # Check if demofile exists
+        if not os.path.exists(demofile):
+            self.logger.error("Demofile path does not exist!")
+            raise ValueError("Demofile path does not exist!")
+        
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = demofile
         self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
