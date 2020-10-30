@@ -153,7 +153,7 @@ class TestDemoParser:
             log=False,
             demo_id="test",
         )
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             self.parser_not_parsed._parse_kills(return_type="list")
 
     def test_generate_stats(self):

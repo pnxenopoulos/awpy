@@ -167,7 +167,7 @@ class DemoParser:
             self.logger.error("Parse kills return_type must be either 'list' or 'df'")
             raise ValueError("return_type must be either 'list' or 'df'")
 
-        if self.json:
+        try:
             kills = []
             for r in self.json["GameRounds"]:
                 for k in r["Kills"]:
@@ -178,10 +178,9 @@ class DemoParser:
             elif return_type == "df":
                 self.logger.info("Parsed kills to Pandas DataFrame")
                 return pd.DataFrame(kills)
-        else:
+        except AttributeError:
             self.logger.error("JSON not found. Run .parse()")
-            raise ValueError("JSON not found. Run .parse()")
-            return None
+            raise AttributeError("JSON not found. Run .parse()")
 
     def _parse_damages(self, return_type):
         """ Returns damages as either a list or Pandas dataframe
