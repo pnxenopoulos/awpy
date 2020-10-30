@@ -24,7 +24,6 @@ import (
 	"strings"
 	"math"
 	"strconv"
-	"fmt"
 	"sort"
 
 	dem "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs"
