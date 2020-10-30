@@ -55,7 +55,7 @@ class DemoParser:
         if not os.path.exists(demofile):
             self.logger.error("Demofile path does not exist!")
             raise ValueError("Demofile path does not exist!")
-        
+
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = demofile
         self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
@@ -166,12 +166,12 @@ class DemoParser:
         if return_type not in ["list", "df"]:
             self.logger.error("Parse kills return_type must be either 'list' or 'df'")
             raise ValueError("return_type must be either 'list' or 'df'")
-        
+
         if self.json:
             kills = []
-                for r in self.json["GameRounds"]:
-                    for k in r["Kills"]:
-                        kills.append(k)
+            for r in self.json["GameRounds"]:
+                for k in r["Kills"]:
+                    kills.append(k)
             if return_type == "list":
                 self.logger.info("Parsed kills to list")
                 return kills
@@ -193,9 +193,9 @@ class DemoParser:
         """
         if self.json:
             damages = []
-                for r in self.json["GameRounds"]:
-                    for d in r["Damages"]:
-                        damages.append(d)
+            for r in self.json["GameRounds"]:
+                for d in r["Damages"]:
+                    damages.append(d)
             if return_type == "list":
                 self.logger.info("Parsed damages to list")
                 return damages
@@ -217,9 +217,9 @@ class DemoParser:
         """
         if self.json:
             grenades = []
-                for r in self.json["GameRounds"]:
-                    for g in r["Grenades"]:
-                        grenades.append(g)
+            for r in self.json["GameRounds"]:
+                for g in r["Grenades"]:
+                    grenades.append(g)
             if return_type == "list":
                 self.logger.info("Parsed grenades to list")
                 return grenades
@@ -241,9 +241,9 @@ class DemoParser:
         """
         if self.json:
             bomb_events = []
-                for r in self.json["GameRounds"]:
-                    for b in r["BombEvents"]:
-                        bomb_events.append(b)
+            for r in self.json["GameRounds"]:
+                for b in r["BombEvents"]:
+                    bomb_events.append(b)
             if return_type == "list":
                 self.logger.info("Parsed bomb_events to list")
                 return bomb_events
@@ -266,9 +266,9 @@ class DemoParser:
         """
         if self.json:
             flashes = []
-                for r in self.json["GameRounds"]:
-                    for g in r["Flashes"]:
-                        flashes.append(g)
+            for r in self.json["GameRounds"]:
+                for g in r["Flashes"]:
+                    flashes.append(g)
             if return_type == "list":
                 self.logger.info("Parsed flashes to list")
                 return flashes
