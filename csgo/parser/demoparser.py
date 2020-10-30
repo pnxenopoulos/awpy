@@ -163,14 +163,118 @@ class DemoParser:
         Returns:
             A list or Pandas dataframe
         """
+        if return_type not in ["list", "df"]:
+            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            raise ValueError("return_type must be either 'list' or 'df'")
+        
         if self.json:
-            self.logger.info("Parsed kills")
-            if return_type == "list":
-                kills = []
+            kills = []
                 for r in self.json["GameRounds"]:
                     for k in r["Kills"]:
                         kills.append(k)
+            if return_type == "list":
+                self.logger.info("Parsed kills to list")
                 return kills
+            elif return_type == "df":
+                self.logger.info("Parsed kills to Pandas DataFrame")
+                return pd.DataFrame(kills)
+        else:
+            self.logger.error("JSON not found")
+            return None
+
+    def _parse_damages(self, return_type):
+        """ Returns damages as either a list or Pandas dataframe
+
+        Args:
+            return_type (string) : Either "list" or "df"
+
+        Returns:
+            A list or Pandas dataframe
+        """
+        if self.json:
+            damages = []
+                for r in self.json["GameRounds"]:
+                    for d in r["Damages"]:
+                        damages.append(d)
+            if return_type == "list":
+                self.logger.info("Parsed damages to list")
+                return damages
+            elif return_type == "df":
+                self.logger.info("Parsed damages to Pandas DataFrame")
+                return pd.DataFrame(damages)
+        else:
+            self.logger.error("JSON not found")
+            return None
+
+    def _parse_grenades(self, return_type):
+        """ Returns grenades as either a list or Pandas dataframe
+
+        Args:
+            return_type (string) : Either "list" or "df"
+
+        Returns:
+            A list or Pandas dataframe
+        """
+        if self.json:
+            grenades = []
+                for r in self.json["GameRounds"]:
+                    for g in r["Grenades"]:
+                        grenades.append(g)
+            if return_type == "list":
+                self.logger.info("Parsed grenades to list")
+                return grenades
+            elif return_type == "df":
+                self.logger.info("Parsed grenades to Pandas DataFrame")
+                return pd.DataFrame(grenades)
+        else:
+            self.logger.error("JSON not found")
+            return None
+
+    def _parse_bomb_events(self, return_type):
+        """ Returns bomb events as either a list or Pandas dataframe
+
+        Args:
+            return_type (string) : Either "list" or "df"
+
+        Returns:
+            A list or Pandas dataframe
+        """
+        if self.json:
+            bomb_events = []
+                for r in self.json["GameRounds"]:
+                    for b in r["BombEvents"]:
+                        bomb_events.append(b)
+            if return_type == "list":
+                self.logger.info("Parsed bomb_events to list")
+                return bomb_events
+            elif return_type == "df":
+                self.logger.info("Parsed bomb_events to Pandas DataFrame")
+                return pd.DataFrame(bomb_events)
+        else:
+            self.logger.error("JSON not found")
+            return None
+        return NotImplementedError
+
+    def _parse_flashes(self, return_type):
+        """ Returns flashes as either a list or Pandas dataframe
+
+        Args:
+            return_type (string) : Either "list" or "df"
+
+        Returns:
+            A list or Pandas dataframe
+        """
+        if self.json:
+            flashes = []
+                for r in self.json["GameRounds"]:
+                    for g in r["Flashes"]:
+                        flashes.append(g)
+            if return_type == "list":
+                self.logger.info("Parsed flashes to list")
+                return flashes
+            elif return_type == "df":
+                self.logger.info("Parsed flashes to Pandas DataFrame")
+                return pd.DataFrame(flashes)
         else:
             self.logger.error("JSON not found")
             return None

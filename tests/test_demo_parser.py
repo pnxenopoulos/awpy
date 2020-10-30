@@ -176,8 +176,14 @@ class TestDemoParser:
             demo_id="test",
             parse_rate=128,
         )
-        data = self.parser.parse()
-        assert True == True
+        kills_list = self.parser._parse_kills(return_type="list")
+        kills_df = self.parser._parse_kills(return_type="df")
+        assert type(kills_list) == list
+        assert len(kills_list) == 161
+        assert type(kills_df) == pd.DataFrame
+        assert kills_df.shape[0] == 161
+        with pytest.raises(ValueError):
+            self.parser._parse_kills(return_type="notalist")
 
     def test_generate_stats(self):
         """ Tests if stats are generated correctly
