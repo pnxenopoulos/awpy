@@ -65,7 +65,7 @@ class TestDemoParser:
             demofile="tests/test.dem", log=False, demo_id="test", parse_rate=128,
         )
         with pytest.raises(AttributeError):
-            self.parser.parse()
+            self.parser_bad.parse()
 
     def test_parse_rate_good(self):
         """ Tests if good parse rates are set
@@ -217,9 +217,9 @@ class TestDemoParser:
         flashes_list = self.parser._parse_flashes(return_type="list")
         flashes_df = self.parser._parse_flashes(return_type="df")
         assert type(flashes_list) == list
-        assert len(flashes_list) == 701
+        assert len(flashes_list) == 829
         assert type(flashes_df) == pd.DataFrame
-        assert flashes_df.shape[0] == 701
+        assert flashes_df.shape[0] == 829
         with pytest.raises(ValueError):
             self.parser._parse_flashes(return_type="notalist")
 

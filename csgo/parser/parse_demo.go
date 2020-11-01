@@ -11,6 +11,8 @@ TODO:
 	rounds where total score is same
 	11 - 13
 	11 - 13
+
+	Are flashes correct?
 */
 
 package main
