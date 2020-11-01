@@ -58,15 +58,6 @@ class TestDemoParser:
         )
         assert self.parser_bad_parse_rate.parse_rate == 32
 
-    def test_parse_fail(self):
-        """ Tests if parse fails when JSON parsing fails
-        """
-        self.parser_bad = DemoParser(
-            demofile="tests/test.dem", log=False, demo_id="test", parse_rate=128,
-        )
-        with pytest.raises(AttributeError):
-            self.parser_bad.parse()
-
     def test_parse_rate_good(self):
         """ Tests if good parse rates are set
         """
