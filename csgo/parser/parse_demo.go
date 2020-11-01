@@ -85,7 +85,7 @@ type GameRound struct {
 	Kills []KillAction `json:"Kills"`
 	Damages []DamageAction `json:"Damages"`
 	Grenades []GrenadeAction `json:"Grenades"`
-	Bomb []BombAction `json:"Bomb"`
+	Bomb []BombAction `json:"BombEvents"`
 	WeaponFires []WeaponFireAction `json:"WeaponFires"`
 	Flashes []FlashAction `json:"Flashes"`
 	Frames []GameFrame `json:"Frames"`
