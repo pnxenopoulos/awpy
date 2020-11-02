@@ -35,5 +35,5 @@ setup(
         "Documentation": "https://github.com/pnxenopoulos/csgo/",
         "Github": "https://github.com/pnxenopoulos/csgo/",
     },
-    classifiers=["License :: OSI Approved :: Python Software Foundation License"],
+    classifiers=["License :: OSI Approved :: MIT License"],
 )
