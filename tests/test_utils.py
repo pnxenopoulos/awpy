@@ -2,7 +2,7 @@ import os
 import pytest
 import pandas as pd
 
-from csgo.utils import AutoVivification, NpEncoder, check_go_version
+from csgo.utils import AutoVivification, check_go_version
 
 
 class TestUtils:

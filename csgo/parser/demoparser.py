@@ -5,7 +5,7 @@ import re
 import subprocess
 import pandas as pd
 
-from csgo.utils import NpEncoder, check_go_version
+from csgo.utils import check_go_version
 
 
 class DemoParser:
