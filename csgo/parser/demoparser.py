@@ -139,7 +139,7 @@ class DemoParser:
         self.json["Stats"] = dict()
         return NotImplementedError
 
-    def parse(self, return_type = "json"):
+    def parse(self, return_type="json"):
         """ Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
 
         Args:
@@ -172,9 +172,13 @@ class DemoParser:
                 demo_data["Damages"] = self._parse_damages(return_type=return_type)
                 demo_data["Grenades"] = self._parse_grenades(return_type=return_type)
                 demo_data["Flashes"] = self._parse_flashes(return_type=return_type)
-                demo_data["BombEvents"] = self._parse_bomb_events(return_type=return_type)
+                demo_data["BombEvents"] = self._parse_bomb_events(
+                    return_type=return_type
+                )
                 demo_data["Frames"] = self._parse_frames(return_type=return_type)
-                demo_data["PlayerFrames"] = self._parse_player_frames(return_type=return_type)
+                demo_data["PlayerFrames"] = self._parse_player_frames(
+                    return_type=return_type
+                )
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
@@ -197,13 +201,7 @@ class DemoParser:
             raise ValueError("return_type must be either 'list' or 'df'")
         try:
             frames_dataframes = []
-            keys = [
-                "Tick",
-                "Second",
-                "PositionToken",
-                "TToken",
-                "CTToken"
-            ]
+            keys = ["Tick", "Second", "PositionToken", "TToken", "CTToken"]
             for r in self.json["GameRounds"]:
                 for frame in r["Frames"]:
                     frame_item = {}
@@ -213,20 +211,20 @@ class DemoParser:
                     for k in keys:
                         frame_item[k] = frame[k]
                     for side in ["CT", "T"]:
-                    if side == "CT":
-                        frame_item["CTTeamName"] = frame["CT"]["TeamName"]
-                        frame_item["CTEqVal"] = frame["CT"]["TeamEqVal"]
-                        frame_item["CTAlivePlayers"] = frame["CT"]["AlivePlayers"]
-                        frame_item["CTUtility"] = frame["CT"]["TotalUtility"]
-                        frame_item["CTUtilityLevel"] = frame["CT"]["UtilityLevel"]
-                        frame_item["CTToken"] = frame["CT"]["PositionToken"]
-                    else:
-                        frame_item["TTeamName"] = frame["T"]["TeamName"]
-                        frame_item["TEqVal"] = frame["T"]["TeamEqVal"]
-                        frame_item["TAlivePlayers"] = frame["T"]["AlivePlayers"]
-                        frame_item["TUtility"] = frame["T"]["TotalUtility"]
-                        frame_item["TUtilityLevel"] = frame["T"]["UtilityLevel"]
-                        frame_item["TToken"] = frame["T"]["PositionToken"]
+                        if side == "CT":
+                            frame_item["CTTeamName"] = frame["CT"]["TeamName"]
+                            frame_item["CTEqVal"] = frame["CT"]["TeamEqVal"]
+                            frame_item["CTAlivePlayers"] = frame["CT"]["AlivePlayers"]
+                            frame_item["CTUtility"] = frame["CT"]["TotalUtility"]
+                            frame_item["CTUtilityLevel"] = frame["CT"]["UtilityLevel"]
+                            frame_item["CTToken"] = frame["CT"]["PositionToken"]
+                        else:
+                            frame_item["TTeamName"] = frame["T"]["TeamName"]
+                            frame_item["TEqVal"] = frame["T"]["TeamEqVal"]
+                            frame_item["TAlivePlayers"] = frame["T"]["AlivePlayers"]
+                            frame_item["TUtility"] = frame["T"]["TotalUtility"]
+                            frame_item["TUtilityLevel"] = frame["T"]["UtilityLevel"]
+                            frame_item["TToken"] = frame["T"]["PositionToken"]
                 frames_dataframes.append(frame_item)
                 frames_df = pd.DataFrame(frames_dataframes)
                 frames_df["MatchId"] = self.demo_id
@@ -251,7 +249,9 @@ class DemoParser:
             A list or Pandas dataframe
         """
         if return_type not in ["list", "df"]:
-            self.logger.error("Parse player frames return_type must be either 'list' or 'df'")
+            self.logger.error(
+                "Parse player frames return_type must be either 'list' or 'df'"
+            )
             raise ValueError("return_type must be either 'list' or 'df'")
         try:
             player_frames = []
@@ -285,8 +285,12 @@ class DemoParser:
                                 player_item["EqValue"] = player["EquipmentValue"]
                                 player_item["HasHelmet"] = player["HasHelmet"]
                                 player_item["HasDefuse"] = player["HasDefuse"]
-                                player_item["DistToBombsiteA"] = player["DistToBombsiteA"]
-                                player_item["DistToBombsiteB"] = player["DistToBombsiteB"]
+                                player_item["DistToBombsiteA"] = player[
+                                    "DistToBombsiteA"
+                                ]
+                                player_item["DistToBombsiteB"] = player[
+                                    "DistToBombsiteB"
+                                ]
                                 player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
             player_frames_df["MatchId"] = self.demo_id
@@ -424,7 +428,9 @@ class DemoParser:
             A list or Pandas dataframe
         """
         if return_type not in ["list", "df"]:
-            self.logger.error("Parse grenades return_type must be either 'list' or 'df'")
+            self.logger.error(
+                "Parse grenades return_type must be either 'list' or 'df'"
+            )
             raise ValueError("return_type must be either 'list' or 'df'")
 
         if self.json:
@@ -456,7 +462,9 @@ class DemoParser:
             A list or Pandas dataframe
         """
         if return_type not in ["list", "df"]:
-            self.logger.error("Parse bomb events return_type must be either 'list' or 'df'")
+            self.logger.error(
+                "Parse bomb events return_type must be either 'list' or 'df'"
+            )
             raise ValueError("return_type must be either 'list' or 'df'")
 
         if self.json:
