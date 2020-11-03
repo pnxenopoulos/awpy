@@ -139,20 +139,45 @@ class DemoParser:
         self.json["Stats"] = dict()
         return NotImplementedError
 
-    def parse(self):
+    def parse(self, return_type = "json"):
         """ Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
 
+        Args:
+            return_type (string) : Either "json" or "df"
+        
         Returns:
-            A dictionary of JSON output
+            A dictionary of output
         """
         self._parse_demo()
         self._read_json()
-        if self.json:
-            self.logger.info("Successfully returned JSON output")
-            return self.json
+        if return_type == "json"
+            if self.json:
+                self.logger.info("Successfully parsed JSON output")
+                self.logger.info("Successfully returned JSON output")
+                return self.json
+            else:
+                self.logger.error("JSON couldn't be returned")
+                raise AttributeError("No JSON parsed!")
+        elif return_type == "df":
+            if self.json:
+                self.logger.info("Successfully parsed JSON output")
+                demo_data = {}
+                demo_data["MatchId"] = self.json["MatchId"]
+                demo_data["ClientName"] = self.json["ClientName"]
+                demo_data["MapName"] = self.json["MapName"]
+                demo_data["TickRate"] = self.json["TickRate"]
+                demo_data["PlaybackTicks"] = self.json["PlaybackTicks"]
+                demo_data["Kills"] = self._parse_kills()
+                demo_data["Damages"] = self._parse_damages()
+                demo_data["Grenades"] = self._parse_grenades()
+                demo_data["Flashes"] = self._parse_flashes()
+                self.logger.info("Returned dataframe output")
+                return demo_data
+            else:
+                self.logger.error("JSON couldn't be returned")
+                raise AttributeError("No JSON parsed!")
         else:
-            self.logger.error("JSON couldn't be returned")
-            raise AttributeError("No JSON parsed!")
+            raise ValueError("return_type has to be 'json' or 'df'")
 
     def _parse_kills(self, return_type):
         """ Returns kills as either a list or Pandas dataframe

@@ -10,46 +10,34 @@ The `csgo` package provides data parsing, analytics and visualization capabiliti
 ### Installation
 To install `csgo`, clone the repository and install it from source by doing `python setup.py install`.
 
-### Tests
-To run the tests, go to the root directory and run `python -m pytest -vv`.
-
 ## Example Code
-Using the `csgo` package is straightforward. Just pick a demofile and have a set of Pandas dataframes in seconds. Use the example below to get started.
+Using the `csgo` package is straightforward. Just pick a demofile and have output in JSON or Pandas DataFrames in seconds. Use the example below to get started.
 
 ```python
 from csgo.parser import DemoParser
 
 # Create parser object
 # Set log=True above if you want to produce a logfile for the parser
-demo_parser = DemoParser(demofile = "astralis-vs-liquid-m1-inferno.dem", match_id = "astralis-vs-liquid-m1-inferno.dem")
+# Set parse_rate to a power of 2 between 2^0 and 2^7. It indicates the spacing between parsed ticks. Larger numbers result in fewer frames recorded.
+demo_parser = DemoParser(demofile="og-vs-natus-vincere-m1-dust2.dem", log=True, demo_id="og-vs-natus-vincere", parse_rate=128)
+
+
 
 
 # Parse the demofile, output results to dictionary with df name as key
 data = demo_parser.parse()
 
 # The following keys exist
-data["Rounds"]
-data["Kills"]
-data["Damages"]
-data["Grenades"]
-data["BombEvents"]
-data["Footsteps"]
+data["MatchId"]
+data["ClientName"]
+data["MapName"]
+data["TickRate"]
+data["PlaybackTicks"]
+data["GameRounds"]
 
-# You can also write the demofile data to JSON using
-demo_parser.write_json()
-# which writes to matchId_mapName.json
-```
-
-Alternatively, you can create an XML of the game, frame-by-frame, by doing
-```python
-from csgo.parser import FrameParser
-
-# Create parser object
-# Set log=True above if you want to produce a logfile for the parser
-demo_frame_parser = FrameParser(demofile = "astralis-vs-liquid-m1-inferno.dem", match_id = "astralis-vs-liquid-m1-inferno.dem")
-
-# Parse the demofile, output results match_id.xml
-demo_frame_parser.parse()
+# You can also write the demofile data using
+demo_parser.write()
+# which writes to demo_id_map_name.json
 ```
 
 ## Examples
@@ -75,11 +63,13 @@ This repository contains code for CSGO analysis. It is structured as follows:
 ├── examples                      # Contains Jupyter Notebooks showing example code
 └── tests                         # Contains tests for the csgo package
 ```
+## Papers
+Xenopoulos, Peter, et al. "Valuing Actions in Counter-Strike: Global Offensive." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
 
 ## Requests and Issues
 This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues).
 
-## Acknowledgements
+## Acknowledgments
 This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages. To fix errors brought about in the gonav package from Go 1.14, we provide an updated version in the [gonavparse](https://github.com/pnxenopoulos/csgonavparse).
 
 ## License
