@@ -133,6 +133,12 @@ class TestDemoParser:
         """ Tests if df is parsed
         """
         data = self.parser.parse(return_type="df")
+        assert "Rounds" in data.keys()
+        assert type(data["Rounds"]) == pd.DataFrame
+        assert "Frames" in data.keys()
+        assert type(data["Frames"]) == pd.DataFrame
+        assert "PlayerFrames" in data.keys()
+        assert type(data["PlayerFrames"]) == pd.DataFrame
         assert "Kills" in data.keys()
         assert type(data["Kills"]) == pd.DataFrame
         assert "Damages" in data.keys()
@@ -148,6 +154,54 @@ class TestDemoParser:
         with pytest.raises(ValueError):
             self.parser.parse(return_type="test")
 
+    def test_parsed_frames(self):
+        """ Tests if frames parse correctly
+        """
+        data = self.parser.parse()
+        frames_list = self.parser._parse_frames(return_type="list")
+        frames_df = self.parser._parse_frames(return_type="df")
+        assert type(frames_list) == list
+        assert len(frames_list) == 25
+        assert type(frames_df) == pd.DataFrame
+        assert frames_df.shape[0] == 25
+        with pytest.raises(ValueError):
+            self.parser._parse_frames(return_type="notalist")
+
+    def test_parsed_frames_not_parsed(self):
+        """ Tests if frames parse correctly if not parsed
+        """
+        self.parser_not_parsed = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+        )
+        with pytest.raises(AttributeError):
+            self.parser_not_parsed._parse_frames(return_type="list")
+
+    def test_parsed_player_frames(self):
+        """ Tests if player_frames parse correctly
+        """
+        data = self.parser.parse()
+        player_frames_list = self.parser._parse_player_frames(return_type="list")
+        player_frames_df = self.parser._parse_player_frames(return_type="df")
+        assert type(player_frames_list) == list
+        assert len(player_frames_list) == 25
+        assert type(player_frames_df) == pd.DataFrame
+        assert player_frames_df.shape[0] == 25
+        with pytest.raises(ValueError):
+            self.parser._parse_player_frames(return_type="notalist")
+
+    def test_parsed_player_frames_not_parsed(self):
+        """ Tests if player_frames parse correctly if not parsed
+        """
+        self.parser_not_parsed = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+        )
+        with pytest.raises(AttributeError):
+            self.parser_not_parsed._parse_player_frames(return_type="list")
+    
     def test_parsed_rounds(self):
         """ Tests if rounds parse correctly
         """
