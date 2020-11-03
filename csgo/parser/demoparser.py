@@ -285,7 +285,6 @@ class DemoParser:
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise ValueError("JSON not found. Run .parse()")
-            return None
 
     def _parse_grenades(self, return_type):
         """ Returns grenades as either a list or Pandas dataframe
@@ -316,7 +315,6 @@ class DemoParser:
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise ValueError("JSON not found. Run .parse()")
-            return None
 
     def _parse_bomb_events(self, return_type):
         """ Returns bomb events as either a list or Pandas dataframe
@@ -347,7 +345,6 @@ class DemoParser:
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise ValueError("JSON not found. Run .parse()")
-            return None
 
     def _parse_flashes(self, return_type):
         """ Returns flashes as either a list or Pandas dataframe
@@ -378,4 +375,3 @@ class DemoParser:
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise ValueError("JSON not found. Run .parse()")
-            return None
