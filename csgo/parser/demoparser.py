@@ -150,7 +150,7 @@ class DemoParser:
         """
         self._parse_demo()
         self._read_json()
-        if return_type == "json"
+        if return_type == "json":
             if self.json:
                 self.logger.info("Successfully parsed JSON output")
                 self.logger.info("Successfully returned JSON output")

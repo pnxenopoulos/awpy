@@ -134,13 +134,13 @@ class TestDemoParser:
         """
         data = self.parser.parse(return_type="df")
         assert "Kills" in data.keys()
-        assert type(data["Kills"]) = pd.DataFrame
+        assert type(data["Kills"]) == pd.DataFrame
         assert "Damages" in data.keys()
-        assert type(data["Damages"]) = pd.DataFrame
+        assert type(data["Damages"]) == pd.DataFrame
         assert "Grenades" in data.keys()
-        assert type(data["Grenades"]) = pd.DataFrame
+        assert type(data["Grenades"]) == pd.DataFrame
         assert "Flashes" in data.keys()
-        assert type(data["Flashes"]) = pd.DataFrame
+        assert type(data["Flashes"]) == pd.DataFrame
 
     def test_parse_bad_return(self):
         """ Tests if parse fails on bad return type
