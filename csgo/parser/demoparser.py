@@ -225,7 +225,7 @@ class DemoParser:
                             frame_item["TUtility"] = frame["T"]["TotalUtility"]
                             frame_item["TUtilityLevel"] = frame["T"]["UtilityLevel"]
                             frame_item["TToken"] = frame["T"]["PositionToken"]
-                frames_dataframes.append(frame_item)
+                    frames_dataframes.append(frame_item)
                 frames_df = pd.DataFrame(frames_dataframes)
                 frames_df["MatchId"] = self.demo_id
                 frames_df["MapName"] = self.json["MapName"]
