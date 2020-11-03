@@ -179,6 +179,53 @@ class DemoParser:
         else:
             raise ValueError("return_type has to be 'json' or 'df'")
 
+    def _parse_rounds(self, return_type):
+        """ Returns rounds as either a list or Pandas dataframe
+
+        Args:
+            return_type (string) : Either "list" or "df"
+
+        Returns:
+            A list or Pandas dataframe
+        """
+        if return_type not in ["list", "df"]:
+            self.logger.error("Parse rounds return_type must be either 'list' or 'df'")
+            raise ValueError("return_type must be either 'list' or 'df'")
+
+        try:
+            rounds = []
+            keys = [
+                "RoundNum",
+                "StartTick",
+                "FreezeTimeEnd",
+                "EndTick",
+                "EndOfficialTick",
+                "TScore",
+                "CTScore",
+                "WinningSide",
+                "WinningTeam",
+                "LosingTeam",
+                "RoundEndReason",
+                "CTStartEqVal",
+                "CTBuyType",
+                "TStartEqVal",
+                "TBuyType",
+            ]
+            for r in self.json["GameRounds"]:
+                round_item = {}
+                for k in keys:
+                    round_item[k] = r[k]
+                rounds.append(round_item)
+            if return_type == "list":
+                self.logger.info("Parsed kills to list")
+                return rounds
+            elif return_type == "df":
+                self.logger.info("Parsed kills to Pandas DataFrame")
+                return pd.DataFrame(rounds)
+        except AttributeError:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
     def _parse_kills(self, return_type):
         """ Returns kills as either a list or Pandas dataframe
 
@@ -217,7 +264,7 @@ class DemoParser:
             A list or Pandas dataframe
         """
         if return_type not in ["list", "df"]:
-            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            self.logger.error("Parse damages return_type must be either 'list' or 'df'")
             raise ValueError("return_type must be either 'list' or 'df'")
 
         if self.json:
@@ -246,7 +293,7 @@ class DemoParser:
             A list or Pandas dataframe
         """
         if return_type not in ["list", "df"]:
-            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            self.logger.error("Parse grenades return_type must be either 'list' or 'df'")
             raise ValueError("return_type must be either 'list' or 'df'")
 
         if self.json:
@@ -275,7 +322,7 @@ class DemoParser:
             A list or Pandas dataframe
         """
         if return_type not in ["list", "df"]:
-            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            self.logger.error("Parse bomb events return_type must be either 'list' or 'df'")
             raise ValueError("return_type must be either 'list' or 'df'")
 
         if self.json:
@@ -304,7 +351,7 @@ class DemoParser:
             A list or Pandas dataframe
         """
         if return_type not in ["list", "df"]:
-            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
+            self.logger.error("Parse flashes return_type must be either 'list' or 'df'")
             raise ValueError("return_type must be either 'list' or 'df'")
 
         if self.json:

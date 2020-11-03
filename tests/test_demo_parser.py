@@ -148,6 +148,29 @@ class TestDemoParser:
         with pytest.raises(ValueError):
             self.parser.parse(return_type="test")
 
+    def test_parsed_rounds(self):
+        """ Tests if rounds parse correctly
+        """
+        data = self.parser.parse()
+        rounds_list = self.parser._parse_rounds(return_type="list")
+        rounds_df = self.parser._parse_rounds(return_type="df")
+        assert type(rounds_list) == list
+        assert len(rounds_list) == 25
+        assert type(rounds_df) == pd.DataFrame
+        assert rounds_df.shape[0] == 25
+        with pytest.raises(ValueError):
+            self.parser._parse_rounds(return_type="notalist")
+
+    def test_parsed_rounds_not_parsed(self):
+        """ Tests if rounds parse correctly if not parsed
+        """
+        self.parser_not_parsed = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+        )
+        with pytest.raises(AttributeError):
+            self.parser_not_parsed._parse_rounds(return_type="list")
 
     def test_parsed_kills(self):
         """ Tests if kills parse correctly
