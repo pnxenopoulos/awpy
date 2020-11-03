@@ -167,10 +167,10 @@ class DemoParser:
                 demo_data["MapName"] = self.json["MapName"]
                 demo_data["TickRate"] = self.json["TickRate"]
                 demo_data["PlaybackTicks"] = self.json["PlaybackTicks"]
-                demo_data["Kills"] = self._parse_kills()
-                demo_data["Damages"] = self._parse_damages()
-                demo_data["Grenades"] = self._parse_grenades()
-                demo_data["Flashes"] = self._parse_flashes()
+                demo_data["Kills"] = self._parse_kills(return_type=return_type)
+                demo_data["Damages"] = self._parse_damages(return_type=return_type)
+                demo_data["Grenades"] = self._parse_grenades(return_type=return_type)
+                demo_data["Flashes"] = self._parse_flashes(return_type=return_type)
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
