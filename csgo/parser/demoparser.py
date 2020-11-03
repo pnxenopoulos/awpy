@@ -243,7 +243,9 @@ class DemoParser:
             kills = []
             for r in self.json["GameRounds"]:
                 for k in r["Kills"]:
-                    kills.append(k)
+                    new_k = k
+                    new_k["RoundNum"] = r["RoundNum"]
+                    kills.append(new_k)
             if return_type == "list":
                 self.logger.info("Parsed kills to list")
                 return kills
@@ -271,7 +273,9 @@ class DemoParser:
             damages = []
             for r in self.json["GameRounds"]:
                 for d in r["Damages"]:
-                    damages.append(d)
+                    new_d = d
+                    new_d["RoundNum"] = r["RoundNum"]
+                    damages.append(new_d)
             if return_type == "list":
                 self.logger.info("Parsed damages to list")
                 return damages
@@ -300,7 +304,9 @@ class DemoParser:
             grenades = []
             for r in self.json["GameRounds"]:
                 for g in r["Grenades"]:
-                    grenades.append(g)
+                    new_g = g
+                    new_g["RoundNum"] = r["RoundNum"]
+                    grenades.append(new_g)
             if return_type == "list":
                 self.logger.info("Parsed grenades to list")
                 return grenades
@@ -329,7 +335,9 @@ class DemoParser:
             bomb_events = []
             for r in self.json["GameRounds"]:
                 for b in r["BombEvents"]:
-                    bomb_events.append(b)
+                    new_b = b
+                    new_b["RoundNum"] = r["RoundNum"]
+                    bomb_events.append(new_b)
             if return_type == "list":
                 self.logger.info("Parsed bomb_events to list")
                 return bomb_events
@@ -357,8 +365,10 @@ class DemoParser:
         if self.json:
             flashes = []
             for r in self.json["GameRounds"]:
-                for g in r["Flashes"]:
-                    flashes.append(g)
+                for f in r["Flashes"]:
+                    new_f = f
+                    new_f["RoundNum"] = r["RoundNum"]
+                    flashes.append(new_f)
             if return_type == "list":
                 self.logger.info("Parsed flashes to list")
                 return flashes

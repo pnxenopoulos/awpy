@@ -251,9 +251,9 @@ class TestDemoParser:
         flashes_list = self.parser._parse_flashes(return_type="list")
         flashes_df = self.parser._parse_flashes(return_type="df")
         assert type(flashes_list) == list
-        assert len(flashes_list) == 829
+        assert len(flashes_list) == 617
         assert type(flashes_df) == pd.DataFrame
-        assert flashes_df.shape[0] == 829
+        assert flashes_df.shape[0] == 617
         with pytest.raises(ValueError):
             self.parser._parse_flashes(return_type="notalist")
 
