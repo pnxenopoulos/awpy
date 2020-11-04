@@ -258,7 +258,7 @@ class DemoParser:
             for r in self.json["GameRounds"]:
                 for frame in r["Frames"]:
                     for side in ["CT", "T"]:
-                        if len(frame[side]["Players"]) == 5:
+                        if frame[side]["Players"] is not None and (len(frame[side]["Players"]) == 5):
                             for player in frame[side]["Players"]:
                                 player_item = {}
                                 player_item["RoundNum"] = r["RoundNum"]
