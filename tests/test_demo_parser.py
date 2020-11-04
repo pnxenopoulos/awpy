@@ -328,6 +328,30 @@ class TestDemoParser:
         with pytest.raises(AttributeError):
             self.parser_not_parsed._parse_flashes(return_type="list")
 
+    def test_parsed_bomb_events(self):
+        """ Tests if bomb_events parse correctly
+        """
+        data = self.parser.parse()
+        bomb_events_list = self.parser._parse_bomb_events(return_type="list")
+        bomb_events_df = self.parser._parse_bomb_events(return_type="df")
+        assert type(bomb_events_list) == list
+        assert len(bomb_events_list) == 163
+        assert type(bomb_events_df) == pd.DataFrame
+        assert bomb_events_df.shape[0] == 163
+        with pytest.raises(ValueError):
+            self.parser._parse_bomb_events(return_type="notalist")
+
+    def test_parsed_bomb_events_not_parsed(self):
+        """ Tests if bomb_events parse correctly if not parsed
+        """
+        self.parser_not_parsed = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+        )
+        with pytest.raises(AttributeError):
+            self.parser_not_parsed._parse_bomb_events(return_type="list")
+
     def test_generate_stats(self):
         """ Tests if stats are generated correctly
         """

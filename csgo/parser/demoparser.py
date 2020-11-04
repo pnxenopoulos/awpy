@@ -150,17 +150,12 @@ class DemoParser:
         """
         self._parse_demo()
         self._read_json()
-        if return_type == "json":
-            if self.json:
-                self.logger.info("Successfully parsed JSON output")
-                self.logger.info("Successfully returned JSON output")
+        if self.json:
+            self.logger.info("Successfully parsed JSON output")
+            self.logger.info("Successfully returned JSON output")
+            if return_type == "json":
                 return self.json
-            else:
-                self.logger.error("JSON couldn't be returned")
-                raise AttributeError("No JSON parsed!")
-        elif return_type == "df":
-            if self.json:
-                self.logger.info("Successfully parsed JSON output")
+            elif return_type == "df":
                 demo_data = {}
                 demo_data["MatchId"] = self.json["MatchId"]
                 demo_data["ClientName"] = self.json["ClientName"]
@@ -182,10 +177,11 @@ class DemoParser:
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
-                self.logger.error("JSON couldn't be returned")
-                raise AttributeError("No JSON parsed!")
+                self.logger.error("Parse return_type must be either 'json' or 'df'")
+                raise ValueError("return_type must be either 'json' or 'df'")
         else:
-            raise ValueError("return_type has to be 'json' or 'df'")
+            self.logger.error("JSON couldn't be returned")
+            raise AttributeError("No JSON parsed!")
 
     def _parse_frames(self, return_type):
         """ Returns frames as either a list or Pandas dataframe
@@ -258,7 +254,9 @@ class DemoParser:
             for r in self.json["GameRounds"]:
                 for frame in r["Frames"]:
                     for side in ["CT", "T"]:
-                        if frame[side]["Players"] is not None and (len(frame[side]["Players"]) == 5):
+                        if frame[side]["Players"] is not None and (
+                            len(frame[side]["Players"]) == 5
+                        ):
                             for player in frame[side]["Players"]:
                                 player_item = {}
                                 player_item["RoundNum"] = r["RoundNum"]
