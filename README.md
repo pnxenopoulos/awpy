@@ -41,12 +41,16 @@ data_df = demo_parser.parse(return_type="df")
 # You can also access the data in the file demoId_mapName.json, which is written in your working directory
 ```
 
-## Examples
+## Examples and Papers
 Take a look at the following Jupyter notebooks provided in our `examples/` directory.
 
-- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/master/examples/00_Parsing_a_CSGO_demofile.ipynb)
-- [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/master/examples/01_Basic_statistical_analysis.ipynb)
-- [Creating game frames](https://github.com/pnxenopoulos/csgo/blob/master/examples/02_Generating_game_frames.ipynb)
+- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/master/examples/00_Parsing_a_CSGO_Demofile.ipynb)
+- [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/master/examples/01_Basic_CSGO_Analysis.ipynb)
+
+You can also look at the following papers which make use of the parser. If using the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive*.
+
+Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive](https://arxiv.org/pdf/2011.01324.pdf)." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
+
 
 ## Structure
 This repository contains code for CSGO analysis. It is structured as follows:
@@ -64,8 +68,6 @@ This repository contains code for CSGO analysis. It is structured as follows:
 ├── examples                      # Contains Jupyter Notebooks showing example code
 └── tests                         # Contains tests for the csgo package
 ```
-## Papers
-Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive](https://arxiv.org/pdf/2011.01324.pdf)." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
 
 ## Requests and Issues
 This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues).
