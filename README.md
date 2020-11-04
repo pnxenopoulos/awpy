@@ -65,7 +65,7 @@ This repository contains code for CSGO analysis. It is structured as follows:
 └── tests                         # Contains tests for the csgo package
 ```
 ## Papers
-Xenopoulos, Peter, et al. "Valuing Actions in Counter-Strike: Global Offensive." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
+Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive](https://arxiv.org/pdf/2011.01324.pdf)." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
 
 ## Requests and Issues
 This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues).
