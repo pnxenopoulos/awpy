@@ -668,6 +668,7 @@ func main() {
 
 	// Create flags to guide parsing
 	roundStarted := 0
+	roundInEndTime := 0
 	roundInFreezetime := 0
 	currentFrameIdx := 0
 
@@ -697,6 +698,7 @@ func main() {
 		if (acceptableGamePhase(gs)) && (roundStarted == 0) && (e.NewIsStarted == true) {
 			roundStarted = 1
 			roundInFreezetime = 0 // When match starts, the freezetime is usually good to go
+			roundInEndTime = 0
 			currentRound = GameRound{}
 			currentRound.RoundNum = int64(len(currentGame.Rounds)+1)
 			currentRound.StartTick = int64(gs.IngameTick())
@@ -713,6 +715,7 @@ func main() {
 		if (acceptableGamePhase(gs)) {
 			roundStarted = 1
 			roundInFreezetime = 1
+			roundInEndTime = 0
 			currentRound = GameRound{}
 			currentRound.RoundNum = int64(len(currentGame.Rounds)+1)
 			currentRound.StartTick = int64(gs.IngameTick())
@@ -736,6 +739,7 @@ func main() {
 		gs := p.GameState()
 
 		if (acceptableGamePhase(gs)) {
+			roundInEndTime = 1
 			winningTeam := "CT"
 			switch e.Winner {
 			case common.TeamTerrorists:
@@ -788,6 +792,7 @@ func main() {
 
 		// && (roundStarted == 1)
 		if (acceptableGamePhase(gs))  {
+			roundInEndTime = 0
 			// Replace the last round object
 			currentGame.Rounds[len(currentGame.Rounds)-1].EndOfficialTick = int64(gs.IngameTick())
 		}
@@ -864,7 +869,11 @@ func main() {
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			// add
-			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
+			if roundInEndTime == 1 {
+				currentGame.Rounds[len(currentGame.Rounds)-1].WeaponFires = append(currentGame.Rounds[len(currentGame.Rounds)-1].WeaponFires, currentWeaponFire)
+			} else {
+				currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
+			}
 		}
 	})
 
@@ -967,9 +976,12 @@ func main() {
 				currentFlash.PlayerViewY = &playerViewY
 				// add
 				if *currentFlash.PlayerSide != "Spectator" {
-					currentRound.Flashes = append(currentRound.Flashes, currentFlash)
+					if roundInEndTime == 1 {
+						currentGame.Rounds[len(currentGame.Rounds)-1].Flashes = append(currentGame.Rounds[len(currentGame.Rounds)-1].Flashes, currentFlash)
+					} else {
+						currentRound.Flashes = append(currentRound.Flashes, currentFlash)
+					}
 				}
-				
 			}
 		}
 	})
@@ -1063,7 +1075,11 @@ func main() {
 				currentGrenade.GrenadeY = float64(grenadePos.Y)
 				currentGrenade.GrenadeZ = float64(grenadePos.Z)
 				// add
-				currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
+				if roundInEndTime == 1 {
+					currentGame.Rounds[len(currentGame.Rounds)-1].Grenades = append(currentGame.Rounds[len(currentGame.Rounds)-1].Grenades, currentGrenade)
+				} else {
+					currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
+				}
 			}
 		}
 	})
@@ -1134,7 +1150,11 @@ func main() {
 				currentGrenade.GrenadeY = float64(grenadePos.Y)
 				currentGrenade.GrenadeZ = float64(grenadePos.Z)
 				// add
-				currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
+				if roundInEndTime == 1 {
+					currentGame.Rounds[len(currentGame.Rounds)-1].Grenades = append(currentGame.Rounds[len(currentGame.Rounds)-1].Grenades, currentGrenade)
+				} else {
+					currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
+				}
 			}
 		}
 	})
@@ -1284,9 +1304,15 @@ func main() {
 			}
 			if len(currentRound.Kills) > 0 {
 				currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill)
+			} else {
+				currentKill.IsTrade = false
 			}
 			// add
-			currentRound.Kills = append(currentRound.Kills, currentKill)
+			if roundInEndTime == 1 {
+				currentGame.Rounds[len(currentGame.Rounds)-1].Kills = append(currentGame.Rounds[len(currentGame.Rounds)-1].Kills, currentKill)
+			} else {
+				currentRound.Kills = append(currentRound.Kills, currentKill)
+			}
 		}
 	})
 
@@ -1397,7 +1423,11 @@ func main() {
 				currentDamage.VictimViewY = &victimViewY
 			}
 			// add
-			currentRound.Damages = append(currentRound.Damages, currentDamage)
+			if roundInEndTime == 1 {
+				currentGame.Rounds[len(currentGame.Rounds)-1].Damages = append(currentGame.Rounds[len(currentGame.Rounds)-1].Damages, currentDamage)
+			} else {
+				currentRound.Damages = append(currentRound.Damages, currentDamage)
+			}
 		}
 	})
 
@@ -1505,7 +1535,11 @@ func main() {
 			currentWorldObj.Z = float64(objPos.Z)
 			currentFrame.World = append(currentFrame.World, currentWorldObj)
 			// add
-			currentRound.Frames = append(currentRound.Frames, currentFrame)
+			if roundInEndTime == 1 {
+				currentGame.Rounds[len(currentGame.Rounds)-1].Frames = append(currentGame.Rounds[len(currentGame.Rounds)-1].Frames, currentFrame)
+			} else {
+				currentRound.Frames = append(currentRound.Frames, currentFrame)
+			}
 			currentFrameIdx = currentFrameIdx + 1
 		} else {
 			if currentFrameIdx == currentGame.ParseRate {
@@ -1529,7 +1563,7 @@ func main() {
 	if len(currentGame.Rounds) > 0 {
 		InfoLogger.Println("Cleaning data")
 
-		// Remove knife round if there
+		// Remove knife round if there is one
 		firstRound := currentGame.Rounds[0]
 		knifeKills := 0
 		for _, k := range firstRound.Kills {

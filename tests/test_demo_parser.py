@@ -129,6 +129,12 @@ class TestDemoParser:
         assert data["GameRounds"][-1]["RoundEndReason"] == "TerroristsWin"
         assert data["GameRounds"][15]["RoundEndReason"] == "BombDefused"
 
+    def test_parsed_wrong_type(self):
+        """ Tests wrote parse type
+        """
+        with pytest.raises(ValueError):
+            self.parser.parse(return_type="bad")
+
     def test_parse_df(self):
         """ Tests if df is parsed
         """

@@ -22,10 +22,9 @@ from csgo.parser import DemoParser
 demo_parser = DemoParser(demofile="og-vs-natus-vincere-m1-dust2.dem", log=True, demo_id="og-vs-natus-vincere", parse_rate=128)
 
 
-
-
 # Parse the demofile, output results to dictionary with df name as key
 data = demo_parser.parse()
+
 
 # The following keys exist
 data["MatchId"]
@@ -35,9 +34,11 @@ data["TickRate"]
 data["PlaybackTicks"]
 data["GameRounds"]
 
-# You can also write the demofile data using
-demo_parser.write()
-# which writes to demo_id_map_name.json
+# You can also parse the data into dataframes using
+data_df = demo_parser.parse(return_type="df")
+
+
+# You can also access the data in the file demoId_mapName.json, which is written in your working directory
 ```
 
 ## Examples
