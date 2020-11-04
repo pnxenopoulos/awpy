@@ -167,9 +167,9 @@ class TestDemoParser:
         frames_list = self.parser._parse_frames(return_type="list")
         frames_df = self.parser._parse_frames(return_type="df")
         assert type(frames_list) == list
-        assert len(frames_list) == 2329
+        assert len(frames_list) == 2521
         assert type(frames_df) == pd.DataFrame
-        assert frames_df.shape[0] == 2329
+        assert frames_df.shape[0] == 2521
         with pytest.raises(ValueError):
             self.parser._parse_frames(return_type="notalist")
 
@@ -239,9 +239,9 @@ class TestDemoParser:
         kills_list = self.parser._parse_kills(return_type="list")
         kills_df = self.parser._parse_kills(return_type="df")
         assert type(kills_list) == list
-        assert len(kills_list) == 161
+        assert len(kills_list) == 163
         assert type(kills_df) == pd.DataFrame
-        assert kills_df.shape[0] == 161
+        assert kills_df.shape[0] == 163
         with pytest.raises(ValueError):
             self.parser._parse_kills(return_type="notalist")
 
@@ -263,9 +263,9 @@ class TestDemoParser:
         damages_list = self.parser._parse_damages(return_type="list")
         damages_df = self.parser._parse_damages(return_type="df")
         assert type(damages_list) == list
-        assert len(damages_list) == 685
+        assert len(damages_list) == 704
         assert type(damages_df) == pd.DataFrame
-        assert damages_df.shape[0] == 685
+        assert damages_df.shape[0] == 704
         with pytest.raises(ValueError):
             self.parser._parse_damages(return_type="notalist")
 
@@ -287,9 +287,9 @@ class TestDemoParser:
         grenades_list = self.parser._parse_grenades(return_type="list")
         grenades_df = self.parser._parse_grenades(return_type="df")
         assert type(grenades_list) == list
-        assert len(grenades_list) == 701
+        assert len(grenades_list) == 705
         assert type(grenades_df) == pd.DataFrame
-        assert grenades_df.shape[0] == 701
+        assert grenades_df.shape[0] == 705
         with pytest.raises(ValueError):
             self.parser._parse_grenades(return_type="notalist")
 
