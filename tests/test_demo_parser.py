@@ -335,9 +335,9 @@ class TestDemoParser:
         bomb_events_list = self.parser._parse_bomb_events(return_type="list")
         bomb_events_df = self.parser._parse_bomb_events(return_type="df")
         assert type(bomb_events_list) == list
-        assert len(bomb_events_list) == 163
+        assert len(bomb_events_list) == 16
         assert type(bomb_events_df) == pd.DataFrame
-        assert bomb_events_df.shape[0] == 163
+        assert bomb_events_df.shape[0] == 16
         with pytest.raises(ValueError):
             self.parser._parse_bomb_events(return_type="notalist")
 
