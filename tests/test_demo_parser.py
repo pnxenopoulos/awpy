@@ -191,9 +191,9 @@ class TestDemoParser:
         player_frames_list = self.parser._parse_player_frames(return_type="list")
         player_frames_df = self.parser._parse_player_frames(return_type="df")
         assert type(player_frames_list) == list
-        assert len(player_frames_list) == 23290
+        assert len(player_frames_list) == 24610
         assert type(player_frames_df) == pd.DataFrame
-        assert player_frames_df.shape[0] == 23290
+        assert player_frames_df.shape[0] == 24610
         with pytest.raises(ValueError):
             self.parser._parse_player_frames(return_type="notalist")
 
