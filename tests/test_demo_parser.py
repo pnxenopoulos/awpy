@@ -351,8 +351,3 @@ class TestDemoParser:
         )
         with pytest.raises(AttributeError):
             self.parser_not_parsed._parse_bomb_events(return_type="list")
-
-    def test_generate_stats(self):
-        """ Tests if stats are generated correctly
-        """
-        assert True
