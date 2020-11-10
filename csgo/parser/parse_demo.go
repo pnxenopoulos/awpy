@@ -1618,7 +1618,7 @@ func main() {
 		// Write the JSON
 		file, _ := json.MarshalIndent(currentGame, "", " ")
 		// currentGame.MatchName + ".json"
-		_ = ioutil.WriteFile(outpath + "/" + currentGame.MatchName + ".json", file, 0644)
+		_ = ioutil.WriteFile(outpath + "/" + currentGame.MatchName + "_" + currentGame.Map + ".json", file, 0644)
 		fmt.Printf(currentGame.MatchName + "_" + currentGame.Map + ".json")
 		
 		InfoLogger.Println("Wrote to JSON file to: " + outpath + "/" + currentGame.MatchName + "_" + currentGame.Map + ".json")
