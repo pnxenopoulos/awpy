@@ -106,10 +106,12 @@ class DemoParser:
             stdout=subprocess.PIPE,
             cwd=path,
         )
-        output = proc.stdout.read().splitlines()
-        if os.path.isfile(str(self.demo_id) + ".json"):
+        stdout = proc.stdout.read().splitlines()
+        output = [event.decode("utf-8") for event in stdout]
+        self.output_file = output[0]
+        if os.path.isfile(self.output_file):
             self.logger.info(
-                "Wrote demo parse output to " + str(self.demo_id) + ".json"
+                "Wrote demo parse output to " + output_file + ".json"
             )
         else:
             self.logger.error("No file produced, error in calling Golang")
@@ -120,8 +122,8 @@ class DemoParser:
         Returns:
             A dictionary of the JSON output of _parse_demo()
         """
-        json_path = str(self.demo_id) + ".json"
-        self.logger.info("Reading in JSON from " + json_path)
+        json_path = self.output_file
+        self.logger.info("Reading in JSON from " + self.output_file)
         with open(json_path) as f:
             demo_data = json.load(f)
         self.json = demo_data
