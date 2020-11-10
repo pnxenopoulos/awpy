@@ -89,7 +89,8 @@ class TestDemoParser:
         """ Tests if parse actually outputs a file
         """
         self.parser._parse_demo()
-        assert os.path.exists("test.json")
+        assert os.path.exists("test_de_dust2.json")
+        assert self.parser.output_file == "test_de_dust2.json"
 
     def test_read_json(self):
         """ Tests if the JSON output from _parse_demo() can be read
