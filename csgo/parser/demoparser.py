@@ -111,7 +111,7 @@ class DemoParser:
         self.output_file = output[0]
         if os.path.isfile(self.output_file):
             self.logger.info(
-                "Wrote demo parse output to " + output_file + ".json"
+                "Wrote demo parse output to " + self.output_file
             )
         else:
             self.logger.error("No file produced, error in calling Golang")
