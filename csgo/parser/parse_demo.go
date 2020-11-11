@@ -253,6 +253,8 @@ type GameFrame struct {
 	World []WorldObject `json:"World"`
 	BombDistToA int64 `json:"BombDistanceToA"`
 	BombDistToB int64 `json:"BombDistanceToB"`
+	BombPlanted bool `json:"BombPlanted"`
+	BombSite *string `json:"BombSite"`
 }
 
 type WorldObject struct {
@@ -1535,6 +1537,13 @@ func main() {
 			currentWorldObj.Y = float64(objPos.Y)
 			currentWorldObj.Z = float64(objPos.Z)
 			currentFrame.World = append(currentFrame.World, currentWorldObj)
+			if len(currentRound.Bomb) > 0 {
+				currentFrame.BombPlanted = true
+				currentFrame.BombSite = &currentRound.Bomb[0].BombSite
+			} else {
+				currentFrame.BombPlanted = false
+			}
+			
 			// add
 			if roundInEndTime == 1 {
 				currentGame.Rounds[len(currentGame.Rounds)-1].Frames = append(currentGame.Rounds[len(currentGame.Rounds)-1].Frames, currentFrame)
