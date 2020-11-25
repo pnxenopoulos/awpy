@@ -38,10 +38,11 @@ def frame_to_graph(frame, metric, map_name, full=False):
             side_ind = 0
         else:
             side_ind = 1
-        if full and p["IsAlive"] is True:
+        if full:
             nodes.append(
                 [
                     side_ind,
+                    p["IsAlive"],
                     p["Hp"],
                     p["Armor"],
                     p["EquipmentValue"],
@@ -52,10 +53,9 @@ def frame_to_graph(frame, metric, map_name, full=False):
                     p["DistToBombsiteB"],
                 ]
             )
-        elif full is False:
+        elif full is False and p["IsAlive"] is True:
             nodes.append(
                 [
-                    p["IsAlive"],
                     side_ind,
                     p["Hp"],
                     p["Armor"],

@@ -33,6 +33,7 @@ class TestDemoParser:
             frame=self.data["GameRounds"][0]["Frames"][0],
             metric="graph",
             map_name=self.data["MapName"],
+            full=True
         )
         assert X.shape[0] == 10
         assert X.shape[1] == 10
@@ -58,11 +59,12 @@ class TestDemoParser:
             frame=self.data["GameRounds"][0]["Frames"][0],
             metric="euclidean",
             map_name=self.data["MapName"],
+            full=True
         )
-        assert X.shape[0] == 9
-        assert X.shape[1] == 9
-        assert A.shape[0] == 9
-        assert A.shape[1] == 9
+        assert X.shape[0] == 10
+        assert X.shape[1] == 10
+        assert A.shape[0] == 10
+        assert A.shape[1] == 10
 
     def test_frame_to_graph_bad_map(self):
         """Tests if frame to graph fails on bad map name"""
