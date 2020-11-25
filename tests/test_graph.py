@@ -34,10 +34,10 @@ class TestDemoParser:
             metric="graph",
             map_name=self.data["MapName"],
         )
-        assert X.shape[0] == 9
+        assert X.shape[0] == 10
         assert X.shape[1] == 10
-        assert A.shape[0] == 9
-        assert A.shape[1] == 9
+        assert A.shape[0] == 10
+        assert A.shape[1] == 10
 
     def test_graph_output_graph_dist_nonfull(self):
         """Tests if the graph output is of correct dimension using graph distance and non-full parameters"""
@@ -47,10 +47,10 @@ class TestDemoParser:
             map_name=self.data["MapName"],
             full=False,
         )
-        assert X.shape[0] == 10
+        assert X.shape[0] == 9
         assert X.shape[1] == 9
-        assert A.shape[0] == 10
-        assert A.shape[1] == 10
+        assert A.shape[0] == 9
+        assert A.shape[1] == 9
 
     def test_graph_output_non_graph_dist(self):
         """Tests if the graph output is of correct dimension using non-graph distance"""
