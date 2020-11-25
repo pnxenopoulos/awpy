@@ -23,8 +23,7 @@ import subprocess
 
 
 class AutoVivification(dict):
-    """ Implementation of perl's autovivification feature. Stolen from https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python
-    """
+    """Implementation of perl's autovivification feature. Stolen from https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python"""
 
     def __getitem__(self, item):
         try:
@@ -35,8 +34,7 @@ class AutoVivification(dict):
 
 
 def check_go_version():
-    """ Function to check the Golang version of the current machine, returns True if greater than 1.14.0
-    """
+    """Function to check the Golang version of the current machine, returns True if greater than 1.14.0"""
     try:
         proc = subprocess.Popen(["go", "version"], stdout=subprocess.PIPE)
         parsed_resp = proc.stdout.read().splitlines()

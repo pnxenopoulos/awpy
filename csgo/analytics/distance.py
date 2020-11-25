@@ -11,7 +11,7 @@ from scipy.spatial import distance
 
 
 def area_distance(area_one=0, area_two=0, map="de_dust2"):
-    """ Returns the distance given two area ids
+    """Returns the distance given two area ids
 
     Args:
         map: A string indicating the map
@@ -35,7 +35,7 @@ def area_distance(area_one=0, area_two=0, map="de_dust2"):
 
 
 def bombsite_distance(location, bombsite="A", map="de_dust2"):
-    """ Returns the distance between a location and a given bombsite
+    """Returns the distance between a location and a given bombsite
 
     Args:
         Location: A list of floats or ints containing the starting position
@@ -80,7 +80,7 @@ def bombsite_distance(location, bombsite="A", map="de_dust2"):
 
 
 def point_distance(point_a, point_b, type="graph", map="de_dust2"):
-    """ Returns the distance between two points using a given method on a given map (if needed)
+    """Returns the distance between two points using a given method on a given map (if needed)
 
     Args:
         point_a: A list of floats or ints containing the position of point A
@@ -139,7 +139,7 @@ def point_distance(point_a, point_b, type="graph", map="de_dust2"):
 
 
 def polygon_area(x, y):
-    """ Returns area of a polygon given x,y coordinates of vertices
+    """Returns area of a polygon given x,y coordinates of vertices
 
     Args:
         x: A list of floats indicating x index of vertices

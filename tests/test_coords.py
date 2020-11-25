@@ -4,8 +4,7 @@ from csgo.analytics.coords import coords_to_area
 
 
 class TestCSGOCoords:
-    """ Class to test CSGO coordinate functions
-    """
+    """Class to test CSGO coordinate functions"""
 
     def test_coords_to_area_invalid_map(self):
         """

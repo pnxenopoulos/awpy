@@ -9,14 +9,14 @@ from csgo.utils import check_go_version
 
 
 class DemoParser:
-    """ This class can parse a CSGO demofile to various outputs, such as JSON or CSV. Accessible via csgo.parser import DemoParser
+    """This class can parse a CSGO demofile to various outputs, such as JSON or CSV. Accessible via csgo.parser import DemoParser
 
     Attributes:
         demofile (string) : A string denoting the path to the demo file, which ends in .dem
         log (boolean)     : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
         demo_id (string) : A unique demo name/game id. Default is inferred from demofile name
         parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 32.
-    
+
     Raises:
         ValueError : Raises a ValueError if the Golang version is lower than 1.14
     """
@@ -81,7 +81,7 @@ class DemoParser:
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
 
     def _parse_demo(self):
-        """ Parse a demofile using the Go script parse_demo.go -- this function takes no arguments, all arguments are set in initialization.
+        """Parse a demofile using the Go script parse_demo.go -- this function takes no arguments, all arguments are set in initialization.
 
         Returns:
             Outputs a JSON file to current working directory.
@@ -110,14 +110,12 @@ class DemoParser:
         output = [event.decode("utf-8") for event in stdout]
         self.output_file = output[0]
         if os.path.isfile(self.output_file):
-            self.logger.info(
-                "Wrote demo parse output to " + self.output_file
-            )
+            self.logger.info("Wrote demo parse output to " + self.output_file)
         else:
             self.logger.error("No file produced, error in calling Golang")
 
     def _read_json(self):
-        """ Reads the JSON file created by _parse_demo()
+        """Reads the JSON file created by _parse_demo()
 
         Returns:
             A dictionary of the JSON output of _parse_demo()
@@ -133,11 +131,11 @@ class DemoParser:
         return demo_data
 
     def parse(self, return_type="json"):
-        """ Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
+        """Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
 
         Args:
             return_type (string) : Either "json" or "df"
-        
+
         Returns:
             A dictionary of output
         """
@@ -177,7 +175,7 @@ class DemoParser:
             raise AttributeError("No JSON parsed!")
 
     def _parse_frames(self, return_type):
-        """ Returns frames as either a list or Pandas dataframe
+        """Returns frames as either a list or Pandas dataframe
 
         Args:
             return_type (string) : Either "list" or "df"
@@ -229,7 +227,7 @@ class DemoParser:
             raise AttributeError("JSON not found. Run .parse()")
 
     def _parse_player_frames(self, return_type):
-        """ Returns player frames as either a list or Pandas dataframe
+        """Returns player frames as either a list or Pandas dataframe
 
         Args:
             return_type (string) : Either "list" or "df"
@@ -297,7 +295,7 @@ class DemoParser:
             raise AttributeError("JSON not found. Run .parse()")
 
     def _parse_rounds(self, return_type):
-        """ Returns rounds as either a list or Pandas dataframe
+        """Returns rounds as either a list or Pandas dataframe
 
         Args:
             return_type (string) : Either "list" or "df"
@@ -346,7 +344,7 @@ class DemoParser:
             raise AttributeError("JSON not found. Run .parse()")
 
     def _parse_kills(self, return_type):
-        """ Returns kills as either a list or Pandas dataframe
+        """Returns kills as either a list or Pandas dataframe
 
         Args:
             return_type (string) : Either "list" or "df"
@@ -378,7 +376,7 @@ class DemoParser:
             raise AttributeError("JSON not found. Run .parse()")
 
     def _parse_damages(self, return_type):
-        """ Returns damages as either a list or Pandas dataframe
+        """Returns damages as either a list or Pandas dataframe
 
         Args:
             return_type (string) : Either "list" or "df"
@@ -410,7 +408,7 @@ class DemoParser:
             raise AttributeError("JSON not found. Run .parse()")
 
     def _parse_grenades(self, return_type):
-        """ Returns grenades as either a list or Pandas dataframe
+        """Returns grenades as either a list or Pandas dataframe
 
         Args:
             return_type (string) : Either "list" or "df"
@@ -444,7 +442,7 @@ class DemoParser:
             raise AttributeError("JSON not found. Run .parse()")
 
     def _parse_bomb_events(self, return_type):
-        """ Returns bomb events as either a list or Pandas dataframe
+        """Returns bomb events as either a list or Pandas dataframe
 
         Args:
             return_type (string) : Either "list" or "df"
@@ -479,7 +477,7 @@ class DemoParser:
             raise AttributeError("JSON not found. Run .parse()")
 
     def _parse_flashes(self, return_type):
-        """ Returns flashes as either a list or Pandas dataframe
+        """Returns flashes as either a list or Pandas dataframe
 
         Args:
             return_type (string) : Either "list" or "df"

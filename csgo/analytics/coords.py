@@ -7,7 +7,7 @@ import numpy as np
 
 
 def coords_to_area(x=0, y=0, z=0, map="de_dust2"):
-    """ Returns a dicitonary of the area 
+    """Returns a dicitonary of the area
 
     Args:
         x (float) : X coordinate

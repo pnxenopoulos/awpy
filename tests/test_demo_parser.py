@@ -6,14 +6,13 @@ from csgo.parser import DemoParser
 
 
 class TestDemoParser:
-    """ Class to test the match parser
+    """Class to test the match parser
 
     Uses https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
     """
 
     def setup_class(self):
-        """ Setup class by instantiating parser
-        """
+        """Setup class by instantiating parser"""
         self.parser = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
@@ -22,34 +21,33 @@ class TestDemoParser:
         )
 
     def teardown_class(self):
-        """ Set parser to none
-        """
+        """Set parser to none"""
         self.parser = None
 
     def test_demo_id_inferred(self):
-        """ Tests if a demo_id is correctly inferred
-        """
+        """Tests if a demo_id is correctly inferred"""
         self.parser_inferred = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False,
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
         )
         assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
 
     def test_demo_id_given(self):
-        """ Tests if a demo_id is correctly inferred
-        """
+        """Tests if a demo_id is correctly inferred"""
         assert self.parser.demo_id == "test"
 
     def test_wrong_demo_path(self):
-        """ Tests if failure on wrong demofile path
-        """
+        """Tests if failure on wrong demofile path"""
         with pytest.raises(ValueError):
             self.parser_wrong_demo_path = DemoParser(
-                demofile="bad.dem", log=False, demo_id="test", parse_rate=128,
+                demofile="bad.dem",
+                log=False,
+                demo_id="test",
+                parse_rate=128,
             )
 
     def test_parse_rate_bad(self):
-        """ Tests if bad parse rates fail
-        """
+        """Tests if bad parse rates fail"""
         self.parser_bad_parse_rate = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -59,8 +57,7 @@ class TestDemoParser:
         assert self.parser_bad_parse_rate.parse_rate == 32
 
     def test_parse_rate_good(self):
-        """ Tests if good parse rates are set
-        """
+        """Tests if good parse rates are set"""
         self.parser_diff_parse_rate = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -70,8 +67,7 @@ class TestDemoParser:
         assert self.parser_diff_parse_rate.parse_rate == 16
 
     def test_parse_rate_inferred(self):
-        """ Tests if good parse rates are set
-        """
+        """Tests if good parse rates are set"""
         self.parser_inferred_parse_rate = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -80,34 +76,29 @@ class TestDemoParser:
         assert self.parser_inferred_parse_rate.parse_rate == 32
 
     def test_logger_set(self):
-        """ Tests if log file is created
-        """
+        """Tests if log file is created"""
         assert self.parser.logger.name == "CSGODemoParser"
         assert os.path.exists("csgo_demoparser.log")
 
     def test_parse_demo(self):
-        """ Tests if parse actually outputs a file
-        """
+        """Tests if parse actually outputs a file"""
         self.parser._parse_demo()
         assert os.path.exists("test_de_dust2.json")
         assert self.parser.output_file == "test_de_dust2.json"
 
     def test_read_json(self):
-        """ Tests if the JSON output from _parse_demo() can be read
-        """
+        """Tests if the JSON output from _parse_demo() can be read"""
         self.parser._parse_demo()
         output_json = self.parser._read_json()
         assert type(output_json) is dict
 
     def test_parse(self):
-        """ Tests if the JSON output from parse is a dict
-        """
+        """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
         assert type(output_json) is dict
 
     def test_parsed_json(self):
-        """ Tests if the parsed JSON is correct
-        """
+        """Tests if the parsed JSON is correct"""
         data = self.parser.parse()
         assert data["MatchId"] == self.parser.demo_id
         assert data["ClientName"] == "GOTV Demo"
@@ -131,14 +122,12 @@ class TestDemoParser:
         assert data["GameRounds"][15]["RoundEndReason"] == "BombDefused"
 
     def test_parsed_wrong_type(self):
-        """ Tests wrote parse type
-        """
+        """Tests wrote parse type"""
         with pytest.raises(ValueError):
             self.parser.parse(return_type="bad")
 
     def test_parse_df(self):
-        """ Tests if df is parsed
-        """
+        """Tests if df is parsed"""
         data = self.parser.parse(return_type="df")
         assert "Rounds" in data.keys()
         assert type(data["Rounds"]) == pd.DataFrame
@@ -156,14 +145,12 @@ class TestDemoParser:
         assert type(data["Flashes"]) == pd.DataFrame
 
     def test_parse_bad_return(self):
-        """ Tests if parse fails on bad return type
-        """
+        """Tests if parse fails on bad return type"""
         with pytest.raises(ValueError):
             self.parser.parse(return_type="test")
 
     def test_parsed_frames(self):
-        """ Tests if frames parse correctly
-        """
+        """Tests if frames parse correctly"""
         data = self.parser.parse()
         frames_list = self.parser._parse_frames(return_type="list")
         frames_df = self.parser._parse_frames(return_type="df")
@@ -175,8 +162,7 @@ class TestDemoParser:
             self.parser._parse_frames(return_type="notalist")
 
     def test_parsed_frames_not_parsed(self):
-        """ Tests if frames parse correctly if not parsed
-        """
+        """Tests if frames parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -186,8 +172,7 @@ class TestDemoParser:
             self.parser_not_parsed._parse_frames(return_type="list")
 
     def test_parsed_player_frames(self):
-        """ Tests if player_frames parse correctly
-        """
+        """Tests if player_frames parse correctly"""
         data = self.parser.parse()
         player_frames_list = self.parser._parse_player_frames(return_type="list")
         player_frames_df = self.parser._parse_player_frames(return_type="df")
@@ -199,8 +184,7 @@ class TestDemoParser:
             self.parser._parse_player_frames(return_type="notalist")
 
     def test_parsed_player_frames_not_parsed(self):
-        """ Tests if player_frames parse correctly if not parsed
-        """
+        """Tests if player_frames parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -208,10 +192,9 @@ class TestDemoParser:
         )
         with pytest.raises(AttributeError):
             self.parser_not_parsed._parse_player_frames(return_type="list")
-    
+
     def test_parsed_rounds(self):
-        """ Tests if rounds parse correctly
-        """
+        """Tests if rounds parse correctly"""
         data = self.parser.parse()
         rounds_list = self.parser._parse_rounds(return_type="list")
         rounds_df = self.parser._parse_rounds(return_type="df")
@@ -223,8 +206,7 @@ class TestDemoParser:
             self.parser._parse_rounds(return_type="notalist")
 
     def test_parsed_rounds_not_parsed(self):
-        """ Tests if rounds parse correctly if not parsed
-        """
+        """Tests if rounds parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -234,8 +216,7 @@ class TestDemoParser:
             self.parser_not_parsed._parse_rounds(return_type="list")
 
     def test_parsed_kills(self):
-        """ Tests if kills parse correctly
-        """
+        """Tests if kills parse correctly"""
         data = self.parser.parse()
         kills_list = self.parser._parse_kills(return_type="list")
         kills_df = self.parser._parse_kills(return_type="df")
@@ -247,8 +228,7 @@ class TestDemoParser:
             self.parser._parse_kills(return_type="notalist")
 
     def test_parsed_kills_not_parsed(self):
-        """ Tests if kills parse correctly if not parsed
-        """
+        """Tests if kills parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -258,8 +238,7 @@ class TestDemoParser:
             self.parser_not_parsed._parse_kills(return_type="list")
 
     def test_parsed_damages(self):
-        """ Tests if damages parse correctly
-        """
+        """Tests if damages parse correctly"""
         data = self.parser.parse()
         damages_list = self.parser._parse_damages(return_type="list")
         damages_df = self.parser._parse_damages(return_type="df")
@@ -271,8 +250,7 @@ class TestDemoParser:
             self.parser._parse_damages(return_type="notalist")
 
     def test_parsed_damages_not_parsed(self):
-        """ Tests if damages parse correctly if not parsed
-        """
+        """Tests if damages parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -282,8 +260,7 @@ class TestDemoParser:
             self.parser_not_parsed._parse_damages(return_type="list")
 
     def test_parsed_grenades(self):
-        """ Tests if grenades parse correctly
-        """
+        """Tests if grenades parse correctly"""
         data = self.parser.parse()
         grenades_list = self.parser._parse_grenades(return_type="list")
         grenades_df = self.parser._parse_grenades(return_type="df")
@@ -295,8 +272,7 @@ class TestDemoParser:
             self.parser._parse_grenades(return_type="notalist")
 
     def test_parsed_grenades_not_parsed(self):
-        """ Tests if grenades parse correctly if not parsed
-        """
+        """Tests if grenades parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -306,8 +282,7 @@ class TestDemoParser:
             self.parser_not_parsed._parse_grenades(return_type="list")
 
     def test_parsed_flashes(self):
-        """ Tests if flashes parse correctly
-        """
+        """Tests if flashes parse correctly"""
         data = self.parser.parse()
         flashes_list = self.parser._parse_flashes(return_type="list")
         flashes_df = self.parser._parse_flashes(return_type="df")
@@ -319,8 +294,7 @@ class TestDemoParser:
             self.parser._parse_flashes(return_type="notalist")
 
     def test_parsed_flashes_not_parsed(self):
-        """ Tests if flashes parse correctly if not parsed
-        """
+        """Tests if flashes parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
@@ -330,8 +304,7 @@ class TestDemoParser:
             self.parser_not_parsed._parse_flashes(return_type="list")
 
     def test_parsed_bomb_events(self):
-        """ Tests if bomb_events parse correctly
-        """
+        """Tests if bomb_events parse correctly"""
         data = self.parser.parse()
         bomb_events_list = self.parser._parse_bomb_events(return_type="list")
         bomb_events_df = self.parser._parse_bomb_events(return_type="df")
@@ -343,8 +316,7 @@ class TestDemoParser:
             self.parser._parse_bomb_events(return_type="notalist")
 
     def test_parsed_bomb_events_not_parsed(self):
-        """ Tests if bomb_events parse correctly if not parsed
-        """
+        """Tests if bomb_events parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
