@@ -59,10 +59,10 @@ class TestDemoParser:
             metric="euclidean",
             map_name=self.data["MapName"],
         )
-        assert X.shape[0] == 10
-        assert X.shape[1] == 10
-        assert A.shape[0] == 10
-        assert A.shape[1] == 10
+        assert X.shape[0] == 9
+        assert X.shape[1] == 9
+        assert A.shape[0] == 9
+        assert A.shape[1] == 9
 
     def test_frame_to_graph_bad_map(self):
         """Tests if frame to graph fails on bad map name"""
