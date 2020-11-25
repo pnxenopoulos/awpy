@@ -32,6 +32,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
     if frame["T"]["Players"] is None or frame["CT"]["Players"] is None:
         raise ValueError("No players!")
     players = frame["T"]["Players"] + frame["CT"]["Players"]
+    # Create player nodes
     nodes = []
     for i, p in enumerate(players):
         if i < 5:
@@ -67,6 +68,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
                     p["DistToBombsiteB"],
                 ]
             )
+    # Create adjacency matrix
     adjacency = []
     for p1 in players:
         player_distances = []
@@ -87,6 +89,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
                             map=map_name,
                         )
                     )
+                adjacency.append(player_distances)
             else:
                 if metric == "graph":
                     player_distances.append(
@@ -103,7 +106,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
                             map=map_name,
                         )
                     )
-        adjacency.append(player_distances)
+                adjacency.append(player_distances)
     X = np.array(nodes)
     A = np.array(adjacency)
     return X, A
