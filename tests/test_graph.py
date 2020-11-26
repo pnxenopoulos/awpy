@@ -66,6 +66,19 @@ class TestDemoParser:
         assert A.shape[0] == 10
         assert A.shape[1] == 10
 
+    def test_graph_output_non_graph_dist_not_full(self):
+        """Tests if the graph output is of correct dimension using non-graph distance"""
+        X, A = frame_to_graph(
+            frame=self.data["GameRounds"][0]["Frames"][40],
+            metric="euclidean",
+            map_name=self.data["MapName"],
+            full=False
+        )
+        assert X.shape[0] == 5
+        assert X.shape[1] == 9
+        assert A.shape[0] == 5
+        assert A.shape[1] == 5
+
     def test_frame_to_graph_bad_map(self):
         """Tests if frame to graph fails on bad map name"""
         with pytest.raises(ValueError):
