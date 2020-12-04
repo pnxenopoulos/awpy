@@ -21,7 +21,7 @@ class DemoParser:
         ValueError : Raises a ValueError if the Golang version is lower than 1.14
     """
 
-    def __init__(self, demofile="", outfile=None, log=False, demo_id=None, parse_rate=None):
+    def __init__(self, demofile="", outpath=None, log=False, demo_id=None, parse_rate=None):
         # Set up logger
         if log:
             logging.basicConfig(
