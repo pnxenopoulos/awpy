@@ -14,7 +14,8 @@ class TestDemoParser:
     def setup_class(self):
         """Setup class by instantiating parser"""
         self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=True,
             demo_id="test",
             parse_rate=128,
@@ -27,7 +28,8 @@ class TestDemoParser:
     def test_demo_id_inferred(self):
         """Tests if a demo_id is correctly inferred"""
         self.parser_inferred = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
         )
         assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
@@ -41,6 +43,7 @@ class TestDemoParser:
         with pytest.raises(ValueError):
             self.parser_wrong_demo_path = DemoParser(
                 demofile="bad.dem",
+                outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
                 log=False,
                 demo_id="test",
                 parse_rate=128,
@@ -49,7 +52,8 @@ class TestDemoParser:
     def test_parse_rate_bad(self):
         """Tests if bad parse rates fail"""
         self.parser_bad_parse_rate = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
             parse_rate=129,
@@ -59,7 +63,8 @@ class TestDemoParser:
     def test_parse_rate_good(self):
         """Tests if good parse rates are set"""
         self.parser_diff_parse_rate = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
             parse_rate=16,
@@ -69,7 +74,8 @@ class TestDemoParser:
     def test_parse_rate_inferred(self):
         """Tests if good parse rates are set"""
         self.parser_inferred_parse_rate = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
@@ -164,7 +170,8 @@ class TestDemoParser:
     def test_parsed_frames_not_parsed(self):
         """Tests if frames parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
@@ -186,7 +193,8 @@ class TestDemoParser:
     def test_parsed_player_frames_not_parsed(self):
         """Tests if player_frames parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
@@ -208,7 +216,8 @@ class TestDemoParser:
     def test_parsed_rounds_not_parsed(self):
         """Tests if rounds parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
@@ -230,7 +239,8 @@ class TestDemoParser:
     def test_parsed_kills_not_parsed(self):
         """Tests if kills parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
@@ -252,7 +262,8 @@ class TestDemoParser:
     def test_parsed_damages_not_parsed(self):
         """Tests if damages parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
@@ -274,7 +285,8 @@ class TestDemoParser:
     def test_parsed_grenades_not_parsed(self):
         """Tests if grenades parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
@@ -296,7 +308,8 @@ class TestDemoParser:
     def test_parsed_flashes_not_parsed(self):
         """Tests if flashes parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
@@ -318,7 +331,8 @@ class TestDemoParser:
     def test_parsed_bomb_events_not_parsed(self):
         """Tests if bomb_events parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
             log=False,
             demo_id="test",
         )
