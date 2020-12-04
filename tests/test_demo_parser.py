@@ -318,7 +318,7 @@ class TestDemoParser:
     def test_parsed_bomb_events_not_parsed(self):
         """Tests if bomb_events parse correctly if not parsed"""
         self.parser_not_parsed = DemoParser(
-            demofile="csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
         )
