@@ -52,21 +52,21 @@ class DemoParser:
             self.logger.info("Go version>=1.14.0")
 
         # Check if demofile exists
-        if not os.path.exists(demofile):
+        if not os.path.exists(os.path.abspath(demofile)):
             self.logger.error("Demofile path does not exist!")
             raise ValueError("Demofile path does not exist!")
 
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
-        self.demofile = demofile
+        self.demofile = os.path.abspath(demofile)
         self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
         if demo_id is None:
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
             self.demo_id = demo_id
         if outpath is None:
-            self.outpath = os.getcwd()
+            self.outpath = os.path.abspath(os.getcwd())
         else:
-            self.outpath = outpath
+            self.outpath = os.path.abspath(outpath)
         self.logger.info("Setting demo id to " + self.demo_id)
 
         # Handle parse rate. Must be a power of 2^0 to 2^7. If not, then default to 2^5.

@@ -15,8 +15,7 @@ class TestDemoParser:
     def setup_class(self):
         """Setup class by instantiating parser"""
         self.parser = DemoParser(
-            demofile="/home/travis/build/pnxenopoulos/csgo/tests/og-vs-natus-vincere-m1-dust2.dem",
-            outpath="/home/travis/build/pnxenopoulos/csgo/tests/",
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
             parse_rate=128,
