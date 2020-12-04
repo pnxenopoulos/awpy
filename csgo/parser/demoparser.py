@@ -21,7 +21,7 @@ class DemoParser:
         ValueError : Raises a ValueError if the Golang version is lower than 1.14
     """
 
-    def __init__(self, demofile="", log=False, demo_id=None, parse_rate=None):
+    def __init__(self, demofile="", outfile=None, log=False, demo_id=None, parse_rate=None):
         # Set up logger
         if log:
             logging.basicConfig(
@@ -63,6 +63,10 @@ class DemoParser:
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
             self.demo_id = demo_id
+        if outpath is None:
+            self.outpath = os.getcwd()
+        else:
+            self.outpath = outpath
         self.logger.info("Setting demo id to " + self.demo_id)
 
         # Handle parse rate. Must be a power of 2^0 to 2^7. If not, then default to 2^5.
@@ -88,20 +92,20 @@ class DemoParser:
         """
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
-        self.logger.info("Looking for file at " + os.getcwd() + "/" + self.demofile)
+        self.logger.info("Looking for file at " + self.demofile)
         proc = subprocess.Popen(
             [
                 "go",
                 "run",
                 "parse_demo.go",
                 "-demo",
-                os.getcwd() + "/" + self.demofile,
+                self.demofile,
                 "-parserate",
                 str(self.parse_rate),
                 "-demoid",
                 str(self.demo_id),
                 "-out",
-                os.getcwd(),
+                self.outpath,
             ],
             stdout=subprocess.PIPE,
             cwd=path,
