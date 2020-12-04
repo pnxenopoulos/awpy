@@ -124,7 +124,7 @@ class DemoParser:
         Returns:
             A dictionary of the JSON output of _parse_demo()
         """
-        json_path = self.output_file
+        json_path = self.outpath + "/" + self.output_file
         self.logger.info("Reading in JSON from " + self.output_file)
         with open(json_path) as f:
             demo_data = json.load(f)
