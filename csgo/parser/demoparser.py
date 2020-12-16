@@ -363,12 +363,13 @@ class DemoParser:
         try:
             kills = []
             for r in self.json["GameRounds"]:
-                for k in r["Kills"]:
-                    new_k = k
-                    new_k["RoundNum"] = r["RoundNum"]
-                    new_k["MatchId"] = self.demo_id
-                    new_k["MapName"] = self.json["MapName"]
-                    kills.append(new_k)
+                if r["Kills"] is not None:
+                    for k in r["Kills"]:
+                        new_k = k
+                        new_k["RoundNum"] = r["RoundNum"]
+                        new_k["MatchId"] = self.demo_id
+                        new_k["MapName"] = self.json["MapName"]
+                        kills.append(new_k)
             if return_type == "list":
                 self.logger.info("Parsed kills to list")
                 return kills
@@ -395,12 +396,13 @@ class DemoParser:
         if self.json:
             damages = []
             for r in self.json["GameRounds"]:
-                for d in r["Damages"]:
-                    new_d = d
-                    new_d["RoundNum"] = r["RoundNum"]
-                    new_d["MatchId"] = self.demo_id
-                    new_d["MapName"] = self.json["MapName"]
-                    damages.append(new_d)
+                if r["Damages"] is not None:
+                    for d in r["Damages"]:
+                        new_d = d
+                        new_d["RoundNum"] = r["RoundNum"]
+                        new_d["MatchId"] = self.demo_id
+                        new_d["MapName"] = self.json["MapName"]
+                        damages.append(new_d)
             if return_type == "list":
                 self.logger.info("Parsed damages to list")
                 return damages
@@ -429,12 +431,13 @@ class DemoParser:
         if self.json:
             grenades = []
             for r in self.json["GameRounds"]:
-                for g in r["Grenades"]:
-                    new_g = g
-                    new_g["RoundNum"] = r["RoundNum"]
-                    new_g["MatchId"] = self.demo_id
-                    new_g["MapName"] = self.json["MapName"]
-                    grenades.append(new_g)
+                if r["Grenades"] is not None:
+                    for g in r["Grenades"]:
+                        new_g = g
+                        new_g["RoundNum"] = r["RoundNum"]
+                        new_g["MatchId"] = self.demo_id
+                        new_g["MapName"] = self.json["MapName"]
+                        grenades.append(new_g)
             if return_type == "list":
                 self.logger.info("Parsed grenades to list")
                 return grenades
@@ -496,12 +499,13 @@ class DemoParser:
         if self.json:
             flashes = []
             for r in self.json["GameRounds"]:
-                for f in r["Flashes"]:
-                    new_f = f
-                    new_f["RoundNum"] = r["RoundNum"]
-                    new_f["MatchId"] = self.demo_id
-                    new_f["MapName"] = self.json["MapName"]
-                    flashes.append(new_f)
+                if r["Flashes"] is not None:
+                    for f in r["Flashes"]:
+                            new_f = f
+                            new_f["RoundNum"] = r["RoundNum"]
+                            new_f["MatchId"] = self.demo_id
+                            new_f["MapName"] = self.json["MapName"]
+                            flashes.append(new_f)
             if return_type == "list":
                 self.logger.info("Parsed flashes to list")
                 return flashes
