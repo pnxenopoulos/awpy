@@ -103,42 +103,79 @@ def frame_to_graph(frame, metric, map_name, full=False):
     adjacency = []
     for p1 in players:
         player_distances = []
-        if p1["IsAlive"]:
+        if full:
             for p2 in players:
-                if p2["IsAlive"]:
-                    if full:
-                        if metric == "graph":
-                            player_distances.append(
-                                area_distance(
-                                    area_one=p1["AreaId"], area_two=p2["AreaId"], map=map_name
+                    if p2["IsAlive"]:
+                        if full:
+                            if metric == "graph":
+                                player_distances.append(
+                                    area_distance(
+                                        area_one=p1["AreaId"], area_two=p2["AreaId"], map=map_name
+                                    )
                                 )
-                            )
+                            else:
+                                player_distances.append(
+                                    point_distance(
+                                        point_a=[p1["X"], p1["Y"], p1["Z"]],
+                                        point_b=[p2["X"], p2["Y"], p2["Z"]],
+                                        type=metric,
+                                        map=map_name,
+                                    )
+                                )
                         else:
-                            player_distances.append(
-                                point_distance(
-                                    point_a=[p1["X"], p1["Y"], p1["Z"]],
-                                    point_b=[p2["X"], p2["Y"], p2["Z"]],
-                                    type=metric,
-                                    map=map_name,
+                            if metric == "graph":
+                                player_distances.append(
+                                    area_distance(
+                                        area_one=p1["AreaId"], area_two=p2["AreaId"], map=map_name
+                                    )
                                 )
-                            )
-                    else:
-                        if metric == "graph":
-                            player_distances.append(
-                                area_distance(
-                                    area_one=p1["AreaId"], area_two=p2["AreaId"], map=map_name
+                            else:
+                                player_distances.append(
+                                    point_distance(
+                                        point_a=[p1["X"], p1["Y"], p1["Z"]],
+                                        point_b=[p2["X"], p2["Y"], p2["Z"]],
+                                        type=metric,
+                                        map=map_name,
+                                    )
                                 )
-                            )
+                adjacency.append(player_distances)
+        else:
+            if p1["IsAlive"]:
+                for p2 in players:
+                    if p2["IsAlive"]:
+                        if full:
+                            if metric == "graph":
+                                player_distances.append(
+                                    area_distance(
+                                        area_one=p1["AreaId"], area_two=p2["AreaId"], map=map_name
+                                    )
+                                )
+                            else:
+                                player_distances.append(
+                                    point_distance(
+                                        point_a=[p1["X"], p1["Y"], p1["Z"]],
+                                        point_b=[p2["X"], p2["Y"], p2["Z"]],
+                                        type=metric,
+                                        map=map_name,
+                                    )
+                                )
                         else:
-                            player_distances.append(
-                                point_distance(
-                                    point_a=[p1["X"], p1["Y"], p1["Z"]],
-                                    point_b=[p2["X"], p2["Y"], p2["Z"]],
-                                    type=metric,
-                                    map=map_name,
+                            if metric == "graph":
+                                player_distances.append(
+                                    area_distance(
+                                        area_one=p1["AreaId"], area_two=p2["AreaId"], map=map_name
+                                    )
                                 )
-                            )
-            adjacency.append(player_distances)
+                            else:
+                                player_distances.append(
+                                    point_distance(
+                                        point_a=[p1["X"], p1["Y"], p1["Z"]],
+                                        point_b=[p2["X"], p2["Y"], p2["Z"]],
+                                        type=metric,
+                                        map=map_name,
+                                    )
+                                )
+                adjacency.append(player_distances)
     X = np.array(nodes)
     A = np.array(adjacency)
     return X, A
