@@ -34,40 +34,71 @@ def frame_to_graph(frame, metric, map_name, full=False):
     players = frame["T"]["Players"] + frame["CT"]["Players"]
     # Create player nodes
     nodes = []
-    for i, p in enumerate(players):
-        if i < 5:
+    # Go through T
+    if len(frame["T"]["Players"]) > 0:
+        for p in frame["T"]["Players"]:
             side_ind = 0
-        else:
+            if full:
+                nodes.append(
+                    [
+                        side_ind,
+                        p["IsAlive"],
+                        p["Hp"],
+                        p["Armor"],
+                        p["EquipmentValue"],
+                        p["HasHelmet"],
+                        p["HasDefuse"],
+                        p["TotalUtility"],
+                        p["DistToBombsiteA"],
+                        p["DistToBombsiteB"],
+                    ]
+                )
+            elif full is False and p["IsAlive"] is True:
+                nodes.append(
+                    [
+                        side_ind,
+                        p["Hp"],
+                        p["Armor"],
+                        p["EquipmentValue"],
+                        p["HasHelmet"],
+                        p["HasDefuse"],
+                        p["TotalUtility"],
+                        p["DistToBombsiteA"],
+                        p["DistToBombsiteB"],
+                    ]
+                )
+    if len(frame["CT"]["Players"]) > 0:
+        for p in frame["CT"]["Players"]:
             side_ind = 1
-        if full:
-            nodes.append(
-                [
-                    side_ind,
-                    p["IsAlive"],
-                    p["Hp"],
-                    p["Armor"],
-                    p["EquipmentValue"],
-                    p["HasHelmet"],
-                    p["HasDefuse"],
-                    p["TotalUtility"],
-                    p["DistToBombsiteA"],
-                    p["DistToBombsiteB"],
-                ]
-            )
-        elif full is False and p["IsAlive"] is True:
-            nodes.append(
-                [
-                    side_ind,
-                    p["Hp"],
-                    p["Armor"],
-                    p["EquipmentValue"],
-                    p["HasHelmet"],
-                    p["HasDefuse"],
-                    p["TotalUtility"],
-                    p["DistToBombsiteA"],
-                    p["DistToBombsiteB"],
-                ]
-            )
+            if full:
+                nodes.append(
+                    [
+                        side_ind,
+                        p["IsAlive"],
+                        p["Hp"],
+                        p["Armor"],
+                        p["EquipmentValue"],
+                        p["HasHelmet"],
+                        p["HasDefuse"],
+                        p["TotalUtility"],
+                        p["DistToBombsiteA"],
+                        p["DistToBombsiteB"],
+                    ]
+                )
+            elif full is False and p["IsAlive"] is True:
+                nodes.append(
+                    [
+                        side_ind,
+                        p["Hp"],
+                        p["Armor"],
+                        p["EquipmentValue"],
+                        p["HasHelmet"],
+                        p["HasDefuse"],
+                        p["TotalUtility"],
+                        p["DistToBombsiteA"],
+                        p["DistToBombsiteB"],
+                    ]
+                )
     # Create adjacency matrix
     adjacency = []
     for p1 in players:
