@@ -34,7 +34,6 @@ def frame_to_graph(frame, metric, map_name, full=False):
     players = frame["T"]["Players"] + frame["CT"]["Players"]
     # Create player nodes
     nodes = []
-    # Go through T
     if len(frame["T"]["Players"]) > 0:
         for p in frame["T"]["Players"]:
             side_ind = 0
