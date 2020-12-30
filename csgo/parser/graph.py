@@ -119,7 +119,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
                             map=map_name,
                         )
                     )
-                adjacency.append(player_distances)
+            adjacency.append(player_distances)
         else:
             if p1["IsAlive"]:
                 for p2 in players:
@@ -141,7 +141,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
                                     map=map_name,
                                 )
                             )
-                        adjacency.append(player_distances)
+                adjacency.append(player_distances)
     X = np.array(nodes)
     A = np.array(adjacency)
     return X, A
