@@ -21,7 +21,9 @@ class DemoParser:
         ValueError : Raises a ValueError if the Golang version is lower than 1.14
     """
 
-    def __init__(self, demofile="", outpath=None, log=False, demo_id=None, parse_rate=None):
+    def __init__(
+        self, demofile="", outpath=None, log=False, demo_id=None, parse_rate=None
+    ):
         # Set up logger
         if log:
             logging.basicConfig(
@@ -501,11 +503,11 @@ class DemoParser:
             for r in self.json["GameRounds"]:
                 if r["Flashes"] is not None:
                     for f in r["Flashes"]:
-                            new_f = f
-                            new_f["RoundNum"] = r["RoundNum"]
-                            new_f["MatchId"] = self.demo_id
-                            new_f["MapName"] = self.json["MapName"]
-                            flashes.append(new_f)
+                        new_f = f
+                        new_f["RoundNum"] = r["RoundNum"]
+                        new_f["MatchId"] = self.demo_id
+                        new_f["MapName"] = self.json["MapName"]
+                        flashes.append(new_f)
             if return_type == "list":
                 self.logger.info("Parsed flashes to list")
                 return flashes
