@@ -1,11 +1,14 @@
 import pytest
 
+import numpy as np
+
 from csgo.analytics.distance import (
     bombsite_distance,
     point_distance,
     polygon_area,
     area_distance,
 )
+from csgo.analytics.coords import PlaceEncode
 from csgo.utils import AutoVivification
 
 
@@ -57,3 +60,11 @@ class TestCSGOAnalytics:
         Tests that area distance returns correct value.
         """
         assert area_distance(26, 42, map="de_mirage") == 26
+
+    def test_place_encode(self):
+        """
+        Tests that place encoding works for correct values
+        """
+        e = PlaceEncode()
+        assert np.sum(e.encode("TSpawn")) == 1
+        assert np.sum(e.encode("TSpawnnn")) == 0
