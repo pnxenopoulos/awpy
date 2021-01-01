@@ -65,7 +65,7 @@ class TestCSGOAnalytics:
         """
         Tests that place encoding works for correct values
         """
-        e = PlaceEncode()
+        e = Encoder()
         assert np.sum(e.encode("place", "TSpawn")) == 1
         assert np.sum(e.encode("place", "TSpawnnn")) == 0
         assert np.sum(e.encode("map", "de_dust2")) == 1
