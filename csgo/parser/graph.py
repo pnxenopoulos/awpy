@@ -3,6 +3,7 @@ import numpy as np
 from csgo.analytics.distance import area_distance, point_distance
 from csgo.analytics.coords import Encoder
 
+
 def frame_to_graph(frame, metric, map_name, full=False, places=False):
     """Transforms a frame to a graph
 
@@ -41,29 +42,29 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
             side_ind = 0
             if full:
                 item = [
-                        side_ind,
-                        p["IsAlive"],
-                        p["Hp"],
-                        p["Armor"],
-                        p["EquipmentValue"],
-                        p["HasHelmet"],
-                        p["HasDefuse"],
-                        p["TotalUtility"],
-                        p["DistToBombsiteA"],
-                        p["DistToBombsiteB"],
-                    ]
+                    side_ind,
+                    p["IsAlive"],
+                    p["Hp"],
+                    p["Armor"],
+                    p["EquipmentValue"],
+                    p["HasHelmet"],
+                    p["HasDefuse"],
+                    p["TotalUtility"],
+                    p["DistToBombsiteA"],
+                    p["DistToBombsiteB"],
+                ]
             elif full is False and p["IsAlive"] is True:
                 item = [
-                        side_ind,
-                        p["Hp"],
-                        p["Armor"],
-                        p["EquipmentValue"],
-                        p["HasHelmet"],
-                        p["HasDefuse"],
-                        p["TotalUtility"],
-                        p["DistToBombsiteA"],
-                        p["DistToBombsiteB"],
-                    ]
+                    side_ind,
+                    p["Hp"],
+                    p["Armor"],
+                    p["EquipmentValue"],
+                    p["HasHelmet"],
+                    p["HasDefuse"],
+                    p["TotalUtility"],
+                    p["DistToBombsiteA"],
+                    p["DistToBombsiteB"],
+                ]
             if places:
                 item.extend(encoder.encode("places", p["AreaName"]))
             nodes.append(item)
@@ -72,29 +73,29 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
             side_ind = 1
             if full:
                 item = [
-                        side_ind,
-                        p["IsAlive"],
-                        p["Hp"],
-                        p["Armor"],
-                        p["EquipmentValue"],
-                        p["HasHelmet"],
-                        p["HasDefuse"],
-                        p["TotalUtility"],
-                        p["DistToBombsiteA"],
-                        p["DistToBombsiteB"],
-                    ]
+                    side_ind,
+                    p["IsAlive"],
+                    p["Hp"],
+                    p["Armor"],
+                    p["EquipmentValue"],
+                    p["HasHelmet"],
+                    p["HasDefuse"],
+                    p["TotalUtility"],
+                    p["DistToBombsiteA"],
+                    p["DistToBombsiteB"],
+                ]
             elif full is False and p["IsAlive"] is True:
                 item = [
-                        side_ind,
-                        p["Hp"],
-                        p["Armor"],
-                        p["EquipmentValue"],
-                        p["HasHelmet"],
-                        p["HasDefuse"],
-                        p["TotalUtility"],
-                        p["DistToBombsiteA"],
-                        p["DistToBombsiteB"],
-                    ]
+                    side_ind,
+                    p["Hp"],
+                    p["Armor"],
+                    p["EquipmentValue"],
+                    p["HasHelmet"],
+                    p["HasDefuse"],
+                    p["TotalUtility"],
+                    p["DistToBombsiteA"],
+                    p["DistToBombsiteB"],
+                ]
             if places:
                 item.extend(encoder.encode("places", p["AreaName"]))
             nodes.append(item)

@@ -27,8 +27,7 @@ class TestDemoParser:
     def test_demo_id_inferred(self):
         """Tests if a demo_id is correctly inferred"""
         self.parser_inferred = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=False,
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False,
         )
         assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
 
@@ -40,10 +39,7 @@ class TestDemoParser:
         """Tests if failure on wrong demofile path"""
         with pytest.raises(ValueError):
             self.parser_wrong_demo_path = DemoParser(
-                demofile="bad.dem",
-                log=False,
-                demo_id="test",
-                parse_rate=128,
+                demofile="bad.dem", log=False, demo_id="test", parse_rate=128,
             )
 
     def test_parse_rate_bad(self):

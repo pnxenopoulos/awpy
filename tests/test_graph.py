@@ -33,7 +33,7 @@ class TestDemoParser:
             frame=self.data["GameRounds"][0]["Frames"][0],
             metric="graph",
             map_name=self.data["MapName"],
-            full=True
+            full=True,
         )
         assert X.shape[0] == 10
         assert X.shape[1] == 10
@@ -59,7 +59,7 @@ class TestDemoParser:
             frame=self.data["GameRounds"][0]["Frames"][0],
             metric="euclidean",
             map_name=self.data["MapName"],
-            full=True
+            full=True,
         )
         assert X.shape[0] == 10
         assert X.shape[1] == 10
@@ -72,7 +72,7 @@ class TestDemoParser:
             frame=self.data["GameRounds"][0]["Frames"][40],
             metric="euclidean",
             map_name=self.data["MapName"],
-            full=False
+            full=False,
         )
         assert X.shape[0] == 5
         assert X.shape[1] == 9
@@ -104,7 +104,7 @@ class TestDemoParser:
             metric="euclidean",
             map_name=self.data["MapName"],
             full=True,
-            places=True
+            places=True,
         )
         assert X.shape[0] == 10
         assert X.shape[1] == 120
