@@ -8,7 +8,7 @@ from csgo.analytics.distance import (
     polygon_area,
     area_distance,
 )
-from csgo.analytics.coords import PlaceEncode
+from csgo.analytics.coords import Encoder
 from csgo.utils import AutoVivification
 
 

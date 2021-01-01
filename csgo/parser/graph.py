@@ -1,9 +1,9 @@
 import numpy as np
 
 from csgo.analytics.distance import area_distance, point_distance
+from csgo.analytics.coords import Encoder
 
-
-def frame_to_graph(frame, metric, map_name, full=False):
+def frame_to_graph(frame, metric, map_name, full=False, places=False):
     """Transforms a frame to a graph
 
     Args:
@@ -11,6 +11,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
         metric (string)    : A string indicating "graph" for graph distance or one of 'euclidean', 'manhattan', 'canberra', 'cosine'
         map_name (string)  : A string indicating the map
         full (boolean)     : True for full graphs (force 10 nodes) or False for graph of only alive players
+        places (boolean)   : True to include a 110 long OHE vector of player location, False otherwise
 
         Returns:
             A (np.array) : Adjacency matrix using graph distances
@@ -31,6 +32,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
         )
     if frame["T"]["Players"] is None or frame["CT"]["Players"] is None:
         raise ValueError("No players!")
+    encoder = Encoder()
     players = frame["T"]["Players"] + frame["CT"]["Players"]
     # Create player nodes
     nodes = []
@@ -38,8 +40,7 @@ def frame_to_graph(frame, metric, map_name, full=False):
         for p in frame["T"]["Players"]:
             side_ind = 0
             if full:
-                nodes.append(
-                    [
+                item = [
                         side_ind,
                         p["IsAlive"],
                         p["Hp"],
@@ -51,10 +52,8 @@ def frame_to_graph(frame, metric, map_name, full=False):
                         p["DistToBombsiteA"],
                         p["DistToBombsiteB"],
                     ]
-                )
             elif full is False and p["IsAlive"] is True:
-                nodes.append(
-                    [
+                item = [
                         side_ind,
                         p["Hp"],
                         p["Armor"],
@@ -65,13 +64,14 @@ def frame_to_graph(frame, metric, map_name, full=False):
                         p["DistToBombsiteA"],
                         p["DistToBombsiteB"],
                     ]
-                )
+            if places:
+                item.extend(encoder.encode("places", p["AreaName"]))
+            nodes.append(item)
     if len(frame["CT"]["Players"]) > 0:
         for p in frame["CT"]["Players"]:
             side_ind = 1
             if full:
-                nodes.append(
-                    [
+                item = [
                         side_ind,
                         p["IsAlive"],
                         p["Hp"],
@@ -83,10 +83,8 @@ def frame_to_graph(frame, metric, map_name, full=False):
                         p["DistToBombsiteA"],
                         p["DistToBombsiteB"],
                     ]
-                )
             elif full is False and p["IsAlive"] is True:
-                nodes.append(
-                    [
+                item = [
                         side_ind,
                         p["Hp"],
                         p["Armor"],
@@ -97,7 +95,9 @@ def frame_to_graph(frame, metric, map_name, full=False):
                         p["DistToBombsiteA"],
                         p["DistToBombsiteB"],
                     ]
-                )
+            if places:
+                item.extend(encoder.encode("places", p["AreaName"]))
+            nodes.append(item)
     # Create adjacency matrix
     adjacency = []
     for p1 in players:

@@ -96,3 +96,17 @@ class TestDemoParser:
                 metric="graph",
                 map_name=self.data["MapName"],
             )
+
+    def test_frame_to_graph_places(self):
+        """Tests if frame to graph fails on places=True"""
+        X, A = frame_to_graph(
+            frame=self.data["GameRounds"][0]["Frames"][40],
+            metric="euclidean",
+            map_name=self.data["MapName"],
+            full=True,
+            places=True
+        )
+        assert X.shape[0] == 10
+        assert X.shape[1] == 120
+        assert A.shape[0] == 10
+        assert A.shape[1] == 10
