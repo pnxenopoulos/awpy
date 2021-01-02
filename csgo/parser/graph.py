@@ -68,7 +68,10 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                 ]
             if places:
                 item.extend(encoder.encode("places", p["AreaName"]))
-            nodes.append(item)
+            if full is False and p["IsAlive"] is True:
+                nodes.append(item)
+            else:
+                nodes.append(item)
     if len(frame["CT"]["Players"]) > 0:
         side_ind = 1
         for p in frame["CT"]["Players"]:
@@ -100,7 +103,10 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                 ]
             if places:
                 item.extend(encoder.encode("places", p["AreaName"]))
-            nodes.append(item)
+            if full is False and p["IsAlive"] is True:
+                nodes.append(item)
+            else:
+                nodes.append(item)
     # Create adjacency matrix
     adjacency = []
     for p1 in players:
