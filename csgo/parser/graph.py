@@ -54,6 +54,9 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                     p["DistToBombsiteA"],
                     p["DistToBombsiteB"],
                 ]
+                if places:
+                    item.extend(encoder.encode("places", p["AreaName"]))
+                nodes.append(item)
             elif full is False and p["IsAlive"] is True:
                 item = [
                     side_ind,
@@ -66,11 +69,8 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                     p["DistToBombsiteA"],
                     p["DistToBombsiteB"],
                 ]
-            if places:
-                item.extend(encoder.encode("places", p["AreaName"]))
-            if full is False and p["IsAlive"] is True:
-                nodes.append(item)
-            else:
+                if places:
+                    item.extend(encoder.encode("places", p["AreaName"]))
                 nodes.append(item)
     if len(frame["CT"]["Players"]) > 0:
         side_ind = 1
@@ -89,6 +89,9 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                     p["DistToBombsiteA"],
                     p["DistToBombsiteB"],
                 ]
+                if places:
+                    item.extend(encoder.encode("places", p["AreaName"]))
+                nodes.append(item)
             elif full is False and p["IsAlive"] is True:
                 item = [
                     side_ind,
@@ -101,11 +104,8 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                     p["DistToBombsiteA"],
                     p["DistToBombsiteB"],
                 ]
-            if places:
-                item.extend(encoder.encode("places", p["AreaName"]))
-            if full is False and p["IsAlive"] is True:
-                nodes.append(item)
-            else:
+                if places:
+                    item.extend(encoder.encode("places", p["AreaName"]))
                 nodes.append(item)
     # Create adjacency matrix
     adjacency = []
