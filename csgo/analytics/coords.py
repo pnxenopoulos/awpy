@@ -138,11 +138,17 @@ class Encoder:
     def encode(self, type, item):
         if type == "place":
             output = [0 for i in range(self.places_len)]
-            obj_idx = self.places.index(item)
-        if type == "map":
+        elif type == "map":
             output = [0 for i in range(self.maps_len)]
-            obj_idx = self.maps.index(item)
+        else:
+            output = [0 for i in range(self.places_len)]
         try:
+            if type == "place":
+                obj_idx = self.places.index(item)
+            elif type == "map":
+                obj_idx = self.maps.index(item)
+            else:
+                obj_idx = self.places.index(item)
             output[obj_idx] = 1
         except ValueError:
             pass

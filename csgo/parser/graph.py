@@ -38,8 +38,9 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
     # Create player nodes
     nodes = []
     if len(frame["T"]["Players"]) > 0:
+        side_ind = 0
         for p in frame["T"]["Players"]:
-            side_ind = 0
+            item = []
             if full:
                 item = [
                     side_ind,
@@ -69,8 +70,9 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                 item.extend(encoder.encode("places", p["AreaName"]))
             nodes.append(item)
     if len(frame["CT"]["Players"]) > 0:
+        side_ind = 1
         for p in frame["CT"]["Players"]:
-            side_ind = 1
+            item = []
             if full:
                 item = [
                     side_ind,
