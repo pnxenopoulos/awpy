@@ -4,15 +4,16 @@ from csgo.analytics.distance import area_distance, point_distance
 from csgo.analytics.coords import Encoder
 
 
-def frame_to_graph(frame, metric, map_name, full=False, places=False):
+def frame_to_graph(frame, metric, map_name, full=False, places=False, coordinates=False):
     """Transforms a frame to a graph
 
     Args:
-        frame (dictionary) : A frame from the dict in csgo.parser.DemoParser
-        metric (string)    : A string indicating "graph" for graph distance or one of 'euclidean', 'manhattan', 'canberra', 'cosine'
-        map_name (string)  : A string indicating the map
-        full (boolean)     : True for full graphs (force 10 nodes) or False for graph of only alive players
-        places (boolean)   : True to include a 110 long OHE vector of player location, False otherwise
+        frame (dictionary)    : A frame from the dict in csgo.parser.DemoParser
+        metric (string)       : A string indicating "graph" for graph distance or one of 'euclidean', 'manhattan', 'canberra', 'cosine'
+        map_name (string)     : A string indicating the map
+        full (boolean)        : True for full graphs (force 10 nodes) or False for graph of only alive players
+        places (boolean)      : True to include a 110 long OHE vector of player location, False otherwise
+        coordinates (boolean) : True to include player X/Y/Z, False otherwise
 
         Returns:
             A (np.array) : Adjacency matrix using graph distances
@@ -54,6 +55,8 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                     p["DistToBombsiteA"],
                     p["DistToBombsiteB"],
                 ]
+                if coordinates:
+                    item.extend([p["X"], p["Y"], p["Z"]])
                 if places:
                     item.extend(encoder.encode("places", p["AreaName"]))
                 nodes.append(item)
@@ -69,6 +72,8 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                     p["DistToBombsiteA"],
                     p["DistToBombsiteB"],
                 ]
+                if coordinates:
+                    item.extend([p["X"], p["Y"], p["Z"]])
                 if places:
                     item.extend(encoder.encode("places", p["AreaName"]))
                 nodes.append(item)
@@ -89,6 +94,8 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                     p["DistToBombsiteA"],
                     p["DistToBombsiteB"],
                 ]
+                if coordinates:
+                    item.extend([p["X"], p["Y"], p["Z"]])
                 if places:
                     item.extend(encoder.encode("places", p["AreaName"]))
                 nodes.append(item)
@@ -104,6 +111,8 @@ def frame_to_graph(frame, metric, map_name, full=False, places=False):
                     p["DistToBombsiteA"],
                     p["DistToBombsiteB"],
                 ]
+                if coordinates:
+                    item.extend([p["X"], p["Y"], p["Z"]])
                 if places:
                     item.extend(encoder.encode("places", p["AreaName"]))
                 nodes.append(item)
