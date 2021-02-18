@@ -522,12 +522,6 @@ func acceptableGamePhase(gs dem.GameState) bool {
 	} else {
 		return false
 	}
-	//return true
-	//if (gp == 2) || (gp == 3) || (gp == 4) {
-	//	return true
-	//} else {
-	//	return false
-	//}
 }
 
 func isTrade(killA KillAction, killB KillAction) bool {
@@ -718,21 +712,21 @@ func main() {
 	InfoLogger.Println("Registering event handlers, parsing demo")
 
 	// Parse round starts, which sometimes happen when MatchStartedChanged
-	p.RegisterEventHandler(func(e events.MatchStartedChanged) {	
-		gs := p.GameState()
-
-		if (acceptableGamePhase(gs)) && (roundStarted == 0) && (e.NewIsStarted == true) {
-			roundStarted = 1
-			roundInFreezetime = 0 // When match starts, the freezetime is usually good to go
-			roundInEndTime = 0
-			currentRound = GameRound{}
-			currentRound.RoundNum = int64(len(currentGame.Rounds)+1)
-			currentRound.StartTick = int64(gs.IngameTick())
-			currentRound.FreezeTimeEnd = int64(gs.IngameTick())
-			currentRound.TScore = int64(gs.TeamTerrorists().Score())
-			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		}
-	})
+	//p.RegisterEventHandler(func(e events.MatchStartedChanged) {	
+	//	gs := p.GameState()
+	//
+	//	if (acceptableGamePhase(gs)) && (roundStarted == 0) && (e.NewIsStarted == true) {
+	//		roundStarted = 1
+	//		roundInFreezetime = 0
+	//		roundInEndTime = 0
+	//		currentRound = GameRound{}
+	//		currentRound.RoundNum = int64(len(currentGame.Rounds)+1)
+	//		currentRound.StartTick = int64(gs.IngameTick())
+	//		currentRound.FreezeTimeEnd = int64(gs.IngameTick())
+	//		currentRound.TScore = int64(gs.TeamTerrorists().Score())
+	//		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+	//	}
+	//})
 
 	// Parse round starts
 	p.RegisterEventHandler(func(e events.RoundStart) {
@@ -791,6 +785,7 @@ func main() {
 
 		if (acceptableGamePhase(gs)) {
 			roundInEndTime = 1
+
 			winningTeam := "CT"
 			switch e.Winner {
 			case common.TeamTerrorists:
@@ -800,14 +795,16 @@ func main() {
 			default:
 				winningTeam = "Unknown"
 			}
+
 			currentRound.EndTick = int64(gs.IngameTick())
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 			currentRound.Reason = convertRoundEndReason(e.Reason)
 			currentRound.WinningSide = winningTeam
 			currentRound.LosingTeam = e.LoserState.ClanName()
 			currentRound.WinningTeam = e.WinnerState.ClanName()
+
 			// Parse the start eq values
-			frameIdx := (currentGame.TickRate*3)/int64(currentGame.ParseRate)
+			frameIdx := (currentGame.TickRate*2)/int64(currentGame.ParseRate)  // grab equipment 2 sec after freezetime ends
 			if frameIdx < int64(len(currentRound.Frames)) {
 				startFrame := currentRound.Frames[frameIdx-1]
 				currentRound.CTStartEqVal = startFrame.CT.CurrentEqVal
@@ -819,30 +816,31 @@ func main() {
 					currentRound.CTBuyType = parseTeamBuy(currentRound.CTStartEqVal, "CT")
 					currentRound.TBuyType = parseTeamBuy(currentRound.TStartEqVal, "T")
 				}
-				// add to round slice
+
+				// add to round slice in currentGame
 				currentGame.Rounds = append(currentGame.Rounds, currentRound)
 			}
 		}
 	})
 
 	// Parse score changes
-	p.RegisterEventHandler(func(e events.ScoreUpdated) {
-		gs := p.GameState()
-
-		if (acceptableGamePhase(gs)) && (len(currentGame.Rounds) > 0) {
-			// Replace the last round object
-			currentGame.Rounds[len(currentGame.Rounds)-1].ScoreUpdatedTick = int64(gs.IngameTick())
-			// reset
-			roundStarted = 0
-		}
-	})
+	//p.RegisterEventHandler(func(e events.ScoreUpdated) {
+	//	gs := p.GameState()
+	//
+	//	if (acceptableGamePhase(gs)) && (len(currentGame.Rounds) > 0) {
+	//		// Replace the last round object
+	//		currentGame.Rounds[len(currentGame.Rounds)-1].ScoreUpdatedTick = int64(gs.IngameTick())
+	//		// reset
+	//		roundStarted = 0
+	//	}
+	//})
 
 	// Parse official round ends. Before this, players can still move around.
 	p.RegisterEventHandler(func(e events.RoundEndOfficial) {
 		gs := p.GameState()
 
 		// && (roundStarted == 1)
-		if (acceptableGamePhase(gs))  {
+		if (acceptableGamePhase(gs) && len(currentGame.Rounds) > 0)  {
 			roundInEndTime = 0
 			// Replace the last round object
 			currentGame.Rounds[len(currentGame.Rounds)-1].EndOfficialTick = int64(gs.IngameTick())
