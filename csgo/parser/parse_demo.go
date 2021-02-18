@@ -1650,12 +1650,29 @@ func main() {
 		for i, _ := range currentGame.Rounds {
 			currentGame.Rounds[i].RoundNum = int64(i+1)
 		}
+
 		/* Fix the rounds to have pistol rounds instead of ecos
 		*/
 		for i, _ := range currentGame.Rounds {
 			if (i == 0 || i == 15) {
 				currentGame.Rounds[i].CTBuyType = "Pistol"
 				currentGame.Rounds[i].TBuyType = "Pistol"
+			}
+		}
+
+		/* Correctly assign round scores by looking at round end reasons
+		*/
+		for i, _ := range currentGame.Rounds {
+			if (i > 0) {
+				lastRound := currentGame.Rounds[i-1]
+				currRound := currentGame.Rounds[i]
+				if (lastRound.Reason == "CTWin" || lastRound.Reason == "BombDefused" || lastRound.Reason == "TargetSaved") {
+					currRound.CTScore = lastRound.CTScore + 1
+					currRound.TScore = lastRound.TScore
+				} else if (lastRound.Reason == "TWin" || lastRound.Reason == "TargetBombed") {
+					currRound.CTScore = lastRound.CTScore
+					currRound.TScore = lastRound.TScore + 1
+				}
 			}
 		}
 
