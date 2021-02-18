@@ -738,7 +738,7 @@ func main() {
 		gs := p.GameState()
 
 		if (acceptableGamePhase(gs)) {
-			if convParsed == false {
+			if convParsed == 0 {
 				// If convars are unparsed, record the convars of the server
 				serverConfig := ServerConVar{}
 				conv := gs.ConVars()
