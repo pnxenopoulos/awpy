@@ -172,8 +172,9 @@ type DamageAction struct {
 	VictimViewY *float64 `json:"VictimViewY"`
 	Weapon string `json:"Weapon"`
 	HpDamage int64 `json:"HpDamage"`
-	KillHpDamage int64 `json:"KillHpDamage"`
+	HpDamageTaken int64 `json:"HpDamageTaken"`
 	ArmorDamage int64 `json:"ArmorDamage"`
+	ArmorDamageTaken int64 `json:"ArmorDamageTaken"`
 	HitGroup string `json:"HitGroup"`
 }
 
@@ -1377,12 +1378,9 @@ func main() {
 			currentDamage.Weapon = e.Weapon.String()
 			currentDamage.HitGroup = convertHitGroup(e.HitGroup)
 			currentDamage.HpDamage = int64(e.HealthDamage)
-			if e.HealthDamage >= e.Player.Health() {
-				currentDamage.KillHpDamage = int64(e.Player.Health())
-			} else {
-				currentDamage.KillHpDamage = currentDamage.HpDamage
-			}
+			currentDamage.HpDamageTaken = int64(e.HealthDamageTaken)
 			currentDamage.ArmorDamage = int64(e.ArmorDamage)
+			currentDamage.ArmorDamageTaken = int64(e.ArmorDamageTaken)
 
 			// Attacker
 			if e.Attacker != nil {
