@@ -73,16 +73,20 @@ type ServerConVar struct {
 	CashBombDefused int64 `json:"CashBombDefused"`  // cash_player_bomb_defused
 	CashBombPlanted int64 `json:"CashBombPlanted"`  // cash_player_bomb_planted
 	CashWinBomb int64 `json:"CashTeamTWinBomb"`  // cash_team_terrorist_win_bomb
-	CashWinDefuse int64 `json:"CashWinDefuse"`  // cash_win_by_defusing_bomb
+	CashWinDefuse int64 `json:"CashWinDefuse"`  // cash_team_win_by_defusing_bomb
 	CashWinTimeRunOut int64 `json:"CashWinTimeRunOut"`  // cash_team_win_by_time_running_out_bomb
 	CashWinElimination int64 `json:"CashWinElimination"`  // cash_team_elimination_bomb_map
 	CashPlayerKilledDefault int64 `json:"CashPlayerKilledDefault"`  //cash_player_killed_enemy_default
 	CashTeamLoserBonus int64 `json:"CashTeamLoserBonus"`  //cash_team_loser_bonus
 	CashteamLoserBonusConsecutive int64 `json:"CashteamLoserBonusConsecutive"`  // cash_team_loser_bonus_consecutive_rounds
 	RoundTime int64 `json:"RoundTime"`  // mp_roundtime_defuse
+	RoundRestartDelay int64 `json:"RoundRestartDelay"`  // mp_round_restart_delay
 	FreezeTime int64 `json:"FreezeTime"` // mp_freezetime
 	BuyTime int64 `json:"BuyTime"`  // mp_buytime
 	BombTimer int64 `json:"BombTimer"` // mp_c4timer
+	MaxRounds int64 `json:"MaxRounds"`  // mp_maxrounds
+	TimeoutsAllowed int64 `json:"TimeoutsAllowed"`  // mp_team_timeout_max
+	CoachingAllowed int64 `json:"CoachingAllowed"`  // sv_coaching_enabled 
 }
 
 type GameRound struct {
@@ -691,6 +695,7 @@ func main() {
 	roundInEndTime := 0
 	roundInFreezetime := 0
 	currentFrameIdx := 0
+	convParsed := 0
 
 	// Create game object, then initial round object
 	currentGame := Game{}
@@ -733,24 +738,32 @@ func main() {
 		gs := p.GameState()
 
 		if (acceptableGamePhase(gs)) {
-			if len(currentGame.Rounds) == 0 {
-				// If first round, record the convars of the server
+			if convParsed == false {)
+				// If convars are unparsed, record the convars of the server
 				serverConfig := ServerConVar{}
 				conv := gs.ConVars()
+				for key, value := range conv {
+					fmt.Println("Key:", key, "Value:", value)
+				}
 				serverConfig.CashBombDefused, _ = strconv.ParseInt(conv["cash_player_bomb_defused"], 10, 64)
 				serverConfig.CashBombPlanted, _ = strconv.ParseInt(conv["cash_player_bomb_planted"], 10, 64)
 				serverConfig.CashWinBomb, _ = strconv.ParseInt(conv["cash_team_terrorist_win_bomb"], 10, 64)
-				serverConfig.CashWinDefuse, _ = strconv.ParseInt(conv["cash_win_by_defusing_bomb"], 10, 64)
+				serverConfig.CashWinDefuse, _ = strconv.ParseInt(conv["cash_team_win_by_defusing_bomb"], 10, 64)
 				serverConfig.CashWinTimeRunOut, _ = strconv.ParseInt(conv["cash_team_win_by_time_running_out_bomb"], 10, 64)
 				serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
 				serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
 				serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
 				serverConfig.CashteamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
+				serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
 				serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
+				serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
 				serverConfig.FreezeTime, _ = strconv.ParseInt(conv["mp_freezetime"], 10, 64)
 				serverConfig.BuyTime, _ = strconv.ParseInt(conv["mp_buytime"], 10, 64)
 				serverConfig.BombTimer, _ = strconv.ParseInt(conv["mp_c4timer"], 10, 64)
+				serverConfig.TimeoutsAllowed, _ = strconv.ParseInt(conv["mp_team_timeout_max"], 10, 64)
+				serverConfig.CoachingAllowed, _ = strconv.ParseInt(conv["sv_coaching_enabled"], 10, 64)
 				currentGame.ServerVars = serverConfig
+				convParsed = 1
 			}
 
 			roundStarted = 1

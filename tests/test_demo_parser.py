@@ -116,6 +116,7 @@ class TestDemoParser:
         assert data["GameRounds"][0]["TStartEqVal"] == 4250
         assert data["GameRounds"][-1]["RoundEndReason"] == "TerroristsWin"
         assert data["GameRounds"][15]["RoundEndReason"] == "BombDefused"
+        assert len(data["ServerVars"].keys()) == 17
 
     def test_parsed_wrong_type(self):
         """Tests wrote parse type"""
