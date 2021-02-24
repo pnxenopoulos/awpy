@@ -918,7 +918,7 @@ func main() {
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			// add
-			if roundInEndTime == 1 {
+			if (roundInEndTime == 1 && len(currentGame.Rounds) > 0) {
 				currentGame.Rounds[len(currentGame.Rounds)-1].WeaponFires = append(currentGame.Rounds[len(currentGame.Rounds)-1].WeaponFires, currentWeaponFire)
 			} else {
 				currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
@@ -1025,7 +1025,7 @@ func main() {
 				currentFlash.PlayerViewY = &playerViewY
 				// add
 				if *currentFlash.PlayerSide != "Spectator" {
-					if roundInEndTime == 1 {
+					if (roundInEndTime == 1 && len(currentGame.Rounds) > 0) {
 						currentGame.Rounds[len(currentGame.Rounds)-1].Flashes = append(currentGame.Rounds[len(currentGame.Rounds)-1].Flashes, currentFlash)
 					} else {
 						currentRound.Flashes = append(currentRound.Flashes, currentFlash)
@@ -1124,7 +1124,7 @@ func main() {
 				currentGrenade.GrenadeY = float64(grenadePos.Y)
 				currentGrenade.GrenadeZ = float64(grenadePos.Z)
 				// add
-				if roundInEndTime == 1 {
+				if (roundInEndTime == 1 && len(currentGame.Rounds) > 0) {
 					currentGame.Rounds[len(currentGame.Rounds)-1].Grenades = append(currentGame.Rounds[len(currentGame.Rounds)-1].Grenades, currentGrenade)
 				} else {
 					currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
@@ -1199,7 +1199,7 @@ func main() {
 				currentGrenade.GrenadeY = float64(grenadePos.Y)
 				currentGrenade.GrenadeZ = float64(grenadePos.Z)
 				// add
-				if roundInEndTime == 1 {
+				if (roundInEndTime == 1 && len(currentGame.Rounds) > 0) {
 					currentGame.Rounds[len(currentGame.Rounds)-1].Grenades = append(currentGame.Rounds[len(currentGame.Rounds)-1].Grenades, currentGrenade)
 				} else {
 					currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
@@ -1357,7 +1357,7 @@ func main() {
 				currentKill.IsTrade = false
 			}
 			// add
-			if roundInEndTime == 1 {
+			if (roundInEndTime == 1 && len(currentGame.Rounds) > 0) {
 				currentGame.Rounds[len(currentGame.Rounds)-1].Kills = append(currentGame.Rounds[len(currentGame.Rounds)-1].Kills, currentKill)
 			} else {
 				currentRound.Kills = append(currentRound.Kills, currentKill)
@@ -1469,7 +1469,7 @@ func main() {
 				currentDamage.VictimViewY = &victimViewY
 			}
 			// add
-			if roundInEndTime == 1 {
+			if (roundInEndTime == 1 && len(currentGame.Rounds) > 0) {
 				currentGame.Rounds[len(currentGame.Rounds)-1].Damages = append(currentGame.Rounds[len(currentGame.Rounds)-1].Damages, currentDamage)
 			} else {
 				currentRound.Damages = append(currentRound.Damages, currentDamage)
@@ -1588,7 +1588,7 @@ func main() {
 			}
 			
 			// add
-			if roundInEndTime == 1 {
+			if (roundInEndTime == 1 && len(currentGame.Rounds) > 0) {
 				currentGame.Rounds[len(currentGame.Rounds)-1].Frames = append(currentGame.Rounds[len(currentGame.Rounds)-1].Frames, currentFrame)
 			} else {
 				currentRound.Frames = append(currentRound.Frames, currentFrame)
@@ -1647,6 +1647,25 @@ func main() {
 			}
 		}
 		currentGame.Rounds = currentGame.Rounds[startIdx:len(currentGame.Rounds)]
+
+		// Get rid of rounds where score doesn't change
+		var tempRounds []GameRound;
+		for i, _ := range currentGame.Rounds {
+			if (i < len(currentGame.Rounds)-1) {
+				nextRound := currentGame.Rounds[i+1]
+				currRound := currentGame.Rounds[i]
+				if (!(currRound.CTScore + currRound.TScore == nextRound.CTScore + nextRound.TScore)) {
+					tempRounds = append(tempRounds, currRound)
+				}
+			} else {
+				currRound := currentGame.Rounds[i]
+				tempRounds = append(tempRounds, currRound)
+			}
+
+		}
+		currentGame.Rounds = tempRounds
+
+		// Set correct round numbers
 		for i, _ := range currentGame.Rounds {
 			currentGame.Rounds[i].RoundNum = int64(i+1)
 		}
