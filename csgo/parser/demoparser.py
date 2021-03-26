@@ -113,8 +113,7 @@ class DemoParser:
             cwd=path,
         )
         stdout = proc.stdout.read().splitlines()
-        output = [event.decode("utf-8") for event in stdout]
-        self.output_file = output[0]
+        self.output_file = self.demo_id + ".json"
         if os.path.isfile(self.output_file):
             self.logger.info("Wrote demo parse output to " + self.output_file)
         else:
