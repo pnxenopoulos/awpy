@@ -1776,14 +1776,14 @@ func main() {
 			for j := range currentGame.Rounds[i].Damages {
 				if (j < len(currentGame.Rounds[i].Damages) && j > 0) {
 					if ((len(tempDamages) > 0) &&
-						(currentGame.Rounds[i].Damages[j].Tick == tempDamages[len(tempDamages)].Tick) && 
-						(currentGame.Rounds[i].Damages[j].AttackerSteamId == tempDamages[len(tempDamages)].AttackerSteamId) && 
-						(currentGame.Rounds[i].Damages[j].VictimSteamId == tempDamages[len(tempDamages)].VictimSteamId) && 
-						(currentGame.Rounds[i].Damages[j].Weapon == tempDamages[len(tempDamages)].Weapon)) {
-							tempDamages[len(tempDamages)].HpDamage = tempDamages[len(tempDamages)].HpDamage + currentGame.Rounds[i].Damages[j].HpDamage
-							tempDamages[len(tempDamages)].HpDamageTaken = tempDamages[len(tempDamages)].HpDamageTaken + currentGame.Rounds[i].Damages[j].HpDamageTaken
-							tempDamages[len(tempDamages)].ArmorDamage = tempDamages[len(tempDamages)].ArmorDamage + currentGame.Rounds[i].Damages[j].ArmorDamage
-							tempDamages[len(tempDamages)].ArmorDamageTaken = tempDamages[len(tempDamages)].ArmorDamageTaken + currentGame.Rounds[i].Damages[j].ArmorDamageTaken
+						(currentGame.Rounds[i].Damages[j].Tick == tempDamages[len(tempDamages)-1].Tick) && 
+						(currentGame.Rounds[i].Damages[j].AttackerSteamId == tempDamages[len(tempDamages)-1].AttackerSteamId) && 
+						(currentGame.Rounds[i].Damages[j].VictimSteamId == tempDamages[len(tempDamages)-1].VictimSteamId) && 
+						(currentGame.Rounds[i].Damages[j].Weapon == tempDamages[len(tempDamages)-1].Weapon)) {
+							tempDamages[len(tempDamages)].HpDamage = tempDamages[len(tempDamages)-1].HpDamage + currentGame.Rounds[i].Damages[j].HpDamage
+							tempDamages[len(tempDamages)].HpDamageTaken = tempDamages[len(tempDamages)-1].HpDamageTaken + currentGame.Rounds[i].Damages[j].HpDamageTaken
+							tempDamages[len(tempDamages)].ArmorDamage = tempDamages[len(tempDamages)-1].ArmorDamage + currentGame.Rounds[i].Damages[j].ArmorDamage
+							tempDamages[len(tempDamages)].ArmorDamageTaken = tempDamages[len(tempDamages)-1].ArmorDamageTaken + currentGame.Rounds[i].Damages[j].ArmorDamageTaken
 						} else {
 							tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
 						}
