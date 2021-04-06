@@ -807,7 +807,20 @@ func main() {
 	p.RegisterEventHandler(func(e events.RoundEnd) {
 		gs := p.GameState()
 
-		if (acceptableGamePhase(gs)) {
+		acceptableEnd := false
+		if (convertRoundEndReason(e.Reason) == "TargetBombed") {
+			acceptableEnd = true
+		} else if (convertRoundEndReason(e.Reason) == "BombDefused") {
+			acceptableEnd = true
+		} else if (convertRoundEndReason(e.Reason) == "CTWin") {
+			acceptableEnd = true
+		} else if (convertRoundEndReason(e.Reason) == "TWin") {
+			acceptableEnd = true
+		} else if (convertRoundEndReason(e.Reason) == "TargetSaved") {
+			acceptableEnd = true
+		}
+
+		if (acceptableGamePhase(gs) && acceptableEnd) {
 			roundInEndTime = 1
 
 			winningTeam := "CT"
