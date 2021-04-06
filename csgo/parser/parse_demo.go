@@ -1775,7 +1775,7 @@ func main() {
 			var tempDamages []DamageAction;
 			for j := range currentGame.Rounds[i].Damages {
 				if (j < len(currentGame.Rounds[i].Damages) && j > 0) {
-					if ( 
+					if ((len(tempDamages) > 0) &&
 						(currentGame.Rounds[i].Damages[j].Tick == tempDamages[len(tempDamages)].Tick) && 
 						(currentGame.Rounds[i].Damages[j].AttackerSteamId == tempDamages[len(tempDamages)].AttackerSteamId) && 
 						(currentGame.Rounds[i].Damages[j].VictimSteamId == tempDamages[len(tempDamages)].VictimSteamId) && 
