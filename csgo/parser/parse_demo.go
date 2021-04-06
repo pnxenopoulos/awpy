@@ -4,6 +4,15 @@ TODO:
 	Add player stats summary?
 	Fix name finding alg in csgo - this is in the csgo library 
 	Fix the team parsing - this is in the data scraper
+	Build go file instead of Go run?
+
+	Add automatic round end after a certain time period
+	first and last round of match
+	rounds where total score is same
+	11 - 13
+	11 - 13
+
+	Are flashes correct?
 */
 
 package main
@@ -1796,7 +1805,7 @@ func main() {
 		// Write the JSON
 		file, _ := json.MarshalIndent(currentGame, "", " ")
 		// currentGame.MatchName + ".json"
-		_ = ioutil.WriteFile(outpath + "/" + currentGame.MatchName + ".json", file, 0644)
+		_ = ioutil.WriteFile(outpath + "/" + "test.json", file, 0644)
 		
 		InfoLogger.Println("Wrote to JSON file to: " + outpath + "/" + currentGame.MatchName + ".json")
 	}
