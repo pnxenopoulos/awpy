@@ -814,7 +814,7 @@ func main() {
 			acceptableEnd = true
 		} else if (convertRoundEndReason(e.Reason) == "CTWin") {
 			acceptableEnd = true
-		} else if (convertRoundEndReason(e.Reason) == "TWin") {
+		} else if (convertRoundEndReason(e.Reason) == "TerroristsWin") {
 			acceptableEnd = true
 		} else if (convertRoundEndReason(e.Reason) == "TargetSaved") {
 			acceptableEnd = true
@@ -1763,7 +1763,7 @@ func main() {
 				if (lastRound.Reason == "CTWin" || lastRound.Reason == "BombDefused" || lastRound.Reason == "TargetSaved") {
 					currRound.CTScore = lastRound.CTScore + 1
 					currRound.TScore = lastRound.TScore
-				} else if (lastRound.Reason == "TWin" || lastRound.Reason == "TargetBombed") {
+				} else if (lastRound.Reason == "TerroristsWin" || lastRound.Reason == "TargetBombed") {
 					currRound.CTScore = lastRound.CTScore
 					currRound.TScore = lastRound.TScore + 1
 				}
