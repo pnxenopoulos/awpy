@@ -4,15 +4,6 @@ TODO:
 	Add player stats summary?
 	Fix name finding alg in csgo - this is in the csgo library 
 	Fix the team parsing - this is in the data scraper
-	Build go file instead of Go run?
-
-	Add automatic round end after a certain time period
-	first and last round of match
-	rounds where total score is same
-	11 - 13
-	11 - 13
-
-	Are flashes correct?
 */
 
 package main
@@ -1768,6 +1759,30 @@ func main() {
 					currRound.TScore = lastRound.TScore + 1
 				}
 			}
+		}
+
+		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
+		for i := range currentGame.Rounds {
+			var tempDamages []DamageAction;
+			for j := range currentGame.Rounds[i].Damages {
+				if (j < len(currentGame.Rounds[i].Damages) && j > 0) {
+					if ( 
+						(currentGame.Rounds[i].Damages[j].Tick == tempDamages[len(tempDamages)].Tick) && 
+						(currentGame.Rounds[i].Damages[j].AttackerSteamId == tempDamages[len(tempDamages)].AttackerSteamId) && 
+						(currentGame.Rounds[i].Damages[j].VictimSteamId == tempDamages[len(tempDamages)].VictimSteamId) && 
+						(currentGame.Rounds[i].Damages[j].Weapon == tempDamages[len(tempDamages)].Weapon)) {
+							tempDamages[len(tempDamages)].HpDamage = tempDamages[len(tempDamages)].HpDamage + currentGame.Rounds[i].Damages[j].HpDamage
+							tempDamages[len(tempDamages)].HpDamageTaken = tempDamages[len(tempDamages)].HpDamageTaken + currentGame.Rounds[i].Damages[j].HpDamageTaken
+							tempDamages[len(tempDamages)].ArmorDamage = tempDamages[len(tempDamages)].ArmorDamage + currentGame.Rounds[i].Damages[j].ArmorDamage
+							tempDamages[len(tempDamages)].ArmorDamageTaken = tempDamages[len(tempDamages)].ArmorDamageTaken + currentGame.Rounds[i].Damages[j].ArmorDamageTaken
+						} else {
+							tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
+						}
+				} else {
+					tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
+				}
+			}
+			currentGame.Rounds[i].Damages = tempDamages
 		}
 
 		/* Now see if there are any remaining weird rounds
