@@ -118,6 +118,7 @@ class DemoParser:
             self.logger.info("Wrote demo parse output to " + self.output_file)
         else:
             self.logger.error("No file produced, error in calling Golang")
+            self.logger.error(stdout)
 
     def _read_json(self):
         """Reads the JSON file created by _parse_demo()
