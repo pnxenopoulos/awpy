@@ -59,7 +59,6 @@ func init() {
 
 // Game is the overall struct that holds everything
 type Game struct {
-	
 	MatchName string `json:"MatchId"`
 	ClientName string `json:"ClientName"`
 	Map string `json:"MapName"`
@@ -106,9 +105,13 @@ type GameRound struct {
 	LosingTeam string `json:"LosingTeam"`
 	Reason string `json:"RoundEndReason"`
 	CTStartEqVal int64 `json:"CTStartEqVal"`
+	CTBeginEqVal int64 `json:"CTRoundStartEqVal"`
+	CTBeginMoney int64 `json:"CTRoundStartMoney"`
 	CTBuyType string `json:"CTBuyType"`
 	CTSpend int64 `json:"CTSpend"`
 	TStartEqVal int64 `json:"TStartEqVal"`
+	TBeginEqVal int64 `json:"TRoundStartEqVal"`
+	TBeginMoney int64 `json:"TRoundStartMoney"`
 	TBuyType string `json:"TBuyType"`
 	TSpend int64 `json:"TSpend"`
 	Kills []KillAction `json:"Kills"`
@@ -778,6 +781,18 @@ func main() {
 			currentRound.StartTick = int64(gs.IngameTick())
 			currentRound.TScore = int64(gs.TeamTerrorists().Score())
 			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+
+			// Parse round spend
+			tPlayers := gs.TeamTerrorists().Members()
+			currentRound.TBeginMoney = 0
+			ctPlayers := gs.TeamCounterTerrorists().Members()
+			currentRound.CTBeginMoney = 0
+			for _, p := range tPlayers {
+				currentRound.TBeginMoney += int64(p.Money())
+			}
+			for _, p := range ctPlayers {
+				currentRound.CTBeginMoney += int64(p.Money())
+			}
 		}
 	})
 
@@ -788,18 +803,6 @@ func main() {
 		if (acceptableGamePhase(gs)) {
 			roundInFreezetime = 0
 			currentRound.FreezeTimeEnd = int64(gs.IngameTick())
-
-			// Parse round spend
-			tPlayers := gs.TeamTerrorists().Members()
-			currentRound.TSpend = 0
-			ctPlayers := gs.TeamCounterTerrorists().Members()
-			currentRound.CTSpend = 0
-			for _, p := range tPlayers {
-				currentRound.TSpend += int64(p.MoneySpentThisRound())
-			}
-			for _, p := range ctPlayers {
-				currentRound.CTSpend += int64(p.MoneySpentThisRound())
-			}
 		}
 	})
 
@@ -839,6 +842,13 @@ func main() {
 			currentRound.WinningSide = winningTeam
 			currentRound.LosingTeam = e.LoserState.ClanName()
 			currentRound.WinningTeam = e.WinnerState.ClanName()
+
+			currentRound.CTBeginEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
+			currentRound.TBeginEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
+			currentRound.CTSpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
+			currentRound.TSpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
+			currentRound.CTBeginMoney = 0
+			currentRound.TBeginMoney = 0
 
 			// Parse the start eq values
 			frameIdx := (currentGame.TickRate*2)/int64(currentGame.ParseRate)  // grab equipment 2 sec after freezetime ends
