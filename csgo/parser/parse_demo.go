@@ -847,8 +847,6 @@ func main() {
 			currentRound.TBeginEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
 			currentRound.CTSpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
 			currentRound.TSpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
-			currentRound.CTBeginMoney = 0
-			currentRound.TBeginMoney = 0
 
 			// Parse the start eq values
 			frameIdx := (currentGame.TickRate*2)/int64(currentGame.ParseRate)  // grab equipment 2 sec after freezetime ends
