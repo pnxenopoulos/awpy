@@ -1205,7 +1205,8 @@ func main() {
 				currentGrenade.Second = (float64(currentGrenade.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
 				currentGrenade.PlayerSteamId = int64(e.Base().Thrower.SteamID64)
 				currentGrenade.PlayerName = e.Base().Thrower.Name
-				currentGrenade.PlayerTeam = e.Base().Thrower.TeamState.ClanName()
+				grenadeThrowerTeam := e.Base().Thrower.TeamState.ClanName()
+				currentGrenade.PlayerTeam = &grenadeThrowerTeam
 				currentGrenade.Grenade = e.Base().Grenade.String()
 				playerSide := "Unknown"
 
