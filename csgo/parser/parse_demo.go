@@ -100,6 +100,8 @@ type GameRound struct {
 	EndOfficialTick int64 `json:"EndOfficialTick"`
 	TScore int64 `json:"TScore"`
 	CTScore int64 `json:"CTScore"`
+	CTTeam string `json:"CTTeam"`
+	TTeam string `json:"TTeam"`
 	WinningSide string `json:"WinningSide"`
 	WinningTeam string `json:"WinningTeam"`
 	LosingTeam string `json:"LosingTeam"`
@@ -781,6 +783,8 @@ func main() {
 			currentRound.StartTick = int64(gs.IngameTick())
 			currentRound.TScore = int64(gs.TeamTerrorists().Score())
 			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+			currentRound.TTeam = gs.TeamTerrorists().ClanName()
+			currentRound.CTTeam = gs.TeamCounterTerrorists().ClanName()
 
 			// Parse round spend
 			tPlayers := gs.TeamTerrorists().Members()
