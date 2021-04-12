@@ -131,7 +131,7 @@ type GrenadeAction struct {
 	Second float64 `json:"Second"`
 	PlayerSteamId int64 `json:"PlayerSteamId"`
 	PlayerName string `json:"PlayerName"`
-	PlayerTeam string `json:"PlayerTeam"`
+	PlayerTeam *string `json:"PlayerTeam"`
 	PlayerSide string `json:"PlayerSide"`
 	PlayerX float64 `json:"PlayerX"`
 	PlayerY float64 `json:"PlayerY"`
@@ -1121,7 +1121,8 @@ func main() {
 				currentGrenade.Second = (float64(currentGrenade.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
 				currentGrenade.PlayerSteamId = int64(e.Projectile.Thrower.SteamID64)
 				currentGrenade.PlayerName = e.Projectile.Thrower.Name
-				currentGrenade.PlayerTeam = e.Projectile.Thrower.TeamState.ClanName()
+				grenadeThrowerTeam := e.Projectile.Thrower.TeamState.ClanName()
+				currentGrenade.PlayerTeam = &grenadeThrowerTeam
 				currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
 				playerSide := "Unknown"
 
