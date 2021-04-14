@@ -1137,17 +1137,23 @@ func main() {
 			currentGrenade.Second = (float64(currentGrenade.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
 			currentGrenade.PlayerSteamId = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.PlayerName = e.Projectile.Thrower.Name
-			grenadeThrowerTeam := e.Projectile.Thrower.TeamState.ClanName()
 			//grenadeThrowerTeam := e.Projectile.Thrower.TeamState.ClanName()
-			currentGrenade.PlayerTeam = &grenadeThrowerTeam
+			//grenadeThrowerTeam := e.Projectile.Thrower.TeamState.ClanName()
+			//currentGrenade.PlayerTeam = &grenadeThrowerTeam
 			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
 			playerSide := "Unknown"
+			playerTeam := ""
+
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
 
 			switch e.Projectile.Thrower.Team {
 			case common.TeamTerrorists:
 				playerSide = "T"
+				currentGrenade.PlayerTeam = &tTeam
 			case common.TeamCounterTerrorists:
 				playerSide = "CT"
+				currentGrenade.PlayerTeam = &ctTeam
 			case common.TeamSpectators:
 				playerSide = "Spectator"
 			case common.TeamUnassigned:
