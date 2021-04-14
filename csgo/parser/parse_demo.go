@@ -93,7 +93,6 @@ type GameRound struct {
 	StartTick int64 `json:"StartTick"`
 	FreezeTimeEnd int64 `json:"FreezeTimeEnd"`
 	EndTick int64 `json:"EndTick"`
-	ScoreUpdatedTick int64 `json:"ScoreUpdatedTick"`
 	EndOfficialTick int64 `json:"EndOfficialTick"`
 	TScore int64 `json:"TScore"`
 	CTScore int64 `json:"CTScore"`
