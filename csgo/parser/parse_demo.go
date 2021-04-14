@@ -1142,7 +1142,6 @@ func main() {
 			//currentGrenade.PlayerTeam = &grenadeThrowerTeam
 			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
 			playerSide := "Unknown"
-			playerTeam := ""
 
 			tTeam := gs.TeamTerrorists().ClanName()
 			ctTeam := gs.TeamCounterTerrorists().ClanName()
