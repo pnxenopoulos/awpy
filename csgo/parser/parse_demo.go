@@ -151,6 +151,9 @@ type BombAction struct {
 	PlayerSteamId int64 `json:"PlayerSteamId"`
 	PlayerName string `json:"PlayerName"`
 	PlayerTeam string `json:"PlayerTeam"`
+	PlayerX float64 `json:"PlayerX"`
+	PlayerY float64 `json:"PlayerY"`
+	PlayerZ float64 `json:"PlayerZ"`
 	BombAction string `json:"BombAction"`
 	BombSite string `json:"BombSite"`
 }
@@ -931,7 +934,12 @@ func main() {
 		}
 		currentBomb.PlayerSteamId = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		currentBomb.PlayerTeam = e.Player.TeamState.ClanName() 
+		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = float64(playerPos.X)
+		currentBomb.PlayerY = float64(playerPos.Y)
+		currentBomb.PlayerZ = float64(playerPos.Z)
 		// add
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
@@ -1121,8 +1129,12 @@ func main() {
 
 		currentBomb.PlayerSteamId = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		currentBomb.PlayerTeam = e.Player.TeamState.ClanName() 
-
+		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = float64(playerPos.X)
+		currentBomb.PlayerY = float64(playerPos.Y)
+		currentBomb.PlayerZ = float64(playerPos.Z)
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
