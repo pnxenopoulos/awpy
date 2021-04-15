@@ -548,9 +548,7 @@ func acceptableGamePhase(gs dem.GameState) bool {
 
 func isTrade(killA KillAction, killB KillAction) bool {
 	// If the the previous killer is not the person killed, it is not a trade
-	killBVictimId := *killB.VictimSteamId
-	killAAttackerId := *killA.AttackerSteamId
-	if killBVictimId != killAAttackerId {
+	if killB.VictimSteamId != killA.AttackerSteamId {
 		return false
 	} 
 	if (killB.Tick - killA.Tick < int64(5*128)) {
@@ -1666,7 +1664,7 @@ func main() {
 		startIdx := 0
 		for i, r := range currentGame.Rounds {
 			if ((i < len(currentGame.Rounds)-3) && (len(currentGame.Rounds) > 3)) {
-				if (r.TScore + r.CTScore == 0) && (currentGame.Rounds[i+1].TScore + currentGame.Rounds[i+1].CTScore > 0) && (currentGame.Rounds[i+2].TScore + currentGame.Rounds[i+2].CTScore > 0) && (currentGame.Rounds[i+3].TScore + currentGame.Rounds[i+4].CTScore > 0) {
+				if (r.TScore + r.CTScore == 0) && (currentGame.Rounds[i+1].TScore + currentGame.Rounds[i+1].CTScore > 0) && (currentGame.Rounds[i+2].TScore + currentGame.Rounds[i+2].CTScore > 0) && (currentGame.Rounds[i+3].TScore + currentGame.Rounds[i+3].CTScore > 0) {
 					startIdx = i
 				}
 			}
