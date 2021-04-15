@@ -946,7 +946,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.WeaponFire) {
 		gs := p.GameState()
 
-		if (e.Weapon.String() != "Knife") {
+		if (e.Weapon.String() != "Knife" && e.Shooter != nil) {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
 			currentWeaponFire.Second = (float64(currentWeaponFire.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
@@ -999,114 +999,117 @@ func main() {
 	p.RegisterEventHandler(func(e events.PlayerFlashed) {
 		gs := p.GameState()
 
-		currentFlash := FlashAction{}
-		currentFlash.Tick = int64(gs.IngameTick())
-		currentFlash.Second = (float64(currentFlash.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
+		if (e.Attacker != nil) {
+			currentFlash := FlashAction{}
+			currentFlash.Tick = int64(gs.IngameTick())
+			currentFlash.Second = (float64(currentFlash.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
 
-		// Attacker
-		currentFlash.AttackerSteamId = int64(e.Attacker.SteamID64)
-		currentFlash.AttackerName = e.Attacker.Name
-		currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
-		attackerSide := "Unknown"
-		switch e.Attacker.Team {
-		case common.TeamTerrorists:
-			attackerSide = "T"
-		case common.TeamCounterTerrorists:
-			attackerSide = "CT"
-		case common.TeamSpectators:
-			attackerSide = "Spectator"
-		case common.TeamUnassigned:
-			attackerSide = "Unassigned"
-		default:
-			attackerSide = "Unknown"
-		}
-		currentFlash.AttackerSide = attackerSide
-
-		// Attacker loc
-		attackerPos := e.Attacker.LastAlivePosition
-		attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
-		attackerArea := mesh.GetNearestArea(attackerPoint, true)
-		var attackerAreaId int64
-		attackerAreaPlace := ""
-		if attackerArea != nil {
-			attackerAreaId = int64(attackerArea.ID)
-			if attackerArea.Place != nil {
-				attackerAreaPlace = attackerArea.Place.Name
-			} else {
-				attackerAreaPlace = findAreaPlace(attackerArea, mesh)
-			}
-		}
-
-		currentFlash.AttackerAreaId = attackerAreaId
-		currentFlash.AttackerAreaName = attackerAreaPlace
-		currentFlash.AttackerX = float64(attackerPos.X)
-		currentFlash.AttackerY = float64(attackerPos.Y)
-		currentFlash.AttackerZ = float64(attackerPos.Z)
-		currentFlash.AttackerViewX = float64(e.Attacker.ViewDirectionX())
-		currentFlash.AttackerViewY = float64(e.Attacker.ViewDirectionY())
-
-		// Player
-		if e.Player != nil {
-			playerSteamId := int64(e.Player.SteamID64)
-			currentFlash.PlayerSteamId = &playerSteamId
-			currentFlash.PlayerName = &e.Player.Name
-			playerClanName := ""
-
-			if e.Player.TeamState != nil {
-				playerClanName = e.Player.TeamState.ClanName()
-			}
-
-			currentFlash.PlayerTeam = &playerClanName
-			playerSide := "Unknown"
-			switch e.Player.Team {
+			// Attacker
+			currentFlash.AttackerSteamId = int64(e.Attacker.SteamID64)
+			currentFlash.AttackerName = e.Attacker.Name
+			currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
+			attackerSide := "Unknown"
+			switch e.Attacker.Team {
 			case common.TeamTerrorists:
-				playerSide = "T"
+				attackerSide = "T"
 			case common.TeamCounterTerrorists:
-				playerSide = "CT"
+				attackerSide = "CT"
 			case common.TeamSpectators:
-				playerSide = "Spectator"
+				attackerSide = "Spectator"
 			case common.TeamUnassigned:
-				playerSide = "Unassigned"
+				attackerSide = "Unassigned"
 			default:
-				playerSide = "Unknown"
+				attackerSide = "Unknown"
 			}
+			currentFlash.AttackerSide = attackerSide
 
-			currentFlash.PlayerSide = &playerSide
-
-			// Player loc
-			playerPos := e.Player.LastAlivePosition
-			playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
-			playerArea := mesh.GetNearestArea(playerPoint, true)
-			var playerAreaId int64
-			playerAreaPlace := ""
-
-			if playerArea != nil {
-				playerAreaId = int64(playerArea.ID)
-				if playerArea.Place != nil {
-					playerAreaPlace = playerArea.Place.Name
+			// Attacker loc
+			attackerPos := e.Attacker.LastAlivePosition
+			attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
+			attackerArea := mesh.GetNearestArea(attackerPoint, true)
+			var attackerAreaId int64
+			attackerAreaPlace := ""
+			if attackerArea != nil {
+				attackerAreaId = int64(attackerArea.ID)
+				if attackerArea.Place != nil {
+					attackerAreaPlace = attackerArea.Place.Name
 				} else {
-					playerAreaPlace = findAreaPlace(playerArea, mesh)
+					attackerAreaPlace = findAreaPlace(attackerArea, mesh)
 				}
 			}
 
-			currentFlash.PlayerAreaId = &playerAreaId
-			currentFlash.PlayerAreaName = &playerAreaPlace
-			playerX := float64(playerPos.X)
-			playerY := float64(playerPos.Y)
-			playerZ := float64(playerPos.Z)
-			currentFlash.PlayerX = &playerX
-			currentFlash.PlayerY = &playerY
-			currentFlash.PlayerZ = &playerZ
-			playerViewX := float64(e.Player.ViewDirectionX())
-			playerViewY := float64(e.Player.ViewDirectionY())
-			currentFlash.PlayerViewX = &playerViewX
-			currentFlash.PlayerViewY = &playerViewY
+			currentFlash.AttackerAreaId = attackerAreaId
+			currentFlash.AttackerAreaName = attackerAreaPlace
+			currentFlash.AttackerX = float64(attackerPos.X)
+			currentFlash.AttackerY = float64(attackerPos.Y)
+			currentFlash.AttackerZ = float64(attackerPos.Z)
+			currentFlash.AttackerViewX = float64(e.Attacker.ViewDirectionX())
+			currentFlash.AttackerViewY = float64(e.Attacker.ViewDirectionY())
 
-			// Add
-			if *currentFlash.PlayerSide != "Spectator" {
-				currentRound.Flashes = append(currentRound.Flashes, currentFlash)
+			// Player
+			if e.Player != nil {
+				playerSteamId := int64(e.Player.SteamID64)
+				currentFlash.PlayerSteamId = &playerSteamId
+				currentFlash.PlayerName = &e.Player.Name
+				playerClanName := ""
+
+				if e.Player.TeamState != nil {
+					playerClanName = e.Player.TeamState.ClanName()
+				}
+
+				currentFlash.PlayerTeam = &playerClanName
+				playerSide := "Unknown"
+				switch e.Player.Team {
+				case common.TeamTerrorists:
+					playerSide = "T"
+				case common.TeamCounterTerrorists:
+					playerSide = "CT"
+				case common.TeamSpectators:
+					playerSide = "Spectator"
+				case common.TeamUnassigned:
+					playerSide = "Unassigned"
+				default:
+					playerSide = "Unknown"
+				}
+
+				currentFlash.PlayerSide = &playerSide
+
+				// Player loc
+				playerPos := e.Player.LastAlivePosition
+				playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
+				playerArea := mesh.GetNearestArea(playerPoint, true)
+				var playerAreaId int64
+				playerAreaPlace := ""
+
+				if playerArea != nil {
+					playerAreaId = int64(playerArea.ID)
+					if playerArea.Place != nil {
+						playerAreaPlace = playerArea.Place.Name
+					} else {
+						playerAreaPlace = findAreaPlace(playerArea, mesh)
+					}
+				}
+
+				currentFlash.PlayerAreaId = &playerAreaId
+				currentFlash.PlayerAreaName = &playerAreaPlace
+				playerX := float64(playerPos.X)
+				playerY := float64(playerPos.Y)
+				playerZ := float64(playerPos.Z)
+				currentFlash.PlayerX = &playerX
+				currentFlash.PlayerY = &playerY
+				currentFlash.PlayerZ = &playerZ
+				playerViewX := float64(e.Player.ViewDirectionX())
+				playerViewY := float64(e.Player.ViewDirectionY())
+				currentFlash.PlayerViewX = &playerViewX
+				currentFlash.PlayerViewY = &playerViewY
+
+				// Add
+				if *currentFlash.PlayerSide != "Spectator" {
+					currentRound.Flashes = append(currentRound.Flashes, currentFlash)
+				}
 			}
 		}
+		
 	})
 
 	// Parse bomb plants
@@ -1147,9 +1150,6 @@ func main() {
 			currentGrenade.Second = (float64(currentGrenade.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
 			currentGrenade.PlayerSteamId = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.PlayerName = e.Projectile.Thrower.Name
-			//grenadeThrowerTeam := e.Projectile.Thrower.TeamState.ClanName()
-			//grenadeThrowerTeam := e.Projectile.Thrower.TeamState.ClanName()
-			//currentGrenade.PlayerTeam = &grenadeThrowerTeam
 			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
 			playerSide := "Unknown"
 
@@ -1283,51 +1283,53 @@ func main() {
 		}
 
 		// Victim
-		victimSteamId := int64(e.Victim.SteamID64)
-		currentKill.VictimSteamId = &victimSteamId
-		currentKill.VictimName = &e.Victim.Name
-		victimTeamName := e.Victim.TeamState.ClanName() 
-		currentKill.VictimTeam = &victimTeamName
-		victimSide := "Unknown"
+		if e.Victim != nil {
+			victimSteamId := int64(e.Victim.SteamID64)
+			currentKill.VictimSteamId = &victimSteamId
+			currentKill.VictimName = &e.Victim.Name
+			victimTeamName := e.Victim.TeamState.ClanName() 
+			currentKill.VictimTeam = &victimTeamName
+			victimSide := "Unknown"
 
-		switch e.Victim.Team {
-		case common.TeamTerrorists:
-			victimSide = "T"
-		case common.TeamCounterTerrorists:
-			victimSide = "CT"
-		case common.TeamSpectators:
-			victimSide = "Spectator"
-		case common.TeamUnassigned:
-			victimSide = "Unassigned"
-		default:
-			victimSide = "Unknown"
-		}
-
-		currentKill.VictimSide = &victimSide
-		victimPos := e.Victim.LastAlivePosition
-		victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
-		victimArea := mesh.GetNearestArea(victimPoint, true)
-		var victimAreaId int64
-		victimAreaPlace := ""
-
-		if victimArea != nil {
-			victimAreaId = int64(victimArea.ID)
-			if victimArea.Place != nil {
-				victimAreaPlace = victimArea.Place.Name
-			} else {
-				victimAreaPlace = findAreaPlace(victimArea, mesh)
+			switch e.Victim.Team {
+			case common.TeamTerrorists:
+				victimSide = "T"
+			case common.TeamCounterTerrorists:
+				victimSide = "CT"
+			case common.TeamSpectators:
+				victimSide = "Spectator"
+			case common.TeamUnassigned:
+				victimSide = "Unassigned"
+			default:
+				victimSide = "Unknown"
 			}
-		}
 
-		currentKill.VictimAreaId = &victimAreaId
-		currentKill.VictimAreaName = &victimAreaPlace
-		currentKill.VictimX = &victimPos.X
-		currentKill.VictimY = &victimPos.Y
-		currentKill.VictimZ = &victimPos.Z
-		victimViewX := float64(e.Victim.ViewDirectionX())
-		victimViewY := float64(e.Victim.ViewDirectionY())
-		currentKill.VictimViewX = &victimViewX
-		currentKill.VictimViewY = &victimViewY
+			currentKill.VictimSide = &victimSide
+			victimPos := e.Victim.LastAlivePosition
+			victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
+			victimArea := mesh.GetNearestArea(victimPoint, true)
+			var victimAreaId int64
+			victimAreaPlace := ""
+
+			if victimArea != nil {
+				victimAreaId = int64(victimArea.ID)
+				if victimArea.Place != nil {
+					victimAreaPlace = victimArea.Place.Name
+				} else {
+					victimAreaPlace = findAreaPlace(victimArea, mesh)
+				}
+			}
+
+			currentKill.VictimAreaId = &victimAreaId
+			currentKill.VictimAreaName = &victimAreaPlace
+			currentKill.VictimX = &victimPos.X
+			currentKill.VictimY = &victimPos.Y
+			currentKill.VictimZ = &victimPos.Z
+			victimViewX := float64(e.Victim.ViewDirectionX())
+			victimViewY := float64(e.Victim.ViewDirectionY())
+			currentKill.VictimViewX = &victimViewX
+			currentKill.VictimViewY = &victimViewY
+		}
 
 		// Assister
 		if e.Assister != nil {
@@ -1371,7 +1373,7 @@ func main() {
 		}
 
 		// Parse trade information
-		if len(currentRound.Kills) > 0 {
+		if (len(currentRound.Kills) > 0 && e.Victim != nil) {
 			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill)
 			currentKill.PlayerTradedName = currentRound.Kills[len(currentRound.Kills)-1].VictimName
 			currentKill.PlayerTradedSteamId = currentRound.Kills[len(currentRound.Kills)-1].VictimSteamId
@@ -1527,7 +1529,9 @@ func main() {
 			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
 			tPlayers := gs.TeamTerrorists().Members()
 			for _, p := range tPlayers {
-				currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p, mesh))
+				if p != nil {
+					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p, mesh))
+				}
 			}
 			tPlayerPlaces := createAlivePlayerSlice(currentFrame.T.Players)
 			tToken := createCountToken(tPlayerPlaces, placeSl)
@@ -1543,7 +1547,9 @@ func main() {
 			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 			for _, p := range ctPlayers {
-				currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p, mesh))
+				if p != nil {
+					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p, mesh))
+				}
 			}
 			ctPlayerPlaces := createAlivePlayerSlice(currentFrame.CT.Players)
 			ctToken := createCountToken(ctPlayerPlaces, placeSl)
