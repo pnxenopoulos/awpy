@@ -1663,8 +1663,12 @@ func main() {
 		var tempRoundsTicks []GameRound;
 		for i := range currentGame.Rounds {
 			currRound := currentGame.Rounds[i]
-			if (currRound.StartTick > 0 && currRound.EndTick > 0) {
+			if (i>0 && currRound.StartTick > 0 && currRound.EndTick > 0) {
 				tempRoundsTicks = append(tempRoundsTicks, currRound)
+			} else {
+				if currRound.EndTick > 0 {
+					tempRoundsTicks = append(tempRoundsTicks, currRound)
+				}
 			}
 		}
 		currentGame.Rounds = tempRoundsTicks
