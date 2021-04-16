@@ -781,10 +781,15 @@ func main() {
 		ctPlayers := gs.TeamCounterTerrorists().Members()
 		currentRound.CTBeginMoney = 0
 		for _, p := range tPlayers {
-			currentRound.TBeginMoney += int64(p.Money())
+			if p != nil {
+				currentRound.TBeginMoney += int64(p.Money())
+			}
+			
 		}
 		for _, p := range ctPlayers {
-			currentRound.CTBeginMoney += int64(p.Money())
+			if p != nil {
+				currentRound.CTBeginMoney += int64(p.Money())
+			}
 		}
 	})
 
@@ -819,12 +824,12 @@ func main() {
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 			aliveCT := 0
 			for _, p := range tPlayers {
-				if p.IsAlive() {
+				if p.IsAlive() && p != nil {
 					aliveT = aliveT + 1
 				}
 			}
 			for _, p := range ctPlayers {
-				if p.IsAlive() {
+				if p.IsAlive() && p != nil {
 					aliveCT = aliveCT + 1
 				}
 			}
@@ -1663,7 +1668,7 @@ func main() {
 		var tempRoundsTicks []GameRound;
 		for i := range currentGame.Rounds {
 			currRound := currentGame.Rounds[i]
-			if (i>0 && currRound.StartTick > 0 && currRound.EndTick > 0) {
+			if (currRound.StartTick > 0 && currRound.EndTick > 0) {
 				tempRoundsTicks = append(tempRoundsTicks, currRound)
 			} else {
 				if currRound.EndTick > 0 {
