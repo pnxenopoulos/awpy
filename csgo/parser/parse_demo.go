@@ -1669,6 +1669,54 @@ func main() {
 		}
 		currentGame.Rounds = tempRoundsTicks
 
+		// Remove rounds that dip in score
+		var tempRoundsDip []GameRound;
+		for i := range currentGame.Rounds {
+			if (i > 0 && i < len(currentGame.Rounds)) {
+				prevRound := currentGame.Rounds[i-1]
+				currRound := currentGame.Rounds[i]
+				if ((currRound.CTScore + currRound.TScore >= prevRound.CTScore + prevRound.TScore)) {
+					tempRoundsDip = append(tempRoundsDip, currRound)
+				}
+			} else if i == 0 {
+				currRound := currentGame.Rounds[i]
+				tempRoundsDip = append(tempRoundsDip, currRound)
+			}
+		}
+		currentGame.Rounds = tempRoundsDip
+
+		// Set first round scores to 0-0
+		currentGame.Rounds[0].TScore = 0
+		currentGame.Rounds[0].CTScore = 0
+
+		// Remove rounds where score doesn't change
+		var tempRounds []GameRound;
+		for i := range currentGame.Rounds {
+			if (i < len(currentGame.Rounds)-1) {
+				nextRound := currentGame.Rounds[i+1]
+				currRound := currentGame.Rounds[i]
+				if (!(currRound.CTScore + currRound.TScore >= nextRound.CTScore + nextRound.TScore)) {
+					tempRounds = append(tempRounds, currRound)
+				}
+			} else {
+				currRound := currentGame.Rounds[i]
+				tempRounds = append(tempRounds, currRound)
+			}
+
+		}
+		currentGame.Rounds = tempRounds
+
+		// Find the starting round. Starting round is defined as the first 0-0 round which has following rounds.
+		startIdx := 0
+		for i, r := range currentGame.Rounds {
+			if ((i < len(currentGame.Rounds)-3) && (len(currentGame.Rounds) > 3)) {
+				if (r.TScore + r.CTScore == 0) && (currentGame.Rounds[i+1].TScore + currentGame.Rounds[i+1].CTScore > 0) && (currentGame.Rounds[i+2].TScore + currentGame.Rounds[i+2].CTScore > 0) && (currentGame.Rounds[i+3].TScore + currentGame.Rounds[i+4].CTScore > 0) {
+					startIdx = i
+				}
+			}
+		}
+		currentGame.Rounds = currentGame.Rounds[startIdx:len(currentGame.Rounds)]
+
 		// Remove rounds with 0-0 scorelines that arent first
 		var tempRoundsScores []GameRound;
 		for i := range currentGame.Rounds {
