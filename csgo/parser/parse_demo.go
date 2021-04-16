@@ -1649,79 +1649,75 @@ func main() {
 		}
 		currentGame.Rounds = tempRoundsReason
 
-		// Remove rounds where score doesn't change
-		var tempRounds []GameRound;
+		// Remove rounds where kills are > 10
+		var tempRoundsKills []GameRound;
 		for i := range currentGame.Rounds {
-			if (i < len(currentGame.Rounds)-1) {
-				nextRound := currentGame.Rounds[i+1]
-				currRound := currentGame.Rounds[i]
-				if (!(currRound.CTScore + currRound.TScore >= nextRound.CTScore + nextRound.TScore)) {
-					tempRounds = append(tempRounds, currRound)
-				}
-			} else {
-				currRound := currentGame.Rounds[i]
-				tempRounds = append(tempRounds, currRound)
-			}
-
-		}
-		currentGame.Rounds = tempRounds
-
-		// Find the starting round. Starting round is defined as the first 0-0 round which has following rounds.
-		startIdx := 0
-		for i, r := range currentGame.Rounds {
-			if ((i < len(currentGame.Rounds)-3) && (len(currentGame.Rounds) > 3)) {
-				if (r.TScore + r.CTScore == 0) && (currentGame.Rounds[i+1].TScore + currentGame.Rounds[i+1].CTScore > 0) && (currentGame.Rounds[i+2].TScore + currentGame.Rounds[i+2].CTScore > 0) && (currentGame.Rounds[i+3].TScore + currentGame.Rounds[i+3].CTScore > 0) {
-					startIdx = i
-				}
+			currRound := currentGame.Rounds[i]
+			if (len(currRound.Kills) <= 10) {
+				tempRoundsKills = append(tempRoundsKills, currRound)
 			}
 		}
-		currentGame.Rounds = currentGame.Rounds[startIdx:len(currentGame.Rounds)]
+		currentGame.Rounds = tempRoundsKills
 
-		// Correctly assign round scores by looking at round end reasons
+		// Remove rounds with missing end or start tick
+		var tempRoundsTicks []GameRound;
+		for i := range currentGame.Rounds {
+			currRound := currentGame.Rounds[i]
+			if (currRound.StartTick > 0 && currRound.EndTick > 0) {
+				tempRoundsTicks = append(tempRoundsTicks, currRound)
+			}
+		}
+		currentGame.Rounds = tempRoundsTicks
+
+		// Remove rounds with 0-0 scorelines that arent first
 		var tempRoundsScores []GameRound;
 		for i := range currentGame.Rounds {
-			if (i > 0) {
-				lastRound := currentGame.Rounds[i-1]
-				currRound := currentGame.Rounds[i]
-				if (lastRound.Reason == "CTWin" || lastRound.Reason == "BombDefused" || lastRound.Reason == "TargetSaved") {
-					currRound.CTScore = lastRound.CTScore + 1
-					currRound.TScore = lastRound.TScore
-					if (currRound.Reason == "CTWin" || currRound.Reason == "BombDefused" || currRound.Reason == "TargetSaved") {
-						currRound.EndCTScore = currRound.CTScore + 1
-						currRound.EndTScore = currRound.TScore
-					} else if (currRound.Reason == "TerroristsWin" || currRound.Reason == "TargetBombed") {
-						currRound.EndTScore = currRound.TScore + 1
-						currRound.EndCTScore = currRound.CTScore
-					}
-					tempRoundsScores = append(tempRoundsScores, currRound)
-				} else if (lastRound.Reason == "TerroristsWin" || lastRound.Reason == "TargetBombed") {
-					currRound.CTScore = lastRound.CTScore
-					currRound.TScore = lastRound.TScore + 1
-					if (currRound.Reason == "CTWin" || currRound.Reason == "BombDefused" || currRound.Reason == "TargetSaved") {
-						currRound.EndCTScore = currRound.CTScore + 1
-						currRound.EndTScore = currRound.TScore
-					} else if (currRound.Reason == "TerroristsWin" || currRound.Reason == "TargetBombed") {
-						currRound.EndTScore = currRound.TScore + 1
-						currRound.EndCTScore = currRound.CTScore
-					}
+			currRound := currentGame.Rounds[i]
+			if i > 0 {
+				if currRound.TScore + currRound.CTScore > 0 {
 					tempRoundsScores = append(tempRoundsScores, currRound)
 				}
 			} else {
-				currRound := currentGame.Rounds[i]
-				currRound.CTScore = 0
-				currRound.TScore = 0
-				if (currRound.Reason == "CTWin" || currRound.Reason == "BombDefused" || currRound.Reason == "TargetSaved") {
-					currRound.EndCTScore = 1
-					currRound.EndTScore = 0
-					tempRoundsScores = append(tempRoundsScores, currRound)
-				} else if (currRound.Reason == "TerroristsWin" || currRound.Reason == "TargetBombed") {
-					currRound.EndTScore = 1
-					currRound.EndCTScore = 0
-					tempRoundsScores = append(tempRoundsScores, currRound)
-				}
+				tempRoundsScores = append(tempRoundsScores, currRound)
 			}
 		}
 		currentGame.Rounds = tempRoundsScores
+
+		// Determine scores
+		for i := range currentGame.Rounds {
+			if i == 15 {
+				currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndCTScore
+				currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndTScore
+				if (currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved") {
+					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
+					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1 
+				} else {
+					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
+					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
+				}
+			} else if i>0 {
+				currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndTScore
+				currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndCTScore
+				if (currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved") {
+					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
+					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1 
+				} else {
+					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
+					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
+				}
+			} else if i == 0 {
+				// Set first round to 0-0, switch other scores
+				currentGame.Rounds[i].TScore = 0
+				currentGame.Rounds[i].CTScore = 0
+				if (currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved") {
+					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
+					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1 
+				} else {
+					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
+					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
+				}
+			}
+		}
 
 		// Set correct round numbers
 		for i := range currentGame.Rounds {
