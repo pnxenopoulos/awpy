@@ -1789,10 +1789,10 @@ func main() {
 		}
 
 		// Set the correct round start for round 0
-		currentGame.Rounds[0].CTRoundStartMoney = 4000
-		currentGame.Rounds[0].TRoundStartMoney = 4000
-		currentGame.Rounds[0].CTRoundStartEqVal = 1000
-		currentGame.Rounds[0].TRoundStartEqVal = 1000
+		currentGame.Rounds[0].CTBeginMoney = 4000
+		currentGame.Rounds[0].TBeginMoney = 4000
+		currentGame.Rounds[0].CTBeginEqVal = 1000
+		currentGame.Rounds[0].TBeginEqVal = 1000
 
 		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
 		for i := range currentGame.Rounds {
