@@ -644,7 +644,6 @@ func cleanMapName(mapName string) string {
 
 // Main
 func main() {
-	InfoLogger.Println("Started demoparser")
 	/* Parse the arguments
 
 	Run the parser as follows: go run parse_demo.go -demo /path/to/demo.dem -parserate 1/2/4/8/16/32/64/128 -demoid someDemoIdString
@@ -1788,6 +1787,12 @@ func main() {
 				currentGame.Rounds[i].TBuyType = "Pistol"
 			}
 		}
+
+		// Set the correct round start for round 0
+		currentGame.Rounds[0].CTRoundStartMoney = 4000
+		currentGame.Rounds[0].TRoundStartMoney = 4000
+		currentGame.Rounds[0].CTRoundStartEqVal = 1000
+		currentGame.Rounds[0].TRoundStartEqVal = 1000
 
 		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
 		for i := range currentGame.Rounds {
