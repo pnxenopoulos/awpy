@@ -5,14 +5,8 @@ FROM ubuntu:20.04
 ENV PYTHONUNBUFFERED True
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install git
-RUN apt-get install -y git
-
-# Install wget
-RUN apt-get install -y wget
-
-# Install pip
-RUN apt-get install -y python3-pip
+# Update, install git, wget, pip
+RUN apt-get -q update && apt-get install -y git && apt-get install -y wget && apt-get install -y python3-pip 
 
 # Install testing stuff
 RUN pip install pytest
