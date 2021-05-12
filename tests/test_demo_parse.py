@@ -60,7 +60,7 @@ class TestDemoParser:
                 parse_rate=128,
             )
             self.parser.parse()
-            if self.parser.parse_error = True:
+            if self.parser.parse_error == True:
                 parse_errors += 1
             self._delete_demofile(file)
         assert parse_errors == 0
