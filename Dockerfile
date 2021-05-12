@@ -33,14 +33,8 @@ WORKDIR $LIB_HOME
 COPY . ./
 RUN pip3 install -r requirements.txt
 
-# Get associated files
-WORKDIR  $LIB_HOME/tests
-
-# Go back to LIB_HOME
-WORKDIR $LIB_HOME
-
 # Run tests
-RUN /run_tests.sh
+RUN ./run_tests.sh
 
 # Run tests
 ENTRYPOINT ["/run_tests.sh"]
