@@ -8,7 +8,11 @@ from csgo.parser import DemoParser
 class TestDemoParser:
     """Class to test the match parser
 
-    Uses https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
+    We use the following demofiles:
+        - [1] https://www.hltv.org/matches/2347706/ence-vs-endpoint-european-development-championship-3
+        - [2] https://www.hltv.org/matches/2346568/evil-geniuses-vs-astralis-iem-katowice-2021
+        - [3] https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
+        - [4] https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019
     """
 
     def setup_class(self):

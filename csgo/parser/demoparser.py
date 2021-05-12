@@ -86,6 +86,9 @@ class DemoParser:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
 
+        # Set parse error to False
+        self.parse_error = False
+
     def _parse_demo(self):
         """Parse a demofile using the Go script parse_demo.go -- this function takes no arguments, all arguments are set in initialization.
 
@@ -116,7 +119,9 @@ class DemoParser:
         self.output_file = self.demo_id + ".json"
         if os.path.isfile(self.output_file):
             self.logger.info("Wrote demo parse output to " + self.output_file)
+            self.parse_error = False
         else:
+            self.parse_error = True
             self.logger.error("No file produced, error in calling Golang")
             self.logger.error(stdout)
 
