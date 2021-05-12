@@ -28,4 +28,4 @@ RUN pip3 install -r requirements.txt
 RUN wget https://storage.googleapis.com/csgo-tests/og-vs-natus-vincere-m1-dust2.dem -O tests/og-vs-natus-vincere-m1-dust2.dem
 
 # Run tests
-ENTRYPOINT ["/run_tests.sh"]
+ENTRYPOINT ["./run_tests.sh"]
