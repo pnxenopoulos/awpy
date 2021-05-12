@@ -40,4 +40,7 @@ WORKDIR  $LIB_HOME/tests
 WORKDIR $LIB_HOME
 
 # Run tests
+RUN /run_tests.sh
+
+# Run tests
 ENTRYPOINT ["/run_tests.sh"]
