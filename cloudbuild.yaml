@@ -2,9 +2,11 @@ steps:
   # Build the container image
   - name: "gcr.io/cloud-builders/docker"
     id: "build-library"
+    timeout: 5m
     args: ["build", "-t", "gcr.io/csgo-library/csgo-python", "."]
 
   # Test the code
   - name: "gcr.io/cloud-builders/docker"
     id: "test-library"
+    timeout: 20m
     args: ["run", "gcr.io/csgo-library/csgo-python"]
