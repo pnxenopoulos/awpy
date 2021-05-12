@@ -1,0 +1,10 @@
+steps:
+  # Build the container image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-library"
+    args: ["build", "-t", "gcr.io/csgo-library/csgo-python", "."]
+
+  # Test the code
+  - name: "gcr.io/cloud-builders/docker"
+    id: "test-library"
+    args: ["run", "gcr.io/csgo-library/csgo-python"]
