@@ -1,0 +1,47 @@
+{
+    "astralis-vs-liquid-m1-inferno": {
+        "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m1-inferno.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019",
+        "rounds": 27
+    },
+    "astralis-vs-liquid-m2-nuke": {
+        "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019",
+        "rounds": 28
+    },
+    "ence-vs-endpoint-m1-inferno": {
+        "url": "https://storage.googleapis.com/csgo-tests/ence-vs-endpoint-m1-inferno.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2347706/ence-vs-endpoint-european-development-championship-3",
+        "rounds": 27
+    },
+    "ence-vs-endpoint-m2-train": {
+        "url": "https://storage.googleapis.com/csgo-tests/ence-vs-endpoint-m2-train.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2347706/ence-vs-endpoint-european-development-championship-3",
+        "rounds": 21
+    },
+    "evil-geniuses-vs-astralis-m1-train": {
+        "url": "https://storage.googleapis.com/csgo-tests/evil-geniuses-vs-astralis-m1-train.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2346568/evil-geniuses-vs-astralis-iem-katowice-2021",
+        "rounds": 25
+    },
+    "evil-geniuses-vs-astralis-m2-dust2": {
+        "url": "https://storage.googleapis.com/csgo-tests/evil-geniuses-vs-astralis-m2-dust2.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2346568/evil-geniuses-vs-astralis-iem-katowice-2021",
+        "rounds": 23
+    },
+    "og-vs-natus-vincere-m1-dust2": {
+        "url": "https://storage.googleapis.com/csgo-tests/og-vs-natus-vincere-m1-dust2.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020",
+        "rounds": 25
+    },
+    "og-vs-natus-vincere-m2-mirage": {
+        "url": "https://storage.googleapis.com/csgo-tests/og-vs-natus-vincere-m2-mirage.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020",
+        "rounds": 26
+    },
+    "og-vs-natus-vincere-m3-nuke": {
+        "url": "https://storage.googleapis.com/csgo-tests/og-vs-natus-vincere-m3-nuke.dem",
+        "hltvUrl": "https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020",
+        "rounds": 28
+    }
+}

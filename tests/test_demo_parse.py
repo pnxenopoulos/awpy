@@ -1,7 +1,8 @@
-import requests
+import json
 import os
 import pytest
 import pandas as pd
+import requests
 
 from csgo.parser import DemoParser
 
@@ -26,17 +27,8 @@ class TestDemoParser:
             demo_id="test",
             parse_rate=128,
         )
-        self.demofiles = {
-            "astralis-vs-liquid-m1-inferno": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m1-inferno.dem",
-            "astralis-vs-liquid-m2-nuke": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem",
-            "ence-vs-endpoint-m1-inferno": "https://storage.googleapis.com/csgo-tests/ence-vs-endpoint-m1-inferno.dem",
-            "ence-vs-endpoint-m2-train": "https://storage.googleapis.com/csgo-tests/ence-vs-endpoint-m2-train.dem",
-            "evil-geniuses-vs-astralis-m1-train": "https://storage.googleapis.com/csgo-tests/evil-geniuses-vs-astralis-m1-train.dem",
-            "evil-geniuses-vs-astralis-m2-dust2": "https://storage.googleapis.com/csgo-tests/evil-geniuses-vs-astralis-m2-dust2.dem",
-            "og-vs-natus-vincere-m1-dust2": "https://storage.googleapis.com/csgo-tests/og-vs-natus-vincere-m1-dust2.dem",
-            "og-vs-natus-vincere-m2-mirage": "https://storage.googleapis.com/csgo-tests/og-vs-natus-vincere-m2-mirage.dem",
-            "og-vs-natus-vincere-m3-nuke": "https://storage.googleapis.com/csgo-tests/og-vs-natus-vincere-m3-nuke.dem"
-        }
+        with open("tests/test_data.json") as f:
+            self.demo_data = json.load(f)
 
     def teardown_class(self):
         """ Set parser to none, deletes all demofiles and JSON
@@ -128,8 +120,8 @@ class TestDemoParser:
 
     def test_parse(self):
         parse_errors = 0
-        for file in self.demofiles:
-            self._get_demofile(self.demofiles[file], file)
+        for file in self.demo_data:
+            self._get_demofile(self.demo_data[file]["url"], file)
             self.parser = DemoParser(
                 demofile=file + ".dem",
                 log=True,
@@ -138,11 +130,18 @@ class TestDemoParser:
             )
             self.parser.parse()
             if self.parser.parse_error == True:
+                # If error, count it
                 parse_errors += 1
+            else:
+                # If not, then add the JSON
+                with open(file + ".json") as f:
+                    self.demo_data[file]["json"] = json.load(f)
             self._delete_demofile(file)
         assert parse_errors == 0
 
-    def test_parsed_json(self):
-        assert 2 + 2 == 4
+    def test_parsed_json_rounds(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["json"]:
+                assert len(self.demo_data[demo]["json"]["gameRounds"]) == self.demo_data[demo]["rounds"]
 
     
