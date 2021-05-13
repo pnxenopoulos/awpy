@@ -24,6 +24,7 @@ class TestDemoParser:
         """ Setup class by defining the base parser, demofile list, demofile to use for specific tests
         """
         out_hdlr = logging.StreamHandler(sys.stdout)
+        out_hdlr.setLevel(logging.INFO)
         out_hdlr.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
         self.LOGGER = logging.getLogger("csgo-lib-test")
         self.LOGGER.addHandler(out_hdlr)
