@@ -142,6 +142,6 @@ class TestDemoParser:
     def test_parsed_json_rounds(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["json"]:
-                assert len(self.demo_data[demo]["json"]["gameRounds"]) == self.demo_data[demo]["rounds"]
+                assert len(self.demo_data[demo]["json"]["GameRounds"]) == self.demo_data[demo]["rounds"]
 
     
