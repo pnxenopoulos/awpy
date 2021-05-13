@@ -156,7 +156,7 @@ class TestDemoParser:
             if self.demo_data[demo]["json"]:
                 demo_kills = self._count_kills(self.demo_data[demo]["json"])
                 real_kills = self.demo_data[demo]["totalKills"]
-                print("Parsed {0} kills, real kills are {1}".format(demo_kills, real_kills))
+                print("[{0}] Parsed {1} kills, real kills are {2}".format(demo, demo_kills, real_kills))
                 assert demo_kills == real_kills
 
     
