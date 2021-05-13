@@ -1,4 +1,3 @@
-import logging
 import json
 import os
 import pytest
@@ -23,11 +22,6 @@ class TestDemoParser:
     def setup_class(self):
         """ Setup class by defining the base parser, demofile list, demofile to use for specific tests
         """
-        out_hdlr = logging.StreamHandler(sys.stdout)
-        out_hdlr.setLevel(logging.INFO)
-        out_hdlr.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
-        self.LOGGER = logging.getLogger("csgo-lib-test")
-        self.LOGGER.addHandler(out_hdlr)
         self.parser = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
@@ -162,7 +156,7 @@ class TestDemoParser:
             if self.demo_data[demo]["json"]:
                 demo_kills = self._count_kills(self.demo_data[demo]["json"])
                 real_kills = self.demo_data[demo]["totalKills"]
-                self.LOGGER.info("Parsed {0} kills, real kills are {1}".format(demo_kills, real_kills))
+                print("Parsed {0} kills, real kills are {1}".format(demo_kills, real_kills))
                 assert demo_kills == real_kills
 
     
