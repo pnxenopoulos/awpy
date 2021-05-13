@@ -144,4 +144,15 @@ class TestDemoParser:
             if self.demo_data[demo]["json"]:
                 assert len(self.demo_data[demo]["json"]["GameRounds"]) == self.demo_data[demo]["rounds"]
 
+    def _count_kills(self, json):
+        total_kills = 0
+        for r in json["GameRounds"]:
+            total_kills += len(r["Kills"])
+        return total_kills
+
+    def test_parsed_kills(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["json"]:
+                assert self._count_kills(self.demo_data[demo]["json"]) == self.demo_data["totalKills"]
+
     
