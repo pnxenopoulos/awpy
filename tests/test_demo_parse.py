@@ -4,6 +4,7 @@ import os
 import pytest
 import pandas as pd
 import requests
+import sys
 
 from csgo.parser import DemoParser
 
@@ -22,7 +23,10 @@ class TestDemoParser:
     def setup_class(self):
         """ Setup class by defining the base parser, demofile list, demofile to use for specific tests
         """
+        out_hdlr = logging.StreamHandler(sys.stdout)
+        out_hdlr.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
         self.LOGGER = logging.getLogger("csgo-lib-test")
+        self.LOGGER.addHandler(out_hdlr)
         self.parser = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
