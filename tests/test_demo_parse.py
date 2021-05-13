@@ -153,6 +153,6 @@ class TestDemoParser:
     def test_parsed_kills(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["json"]:
-                assert self._count_kills(self.demo_data[demo]["json"]) == self.demo_data["totalKills"]
+                assert self._count_kills(self.demo_data[demo]["json"]) == self.demo_data[demo]["totalKills"]
 
     
