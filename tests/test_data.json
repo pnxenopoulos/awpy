@@ -3,7 +3,7 @@
         "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m1-inferno.dem",
         "hltvUrl": "https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019",
         "rounds": 27,
-        "totalKills": 178
+        "totalKills": 177
     },
     "astralis-vs-liquid-m2-nuke": {
         "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem",
