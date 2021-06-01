@@ -228,13 +228,19 @@ type KillAction struct {
 	AssisterAreaId *int64 `json:"AssisterAreaId"`
 	AssisterAreaName *string `json:"AssisterAreaName"`
 	IsWallbang bool `json:"IsWallbang"`
+	PenetratedObjects int64 `json:"PenetratedObjects"`
+	IsFirstKill bool `json:"IsFirstKill"`
 	IsFlashed bool `json:"IsFlashed"`
 	IsHeadshot bool `json:"IsHeadshot"`
+	AssistedFlash bool `json:"AssistedFlash"`
+	AttackerBlind bool `json:"AttackerBlind"`
+	NoScope bool `json:"NoScope"`
+	ThruSmoke bool `json:"ThruSmoke"`
+	Distance float64 `json:"Distance"`
 	IsTrade bool `json:"IsTrade"`
 	PlayerTradedName *string `json:"PlayerTradedName"`
 	PlayerTradedTeam *string `json:"PlayerTradedTeam"`
 	PlayerTradedSteamId *int64 `json:"PlayerTradedSteamId"`
-	IsFirstKill bool `json:"IsFirstKill"`
 	Weapon string `json:"Weapon"`
 }
 
@@ -773,7 +779,7 @@ func main() {
 		ctTeam := gs.TeamCounterTerrorists().ClanName()
 		currentRound.TTeam = &tTeam
 		currentRound.CTTeam = &ctTeam
-
+		
 		// Parse round spend
 		tPlayers := gs.TeamTerrorists().Members()
 		currentRound.TBeginMoney = 0
@@ -1234,7 +1240,12 @@ func main() {
 		currentKill.Second = (float64(currentKill.Tick)-float64(currentRound.FreezeTimeEnd))/float64(currentGame.TickRate)
 		currentKill.Weapon = e.Weapon.String()
 		currentKill.IsWallbang = e.IsWallBang()
+		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
 		currentKill.IsHeadshot = e.IsHeadshot
+		currentKill.AssistedFlash = e.AssistedFlash
+		currentKill.AttackerBlind = e.AttackerBlind
+		currentKill.NoScope = e.NoScope
+		currentKill.ThruSmoke = e.ThroughSmoke
 
 		// Attacker
 		if e.Killer != nil {
@@ -1333,6 +1344,8 @@ func main() {
 			victimViewY := float64(e.Victim.ViewDirectionY())
 			currentKill.VictimViewX = &victimViewX
 			currentKill.VictimViewY = &victimViewY
+
+			currentKill.Distance = float64(e.Distance)
 		}
 
 		// Assister
