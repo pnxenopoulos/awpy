@@ -25,13 +25,17 @@ github.com/markus-wa/demoinfocs-golang/v2 v2.5.0 h1:q56nV+pO8DWE8qg14+IIRHc21MY6
 github.com/markus-wa/demoinfocs-golang/v2 v2.5.0/go.mod h1:qjgSVfhCIrr6Gf6ZjN0ZCGhl5bPC4rSVhc3cIpVkFWI=
 github.com/markus-wa/demoinfocs-golang/v2 v2.6.0 h1:oxKbl89+Iog5sPXG+zv1kMsX+HWw1/xJ7plVs4iQWz0=
 github.com/markus-wa/demoinfocs-golang/v2 v2.6.0/go.mod h1:ckL0zoSqko9oVV5Vy7pnCmEW/X+8FJNVjGLhR258h3g=
+github.com/markus-wa/demoinfocs-golang/v2 v2.8.1 h1:FvgjA8wk5QMFkLcZMr4goowIvNIotCsyCUcU2whJAY0=
 github.com/markus-wa/demoinfocs-golang/v2 v2.8.1/go.mod h1:cA2eUctmtZ0Pbw+vgpMmOAJCMUR6nWiTMLfsomWMjdo=
+github.com/markus-wa/demoinfocs-golang/v2 v2.9.1 h1:hNaLfSwClx2nnPnjObuTy5t3p5y468bT58HGDYiwG9c=
+github.com/markus-wa/demoinfocs-golang/v2 v2.9.1/go.mod h1:zStNeM/pxDkd8Ao1oM3tcbwvXY0EY3fgEA0fL1OM8UM=
 github.com/markus-wa/go-unassert v0.1.2 h1:uXWlMDa8JVtc4RgNq4XJIjyRejv9MOVuy/E0VECPxxo=
 github.com/markus-wa/go-unassert v0.1.2/go.mod h1:XEvrxR+trvZeMDfXcZPvzqGo6eumEtdk5VjNRuvvzxQ=
 github.com/markus-wa/gobitread v0.2.2 h1:4Z4oJ8Bf1XnOy6JZ2/9AdFKVAoxdq7awRjrb+j2BeSQ=
 github.com/markus-wa/gobitread v0.2.2/go.mod h1:PcWXMH4gx7o2CKslbkFkLyJB/aHW7JVRG3MRZe3PINg=
 github.com/markus-wa/godispatch v1.3.0 h1:eHT5Xm8ZEwilj9b/Tu7gyMfmtSau+yC0qpM7NRR+CQk=
 github.com/markus-wa/godispatch v1.3.0/go.mod h1:GNzV7xdnZ9+VBi0z+hma9oUQrJmtqRrqyAuGKTTTcKY=
+github.com/markus-wa/godispatch v1.4.1 h1:Cdff5x33ShuX3sDmUbYWejk7tOuoHErFYMhUc2h7sLc=
 github.com/markus-wa/godispatch v1.4.1/go.mod h1:tk8L0yzLO4oAcFwM2sABMge0HRDJMdE8E7xm4gK/+xM=
 github.com/markus-wa/quickhull-go/v2 v2.1.0 h1:DA2pzEzH0k5CEnlUsouRqNdD+jzNFb4DBhrX4Hpa5So=
 github.com/markus-wa/quickhull-go/v2 v2.1.0/go.mod h1:bOlBUpIzGSMMhHX0f9N8CQs0VZD4nnPeta0OocH7m4o=
