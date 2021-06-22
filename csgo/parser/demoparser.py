@@ -75,6 +75,8 @@ class DemoParser:
         if parse_rate is None:
             self.logger.warning("No parse rate set")
             self.parse_rate = 32
+        elif parse_rate == 1:
+            self.logger.warning("A parse rate of 1 will parse EVERY tick. This process will be very slow.")
         elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128]:
             self.logger.warning(
                 "Parse rate of "
