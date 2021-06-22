@@ -1634,7 +1634,13 @@ func main() {
 
 			// add
 			currentRound.Frames = append(currentRound.Frames, currentFrame)
-			currentFrameIdx = currentFrameIdx + 1
+
+			if currentFrameIdx == (currentGame.ParseRate - 1) {
+				currentFrameIdx = 0
+			} else {
+				currentFrameIdx = currentFrameIdx + 1
+			}
+			
 		} else {
 			if currentFrameIdx == (currentGame.ParseRate - 1) {
 				currentFrameIdx = 0
