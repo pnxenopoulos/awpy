@@ -78,6 +78,16 @@ class TestDemoParser:
         )
         assert self.parser_bad_parse_rate.parse_rate == 32
 
+    def test_parse_rate_one(self):
+        """Tests if parse rate can be set to 1"""
+        self.parser_diff_parse_rate = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+            parse_rate=1,
+        )
+        assert self.parser_diff_parse_rate.parse_rate == 1
+
     def test_parse_rate_good(self):
         """Tests if good parse rates are set"""
         self.parser_diff_parse_rate = DemoParser(
