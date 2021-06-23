@@ -77,11 +77,12 @@ class DemoParser:
             self.parse_rate = 32
         elif parse_rate == 1:
             self.logger.warning("A parse rate of 1 will parse EVERY tick. This process will be very slow.")
+            self.parse_rate = 1
         elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128]:
             self.logger.warning(
                 "Parse rate of "
                 + str(parse_rate)
-                + " not acceptable! Parse rate must be between 2^0 and 2^7. Setting to DEFAULT value of 32."
+                + " not acceptable! Parse rate must be a power of 2 between 2^0 and 2^7. Setting to DEFAULT value of 32."
             )
             self.parse_rate = 32
         else:
