@@ -227,6 +227,8 @@ type KillAction struct {
 	AssisterZ           *float64 `json:"AssisterZ"`
 	AssisterAreaId      *int64   `json:"AssisterAreaId"`
 	AssisterAreaName    *string  `json:"AssisterAreaName"`
+	IsSuicide           bool     `json:"IsSuicide"`
+	IsTeamkill          bool     `json:"IsTeamkill"`
 	IsWallbang          bool     `json:"IsWallbang"`
 	PenetratedObjects   int64    `json:"PenetratedObjects"`
 	IsFirstKill         bool     `json:"IsFirstKill"`
@@ -1346,6 +1348,22 @@ func main() {
 			currentKill.VictimViewY = &victimViewY
 
 			currentKill.Distance = float64(e.Distance)
+
+			// Parse teamkill
+			currentKill.IsTeamkill = false
+			currentKill.IsSuicide = false
+			
+			if e.Killer != nil {
+				if e.Killer.TeamState.ClanName() == e.Victim.TeamState.ClanName() {
+					currentKill.IsTeamkill = true
+				} else {
+					currentKill.IsTeamkill = false
+				}
+			} else {
+				currentKill.IsTeamkill = true
+				currentKill.IsSuicide = true
+			}
+			
 		}
 
 		// Assister
@@ -1405,6 +1423,7 @@ func main() {
 		} else {
 			currentKill.IsFirstKill = false
 		}
+		
 
 		// Add Kill event to maintained data
 		currentRound.Kills = append(currentRound.Kills, currentKill)
