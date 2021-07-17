@@ -4,14 +4,14 @@
 The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and useful information pertaining to the `csgo` package.
 
 ## Setup
-### Requirements
-`csgo` requires [Python](https://www.python.org/downloads/) >= 3.7 and [Golang](https://golang.org/dl/) >= 1.14. Python acts as a wrapper for the Go code which parses demofiles.
+#### Requirements
+`csgo` requires [Python](https://www.python.org/downloads/) >= 3.7 and [Golang](https://golang.org/dl/) >= 1.16. Python acts as a wrapper for the Go code which parses demofiles.
 
-### Installation
-To install `csgo`, clone the repository and install it from source by doing `python setup.py install`.
+#### Installation
+To install `csgo`, clone the repository and install it from source by running `python setup.py install`. *MAKE SURE TO HAVE GOLANG INSTALLED* (see above). 
 
 ## Example Code
-Using the `csgo` package is straightforward. Just pick a demofile and have output in JSON or Pandas DataFrames in seconds. Use the example below to get started.
+Using the `csgo` package is straightforward. Just pick a demofile and have output in JSON or Pandas DataFrame form in seconds. Use the example below to get started.
 
 ```python
 from csgo.parser import DemoParser
@@ -47,9 +47,11 @@ Take a look at the following Jupyter notebooks provided in our `examples/` direc
 - [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/master/examples/00_Parsing_a_CSGO_Demofile.ipynb)
 - [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/master/examples/01_Basic_CSGO_Analysis.ipynb)
 
-You can also look at the following papers which make use of the parser. If using the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive*.
+You can also look at the following papers which make use of the parser. If using the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive* (first paper).
 
 Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive](https://arxiv.org/pdf/2011.01324.pdf)." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
+
+Xenopoulos, Peter, et al. "[ggViz: Accelerating Large-Scale Esports Game Analysis](https://arxiv.org/pdf/2107.06495.pdf)."
 
 
 ## Structure
