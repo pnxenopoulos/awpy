@@ -1354,7 +1354,7 @@ func main() {
 			currentKill.IsSuicide = false
 			
 			if e.Killer != nil {
-				if currentKill.KillerSide == e.VictimSide {
+				if currentKill.AttackerSide == currentKill.VictimSide {
 					currentKill.IsTeamkill = true
 				} else {
 					currentKill.IsTeamkill = false
