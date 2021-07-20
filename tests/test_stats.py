@@ -22,16 +22,17 @@ class TestStats:
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
 
-        self._get_demofile(demo_link=self.demo_data["gambit-vs-natus-vincere-m1-dust2"]["url"], demo_name="gambit-vs-natus-vincere-m1-dust2")
+        r = requests.get(self.demo_data["gambit-vs-natus-vincere-m1-dust2"]["url"])
+        open("gambit-vs-natus-vincere-m1-dust2" + ".dem", "wb").write(r.content)
 
         self.parser = DemoParser(
-            demofile="gambit-vs-natus-vincere-m1-dust2",
+            demofile="gambit-vs-natus-vincere-m1-dust2.dem",
             demo_id="test",
             parse_rate=128,
         )
 
         self.data = self.parser.parse(return_type="df")
-        
+
         self.invalid_numeric_filter = {"Kills":[10]}
         self.invalid_logical_operator = {"Kills":["=invalid=10"]}
         self.invalid_numeric_value = {"Kills":["==1invalid0"]}
@@ -57,9 +58,7 @@ class TestStats:
         })
 
     def _get_demofile(self, demo_link, demo_name):
-        print("Requesting " + demo_link)
-        r = requests.get(demo_link)
-        open(demo_name + ".dem", "wb").write(r.content)
+        
         
     def test_extract_num_filters(self):
         """Tests extract_num_filters function."""
