@@ -21,13 +21,17 @@ class TestStats:
         """Sets up class by defining the parser, filters, and dataframes."""
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
-        self._get_demofile(self.demo_data["gambit-vs-natus-vincere-m1-dust2"]["url"], "gambit-vs-natus-vincere-m1-dust2")
+
+        self._get_demofile(demo_link=self.demo_data["gambit-vs-natus-vincere-m1-dust2"]["url"], demo_name="gambit-vs-natus-vincere-m1-dust2")
+
         self.parser = DemoParser(
             demofile="gambit-vs-natus-vincere-m1-dust2",
             demo_id="test",
             parse_rate=128,
         )
+
         self.data = self.parser.parse(return_type="df")
+        
         self.invalid_numeric_filter = {"Kills":[10]}
         self.invalid_logical_operator = {"Kills":["=invalid=10"]}
         self.invalid_numeric_value = {"Kills":["==1invalid0"]}
