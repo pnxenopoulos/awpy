@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import pytest
 import requests
@@ -18,6 +19,8 @@ class TestStats:
     
     def setup_class(self):
         """Sets up class by defining the parser, filters, and dataframes."""
+        with open("tests/test_data.json") as f:
+            self.demo_data = json.load(f)
         self._get_demofile(self.demo_data["gambit-vs-natus-vincere-m1-dust2"]["url"], "gambit-vs-natus-vincere-m1-dust2")
         self.parser = DemoParser(
             demofile="gambit-vs-natus-vincere-m1-dust2",
