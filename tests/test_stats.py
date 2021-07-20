@@ -56,9 +56,6 @@ class TestStats:
                                "s1mple"],
             "First Half Headshot Kills":[1, 3, 5, 5, 1],
         })
-
-    def _get_demofile(self, demo_link, demo_name):
-        
         
     def test_extract_num_filters(self):
         """Tests extract_num_filters function."""
