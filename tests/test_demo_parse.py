@@ -1,9 +1,7 @@
 import json
 import os
 import pytest
-import pandas as pd
 import requests
-import sys
 
 from csgo.parser import DemoParser
 
@@ -158,7 +156,9 @@ class TestDemoParser:
     def _count_kills(self, json):
         total_kills = 0
         for r in json["GameRounds"]:
-            total_kills += len(r["Kills"])
+            for k in r["Kills"]:
+                if not k["IsTeamkill"] and not k["IsSuicide"]:
+                    total_kills += 1
         return total_kills
 
     def test_parsed_kills(self):
