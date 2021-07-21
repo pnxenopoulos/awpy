@@ -260,11 +260,7 @@ class DemoParser:
                 for frame in r["Frames"]:
                     for side in ["CT", "T"]:
                         if frame[side]["Players"] is not None and (
-<<<<<<< HEAD
-                            len(frame[side]["Players"]) > 0
-=======
                             len(frame[side]["Players"]) > 0  # Used to be == 5, to ensure the sides were equal.
->>>>>>> upstream/master
                         ):
                             for player in frame[side]["Players"]:
                                 player_item = {}
