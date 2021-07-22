@@ -319,7 +319,7 @@ def weapon_type(weapon: str) -> str:
                     "USP-S"]:
         return "Pistol Kills"
     elif weapon in ["MAG-7", "Nova", "Sawed-Off", "XM1014"]:
-        return "Shotgun"
+        return "Shotgun Kills"
     elif weapon in ["MAC-10", "MP5-SD", "MP7", "MP9", "P90", "PP-Bizon",
                     "UMP-45"]:
         return "SMG Kills"
