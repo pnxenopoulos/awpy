@@ -107,32 +107,26 @@ class TestStats:
             self.kill_stats, "First Half Headshot Kills", "==", 3.0).equals( 
                 self.kill_stats.loc[self.kill_stats["First Half Headshot Kills"] 
                                     == 3])
-        )
         assert num_filter_df(
             self.kill_stats, "First Half Headshot Kills", "!=", 3.0).equals( 
                 self.kill_stats.loc[self.kill_stats["First Half Headshot Kills"] 
                                     != 3])
-        )
         assert num_filter_df(
             self.kill_stats, "First Half Headshot Kills", "<=", 3.0).equals( 
                 self.kill_stats.loc[self.kill_stats["First Half Headshot Kills"] 
                                     <= 3])
-        )
         assert num_filter_df(
             self.kill_stats, "First Half Headshot Kills", ">=", 3.0).equals( 
                 self.kill_stats.loc[self.kill_stats["First Half Headshot Kills"] 
                                     >= 3])
-        )
         assert num_filter_df(
             self.kill_stats, "First Half Headshot Kills", "<", 3.0).equals( 
                 self.kill_stats.loc[self.kill_stats["First Half Headshot Kills"] 
                                     < 3])
-        )
         assert num_filter_df(
             self.kill_stats, "First Half Headshot Kills", ">", 3.0).equals( 
                 self.kill_stats.loc[self.kill_stats["First Half Headshot Kills"] 
                                     > 3])                                 
-        )
         
     def test_filter_df(self):
         """Tests filter_df function."""
