@@ -1,25 +1,24 @@
-[![Build Status](https://travis-ci.com/pnxenopoulos/csgo.svg?branch=master)](https://travis-ci.com/pnxenopoulos/csgo) [![codecov](https://codecov.io/gh/pnxenopoulos/csgo/branch/master/graph/badge.svg)](https://codecov.io/gh/pnxenopoulos/csgo) [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE)
+[![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/3JrhKYcEKW) [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE)
 
 # Analyzing Counter-Strike: Global Offensive Data
-The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and useful information pertaining to the `csgo` package.
+The `csgo` package provides data parsing, analytics and (soon) visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/3JrhKYcEKW) for discussion around the library, along with other resources for esports analytics.
 
 ## Setup
 #### Requirements
 `csgo` requires [Python](https://www.python.org/downloads/) >= 3.7 and [Golang](https://golang.org/dl/) >= 1.16. Python acts as a wrapper for the Go code which parses demofiles.
 
 #### Installation
-To install `csgo`, clone the repository and install it from source by running `python setup.py install`. *MAKE SURE TO HAVE GOLANG INSTALLED* (see above). 
+To install `csgo`, clone the repository by running `git clone https://github.com/pnxenopoulos/csgo`. Then, change directories to the newly cloned repository, and install the library by running `python setup.py install`. For more help, you can visit the installation channel in our Discord.
 
 ## Example Code
-Using the `csgo` package is straightforward. Just pick a demofile and have output in JSON or Pandas DataFrame form in seconds. Use the example below to get started.
+Using the `csgo` package is straightforward. Just choose a demofile and have output in a JSON or Pandas DataFrame in a few seconds. Use the example below to get started.
 
 ```python
 from csgo.parser import DemoParser
 
-# Create parser object
-# Set log=True above if you want to produce a logfile for the parser
-# Set parse_rate to a power of 2 between 2^0 and 2^7. It indicates the spacing between parsed ticks. Larger numbers result in fewer frames recorded.
-demo_parser = DemoParser(demofile="og-vs-natus-vincere-m1-dust2.dem", log=True, demo_id="og-vs-natus-vincere", parse_rate=128)
+
+# Set parse_rate to a power of 2 between 2^0 and 2^7. It indicates the spacing between parsed ticks. Larger numbers result in fewer frames recorded. 128 indicates a frame per second on professional game demos.
+demo_parser = DemoParser(demofile="og-vs-natus-vincere-m1-dust2.dem", demo_id="og-vs-natus-vincere", parse_rate=128)
 
 
 # Parse the demofile, output results to dictionary with df name as key
@@ -42,12 +41,12 @@ data_df = demo_parser.parse(return_type="df")
 ```
 
 ## Examples and Papers
-Take a look at the following Jupyter notebooks provided in our `examples/` directory.
+Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
 
 - [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/master/examples/00_Parsing_a_CSGO_Demofile.ipynb)
 - [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/master/examples/01_Basic_CSGO_Analysis.ipynb)
 
-You can also look at the following papers which make use of the parser. If using the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive* (first paper).
+You can also look at the following papers which make use of the parser. If using the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive* (first paper). If you have a paper that uses the parser, please let us know in Discord so we can add it!
 
 Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive](https://arxiv.org/pdf/2011.01324.pdf)." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
 
@@ -72,10 +71,7 @@ This repository contains code for CSGO analysis. It is structured as follows:
 ```
 
 ## Requests and Issues
-This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues).
+This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues). If you come across a bug, please open an issue, and also consider bringing it to the community's attention in the Discord. Same goes for feature requests.
 
 ## Acknowledgments
 This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages. To fix errors brought about in the gonav package from Go 1.14, we provide an updated version in the [gonavparse](https://github.com/pnxenopoulos/csgonavparse).
-
-## License
-Our project is licensed using the [MIT License](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE).
