@@ -8,14 +8,17 @@ def extract_num_filters(filters: Dict[str, Union[List[bool], List[str]]],
                         key: str) -> Tuple[List[str], List[float]]:
     """Extracts the numeric column filters from a key-value pair in a 
        dictionary.
+       
     Extracts logical operators and numeric values from the column filters in the 
     the value of a specified key in the dictionary represented by filters. 
+    
     Args: 
         filters: A dictionary where the keys are the columns of the dataframe 
             represented by df to filter the data by and the values are lists 
             that contain the column filters.
         key: The key in the dictionary represented by filters for which the 
-            numeric column filters should be extracted. 
+            numeric column filters should be extracted.
+            
     Returns:
         A tuple of two lists where the first list contains all of the logical 
         operators in the column filters in the value of a specified key and the 
@@ -65,6 +68,7 @@ def check_filters(df: pd.DataFrame,
     of type boolean and the column filters for columns of type string are of 
     type string. Calls the function extract_numeric_filters to check if the 
     column filters for columns of type float and integer are valid.
+    
     Args: 
         df: A dataframe to be filtered. 
         filters: A dictionary where the keys are the columns of the dataframe 
@@ -104,6 +108,7 @@ def num_filter_df(df: pd.DataFrame,
         sign: A logical operator representing the operation to filter the 
             dataframe represented by df by. 
         val: A numeric value to filter the dataframe represented by df by. 
+        
     Returns:
         A filtered dataframe.
     """
@@ -127,6 +132,7 @@ def filter_df(df: pd.DataFrame,
         filters: A dictionary where the keys are the columns of the dataframe 
             represented by df to filter the data by and the values are lists 
             that contain the column filters.
+            
     Returns:
         A filtered dataframe.
     """
@@ -153,6 +159,7 @@ def calc_stats(df: pd.DataFrame,
                agg: List[List[str]],  
                col_names: List[str]) -> pd.DataFrame: 
     """Calculates statistics for a dataframe.
+    
     Calls the function filter_df to filter a data in dataframe and then performs 
     groupby and aggregation operations on the dataframe and renames the columns. 
    
@@ -168,117 +175,123 @@ def calc_stats(df: pd.DataFrame,
         agg: The aggregation operations to be applied to the columns in the list 
             represented by col_to_agg.
         col_names: Column names for the returned dataframe.
+        
     Returns:
         A dataframe with the specified statistics.
     """
     df_copy = filter_df(df, filters)
     agg_dict = dict(zip(col_to_agg, agg))
-    df_copy = df_copy.groupby(col_to_groupby).agg(agg_dict).reset_index()
+    if col_to_agg:
+        df_copy = df_copy.groupby(col_to_groupby).agg(agg_dict).reset_index()
     df_copy.columns = col_names
     return df_copy
 
 
-def kdr(kill_data: pd.DataFrame,
-        kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
-        death_filters: Dict[str, Union[List[bool], List[str]]] = {},
-        col_names: List[str] = ["PlayerName", "Kills", "Deaths", "KDR"]
+def kill_stats(kill_data: pd.DataFrame,
+               round_data: pd.DataFrame,
+               kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
+               death_filters: Dict[str, Union[List[bool], List[str]]] = {},
+               round_filters: Dict[str, Union[List[bool], List[str]]] = {}
 ) -> pd.DataFrame:
-    """Returns a dataframe with kill, death, and KDR statistics.
-    
-    Calls the function calc_stats to create a dataframe with kill and death 
-    statistics and adds a column with KDR statistics. 
-   
+    """Returns a dataframe with kill statistics.
+       
     Args: 
         kill_data: A dataframe with kill data. 
+        round_data: A dataframe with round data.
         kill_filters: A dictionary where the keys are the columns of the 
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
         death_filters: A dictionary where the keys are the columns of the 
             dataframe represented by kill_data to filter the death data by and
             the values are lists that contain the column filters.
-        col_names: Column names for the returned dataframe.
+        round_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by round_data to filter the round data by and
+            the values are lists that contain the column filters.
     """
-    kills = calc_stats(kill_data, kill_filters, ["AttackerName"], 
-                       ["AttackerName"], [["size"]], ["PlayerName", "Kills"])
+    kills = calc_stats(kill_data.loc[kill_data["AttackerTeam"] != 
+                                     kill_data["VictimTeam"]],
+                       kill_filters, ["AttackerName"], ["AttackerName"], 
+                       [["size"]], ["Player", "K"])
     deaths = calc_stats(kill_data, death_filters, ["VictimName"], 
-                        ["VictimName"], [["size"]], ["PlayerName", "Deaths"])
-    kdr = pd.merge(kills, deaths)
-    kdr["KDR"] = kdr["Kills"] / kdr["Deaths"]
-    kdr.sort_values(by="KDR", ascending=False, inplace=True)
-    kdr.columns = col_names
-    return kdr
+                        ["VictimName"], [["size"]], ["Player", "D"])
+    assists = calc_stats(kill_data.loc[(kill_data["AttackerTeam"] != 
+                                        kill_data["VictimTeam"]) & 
+                                       (kill_data["AssistedFlash"] == False)],
+                         kill_filters, ["AssisterName"], ["AssisterName"], 
+                         [["size"]], ["Player", "A"])
+    first_kills = calc_stats(kill_data.loc[(kill_data["AttackerTeam"] != 
+                                            kill_data["VictimTeam"]) &
+                                           (kill_data["IsFirstKill"] == True)],
+                             kill_filters, ["AttackerName"], ["AttackerName"], 
+                             [["size"]], ["Player", "FK"])
+    headshots = calc_stats(kill_data.loc[(kill_data["AttackerTeam"] != 
+                                          kill_data["VictimTeam"]) & 
+                                         (kill_data["IsHeadshot"] == True)], 
+                           kill_filters, ["AttackerName"], ["AttackerName"], 
+                           [["size"]], ["Player", "HS"])
+    headshot_pct = calc_stats(kill_data.loc[kill_data["AttackerTeam"] != 
+                                            kill_data["VictimTeam"]], 
+                              kill_filters, ["AttackerName"], ["IsHeadshot"], 
+                              [["mean"]], ["Player", "HS%"])
+    kill_stats = kills.merge(assists, how="outer")
+    kill_stats = kill_stats.merge(deaths, how="outer")
+    kill_stats["+/-"] = kill_stats["K"] - kill_stats["D"]
+    kill_stats["KDR"] = kill_stats["K"] / kill_stats["D"]
+    kill_stats["KPR"] = kill_stats["K"] / len(calc_stats(round_data, 
+                                                         round_filters, [], [],                                                          
+                                                         [], round_data.columns))
+    kill_stats = kill_stats.merge(first_kills, how="outer")
+    kill_stats = kill_stats.merge(headshots, how="outer")
+    kill_stats = kill_stats.merge(headshot_pct, how="outer")
+    kill_stats = kill_stats[["Player", "K", "D", "A", "+/-", "HS", "FK", "KDR", 
+                             "KPR", "HS%"]]
+    kill_stats.fillna(0, inplace=True)
+    kill_stats.sort_values(by="K", ascending=False, inplace=True)
+    kill_stats.reset_index(drop=True, inplace=True)
+    return kill_stats
 
 
-def adr(round_data: pd.DataFrame,
-        damage_data: pd.DataFrame,
+def adr(damage_data: pd.DataFrame,
+        round_data: pd.DataFrame,
         damage_filters: Dict[str, Union[List[bool], List[str]]] = {},
-        col_names: List[str] = ["PlayerName", "RawADR", "NormADR"]
+        round_filters: Dict[str, Union[List[bool], List[str]]] = {}
 ) -> pd.DataFrame:  
     """Returns a dataframe with ADR statistics.
- 
-    Calculates raw damage and normalized damage and calls the function 
-    calc_stats to create a dataframe with raw ADR and normalized ADR statistics.
    
     Args: 
-        round_data: A dataframe with round data. 
         damage_data: A dataframe with damage data. 
+        round_data: A dataframe with round data. 
         damage_filters: A dictionary where the keys are the columns of the 
             dataframe represented by damage_data to filter the damage data by 
             and the values are lists that contain the column filters.
-        col_names: Column names for the returned dataframe.
-    """    
-    rounds = len(round_data)
-    damage_data_copy = damage_data.copy()
-    damage_data_copy["RawDamage"] = (damage_data_copy["HpDamage"] 
-                                     + damage_data_copy["ArmorDamage"])
-    damage_data_copy["NormDamage"] = (damage_data_copy["HpDamageTaken"] 
-                                      + damage_data_copy["ArmorDamage"])
-    adr = calc_stats(damage_data_copy, damage_filters, ["AttackerName"],
-                     ["RawDamage", "NormDamage"], [["sum"], ["sum"]],
-                     ["PlayerName", "RawADR", "NormADR"])
-    adr["RawADR"] = adr["RawADR"] / rounds
-    adr["NormADR"] = adr["NormADR"] / rounds
-    adr.sort_values(by="RawADR", ascending=False, inplace=True)
-    adr.columns = col_names
-    return adr
-
-
-def headshot_pct(kill_data: pd.DataFrame,
-                 kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
-                 col_names: List[str] = ["PlayerName", "HeadshotPct"]
-) -> pd.DataFrame:
-    """Returns a dataframe with headshot percentage statistics.
- 
-    Calls the function calc_stats to create a dataframe with headshot percentage
-    statistics.
-   
-    Args: 
-        kill_data: A dataframe with kill data. 
-        kill_filters: A dictionary where the keys are the columns of the 
-            dataframe represented by kill_data to filter the kill data by and
+        round_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
-        col_names: Column names for the returned dataframe.
     """    
-    headshot_pct = calc_stats(kill_data, kill_filters, ["AttackerName"], 
-                              ["IsHeadshot"], [["mean"]], 
-                              ["PlayerName", "HeadshotPct"])
-    headshot_pct.sort_values(by="HeadshotPct", ascending=False, inplace=True)
-    headshot_pct.columns = col_names
-    return headshot_pct
+    adr = calc_stats(damage_data.loc[damage_data["AttackerTeam"] != 
+                                     damage_data["VictimTeam"]], damage_filters, 
+                     ["AttackerName"],["HpDamage", "HpDamageTaken"], [["sum"], 
+                                                                      ["sum"]],
+                     ["Player", "Raw ADR", "Norm ADR"])
+    adr["Raw ADR"] = adr["Raw ADR"] / len(calc_stats(round_data, round_filters, 
+                                                     [], [], [], 
+                                                     round_data.columns))
+    adr["Norm ADR"] = adr["Norm ADR"] / len(calc_stats(round_data, round_filters, 
+                                                       [], [], [], 
+                                                       round_data.columns))
+    adr.fillna(0, inplace=True)
+    adr.sort_values(by="Raw ADR", ascending=False, inplace=True)
+    adr.reset_index(drop=True, inplace=True)
+    return adr
 
 
 def util_dmg(damage_data: pd.DataFrame,
              grenade_data: pd.DataFrame,
              damage_filters: Dict[str, Union[List[bool], List[str]]] = {},
-             grenade_filters: Dict[str, Union[List[bool], List[str]]] = {},
-             col_names: List[str] = ["PlayerName", "UtilityDamage",
-                                     "NadesThrown","DamagePerNade"]
+             grenade_filters: Dict[str, Union[List[bool], List[str]]] = {}
 ) -> pd.DataFrame:
     """Returns a dataframe with utility damage statistics.
-    Calculates raw damage and and calls the function calc_stats to create a 
-    a dataframe with utility damage, grenades thrown, and damage per grenade 
-    thrown statistics.
-   
+    
     Args: 
         damage_data: A dataframe with damage data. 
         grenade_data: A dataframe with grenade data.
@@ -286,28 +299,203 @@ def util_dmg(damage_data: pd.DataFrame,
             dataframe represented by damage_data to filter the damage data by 
             and the values are lists that contain the column filters.
         grenade_filters: A dictionary where the keys are the columns of the 
-            dataframe represented by grenade_data to filter the grende data by 
+            dataframe represented by grenade_data to filter the grenade data by 
             and the values are lists that contain the column filters.
-        col_names: Column names for the returned dataframe.
     """    
-    damage_data_copy = damage_data.loc[damage_data["Weapon"].isin(
-        ["HE Grenade", "Incendiary Grendade", "Molotov"])]
-    damage_data_copy["RawDamage"] = (damage_data_copy["HpDamage"] 
-                                     + damage_data_copy["ArmorDamage"])
-    util_dmg = calc_stats(damage_data_copy, damage_filters, ["AttackerName"], 
-                          ["RawDamage"], [["sum"]], 
-                          ["PlayerName", "UtilityDamage"])
-    grenade_data_copy = grenade_data.loc[grenade_data["GrenadeType"].isin(
-        ["HE Grenade", "Incendiary Grendade", "Molotov"])]
-    nades_thrown = calc_stats(grenade_data_copy, grenade_filters, ["PlayerName"], 
-                              ["PlayerName"], [["size"]],  
-                              ["PlayerName", "NadesThrown"])
-    util_dmg_stats = pd.merge(util_dmg, nades_thrown)
-    util_dmg_stats["DmgPerNade"] = (util_dmg_stats["UtilityDamage"] 
-                                    / util_dmg_stats["NadesThrown"])
-    util_dmg_stats.sort_values(by="UtilityDamage", ascending=False, inplace=True)
-    util_dmg_stats.columns = col_names
+    util_dmg = calc_stats(damage_data.loc[(damage_data["AttackerTeam"] != 
+                                           damage_data["VictimTeam"]) & 
+                                          (damage_data["Weapon"].isin([ 
+                                               "HE Grenade", 
+                                               "Incendiary Grenade", 
+                                               "Molotov"
+                                          ]))], damage_filters, ["AttackerName"], 
+                          ["HpDamage", "HpDamageTaken"], [["sum"], ["sum"]], 
+                          ["Player", "UD", "Given UD"])
+    nades_thrown = calc_stats(grenade_data.loc[grenade_data["GrenadeType"].isin([
+                                                   "HE Grenade", 
+                                                   "Incendiary Grenade", 
+                                                   "Molotov"
+                                               ])], grenade_filters, 
+                              ["PlayerName"], ["PlayerName"], [["size"]], 
+                              ["Player", "Nades Thrown"])
+    util_dmg_stats = util_dmg.merge(nades_thrown, how="outer")
+    util_dmg_stats["UD Per Nade"] = (util_dmg_stats["UD"] 
+                                     / util_dmg_stats["Nades Thrown"])
+    util_dmg_stats["Given UD Per Nade"] = (util_dmg_stats["Given UD"] 
+                                           / util_dmg_stats["Nades Thrown"])
+    util_dmg_stats.fillna(0, inplace=True)
+    util_dmg_stats.sort_values(by="UD", ascending=False, inplace=True)
+    util_dmg_stats.reset_index(drop=True, inplace=True)
     return util_dmg_stats
+
+
+def flash_stats(flash_data: pd.DataFrame,
+                grenade_data: pd.DataFrame,
+                flash_filters: Dict[str, Union[List[bool], List[str]]] = {},
+                grenade_filters: Dict[str, Union[List[bool], List[str]]] = {},
+) -> pd.DataFrame:  
+    """Returns a dataframe with flashbang statistics.
+
+    Args: 
+        flash_data: A dataframe with flash data. 
+        grenade_data: A dataframe with grenade data.
+        flash_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by flash_data to filter the flash data by 
+            and the values are lists that contain the column filters.
+        grenade_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by grenade_data to filter the grenade data by 
+            and the values are lists that contain the column filters.
+    """  
+    enemy_flashes = calc_stats(flash_data.loc[flash_data["AttackerTeam"] != 
+                                              flash_data["PlayerTeam"]], 
+                               flash_filters, ["AttackerName"], ["AttackerName"], 
+                               [["size"]], ["Player", "EF"])
+    team_flashes = calc_stats(flash_data.loc[flash_data["AttackerTeam"] == 
+                                             flash_data["PlayerTeam"]], 
+                              flash_filters, ["AttackerName"], ["AttackerName"], 
+                              [["size"]], ["Player", "TF"])
+    flashes_thrown = calc_stats(grenade_data.loc[grenade_data["GrenadeType"] == 
+                                                 "Flashbang"], flash_filters, 
+                                ["PlayerName"], ["PlayerName"], [["size"]], 
+                                ["Player", "Flashes Thrown"])
+    flash_stats = enemy_flashes.merge(team_flashes, how="outer")
+    flash_stats = flash_stats.merge(flashes_thrown, how="outer")
+    flash_stats["EF Per Throw"] = flash_stats["EF"] / flash_stats["Flashes Thrown"]
+    flash_stats.fillna(0, inplace=True)
+    flash_stats.sort_values(by="EF", ascending=False, inplace=True)
+    flash_stats.reset_index(drop=True, inplace=True)
+    return flash_stats
+
+
+def bomb_stats(bomb_data: pd.DataFrame,
+               bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
+) -> pd.DataFrame:  
+    """Returns a dataframe with bomb event statistics.
+        
+    Args: 
+        bomb_data: A dataframe with bomb event data. 
+        bomb_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by bomb_data to filter the bomb data by and
+            the values are lists that contain the column filters.
+    """ 
+    team_one = bomb_data["PlayerTeam"].unique()[0]
+    team_two = bomb_data["PlayerTeam"].unique()[1]
+    team_one_plants = calc_stats(bomb_data.loc[(bomb_data["BombAction"] == 
+                                                "plant") & 
+                                               (bomb_data["PlayerTeam"] == 
+                                                team_one)], bomb_filters, 
+                                 ["BombSite"], ["BombSite"], [["size"]], 
+                                 ["Bombsite", f"{team_one} Plants"])
+    team_two_plants = calc_stats(bomb_data.loc[(bomb_data["BombAction"] == 
+                                                "plant") & 
+                                               (bomb_data["PlayerTeam"] == 
+                                                team_two)], bomb_filters, 
+                                 ["BombSite"], ["BombSite"], [["size"]],
+                                 ["Bombsite", f"{team_two} Plants"])
+    team_one_defuses = calc_stats(bomb_data.loc[(bomb_data["BombAction"] == 
+                                                 "defuse") & 
+                                                (bomb_data["PlayerTeam"] == 
+                                                 team_one)], bomb_filters, 
+                                  ["BombSite"], ["BombSite"], [["size"]],
+                                  ["Bombsite", f"{team_one} Defuses"])
+    team_two_defuses = calc_stats(bomb_data.loc[(bomb_data["BombAction"] == 
+                                                 "defuse") & 
+                                                (bomb_data["PlayerTeam"] == 
+                                                 team_two)], bomb_filters, 
+                                  ["BombSite"], ["BombSite"], [["size"]],
+                                  ["Bombsite", f"{team_two} Defuses"])
+    bomb_stats = team_one_plants.merge(team_two_defuses, how="outer")
+    bomb_stats[f"{team_two} Defuse %"] = (bomb_stats[f"{team_two} Defuses"] /
+                                          bomb_stats[f"{team_one} Plants"])
+    bomb_stats = bomb_stats.merge(team_two_plants, how="outer")
+    bomb_stats = bomb_stats.merge(team_one_defuses, how="outer")
+    bomb_stats[f"{team_one} Defuse %"] = (bomb_stats[f"{team_one} Defuses"] /
+                                          bomb_stats[f"{team_two} Plants"])
+    bomb_stats.loc[2]=["A and B", bomb_stats[f"{team_one} Plants"].sum(), 
+                       bomb_stats[f"{team_two} Defuses"].sum(),
+                       (bomb_stats[f"{team_two} Defuses"].sum() / 
+                        bomb_stats[f"{team_one} Plants"].sum()), 
+                       bomb_stats[f"{team_two} Plants"].sum(), 
+                       bomb_stats[f"{team_one} Defuses"].sum(),
+                       (bomb_stats[f"{team_one} Defuses"].sum() / 
+                        bomb_stats[f"{team_two} Plants"].sum())] 
+    bomb_stats.fillna(0, inplace=True)
+    return bomb_stats
+
+
+def econ_stats(round_data: pd.DataFrame,
+               round_data_json: List[Dict]) -> pd.DataFrame:  
+    """Returns a dataframe with economy statistics.
+        
+    Args: 
+        round_data: A dataframe with round data. 
+        round_data_json: A list of dictionaries with round data
+            where each round is a dictionary. 
+    """ 
+    team_one = round_data_json[0]["TTeam"]
+    team_two = round_data_json[0]["CTTeam"]
+    team_one_T_val = 0
+    team_one_CT_val = 0
+    team_two_T_val = 0
+    team_two_CT_val = 0
+    team_one_T_spend = 0
+    team_one_CT_spend = 0
+    team_two_T_spend = 0
+    team_two_CT_spend = 0
+    first_half = 0
+    second_half = 0
+    team_one_T_buy = calc_stats(round_data.loc[round_data["RoundNum"] <= 15], 
+                                {}, ["TBuyType"], ["TBuyType"], [["size"]], 
+                                ["Side", f"{team_one} T"])
+    team_one_CT_buy = calc_stats(round_data.loc[round_data["RoundNum"] > 15], {}, 
+                                 ["CTBuyType"], ["CTBuyType"], [["size"]], 
+                                 ["Side", f"{team_one} CT"])
+    team_two_T_buy = calc_stats(round_data.loc[round_data["RoundNum"] > 15], {}, 
+                                ["TBuyType"], ["TBuyType"], [["size"]], 
+                                ["Side", f"{team_two} T"])
+    team_two_CT_buy = calc_stats(round_data.loc[round_data["RoundNum"] < 15], {}, 
+                                 ["CTBuyType"], ["CTBuyType"], [["size"]], 
+                                 ["Side", f"{team_two} CT"])
+    for rd in round_data_json:
+        if rd["RoundNum"] <= 15:
+            team_one_T_val += rd["TStartEqVal"]
+            team_two_CT_val += rd["CTStartEqVal"]
+            team_one_T_spend += rd["TSpend"]
+            team_two_CT_spend += rd["CTSpend"]
+            first_half += 1
+        else:
+            team_one_CT_val += rd["CTStartEqVal"]
+            team_two_T_val += rd["TStartEqVal"]
+            team_one_CT_spend += rd["CTSpend"]
+            team_two_T_spend += rd["TSpend"]
+            second_half += 1
+    if first_half == 0: first_half = 1
+    if second_half == 0: second_half = 1
+    team_one_T_val = team_one_T_val / first_half
+    team_one_CT_val = team_one_CT_val / first_half
+    team_two_T_val= team_two_T_val / second_half
+    team_two_CT_val = team_two_CT_val / second_half
+    team_one_T_spend = team_one_T_spend / first_half
+    team_one_CT_spend = team_one_CT_spend / first_half
+    team_two_T_spend = team_two_T_spend / second_half
+    team_two_CT_spend = team_two_CT_spend / second_half
+    econ_stats = team_one_T_buy.merge(team_one_CT_buy, how="outer")    
+    econ_stats = econ_stats.merge(team_two_T_buy, how="outer")    
+    econ_stats = econ_stats.merge(team_two_CT_buy, how="outer") 
+    econ_stats.loc[len(econ_stats)] = ["Avg EQ Value", team_one_T_val, 
+                                       team_two_CT_val, team_two_T_val, 
+                                       team_one_CT_val]
+    econ_stats.loc[len(econ_stats)] = ["Avg Spend", team_one_T_spend, 
+                                       team_two_CT_spend, team_two_T_spend, 
+                                       team_one_CT_spend]
+    econ_stats.fillna(0, inplace=True)
+    econ_stats.iloc[:, 1:] = econ_stats.iloc[:, 1:].astype(int)
+    econ_stats = econ_stats.transpose()
+    econ_stats.reset_index(inplace=True)
+    econ_stats.columns = econ_stats.iloc[0]
+    econ_stats.drop(0, inplace=True)
+    econ_stats.reset_index(drop=True, inplace=True)
+    return econ_stats
 
 
 def weapon_type(weapon: str) -> str:
@@ -334,63 +522,312 @@ def weapon_type(weapon: str) -> str:
         return "Utility Kills"
 
 
-def kills_by_weapon_type(kill_data: pd.DataFrame,
-                         kill_filters: Dict[str, Union[List[bool], 
-                                                       List[str]]] = {},
-                         col_names: List[str] = ["Melee Kills", "Pistol Kills",
-                                                 "Shotgun Kills", "SMG Kills",
-                                                 "Assault Rifle Kills",
-                                                 "Machine Gun Kills",
-                                                 "Sniper Rifle Kills",
-                                                 "Utility Kills", "Total Kills"]
+def kill_breakdown(kill_data: pd.DataFrame,
+                   kill_filters: Dict[str, Union[List[bool], List[str]]] = {}
 ) -> pd.DataFrame:
-    """Returns a dataframe with kills by weapon type statistics.
-    
-    Calls the function weapon_type to determine the weapon type for each kill
-    and calls the function calc_stats to create a dataframe with kills by weapon
-    type statistics.
-    
+    """Returns a dataframe with kills broken down by weapon type.
+        
     Args: 
         kill_data: A dataframe with kill data. 
         kill_filters: A dictionary where the keys are the columns of the 
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
-        col_names: Column names for the returned dataframe.
     """ 
-    kills_by_weapon_type = kill_data.copy()
-    kills_by_weapon_type["Kills Type"] = kills_by_weapon_type.apply(
-        lambda row: weapon_type(row["Weapon"]), axis=1)
-    kills_by_weapon_type = calc_stats(kills_by_weapon_type, kill_filters,
-                                      ["AttackerName", "Kills Type"],
-                                      ["AttackerName"], [["size"]],
-                                      ["PlayerName", "Kills Type", "Kills"])
-    kills_by_weapon_type = kills_by_weapon_type.pivot(index="PlayerName", 
-                                                      columns="Kills Type", 
-                                                      values="Kills")
+    kill_breakdown = kill_data.loc[kill_data["AttackerTeam"] != 
+                                   kill_data["VictimTeam"]].copy()
+    kill_breakdown["Kills Type"] = kill_breakdown.apply(lambda row: weapon_type(
+                                                            row["Weapon"]), 
+                                                        axis=1)
+    kill_breakdown = calc_stats(kill_breakdown, kill_filters, ["AttackerName", 
+                                                               "Kills Type"],
+                                ["AttackerName"], [["size"]], [
+                                                               "Player", 
+                                                               "Kills Type", 
+                                                               "Kills"
+                                ])
+    kill_breakdown = kill_breakdown.pivot(index="Player", columns="Kills Type",
+                                         values="Kills")
     for col in ["Melee Kills", "Pistol Kills", "Shotgun Kills", "SMG Kills", 
-                "Assault Rifle Kills", "Machine Gun Kills", 
-                "Sniper Rifle Kills", "Utility Kills"]:
-        if not col in kills_by_weapon_type.columns:
-            kills_by_weapon_type.insert(0, col, 0)
-        kills_by_weapon_type[col] = kills_by_weapon_type[col].fillna(0)
-        kills_by_weapon_type[col] = kills_by_weapon_type[col].astype(int)
-    kills_by_weapon_type["Total Kills"] = kills_by_weapon_type.iloc[
-        0:kills_by_weapon_type.shape[0]].sum(axis=1)
-    kills_by_weapon_type.reset_index(inplace=True)
-    kills_by_weapon_type = kills_by_weapon_type.rename_axis(None, axis=1)
-    kills_by_weapon_type = kills_by_weapon_type[["Melee Kills", "Pistol Kills",
-                                                 "Shotgun Kills", "SMG Kills",
-                                                 "Assault Rifle Kills",
-                                                 "Machine Gun Kills",
-                                                 "Sniper Rifle Kills",
-                                                 "Utility Kills", "Total Kills"]]
-    kills_by_weapon_type.columns = col_names
-    return kills_by_weapon_type
+                "Assault Rifle Kills", "Machine Gun Kills", "Sniper Rifle Kills", 
+                "Utility Kills"]:
+        if not col in kill_breakdown.columns:
+            kill_breakdown.insert(0, col, 0)
+        kill_breakdown[col].fillna(0, inplace=True)
+        kill_breakdown[col] = kill_breakdown[col].astype(int)
+    kill_breakdown["Total Kills"] = kill_breakdown.iloc[0:].sum(axis=1)
+    kill_breakdown.reset_index(inplace=True)
+    kill_breakdown = kill_breakdown.rename_axis(None, axis=1)
+    kill_breakdown = kill_breakdown[["Player", "Melee Kills", "Pistol Kills",
+                                     "Shotgun Kills", "SMG Kills", 
+                                     "Assault Rifle Kills", "Machine Gun Kills",
+                                     "Sniper Rifle Kills", "Utility Kills", 
+                                     "Total Kills"]]
+    kill_breakdown.sort_values(by="Total Kills", ascending=False, inplace=True)
+    kill_breakdown.reset_index(drop=True, inplace=True)
+    return kill_breakdown
 
 
-def player_box_score():
-    raise NotImplementedError
+def util_dmg_breakdown(damage_data: pd.DataFrame,
+                       grenade_data: pd.DataFrame,
+                       damage_filters: Dict[str, Union[List[bool], 
+                                                       List[str]]] = {},
+                       grenade_filters: Dict[str, Union[List[bool], 
+                                                        List[str]]] = {}
+) -> pd.DataFrame:
+    """Returns a dataframe with utility damage statistics broken down by grenade
+       type.
+
+    Args: 
+        damage_data: A dataframe with damage data. 
+        grenade_data: A dataframe with grenade data.
+        damage_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by damage_data to filter the damage data by 
+            and the values are lists that contain the column filters.
+        grenade_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by grenade_data to filter the grenade data by 
+            and the values are lists that contain the column filters.
+    """    
+    util_dmg = calc_stats(damage_data.loc[(damage_data["AttackerTeam"] != 
+                                           damage_data["VictimTeam"]) & 
+                                          (damage_data["Weapon"].isin([
+                                               "HE Grenade", 
+                                               "Incendiary Grenade",
+                                               "Molotov"
+                                          ]))], damage_filters, ["AttackerName", 
+                                                                 "Weapon"], 
+                          ["HpDamage", "HpDamageTaken"], [["sum"], ["sum"]], 
+                          ["Player", "Nade Type", "UD", "Given UD"])
+    nades_thrown = calc_stats(grenade_data.loc[grenade_data["GrenadeType"].isin([
+                                                   "HE Grenade", 
+                                                   "Incendiary Grenade", 
+                                                   "Molotov"
+                                               ])], grenade_filters, 
+                              ["PlayerName", "GrenadeType"], ["PlayerName"], 
+                              [["size"]], ["Player", "Nade Type","Nades Thrown"])
+    util_dmg_breakdown = util_dmg.merge(nades_thrown, how="outer", on = 
+                                        ["Player", "Nade Type"])
+    util_dmg_breakdown["UD Per Nade"] = (util_dmg_breakdown["UD"] 
+                                         / util_dmg_breakdown["Nades Thrown"])
+    util_dmg_breakdown["Given UD Per Nade"] = (util_dmg_breakdown["Given UD"]
+                                               / util_dmg_breakdown["Nades Thrown"])
+    util_dmg_breakdown.fillna(0, inplace=True)
+    util_dmg_breakdown.sort_values(by=["Player", "UD"], ascending=[True, False], 
+                                   inplace=True)
+    util_dmg_breakdown.reset_index(drop=True, inplace=True)
+    return util_dmg_breakdown
+
+
+def win_breakdown(round_data: pd.DataFrame,
+                  round_filters: Dict[str, Union[List[bool], List[str]]] = {}
+) -> pd.DataFrame:     
+    """Returns a dataframe with wins broken down by round end reason.
+        
+    Args: 
+        round_data: A dataframe with round data.
+        round_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by round_data to filter the round data by and
+            the values are lists that contain the column filters.
+    """ 
+    win_breakdown = calc_stats(round_data, round_filters, ["WinningTeam", 
+                                                           "RoundEndReason"],
+                               ["RoundEndReason"], [["size"]], [
+                                                                "Team", 
+                                                                "RoundEndReason", 
+                                                                "Count"
+                               ])
+    win_breakdown = win_breakdown.pivot(index="Team", columns="RoundEndReason", 
+                                        values="Count")
+    win_breakdown.reset_index(inplace=True)
+    win_breakdown = win_breakdown.rename_axis(None, axis=1)
+    win_breakdown["Total"] = win_breakdown.iloc[0:].sum(axis=1)
+    return win_breakdown
+
+
+def player_box_score(damage_data: pd.DataFrame,
+                     flash_data: pd.DataFrame,
+                     grenade_data: pd.DataFrame,
+                     kill_data: pd.DataFrame,
+                     round_data: pd.DataFrame,
+                     damage_filters: Dict[str, Union[List[bool], 
+                                                     List[str]]] = {},
+                     flash_filters: Dict[str, Union[List[bool], 
+                                                    List[str]]] = {},
+                     grenade_filters: Dict[str, Union[List[bool], 
+                                                      List[str]]] = {},
+                     kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
+                     death_filters: Dict[str, Union[List[bool], 
+                                                    List[str]]] = {},
+                     round_filters: Dict[str, Union[List[bool], List[str]]] = {}
+) -> pd.DataFrame:
+    """Returns a player box score dataframe.
     
+     Args: 
+        damage_data: A dataframe with damage data. 
+        flash_data: A dataframe with flash data. 
+        grenade_data: A dataframe with grenade data. 
+        kill_data: A dataframe with kill data. 
+        round_data: A dataframe with round data.
+        damage_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by damage_data to filter the damage data by 
+            and the values are lists that contain the column filters.
+        flash_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by flash_data to filter the flash data by 
+            and the values are lists that contain the column filters.
+        grenade_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by grenade_data to filter the grenade data by 
+            and the values are lists that contain the column filters.
+        kill_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by kill_data to filter the kill data by and
+            the values are lists that contain the column filters.
+        death_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by kill_data to filter the death data by and
+            the values are lists that contain the column filters.
+        round_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by round_data to filter the round data by and
+            the values are lists that contain the column filters.
+    """
+    kills_df = kill_stats(kill_data, round_data, kill_filters, 
+                          death_filters, round_filters)
+    kills_df = kills_df[["Player", "K", "D", "A", "+/-", "KDR", "HS%"]]
+    adr_df = adr(damage_data, round_data, damage_filters, round_filters)
+    adr_df = adr_df[["Player", "Norm ADR"]]
+    adr_df.columns = ["Player", "ADR"]
+    ud_df = util_dmg(damage_data, grenade_data, damage_filters, grenade_filters)
+    ud_df = ud_df[["Player", "UD", "UD Per Nade"]]
+    flashes_df = flash_stats(flash_data, grenade_data, flash_filters, 
+                             grenade_filters)
+    flashes_df = flashes_df[["Player", "EF", "EF Per Throw"]]
+    box_score = kills_df.merge(adr_df, how="outer")
+    box_score = box_score[["Player", "K", "D", "A", "+/-", "KDR", "ADR", "HS%"]]
+    box_score = box_score.merge(ud_df, how="outer")
+    box_score = box_score.merge(flashes_df, how="outer")
+    return box_score
+
+
+def team_box_score(damage_data: pd.DataFrame,
+                   flash_data: pd.DataFrame,
+                   grenade_data: pd.DataFrame,
+                   kill_data: pd.DataFrame,
+                   round_data: pd.DataFrame,
+                   round_data_json: List[Dict],
+                   damage_filters: Dict[str, Union[List[bool], List[str]]] = {},
+                   flash_filters: Dict[str, Union[List[bool], List[str]]] = {},
+                   grenade_filters: Dict[str, Union[List[bool], List[str]]] = {},
+                   kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
+                   death_filters: Dict[str, Union[List[bool], List[str]]] = {},
+                   round_filters: Dict[str, Union[List[bool], List[str]]] = {}
+) -> pd.DataFrame:
+    """Returns a team box score dataframe.
     
-def team_box_score():
-    raise NotImplementedError
+     Args: 
+        damage_data: A dataframe with damage data. 
+        flash_data: A dataframe with flash data. 
+        grenade_data: A dataframe with grenade data. 
+        kill_data: A dataframe with kill data. 
+        round_data: A dataframe with round data.
+        round_data_json: A list of dictionaries with round data
+            where each round is a dictionary. 
+        damage_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by damage_data to filter the damage data by 
+            and the values are lists that contain the column filters.
+        flash_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by flash_data to filter the flash data by 
+            and the values are lists that contain the column filters.
+        grenade_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by grenade_data to filter the grenade data by 
+            and the values are lists that contain the column filters.
+        kill_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by kill_data to filter the kill data by and
+            the values are lists that contain the column filters.
+        death_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by kill_data to filter the death data by and
+            the values are lists that contain the column filters.
+        round_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by round_data to filter the round data by and
+            the values are lists that contain the column filters.
+    """    
+    kills = calc_stats(kill_data.loc[kill_data["AttackerTeam"] != 
+                                        kill_data["VictimTeam"]], kill_filters, 
+                          ["AttackerTeam"], ["AttackerTeam"], [["size"]], 
+                          ["Team", "K"])
+    deaths = calc_stats(kill_data, death_filters, ["VictimTeam"], ["VictimTeam"], 
+                        [["size"]], ["Team", "D"])
+    assists = calc_stats(kill_data.loc[(kill_data["AttackerTeam"] != 
+                                        kill_data["VictimTeam"]) & 
+                                       (kill_data["AssistedFlash"] == False)],
+                         kill_filters, ["AssisterTeam"], ["AssisterTeam"], 
+                         [["size"]], ["Team", "A"])
+    first_kills = calc_stats(kill_data.loc[(kill_data["AttackerTeam"] != 
+                                            kill_data["VictimTeam"]) &
+                                           (kill_data["IsFirstKill"] == True)],
+                             kill_filters, ["AttackerTeam"], ["AttackerTeam"], 
+                             [["size"]], ["Team", "FK"])
+    headshot_pct = calc_stats(kill_data.loc[kill_data["AttackerTeam"] != 
+                                            kill_data["VictimTeam"]], 
+                              kill_filters, ["AttackerTeam"], ["IsHeadshot"], 
+                              [["mean"]], ["Team", "HS%"])
+    adr = calc_stats(damage_data.loc[damage_data["AttackerTeam"] != 
+                                     damage_data["VictimTeam"]], 
+                     damage_filters, ["AttackerTeam"],["HpDamageTaken"], 
+                     [["sum"]], ["Team", "ADR"])
+    adr["ADR"] = adr["ADR"] / len(calc_stats(round_data, round_filters, [], [], 
+                                             [], round_data.columns))
+    util_dmg = calc_stats(damage_data.loc[(damage_data["AttackerTeam"] != 
+                                           damage_data["VictimTeam"]) & 
+                                          (damage_data["Weapon"].isin([ 
+                                               "HE Grenade", 
+                                               "Incendiary Grenade", 
+                                               "Molotov"
+                                          ]))], damage_filters, ["AttackerTeam"], 
+                          ["HpDamage"], [["sum"]], ["Team", "UD"])
+    nades_thrown = calc_stats(grenade_data.loc[grenade_data["GrenadeType"].isin([
+                                                   "HE Grenade", 
+                                                   "Incendiary Grenade", 
+                                                   "Molotov"
+                                               ])], grenade_filters, 
+                              ["PlayerTeam"], ["PlayerTeam"], [["size"]], 
+                              ["Team", "Nades Thrown"])   
+    enemy_flashes = calc_stats(flash_data.loc[flash_data["AttackerTeam"] != 
+                                              flash_data["PlayerTeam"]], 
+                               flash_filters, ["AttackerTeam"], ["AttackerTeam"], 
+                               [["size"]], ["Team", "EF"])
+    flashes_thrown = calc_stats(grenade_data.loc[grenade_data["GrenadeType"] == 
+                                                 "Flashbang"], flash_filters, 
+                                ["PlayerTeam"], ["PlayerTeam"], [["size"]], 
+                                ["Team", "Flashes Thrown"])
+    econ_df = econ_stats(round_data, round_data_json)
+    team_one = round_data_json[0]["TTeam"]
+    box_score = kills.merge(deaths, how="outer")
+    box_score = box_score.merge(assists, how="outer")
+    box_score["+/-"] = box_score["K"] - box_score["D"]
+    box_score = box_score.merge(first_kills, how="outer")
+    box_score = box_score.merge(adr, how="outer")
+    box_score = box_score.merge(headshot_pct, how="outer")
+    box_score = box_score.merge(util_dmg, how="outer")
+    box_score = box_score.merge(nades_thrown, how="outer")
+    box_score["UD Per Nade"] = box_score["UD"]  / box_score["Nades Thrown"]
+    box_score = box_score.merge(enemy_flashes, how="outer")
+    box_score = box_score.merge(flashes_thrown, how="outer")
+    box_score["EF Per Throw"] = box_score["EF"] / box_score["Flashes Thrown"]      
+    if box_score.iloc[0]["Team"] == team_one:
+        box_score["Avg EQ Value"] = [int(econ_df.iloc[0:2]["Avg EQ Value"].mean()), 
+                                     int(econ_df.iloc[2:4]["Avg EQ Value"].mean())
+                                    ] 
+        box_score["Avg Spend"] = [int(econ_df.iloc[0:2]["Avg Spend"].mean()), 
+                                  int(econ_df.iloc[2:4]["Avg Spend"].mean())] 
+    else:
+        box_score["Avg EQ Value"] = [int(econ_df.iloc[2:4]["Avg EQ Value"].mean()), 
+                                     int(econ_df.iloc[0:2]["Avg EQ Value"].mean())
+                                    ] 
+        box_score["Avg Spend"] = [int(econ_df.iloc[2:4]["Avg Spend"].mean()), 
+                                  int(econ_df.iloc[0:2]["Avg Spend"].mean())] 
+    box_score = box_score.merge(win_breakdown(round_data), how="outer")
+    box_score.rename(columns={"Total":"Score"}, inplace=True)
+    score = box_score["Score"]
+    box_score.drop("Score", axis=1, inplace=True)
+    box_score.insert(1, "Score", score)
+    box_score = box_score.transpose()
+    box_score.columns = box_score.iloc[0]
+    box_score.drop("Team", inplace=True)
+    box_score = box_score.rename_axis(None, axis=1)
+    return box_score
