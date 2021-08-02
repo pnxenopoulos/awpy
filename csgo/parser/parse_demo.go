@@ -1408,13 +1408,11 @@ func main() {
 		}
 
 		// Parse trade information
-		if len(currentRound.Kills) > 0 && e.Victim != nil {
-			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill)
+		currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill)
+		if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true {
 			currentKill.PlayerTradedName = currentRound.Kills[len(currentRound.Kills)-1].VictimName
 			currentKill.PlayerTradedSteamId = currentRound.Kills[len(currentRound.Kills)-1].VictimSteamId
 			currentKill.PlayerTradedTeam = currentRound.Kills[len(currentRound.Kills)-1].VictimTeam
-		} else {
-			currentKill.IsTrade = false
 		}
 
 		// Parse the opening kill info
