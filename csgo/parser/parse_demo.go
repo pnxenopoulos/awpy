@@ -554,15 +554,17 @@ func acceptableGamePhase(gs dem.GameState) bool {
 	return false
 }
 
-func isTrade(killA KillAction, killB KillAction) bool {
+func isTrade(killA KillAction, killB KillAction, tickRate int64) bool {
 	// If the the previous killer is not the person killed, it is not a trade
-	if killB.VictimSteamId != killA.AttackerSteamId {
+	if *killB.VictimSteamId == *killA.AttackerSteamId {
+		if (killB.Tick - killA.Tick) <= 5*tickRate {
+			return true
+		} else {
+			return false
+		}
+	} else {
 		return false
 	}
-	if killB.Tick-killA.Tick < int64(5*128) {
-		return true
-	}
-	return false
 }
 
 func countAlivePlayers(players []PlayerInfo) int64 {
@@ -1412,7 +1414,7 @@ func main() {
 			currentKill.IsFirstKill = true
 		} else {
 			currentKill.IsFirstKill = false
-			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill)
+			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill, currentGame.TickRate)
 			if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true {
 				currentKill.PlayerTradedName = currentRound.Kills[len(currentRound.Kills)-1].VictimName
 				currentKill.PlayerTradedSteamId = currentRound.Kills[len(currentRound.Kills)-1].VictimSteamId
@@ -1420,7 +1422,6 @@ func main() {
 			}
 		}
 		
-
 		// Add Kill event to maintained data
 		currentRound.Kills = append(currentRound.Kills, currentKill)
 	})
