@@ -6,11 +6,11 @@ import requests
 from csgo.parser import DemoParser
 from csgo.analytics.stats import (extract_num_filters, check_filters, 
                                   num_filter_df, filter_df, calc_stats, 
-                                  kill_stats, adr, util_dmg, flash_stats, 
-                                  bomb_stats, econ_stats, weapon_type, 
-                                  kill_breakdown, util_dmg_breakdown,
-                                  win_breakdown, player_box_score, 
-                                  team_box_score)
+                                  kast, kill_stats, adr, util_dmg, 
+                                  flash_stats, bomb_stats, econ_stats, 
+                                  weapon_type, kill_breakdown, 
+                                  util_dmg_breakdown, win_breakdown, 
+                                  player_box_score, team_box_score)
                                  
                                   
 class TestStats:
@@ -138,6 +138,10 @@ class TestStats:
                           ["NAVI PlayerName", "First Half Headshot Kills"]
         ).equals(self.kills)
         
+    def test_kast(self):
+        """Tests  kastfunction."""
+        assert kast(self.kill_data, "KAST")["KAST%"].sum() == 6.6
+        
     def test_kill_stats(self):
         """Tests kill_stats function."""
         assert (kill_stats(self.kill_data, self.round_data)["KDR"].sum() == 
@@ -189,7 +193,7 @@ class TestStats:
    
     def test_win_breakdown(self):
         """Tests win_breakdown function."""
-        assert win_breakdown(self.round_data)["CTWin"].sum() == 3
+        assert win_breakdown(self.round_data)["T CT Elim Wins"].sum() == 5
         
     def test_player_box_score(self):
         """Tests player_box_score function."""
@@ -201,5 +205,5 @@ class TestStats:
         """Tests team_box_score function."""
         assert (team_box_score(self.damage_data, self.flash_data,
                                self.grenade_data, self.kill_data, 
-                               self.round_data, self.round_data_json).iloc[1].sum() 
+                               self.round_data, self.round_data_json).iloc[3].sum() 
                 == 166)

@@ -187,6 +187,76 @@ def calc_stats(df: pd.DataFrame,
     return df_copy
 
 
+def kast(kill_data: pd.DataFrame, 
+         kast_string: str = "KAST", 
+         kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
+         death_filters: Dict[str, Union[List[bool], List[str]]] = {},
+) -> pd.DataFrame:
+    """Returns a dataframe with KAST statistics.
+    
+    Args: 
+        kill_data: A dataframe with kill data. 
+        kast_string: A string representing the combination of KAST statistics 
+            to use. 
+        kill_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by kill_data to filter the kill data by and
+            the values are lists that contain the column filters.
+        death_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by kill_data to filter the death data by and
+            the values are lists that contain the column filters.
+    """
+    kast_counts = {}
+    kast_rounds = {}
+    killers = calc_stats(kill_data.loc[kill_data["AttackerTeam"] != 
+                                       kill_data["VictimTeam"]], 
+                         kill_filters, ["RoundNum"], ["AttackerName"], 
+                         [["sum"]], ["RoundNum", "Killers"])
+    victims = calc_stats(kill_data, kill_filters, ["RoundNum"], ["VictimName"], 
+                         [["sum"]], ["RoundNum", "Victims"])
+    assisters = calc_stats(kill_data.loc[(kill_data["AttackerTeam"] != 
+                                          kill_data["VictimTeam"]) & 
+                                         (kill_data["AssistedFlash"] == 
+                                          False)].fillna(""), kill_filters, 
+                           ["RoundNum"], ["AssisterName"], [["sum"]], 
+                           ["RoundNum","Assisters"])
+    traded = calc_stats(kill_data.loc[(kill_data["AttackerTeam"] != 
+                                       kill_data["VictimTeam"]) & 
+                                      (kill_data["IsTrade"] == 
+                                       True)].fillna(""), kill_filters, 
+                        ["RoundNum"], ["PlayerTradedName"], [["sum"]],
+                        ["RoundNum", "Traded"])
+    kast_data = killers.merge(assisters, how="outer")
+    kast_data = kast_data.merge(victims, how="outer")
+    kast_data = kast_data.merge(traded, how="outer")
+    kast_data.fillna("", inplace=True)
+    for player in kill_data["AttackerName"].unique():
+        kast_counts[player] = [[0, 0, 0, 0] for i in range(len(kast_data))]
+        kast_rounds[player] = 0 
+    for rd in kast_data.index:
+        for player in kast_counts:
+            if "K" in  kast_string.upper():
+                if player in kast_data.iloc[rd]["Killers"]:
+                    kast_counts[player][rd][0] += 1 
+            if "A" in kast_string.upper():
+                if player in kast_data.iloc[rd]["Assisters"]:
+                    kast_counts[player][rd][1] += 1  
+            if "S" in kast_string.upper(): 
+                if player not in kast_data.iloc[rd]["Victims"]:
+                    kast_counts[player][rd][2] += 1  
+            if "T" in kast_string.upper():
+                if player in kast_data.iloc[rd]["Traded"]:
+                    kast_counts[player][rd][3] += 1  
+    for player in kast_rounds:
+        for rd in kast_counts[player]:
+            if any(rd):
+                kast_rounds[player] += 1
+        kast_rounds[player] /= len(kast_data)
+    kast_df = pd.DataFrame.from_dict(kast_rounds, orient='index')
+    kast_df.reset_index(inplace=True)
+    kast_df.columns = ["Player", "KAST%"]
+    return kast_df
+
+
 def kill_stats(kill_data: pd.DataFrame,
                round_data: pd.DataFrame,
                kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
@@ -233,6 +303,7 @@ def kill_stats(kill_data: pd.DataFrame,
                                             kill_data["VictimTeam"]], 
                               kill_filters, ["AttackerName"], ["IsHeadshot"], 
                               [["mean"]], ["Player", "HS%"])
+    kast_stats = kast(kill_data, "KAST", kill_filters, death_filters)
     kill_stats = kills.merge(assists, how="outer")
     kill_stats = kill_stats.merge(deaths, how="outer")
     kill_stats["+/-"] = kill_stats["K"] - kill_stats["D"]
@@ -243,8 +314,10 @@ def kill_stats(kill_data: pd.DataFrame,
     kill_stats = kill_stats.merge(first_kills, how="outer")
     kill_stats = kill_stats.merge(headshots, how="outer")
     kill_stats = kill_stats.merge(headshot_pct, how="outer")
+    kill_stats["HS%"] = kill_stats["HS%"].astype(float)
     kill_stats = kill_stats[["Player", "K", "D", "A", "+/-", "HS", "FK", "KDR", 
                              "KPR", "HS%"]]
+    kill_stats = kill_stats.merge(kast_stats, how="outer")
     kill_stats.fillna(0, inplace=True)
     kill_stats.sort_values(by="K", ascending=False, inplace=True)
     kill_stats.reset_index(drop=True, inplace=True)
@@ -270,17 +343,17 @@ def adr(damage_data: pd.DataFrame,
     """    
     adr = calc_stats(damage_data.loc[damage_data["AttackerTeam"] != 
                                      damage_data["VictimTeam"]], damage_filters, 
-                     ["AttackerName"],["HpDamage", "HpDamageTaken"], [["sum"], 
+                     ["AttackerName"],["HpDamageTaken", "HpDamage"], [["sum"], 
                                                                       ["sum"]],
-                     ["Player", "Raw ADR", "Norm ADR"])
-    adr["Raw ADR"] = adr["Raw ADR"] / len(calc_stats(round_data, round_filters, 
-                                                     [], [], [], 
-                                                     round_data.columns))
+                     ["Player", "Norm ADR", "Raw ADR"])
     adr["Norm ADR"] = adr["Norm ADR"] / len(calc_stats(round_data, round_filters, 
                                                        [], [], [], 
                                                        round_data.columns))
+    adr["Raw ADR"] = adr["Raw ADR"] / len(calc_stats(round_data, round_filters, 
+                                                     [], [], [], 
+                                                     round_data.columns))
     adr.fillna(0, inplace=True)
-    adr.sort_values(by="Raw ADR", ascending=False, inplace=True)
+    adr.sort_values(by="Norm ADR", ascending=False, inplace=True)
     adr.reset_index(drop=True, inplace=True)
     return adr
 
@@ -309,8 +382,8 @@ def util_dmg(damage_data: pd.DataFrame,
                                                "Incendiary Grenade", 
                                                "Molotov"
                                           ]))], damage_filters, ["AttackerName"], 
-                          ["HpDamage", "HpDamageTaken"], [["sum"], ["sum"]], 
-                          ["Player", "UD", "Given UD"])
+                          ["HpDamageTaken", "HpDamage"], [["sum"], ["sum"]], 
+                          ["Player", "Given UD", "UD"])
     nades_thrown = calc_stats(grenade_data.loc[grenade_data["GrenadeType"].isin([
                                                    "HE Grenade", 
                                                    "Incendiary Grenade", 
@@ -319,12 +392,12 @@ def util_dmg(damage_data: pd.DataFrame,
                               ["PlayerName"], ["PlayerName"], [["size"]], 
                               ["Player", "Nades Thrown"])
     util_dmg_stats = util_dmg.merge(nades_thrown, how="outer")
-    util_dmg_stats["UD Per Nade"] = (util_dmg_stats["UD"] 
-                                     / util_dmg_stats["Nades Thrown"])
     util_dmg_stats["Given UD Per Nade"] = (util_dmg_stats["Given UD"] 
                                            / util_dmg_stats["Nades Thrown"])
+    util_dmg_stats["UD Per Nade"] = (util_dmg_stats["UD"] 
+                                     / util_dmg_stats["Nades Thrown"])
     util_dmg_stats.fillna(0, inplace=True)
-    util_dmg_stats.sort_values(by="UD", ascending=False, inplace=True)
+    util_dmg_stats.sort_values(by="Given UD", ascending=False, inplace=True)
     util_dmg_stats.reset_index(drop=True, inplace=True)
     return util_dmg_stats
 
@@ -405,12 +478,12 @@ def bomb_stats(bomb_data: pd.DataFrame,
                                   ["BombSite"], ["BombSite"], [["size"]],
                                   ["Bombsite", f"{team_two} Defuses"])
     bomb_stats = team_one_plants.merge(team_two_defuses, how="outer")
-    bomb_stats[f"{team_two} Defuse %"] = (bomb_stats[f"{team_two} Defuses"] /
-                                          bomb_stats[f"{team_one} Plants"])
+    bomb_stats[f"{team_two} Defuse %"] = (bomb_stats[f"{team_two} Defuses"] 
+                                         / bomb_stats[f"{team_one} Plants"])
     bomb_stats = bomb_stats.merge(team_two_plants, how="outer")
     bomb_stats = bomb_stats.merge(team_one_defuses, how="outer")
-    bomb_stats[f"{team_one} Defuse %"] = (bomb_stats[f"{team_one} Defuses"] /
-                                          bomb_stats[f"{team_two} Plants"])
+    bomb_stats[f"{team_one} Defuse %"] = (bomb_stats[f"{team_one} Defuses"] 
+                                         / bomb_stats[f"{team_two} Plants"])
     bomb_stats.loc[2]=["A and B", bomb_stats[f"{team_one} Plants"].sum(), 
                        bomb_stats[f"{team_two} Defuses"].sum(),
                        (bomb_stats[f"{team_two} Defuses"].sum() / 
@@ -424,70 +497,94 @@ def bomb_stats(bomb_data: pd.DataFrame,
 
 
 def econ_stats(round_data: pd.DataFrame,
-               round_data_json: List[Dict]) -> pd.DataFrame:  
+               round_data_json: List[Dict],
+               round_filters: Dict[str, Union[List[bool], List[str]]] = {}
+) -> pd.DataFrame:  
     """Returns a dataframe with economy statistics.
         
     Args: 
         round_data: A dataframe with round data. 
         round_data_json: A list of dictionaries with round data
             where each round is a dictionary. 
+        round_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by round_data to filter the round data by and
+            the values are lists that contain the column filters.
     """ 
-    team_one = round_data_json[0]["TTeam"]
-    team_two = round_data_json[0]["CTTeam"]
-    team_one_T_val = 0
+    team_one = round_data_json[0]["CTTeam"]
     team_one_CT_val = 0
-    team_two_T_val = 0
-    team_two_CT_val = 0
-    team_one_T_spend = 0
+    team_one_T_val = 0
+    team_one_CT_cash = 0        
+    team_one_T_cash = 0
     team_one_CT_spend = 0
-    team_two_T_spend = 0
+    team_one_T_spend = 0
+    team_two = round_data_json[0]["TTeam"]
+    team_two_CT_val = 0
+    team_two_T_val = 0
+    team_two_CT_cash = 0
+    team_two_T_cash = 0
     team_two_CT_spend = 0
+    team_two_T_spend = 0
     first_half = 0
     second_half = 0
-    team_one_T_buy = calc_stats(round_data.loc[round_data["RoundNum"] <= 15], 
-                                {}, ["TBuyType"], ["TBuyType"], [["size"]], 
-                                ["Side", f"{team_one} T"])
-    team_one_CT_buy = calc_stats(round_data.loc[round_data["RoundNum"] > 15], {}, 
-                                 ["CTBuyType"], ["CTBuyType"], [["size"]], 
-                                 ["Side", f"{team_one} CT"])
-    team_two_T_buy = calc_stats(round_data.loc[round_data["RoundNum"] > 15], {}, 
-                                ["TBuyType"], ["TBuyType"], [["size"]], 
-                                ["Side", f"{team_two} T"])
-    team_two_CT_buy = calc_stats(round_data.loc[round_data["RoundNum"] < 15], {}, 
-                                 ["CTBuyType"], ["CTBuyType"], [["size"]], 
-                                 ["Side", f"{team_two} CT"])
-    for rd in round_data_json:
+    filtered_round_data_json = []
+    team_one_CT_buy = calc_stats(round_data.loc[round_data["RoundNum"] <= 15], 
+                                 round_filters, ["CTBuyType"], ["CTBuyType"], 
+                                 [["size"]], ["Side", f"{team_one} CT"])
+    team_one_T_buy = calc_stats(round_data.loc[round_data["RoundNum"] > 15], 
+                                round_filters, ["TBuyType"], ["TBuyType"], 
+                                [["size"]], ["Side", f"{team_one} T"])
+    team_two_CT_buy = calc_stats(round_data.loc[round_data["RoundNum"] > 15],
+                                 round_filters, ["CTBuyType"], ["CTBuyType"], 
+                                 [["size"]], ["Side", f"{team_two} CT"])
+    team_two_T_buy = calc_stats(round_data.loc[round_data["RoundNum"] <= 15],
+                                round_filters, ["TBuyType"], ["TBuyType"], 
+                                [["size"]], ["Side", f"{team_two} T"])
+    rounds = filter_df(round_data, round_filters)["RoundNum"].unique()
+    for rd in rounds:
+        filtered_round_data_json.append(round_data_json[rd-1])
+    for rd in filtered_round_data_json:
         if rd["RoundNum"] <= 15:
-            team_one_T_val += rd["TStartEqVal"]
-            team_two_CT_val += rd["CTStartEqVal"]
-            team_one_T_spend += rd["TSpend"]
-            team_two_CT_spend += rd["CTSpend"]
-            first_half += 1
-        else:
             team_one_CT_val += rd["CTStartEqVal"]
-            team_two_T_val += rd["TStartEqVal"]
+            team_one_CT_cash += rd["CTRoundStartMoney"]
             team_one_CT_spend += rd["CTSpend"]
+            team_two_T_val += rd["TStartEqVal"]
+            team_two_T_cash += rd["TRoundStartMoney"]
             team_two_T_spend += rd["TSpend"]
+            first_half += 1
+        else:                                          
+            team_one_T_val += rd["TStartEqVal"]
+            team_one_T_cash += rd["TRoundStartMoney"]
+            team_one_T_spend += rd["TSpend"]
+            team_two_CT_val += rd["CTStartEqVal"]
+            team_two_CT_cash += rd["CTRoundStartMoney"]
+            team_two_CT_spend += rd["CTSpend"]
             second_half += 1
     if first_half == 0: first_half = 1
     if second_half == 0: second_half = 1
-    team_one_T_val = team_one_T_val / first_half
-    team_one_CT_val = team_one_CT_val / first_half
-    team_two_T_val= team_two_T_val / second_half
-    team_two_CT_val = team_two_CT_val / second_half
-    team_one_T_spend = team_one_T_spend / first_half
-    team_one_CT_spend = team_one_CT_spend / first_half
-    team_two_T_spend = team_two_T_spend / second_half
-    team_two_CT_spend = team_two_CT_spend / second_half
-    econ_stats = team_one_T_buy.merge(team_one_CT_buy, how="outer")    
-    econ_stats = econ_stats.merge(team_two_T_buy, how="outer")    
-    econ_stats = econ_stats.merge(team_two_CT_buy, how="outer") 
-    econ_stats.loc[len(econ_stats)] = ["Avg EQ Value", team_one_T_val, 
-                                       team_two_CT_val, team_two_T_val, 
-                                       team_one_CT_val]
-    econ_stats.loc[len(econ_stats)] = ["Avg Spend", team_one_T_spend, 
-                                       team_two_CT_spend, team_two_T_spend, 
-                                       team_one_CT_spend]
+    team_one_CT_val /= first_half
+    team_one_CT_cash /= first_half
+    team_one_CT_spend /= first_half
+    team_one_T_val /= second_half
+    team_one_T_cash /= second_half
+    team_one_T_spend /= second_half
+    team_two_CT_val /= second_half
+    team_two_CT_cash /= second_half
+    team_two_CT_spend /= second_half
+    team_two_T_val /= first_half
+    team_two_T_cash /= first_half
+    team_two_T_spend /= first_half
+    econ_stats = team_one_CT_buy.merge(team_one_T_buy, how="outer")    
+    econ_stats = econ_stats.merge(team_two_CT_buy, how="outer")    
+    econ_stats = econ_stats.merge(team_two_T_buy, how="outer") 
+    econ_stats.loc[len(econ_stats)] = ["Avg EQ Value", team_one_CT_val, 
+                                       team_one_T_val, team_two_CT_val, 
+                                       team_two_T_val]
+    econ_stats.loc[len(econ_stats)] = ["Avg Cash", team_one_CT_cash, 
+                                       team_one_T_cash, team_two_CT_cash, 
+                                       team_two_T_cash]
+    econ_stats.loc[len(econ_stats)] = ["Avg Spend", team_one_CT_spend, 
+                                       team_one_T_spend, team_two_CT_spend, 
+                                       team_two_T_spend]
     econ_stats.fillna(0, inplace=True)
     econ_stats.iloc[:, 1:] = econ_stats.iloc[:, 1:].astype(int)
     econ_stats = econ_stats.transpose()
@@ -595,8 +692,8 @@ def util_dmg_breakdown(damage_data: pd.DataFrame,
                                                "Molotov"
                                           ]))], damage_filters, ["AttackerName", 
                                                                  "Weapon"], 
-                          ["HpDamage", "HpDamageTaken"], [["sum"], ["sum"]], 
-                          ["Player", "Nade Type", "UD", "Given UD"])
+                          ["HpDamageTaken", "HpDamage"], [["sum"], ["sum"]], 
+                          ["Player", "Nade Type", "Given UD", "UD"])
     nades_thrown = calc_stats(grenade_data.loc[grenade_data["GrenadeType"].isin([
                                                    "HE Grenade", 
                                                    "Incendiary Grenade", 
@@ -606,12 +703,12 @@ def util_dmg_breakdown(damage_data: pd.DataFrame,
                               [["size"]], ["Player", "Nade Type","Nades Thrown"])
     util_dmg_breakdown = util_dmg.merge(nades_thrown, how="outer", on = 
                                         ["Player", "Nade Type"])
-    util_dmg_breakdown["UD Per Nade"] = (util_dmg_breakdown["UD"] 
-                                         / util_dmg_breakdown["Nades Thrown"])
     util_dmg_breakdown["Given UD Per Nade"] = (util_dmg_breakdown["Given UD"]
                                                / util_dmg_breakdown["Nades Thrown"])
+    util_dmg_breakdown["UD Per Nade"] = (util_dmg_breakdown["UD"] 
+                                         / util_dmg_breakdown["Nades Thrown"])
     util_dmg_breakdown.fillna(0, inplace=True)
-    util_dmg_breakdown.sort_values(by=["Player", "UD"], ascending=[True, False], 
+    util_dmg_breakdown.sort_values(by=["Player", "Given UD"], ascending=[True, False], 
                                    inplace=True)
     util_dmg_breakdown.reset_index(drop=True, inplace=True)
     return util_dmg_breakdown
@@ -628,7 +725,13 @@ def win_breakdown(round_data: pd.DataFrame,
             dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
     """ 
-    win_breakdown = calc_stats(round_data, round_filters, ["WinningTeam", 
+    round_data_copy = round_data.copy()
+    round_data_copy.replace("BombDefused", "CT Bomb Defusal Wins", inplace=True)
+    round_data_copy.replace("CTWin", "CT T Elim Wins", inplace=True)
+    round_data_copy.replace("TargetBombed", "T Bomb Detonation Wins", inplace=True)
+    round_data_copy.replace("TargetSaved", "CT Time Expired Wins", inplace=True)
+    round_data_copy.replace("TerroristsWin", "T CT Elim Wins", inplace=True)
+    win_breakdown = calc_stats(round_data_copy, round_filters, ["WinningTeam", 
                                                            "RoundEndReason"],
                                ["RoundEndReason"], [["size"]], [
                                                                 "Team", 
@@ -639,7 +742,15 @@ def win_breakdown(round_data: pd.DataFrame,
                                         values="Count")
     win_breakdown.reset_index(inplace=True)
     win_breakdown = win_breakdown.rename_axis(None, axis=1)
-    win_breakdown["Total"] = win_breakdown.iloc[0:].sum(axis=1)
+    win_breakdown["Total CT Wins"] = win_breakdown.iloc[0:][list(
+        set.intersection(set(win_breakdown.columns), 
+                         set(["CT Bomb Defusal Wins", "CT T Elim Wins", 
+                              "CT Time Expired Wins"])))].sum(axis=1)
+    win_breakdown["Total T Wins"] =  win_breakdown.iloc[0:][list(
+        set.intersection(set(win_breakdown.columns), 
+                         set(["T Bomb Detonation Wins", "T CT Elim Wins"])))
+        ].sum(axis=1)
+    win_breakdown["Total"] = win_breakdown.iloc[0:, 0:-2].sum(axis=1)
     return win_breakdown
 
 
@@ -686,21 +797,23 @@ def player_box_score(damage_data: pd.DataFrame,
             dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
     """
-    kills_df = kill_stats(kill_data, round_data, kill_filters, 
-                          death_filters, round_filters)
-    kills_df = kills_df[["Player", "K", "D", "A", "+/-", "KDR", "HS%"]]
-    adr_df = adr(damage_data, round_data, damage_filters, round_filters)
-    adr_df = adr_df[["Player", "Norm ADR"]]
-    adr_df.columns = ["Player", "ADR"]
-    ud_df = util_dmg(damage_data, grenade_data, damage_filters, grenade_filters)
-    ud_df = ud_df[["Player", "UD", "UD Per Nade"]]
-    flashes_df = flash_stats(flash_data, grenade_data, flash_filters, 
-                             grenade_filters)
-    flashes_df = flashes_df[["Player", "EF", "EF Per Throw"]]
-    box_score = kills_df.merge(adr_df, how="outer")
-    box_score = box_score[["Player", "K", "D", "A", "+/-", "KDR", "ADR", "HS%"]]
-    box_score = box_score.merge(ud_df, how="outer")
-    box_score = box_score.merge(flashes_df, how="outer")
+    k_stats = kill_stats(kill_data, round_data, kill_filters, 
+                         death_filters, round_filters)
+    k_stats = k_stats[["Player", "K", "D", "A", "KDR", "HS%"]]
+    adr_stats = adr(damage_data, round_data, damage_filters, round_filters)
+    adr_stats = adr_stats[["Player", "Norm ADR"]]
+    adr_stats.columns = ["Player", "ADR"]
+    kast_stats = kast(kill_data, "KAST", kill_filters, death_filters)
+    ud_stats = util_dmg(damage_data, grenade_data, damage_filters, grenade_filters)
+    ud_stats = ud_stats[["Player", "UD", "UD Per Nade"]]
+    f_stats = flash_stats(flash_data, grenade_data, flash_filters, 
+                          grenade_filters)
+    f_stats = f_stats[["Player", "EF", "EF Per Throw"]]
+    box_score = k_stats.merge(adr_stats, how="outer")
+    box_score = box_score[["Player", "K", "D", "A", "KDR", "ADR", "HS%"]]
+    box_score = box_score.merge(kast_stats, how="outer")
+    box_score = box_score.merge(ud_stats, how="outer")
+    box_score = box_score.merge(f_stats, how="outer")
     return box_score
 
 
@@ -795,8 +908,8 @@ def team_box_score(damage_data: pd.DataFrame,
                                                  "Flashbang"], flash_filters, 
                                 ["PlayerTeam"], ["PlayerTeam"], [["size"]], 
                                 ["Team", "Flashes Thrown"])
-    econ_df = econ_stats(round_data, round_data_json)
-    team_one = round_data_json[0]["TTeam"]
+    econ = econ_stats(round_data, round_data_json, round_filters)
+    team_one = round_data_json[0]["CTTeam"]
     box_score = kills.merge(deaths, how="outer")
     box_score = box_score.merge(assists, how="outer")
     box_score["+/-"] = box_score["K"] - box_score["D"]
@@ -810,22 +923,35 @@ def team_box_score(damage_data: pd.DataFrame,
     box_score = box_score.merge(flashes_thrown, how="outer")
     box_score["EF Per Throw"] = box_score["EF"] / box_score["Flashes Thrown"]      
     if box_score.iloc[0]["Team"] == team_one:
-        box_score["Avg EQ Value"] = [int(econ_df.iloc[0:2]["Avg EQ Value"].mean()), 
-                                     int(econ_df.iloc[2:4]["Avg EQ Value"].mean())
-                                    ] 
-        box_score["Avg Spend"] = [int(econ_df.iloc[0:2]["Avg Spend"].mean()), 
-                                  int(econ_df.iloc[2:4]["Avg Spend"].mean())] 
+        for buy_type in econ.columns[1:-3]:
+            box_score[buy_type] = [econ.iloc[0:2][buy_type].sum(), 
+                                   econ.iloc[2:][buy_type].sum()]
+        box_score["Avg EQ Value"] = [int(econ.iloc[0:2]["Avg EQ Value"].mean()), 
+                                     int(econ.iloc[2:]["Avg EQ Value"].mean())] 
+        box_score["Avg Cash"] = [int(econ.iloc[0:2]["Avg Cash"].mean()), 
+                                 int(econ.iloc[2:]["Avg Cash"].mean())] 
+        box_score["Avg Spend"] = [int(econ.iloc[0:2]["Avg Spend"].mean()), 
+                                  int(econ.iloc[2:]["Avg Spend"].mean())] 
     else:
-        box_score["Avg EQ Value"] = [int(econ_df.iloc[2:4]["Avg EQ Value"].mean()), 
-                                     int(econ_df.iloc[0:2]["Avg EQ Value"].mean())
-                                    ] 
-        box_score["Avg Spend"] = [int(econ_df.iloc[2:4]["Avg Spend"].mean()), 
-                                  int(econ_df.iloc[0:2]["Avg Spend"].mean())] 
+        for buy_type in econ.columns[1:-3]:
+            box_score[buy_type] = [econ.iloc[2:][buy_type].sum(), 
+                                   econ.iloc[0:2][buy_type].sum()]
+        box_score["Avg EQ Value"] = [int(econ.iloc[2:]["Avg EQ Value"].mean()), 
+                                     int(econ.iloc[0:2]["Avg EQ Value"].mean())] 
+        box_score["Avg Cash"] = [int(econ.iloc[2:]["Avg Cash"].mean()), 
+                                 int(econ.iloc[0:2]["Avg Cash"].mean())] 
+        box_score["Avg Spend"] = [int(econ.iloc[2:]["Avg Spend"].mean()), 
+                                  int(econ.iloc[0:2]["Avg Spend"].mean())] 
     box_score = box_score.merge(win_breakdown(round_data), how="outer")
-    box_score.rename(columns={"Total":"Score"}, inplace=True)
+    box_score.rename(columns={"Total CT Wins":"CT Wins", "Total T Wins":"T Wins", 
+                              "Total":"Score"}, inplace=True)
     score = box_score["Score"]
-    box_score.drop("Score", axis=1, inplace=True)
+    ct_wins = box_score["CT Wins"]
+    t_wins = box_score["T Wins"]
+    box_score.drop(["Score", "CT Wins", "T Wins"], axis=1, inplace=True)
     box_score.insert(1, "Score", score)
+    box_score.insert(2, "CT Wins", ct_wins)
+    box_score.insert(3, "T Wins", t_wins)
     box_score = box_score.transpose()
     box_score.columns = box_score.iloc[0]
     box_score.drop("Team", inplace=True)
