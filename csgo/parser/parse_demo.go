@@ -1830,6 +1830,7 @@ func main() {
 		currentGame.Rounds[0].TBeginEqVal = 1000
 
 		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
+		/*
 		for i := range currentGame.Rounds {
 			var tempDamages []DamageAction
 			for j := range currentGame.Rounds[i].Damages {
@@ -1851,7 +1852,7 @@ func main() {
 				}
 			}
 			currentGame.Rounds[i].Damages = tempDamages
-		}
+		} */
 
 		InfoLogger.Println("Cleaned data, writing to JSON file")
 

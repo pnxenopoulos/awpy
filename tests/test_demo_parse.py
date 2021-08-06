@@ -130,22 +130,23 @@ class TestDemoParser:
     def test_parse(self):
         parse_errors = 0
         for file in self.demo_data:
-            self._get_demofile(self.demo_data[file]["url"], file)
-            self.parser = DemoParser(
-                demofile=file + ".dem",
-                log=True,
-                demo_id=file,
-                parse_rate=128,
-            )
-            self.parser.parse()
-            if self.parser.parse_error == True:
-                # If error, count it
-                parse_errors += 1
-            else:
-                # If not, then add the JSON
-                with open(file + ".json") as f:
-                    self.demo_data[file]["json"] = json.load(f)
-            self._delete_demofile(file)
+            if self.demo_data[file]["useForTests"]:
+                self._get_demofile(self.demo_data[file]["url"], file)
+                self.parser = DemoParser(
+                    demofile=file + ".dem",
+                    log=True,
+                    demo_id=file,
+                    parse_rate=128,
+                )
+                self.parser.parse()
+                if self.parser.parse_error == True:
+                    # If error, count it
+                    parse_errors += 1
+                else:
+                    # If not, then add the JSON
+                    with open(file + ".json") as f:
+                        self.demo_data[file]["json"] = json.load(f)
+                self._delete_demofile(file)
         assert parse_errors == 0
 
     def test_parsed_json_rounds(self):
