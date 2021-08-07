@@ -421,6 +421,8 @@ func convertHitGroup(hg events.HitGroup) string {
 		return "LeftLeg"
 	case 7:
 		return "RightLeg"
+    case 8:
+		return "Neck"   
 	case 10:
 		return "Gear"
 	default:

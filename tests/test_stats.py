@@ -6,9 +6,9 @@ import requests
 from csgo.parser import DemoParser
 from csgo.analytics.stats import (extract_num_filters, check_filters, 
                                   num_filter_df, filter_df, calc_stats, 
-                                  kast, kill_stats, adr, util_dmg, 
-                                  flash_stats, bomb_stats, econ_stats, 
-                                  weapon_type, kill_breakdown, 
+                                  accuracy, kast, kill_stats, adr, 
+                                  util_dmg, flash_stats, bomb_stats, 
+                                  econ_stats, weapon_type, kill_breakdown, 
                                   util_dmg_breakdown, win_breakdown, 
                                   player_box_score, team_box_score)
                                  
@@ -137,14 +137,20 @@ class TestStats:
                           ["AttackerName"], [["size"]], 
                           ["NAVI PlayerName", "First Half Headshot Kills"]
         ).equals(self.kills)
-        
+       
+    def test_accuracy(self):
+        """Tests accuracy function."""
+        assert (accuracy(self.damage_data, self.round_data_json)["ACC%"].sum() == 
+                1.706741391076766)
+    
     def test_kast(self):
-        """Tests  kastfunction."""
+        """Tests kast function."""
         assert kast(self.kill_data, "KAST")["KAST%"].sum() == 6.6
         
     def test_kill_stats(self):
         """Tests kill_stats function."""
-        assert (kill_stats(self.kill_data, self.round_data)["KDR"].sum() == 
+        assert (kill_stats(self.damage_data, self.kill_data, 
+                           self.round_data, self.round_data_json)["KDR"].sum() == 
                 10.069507101086048)
         
     def test_adr(self):
@@ -154,8 +160,8 @@ class TestStats:
         
     def test_util_dmg(self):
         """Tests util_dmg function."""
-        assert (util_dmg(self.damage_data, self.grenade_data)["UD Per Nade"].sum() == 
-                45.03684172740714)
+        assert (util_dmg(self.damage_data, self.grenade_data)["UD Per Nade"].sum() 
+                == 45.03684172740714)
     
     def test_flash_stats(self):
         """Tests flash_stats function."""
@@ -168,8 +174,8 @@ class TestStats:
         
     def test_econ_stats(self):
         """Tests econ_stats function."""
-        assert (econ_stats(self.round_data, self.round_data_json)["Avg Spend"].sum() == 
-                52312)   
+        assert (econ_stats(self.round_data, self.round_data_json)["Avg Spend"].sum() 
+                == 52312)   
         
     def test_weapon_type(self):
         """Tests weapon_type function."""
@@ -199,7 +205,8 @@ class TestStats:
         """Tests player_box_score function."""
         assert (player_box_score(self.damage_data, self.flash_data,
                                  self.grenade_data, self.kill_data, 
-                                 self.round_data)["K"].sum() == 166)
+                                 self.round_data, self.round_data_json)["K"].sum() 
+                == 166)
         
     def test_team_box_score(self):
         """Tests team_box_score function."""
