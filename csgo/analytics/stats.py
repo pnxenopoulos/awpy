@@ -820,7 +820,7 @@ def win_breakdown(round_data: pd.DataFrame,
         set.intersection(set(win_breakdown.columns), 
                          set(["T Bomb Detonation Wins", "T CT Elim Wins"])))
         ].sum(axis=1)
-    win_breakdown["Total"] = win_breakdown.iloc[0:, 0:-2].sum(axis=1)
+    win_breakdown["Total Wins"] = win_breakdown.iloc[0:, 0:-2].sum(axis=1)
     win_breakdown.iloc[:, 1:] = win_breakdown.iloc[:, 1:].astype(int)
     return win_breakdown
 
@@ -1049,7 +1049,7 @@ def team_box_score(damage_data: pd.DataFrame,
                                   int(econ.iloc[0:2]["Avg Spend"].mean())] 
     box_score = box_score.merge(win_breakdown(round_data), how="outer").fillna(0)
     box_score.rename(columns={"Total CT Wins":"CT Wins", "Total T Wins":"T Wins", 
-                              "Total":"Score"}, inplace=True)
+                              "Total Wins":"Score"}, inplace=True)
     score = box_score["Score"]
     ct_wins = box_score["CT Wins"]
     t_wins = box_score["T Wins"]
