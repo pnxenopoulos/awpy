@@ -54,6 +54,7 @@ class TestStats:
         self.flash_data = self.data["Flashes"]
         self.grenade_data = self.data["Grenades"]
         self.kill_data = self.data["Kills"]
+        self.bomb_data = self.data["BombEvents"]
         self.round_data = self.data["Rounds"]
         self.round_data_json = self.data_json["GameRounds"]
         self.invalid_numeric_filter = {"Kills": [10]}
@@ -160,10 +161,7 @@ class TestStats:
 
     def test_accuracy(self):
         """Tests accuracy function."""
-        assert (
-            accuracy(self.damage_data, self.round_data_json)["ACC%"].sum()
-            == 1.706741391076766
-        )
+        assert is_in_range(accuracy(self.damage_data, self.round_data_json)["ACC%"].sum(), 1.65, 1.75)
 
     def test_kast(self):
         """Tests kast function."""
