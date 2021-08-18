@@ -31,7 +31,7 @@ from csgo.utils import is_in_range
 class TestStats:
     """Class to test the statistics functions.
     
-    Uses https://www.hltv.org/matches/2349180/gambit-vs-natus-vincere-blast-premier-spring-final-2021.
+    Uses https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
     """
 
     def setup_class(self):
@@ -39,11 +39,11 @@ class TestStats:
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
 
-        r = requests.get(self.demo_data["gambit-vs-natus-vincere-m1-dust2"]["url"])
-        open("gambit-vs-natus-vincere-m1-dust2" + ".dem", "wb").write(r.content)
+        r = requests.get(self.demo_data["astralis-vs-liquid-m1-inferno"]["url"])
+        open("astralis-vs-liquid-m1-inferno" + ".dem", "wb").write(r.content)
 
         self.parser = DemoParser(
-            demofile="gambit-vs-natus-vincere-m1-dust2.dem",
+            demofile="astralis-vs-liquid-m1-inferno.dem",
             demo_id="test",
             parse_rate=128,
         )
@@ -63,25 +63,25 @@ class TestStats:
         self.invalid_str_filter = {"AttackerName": [1]}
         self.invalid_bool_filter = {"IsHeadshot": ["True"]}
         self.filters = {
-            "AttackerTeam": ["Natus Vincere"],
+            "AttackerTeam": ["Astralis"],
             "RoundNum": ["<16"],
             "IsHeadshot": [True],
         }
         self.filtered_kill_data = self.kill_data.loc[
-            (self.kill_data[("AttackerTeam")] == "Natus Vincere")
+            (self.kill_data[("AttackerTeam")] == "Astralis")
             & (self.kill_data["RoundNum"] < 16)
             & (self.kill_data["IsHeadshot"] == True)
         ]
         self.kills = pd.DataFrame(
             {
-                "NAVI PlayerName": [
-                    "Boombl4",
-                    "Perfecto",
-                    "b1t",
-                    "electronic",
-                    "s1mple",
+                "Astralis Player": [
+                    "Magisk",
+                    "Xyp9x",
+                    "device",
+                    "dupreeh",
+                    "gla1ve",
                 ],
-                "First Half Headshot Kills": [1, 3, 5, 5, 1],
+                "1st Half Headshot Kills": [6, 2, 3, 4, 2],
             }
         )
 
@@ -120,23 +120,23 @@ class TestStats:
 
     def test_num_filter_df(self):
         """Tests num_filter_df function."""
-        assert num_filter_df(self.kills, "First Half Headshot Kills", "==", 3.0).equals(
-            self.kills.loc[self.kills["First Half Headshot Kills"] == 3]
+        assert num_filter_df(self.kills, "1st Half Headshot Kills", "==", 3.0).equals(
+            self.kills.loc[self.kills["1st Half Headshot Kills"] == 3]
         )
-        assert num_filter_df(self.kills, "First Half Headshot Kills", "!=", 3.0).equals(
-            self.kills.loc[self.kills["First Half Headshot Kills"] != 3]
+        assert num_filter_df(self.kills, "1st Half Headshot Kills", "!=", 3.0).equals(
+            self.kills.loc[self.kills["1st Half Headshot Kills"] != 3]
         )
-        assert num_filter_df(self.kills, "First Half Headshot Kills", "<=", 3.0).equals(
-            self.kills.loc[self.kills["First Half Headshot Kills"] <= 3]
+        assert num_filter_df(self.kills, "1st Half Headshot Kills", "<=", 3.0).equals(
+            self.kills.loc[self.kills["1st Half Headshot Kills"] <= 3]
         )
-        assert num_filter_df(self.kills, "First Half Headshot Kills", ">=", 3.0).equals(
-            self.kills.loc[self.kills["First Half Headshot Kills"] >= 3]
+        assert num_filter_df(self.kills, "1st Half Headshot Kills", ">=", 3.0).equals(
+            self.kills.loc[self.kills["1st Half Headshot Kills"] >= 3]
         )
-        assert num_filter_df(self.kills, "First Half Headshot Kills", "<", 3.0).equals(
-            self.kills.loc[self.kills["First Half Headshot Kills"] < 3]
+        assert num_filter_df(self.kills, "1st Half Headshot Kills", "<", 3.0).equals(
+            self.kills.loc[self.kills["1st Half Headshot Kills"] < 3]
         )
-        assert num_filter_df(self.kills, "First Half Headshot Kills", ">", 3.0).equals(
-            self.kills.loc[self.kills["First Half Headshot Kills"] > 3]
+        assert num_filter_df(self.kills, "1st Half Headshot Kills", ">", 3.0).equals(
+            self.kills.loc[self.kills["1st Half Headshot Kills"] > 3]
         )
 
     def test_filter_df(self):
@@ -151,54 +151,46 @@ class TestStats:
             ["AttackerName"],
             ["AttackerName"],
             [["size"]],
-            ["NAVI PlayerName", "First Half Headshot Kills"],
+            ["Astralis Player", "1st Half Headshot Kills"],
         ).equals(self.kills)
 
     def test_accuracy(self):
         """Tests accuracy function."""
-        assert is_in_range(accuracy(self.damage_data, self.round_data_json)["ACC%"].sum(), 1.65, 1.75)
+        assert round(accuracy(self.damage_data, self.round_data_json)["ACC%"].sum(), 
+                     2) == 1.64
 
     def test_kast(self):
         """Tests kast function."""
-        assert is_in_range(kast(self.kill_data, "KAST")["KAST%"].sum(), 6.5, 7.5)
+        assert round(kast(self.kill_data, "KAST")["KAST%"].sum(), 2) == 6.63
 
     def test_kill_stats(self):
         """Tests kill_stats function."""
-        assert is_in_range(
-            kill_stats(
-                self.damage_data, self.kill_data, self.round_data, self.round_data_json
-            )["KDR"].sum(),
-            10,
-            10.5,
-        )
+        assert round(kill_stats(self.damage_data, self.kill_data, self.round_data, 
+                                self.round_data_json)["KDR"].sum(), 2) == 10.09
 
     def test_adr(self):
         """Tests adr function."""
-        assert is_in_range(
-            adr(self.damage_data, self.round_data)["Norm ADR"].sum(), 625, 650
-        )
+        assert round(adr(self.damage_data, self.round_data)["Norm ADR"].sum(),
+                     2) == 715.56
 
     def test_util_dmg(self):
         """Tests util_dmg function."""
-        assert is_in_range(
-            util_dmg(self.damage_data, self.grenade_data)["UD Per Nade"].sum(), 40, 50
-        )
+        assert round(util_dmg(self.damage_data, self.grenade_data)
+                     ["UD Per Nade"].sum(), 2) == 75.96
 
     def test_flash_stats(self):
         """Tests flash_stats function."""
-        assert flash_stats(self.flash_data, self.grenade_data)["EF"].sum() == 373
+        assert flash_stats(self.flash_data, self.grenade_data)["EF"].sum() == 327
 
     def test_bomb_stats(self):
         """Tests bomb_stats function."""
-        assert is_in_range(
-            bomb_stats(self.bomb_data)["Gambit Defuse %"].sum(), 1.2, 1.3
-        )
+        assert bomb_stats(self.bomb_data)["Astralis Defuses"].sum() == 6
 
     def test_econ_stats(self):
         """Tests econ_stats function."""
         assert (
             econ_stats(self.round_data, self.round_data_json)["Avg Spend"].sum()
-            == 52312
+            == 56235
         )
 
     def test_weapon_type(self):
@@ -214,21 +206,16 @@ class TestStats:
 
     def test_kill_breakdown(self):
         """Tests kill_breakdown function."""
-        assert kill_breakdown(self.kill_data)["Assault Rifle Kills"].sum() == 96
+        assert kill_breakdown(self.kill_data)["Assault Rifle Kills"].sum() == 127
 
     def test_util_dmg_breakdown(self):
         """Tests util_dmg_breakdown function."""
-        assert is_in_range(
-            util_dmg_breakdown(self.damage_data, self.grenade_data)[
-                "UD Per Nade"
-            ].sum(),
-            120,
-            125,
-        )
+        assert round(util_dmg_breakdown(self.damage_data, self.grenade_data)
+                     ["UD Per Nade"].sum(), 2) == 208.30
 
     def test_win_breakdown(self):
         """Tests win_breakdown function."""
-        assert win_breakdown(self.round_data)["T CT Elim Wins"].sum() == 5
+        assert win_breakdown(self.round_data)["T CT Elim Wins"].sum() == 7
 
     def test_player_box_score(self):
         """Tests player_box_score function."""
@@ -241,7 +228,7 @@ class TestStats:
                 self.round_data,
                 self.round_data_json,
             )["K"].sum()
-            == 166
+            == 176
         )
 
     def test_team_box_score(self):
@@ -255,7 +242,7 @@ class TestStats:
                 self.round_data,
                 self.round_data_json,
             )
-            .iloc[3]
+            .iloc[4]
             .sum()
-            == 166
+            == 177
         )
