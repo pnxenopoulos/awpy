@@ -5,8 +5,7 @@ import os
 import subprocess
 import numpy as np
 
-from csgo import DIST_DICT
-from csgo.utils import AutoVivification
+from csgo import DIST
 from scipy.spatial import distance
 
 
@@ -31,7 +30,7 @@ def area_distance(area_one=0, area_two=0, map="de_dust2"):
         raise ValueError(
             f'Invalid map name: got {map}, expected one of: "de_dust2", "de_cbble", "de_inferno", "de_mirage", "de_nuke", "de_overpass", "de_train", "de_vertigo"'
         )
-    return DIST_DICT[map][area_one][area_two]
+    return DIST[map][area_one][area_two]
 
 
 def bombsite_distance(location, bombsite="A", map="de_dust2"):
