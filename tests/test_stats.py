@@ -88,11 +88,6 @@ class TestStats:
     def test_extract_num_filters(self):
         """Tests extract_num_filters function."""
         assert extract_num_filters({"Kills": ["==3"]}, "Kills") == (["=="], [3.0])
-        assert extract_num_filters({"Kills": ["!=3"]}, "Kills") == (["!="], [3.0])
-        assert extract_num_filters({"Kills": ["<=3"]}, "Kills") == (["<="], [3.0])
-        assert extract_num_filters({"Kills": [">=3"]}, "Kills") == ([">="], [3.0])
-        assert extract_num_filters({"Kills": ["<3"]}, "Kills") == (["<"], [3.0])
-        assert extract_num_filters({"Kills": [">3"]}, "Kills") == ([">"], [3.0])
         assert extract_num_filters({"Kills": [">1", "<5"]}, "Kills") == (
             [">", "<"],
             [1.0, 5.0],
