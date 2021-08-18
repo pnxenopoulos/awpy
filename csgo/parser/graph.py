@@ -4,7 +4,9 @@ from csgo.analytics.distance import area_distance, point_distance
 from csgo.analytics.coords import Encoder
 
 
-def frame_to_graph(frame, metric, map_name, full=False, places=False, coordinates=False):
+def frame_to_graph(
+    frame, metric, map_name, full=False, places=False, coordinates=False
+):
     """Transforms a frame to a graph
 
     Args:

@@ -50,3 +50,10 @@ def check_go_version():
     except Exception as e:
         print(e)
         return False
+
+
+def is_in_range(value, min, max):
+    if value >= min and value <= max:
+        return True
+    else:
+        return False

@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def agg_damages(damage_data: pd.DataFrame) -> pd.DataFrame:
     """Returns a dataframe with aggregated damage events."""
     cols_to_groupby = list(damage_data.columns[0:25])
