@@ -119,10 +119,9 @@ class TestDemoParser:
             map_name=self.data["MapName"],
             full=True,
             places=False,
-            coordinates=True
+            coordinates=True,
         )
         assert X.shape[0] == 10
         assert X.shape[1] == 13
         assert A.shape[0] == 10
         assert A.shape[1] == 10
-

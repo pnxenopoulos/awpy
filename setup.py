@@ -19,6 +19,7 @@ setup(
             "*.go",
             "data/map/*.png",
             "data/nav/*.nav",
+            "data/nav/*.csv",
             "data/nav/*.xz",
             "*.mod",
             "*.sum",

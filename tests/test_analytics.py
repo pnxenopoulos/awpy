@@ -9,7 +9,6 @@ from csgo.analytics.distance import (
     area_distance,
 )
 from csgo.analytics.coords import Encoder
-from csgo.utils import AutoVivification
 
 
 class TestCSGOAnalytics:

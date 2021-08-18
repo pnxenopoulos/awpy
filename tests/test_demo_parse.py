@@ -5,6 +5,7 @@ import requests
 
 from csgo.parser import DemoParser
 
+
 class TestDemoParser:
     """Class to test the match parser
 
@@ -34,7 +35,11 @@ class TestDemoParser:
         """
         self.parser = None
         files_in_directory = os.listdir()
-        filtered_files = [file for file in files_in_directory if file.endswith(".dem") or file.endswith(".json")]
+        filtered_files = [
+            file
+            for file in files_in_directory
+            if file.endswith(".dem") or file.endswith(".json")
+        ]
         if len(filtered_files) > 0:
             for f in filtered_files:
                 os.remove(f)
@@ -54,7 +59,7 @@ class TestDemoParser:
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False,
         )
         assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
-    
+
     def test_demo_id_given(self):
         """Tests if a demo_id is correctly inferred"""
         assert self.parser.demo_id == "test"
@@ -133,10 +138,7 @@ class TestDemoParser:
             if self.demo_data[file]["useForTests"]:
                 self._get_demofile(self.demo_data[file]["url"], file)
                 self.parser = DemoParser(
-                    demofile=file + ".dem",
-                    log=True,
-                    demo_id=file,
-                    parse_rate=128,
+                    demofile=file + ".dem", log=True, demo_id=file, parse_rate=128,
                 )
                 self.parser.parse()
                 if self.parser.parse_error == True:
@@ -151,8 +153,11 @@ class TestDemoParser:
 
     def test_parsed_json_rounds(self):
         for demo in self.demo_data:
-            if self.demo_data[demo]["json"]:
-                assert len(self.demo_data[demo]["json"]["GameRounds"]) == self.demo_data[demo]["rounds"]
+            if self.demo_data[demo]["useForTests"]:
+                assert (
+                    len(self.demo_data[demo]["json"]["GameRounds"])
+                    == self.demo_data[demo]["rounds"]
+                )
 
     def _count_kills(self, json):
         total_kills = 0
@@ -164,10 +169,12 @@ class TestDemoParser:
 
     def test_parsed_kills(self):
         for demo in self.demo_data:
-            if self.demo_data[demo]["json"]:
+            if self.demo_data[demo]["useForTests"]:
                 demo_kills = self._count_kills(self.demo_data[demo]["json"])
                 real_kills = self.demo_data[demo]["totalKills"]
-                print("[{0}] Parsed {1} kills, real kills are {2}".format(demo, demo_kills, real_kills))
+                print(
+                    "[{0}] Parsed {1} kills, real kills are {2}".format(
+                        demo, demo_kills, real_kills
+                    )
+                )
                 assert demo_kills == real_kills
-
-    

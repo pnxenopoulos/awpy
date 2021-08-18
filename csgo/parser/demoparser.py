@@ -76,7 +76,9 @@ class DemoParser:
             self.logger.warning("No parse rate set")
             self.parse_rate = 32
         elif parse_rate == 1:
-            self.logger.warning("A parse rate of 1 will parse EVERY tick. This process will be very slow.")
+            self.logger.warning(
+                "A parse rate of 1 will parse EVERY tick. This process will be very slow."
+            )
             self.parse_rate = 1
         elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128]:
             self.logger.warning(
@@ -260,7 +262,8 @@ class DemoParser:
                 for frame in r["Frames"]:
                     for side in ["CT", "T"]:
                         if frame[side]["Players"] is not None and (
-                            len(frame[side]["Players"]) > 0  # Used to be == 5, to ensure the sides were equal.
+                            len(frame[side]["Players"])
+                            > 0  # Used to be == 5, to ensure the sides were equal.
                         ):
                             for player in frame[side]["Players"]:
                                 player_item = {}
