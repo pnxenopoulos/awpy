@@ -189,6 +189,7 @@ def calc_stats(df: pd.DataFrame,
 
 def accuracy(damage_data: pd.DataFrame,
              round_data_json: List[Dict],
+             damage_filters: Dict[str, Union[List[bool], List[str]]] = {},
              weapon_fires_filters: Dict[str, Union[List[bool], List[str]]] = {}
 ) -> pd.DataFrame:
     """Returns a dataframe with accuracy statistics.
@@ -197,6 +198,9 @@ def accuracy(damage_data: pd.DataFrame,
         damage_data: A dataframe with damage data.
         round_data_json: A list of dictionaries with round data
             where each round is a dictionary. 
+        damage_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by damage_data to filter the damage data by 
+            and the values are lists that contain the column filters.
         weapon_fires_filters: A dictionary where the keys are the columns of the 
             dataframe represented by weapon_fires to filter the weapon fire data 
             by and the values are lists that contain the column filters.
@@ -212,11 +216,11 @@ def accuracy(damage_data: pd.DataFrame,
     weapon_fires = calc_stats(weapon_fires, weapon_fires_filters, ["PlayerName"], 
                               ["PlayerName"], [["size"]], ["Player", 
                                                            "Weapon Fires"])
-    hits = calc_stats(damage_data, weapon_fires_filters, ["AttackerName"], 
+    hits = calc_stats(damage_data, damage_filters, ["AttackerName"], 
                       ["AttackerName"], [["size"]], ["Player", "Hits"])
     headshots = calc_stats(damage_data.loc[damage_data["HitGroup"] == "Head"], 
-                           weapon_fires_filters, ["AttackerName"], 
-                           ["AttackerName"], [["size"]], ["Player", "Headshots"])
+                           damage_filters, ["AttackerName"], ["AttackerName"], 
+                           [["size"]], ["Player", "Headshots"])
     acc = weapon_fires.merge(hits, how="outer").fillna(0)
     acc = acc.merge(headshots, how="outer").fillna(0)
     acc["ACC%"] = acc["Hits"] / acc["Weapon Fires"]
@@ -313,6 +317,7 @@ def kill_stats(damage_data: pd.DataFrame,
                kill_data: pd.DataFrame,
                round_data: pd.DataFrame,
                round_data_json: List[Dict],
+               damage_filters: Dict[str, Union[List[bool], List[str]]] = {},
                kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
                death_filters: Dict[str, Union[List[bool], List[str]]] = {},
                round_filters: Dict[str, Union[List[bool], List[str]]] = {},
@@ -327,6 +332,9 @@ def kill_stats(damage_data: pd.DataFrame,
         round_data: A dataframe with round data.
         round_data_json: A list of dictionaries with round data
             where each round is a dictionary.
+        damage_filters: A dictionary where the keys are the columns of the 
+            dataframe represented by damage_data to filter the damage data by 
+            and the values are lists that contain the column filters.
         kill_filters: A dictionary where the keys are the columns of the 
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
@@ -370,7 +378,8 @@ def kill_stats(damage_data: pd.DataFrame,
                                             kill_data["VictimTeam"]], 
                               kill_filters, ["AttackerName"], ["IsHeadshot"], 
                               [["mean"]], ["Player", "HS%"])
-    acc_stats = accuracy(damage_data, round_data_json, weapon_fires_filters)
+    acc_stats = accuracy(damage_data, round_data_json, damage_filters,
+                         weapon_fires_filters)
     kast_stats = kast(kill_data, "KAST", kill_filters, death_filters)
     kill_stats = kills.merge(assists, how="outer").fillna(0)
     kill_stats = kill_stats.merge(deaths, how="outer").fillna(0)
