@@ -5,7 +5,6 @@ TODO:
 	Are flashes correct?
 
 	Lint the code
-	Remove logger
 */
 
 package main
@@ -26,24 +25,6 @@ import (
 	events "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/events"
 	gonav "github.com/pnxenopoulos/csgonavparse"
 )
-
-// Logging
-var (
-	WarningLogger *log.Logger
-	InfoLogger    *log.Logger
-	ErrorLogger   *log.Logger
-)
-
-func init() {
-	file, err := os.OpenFile("demoparser.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	InfoLogger = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	WarningLogger = log.New(file, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
-	ErrorLogger = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
-}
 
 // Game is the overall struct that holds everything
 type Game struct {
@@ -661,18 +642,12 @@ func main() {
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
-	if err != nil {
-		ErrorLogger.Println("ERROR PARSING FLAGS")
-		ErrorLogger.Println(err.Error())
-		panic(err)
-	}
+	checkError(err)
 
 	demPath := *demoPathPtr
 	parseRate := *parseRatePtr
 	tradeTime := int64(*tradeTimePtr)
 	outpath := *outpathPtr
-
-	InfoLogger.Printf("Parsed arguments, reading in %s and a parse rate of %d \n", demPath, parseRate)
 
 	// Read in demofile
 	f, err := os.Open(demPath)
@@ -694,8 +669,6 @@ func main() {
 	fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 	parserNav := gonav.Parser{Reader: fNav}
 	mesh, _ := parserNav.Parse()
-
-	InfoLogger.Printf("Parsed demo header and mesh for map %s \n", currentMap)
 
 	// Create list of places as parsed from the nav mesh
 	var placeSl []string
@@ -727,10 +700,6 @@ func main() {
 	currentGame.ParseRate = int(parseRate)
 
 	currentRound := GameRound{}
-
-	InfoLogger.Printf("Demo is of type %s with tickrate %d \n", currentGame.ClientName, currentGame.TickRate)
-	InfoLogger.Printf("Demo name is %s from %s\n", currentGame.MatchName, demPath)
-	InfoLogger.Println("Registering event handlers, parsing demo")
 
 	// Parse round starts
 	p.RegisterEventHandler(func(e events.RoundStart) {
@@ -1678,9 +1647,6 @@ func main() {
 
 	// Clean rounds
 	if len(currentGame.Rounds) > 0 {
-
-		InfoLogger.Println("Cleaning data")
-
 		// Remove rounds where win reason doesn't exist
 		var tempRoundsReason []GameRound
 		for i := range currentGame.Rounds {
@@ -1857,21 +1823,15 @@ func main() {
 			currentGame.Rounds[i].Damages = tempDamages
 		} */
 
-		InfoLogger.Println("Cleaned data, writing to JSON file")
-
 		// Write the JSON
 		file, _ := json.MarshalIndent(currentGame, "", " ")
 		_ = ioutil.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
-
-		InfoLogger.Println("Wrote to JSON file to: " + outpath + "/" + currentGame.MatchName + ".json")
 	}
 }
 
 // Function to handle errors
 func checkError(err error) {
 	if err != nil {
-		ErrorLogger.Println("DEMO STREAM ERROR")
-		WarningLogger.Println("Demo stream errors can still write output, check for JSON file")
-		ErrorLogger.Println(err.Error())
+		panic(err)
 	}
 }

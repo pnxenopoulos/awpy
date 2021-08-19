@@ -333,7 +333,7 @@ class DemoParser:
 
         try:
             rounds = []
-            keys = [
+            cols = [
                 "RoundNum",
                 "StartTick",
                 "FreezeTimeEnd",
@@ -341,18 +341,28 @@ class DemoParser:
                 "EndOfficialTick",
                 "TScore",
                 "CTScore",
+                "EndTScore",
+                "EndCTScore",
+                "CTTeam",
+                "TTeam",
                 "WinningSide",
                 "WinningTeam",
                 "LosingTeam",
                 "RoundEndReason",
                 "CTStartEqVal",
+                "CTRoundStartEqVal",
+                "CTRoundStartMoney"
                 "CTBuyType",
+                "CTSpend",
                 "TStartEqVal",
+                "TRoundStartEqVal",
+                "TRoundStartMoney"
                 "TBuyType",
+                "TSpend",
             ]
             for r in self.json["GameRounds"]:
                 round_item = {}
-                for k in keys:
+                for k in cols:
                     round_item[k] = r[k]
                     round_item["MatchId"] = self.demo_id
                     round_item["MapName"] = self.json["MapName"]
