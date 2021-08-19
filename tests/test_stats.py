@@ -39,11 +39,11 @@ class TestStats:
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
 
-        r = requests.get(self.demo_data["astralis-vs-liquid-m1-inferno"]["url"])
-        open("astralis-vs-liquid-m1-inferno" + ".dem", "wb").write(r.content)
+        r = requests.get(self.demo_data["astralis-vs-liquid-m2-nuke"]["url"])
+        open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
 
         self.parser = DemoParser(
-            demofile="astralis-vs-liquid-m1-inferno.dem",
+            demofile="astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
             parse_rate=128,
         )
@@ -81,7 +81,7 @@ class TestStats:
                     "dupreeh",
                     "gla1ve",
                 ],
-                "1st Half Headshot Kills": [6, 2, 3, 4, 2],
+                "1st Half Headshot Kills": [3, 2, 7, 5, 2],
             }
         )
 
@@ -157,40 +157,40 @@ class TestStats:
     def test_accuracy(self):
         """Tests accuracy function."""
         assert round(accuracy(self.damage_data, self.round_data_json)["ACC%"].sum(), 
-                     2) == 1.64
+                     2) == 1.89
 
     def test_kast(self):
         """Tests kast function."""
-        assert round(kast(self.kill_data, "KAST")["KAST%"].sum(), 2) == 6.63
+        assert round(kast(self.kill_data, "KAST")["KAST%"].sum(), 2) == 6.39
 
     def test_kill_stats(self):
         """Tests kill_stats function."""
         assert round(kill_stats(self.damage_data, self.kill_data, self.round_data, 
-                                self.round_data_json)["KDR"].sum(), 2) == 10.09
+                                self.round_data_json)["KDR"].sum(), 2) == 10.1
 
     def test_adr(self):
         """Tests adr function."""
         assert round(adr(self.damage_data, self.round_data)["Norm ADR"].sum(),
-                     2) == 715.56
+                     2) == 729.07
 
     def test_util_dmg(self):
         """Tests util_dmg function."""
         assert round(util_dmg(self.damage_data, self.grenade_data)
-                     ["UD Per Nade"].sum(), 2) == 75.96
+                     ["UD Per Nade"].sum(), 2) == 48.4
 
     def test_flash_stats(self):
         """Tests flash_stats function."""
-        assert flash_stats(self.flash_data, self.grenade_data)["EF"].sum() == 327
+        assert flash_stats(self.flash_data, self.grenade_data)["EF"].sum() == 144
 
     def test_bomb_stats(self):
         """Tests bomb_stats function."""
-        assert bomb_stats(self.bomb_data)["Astralis Defuses"].sum() == 6
+        assert bomb_stats(self.bomb_data)["Astralis Defuses"].sum() == 8
 
     def test_econ_stats(self):
         """Tests econ_stats function."""
         assert (
             econ_stats(self.round_data, self.round_data_json)["Avg Spend"].sum()
-            == 56235
+            == 53371
         )
 
     def test_weapon_type(self):
@@ -211,11 +211,11 @@ class TestStats:
     def test_util_dmg_breakdown(self):
         """Tests util_dmg_breakdown function."""
         assert round(util_dmg_breakdown(self.damage_data, self.grenade_data)
-                     ["UD Per Nade"].sum(), 2) == 208.30
+                     ["UD Per Nade"].sum(), 2) == 120.02
 
     def test_win_breakdown(self):
         """Tests win_breakdown function."""
-        assert win_breakdown(self.round_data)["T CT Elim Wins"].sum() == 7
+        assert win_breakdown(self.round_data)["T CT Elim Wins"].sum() == 6
 
     def test_player_box_score(self):
         """Tests player_box_score function."""
@@ -228,7 +228,7 @@ class TestStats:
                 self.round_data,
                 self.round_data_json,
             )["K"].sum()
-            == 176
+            == 179
         )
 
     def test_team_box_score(self):
@@ -244,5 +244,5 @@ class TestStats:
             )
             .iloc[4]
             .sum()
-            == 177
+            == 180
         )
