@@ -14,15 +14,16 @@ class DemoParser:
     Attributes:
         demofile (string) : A string denoting the path to the demo file, which ends in .dem
         log (boolean)     : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
-        demo_id (string) : A unique demo name/game id. Default is inferred from demofile name
+        demo_id (string)  : A unique demo name/game id. Default is inferred from demofile name
         parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 32.
+        trade_time (int)  : Length of the window for a trade (in seconds). Default is 5.
 
     Raises:
         ValueError : Raises a ValueError if the Golang version is lower than 1.14
     """
 
     def __init__(
-        self, demofile="", outpath=None, log=False, demo_id=None, parse_rate=None
+        self, demofile="", outpath=None, log=False, demo_id=None, parse_rate=None, trade_time=5
     ):
         # Set up logger
         if log:
@@ -91,6 +92,10 @@ class DemoParser:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
 
+        # Set trade time
+        self.trade_time = trade_time
+        self.logger.info("Setting trade time to " + str(self.trade_time))
+        
         # Set parse error to False
         self.parse_error = False
 
@@ -112,6 +117,8 @@ class DemoParser:
                 self.demofile,
                 "-parserate",
                 str(self.parse_rate),
+                "-tradetime",
+                str(self.trade_time),
                 "-demoid",
                 str(self.demo_id),
                 "-out",

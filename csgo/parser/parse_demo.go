@@ -1,18 +1,11 @@
 /*
 TODO:
 	Fuzzy logic for round ends - see https://github.com/markus-wa/demoinfocs-golang/issues/83
-	Add player stats summary?
-	Fix name finding alg in csgo - this is in the csgo library
-	Fix the team parsing - this is in the data scraper
 	Build go file instead of Go run?
-
-	Add automatic round end after a certain time period
-	first and last round of match
-	rounds where total score is same
-	11 - 13
-	11 - 13
-
 	Are flashes correct?
+
+	Lint the code
+	Remove logger
 */
 
 package main
@@ -31,8 +24,6 @@ import (
 	dem "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs"
 	common "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/common"
 	events "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/events"
-	//ex "github.com/markus-wa/demoinfocs-golang/v2/examples"
-	//metadata "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/metadata"
 	gonav "github.com/pnxenopoulos/csgonavparse"
 )
 
@@ -74,8 +65,8 @@ type ServerConVar struct {
 	CashWinDefuse                 int64 `json:"CashWinDefuse"`                 // cash_team_win_by_defusing_bomb
 	CashWinTimeRunOut             int64 `json:"CashWinTimeRunOut"`             // cash_team_win_by_time_running_out_bomb
 	CashWinElimination            int64 `json:"CashWinElimination"`            // cash_team_elimination_bomb_map
-	CashPlayerKilledDefault       int64 `json:"CashPlayerKilledDefault"`       //cash_player_killed_enemy_default
-	CashTeamLoserBonus            int64 `json:"CashTeamLoserBonus"`            //cash_team_loser_bonus
+	CashPlayerKilledDefault       int64 `json:"CashPlayerKilledDefault"`       // cash_player_killed_enemy_default
+	CashTeamLoserBonus            int64 `json:"CashTeamLoserBonus"`            // cash_team_loser_bonus
 	CashteamLoserBonusConsecutive int64 `json:"CashteamLoserBonusConsecutive"` // cash_team_loser_bonus_consecutive_rounds
 	RoundTime                     int64 `json:"RoundTime"`                     // mp_roundtime_defuse
 	RoundRestartDelay             int64 `json:"RoundRestartDelay"`             // mp_round_restart_delay
@@ -421,7 +412,7 @@ func convertHitGroup(hg events.HitGroup) string {
 		return "LeftLeg"
 	case 7:
 		return "RightLeg"
-        case 8:
+    case 8:
 		return "Neck"   
 	case 10:
 		return "Gear"
@@ -556,10 +547,10 @@ func acceptableGamePhase(gs dem.GameState) bool {
 	return false
 }
 
-func isTrade(killA KillAction, killB KillAction, tickRate int64) bool {
+func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
 	// If the the previous killer is not the person killed, it is not a trade
 	if *killB.VictimSteamId == *killA.AttackerSteamId {
-		if (killB.Tick - killA.Tick) <= 5*tickRate {
+		if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
 			return true
 		} else {
 			return false
@@ -665,7 +656,8 @@ func main() {
 	fl := new(flag.FlagSet)
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 1, "Parse rate, indicates spacing between ticks")
-	demoIdPtr := fl.String("demoid", "", "Demo string ID")
+	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
+	demoIDPtr := fl.String("demoid", "", "Demo string ID")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
@@ -677,6 +669,7 @@ func main() {
 
 	demPath := *demoPathPtr
 	parseRate := *parseRatePtr
+	tradeTime := int64(*tradeTimePtr)
 	outpath := *outpathPtr
 
 	InfoLogger.Printf("Parsed arguments, reading in %s and a parse rate of %d \n", demPath, parseRate)
@@ -722,7 +715,7 @@ func main() {
 
 	// Create game object, then initial round object
 	currentGame := Game{}
-	currentGame.MatchName = *demoIdPtr
+	currentGame.MatchName = *demoIDPtr
 	currentGame.Map = cleanMapName(currentMap)
 	if p.TickRate() == 0 {
 		currentGame.TickRate = 128
@@ -1416,7 +1409,7 @@ func main() {
 			currentKill.IsFirstKill = true
 		} else {
 			currentKill.IsFirstKill = false
-			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill, currentGame.TickRate)
+			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill, currentGame.TickRate, tradeTime)
 			if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true {
 				currentKill.PlayerTradedName = currentRound.Kills[len(currentRound.Kills)-1].VictimName
 				currentKill.PlayerTradedSteamId = currentRound.Kills[len(currentRound.Kills)-1].VictimSteamId
