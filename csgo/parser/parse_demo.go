@@ -1351,10 +1351,18 @@ func main() {
 			currentKill.IsSuicide = false
 			
 			if e.Killer != nil {
-				if currentKill.AttackerSide == currentKill.VictimSide {
+				// Parse TKs
+				if *currentKill.AttackerSide == *currentKill.VictimSide {
 					currentKill.IsTeamkill = true
 				} else {
 					currentKill.IsTeamkill = false
+				}
+
+				// Parse suicides
+				if *currentKill.AttackerSteamId == *currentKill.VictimSteamId {
+					currentKill.IsSuicide = true
+				} else {
+					currentKill.IsSuicide = false
 				}
 			} else {
 				currentKill.IsTeamkill = true

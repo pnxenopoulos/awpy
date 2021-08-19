@@ -21,6 +21,7 @@ class TestDemoParser:
             demo_id="test",
             parse_rate=128,
         )
+        
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
 

@@ -39,6 +39,9 @@ class TestStats:
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
 
+        with open("tests/astralis-vs-liquid-m2-nuke.json") as f:
+            self.data_json = json.load(f)
+        
         r = requests.get(self.demo_data["astralis-vs-liquid-m2-nuke"]["url"])
         open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
 
@@ -49,7 +52,7 @@ class TestStats:
         )
 
         self.data = self.parser.parse(return_type="df")
-        self.data_json = self.parser.parse()
+        #self.data_json = self.parser.parse()
         self.damage_data = self.data["Damages"]
         self.flash_data = self.data["Flashes"]
         self.grenade_data = self.data["Grenades"]
