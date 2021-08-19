@@ -9,13 +9,7 @@ from csgo.parser import DemoParser
 class TestDemoParser:
     """Class to test the match parser
 
-    We use the following demofiles:
-        - [1] https://www.hltv.org/matches/2347706/ence-vs-endpoint-european-development-championship-3
-        - [2] https://www.hltv.org/matches/2346568/evil-geniuses-vs-astralis-iem-katowice-2021
-        - [3] https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
-        - [4] https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019
-
-    First the tests uses og-vs-natus-vincere-m1-dust2.dem to test various parser functions. Then we test the output JSON on different demofiles.
+    We use the demofiles in test_data.json
     """
 
     def setup_class(self):
