@@ -1,4 +1,3 @@
-import json
 import os
 import pytest
 import pandas as pd
@@ -14,9 +13,14 @@ class TestDemoParser:
     """
 
     def setup_class(self):
-        """Setup class by reading in parsed demo"""
-        with open("tests/og-vs-natus-vincere-m1-dust2.json") as f:
-            self.data = json.load(f)
+        """Setup class by instantiating parser"""
+        self.parser = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=True,
+            demo_id="test",
+            parse_rate=128,
+        )
+        self.data = self.parser.parse()
 
     def teardown_class(self):
         """Set parser to none"""
