@@ -640,7 +640,7 @@ func main() {
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 1, "Parse rate, indicates spacing between ticks")
 	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
-	demoIDPtr := fl.String("demoId", "", "Demo string ID")
+	demoIDPtr := fl.String("demoid", "", "Demo string ID")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
