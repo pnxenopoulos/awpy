@@ -25,7 +25,6 @@ from csgo.analytics.stats import (
     player_box_score,
     team_box_score,
 )
-from csgo.utils import is_in_range
 
 
 class TestStats:

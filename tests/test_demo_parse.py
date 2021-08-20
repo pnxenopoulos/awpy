@@ -60,7 +60,7 @@ class TestDemoParser:
         self.parser_outpath = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False, outpath="."
         )
-        assert self.parser_inferred.outpath == os.getcwd()
+        assert self.parser_outpath.outpath == os.getcwd()
 
     def test_demo_id_given(self):
         """Tests if a demo_id is correctly inferred"""
