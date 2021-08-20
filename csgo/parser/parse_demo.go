@@ -165,7 +165,6 @@ type DamageAction struct {
 
 // KillAction events
 type KillAction struct {
-	TestField           int      `json:"TestField`
 	Tick                int64    `json:"Tick"`
 	Second              float64  `json:"Second"`
 	AttackerSteamID     *int64   `json:"AttackerSteamID"`
@@ -205,6 +204,7 @@ type KillAction struct {
 	PenetratedObjects   int64    `json:"PenetratedObjects"`
 	IsFirstKill         bool     `json:"IsFirstKill"`
 	IsHeadshot          bool     `json:"IsHeadshot"`
+	VictimBlinded       bool     `json:"VictimBlinded"`
 	AssistedFlash       bool     `json:"AssistedFlash"`
 	FlashThrowerSteamID *int64   `json:"FlashThrowerSteamID"`
 	FlashThrowerName    *string  `json:"FlashThrowerName"`
@@ -1318,6 +1318,7 @@ func main() {
 			currentKill.Distance = float64(e.Distance)
 
 			// Parse flash info for kill
+			currentKill.VictimBlinded = e.Victim.IsBlinded()
 			if e.Victim.IsBlinded() {
 				// Find their latest flash event
 				for _, flash := range currentRound.Flashes {
