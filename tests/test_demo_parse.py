@@ -55,6 +55,13 @@ class TestDemoParser:
         )
         assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
 
+    def test_outpath(self):
+        """Tests if the outpath is correctly recorded"""
+        self.parser_outpath = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False, outpath="."
+        )
+        assert self.parser_inferred.outpath == os.getcwd()
+
     def test_demo_id_given(self):
         """Tests if a demo_id is correctly inferred"""
         assert self.parser.demo_id == "test"
