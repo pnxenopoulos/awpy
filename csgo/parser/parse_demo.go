@@ -535,9 +535,8 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 	if *killB.VictimSteamID == *killA.AttackerSteamID {
 		if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
 			return true
-		} else {
-			return false
 		}
+		return false
 	} else {
 		return false
 	}
@@ -1206,7 +1205,6 @@ func main() {
 		gs := p.GameState()
 
 		currentKill := KillAction{}
-		currentKill.TestField = 7
 		currentKill.Tick = int64(gs.IngameTick())
 		currentKill.Second = (float64(currentKill.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
 		currentKill.Weapon = e.Weapon.String()
