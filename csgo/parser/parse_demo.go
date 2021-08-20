@@ -203,9 +203,11 @@ type KillAction struct {
 	IsWallbang          bool     `json:"IsWallbang"`
 	PenetratedObjects   int64    `json:"PenetratedObjects"`
 	IsFirstKill         bool     `json:"IsFirstKill"`
-	IsFlashed           bool     `json:"IsFlashed"`
 	IsHeadshot          bool     `json:"IsHeadshot"`
 	AssistedFlash       bool     `json:"AssistedFlash"`
+	FlashThrowerSteamID *int64   `json:"FlashThrowerSteamID"`
+	FlashThrowerName    *string  `json:"FlashThrowerName"`
+	FlashThrowerTeam    *string  `json:"FlashThrowerTeam"`
 	AttackerBlind       bool     `json:"AttackerBlind"`
 	NoScope             bool     `json:"NoScope"`
 	ThruSmoke           bool     `json:"ThruSmoke"`
@@ -1244,7 +1246,6 @@ func main() {
 			attackerAreaPlace := ""
 
 			if attackerArea != nil {
-				currentKill.IsFlashed = e.Killer.IsBlinded()
 				attackerAreaID = int64(attackerArea.ID)
 				if attackerArea.Place != nil {
 					attackerAreaPlace = attackerArea.Place.Name
@@ -1313,6 +1314,18 @@ func main() {
 			currentKill.VictimViewY = &victimViewY
 
 			currentKill.Distance = float64(e.Distance)
+
+			// Parse flashes
+			if e.Victim.IsBlinded() {
+				// Find their latest flash event
+				for _, flash := range currentRound.Flashes {
+					if (flash.PlayerSteamID == currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 2*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
+						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
+						currentKill.FlashThrowerName = &flash.AttackerName
+						currentKill.FlashThrowerTeam = &flash.AttackerTeam
+					}
+				}
+			}
 
 			// Parse teamkill
 			currentKill.IsTeamkill = false
