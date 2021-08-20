@@ -13,21 +13,19 @@ class TestDemoParser:
     """
 
     def setup_class(self):
-        """ Setup class by defining the base parser, demofile list, demofile to use for specific tests
-        """
+        """Setup class by defining the base parser, demofile list, demofile to use for specific tests"""
         self.parser = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
             parse_rate=128,
         )
-        
+
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
 
     def teardown_class(self):
-        """ Set parser to none, deletes all demofiles and JSON
-        """
+        """Set parser to none, deletes all demofiles and JSON"""
         self.parser = None
         files_in_directory = os.listdir()
         filtered_files = [
@@ -51,7 +49,8 @@ class TestDemoParser:
     def test_demo_id_inferred(self):
         """Tests if a demo_id is correctly inferred"""
         self.parser_inferred = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False,
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
         )
         assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
 
@@ -70,7 +69,10 @@ class TestDemoParser:
         """Tests if failure on wrong demofile path"""
         with pytest.raises(ValueError):
             self.parser_wrong_demo_path = DemoParser(
-                demofile="bad.dem", log=False, demo_id="test", parse_rate=128,
+                demofile="bad.dem",
+                log=False,
+                demo_id="test",
+                parse_rate=128,
             )
 
     def test_parse_rate_bad(self):
@@ -140,7 +142,10 @@ class TestDemoParser:
             if self.demo_data[file]["useForTests"]:
                 self._get_demofile(self.demo_data[file]["url"], file)
                 self.parser = DemoParser(
-                    demofile=file + ".dem", log=True, demo_id=file, parse_rate=128,
+                    demofile=file + ".dem",
+                    log=True,
+                    demo_id=file,
+                    parse_rate=128,
                 )
                 self.parser.parse()
                 if self.parser.parse_error == True:
@@ -284,4 +289,7 @@ class TestDemoParser:
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
                 for i, r in enumerate(self.demo_data[demo]["json"]["GameRounds"]):
-                    assert r["RoundEndReason"] == self.demo_data[demo]["roundEndReasons"][i]
+                    assert (
+                        r["RoundEndReason"]
+                        == self.demo_data[demo]["roundEndReasons"][i]
+                    )

@@ -29,7 +29,7 @@ from csgo.analytics.stats import (
 
 class TestStats:
     """Class to test the statistics functions.
-    
+
     Uses https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
     """
 
@@ -155,8 +155,10 @@ class TestStats:
 
     def test_accuracy(self):
         """Tests accuracy function."""
-        assert round(accuracy(self.damage_data, self.round_data_json)["ACC%"].sum(), 
-                     2) == 1.89
+        assert (
+            round(accuracy(self.damage_data, self.round_data_json)["ACC%"].sum(), 2)
+            == 1.89
+        )
 
     def test_kast(self):
         """Tests kast function."""
@@ -164,18 +166,31 @@ class TestStats:
 
     def test_kill_stats(self):
         """Tests kill_stats function."""
-        assert round(kill_stats(self.damage_data, self.kill_data, self.round_data, 
-                                self.round_data_json)["KDR"].sum(), 2) == 10.1
+        assert (
+            round(
+                kill_stats(
+                    self.damage_data,
+                    self.kill_data,
+                    self.round_data,
+                    self.round_data_json,
+                )["KDR"].sum(),
+                2,
+            )
+            == 10.1
+        )
 
     def test_adr(self):
         """Tests adr function."""
-        assert round(adr(self.damage_data, self.round_data)["Norm ADR"].sum(),
-                     2) == 729.07
+        assert (
+            round(adr(self.damage_data, self.round_data)["Norm ADR"].sum(), 2) == 729.07
+        )
 
     def test_util_dmg(self):
         """Tests util_dmg function."""
-        assert round(util_dmg(self.damage_data, self.grenade_data)
-                     ["UD Per Nade"].sum(), 2) == 48.4
+        assert (
+            round(util_dmg(self.damage_data, self.grenade_data)["UD Per Nade"].sum(), 2)
+            == 48.4
+        )
 
     def test_flash_stats(self):
         """Tests flash_stats function."""
@@ -209,8 +224,15 @@ class TestStats:
 
     def test_util_dmg_breakdown(self):
         """Tests util_dmg_breakdown function."""
-        assert round(util_dmg_breakdown(self.damage_data, self.grenade_data)
-                     ["UD Per Nade"].sum(), 2) == 120.02
+        assert (
+            round(
+                util_dmg_breakdown(self.damage_data, self.grenade_data)[
+                    "UD Per Nade"
+                ].sum(),
+                2,
+            )
+            == 120.02
+        )
 
     def test_win_breakdown(self):
         """Tests win_breakdown function."""

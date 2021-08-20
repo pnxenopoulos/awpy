@@ -23,7 +23,13 @@ class DemoParser:
     """
 
     def __init__(
-        self, demofile="", outpath=None, log=False, demo_id=None, parse_rate=None, trade_time=5
+        self,
+        demofile="",
+        outpath=None,
+        log=False,
+        demo_id=None,
+        parse_rate=None,
+        trade_time=5,
     ):
         # Set up logger
         if log:
@@ -95,7 +101,7 @@ class DemoParser:
         # Set trade time
         self.trade_time = trade_time
         self.logger.info("Setting trade time to " + str(self.trade_time))
-        
+
         # Set parse error to False
         self.parse_error = False
 
