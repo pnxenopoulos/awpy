@@ -165,6 +165,7 @@ type DamageAction struct {
 
 // KillAction events
 type KillAction struct {
+	TestField           int      `json:"TestField`
 	Tick                int64    `json:"Tick"`
 	Second              float64  `json:"Second"`
 	AttackerSteamID     *int64   `json:"AttackerSteamID"`
@@ -639,7 +640,7 @@ func main() {
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 1, "Parse rate, indicates spacing between ticks")
 	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
-	demoIDPtr := fl.String("demoID", "", "Demo string ID")
+	demoIDPtr := fl.String("demoId", "", "Demo string ID")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
@@ -1205,6 +1206,7 @@ func main() {
 		gs := p.GameState()
 
 		currentKill := KillAction{}
+		currentKill.TestField = 7
 		currentKill.Tick = int64(gs.IngameTick())
 		currentKill.Second = (float64(currentKill.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
 		currentKill.Weapon = e.Weapon.String()
@@ -1315,7 +1317,7 @@ func main() {
 
 			currentKill.Distance = float64(e.Distance)
 
-			// Parse flashes
+			// Parse flash info for kill
 			if e.Victim.IsBlinded() {
 				// Find their latest flash event
 				for _, flash := range currentRound.Flashes {
@@ -1468,8 +1470,9 @@ func main() {
 			currentDamage.AttackerViewX = &attackerViewX
 			currentDamage.AttackerViewY = &attackerViewY
 		}
+
+		// Victim
 		if e.Player != nil {
-			// Victim
 			victimSteamID := int64(e.Player.SteamID64)
 			currentDamage.VictimSteamID = &victimSteamID
 			currentDamage.VictimName = &e.Player.Name
