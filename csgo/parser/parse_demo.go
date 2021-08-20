@@ -98,14 +98,14 @@ type GameRound struct {
 type GrenadeAction struct {
 	Tick            int64   `json:"Tick"`
 	Second          float64 `json:"Second"`
-	PlayerSteamID    int64   `json:"PlayerSteamID"`
+	PlayerSteamID   int64   `json:"PlayerSteamID"`
 	PlayerName      string  `json:"PlayerName"`
 	PlayerTeam      *string `json:"PlayerTeam"`
 	PlayerSide      string  `json:"PlayerSide"`
 	PlayerX         float64 `json:"PlayerX"`
 	PlayerY         float64 `json:"PlayerY"`
 	PlayerZ         float64 `json:"PlayerZ"`
-	PlayerAreaID     int64   `json:"PlayerAreaID"`
+	PlayerAreaID    int64   `json:"PlayerAreaID"`
 	PlayerAreaName  string  `json:"PlayerAreaName"`
 	Grenade         string  `json:"GrenadeType"`
 	GrenadeX        float64 `json:"GrenadeX"`
@@ -198,7 +198,7 @@ type KillAction struct {
 	AssisterZ           *float64 `json:"AssisterZ"`
 	AssisterAreaID      *int64   `json:"AssisterAreaID"`
 	AssisterAreaName    *string  `json:"AssisterAreaName"`
-	IsSuicIDe           bool     `json:"IsSuicIDe"`
+	IsSuicide           bool     `json:"IsSuicide"`
 	IsTeamkill          bool     `json:"IsTeamkill"`
 	IsWallbang          bool     `json:"IsWallbang"`
 	PenetratedObjects   int64    `json:"PenetratedObjects"`
@@ -1329,7 +1329,7 @@ func main() {
 
 			// Parse teamkill
 			currentKill.IsTeamkill = false
-			currentKill.IsSuicIDe = false
+			currentKill.IsSuicide = false
 			
 			if e.Killer != nil {
 				// Parse TKs
@@ -1339,15 +1339,15 @@ func main() {
 					currentKill.IsTeamkill = false
 				}
 
-				// Parse suicIDes
+				// Parse Suicides
 				if *currentKill.AttackerSteamID == *currentKill.VictimSteamID {
-					currentKill.IsSuicIDe = true
+					currentKill.IsSuicide = true
 				} else {
-					currentKill.IsSuicIDe = false
+					currentKill.IsSuicide = false
 				}
 			} else {
 				currentKill.IsTeamkill = true
-				currentKill.IsSuicIDe = true
+				currentKill.IsSuicide = true
 			}
 			
 		}
