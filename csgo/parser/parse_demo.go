@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"flag"
 	"io/ioutil"
-	"log"
 	"math"
 	"os"
 	"sort"
