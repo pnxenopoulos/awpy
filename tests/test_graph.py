@@ -6,7 +6,7 @@ from csgo.parser import DemoParser
 from csgo.parser.graph import frame_to_graph
 
 
-class TestDemoParser:
+class TestGraph:
     """Class to test the match parser
 
     Uses https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
