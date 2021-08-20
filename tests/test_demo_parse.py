@@ -154,6 +154,25 @@ class TestDemoParser:
                     == self.demo_data[demo]["rounds"]
                 )
 
+    def _count_deaths(self, json):
+        total_deaths = 0
+        for r in json["GameRounds"]:
+            for _ in r["Kills"]:
+                total_deaths += 1
+        return total_deaths
+
+    def test_parsed_deaths(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                demo_deaths = self._count_deaths(self.demo_data[demo]["json"])
+                real_deaths = self.demo_data[demo]["totalDeaths"]
+                print(
+                    "[{0}] Parsed {1} deaths, real deathss are {2}".format(
+                        demo, demo_deaths, real_deaths
+                    )
+                )
+                assert demo_deaths == real_deaths
+
     def _count_kills(self, json):
         total_kills = 0
         for r in json["GameRounds"]:
@@ -173,3 +192,89 @@ class TestDemoParser:
                     )
                 )
                 assert demo_kills == real_kills
+
+    def _count_teamkills(self, json):
+        total_teamkills = 0
+        for r in json["GameRounds"]:
+            for k in r["Kills"]:
+                if k["IsTeamkill"]:
+                    total_teamkills += 1
+        return total_teamkills
+
+    def test_parsed_teamkills(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                demo_tk = self._count_teamkills(self.demo_data[demo]["json"])
+                real_tk = self.demo_data[demo]["totalTeamkills"]
+                print(
+                    "[{0}] Parsed {1} teamkills, real teamkills are {2}".format(
+                        demo, demo_tk, real_tk
+                    )
+                )
+                assert demo_tk == real_tk
+
+    def _count_firstkills(self, json):
+        total_firstkills = 0
+        for r in json["GameRounds"]:
+            for k in r["Kills"]:
+                if k["IsFirstKill"]:
+                    total_firstkills += 1
+        return total_firstkills
+
+    def test_parsed_firstkills(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                demo_fk = self._count_firstkills(self.demo_data[demo]["json"])
+                real_fk = self.demo_data[demo]["totalFirstKills"]
+                print(
+                    "[{0}] Parsed {1} firstkills, real firstkills are {2}".format(
+                        demo, demo_fk, real_fk
+                    )
+                )
+                assert demo_fk == real_fk
+
+    def _count_headshots(self, json):
+        total_hs = 0
+        for r in json["GameRounds"]:
+            for k in r["Kills"]:
+                if k["IsHeadshot"]:
+                    total_hs += 1
+        return total_hs
+
+    def test_parsed_headshots(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                demo_hs = self._count_headshots(self.demo_data[demo]["json"])
+                real_hs = self.demo_data[demo]["totalHeadshots"]
+                print(
+                    "[{0}] Parsed {1} headshots, real headshots are {2}".format(
+                        demo, demo_hs, real_hs
+                    )
+                )
+                assert demo_hs == real_hs
+
+    def _count_assists(self, json):
+        total_ast = 0
+        for r in json["GameRounds"]:
+            for k in r["Kills"]:
+                if k["AssisterName"] is not None:
+                    total_ast += 1
+        return total_ast
+
+    def test_parsed_assists(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                demo_ast = self._count_assists(self.demo_data[demo]["json"])
+                real_ast = self.demo_data[demo]["totalAssists"]
+                print(
+                    "[{0}] Parsed {1} assists, real assists are {2}".format(
+                        demo, demo_ast, real_ast
+                    )
+                )
+                assert demo_ast == real_ast
+
+    def test_parsed_roundendreasons(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for i, r in enumerate(self.demo_data[demo]["json"]["GameRounds"]):
+                    assert r["RoundEndReason"] == self.demo_data[demo]["roundEndReasons"][i]
