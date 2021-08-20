@@ -351,12 +351,12 @@ class DemoParser:
                 "RoundEndReason",
                 "CTStartEqVal",
                 "CTRoundStartEqVal",
-                "CTRoundStartMoney"
+                "CTRoundStartMoney",
                 "CTBuyType",
                 "CTSpend",
                 "TStartEqVal",
                 "TRoundStartEqVal",
-                "TRoundStartMoney"
+                "TRoundStartMoney",
                 "TBuyType",
                 "TSpend",
             ]
