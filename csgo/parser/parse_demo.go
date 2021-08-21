@@ -236,6 +236,7 @@ type WeaponFireAction struct {
 	PlayerAreaName string  `json:"PlayerAreaName"`
 	PlayerViewX    float64 `json:"PlayerViewX"`
 	PlayerViewY    float64 `json:"PlayerViewY"`
+	PlayerStrafe   bool    `json:"PlayerStrafe"`
 	WeaponName     string  `json:"WeaponName"`
 }
 
@@ -970,6 +971,8 @@ func main() {
 			currentWeaponFire.WeaponName = e.Weapon.String()
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
+			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
+
 			// add
 			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
 		}
@@ -1469,7 +1472,6 @@ func main() {
 			attackerViewY := float64(e.Attacker.ViewDirectionY())
 			currentDamage.AttackerViewX = &attackerViewX
 			currentDamage.AttackerViewY = &attackerViewY
-			currentDamage.AttackerStrafe = &e.Attacker.IsWalking()
 		}
 
 		// Victim
