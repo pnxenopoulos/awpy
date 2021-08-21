@@ -1320,8 +1320,7 @@ func main() {
 			if e.Victim.IsBlinded() {
 				// Find their latest flash event
 				for _, flash := range currentRound.Flashes {
-					if (flash.PlayerSteamID == currentKill.VictimSteamID) {
-						// && (flash.Tick >= currentKill.Tick - 2*currentGame.TickRate) && (flash.Tick <= currentKill.Tick)
+					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 2*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
 						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
 						currentKill.FlashThrowerName = &flash.AttackerName
 						currentKill.FlashThrowerTeam = &flash.AttackerTeam
