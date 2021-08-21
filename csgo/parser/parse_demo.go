@@ -144,6 +144,7 @@ type DamageAction struct {
 	AttackerAreaName *string  `json:"AttackerAreaName"`
 	AttackerViewX    *float64 `json:"AttackerViewX"`
 	AttackerViewY    *float64 `json:"AttackerViewY"`
+	AttackerStrafe   *bool    `json:"AttackerStrafe"`
 	VictimSteamID    *int64   `json:"VictimSteamID"`
 	VictimName       *string  `json:"VictimName"`
 	VictimTeam       *string  `json:"VictimTeam"`
@@ -1468,6 +1469,7 @@ func main() {
 			attackerViewY := float64(e.Attacker.ViewDirectionY())
 			currentDamage.AttackerViewX = &attackerViewX
 			currentDamage.AttackerViewY = &attackerViewY
+			currentDamage.AttackerStrafe = &e.Attacker.IsWalking()
 		}
 
 		// Victim
