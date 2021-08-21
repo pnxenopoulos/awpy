@@ -271,6 +271,8 @@ class TestDemoParser:
             for k in r["Kills"]:
                 if k["AssisterName"] is not None:
                     total_ast += 1
+                if k["AssistedFlash"] is False and k["FlashThrowerName"]:
+                    total_ast += 1
         return total_ast
 
     def test_parsed_assists(self):
