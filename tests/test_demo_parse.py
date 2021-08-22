@@ -119,6 +119,18 @@ class TestDemoParser:
         assert self.parser.logger.name == "CSGODemoParser"
         assert os.path.exists("csgo_demoparser.log")
 
+    def test_parse_opts(self):
+        """Tests parsing options"""
+        self.parser_opts = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+            trade_time=7,
+            buy_style="hltv"
+        )
+        assert self.parser_opts.trade_time == 7
+        assert self.parser_opts.buy_style == "hltv"
+
     def test_parse_demo(self):
         """Tests if parse actually outputs a file"""
         self.parser._parse_demo()

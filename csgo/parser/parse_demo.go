@@ -33,6 +33,8 @@ type Game struct {
 	TickRate      int64        `json:"TickRate"`
 	PlaybackTicks int64        `json:"PlaybackTicks"`
 	ParseRate     int          `json:"ParseRate"`
+	TradeTime     int64        `json:"TradeTime"`
+	RoundBuyStyle string       `json:"RoundBuyStyle"`
 	ServerVars    ServerConVar `json:"ServerVars"`
 	Rounds        []GameRound  `json:"GameRounds"`
 }
@@ -641,6 +643,7 @@ func main() {
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 1, "Parse rate, indicates spacing between ticks")
 	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
+	roundBuyPtr := fl.String("buystyle", "hltv", "Round buy style")
 	demoIDPtr := fl.String("demoid", "", "Demo string ID")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
@@ -650,6 +653,7 @@ func main() {
 	demPath := *demoPathPtr
 	parseRate := *parseRatePtr
 	tradeTime := int64(*tradeTimePtr)
+	roundBuyStyle := *roundBuyPtr
 	outpath := *outpathPtr
 
 	// Read in demofile
@@ -701,6 +705,8 @@ func main() {
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
 	currentGame.ClientName = header.ClientName
 	currentGame.ParseRate = int(parseRate)
+	currentGame.TradeTime = tradeTime
+	currentGame.RoundBuyStyle = roundBuyStyle
 
 	currentRound := GameRound{}
 

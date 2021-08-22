@@ -17,6 +17,7 @@ class DemoParser:
         demo_id (string)  : A unique demo name/game id. Default is inferred from demofile name
         parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 32.
         trade_time (int)  : Length of the window for a trade (in seconds). Default is 5.
+        buy_style (string): Buy style string, one of "hltv", ...
 
     Raises:
         ValueError : Raises a ValueError if the Golang version is lower than 1.14
@@ -30,6 +31,7 @@ class DemoParser:
         demo_id=None,
         parse_rate=None,
         trade_time=5,
+        buy_style="hltv"
     ):
         # Set up logger
         if log:
@@ -101,6 +103,10 @@ class DemoParser:
         # Set trade time
         self.trade_time = trade_time
         self.logger.info("Setting trade time to " + str(self.trade_time))
+
+        # Set buy style
+        self.buy_style = buy_style
+        self.logger.info("Setting buy style to " + str(self.buy_style))
 
         # Set parse error to False
         self.parse_error = False
