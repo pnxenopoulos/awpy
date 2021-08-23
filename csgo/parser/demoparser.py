@@ -15,7 +15,7 @@ class DemoParser:
         demofile (string) : A string denoting the path to the demo file, which ends in .dem
         log (boolean)     : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
         demo_id (string)  : A unique demo name/game id. Default is inferred from demofile name
-        parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 32.
+        parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
         trade_time (int)  : Length of the window for a trade (in seconds). Default is 5.
         buy_style (string): Buy style string, one of "hltv", ...
 
@@ -31,7 +31,7 @@ class DemoParser:
         demo_id=None,
         parse_rate=None,
         trade_time=5,
-        buy_style="hltv"
+        buy_style="hltv",
     ):
         # Set up logger
         if log:
@@ -83,7 +83,7 @@ class DemoParser:
         # Handle parse rate. Must be a power of 2^0 to 2^7. If not, then default to 2^5.
         if parse_rate is None:
             self.logger.warning("No parse rate set")
-            self.parse_rate = 32
+            self.parse_rate = 128
         elif parse_rate == 1:
             self.logger.warning(
                 "A parse rate of 1 will parse EVERY tick. This process will be very slow."
@@ -93,7 +93,7 @@ class DemoParser:
             self.logger.warning(
                 "Parse rate of "
                 + str(parse_rate)
-                + " not acceptable! Parse rate must be a power of 2 between 2^0 and 2^7. Setting to DEFAULT value of 32."
+                + " not acceptable! Parse rate must be a power of 2 between 2^0 and 2^7. Setting to DEFAULT value of 128."
             )
             self.parse_rate = 128
         else:
