@@ -127,7 +127,7 @@ def frame_to_graph(
                 if metric == "graph":
                     player_distances.append(
                         area_distance(
-                            area_one=p1["AreaId"], area_two=p2["AreaId"], map=map_name
+                            area_one=p1["AreaID"], area_two=p2["AreaID"], map=map_name
                         )
                     )
                 else:
@@ -147,8 +147,8 @@ def frame_to_graph(
                         if metric == "graph":
                             player_distances.append(
                                 area_distance(
-                                    area_one=p1["AreaId"],
-                                    area_two=p2["AreaId"],
+                                    area_one=p1["AreaID"],
+                                    area_two=p2["AreaID"],
                                     map=map_name,
                                 )
                             )
