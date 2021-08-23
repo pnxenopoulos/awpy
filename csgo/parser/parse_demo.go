@@ -49,7 +49,7 @@ type ServerConVar struct {
 	CashWinElimination            int64 `json:"CashWinElimination"`            // cash_team_elimination_bomb_map
 	CashPlayerKilledDefault       int64 `json:"CashPlayerKilledDefault"`       // cash_player_killed_enemy_default
 	CashTeamLoserBonus            int64 `json:"CashTeamLoserBonus"`            // cash_team_loser_bonus
-	CashteamLoserBonusConsecutive int64 `json:"CashteamLoserBonusConsecutive"` // cash_team_loser_bonus_consecutive_rounds
+	CashTeamLoserBonusConsecutive int64 `json:"CashTeamLoserBonusConsecutive"` // cash_team_loser_bonus_consecutive_rounds
 	RoundTime                     int64 `json:"RoundTime"`                     // mp_roundtime_defuse
 	RoundRestartDelay             int64 `json:"RoundRestartDelay"`             // mp_round_restart_delay
 	FreezeTime                    int64 `json:"FreezeTime"`                    // mp_freezetime
@@ -759,7 +759,7 @@ func main() {
 			serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
 			serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
 			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
-			serverConfig.CashteamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
+			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
 			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
 			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
 			serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
@@ -962,6 +962,58 @@ func main() {
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
 
+	// Parse bomb defuses
+	p.RegisterEventHandler(func(e events.BombDefuseStart) {
+		gs := p.GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.BombAction = "defuse_start"
+		currentBomb.BombSite = ""
+		if e.Site == 65 {
+			currentBomb.BombSite = "A"
+		} else if e.Site == 66 {
+			currentBomb.BombSite = "B"
+		}
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = float64(playerPos.X)
+		currentBomb.PlayerY = float64(playerPos.Y)
+		currentBomb.PlayerZ = float64(playerPos.Z)
+		// add
+		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+	})
+
+	// Parse bomb defuses
+	p.RegisterEventHandler(func(e events.BombDefuseAborted) {
+		gs := p.GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.BombAction = "defuse_aborted"
+		currentBomb.BombSite = ""
+		if e.Site == 65 {
+			currentBomb.BombSite = "A"
+		} else if e.Site == 66 {
+			currentBomb.BombSite = "B"
+		}
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = float64(playerPos.X)
+		currentBomb.PlayerY = float64(playerPos.Y)
+		currentBomb.PlayerZ = float64(playerPos.Z)
+		// add
+		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+	})
+
 	// Parse weapon fires
 	p.RegisterEventHandler(func(e events.WeaponFire) {
 		gs := p.GameState()
@@ -1142,6 +1194,62 @@ func main() {
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
 		currentBomb.BombAction = "plant"
+		currentBomb.BombSite = ""
+
+		if e.Site == 65 {
+			currentBomb.BombSite = "A"
+		} else if e.Site == 66 {
+			currentBomb.BombSite = "B"
+		}
+
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = float64(playerPos.X)
+		currentBomb.PlayerY = float64(playerPos.Y)
+		currentBomb.PlayerZ = float64(playerPos.Z)
+		// Bomb event
+		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+	})
+
+	// Parse bomb plants
+	p.RegisterEventHandler(func(e events.BombPlantBegin) {
+		gs := p.GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.BombAction = "plant_begin"
+		currentBomb.BombSite = ""
+
+		if e.Site == 65 {
+			currentBomb.BombSite = "A"
+		} else if e.Site == 66 {
+			currentBomb.BombSite = "B"
+		}
+
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = float64(playerPos.X)
+		currentBomb.PlayerY = float64(playerPos.Y)
+		currentBomb.PlayerZ = float64(playerPos.Z)
+		// Bomb event
+		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+	})
+
+	// Parse bomb plants
+	p.RegisterEventHandler(func(e events.BombPlantAborted) {
+		gs := p.GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.BombAction = "plant_abort"
 		currentBomb.BombSite = ""
 
 		if e.Site == 65 {
