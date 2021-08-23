@@ -264,6 +264,7 @@ type FlashAction struct {
 	PlayerAreaName   *string  `json:"PlayerAreaName"`
 	PlayerViewX      *float64 `json:"PlayerViewX"`
 	PlayerViewY      *float64 `json:"PlayerViewY"`
+	FlashDuration    *float64 `json:"FlashDuration"`
 }
 
 // GameFrame (game state at time t)
@@ -1175,6 +1176,10 @@ func main() {
 				playerViewY := float64(e.Player.ViewDirectionY())
 				currentFlash.PlayerViewX = &playerViewX
 				currentFlash.PlayerViewY = &playerViewY
+
+				// Calculate flash duration
+				flashDuration := float64(e.Player.FlashDuration()/1000)
+				currentFlash.FlashDuration = &flashDuration
 
 				// Add
 				if *currentFlash.PlayerSide != "Spectator" && *currentFlash.PlayerSide != "Unassigned" && *currentFlash.PlayerSide != "Unknown" {
