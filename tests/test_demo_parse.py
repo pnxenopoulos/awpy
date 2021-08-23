@@ -83,7 +83,7 @@ class TestDemoParser:
             demo_id="test",
             parse_rate=129,
         )
-        assert self.parser_bad_parse_rate.parse_rate == 32
+        assert self.parser_bad_parse_rate.parse_rate == 128
 
     def test_parse_rate_one(self):
         """Tests if parse rate can be set to 1"""
@@ -112,7 +112,7 @@ class TestDemoParser:
             log=False,
             demo_id="test",
         )
-        assert self.parser_inferred_parse_rate.parse_rate == 32
+        assert self.parser_inferred_parse_rate.parse_rate == 128
 
     def test_logger_set(self):
         """Tests if log file is created"""

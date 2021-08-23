@@ -95,7 +95,7 @@ class DemoParser:
                 + str(parse_rate)
                 + " not acceptable! Parse rate must be a power of 2 between 2^0 and 2^7. Setting to DEFAULT value of 32."
             )
-            self.parse_rate = 32
+            self.parse_rate = 128
         else:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
