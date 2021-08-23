@@ -510,7 +510,7 @@ func parseTeamBuy(eqVal int64, Side string, Style string) string {
 		} else if eqVal >= 20000 {
 			return "Full Buy"
 		} else {
-			"Unknown"
+			return 	"Unknown"
 		}
 	} else if Style == "csgo" {
 		// Created this using 4100 and 3700 as armor+gun for CT and T
@@ -541,7 +541,7 @@ func parseTeamBuy(eqVal int64, Side string, Style string) string {
 		}
 	} else {
 		// Default to hltv style
-		parseTeamBuy(eqVal, Side, "hltv")
+		return parseTeamBuy(eqVal, Side, "hltv")
 	}
 }
 
