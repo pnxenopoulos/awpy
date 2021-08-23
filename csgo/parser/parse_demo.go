@@ -1177,7 +1177,7 @@ func main() {
 				currentFlash.PlayerViewY = &playerViewY
 
 				// Add
-				if *currentFlash.PlayerSide != "Spectator" {
+				if *currentFlash.PlayerSide != "Spectator" && *currentFlash.PlayerSide != "Unassigned" && *currentFlash.PlayerSide != "Unknown" {
 					currentRound.Flashes = append(currentRound.Flashes, currentFlash)
 				}
 			}
