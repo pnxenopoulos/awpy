@@ -196,11 +196,6 @@ type KillAction struct {
 	AssisterName        *string  `json:"AssisterName"`
 	AssisterTeam        *string  `json:"AssisterTeam"`
 	AssisterSide        *string  `json:"AssisterSide"`
-	//AssisterX           *float64 `json:"AssisterX"`
-	//AssisterY           *float64 `json:"AssisterY"`
-	//AssisterZ           *float64 `json:"AssisterZ"`
-	//AssisterAreaID      *int64   `json:"AssisterAreaID"`
-	//AssisterAreaName    *string  `json:"AssisterAreaName"`
 	IsSuicide           bool     `json:"IsSuicide"`
 	IsTeamkill          bool     `json:"IsTeamkill"`
 	IsWallbang          bool     `json:"IsWallbang"`
@@ -208,12 +203,12 @@ type KillAction struct {
 	IsFirstKill         bool     `json:"IsFirstKill"`
 	IsHeadshot          bool     `json:"IsHeadshot"`
 	VictimBlinded       bool     `json:"VictimBlinded"`
-	AssistedFlash       bool     `json:"AssistedFlash"`
+	AttackerBlinded     bool     `json:"AttackerBlinded"`
+	AssistedFlash       bool     `json:"AssistedFlash"` // Better to go off of "VictimBlinded"
 	FlashThrowerSteamID *int64   `json:"FlashThrowerSteamID"`
 	FlashThrowerName    *string  `json:"FlashThrowerName"`
 	FlashThrowerTeam    *string  `json:"FlashThrowerTeam"`
 	FlashThrowerSide    *string  `json:"FlashThrowerSide"`
-	AttackerBlind       bool     `json:"AttackerBlind"`
 	NoScope             bool     `json:"NoScope"`
 	ThruSmoke           bool     `json:"ThruSmoke"`
 	Distance            float64  `json:"Distance"`
@@ -970,12 +965,14 @@ func main() {
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
 		currentBomb.BombAction = "defuse_start"
-		currentBomb.BombSite = ""
-		if e.Site == 65 {
+
+		// No BombSite info, must infer
+		if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
 			currentBomb.BombSite = "A"
-		} else if e.Site == 66 {
+		} else {
 			currentBomb.BombSite = "B"
 		}
+
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
 		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
@@ -996,12 +993,14 @@ func main() {
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
 		currentBomb.BombAction = "defuse_aborted"
-		currentBomb.BombSite = ""
-		if e.Site == 65 {
+
+		// No BombSite info, must infer
+		if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
 			currentBomb.BombSite = "A"
-		} else if e.Site == 66 {
+		} else {
 			currentBomb.BombSite = "B"
 		}
+
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
 		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
@@ -1250,11 +1249,11 @@ func main() {
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
 		currentBomb.BombAction = "plant_abort"
-		currentBomb.BombSite = ""
 
-		if e.Site == 65 {
+		// No BombSite info, must infer
+		if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
 			currentBomb.BombSite = "A"
-		} else if e.Site == 66 {
+		} else {
 			currentBomb.BombSite = "B"
 		}
 
@@ -1363,7 +1362,7 @@ func main() {
 		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
 		currentKill.IsHeadshot = e.IsHeadshot
 		currentKill.AssistedFlash = e.AssistedFlash
-		currentKill.AttackerBlind = e.AttackerBlind
+		currentKill.AttackerBlinded = e.AttackerBlind
 		currentKill.NoScope = e.NoScope
 		currentKill.ThruSmoke = e.ThroughSmoke
 
@@ -1534,24 +1533,6 @@ func main() {
 				assisterSide = "Unknown"
 			}
 			currentKill.AssisterSide = &assisterSide
-			//assisterPos := e.Assister.LastAlivePosition
-			//assisterPoint := gonav.Vector3{X: float32(assisterPos.X), Y: float32(assisterPos.Y), Z: float32(assisterPos.Z)}
-			//assisterArea := mesh.GetNearestArea(assisterPoint, true)
-			//var assisterAreaID int64
-			//assisterAreaPlace := ""
-			//if assisterArea != nil {
-			//	assisterAreaID = int64(assisterArea.ID)
-			//	if assisterArea.Place != nil {
-			//		assisterAreaPlace = assisterArea.Place.Name
-			//	} else {
-			//		assisterAreaPlace = findAreaPlace(assisterArea, mesh)
-			//	}
-			//}
-			//currentKill.AssisterAreaID = &assisterAreaID
-			//currentKill.AssisterAreaName = &assisterAreaPlace
-			//currentKill.AssisterX = &assisterPos.X
-			//currentKill.AssisterY = &assisterPos.Y
-			//currentKill.AssisterZ = &assisterPos.Z
 		}
 
 		// Parse the opening kill info and trade info
@@ -1628,7 +1609,8 @@ func main() {
 			attackerViewY := float64(e.Attacker.ViewDirectionY())
 			currentDamage.AttackerViewX = &attackerViewX
 			currentDamage.AttackerViewY = &attackerViewY
-			currentDamage.AttackerStrafe = &e.Attacker.IsWalking()
+			attackerStrafe := e.Attacker.IsWalking()
+			currentDamage.AttackerStrafe = &attackerStrafe
 		}
 
 		// Victim
