@@ -1177,8 +1177,8 @@ func main() {
 				currentFlash.PlayerViewX = &playerViewX
 				currentFlash.PlayerViewY = &playerViewY
 
-				// Calculate flash duration
-				flashDuration := float64(e.Player.FlashDurationTimeRemaining()/1000)
+				// Calculate flash duration in seconds
+				flashDuration := float64(e.Player.FlashDurationTimeRemaining()/1000000000)
 				currentFlash.FlashDuration = &flashDuration
 
 				// Add
