@@ -311,3 +311,55 @@ class TestDemoParser:
                         r["RoundEndReason"]
                         == self.demo_data[demo]["roundEndReasons"][i]
                     )
+
+    def _count_enemies_flashed(self, json):
+        total_flashed = 0
+        for r in json["GameRounds"]:
+            if r["Flashes"]:
+                for f in r["Flashes"]:
+                    # Use 1.5 seconds as cutoff for "enemies flashed"
+                    if (
+                        (f["AttackerTeam"] != f["PlayerTeam"])
+                        and ((f["PlayerSide"] == "T") or (f["PlayerSide"] == "CT"))
+                        and (f["FlashDuration"] > 1.5)
+                    ):
+                        total_flashed += 1
+        return total_flashed
+
+    def test_parsed_enemies_flashed(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                demo_enemies_flashed = self._count_enemies_flashed(
+                    self.demo_data[demo]["json"]
+                )
+                real_enemies_flashed = self.demo_data[demo]["enemiesFlashed"]
+                print(
+                    "[{0}] Parsed {1} enemies flashed, real enemies flashed are {2}".format(
+                        demo, demo_enemies_flashed, real_enemies_flashed
+                    )
+                )
+                assert demo_enemies_flashed == real_enemies_flashed
+
+    def _sum_util_dmg(self, json):
+        util_dmg = 0
+        for r in json["GameRounds"]:
+            for dmg in r["Damages"]:
+                if (
+                    dmg["Weapon"] in ["HE Grenade", "Molotov", "Incendiary Grenade"]
+                    and dmg["AttackerTeam"] != dmg["VictimTeam"]
+                ):
+                    util_dmg += dmg["HpDamageTaken"]
+        return util_dmg
+
+    def test_parsed_util_dmg(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                demo_util_dmg = self._sum_util_dmg(self.demo_data[demo]["json"])
+                util_dmg = self.demo_data[demo]["utilityDamage"]
+                print(
+                    "[{0}] Parsed {1} util dmg, real util dmg is {2}".format(
+                        demo, demo_util_dmg, util_dmg
+                    )
+                )
+                assert demo_util_dmg < util_dmg + 30
+                assert demo_util_dmg > util_dmg - 30

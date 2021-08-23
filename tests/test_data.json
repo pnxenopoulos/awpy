@@ -18,6 +18,8 @@
         "totalFlashAssists": 5,
         "totalDeaths": 180,
         "totalFirstKills": 28,
+        "enemiesFlashed": 58,
+        "utilityDamage": 1075,
         "KAST": {
             "dupreeh": [
                 0.629,
