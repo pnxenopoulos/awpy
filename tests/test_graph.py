@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 
 from csgo.parser import DemoParser
-from csgo.parser.graph import frame_to_graph
+from csgo.parser.graph import frame_to_graph, frame_to_set
 
 
 class TestGraph:
@@ -26,6 +26,11 @@ class TestGraph:
         """Set parser to none"""
         self.parser = None
         self.data = None
+
+    def test_frame_to_set(self):
+        """Tests if frame to set returns correct number of players"""
+        players = frame_to_set(frame=self.data["GameRounds"][0]["Frames"][0])
+        assert len(players) == 10
 
     def test_graph_output_graph_dist(self):
         """Tests if the graph output is of correct dimension using graph distance"""

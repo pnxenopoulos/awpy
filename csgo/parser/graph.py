@@ -4,28 +4,14 @@ from csgo.analytics.distance import area_distance, point_distance
 from csgo.analytics.coords import Encoder
 
 
-def frame_to_set(frame, map_name):
+def frame_to_set(frame):
     """Transforms a frame to a set
     Args:
         frame (dictionary)    : A frame from the dict in csgo.parser.DemoParser
-        map_name (string)     : A string indicating the map
 
     Returns:
         frame_set (np.array) : Set where each object is a player
     """
-    if map_name not in [
-        "de_dust2",
-        "de_cbble",
-        "de_inferno",
-        "de_mirage",
-        "de_nuke",
-        "de_overpass",
-        "de_train",
-        "de_vertigo",
-    ]:
-        raise ValueError(
-            f'Invalid map name: got {map}, expected one of: "de_dust2", "de_cbble", "de_inferno", "de_mirage", "de_nuke", "de_overpass", "de_train", "de_vertigo"'
-        )
     if frame["T"]["Players"] is None or frame["CT"]["Players"] is None:
         raise ValueError("No players!")
     players = frame["T"]["Players"] + frame["CT"]["Players"]
