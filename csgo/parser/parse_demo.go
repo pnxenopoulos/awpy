@@ -498,31 +498,50 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	return currentPlayer
 }
 
-func parseTeamBuy(eqVal int64, Side string) string {
-	if Side == "CT" {
-		if eqVal < 2000 {
+func parseTeamBuy(eqVal int64, Side string, Style string) string {
+	if Style == "hltv" {
+		// Taken from hltv economy tab
+		if eqVal < 5000 {
 			return "Full Eco"
-		} else if (eqVal >= 2000) && (eqVal < 6000) {
-			return "Eco"
-		} else if (eqVal >= 6000) && (eqVal < 22000) {
-			return "Half Buy"
-		} else if eqVal >= 22000 {
+		} else if (eqVal >= 5000) && (eqVal < 10000) {
+			return "Semi Eco"
+		} else if (eqVal >= 10000) && (eqVal < 20000) {
+			return "Semi Buy"
+		} else if eqVal >= 20000 {
 			return "Full Buy"
 		} else {
-			return "Unknown"
+			"Unknown"
+		}
+	} else if Style == "csgo" {
+		// Created this using 4100 and 3700 as armor+gun for CT and T
+		if Side == "CT" {
+			if eqVal < 2000 {
+				return "Full Eco"
+			} else if (eqVal >= 2000) && (eqVal < 6000) {
+				return "Eco"
+			} else if (eqVal >= 6000) && (eqVal < 22000) {
+				return "Half Buy"
+			} else if eqVal >= 22000 {
+				return "Full Buy"
+			} else {
+				return "Unknown"
+			}
+		} else {
+			if eqVal < 2000 {
+				return "Full Eco"
+			} else if (eqVal >= 2000) && (eqVal < 6000) {
+				return "Eco"
+			} else if (eqVal >= 6000) && (eqVal < 18500) {
+				return "Half Buy"
+			} else if eqVal >= 18500 {
+				return "Full Buy"
+			} else {
+				return "Unknown"
+			}
 		}
 	} else {
-		if eqVal < 2000 {
-			return "Full Eco"
-		} else if (eqVal >= 2000) && (eqVal < 6000) {
-			return "Eco"
-		} else if (eqVal >= 6000) && (eqVal < 18500) {
-			return "Half Buy"
-		} else if eqVal >= 18500 {
-			return "Full Buy"
-		} else {
-			return "Unknown"
-		}
+		// Default to hltv style
+		parseTeamBuy(eqVal, Side, "hltv")
 	}
 }
 
@@ -793,8 +812,8 @@ func main() {
 			currentRound.CTSpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
 			currentRound.TSpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
 
-			currentRound.CTBuyType = parseTeamBuy(currentRound.CTBeginEqVal+currentRound.CTSpend, "CT")
-			currentRound.TBuyType = parseTeamBuy(currentRound.TBeginEqVal+currentRound.TSpend, "T")
+			currentRound.CTBuyType = parseTeamBuy(currentRound.CTBeginEqVal+currentRound.CTSpend, "CT", roundBuyStyle)
+			currentRound.TBuyType = parseTeamBuy(currentRound.TBeginEqVal+currentRound.TSpend, "T", roundBuyStyle)
 
 			currentRound.CTStartEqVal = currentRound.CTBeginEqVal + currentRound.CTSpend
 			currentRound.TStartEqVal = currentRound.TBeginEqVal + currentRound.TSpend
@@ -895,8 +914,8 @@ func main() {
 		currentRound.CTSpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
 		currentRound.TSpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
 
-		currentRound.CTBuyType = parseTeamBuy(currentRound.CTBeginEqVal+currentRound.CTSpend, "CT")
-		currentRound.TBuyType = parseTeamBuy(currentRound.TBeginEqVal+currentRound.TSpend, "T")
+		currentRound.CTBuyType = parseTeamBuy(currentRound.CTBeginEqVal+currentRound.CTSpend, "CT", roundBuyStyle)
+		currentRound.TBuyType = parseTeamBuy(currentRound.TBeginEqVal+currentRound.TSpend, "T", roundBuyStyle)
 
 		currentRound.CTStartEqVal = currentRound.CTBeginEqVal + currentRound.CTSpend
 		currentRound.TStartEqVal = currentRound.TBeginEqVal + currentRound.TSpend
