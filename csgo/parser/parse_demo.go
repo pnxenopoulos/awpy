@@ -196,11 +196,11 @@ type KillAction struct {
 	AssisterName        *string  `json:"AssisterName"`
 	AssisterTeam        *string  `json:"AssisterTeam"`
 	AssisterSide        *string  `json:"AssisterSide"`
-	AssisterX           *float64 `json:"AssisterX"`
-	AssisterY           *float64 `json:"AssisterY"`
-	AssisterZ           *float64 `json:"AssisterZ"`
-	AssisterAreaID      *int64   `json:"AssisterAreaID"`
-	AssisterAreaName    *string  `json:"AssisterAreaName"`
+	//AssisterX           *float64 `json:"AssisterX"`
+	//AssisterY           *float64 `json:"AssisterY"`
+	//AssisterZ           *float64 `json:"AssisterZ"`
+	//AssisterAreaID      *int64   `json:"AssisterAreaID"`
+	//AssisterAreaName    *string  `json:"AssisterAreaName"`
 	IsSuicide           bool     `json:"IsSuicide"`
 	IsTeamkill          bool     `json:"IsTeamkill"`
 	IsWallbang          bool     `json:"IsWallbang"`
@@ -212,6 +212,7 @@ type KillAction struct {
 	FlashThrowerSteamID *int64   `json:"FlashThrowerSteamID"`
 	FlashThrowerName    *string  `json:"FlashThrowerName"`
 	FlashThrowerTeam    *string  `json:"FlashThrowerTeam"`
+	FlashThrowerSide    *string  `json:"FlashThrowerSide"`
 	AttackerBlind       bool     `json:"AttackerBlind"`
 	NoScope             bool     `json:"NoScope"`
 	ThruSmoke           bool     `json:"ThruSmoke"`
@@ -1353,6 +1354,15 @@ func main() {
 						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
 						currentKill.FlashThrowerName = &flash.AttackerName
 						currentKill.FlashThrowerTeam = &flash.AttackerTeam
+						currentKill.FlashThrowerSide = &flash.AttackerSide
+						
+						// Sometimes assister may be nil, so we will set assister to the flash thrower
+						if e.Assister == nil {
+							currentKill.AssisterSteamID = &flash.AttackerSteamID
+							currentKill.AssisterName = &flash.AttackerName
+							currentKill.AssisterTeam = &flash.AttackerTeam
+							currentKill.AssisterSide = &flash.AttackerSide
+						}
 					}
 				}
 			}
@@ -1403,24 +1413,24 @@ func main() {
 				assisterSide = "Unknown"
 			}
 			currentKill.AssisterSide = &assisterSide
-			assisterPos := e.Assister.LastAlivePosition
-			assisterPoint := gonav.Vector3{X: float32(assisterPos.X), Y: float32(assisterPos.Y), Z: float32(assisterPos.Z)}
-			assisterArea := mesh.GetNearestArea(assisterPoint, true)
-			var assisterAreaID int64
-			assisterAreaPlace := ""
-			if assisterArea != nil {
-				assisterAreaID = int64(assisterArea.ID)
-				if assisterArea.Place != nil {
-					assisterAreaPlace = assisterArea.Place.Name
-				} else {
-					assisterAreaPlace = findAreaPlace(assisterArea, mesh)
-				}
-			}
-			currentKill.AssisterAreaID = &assisterAreaID
-			currentKill.AssisterAreaName = &assisterAreaPlace
-			currentKill.AssisterX = &assisterPos.X
-			currentKill.AssisterY = &assisterPos.Y
-			currentKill.AssisterZ = &assisterPos.Z
+			//assisterPos := e.Assister.LastAlivePosition
+			//assisterPoint := gonav.Vector3{X: float32(assisterPos.X), Y: float32(assisterPos.Y), Z: float32(assisterPos.Z)}
+			//assisterArea := mesh.GetNearestArea(assisterPoint, true)
+			//var assisterAreaID int64
+			//assisterAreaPlace := ""
+			//if assisterArea != nil {
+			//	assisterAreaID = int64(assisterArea.ID)
+			//	if assisterArea.Place != nil {
+			//		assisterAreaPlace = assisterArea.Place.Name
+			//	} else {
+			//		assisterAreaPlace = findAreaPlace(assisterArea, mesh)
+			//	}
+			//}
+			//currentKill.AssisterAreaID = &assisterAreaID
+			//currentKill.AssisterAreaName = &assisterAreaPlace
+			//currentKill.AssisterX = &assisterPos.X
+			//currentKill.AssisterY = &assisterPos.Y
+			//currentKill.AssisterZ = &assisterPos.Z
 		}
 
 		// Parse the opening kill info and trade info
