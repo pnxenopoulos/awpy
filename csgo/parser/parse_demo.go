@@ -1628,6 +1628,7 @@ func main() {
 			attackerViewY := float64(e.Attacker.ViewDirectionY())
 			currentDamage.AttackerViewX = &attackerViewX
 			currentDamage.AttackerViewY = &attackerViewY
+			currentDamage.AttackerStrafe = &e.Attacker.IsWalking()
 		}
 
 		// Victim
