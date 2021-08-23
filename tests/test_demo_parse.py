@@ -126,7 +126,7 @@ class TestDemoParser:
             log=False,
             demo_id="test",
             trade_time=7,
-            buy_style="hltv"
+            buy_style="hltv",
         )
         assert self.parser_opts.trade_time == 7
         assert self.parser_opts.buy_style == "hltv"
@@ -281,17 +281,14 @@ class TestDemoParser:
         total_ast = 0
         for r in json["GameRounds"]:
             for k in r["Kills"]:
-                # Three possible situations:
-                # 1) Assister with no flash
-                # 2) Assister and also flash assist
-                # 3) No assister but flash assist
-                if k["AssisterName"] is not None:
+                if k["AssisterName"] and (k["AssisterTeam"] != k["VictimTeam"]):
                     total_ast += 1
-                    if k["FlashThrowerName"] != k["AssisterName"]:
-                        total_ast += 1
-                else:
-                    if k["FlashThrowerName"]:
-                        total_ast += 1
+                if (
+                    (k["FlashThrowerName"] != k["AssisterName"])
+                    and (k["FlashThrowerTeam"] != k["VictimTeam"])
+                    and (k["FlashThrowerName"] is not None)
+                ):
+                    total_ast += 1
         return total_ast
 
     def test_parsed_assists(self):
