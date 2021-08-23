@@ -249,7 +249,7 @@ class DemoParser:
                             frame_item["TToken"] = frame["T"]["PositionToken"]
                     frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
-            frames_df["MatchId"] = self.demo_id
+            frames_df["MatchId"] = self.json["MatchID"]
             frames_df["MapName"] = self.json["MapName"]
             if return_type == "list":
                 self.logger.info("Parsed frames to list")
@@ -292,13 +292,13 @@ class DemoParser:
                                 player_item["Side"] = side
                                 player_item["TeamName"] = frame[side]["TeamName"]
                                 player_item["PlayerName"] = player["Name"]
-                                player_item["PlayerSteamId"] = player["SteamId"]
+                                player_item["PlayerSteamId"] = player["SteamID"]
                                 player_item["X"] = player["X"]
                                 player_item["Y"] = player["Y"]
                                 player_item["Z"] = player["Z"]
                                 player_item["ViewX"] = player["ViewX"]
                                 player_item["ViewY"] = player["ViewY"]
-                                player_item["AreaId"] = player["AreaId"]
+                                player_item["AreaId"] = player["AreaID"]
                                 player_item["Hp"] = player["Hp"]
                                 player_item["Armor"] = player["Armor"]
                                 player_item["IsAlive"] = player["IsAlive"]
@@ -318,7 +318,7 @@ class DemoParser:
                                 ]
                                 player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
-            player_frames_df["MatchId"] = self.demo_id
+            player_frames_df["MatchId"] = self.json["MatchID"]
             player_frames_df["MapName"] = self.json["MapName"]
             if return_type == "list":
                 self.logger.info("Parsed player frames to list")
@@ -376,7 +376,7 @@ class DemoParser:
                 round_item = {}
                 for k in cols:
                     round_item[k] = r[k]
-                    round_item["MatchId"] = self.demo_id
+                    round_item["MatchId"] = self.json["MatchID"]
                     round_item["MapName"] = self.json["MapName"]
                 rounds.append(round_item)
             if return_type == "list":
@@ -409,7 +409,7 @@ class DemoParser:
                     for k in r["Kills"]:
                         new_k = k
                         new_k["RoundNum"] = r["RoundNum"]
-                        new_k["MatchId"] = self.demo_id
+                        new_k["MatchId"] = self.json["MatchID"]
                         new_k["MapName"] = self.json["MapName"]
                         kills.append(new_k)
             if return_type == "list":
@@ -442,7 +442,7 @@ class DemoParser:
                     for d in r["Damages"]:
                         new_d = d
                         new_d["RoundNum"] = r["RoundNum"]
-                        new_d["MatchId"] = self.demo_id
+                        new_d["MatchId"] = self.json["MatchID"]
                         new_d["MapName"] = self.json["MapName"]
                         damages.append(new_d)
             if return_type == "list":
@@ -477,7 +477,7 @@ class DemoParser:
                     for g in r["Grenades"]:
                         new_g = g
                         new_g["RoundNum"] = r["RoundNum"]
-                        new_g["MatchId"] = self.demo_id
+                        new_g["MatchId"] = self.json["MatchID"]
                         new_g["MapName"] = self.json["MapName"]
                         grenades.append(new_g)
             if return_type == "list":
@@ -512,7 +512,7 @@ class DemoParser:
                     for b in r["BombEvents"]:
                         new_b = b
                         new_b["RoundNum"] = r["RoundNum"]
-                        new_b["MatchId"] = self.demo_id
+                        new_b["MatchId"] = self.json["MatchID"]
                         new_b["MapName"] = self.json["MapName"]
                         bomb_events.append(new_b)
             if return_type == "list":
@@ -545,7 +545,7 @@ class DemoParser:
                     for f in r["Flashes"]:
                         new_f = f
                         new_f["RoundNum"] = r["RoundNum"]
-                        new_f["MatchId"] = self.demo_id
+                        new_f["MatchId"] = self.json["MatchID"]
                         new_f["MapName"] = self.json["MapName"]
                         flashes.append(new_f)
             if return_type == "list":
