@@ -4,6 +4,37 @@ from csgo.analytics.distance import area_distance, point_distance
 from csgo.analytics.coords import Encoder
 
 
+def frame_to_set(frame, map_name):
+    """Transforms a frame to a set
+    Args:
+        frame (dictionary)    : A frame from the dict in csgo.parser.DemoParser
+        map_name (string)     : A string indicating the map
+
+    Returns:
+        frame_set (np.array) : Set where each object is a player
+    """
+    if map_name not in [
+        "de_dust2",
+        "de_cbble",
+        "de_inferno",
+        "de_mirage",
+        "de_nuke",
+        "de_overpass",
+        "de_train",
+        "de_vertigo",
+    ]:
+        raise ValueError(
+            f'Invalid map name: got {map}, expected one of: "de_dust2", "de_cbble", "de_inferno", "de_mirage", "de_nuke", "de_overpass", "de_train", "de_vertigo"'
+        )
+    if frame["T"]["Players"] is None or frame["CT"]["Players"] is None:
+        raise ValueError("No players!")
+    players = frame["T"]["Players"] + frame["CT"]["Players"]
+    frame_players = []
+    for p in players:
+        frame_players.append(p)
+    return set(frame_players)
+
+
 def frame_to_graph(
     frame, metric, map_name, full=False, places=False, coordinates=False
 ):
@@ -17,9 +48,9 @@ def frame_to_graph(
         places (boolean)      : True to include a 110 long OHE vector of player location, False otherwise
         coordinates (boolean) : True to include player X/Y/Z, False otherwise
 
-        Returns:
-            A (np.array) : Adjacency matrix using graph distances
-            X (np.array) : Matrix with information on each node
+    Returns:
+        A (np.array) : Adjacency matrix using graph distances
+        X (np.array) : Matrix with information on each node
     """
     if map_name not in [
         "de_dust2",

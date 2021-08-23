@@ -313,6 +313,8 @@ type TeamFrameInfo struct {
 type PlayerInfo struct {
 	PlayerSteamID   int64    `json:"SteamID"`
 	PlayerName      string   `json:"Name"`
+	PlayerTeam      string   `json:"Team"`
+	PlayerSide      string   `json:"Side"`
 	X               float64  `json:"X"`
 	Y               float64  `json:"Y"`
 	Z               float64  `json:"Z"`
@@ -432,6 +434,17 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
+	currentPlayer.PlayerTeam = p.TeamState.ClanName()
+
+	switch p.Team {
+	case common.TeamTerrorists:
+		currentPlayer.PlayerSide = "T"
+	case common.TeamCounterTerrorists:
+		currentPlayer.PlayerSide = "CT"
+	default:
+		currentPlayer.PlayerSide = "Unknown"
+	}
+
 	playerPos := p.LastAlivePosition
 	playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 	playerArea := m.GetNearestArea(playerPoint, true)
