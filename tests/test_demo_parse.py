@@ -281,10 +281,17 @@ class TestDemoParser:
         total_ast = 0
         for r in json["GameRounds"]:
             for k in r["Kills"]:
+                # Three possible situations:
+                # 1) Assister with no flash
+                # 2) Assister and also flash assist
+                # 3) No assister but flash assist
                 if k["AssisterName"] is not None:
                     total_ast += 1
-                if k["AssistedFlash"] is False and k["FlashThrowerName"]:
-                    total_ast += 1
+                    if k["FlashThrowerName"] != k["AssisterName"]:
+                        total_ast += 1
+                else:
+                    if k["FlashThrowerName"]:
+                        total_ast += 1
         return total_ast
 
     def test_parsed_assists(self):
