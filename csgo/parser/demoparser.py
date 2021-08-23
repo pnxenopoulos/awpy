@@ -183,7 +183,7 @@ class DemoParser:
                 return self.json
             elif return_type == "df":
                 demo_data = {}
-                demo_data["MatchId"] = self.json["MatchId"]
+                demo_data["MatchId"] = self.json["MatchID"]
                 demo_data["ClientName"] = self.json["ClientName"]
                 demo_data["MapName"] = self.json["MapName"]
                 demo_data["TickRate"] = self.json["TickRate"]
