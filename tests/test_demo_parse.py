@@ -180,9 +180,9 @@ class TestDemoParser:
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
                 for r in self.demo_data[demo]["json"]["GameRounds"]:
-                    assert r["StartTick"] < r["FreezeTimeEndTick"]
-                    assert r["FreezeTimeEndTick"] < r["EndTick"]
-                    assert r["EndTick"] < r["EndOfficialTick"]
+                    assert r["StartTick"] <= r["FreezeTimeEndTick"]
+                    assert r["FreezeTimeEndTick"] <= r["EndTick"]
+                    assert r["EndTick"] <= r["EndOfficialTick"]
 
     def test_half_side_switch(self):
         for demo in self.demo_data:
@@ -210,7 +210,7 @@ class TestDemoParser:
             if self.demo_data[demo]["useForTests"]:
                 for r in self.demo_data[demo]["json"]["GameRounds"]:
                     assert r["CTStartEqVal"] <= r["CTRoundStartEqVal"] + r["CTRoundStartMoney"]
-                    assert r["CTStartEqVal"] <= r["TRoundStartEqVal"] + r["TRoundStartMoney"]
+                    assert r["TStartEqVal"] <= r["TRoundStartEqVal"] + r["TRoundStartMoney"]
 
     def test_kill_distances(self):
         for demo in self.demo_data:

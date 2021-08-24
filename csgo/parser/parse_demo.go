@@ -754,6 +754,7 @@ func main() {
 		}
 
 		if roundStarted == 1 {
+			// Should the 5 second constant be changed?
 			currentRound.EndOfficialTick = int64(gs.IngameTick()) - (5 * currentGame.TickRate)
 			currentGame.Rounds = append(currentGame.Rounds, currentRound)
 		}
