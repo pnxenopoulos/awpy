@@ -301,7 +301,6 @@ type TeamFrameInfo struct {
 	PosToken     string       `json:"PositionToken"`
 	AlivePlayers int64        `json:"AlivePlayers"`
 	TotalUtility int64        `json:"TotalUtility"`
-	UtilityLevel string       `json:"UtilityLevel"`
 	Players      []PlayerInfo `json:"Players"`
 }
 
@@ -595,20 +594,6 @@ func countUtility(players []PlayerInfo) int64 {
 		}
 	}
 	return totalUtility
-}
-
-func determineUtilityLevel(x int64) string {
-	if x < 5 {
-		return "Very Low"
-	} else if (x >= 5) && (x < 10) {
-		return "Low"
-	} else if (x >= 10) && (x < 15) {
-		return "High"
-	} else if x >= 15 {
-		return "Very High"
-	} else {
-		return "Unknown"
-	}
 }
 
 func findIDx(sl []string, val string) int {
@@ -938,7 +923,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse"
 		currentBomb.BombSite = ""
 		if e.Site == 65 {
@@ -964,7 +949,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse_start"
 
 		// No BombSite info, must infer
@@ -992,7 +977,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse_aborted"
 
 		// No BombSite info, must infer
@@ -1021,7 +1006,7 @@ func main() {
 		if e.Weapon.String() != "Knife" && e.Shooter != nil {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
-			currentWeaponFire.Second = (float64(currentWeaponFire.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+			currentWeaponFire.Second = float64((float64(currentWeaponFire.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
 			currentWeaponFire.PlayerName = e.Shooter.Name
 			currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
@@ -1076,7 +1061,7 @@ func main() {
 		if e.Attacker != nil {
 			currentFlash := FlashAction{}
 			currentFlash.Tick = int64(gs.IngameTick())
-			currentFlash.Second = (float64(currentFlash.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+			currentFlash.Second = float64((float64(currentFlash.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 
 			// Attacker
 			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
@@ -1196,7 +1181,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "plant"
 		currentBomb.BombSite = ""
 
@@ -1224,7 +1209,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "plant_begin"
 		currentBomb.BombSite = ""
 
@@ -1252,7 +1237,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = (float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "plant_abort"
 
 		// No BombSite info, must infer
@@ -1281,7 +1266,7 @@ func main() {
 		if e.Projectile.Thrower != nil {
 			currentGrenade := GrenadeAction{}
 			currentGrenade.Tick = int64(gs.IngameTick())
-			currentGrenade.Second = (float64(currentGrenade.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+			currentGrenade.Second = float64((float64(currentGrenade.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 			currentGrenade.PlayerSteamID = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.PlayerName = e.Projectile.Thrower.Name
 			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
@@ -1361,7 +1346,7 @@ func main() {
 
 		currentKill := KillAction{}
 		currentKill.Tick = int64(gs.IngameTick())
-		currentKill.Second = (float64(currentKill.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentKill.Second = float64((float64(currentKill.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 		currentKill.Weapon = e.Weapon.String()
 		currentKill.IsWallbang = e.IsWallBang()
 		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
@@ -1468,7 +1453,14 @@ func main() {
 			currentKill.VictimViewX = &victimViewX
 			currentKill.VictimViewY = &victimViewY
 
-			currentKill.Distance = float64(e.Distance)
+			if currentKill.IsSuicide == false {
+				X = math.Pow((currentKill.AttackerX - currentKill.VictimX), 2)
+				Y = math.Pow((currentKill.AttackerY - currentKill.VictimY), 2)
+				Z = math.Pow((currentKill.AttackerZ - currentKill.VictimZ), 2)
+				currentKill.Distance = math.Sqrt(X + Y + Z)
+			} else {
+				currentKill.Distance = 0.0
+			}
 
 			// Parse flash info for kill
 			currentKill.VictimBlinded = e.Victim.IsBlinded()
@@ -1563,7 +1555,7 @@ func main() {
 
 		currentDamage := DamageAction{}
 		currentDamage.Tick = int64(gs.IngameTick())
-		currentDamage.Second = (float64(currentDamage.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+		currentDamage.Second = float64((float64(currentDamage.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 		currentDamage.Weapon = e.Weapon.String()
 		currentDamage.HitGroup = convertHitGroup(e.HitGroup)
 		currentDamage.HpDamage = int64(e.HealthDamage)
@@ -1673,7 +1665,7 @@ func main() {
 		if (roundInFreezetime == 0) && (currentFrameIDx == 0) {
 			currentFrame := GameFrame{}
 			currentFrame.Tick = int64(gs.IngameTick())
-			currentFrame.Second = (float64(currentFrame.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate)
+			currentFrame.Second = float64((float64(currentFrame.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
 			// Parse bomb distance
 			bombsiteA := mesh.GetPlaceByName("BombsiteA")
 			aCenter, _ := bombsiteA.GetEstimatedCenter()
@@ -1705,7 +1697,6 @@ func main() {
 			currentFrame.T.PosToken = tToken
 			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
 			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
-			currentFrame.T.UtilityLevel = determineUtilityLevel(currentFrame.T.TotalUtility)
 
 			// Parse CT
 			currentFrame.CT = TeamFrameInfo{}
@@ -1723,7 +1714,6 @@ func main() {
 			currentFrame.CT.PosToken = ctToken
 			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
 			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
-			currentFrame.CT.UtilityLevel = determineUtilityLevel(currentFrame.CT.TotalUtility)
 			currentFrame.TToken = tToken
 			currentFrame.CTToken = ctToken
 			currentFrame.FrameToken = tToken + ctToken
@@ -1952,6 +1942,12 @@ func main() {
 				currentGame.Rounds[i].CTBuyType = "Pistol"
 				currentGame.Rounds[i].TBuyType = "Pistol"
 			}
+		}
+
+		// Make sure that teams are accurately set after half
+		if currentGame.Rounds[15].CTTeam == currentGame.Rounds[14].CTTeam {
+			currentGame.Rounds[15].CTTeam = currentGame.Rounds[15].TTeam
+			currentGame.Rounds[15].TTeam = currentGame.Rounds[15].CTTeam
 		}
 
 		// Set the correct round start for round 0
