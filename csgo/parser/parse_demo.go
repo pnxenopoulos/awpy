@@ -1245,11 +1245,16 @@ func main() {
 		currentBomb.BombAction = "plant_abort"
 
 		// No BombSite info, must infer
-		if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
-			currentBomb.BombSite = "A"
+		if len(currentRound.Frames) > 0 {
+			if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
+				currentBomb.BombSite = "A"
+			} else {
+				currentBomb.BombSite = "B"
+			}
 		} else {
-			currentBomb.BombSite = "B"
+			currentBomb.BombSite = "Unknown"
 		}
+		
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
