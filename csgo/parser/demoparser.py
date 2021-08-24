@@ -193,6 +193,9 @@ class DemoParser:
                 demo_data["Damages"] = self._parse_damages(return_type=return_type)
                 demo_data["Grenades"] = self._parse_grenades(return_type=return_type)
                 demo_data["Flashes"] = self._parse_flashes(return_type=return_type)
+                demo_data["WeaponFires"] = self._parse_weapon_fires(
+                    return_Type=return_type
+                )
                 demo_data["BombEvents"] = self._parse_bomb_events(
                     return_type=return_type
                 )
@@ -418,6 +421,41 @@ class DemoParser:
             elif return_type == "df":
                 self.logger.info("Parsed kills to Pandas DataFrame")
                 return pd.DataFrame(kills)
+        except AttributeError:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def _parse_weapon_fires(self, return_type):
+        """Returns weapon fires as either a list or Pandas dataframe
+
+        Args:
+            return_type (string) : Either "list" or "df"
+
+        Returns:
+            A list or Pandas dataframe
+        """
+        if return_type not in ["list", "df"]:
+            self.logger.error(
+                "Parse weapon fires return_type must be either 'list' or 'df'"
+            )
+            raise ValueError("return_type must be either 'list' or 'df'")
+
+        try:
+            shots = []
+            for r in self.json["GameRounds"]:
+                if r["WeaponFires"] is not None:
+                    for wf in r["WeaponFires"]:
+                        new_wf = wf
+                        new_wf["RoundNum"] = r["RoundNum"]
+                        new_wf["MatchId"] = self.json["MatchID"]
+                        new_wf["MapName"] = self.json["MapName"]
+                        shots.append(new_wf)
+            if return_type == "list":
+                self.logger.info("Parsed weapon fires to list")
+                return shots
+            elif return_type == "df":
+                self.logger.info("Parsed weapon fires to Pandas DataFrame")
+                return pd.DataFrame(shots)
         except AttributeError:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
