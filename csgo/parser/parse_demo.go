@@ -848,6 +848,8 @@ func main() {
 				currentRound.LosingTeam = &tTeam
 				currentRound.WinningSide = "CT"
 			}
+		} else {
+			currentRound.EndOfficialTick = int64(gs.IngameTick())
 		}
 	})
 
