@@ -802,6 +802,7 @@ func main() {
 		gs := p.GameState()
 
 		if roundInEndTime == 0 {
+			currentRound.EndTick = int64(gs.IngameTick()) - (5 * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 			currentRound.CTBeginEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
 			currentRound.TBeginEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
@@ -892,7 +893,7 @@ func main() {
 		}
 
 		currentRound.EndTick = int64(gs.IngameTick())
-		currentRound.EndOfficialTick = int64(gs.IngameTick())
+		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (5 * currentGame.TickRate)
 		currentRound.Reason = convertRoundEndReason(e.Reason)
 		currentRound.WinningSide = winningTeam
 
