@@ -208,14 +208,14 @@ class TestDemoParser:
     def test_eq_val(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
                     assert r["CTStartEqVal"] <= r["CTRoundStartEqVal"] + r["CTRoundStartMoney"]
                     assert r["CTStartEqVal"] <= r["TRoundStartEqVal"] + r["TRoundStartMoney"]
 
     def test_kill_distances(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
                     for k in r["Kills"]:
                         if not k["IsSuicide"]:
                             assert k["Distance"] > 0
@@ -223,7 +223,7 @@ class TestDemoParser:
     def test_damage_amounts(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
                     for d in r["Damages"]:
                         assert d["HpDamage"] >= d["HpDamageTaken"]
                         assert d["ArmorDamage"] >= d["ArmorDamageTaken"]
