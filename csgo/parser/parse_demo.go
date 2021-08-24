@@ -1489,7 +1489,7 @@ func main() {
 			// Parse flash info for kill
 			currentKill.VictimBlinded = e.Victim.IsBlinded()
 			if e.Victim.IsBlinded() {
-				if e.AssistedFlash {
+				if e.AssistedFlash == true {
 					currentKill.FlashThrowerSteamID = currentKill.AssisterSteamID
 					currentKill.FlashThrowerName = currentKill.AssisterName
 					currentKill.FlashThrowerTeam = currentKill.AssisterTeam
@@ -1509,6 +1509,7 @@ func main() {
 								currentKill.AssisterName = &flash.AttackerName
 								currentKill.AssisterTeam = &flash.AttackerTeam
 								currentKill.AssisterSide = &flash.AttackerSide
+								currentKill.AssistedFlash = true
 							}
 						}
 					}
