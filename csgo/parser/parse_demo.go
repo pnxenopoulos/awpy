@@ -1453,10 +1453,10 @@ func main() {
 			currentKill.VictimViewX = &victimViewX
 			currentKill.VictimViewY = &victimViewY
 
-			if currentKill.IsSuicide == false {
-				X = math.Pow((currentKill.AttackerX - currentKill.VictimX), 2)
-				Y = math.Pow((currentKill.AttackerY - currentKill.VictimY), 2)
-				Z = math.Pow((currentKill.AttackerZ - currentKill.VictimZ), 2)
+			if currentKill.IsSuicide == false && e.Killer != nil && e.Victim != nil {
+				X := math.Pow((*currentKill.AttackerX - *currentKill.VictimX), 2)
+				Y := math.Pow((*currentKill.AttackerY - *currentKill.VictimY), 2)
+				Z := math.Pow((*currentKill.AttackerZ - *currentKill.VictimZ), 2)
 				currentKill.Distance = math.Sqrt(X + Y + Z)
 			} else {
 				currentKill.Distance = 0.0
