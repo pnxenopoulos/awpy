@@ -1489,20 +1489,27 @@ func main() {
 			// Parse flash info for kill
 			currentKill.VictimBlinded = e.Victim.IsBlinded()
 			if e.Victim.IsBlinded() {
-				// Find their latest flash event
-				for _, flash := range currentRound.Flashes {
-					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
-						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
-						currentKill.FlashThrowerName = &flash.AttackerName
-						currentKill.FlashThrowerTeam = &flash.AttackerTeam
-						currentKill.FlashThrowerSide = &flash.AttackerSide
-						
-						// Sometimes assister may be nil, so we will set assister to the flash thrower
-						if e.Assister == nil {
-							currentKill.AssisterSteamID = &flash.AttackerSteamID
-							currentKill.AssisterName = &flash.AttackerName
-							currentKill.AssisterTeam = &flash.AttackerTeam
-							currentKill.AssisterSide = &flash.AttackerSide
+				if e.AssistedFlash {
+					currentKill.FlashThrowerSteamID = currentKill.AssisterSteamID
+					currentKill.FlashThrowerName = currentKill.AssisterName
+					currentKill.FlashThrowerTeam = currentKill.AssisterTeam
+					currentKill.FlashThrowerSide = currentKill.AssisterSide
+				} else {
+					// Find their latest flash event
+					for _, flash := range currentRound.Flashes {
+						if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
+							currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
+							currentKill.FlashThrowerName = &flash.AttackerName
+							currentKill.FlashThrowerTeam = &flash.AttackerTeam
+							currentKill.FlashThrowerSide = &flash.AttackerSide
+							
+							// Sometimes assister may be nil, so we will set assister to the flash thrower
+							if e.Assister == nil {
+								currentKill.AssisterSteamID = &flash.AttackerSteamID
+								currentKill.AssisterName = &flash.AttackerName
+								currentKill.AssisterTeam = &flash.AttackerTeam
+								currentKill.AssisterSide = &flash.AttackerSide
+							}
 						}
 					}
 				}

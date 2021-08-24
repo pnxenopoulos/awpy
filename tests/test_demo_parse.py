@@ -239,13 +239,13 @@ class TestDemoParser:
     def test_frames(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
                     assert len(r["Frames"]) > 0
 
     def test_player_counts(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
                     for f in r["Frames"]:
                         assert len(f["T"]["Players"]) == 5
                         assert len(f["CT"]["Players"]) == 5
