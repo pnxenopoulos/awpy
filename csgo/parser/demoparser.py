@@ -241,14 +241,12 @@ class DemoParser:
                             frame_item["CTEqVal"] = frame["CT"]["TeamEqVal"]
                             frame_item["CTAlivePlayers"] = frame["CT"]["AlivePlayers"]
                             frame_item["CTUtility"] = frame["CT"]["TotalUtility"]
-                            frame_item["CTUtilityLevel"] = frame["CT"]["UtilityLevel"]
                             frame_item["CTToken"] = frame["CT"]["PositionToken"]
                         else:
                             frame_item["TTeamName"] = frame["T"]["TeamName"]
                             frame_item["TEqVal"] = frame["T"]["TeamEqVal"]
                             frame_item["TAlivePlayers"] = frame["T"]["AlivePlayers"]
                             frame_item["TUtility"] = frame["T"]["TotalUtility"]
-                            frame_item["TUtilityLevel"] = frame["T"]["UtilityLevel"]
                             frame_item["TToken"] = frame["T"]["PositionToken"]
                     frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)

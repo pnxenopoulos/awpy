@@ -704,7 +704,7 @@ func main() {
 	roundStarted := 0
 	roundInEndTime := 0
 	roundInFreezetime := 0
-	currentFrameIDx := 0
+	currentFrameIdx := 0
 	convParsed := 0
 
 	// Create game object, then initial round object
@@ -1670,7 +1670,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
 
-		if (roundInFreezetime == 0) && (currentFrameIDx == 0) {
+		if (roundInFreezetime == 0) && (currentFrameIdx == 0) {
 			currentFrame := GameFrame{}
 			currentFrame.Tick = int64(gs.IngameTick())
 			currentFrame.Second = float64((float64(currentFrame.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
@@ -1783,17 +1783,17 @@ func main() {
 			// add
 			currentRound.Frames = append(currentRound.Frames, currentFrame)
 
-			if currentFrameIDx == (currentGame.ParseRate - 1) {
-				currentFrameIDx = 0
+			if currentFrameIdx == (currentGame.ParseRate - 1) {
+				currentFrameIdx = 0
 			} else {
-				currentFrameIDx = currentFrameIDx + 1
+				currentFrameIdx = currentFrameIdx + 1
 			}
 			
 		} else {
-			if currentFrameIDx == (currentGame.ParseRate - 1) {
-				currentFrameIDx = 0
+			if currentFrameIdx == (currentGame.ParseRate - 1) {
+				currentFrameIdx = 0
 			} else {
-				currentFrameIDx = currentFrameIDx + 1
+				currentFrameIdx = currentFrameIdx + 1
 			}
 		}
 	})
