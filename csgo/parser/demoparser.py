@@ -351,7 +351,7 @@ class DemoParser:
             cols = [
                 "RoundNum",
                 "StartTick",
-                "FreezeTimeEnd",
+                "FreezeTimeEndTick",
                 "EndTick",
                 "EndOfficialTick",
                 "TScore",
