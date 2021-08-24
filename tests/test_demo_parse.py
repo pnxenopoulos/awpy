@@ -170,6 +170,64 @@ class TestDemoParser:
                 self._delete_demofile(file)
         assert parse_errors == 0
 
+    def test_parsed_metadata(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                assert self.demo_data[demo]["json"]["TickRate"] == self.demo_data[demo]["tickRate"]
+                assert self.demo_data[demo]["json"]["ServerVars"]["MaxRounds"] == self.demo_data[demo]["maxRounds"]
+
+    def test_round_ticks(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
+                    assert r["StartTick"] < r["FreezeTimeEndTick"]
+                    assert r["FreezeTimeEndTick"] < r["EndTick"]
+                    assert r["EndTick"] < r["EndOfficialTick"]
+
+    def test_half_side_switch(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                assert self.demo_data[demo]["json"]["GameRounds"][15]["CTTeam"] == self.demo_data[demo]["json"]["GameRounds"][14]["TTeam"]
+
+    def test_pistol_rounds(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                assert self.demo_data[demo]["json"]["GameRounds"][0]["CTBuyType"] == "Pistol"
+                assert self.demo_data[demo]["json"]["GameRounds"][0]["TBuyType"] == "Pistol"
+                assert self.demo_data[demo]["json"]["GameRounds"][15]["CTBuyType"] == "Pistol"
+                assert self.demo_data[demo]["json"]["GameRounds"][15]["TBuyType"] == "Pistol"
+
+    def test_start_money(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                assert self.demo_data[demo]["json"]["GameRounds"][0]["CTRoundStartEqVal"] == 1000
+                assert self.demo_data[demo]["json"]["GameRounds"][0]["CTRoundStartMoney"] == 4000
+                assert self.demo_data[demo]["json"]["GameRounds"][0]["TRoundStartEqVal"] == 1000
+                assert self.demo_data[demo]["json"]["GameRounds"][0]["TRoundStartMoney"] == 4000
+
+    def test_eq_val(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]:
+                    assert r["CTStartEqVal"] <= r["CTRoundStartEqVal"] + r["CTRoundStartMoney"]
+                    assert r["CTStartEqVal"] <= r["TRoundStartEqVal"] + r["TRoundStartMoney"]
+
+    def test_kill_distances(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]:
+                    for k in r["Kills"]:
+                        if not k["IsSuicide"]:
+                            assert k["Distance"] > 0
+
+    def test_damage_amounts(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]:
+                    for d in r["Damages"]:
+                        assert d["HpDamage"] >= d["HpDamageTaken"]
+                        assert d["ArmorDamage"] >= d["ArmorDamageTaken"]
+
     def test_parsed_json_rounds(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:

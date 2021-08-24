@@ -62,38 +62,38 @@ type ServerConVar struct {
 
 // GameRound information and all of the associated events
 type GameRound struct {
-	RoundNum        int64              `json:"RoundNum"`
-	StartTick       int64              `json:"StartTick"`
-	FreezeTimeEnd   int64              `json:"FreezeTimeEnd"`
-	EndTick         int64              `json:"EndTick"`
-	EndOfficialTick int64              `json:"EndOfficialTick"`
-	TScore          int64              `json:"TScore"`
-	CTScore         int64              `json:"CTScore"`
-	EndTScore       int64              `json:"EndTScore"`
-	EndCTScore      int64              `json:"EndCTScore"`
-	CTTeam          *string            `json:"CTTeam"`
-	TTeam           *string            `json:"TTeam"`
-	WinningSide     string             `json:"WinningSide"`
-	WinningTeam     *string            `json:"WinningTeam"`
-	LosingTeam      *string            `json:"LosingTeam"`
-	Reason          string             `json:"RoundEndReason"`
-	CTStartEqVal    int64              `json:"CTStartEqVal"`
-	CTBeginEqVal    int64              `json:"CTRoundStartEqVal"`
-	CTBeginMoney    int64              `json:"CTRoundStartMoney"`
-	CTBuyType       string             `json:"CTBuyType"`
-	CTSpend         int64              `json:"CTSpend"`
-	TStartEqVal     int64              `json:"TStartEqVal"`
-	TBeginEqVal     int64              `json:"TRoundStartEqVal"`
-	TBeginMoney     int64              `json:"TRoundStartMoney"`
-	TBuyType        string             `json:"TBuyType"`
-	TSpend          int64              `json:"TSpend"`
-	Kills           []KillAction       `json:"Kills"`
-	Damages         []DamageAction     `json:"Damages"`
-	Grenades        []GrenadeAction    `json:"Grenades"`
-	Bomb            []BombAction       `json:"BombEvents"`
-	WeaponFires     []WeaponFireAction `json:"WeaponFires"`
-	Flashes         []FlashAction      `json:"Flashes"`
-	Frames          []GameFrame        `json:"Frames"`
+	RoundNum          int64              `json:"RoundNum"`
+	StartTick         int64              `json:"StartTick"`
+	FreezeTimeEndTick int64              `json:"FreezeTimeEndTick"`
+	EndTick           int64              `json:"EndTick"`
+	EndOfficialTick   int64              `json:"EndOfficialTick"`
+	TScore            int64              `json:"TScore"`
+	CTScore           int64              `json:"CTScore"`
+	EndTScore         int64              `json:"EndTScore"`
+	EndCTScore        int64              `json:"EndCTScore"`
+	CTTeam            *string            `json:"CTTeam"`
+	TTeam             *string            `json:"TTeam"`
+	WinningSide       string             `json:"WinningSide"`
+	WinningTeam       *string            `json:"WinningTeam"`
+	LosingTeam        *string            `json:"LosingTeam"`
+	Reason            string             `json:"RoundEndReason"`
+	CTStartEqVal      int64              `json:"CTStartEqVal"`
+	CTBeginEqVal      int64              `json:"CTRoundStartEqVal"`
+	CTBeginMoney      int64              `json:"CTRoundStartMoney"`
+	CTBuyType         string             `json:"CTBuyType"`
+	CTSpend           int64              `json:"CTSpend"`
+	TStartEqVal       int64              `json:"TStartEqVal"`
+	TBeginEqVal       int64              `json:"TRoundStartEqVal"`
+	TBeginMoney       int64              `json:"TRoundStartMoney"`
+	TBuyType          string             `json:"TBuyType"`
+	TSpend            int64              `json:"TSpend"`
+	Kills             []KillAction       `json:"Kills"`
+	Damages           []DamageAction     `json:"Damages"`
+	Grenades          []GrenadeAction    `json:"Grenades"`
+	Bomb              []BombAction       `json:"BombEvents"`
+	WeaponFires       []WeaponFireAction `json:"WeaponFires"`
+	Flashes           []FlashAction      `json:"Flashes"`
+	Frames            []GameFrame        `json:"Frames"`
 }
 
 // GrenadeAction events
@@ -655,7 +655,7 @@ func main() {
 	*/
 	fl := new(flag.FlagSet)
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
-	parseRatePtr := fl.Int("parserate", 1, "Parse rate, indicates spacing between ticks")
+	parseRatePtr := fl.Int("parserate", 128, "Parse rate, indicates spacing between ticks")
 	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
 	roundBuyPtr := fl.String("buystyle", "hltv", "Round buy style")
 	demoIDPtr := fl.String("demoid", "", "Demo string ID")
@@ -1951,7 +1951,7 @@ func main() {
 		}
 
 		// Make sure that teams are accurately set after half
-		if currentGame.Rounds[15].CTTeam == currentGame.Rounds[14].CTTeam {
+		if *currentGame.Rounds[15].CTTeam == *currentGame.Rounds[14].CTTeam {
 			currentGame.Rounds[15].CTTeam = currentGame.Rounds[14].TTeam
 			currentGame.Rounds[15].TTeam = currentGame.Rounds[14].CTTeam
 		}

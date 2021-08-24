@@ -10,6 +10,8 @@
         "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem",
         "hltvUrl": "https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019",
         "useForTests": true,
+        "tickRate": 128,
+        "maxRounds": 30,
         "rounds": 28,
         "totalKills": 179,
         "totalTeamkills": 1,
