@@ -724,6 +724,8 @@ func main() {
 
 	currentRound := GameRound{}
 
+	ROUND_RESTART_DELAY := int64(5)
+
 	// Parse round starts
 	p.RegisterEventHandler(func(e events.RoundStart) {
 		gs := p.GameState()
@@ -751,11 +753,17 @@ func main() {
 			serverConfig.CoachingAllowed, _ = strconv.ParseInt(conv["sv_coaching_enabled"], 10, 64)
 			currentGame.ServerVars = serverConfig
 			convParsed = 1
+
+			// Change so that round restarts are parsed using the server convar
+			if serverConfig.RoundRestartDelay == 0 {
+				ROUND_RESTART_DELAY = 5
+			} else {
+				ROUND_RESTART_DELAY = serverConfig.RoundRestartDelay
+			}
 		}
 
 		if roundStarted == 1 {
 			// Should the 5 second constant be changed?
-			currentRound.EndOfficialTick = int64(gs.IngameTick()) - (5 * currentGame.TickRate)
 			currentGame.Rounds = append(currentGame.Rounds, currentRound)
 		}
 
@@ -802,7 +810,7 @@ func main() {
 		gs := p.GameState()
 
 		if roundInEndTime == 0 {
-			currentRound.EndTick = int64(gs.IngameTick()) - (5 * currentGame.TickRate)
+			currentRound.EndTick = int64(gs.IngameTick()) - (ROUND_RESTART_DELAY * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 			currentRound.CTBeginEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
 			currentRound.TBeginEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
@@ -851,6 +859,7 @@ func main() {
 				currentRound.WinningSide = "CT"
 			}
 		} else {
+			currentRound.EndTick = int64(gs.IngameTick()) - (ROUND_RESTART_DELAY * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 		}
 	})
@@ -893,7 +902,7 @@ func main() {
 		}
 
 		currentRound.EndTick = int64(gs.IngameTick())
-		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (5 * currentGame.TickRate)
+		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (ROUND_RESTART_DELAY * currentGame.TickRate)
 		currentRound.Reason = convertRoundEndReason(e.Reason)
 		currentRound.WinningSide = winningTeam
 

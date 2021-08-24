@@ -236,6 +236,20 @@ class TestDemoParser:
                     == self.demo_data[demo]["rounds"]
                 )
 
+    def test_frames(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]:
+                    assert len(r["Frames"]) > 0
+
+    def test_player_counts(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]:
+                    for f in r["Frames"]:
+                        assert len(f["T"]["Players"]) == 5
+                        assert len(f["CT"]["Players"]) == 5
+
     def _count_deaths(self, json):
         total_deaths = 0
         for r in json["GameRounds"]:
