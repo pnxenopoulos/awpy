@@ -194,7 +194,7 @@ class DemoParser:
                 demo_data["Grenades"] = self._parse_grenades(return_type=return_type)
                 demo_data["Flashes"] = self._parse_flashes(return_type=return_type)
                 demo_data["WeaponFires"] = self._parse_weapon_fires(
-                    return_Type=return_type
+                    return_type=return_type
                 )
                 demo_data["BombEvents"] = self._parse_bomb_events(
                     return_type=return_type

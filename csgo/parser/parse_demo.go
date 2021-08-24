@@ -771,7 +771,7 @@ func main() {
 		currentRound.TTeam = &tTeam
 		currentRound.CTTeam = &ctTeam
 
-		// Parse round spend
+		// Parse round money
 		tPlayers := gs.TeamTerrorists().Members()
 		currentRound.TBeginMoney = 0
 		ctPlayers := gs.TeamCounterTerrorists().Members()
