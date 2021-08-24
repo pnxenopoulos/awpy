@@ -100,15 +100,15 @@ type GameRound struct {
 type GrenadeAction struct {
 	Tick            int64   `json:"Tick"`
 	Second          float64 `json:"Second"`
-	PlayerSteamID   int64   `json:"PlayerSteamID"`
-	PlayerName      string  `json:"PlayerName"`
-	PlayerTeam      *string `json:"PlayerTeam"`
-	PlayerSide      string  `json:"PlayerSide"`
-	PlayerX         float64 `json:"PlayerX"`
-	PlayerY         float64 `json:"PlayerY"`
-	PlayerZ         float64 `json:"PlayerZ"`
-	PlayerAreaID    int64   `json:"PlayerAreaID"`
-	PlayerAreaName  string  `json:"PlayerAreaName"`
+	ThrowerSteamID  int64   `json:"ThrowerSteamID"`
+	ThrowerName     string  `json:"ThrowerName"`
+	ThrowerTeam     *string `json:"ThrowerTeam"`
+	ThrowerSide     string  `json:"ThrowerSide"`
+	ThrowerX        float64 `json:"ThrowerX"`
+	ThrowerY        float64 `json:"ThrowerY"`
+	ThrowerZ        float64 `json:"ThrowerZ"`
+	ThrowerAreaID   int64   `json:"ThrowerAreaID"`
+	ThrowerAreaName string  `json:"ThrowerAreaName"`
 	Grenade         string  `json:"GrenadeType"`
 	GrenadeX        float64 `json:"GrenadeX"`
 	GrenadeY        float64 `json:"GrenadeY"`
@@ -235,7 +235,7 @@ type WeaponFireAction struct {
 	PlayerViewX    float64 `json:"PlayerViewX"`
 	PlayerViewY    float64 `json:"PlayerViewY"`
 	PlayerStrafe   bool    `json:"PlayerStrafe"`
-	WeaponName     string  `json:"WeaponName"`
+	Weapon         string  `json:"Weapon"`
 }
 
 // FlashAction events
@@ -1044,7 +1044,7 @@ func main() {
 			currentWeaponFire.PlayerX = float64(playerPos.X)
 			currentWeaponFire.PlayerY = float64(playerPos.Y)
 			currentWeaponFire.PlayerZ = float64(playerPos.Z)
-			currentWeaponFire.WeaponName = e.Weapon.String()
+			currentWeaponFire.Weapon = e.Weapon.String()
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
@@ -1267,8 +1267,8 @@ func main() {
 			currentGrenade := GrenadeAction{}
 			currentGrenade.Tick = int64(gs.IngameTick())
 			currentGrenade.Second = float64((float64(currentGrenade.Tick) - float64(currentRound.FreezeTimeEnd)) / float64(currentGame.TickRate))
-			currentGrenade.PlayerSteamID = int64(e.Projectile.Thrower.SteamID64)
-			currentGrenade.PlayerName = e.Projectile.Thrower.Name
+			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
+			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
 			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
 			playerSide := "Unknown"
 
@@ -1278,10 +1278,10 @@ func main() {
 			switch e.Projectile.Thrower.Team {
 			case common.TeamTerrorists:
 				playerSide = "T"
-				currentGrenade.PlayerTeam = &tTeam
+				currentGrenade.ThrowerTeam = &tTeam
 			case common.TeamCounterTerrorists:
 				playerSide = "CT"
-				currentGrenade.PlayerTeam = &ctTeam
+				currentGrenade.ThrowerTeam = &ctTeam
 			case common.TeamSpectators:
 				playerSide = "Spectator"
 			case common.TeamUnassigned:
@@ -1289,11 +1289,17 @@ func main() {
 			default:
 				playerSide = "Unknown"
 			}
+			currentGrenade.ThrowerSide = playerSide
 
-			// Player location
-			currentGrenade.PlayerSide = playerSide
-			playerPos := e.Projectile.Thrower.LastAlivePosition
-			playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
+			// Player location (use weaponfire event)
+			playerPoint := gonav.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
+
+			for _, shot := range currentRound.WeaponFires {
+				if shot.PlayerSteamID == currentGrenade.ThrowerSteamID && shot.Weapon == currentGrenade.Grenade {
+					playerPoint = gonav.Vector3{X: float32(shot.PlayerX), Y: float32(shot.PlayerY), Z: float32(shot.PlayerZ)}
+				}
+			}
+
 			playerArea := mesh.GetNearestArea(playerPoint, true)
 			var playerAreaID int64
 			playerAreaPlace := ""
@@ -1307,11 +1313,11 @@ func main() {
 				}
 			}
 
-			currentGrenade.PlayerAreaID = playerAreaID
-			currentGrenade.PlayerAreaName = playerAreaPlace
-			currentGrenade.PlayerX = float64(playerPos.X)
-			currentGrenade.PlayerY = float64(playerPos.Y)
-			currentGrenade.PlayerZ = float64(playerPos.Z)
+			currentGrenade.ThrowerAreaID = playerAreaID
+			currentGrenade.ThrowerAreaName = playerAreaPlace
+			currentGrenade.ThrowerX = float64(playerPoint.X)
+			currentGrenade.ThrowerY = float64(playerPoint.Y)
+			currentGrenade.ThrowerZ = float64(playerPoint.Z)
 
 			// Grenade Location
 			grenadePos := e.Projectile.Position()
@@ -1946,8 +1952,8 @@ func main() {
 
 		// Make sure that teams are accurately set after half
 		if currentGame.Rounds[15].CTTeam == currentGame.Rounds[14].CTTeam {
-			currentGame.Rounds[15].CTTeam = currentGame.Rounds[15].TTeam
-			currentGame.Rounds[15].TTeam = currentGame.Rounds[15].CTTeam
+			currentGame.Rounds[15].CTTeam = currentGame.Rounds[14].TTeam
+			currentGame.Rounds[15].TTeam = currentGame.Rounds[14].CTTeam
 		}
 
 		// Set the correct round start for round 0
