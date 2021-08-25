@@ -1272,8 +1272,8 @@ def team_box_score(
     e_stats = econ_stats(round_data, round_filters)
     for index in e_stats.index:
         e_stats.iloc[index, 0] = e_stats["Side"].str.rsplit(n=1)[index][0]
-        x = e_stats.iloc[index, 1:-4].sum()
-        e_stats.iloc[index, -3:] = e_stats.iloc[index, -3:] * x
+        rounds = e_stats.iloc[index, 1:-4].sum()
+        e_stats.iloc[index, -3:] = e_stats.iloc[index, -3:] * rounds
     e_stats = e_stats.groupby(["Side"]).sum()
     e_stats.reset_index(inplace=True)
     e_stats.iloc[:, -3:] = (
