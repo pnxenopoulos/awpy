@@ -204,7 +204,6 @@ type KillAction struct {
 	IsHeadshot          bool     `json:"IsHeadshot"`
 	VictimBlinded       bool     `json:"VictimBlinded"`
 	AttackerBlinded     bool     `json:"AttackerBlinded"`
-	AssistedFlash       bool     `json:"AssistedFlash"` // Better to go off of "VictimBlinded"
 	FlashThrowerSteamID *int64   `json:"FlashThrowerSteamID"`
 	FlashThrowerName    *string  `json:"FlashThrowerName"`
 	FlashThrowerTeam    *string  `json:"FlashThrowerTeam"`
@@ -322,11 +321,20 @@ type PlayerInfo struct {
 	ActiveWeapon    string   `json:"ActiveWeapon"`
 	TotalUtility    int64    `json:"TotalUtility"`
 	IsAlive         bool     `json:"IsAlive"`
-	IsFlashed       bool     `json:"IsFlashed"`
+	IsBlinded       bool     `json:"IsBlinded"`
 	IsAirborne      bool     `json:"IsAirborne"`
 	IsDucking       bool     `json:"IsDucking"`
+	IsDuckingInProg bool     `json:"IsDuckingInProgress"` //
+	IsUnducking     bool     `json:"IsUnDuckingInProgress"` //
+	IsDefusing      bool     `json:"IsDefusing"` // ent
+	IsPlanting      bool     `json:"IsPlanting` // ent
+	IsReloading     bool     `json:"IsReloading"` // ent
+	IsInBombZone    bool     `json:"IsInBombZone"` //
+	IsInBuyZone     bool     `json:"IsInBuyZone"` //
+	IsStanding      bool     `json:"IsStanding"` //
 	IsScoped        bool     `json:"IsScoped"`
 	IsWalking       bool     `json:"IsWalking"`
+	IsUnknown       bool     `json:"IsUnkown"` //
 	Inventory       []string `json:"Inventory"`
 	EqVal           int64    `json:"EquipmentValue"`
 	Money           int64    `json:"Money"`
@@ -478,11 +486,20 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	currentPlayer.Hp = int64(p.Health())
 	currentPlayer.Armor = int64(p.Armor())
 	currentPlayer.IsAlive = p.IsAlive()
-	currentPlayer.IsFlashed = p.IsBlinded()
+	currentPlayer.IsBlinded = p.IsBlinded()
 	currentPlayer.IsAirborne = p.IsAirborne()
+	currentPlayer.IsDefusing = p.IsDefusing
+	currentPlayer.IsPlanting = p.IsPlanting
+	currentPlayer.IsReloading = p.IsReloading
+	currentPlayer.IsDuckingInProg = p.IsDuckingInProgress()
+	currentPlayer.IsUnducking = p.IsUnDuckingInProgress()
 	currentPlayer.IsDucking = p.IsDucking()
+	currentPlayer.IsInBombZone = p.IsInBombZone()
+	currentPlayer.IsInBuyZone = p.IsInBuyZone()
+	currentPlayer.IsStanding = p.IsStanding()
 	currentPlayer.IsScoped = p.IsScoped()
 	currentPlayer.IsWalking = p.IsWalking()
+	currentPlayer.IsUnknown = p.IsUnknown()
 	currentPlayer.HasDefuse = p.HasDefuseKit()
 	currentPlayer.HasHelmet = p.HasHelmet()
 	currentPlayer.Money = int64(p.Money())
@@ -1375,7 +1392,6 @@ func main() {
 		currentKill.IsWallbang = e.IsWallBang()
 		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
 		currentKill.IsHeadshot = e.IsHeadshot
-		currentKill.AssistedFlash = e.AssistedFlash
 		currentKill.AttackerBlinded = e.AttackerBlind
 		currentKill.NoScope = e.NoScope
 		currentKill.ThruSmoke = e.ThroughSmoke
@@ -1489,28 +1505,38 @@ func main() {
 			// Parse flash info for kill
 			currentKill.VictimBlinded = e.Victim.IsBlinded()
 			if e.Victim.IsBlinded() {
-				if e.AssistedFlash == true {
-					currentKill.FlashThrowerSteamID = currentKill.AssisterSteamID
-					currentKill.FlashThrowerName = currentKill.AssisterName
-					currentKill.FlashThrowerTeam = currentKill.AssisterTeam
-					currentKill.FlashThrowerSide = currentKill.AssisterSide
-				} else {
 					// Find their latest flash event
 					for _, flash := range currentRound.Flashes {
 						if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
-							currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
-							currentKill.FlashThrowerName = &flash.AttackerName
-							currentKill.FlashThrowerTeam = &flash.AttackerTeam
-							currentKill.FlashThrowerSide = &flash.AttackerSide
+							if e.AssistedFlash {
+								// If assisted flash, put assister info to flashthrower
+								currentKill.FlashThrowerSteamID = currentKill.AssisterSteamID
+								currentKill.FlashThrowerName = currentKill.AssisterName
+								currentKill.FlashThrowerTeam = currentKill.AssisterTeam
+								currentKill.FlashThrowerSide = currentKill.AssisterSide
+
+								currentKill.AssisterSteamID = nil
+								currentKill.AssisterName = nil
+								currentKill.AssisterTeam = nil
+								currentKill.AssisterSide = nil
+							} else {
+								currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
+								currentKill.FlashThrowerName = &flash.AttackerName
+								currentKill.FlashThrowerTeam = &flash.AttackerTeam
+								currentKill.FlashThrowerSide = &flash.AttackerSide
+							}
+							
+
+							
 							
 							// Sometimes assister may be nil, so we will set assister to the flash thrower
-							if e.Assister == nil {
-								currentKill.AssisterSteamID = &flash.AttackerSteamID
-								currentKill.AssisterName = &flash.AttackerName
-								currentKill.AssisterTeam = &flash.AttackerTeam
-								currentKill.AssisterSide = &flash.AttackerSide
-								currentKill.AssistedFlash = true
-							}
+							//if e.Assister == nil {
+							//	currentKill.AssisterSteamID = &flash.AttackerSteamID
+							//	currentKill.AssisterName = &flash.AttackerName
+							//	currentKill.AssisterTeam = &flash.AttackerTeam
+							//	currentKill.AssisterSide = &flash.AttackerSide
+							//	currentKill.AssistedFlash = true
+							//}
 						}
 					}
 				}
