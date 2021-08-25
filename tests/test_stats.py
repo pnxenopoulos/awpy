@@ -187,7 +187,7 @@ class TestStats:
     def test_flash_stats(self):
         """Tests flash_stats function."""
         assert (
-            flash_stats(self.flash_data, self.grenade_data, self.kills_data)["EF"].sum()
+            flash_stats(self.flash_data, self.grenade_data, self.kill_data)["EF"].sum()
             == 114
         )
 
