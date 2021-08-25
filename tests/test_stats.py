@@ -25,6 +25,7 @@ from csgo.analytics.stats import (
     player_box_score,
     team_box_score,
 )
+from csgo.analytics.utils import agg_damages
 
 
 class TestStats:
@@ -42,20 +43,17 @@ class TestStats:
         open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
 
         self.parser = DemoParser(
-            demofile="astralis-vs-liquid-m2-nuke.dem",
-            demo_id="test",
-            parse_rate=128,
+            demofile="astralis-vs-liquid-m2-nuke.dem", demo_id="test", parse_rate=128,
         )
 
         self.data = self.parser.parse(return_type="df")
-        self.data_json = self.parser.parse()
         self.damage_data = self.data["Damages"]
         self.flash_data = self.data["Flashes"]
         self.grenade_data = self.data["Grenades"]
         self.kill_data = self.data["Kills"]
         self.bomb_data = self.data["BombEvents"]
         self.round_data = self.data["Rounds"]
-        self.round_data_json = self.data_json["GameRounds"]
+        self.weapon_fire_data = self.data["WeaponFires"]
         self.invalid_numeric_filter = {"Kills": [10]}
         self.invalid_logical_operator = {"Kills": ["=invalid=10"]}
         self.invalid_numeric_value = {"Kills": ["==1invalid0"]}
@@ -73,13 +71,7 @@ class TestStats:
         ]
         self.kills = pd.DataFrame(
             {
-                "Astralis Player": [
-                    "Magisk",
-                    "Xyp9x",
-                    "device",
-                    "dupreeh",
-                    "gla1ve",
-                ],
+                "Astralis Player": ["Magisk", "Xyp9x", "device", "dupreeh", "gla1ve",],
                 "1st Half Headshot Kills": [3, 2, 7, 5, 2],
             }
         )
@@ -156,13 +148,13 @@ class TestStats:
     def test_accuracy(self):
         """Tests accuracy function."""
         assert (
-            round(accuracy(self.damage_data, self.round_data_json)["ACC%"].sum(), 2)
-            == 1.89
+            round(accuracy(self.damage_data, self.weapon_fire_data)["ACC%"].sum(), 2)
+            == 1.83
         )
 
     def test_kast(self):
         """Tests kast function."""
-        assert round(kast(self.kill_data, "KAST")["KAST%"].sum(), 2) == 6.39
+        assert round(kast(self.kill_data, "KAST")["T"].sum(), 2) == 22
 
     def test_kill_stats(self):
         """Tests kill_stats function."""
@@ -172,7 +164,7 @@ class TestStats:
                     self.damage_data,
                     self.kill_data,
                     self.round_data,
-                    self.round_data_json,
+                    self.weapon_fire_data,
                 )["KDR"].sum(),
                 2,
             )
@@ -194,8 +186,10 @@ class TestStats:
 
     def test_flash_stats(self):
         """Tests flash_stats function."""
-        # assert flash_stats(self.flash_data, self.grenade_data)["EF"].sum() == 144
-        assert True == True
+        assert (
+            flash_stats(self.flash_data, self.grenade_data, self.kills_data)["EF"].sum()
+            == 114
+        )
 
     def test_bomb_stats(self):
         """Tests bomb_stats function."""
@@ -203,10 +197,7 @@ class TestStats:
 
     def test_econ_stats(self):
         """Tests econ_stats function."""
-        assert (
-            econ_stats(self.round_data, self.round_data_json)["Avg Spend"].sum()
-            == 53371
-        )
+        assert econ_stats(self.round_data)["Avg Spend"].sum() == 53371
 
     def test_weapon_type(self):
         """Tests weapon_type function."""
@@ -248,7 +239,7 @@ class TestStats:
                 self.grenade_data,
                 self.kill_data,
                 self.round_data,
-                self.round_data_json,
+                self.weapon_fire_data,
             )["K"].sum()
             == 179
         )
@@ -262,9 +253,13 @@ class TestStats:
                 self.grenade_data,
                 self.kill_data,
                 self.round_data,
-                self.round_data_json,
+                self.weapon_fire_data,
             )
             .iloc[4]
             .sum()
             == 180
         )
+
+    def test_agg_damages(self):
+        """Tests agg_damages function."""
+        assert len(agg_damages(self.damage_data.copy(),) == 820)
