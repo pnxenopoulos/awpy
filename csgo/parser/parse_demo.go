@@ -1501,29 +1501,6 @@ func main() {
 				currentKill.Distance = 0.0
 			}
 
-			// Parse flash info for kill
-			currentKill.VictimBlinded = e.Victim.IsBlinded()
-			if e.Victim.IsBlinded() {
-				// Find their latest flash event
-				for _, flash := range currentRound.Flashes {
-					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
-						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
-						currentKill.FlashThrowerName = &flash.AttackerName
-						currentKill.FlashThrowerTeam = &flash.AttackerTeam
-						currentKill.FlashThrowerSide = &flash.AttackerSide
-						
-						// Sometimes assister may be nil, so we will set assister to the flash thrower
-						//if e.Assister == nil {
-						//	currentKill.AssisterSteamID = &flash.AttackerSteamID
-						//	currentKill.AssisterName = &flash.AttackerName
-						//	currentKill.AssisterTeam = &flash.AttackerTeam
-						//	currentKill.AssisterSide = &flash.AttackerSide
-						//	currentKill.AssistedFlash = true
-						//}
-					}
-				}
-			}
-
 			// Parse teamkill
 			currentKill.IsTeamkill = false
 			currentKill.IsSuicide = false
@@ -1582,6 +1559,29 @@ func main() {
 				currentKill.PlayerTradedName = currentRound.Kills[len(currentRound.Kills)-1].VictimName
 				currentKill.PlayerTradedSteamID = currentRound.Kills[len(currentRound.Kills)-1].VictimSteamID
 				currentKill.PlayerTradedTeam = currentRound.Kills[len(currentRound.Kills)-1].VictimTeam
+			}
+		}
+
+		// Parse flash info for kill
+		currentKill.VictimBlinded = e.Victim.IsBlinded()
+		if e.Victim.IsBlinded() {
+			
+			// This will only be true if in the killfeed the assister is the flasher
+			if e.AssistedFlash {
+				currentKill.AssisterSteamID = nil
+				currentKill.AssisterName = nil
+				currentKill.AssisterTeam = nil
+				currentKill.AssisterSide = nil
+			}
+
+			// Find their latest flash event
+			for _, flash := range currentRound.Flashes {
+				if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
+					currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
+					currentKill.FlashThrowerName = &flash.AttackerName
+					currentKill.FlashThrowerTeam = &flash.AttackerTeam
+					currentKill.FlashThrowerSide = &flash.AttackerSide
+				}
 			}
 		}
 		
