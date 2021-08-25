@@ -375,6 +375,26 @@ class TestDemoParser:
                 )
                 assert demo_ast == real_ast
 
+    def _count_flash_assists(self, json):
+        total_flash_ast = 0
+        for r in json["GameRounds"]:
+            for k in r["Kills"]:
+                if k["FlashThrowerName"] and (k["FlashThrowerTeam"] != k["VictimTeam"]):
+                    total_flash_ast += 1
+        return total_flash_ast
+
+    def test_parsed_flash_assists(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                demo_flash_ast = self._count_flash_assists(self.demo_data[demo]["json"])
+                real_flash_ast = self.demo_data[demo]["totalFlashAssists"]
+                print(
+                    "[{0}] Parsed {1} flash assists, real flash assists are {2}".format(
+                        demo, demo_flash_ast, real_flash_ast
+                    )
+                )
+                assert demo_flash_ast == real_flash_ast
+
     def test_parsed_roundendreasons(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
