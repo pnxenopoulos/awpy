@@ -499,7 +499,7 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	currentPlayer.IsStanding = p.IsStanding()
 	currentPlayer.IsScoped = p.IsScoped()
 	currentPlayer.IsWalking = p.IsWalking()
-	currentPlayer.IsUnknown = p.IsUnknown()
+	currentPlayer.IsUnknown = p.IsUnknown
 	currentPlayer.HasDefuse = p.HasDefuseKit()
 	currentPlayer.HasHelmet = p.HasHelmet()
 	currentPlayer.Money = int64(p.Money())
@@ -586,9 +586,8 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 			return true
 		}
 		return false
-	} else {
-		return false
 	}
+	return false
 }
 
 func countAlivePlayers(players []PlayerInfo) int64 {
@@ -741,7 +740,7 @@ func main() {
 
 	currentRound := GameRound{}
 
-	ROUND_RESTART_DELAY := int64(5)
+	RoundRestartDelay := int64(5)
 
 	// Parse round starts
 	p.RegisterEventHandler(func(e events.RoundStart) {
@@ -773,9 +772,9 @@ func main() {
 
 			// Change so that round restarts are parsed using the server convar
 			if serverConfig.RoundRestartDelay == 0 {
-				ROUND_RESTART_DELAY = 5
+				RoundRestartDelay = 5
 			} else {
-				ROUND_RESTART_DELAY = serverConfig.RoundRestartDelay
+				RoundRestartDelay = serverConfig.RoundRestartDelay
 			}
 		}
 
@@ -827,7 +826,7 @@ func main() {
 		gs := p.GameState()
 
 		if roundInEndTime == 0 {
-			currentRound.EndTick = int64(gs.IngameTick()) - (ROUND_RESTART_DELAY * currentGame.TickRate)
+			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 			currentRound.CTBeginEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
 			currentRound.TBeginEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
@@ -876,7 +875,7 @@ func main() {
 				currentRound.WinningSide = "CT"
 			}
 		} else {
-			currentRound.EndTick = int64(gs.IngameTick()) - (ROUND_RESTART_DELAY * currentGame.TickRate)
+			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 		}
 	})
@@ -919,7 +918,7 @@ func main() {
 		}
 
 		currentRound.EndTick = int64(gs.IngameTick())
-		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (ROUND_RESTART_DELAY * currentGame.TickRate)
+		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (RoundRestartDelay * currentGame.TickRate)
 		currentRound.Reason = convertRoundEndReason(e.Reason)
 		currentRound.WinningSide = winningTeam
 
@@ -1505,39 +1504,35 @@ func main() {
 			// Parse flash info for kill
 			currentKill.VictimBlinded = e.Victim.IsBlinded()
 			if e.Victim.IsBlinded() {
-					// Find their latest flash event
-					for _, flash := range currentRound.Flashes {
-						if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
-							if e.AssistedFlash {
-								// If assisted flash, put assister info to flashthrower
-								currentKill.FlashThrowerSteamID = currentKill.AssisterSteamID
-								currentKill.FlashThrowerName = currentKill.AssisterName
-								currentKill.FlashThrowerTeam = currentKill.AssisterTeam
-								currentKill.FlashThrowerSide = currentKill.AssisterSide
+				// Find their latest flash event
+				for _, flash := range currentRound.Flashes {
+					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
+						if e.AssistedFlash {
+							// If assisted flash, put assister info to flashthrower
+							currentKill.FlashThrowerSteamID = currentKill.AssisterSteamID
+							currentKill.FlashThrowerName = currentKill.AssisterName
+							currentKill.FlashThrowerTeam = currentKill.AssisterTeam
+							currentKill.FlashThrowerSide = currentKill.AssisterSide
 
-								currentKill.AssisterSteamID = nil
-								currentKill.AssisterName = nil
-								currentKill.AssisterTeam = nil
-								currentKill.AssisterSide = nil
-							} else {
-								currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
-								currentKill.FlashThrowerName = &flash.AttackerName
-								currentKill.FlashThrowerTeam = &flash.AttackerTeam
-								currentKill.FlashThrowerSide = &flash.AttackerSide
-							}
-							
-
-							
-							
-							// Sometimes assister may be nil, so we will set assister to the flash thrower
-							//if e.Assister == nil {
-							//	currentKill.AssisterSteamID = &flash.AttackerSteamID
-							//	currentKill.AssisterName = &flash.AttackerName
-							//	currentKill.AssisterTeam = &flash.AttackerTeam
-							//	currentKill.AssisterSide = &flash.AttackerSide
-							//	currentKill.AssistedFlash = true
-							//}
+							currentKill.AssisterSteamID = nil
+							currentKill.AssisterName = nil
+							currentKill.AssisterTeam = nil
+							currentKill.AssisterSide = nil
+						} else {
+							currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
+							currentKill.FlashThrowerName = &flash.AttackerName
+							currentKill.FlashThrowerTeam = &flash.AttackerTeam
+							currentKill.FlashThrowerSide = &flash.AttackerSide
 						}
+						
+						// Sometimes assister may be nil, so we will set assister to the flash thrower
+						//if e.Assister == nil {
+						//	currentKill.AssisterSteamID = &flash.AttackerSteamID
+						//	currentKill.AssisterName = &flash.AttackerName
+						//	currentKill.AssisterTeam = &flash.AttackerTeam
+						//	currentKill.AssisterSide = &flash.AttackerSide
+						//	currentKill.AssistedFlash = true
+						//}
 					}
 				}
 			}
