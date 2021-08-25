@@ -1507,23 +1507,10 @@ func main() {
 				// Find their latest flash event
 				for _, flash := range currentRound.Flashes {
 					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
-						if e.AssistedFlash {
-							// If assisted flash, put assister info to flashthrower
-							currentKill.FlashThrowerSteamID = currentKill.AssisterSteamID
-							currentKill.FlashThrowerName = currentKill.AssisterName
-							currentKill.FlashThrowerTeam = currentKill.AssisterTeam
-							currentKill.FlashThrowerSide = currentKill.AssisterSide
-
-							currentKill.AssisterSteamID = nil
-							currentKill.AssisterName = nil
-							currentKill.AssisterTeam = nil
-							currentKill.AssisterSide = nil
-						} else {
-							currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
-							currentKill.FlashThrowerName = &flash.AttackerName
-							currentKill.FlashThrowerTeam = &flash.AttackerTeam
-							currentKill.FlashThrowerSide = &flash.AttackerSide
-						}
+						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
+						currentKill.FlashThrowerName = &flash.AttackerName
+						currentKill.FlashThrowerTeam = &flash.AttackerTeam
+						currentKill.FlashThrowerSide = &flash.AttackerSide
 						
 						// Sometimes assister may be nil, so we will set assister to the flash thrower
 						//if e.Assister == nil {
