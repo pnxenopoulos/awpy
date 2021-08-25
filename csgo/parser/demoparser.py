@@ -89,7 +89,7 @@ class DemoParser:
                 "A parse rate of 1 will parse EVERY tick. This process will be very slow."
             )
             self.parse_rate = 1
-        elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128]:
+        elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]:
             self.logger.warning(
                 "Parse rate of "
                 + str(parse_rate)

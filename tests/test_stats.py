@@ -43,7 +43,7 @@ class TestStats:
         open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
 
         self.parser = DemoParser(
-            demofile="astralis-vs-liquid-m2-nuke.dem", demo_id="test", parse_rate=128,
+            demofile="astralis-vs-liquid-m2-nuke.dem", demo_id="test", parse_rate=256,
         )
 
         self.data = self.parser.parse(return_type="df")

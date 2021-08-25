@@ -18,7 +18,7 @@ class TestDemoParser:
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
-            parse_rate=128,
+            parse_rate=256,
         )
 
         with open("tests/test_data.json") as f:
@@ -157,7 +157,7 @@ class TestDemoParser:
                     demofile=file + ".dem",
                     log=True,
                     demo_id=file,
-                    parse_rate=128,
+                    parse_rate=256,
                 )
                 self.parser.parse()
                 if self.parser.parse_error == True:
