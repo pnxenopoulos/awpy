@@ -292,31 +292,9 @@ class DemoParser:
                                 player_item["Second"] = frame["Second"]
                                 player_item["Side"] = side
                                 player_item["TeamName"] = frame[side]["TeamName"]
-                                player_item["PlayerName"] = player["Name"]
-                                player_item["PlayerSteamId"] = player["SteamID"]
-                                player_item["X"] = player["X"]
-                                player_item["Y"] = player["Y"]
-                                player_item["Z"] = player["Z"]
-                                player_item["ViewX"] = player["ViewX"]
-                                player_item["ViewY"] = player["ViewY"]
-                                player_item["AreaId"] = player["AreaID"]
-                                player_item["Hp"] = player["Hp"]
-                                player_item["Armor"] = player["Armor"]
-                                player_item["IsAlive"] = player["IsAlive"]
-                                player_item["IsFlashed"] = player["IsFlashed"]
-                                player_item["IsAirborne"] = player["IsAirborne"]
-                                player_item["IsDucking"] = player["IsDucking"]
-                                player_item["IsScoped"] = player["IsScoped"]
-                                player_item["IsWalking"] = player["IsWalking"]
-                                player_item["EqValue"] = player["EquipmentValue"]
-                                player_item["HasHelmet"] = player["HasHelmet"]
-                                player_item["HasDefuse"] = player["HasDefuse"]
-                                player_item["DistToBombsiteA"] = player[
-                                    "DistToBombsiteA"
-                                ]
-                                player_item["DistToBombsiteB"] = player[
-                                    "DistToBombsiteB"
-                                ]
+                                for col in player.keys():
+                                    if col != "Inventory":
+                                        player_item[col] = player[col]
                                 player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
             player_frames_df["MatchId"] = self.json["MatchID"]

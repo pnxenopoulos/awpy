@@ -324,17 +324,17 @@ type PlayerInfo struct {
 	IsBlinded       bool     `json:"IsBlinded"`
 	IsAirborne      bool     `json:"IsAirborne"`
 	IsDucking       bool     `json:"IsDucking"`
-	IsDuckingInProg bool     `json:"IsDuckingInProgress"` //
-	IsUnducking     bool     `json:"IsUnDuckingInProgress"` //
-	IsDefusing      bool     `json:"IsDefusing"` // ent
-	IsPlanting      bool     `json:"IsPlanting` // ent
-	IsReloading     bool     `json:"IsReloading"` // ent
-	IsInBombZone    bool     `json:"IsInBombZone"` //
-	IsInBuyZone     bool     `json:"IsInBuyZone"` //
-	IsStanding      bool     `json:"IsStanding"` //
+	IsDuckingInProg bool     `json:"IsDuckingInProgress"`
+	IsUnducking     bool     `json:"IsUnDuckingInProgress"`
+	IsDefusing      bool     `json:"IsDefusing"`
+	IsPlanting      bool     `json:"IsPlanting"`
+	IsReloading     bool     `json:"IsReloading"`
+	IsInBombZone    bool     `json:"IsInBombZone"`
+	IsInBuyZone     bool     `json:"IsInBuyZone"`
+	IsStanding      bool     `json:"IsStanding"`
 	IsScoped        bool     `json:"IsScoped"`
 	IsWalking       bool     `json:"IsWalking"`
-	IsUnknown       bool     `json:"IsUnkown"` //
+	IsUnknown       bool     `json:"IsUnkown"`
 	Inventory       []string `json:"Inventory"`
 	EqVal           int64    `json:"EquipmentValue"`
 	Money           int64    `json:"Money"`
