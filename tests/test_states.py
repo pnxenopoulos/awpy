@@ -47,7 +47,7 @@ class TestStates:
         assert "Global" in game_state.keys()
 
     def test_vector_output(self):
-        """Tests taht the vector output is correct"""
+        """Tests that the vector output is correct"""
         game_state = generate_game_state(self.data["GameRounds"][0]["Frames"][0])
         assert len(game_state["CT"]) == 8
         assert len(game_state["T"]) == 8

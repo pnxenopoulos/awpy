@@ -97,7 +97,7 @@ def _generate_vector_state(frame):
     state = {}
     state["CT"] = _generate_team_vector_state(frame["CT"])
     state["T"] = _generate_team_vector_state(frame["T"])
-    state["Global"] = _generate_team_vector_state(frame)
+    state["Global"] = _generate_world_vector_state(frame)
     return state
 
 def _generate_graph_state(frame):
