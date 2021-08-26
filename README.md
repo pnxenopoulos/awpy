@@ -77,3 +77,5 @@ This repository contains code for CSGO analysis. It is structured as follows:
 
 ## Acknowledgments
 This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages. To fix errors brought about in the gonav package from Go 1.14, we provide an updated version in the [gonavparse](https://github.com/pnxenopoulos/csgonavparse).
+
+Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage.
