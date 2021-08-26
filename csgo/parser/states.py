@@ -1,5 +1,5 @@
 def generate_game_state(frame, state_type="vector"):
-    """Returns flashes as either a list or Pandas dataframe
+    """Returns a frame into a game state form (one of vector, graph or set)
 
     Args:
         frame (dict)        : Dict output of a frame generated from the DemoParser class
@@ -29,3 +29,36 @@ def generate_game_state(frame, state_type="vector"):
         state = _generate_set_state(frame)
 
     return state
+
+def _generate_vector_state(frame):
+    """Returns a game state as a vector
+
+    Args:
+        frame (dict) : Dict output of a frame generated from the DemoParser class
+
+    Returns:
+        A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
+    """
+    return {"CT": [], "T": [], "Global": []}
+
+def _generate_graph_state(frame):
+    """Returns a game state as a graph
+
+    Args:
+        frame (dict) : Dict output of a frame generated from the DemoParser class
+
+    Returns:
+        A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
+    """
+    return {"CT": [], "T": [], "Global": []}
+
+def _generate_set_state(frame):
+    """Returns a game state as a set
+
+    Args:
+        frame (dict) : Dict output of a frame generated from the DemoParser class
+
+    Returns:
+        A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
+    """
+    return {"CT": [], "T": [], "Global": []}

@@ -37,3 +37,11 @@ class TestStates:
         """Tests that wrong state type raises error"""
         with pytest.raises(ValueError):
             generate_game_state(self.data["GameRounds"][0]["Frames"][0])
+
+    def test_output(self):
+        """Tests that output is a dict with 3 keys"""
+        game_states = generate_game_state(self.data["GameRounds"][0]["Frames"][0])
+        assert type(game_states) == dict
+        assert "CT" in game_states.keys()
+        assert "T" in game_states.keys()
+        assert "Global" in game_states.keys()
