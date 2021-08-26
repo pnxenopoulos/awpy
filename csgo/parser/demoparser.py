@@ -81,6 +81,14 @@ class DemoParser:
         self.logger.info("Setting demo id to " + self.demo_id)
 
         # Handle parse rate. If the parse rate is less than 64, likely to be slow
+        if parse_rate < 1 or type(parse_rate) is not int:
+            self.logger.warning(
+                "Parse rate of "
+                + str(parse_rate)
+                + " not acceptable! Parse rate must be an integer greater than 0."
+            )
+            self.parse_rate = 128
+        
         if parse_rate is None:
             self.logger.warning("No parse rate set")
             self.parse_rate = 128
@@ -89,7 +97,7 @@ class DemoParser:
                 "A parse rate of 1 will parse EVERY tick. This process will be very slow."
             )
             self.parse_rate = 1
-        elif parse_rate < 64:
+        elif parse_rate < 64 and parse_rate > 1:
             self.logger.warning(
                 "A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos."
             )
@@ -99,13 +107,6 @@ class DemoParser:
                 "A high parse rate means very few frames. Only use for testing purposes."
             )
             self.parse_rate = parse_rate
-        elif parse_rate < 1 or type(parse_rate) is not int:
-            self.logger.warning(
-                "Parse rate of "
-                + str(parse_rate)
-                + " not acceptable! Parse rate must be an integer greater than 0."
-            )
-            self.parse_rate = 128
         else:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
