@@ -87,7 +87,8 @@ class DemoParser:
                 + str(parse_rate)
                 + " not acceptable! Parse rate must be an integer greater than 0."
             )
-            self.parse_rate = 128
+            parse_rate = 128
+            self.parse_rate = parse_rate
         
         if parse_rate is None:
             self.logger.warning("No parse rate set")
