@@ -283,7 +283,7 @@ def kast(
         kast_string: A string specifying which combination of KAST statistics
             to use.
         flash_assists: A boolean specifying if flash assists are to be
-            counted as assists or not. 
+            counted as assists or not.
         kill_filters: A dictionary where the keys are the columns of the
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
@@ -439,7 +439,12 @@ def kill_stats(
         [stats[4], "K"],
     )
     deaths = calc_stats(
-        kill_data, death_filters, [stats[1]], [stats[1]], [["size"]], [stats[4], "D"],
+        kill_data,
+        death_filters,
+        [stats[1]],
+        [stats[1]],
+        [["size"]],
+        [stats[4], "D"],
     )
     assists = calc_stats(
         kill_data.loc[kill_data["AssisterTeam"] != kill_data["VictimTeam"]],
@@ -746,7 +751,8 @@ def flash_stats(
 
 
 def bomb_stats(
-    bomb_data: pd.DataFrame, bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
+    bomb_data: pd.DataFrame,
+    bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with bomb event statistics.
 

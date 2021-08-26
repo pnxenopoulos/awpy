@@ -43,7 +43,9 @@ class TestStats:
         open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
 
         self.parser = DemoParser(
-            demofile="astralis-vs-liquid-m2-nuke.dem", demo_id="test", parse_rate=256,
+            demofile="astralis-vs-liquid-m2-nuke.dem",
+            demo_id="test",
+            parse_rate=256,
         )
 
         self.data = self.parser.parse(return_type="df")
@@ -71,7 +73,13 @@ class TestStats:
         ]
         self.kills = pd.DataFrame(
             {
-                "Astralis Player": ["Magisk", "Xyp9x", "device", "dupreeh", "gla1ve",],
+                "Astralis Player": [
+                    "Magisk",
+                    "Xyp9x",
+                    "device",
+                    "dupreeh",
+                    "gla1ve",
+                ],
                 "1st Half Headshot Kills": [3, 2, 7, 5, 2],
             }
         )
@@ -262,4 +270,9 @@ class TestStats:
 
     def test_agg_damages(self):
         """Tests agg_damages function."""
-        assert len(agg_damages(self.damage_data.copy(),) == 820)
+        assert len(
+            agg_damages(
+                self.damage_data.copy(),
+            )
+            == 820
+        )

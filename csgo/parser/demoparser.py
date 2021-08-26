@@ -29,7 +29,7 @@ class DemoParser:
         outpath=None,
         log=False,
         demo_id=None,
-        parse_rate=None,
+        parse_rate=128,
         trade_time=5,
         buy_style="hltv",
     ):
@@ -80,7 +80,7 @@ class DemoParser:
             self.outpath = os.path.abspath(outpath)
         self.logger.info("Setting demo id to " + self.demo_id)
 
-        # Handle parse rate. Must be a power of 2^0 to 2^7. If not, then default to 2^5.
+        # Handle parse rate. If the parse rate is less than 64, likely to be slow
         if parse_rate is None:
             self.logger.warning("No parse rate set")
             self.parse_rate = 128
@@ -89,23 +89,51 @@ class DemoParser:
                 "A parse rate of 1 will parse EVERY tick. This process will be very slow."
             )
             self.parse_rate = 1
-        elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]:
+        elif parse_rate < 64:
+            self.logger.warning(
+                "A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos."
+            )
+            self.parse_rate = parse_rate
+        elif parse_rate >= 256:
+            self.logger.warning(
+                "A high parse rate means very few frames. Only use for testing purposes."
+            )
+            self.parse_rate = parse_rate
+        elif parse_rate < 1 or type(parse_rate) is not int:
             self.logger.warning(
                 "Parse rate of "
                 + str(parse_rate)
-                + " not acceptable! Parse rate must be a power of 2 between 2^0 and 2^7. Setting to DEFAULT value of 128."
+                + " not acceptable! Parse rate must be an integer greater than 0."
             )
             self.parse_rate = 128
         else:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
 
-        # Set trade time
-        self.trade_time = trade_time
+        # Handle trade time
+        if trade_time <= 0:
+            self.logger.warning(
+                "Trade time can't be negative, setting to default value of 5 seconds."
+            )
+            self.trade_time = 5
+        elif trade_time > 7:
+            self.logger.warning(
+                "Trade time of "
+                + str(trade_time)
+                + " is rather long. Consider a value between 4-7."
+            )
+        else:
+            self.trade_time = trade_time
         self.logger.info("Setting trade time to " + str(self.trade_time))
 
-        # Set buy style
-        self.buy_style = buy_style
+        # Handle buy style
+        if buy_style not in ["hltv", "csgo"]:
+            self.logger.warning(
+                "Buy style not one of hltv, csgo, will be set to hltv by default"
+            )
+            self.buy_style = "hltv"
+        else:
+            self.buy_style = buy_style
         self.logger.info("Setting buy style to " + str(self.buy_style))
 
         # Set parse error to False

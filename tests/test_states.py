@@ -18,7 +18,7 @@ class TestStates:
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=True,
             demo_id="test",
-            parse_rate=128,
+            parse_rate=256,
         )
         self.data = self.parser.parse()
 
@@ -32,7 +32,7 @@ class TestStates:
         frame = "not a dict"
         with pytest.raises(ValueError):
             generate_game_state(frame)
-    
+
     def test_wrong_state_type(self):
         """Tests that wrong state type raises error"""
         with pytest.raises(ValueError):

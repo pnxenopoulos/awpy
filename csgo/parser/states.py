@@ -10,8 +10,10 @@ def generate_game_state(frame, state_type="vector"):
         A dict with keys "T", "CT" and "Global"
     """
     if type(frame) is not dict:
-        raise ValueError("Frame input must be a dict from the DemoParser.parse() output")
-        
+        raise ValueError(
+            "Frame input must be a dict from the DemoParser.parse() output"
+        )
+
     if state_type not in ["vector", "graph", "set"]:
         raise ValueError("Supported state types are vector, graph and set.")
 

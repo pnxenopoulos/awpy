@@ -75,13 +75,23 @@ class TestDemoParser:
                 parse_rate=128,
             )
 
-    def test_parse_rate_bad(self):
+    def test_parse_rate_negative(self):
         """Tests if bad parse rates fail"""
         self.parser_bad_parse_rate = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
             log=False,
             demo_id="test",
-            parse_rate=129,
+            parse_rate=-1,
+        )
+        assert self.parser_bad_parse_rate.parse_rate == 128
+
+    def test_parse_rate_float(self):
+        """Tests if bad parse rates fail"""
+        self.parser_bad_parse_rate = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+            parse_rate=64.5,
         )
         assert self.parser_bad_parse_rate.parse_rate == 128
 
@@ -131,6 +141,18 @@ class TestDemoParser:
         assert self.parser_opts.trade_time == 7
         assert self.parser_opts.buy_style == "hltv"
 
+    def test_bad_parse_opts(self):
+        """Tests bad parsing options"""
+        self.parser_opts = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+            trade_time=-2,
+            buy_style="test",
+        )
+        assert self.parser_opts.trade_time == 5
+        assert self.parser_opts.buy_style == "hltv"
+
     def test_parse_demo(self):
         """Tests if parse actually outputs a file"""
         self.parser._parse_demo()
@@ -173,8 +195,14 @@ class TestDemoParser:
     def test_parsed_metadata(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                assert self.demo_data[demo]["json"]["TickRate"] == self.demo_data[demo]["tickRate"]
-                assert self.demo_data[demo]["json"]["ServerVars"]["MaxRounds"] == self.demo_data[demo]["maxRounds"]
+                assert (
+                    self.demo_data[demo]["json"]["TickRate"]
+                    == self.demo_data[demo]["tickRate"]
+                )
+                assert (
+                    self.demo_data[demo]["json"]["ServerVars"]["MaxRounds"]
+                    == self.demo_data[demo]["maxRounds"]
+                )
 
     def test_round_ticks(self):
         for demo in self.demo_data:
@@ -187,30 +215,63 @@ class TestDemoParser:
     def test_half_side_switch(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                assert self.demo_data[demo]["json"]["GameRounds"][15]["CTTeam"] == self.demo_data[demo]["json"]["GameRounds"][14]["TTeam"]
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][15]["CTTeam"]
+                    == self.demo_data[demo]["json"]["GameRounds"][14]["TTeam"]
+                )
 
     def test_pistol_rounds(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                assert self.demo_data[demo]["json"]["GameRounds"][0]["CTBuyType"] == "Pistol"
-                assert self.demo_data[demo]["json"]["GameRounds"][0]["TBuyType"] == "Pistol"
-                assert self.demo_data[demo]["json"]["GameRounds"][15]["CTBuyType"] == "Pistol"
-                assert self.demo_data[demo]["json"]["GameRounds"][15]["TBuyType"] == "Pistol"
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][0]["CTBuyType"]
+                    == "Pistol"
+                )
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][0]["TBuyType"]
+                    == "Pistol"
+                )
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][15]["CTBuyType"]
+                    == "Pistol"
+                )
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][15]["TBuyType"]
+                    == "Pistol"
+                )
 
     def test_start_money(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                assert self.demo_data[demo]["json"]["GameRounds"][0]["CTRoundStartEqVal"] == 1000
-                assert self.demo_data[demo]["json"]["GameRounds"][0]["CTRoundStartMoney"] == 4000
-                assert self.demo_data[demo]["json"]["GameRounds"][0]["TRoundStartEqVal"] == 1000
-                assert self.demo_data[demo]["json"]["GameRounds"][0]["TRoundStartMoney"] == 4000
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][0]["CTRoundStartEqVal"]
+                    == 1000
+                )
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][0]["CTRoundStartMoney"]
+                    == 4000
+                )
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][0]["TRoundStartEqVal"]
+                    == 1000
+                )
+                assert (
+                    self.demo_data[demo]["json"]["GameRounds"][0]["TRoundStartMoney"]
+                    == 4000
+                )
 
     def test_eq_val(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
                 for r in self.demo_data[demo]["json"]["GameRounds"]:
-                    assert r["CTStartEqVal"] <= r["CTRoundStartEqVal"] + r["CTRoundStartMoney"]
-                    assert r["TStartEqVal"] <= r["TRoundStartEqVal"] + r["TRoundStartMoney"]
+                    assert (
+                        r["CTStartEqVal"]
+                        <= r["CTRoundStartEqVal"] + r["CTRoundStartMoney"]
+                    )
+                    assert (
+                        r["TStartEqVal"]
+                        <= r["TRoundStartEqVal"] + r["TRoundStartMoney"]
+                    )
 
     def test_kill_distances(self):
         for demo in self.demo_data:
