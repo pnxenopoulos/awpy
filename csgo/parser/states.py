@@ -29,6 +29,7 @@ def generate_game_state(frame, state_type="vector"):
 
     return state
 
+
 def _generate_team_vector_state(frame_side):
     """Returns a team's game state as a vector.
 
@@ -40,25 +41,39 @@ def _generate_team_vector_state(frame_side):
     """
     eq_val = 0
     players_remaining = 0
+    full_hp_players_remaining = 0
     hp_remaining = 0
     armor_remaining = 0
     helmets_remaining = 0
     defuse_kits_remaining = 0
     sum_team_dist_a = 0
     sum_team_dist_b = 0
-    for player in frame_side['Players']:
-        if player['IsAlive']:
-            eq_val += player['EquipmentValue']
+    for player in frame_side["Players"]:
+        if player["IsAlive"]:
+            eq_val += player["EquipmentValue"]
             players_remaining += 1
-            hp_remaining += player['Hp']
-            armor_remaining += player['Armor']
-            if player['HasHelmet']:
+            hp_remaining += player["Hp"]
+            armor_remaining += player["Armor"]
+            if player["HasHelmet"]:
                 helmets_remaining += 1
-            if player['HasDefuse']:
+            if player["HasDefuse"]:
                 defuse_kits_remaining += 1
-            sum_team_dist_a += player['DistToBombsiteA']
-            sum_team_dist_b += player['DistToBombsiteB']
-    return [eq_val, players_remaining, hp_remaining, armor_remaining, helmets_remaining, defuse_kits_remaining, sum_team_dist_a/players_remaining, sum_team_dist_b/players_remaining]
+            if player["Hp"] == 100:
+                full_hp_players_remaining += 1
+            sum_team_dist_a += player["DistToBombsiteA"]
+            sum_team_dist_b += player["DistToBombsiteB"]
+    return [
+        eq_val,
+        players_remaining,
+        hp_remaining,
+        full_hp_players_remaining,
+        armor_remaining,
+        helmets_remaining,
+        defuse_kits_remaining,
+        sum_team_dist_a / players_remaining,
+        sum_team_dist_b / players_remaining,
+    ]
+
 
 def _generate_world_vector_state(frame):
     """Generate's the world state as a vector
@@ -72,7 +87,14 @@ def _generate_world_vector_state(frame):
     bomb_planted = 0
     if frame["BombPlanted"]:
         bomb_planted = 1
-    return [frame["Second"], frame["BombDistanceToA"], frame["BombDistanceToB"], bomb_planted, frame["BombSite"]]
+    return [
+        frame["Second"],
+        frame["BombDistanceToA"],
+        frame["BombDistanceToB"],
+        bomb_planted,
+        frame["BombSite"],
+    ]
+
 
 def _generate_vector_state(frame):
     """Returns a game state as a vector. The vector includes the following information:
@@ -100,6 +122,7 @@ def _generate_vector_state(frame):
     state["Global"] = _generate_world_vector_state(frame)
     return state
 
+
 def _generate_graph_state(frame):
     """Returns a game state as a graph
 
@@ -110,6 +133,7 @@ def _generate_graph_state(frame):
         A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
     """
     return {"CT": [], "T": [], "Global": []}
+
 
 def _generate_set_state(frame):
     """Returns a game state as a set
