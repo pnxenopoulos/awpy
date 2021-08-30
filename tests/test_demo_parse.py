@@ -522,7 +522,7 @@ class TestDemoParser:
             if self.demo_data[demo]["useForTests"]:
                 for r in self.demo_data[demo]["json"]["GameRounds"]:
                     start_tick = r["StartTick"]
-                    end_tick = r["EndTickOfficial"]
+                    end_tick = r["EndOfficialTick"]
                     if r["Kills"] is not None:
                         for e in r["Kills"]:
                             assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
