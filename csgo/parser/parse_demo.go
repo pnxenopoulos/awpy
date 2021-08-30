@@ -1998,7 +1998,7 @@ func main() {
 
 		// Make sure team names are correct
 		for i := range currentGame.Rounds {
-			if *currentGame.Rounds[i].WinningSide == "CT" {
+			if currentGame.Rounds[i].WinningSide == "CT" {
 				if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].CTTeam {
 					currentGame.Rounds[i].TTeam = currentGame.Rounds[i].CTTeam
 					currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].WinningTeam
