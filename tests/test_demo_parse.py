@@ -224,7 +224,7 @@ class TestDemoParser:
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
                 for r in self.demo_data[demo]["json"]["GameRounds"]:
-                    if r["WinningTeam"] == "CT":
+                    if r["WinningSide"] == "CT":
                         assert r["WinningTeam"] == r["CTTeam"]
                     else:
                         assert r["WinningTeam"] == r["TTeam"]
