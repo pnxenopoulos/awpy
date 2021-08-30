@@ -523,20 +523,27 @@ class TestDemoParser:
                 for r in self.demo_data[demo]["json"]["GameRounds"]:
                     start_tick = r["StartTick"]
                     end_tick = r["EndTick"]
-                    for e in r["Kills"]:
-                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    for e in r["Damages"]:
-                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    for e in r["BombEvents"]:
-                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    for e in r["WeaponFires"]:
-                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    for e in r["Grenades"]:
-                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    for e in r["Flashes"]:
-                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    for e in r["Frames"]:
-                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+                    if r["Kills"] is not None:
+                        for e in r["Kills"]:
+                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+                    if r["Damages"] is not None:
+                        for e in r["Damages"]:
+                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+                    if r["BombEvents"] is not None:
+                        for e in r["BombEvents"]:
+                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+                    if r["WeaponFires"] is not None:
+                        for e in r["WeaponFires"]:
+                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+                    if r["Grenades"] is not None:
+                        for e in r["Grenades"]:
+                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+                    if r["Flashes"] is not None:
+                        for e in r["Flashes"]:
+                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+                    if r["Frames"] is not None:
+                        for e in r["Frames"]:
+                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
 
     def test_defuse_round_end(self):
         """Tests to see if on bomb defuse round ends that the last action is a bomb defuse"""
