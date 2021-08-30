@@ -153,22 +153,12 @@ class TestDemoParser:
         assert self.parser_opts.trade_time == 5
         assert self.parser_opts.buy_style == "hltv"
 
-    def test_parse_demo(self):
-        """Tests if parse actually outputs a file"""
-        self.parser._parse_demo()
-        assert os.path.exists("test.json")
-        assert self.parser.output_file == "test.json"
-
-    def test_read_json(self):
-        """Tests if the JSON output from _parse_demo() can be read"""
-        self.parser._parse_demo()
-        output_json = self.parser._read_json()
-        assert type(output_json) is dict
-
     def test_parse(self):
         """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
         assert type(output_json) is dict
+        assert os.path.exists("test.json")
+        assert self.parser.output_file == "test.json"
 
     def test_parse(self):
         parse_errors = 0
@@ -525,3 +515,24 @@ class TestDemoParser:
                 )
                 assert demo_util_dmg < util_dmg + 30
                 assert demo_util_dmg > util_dmg - 30
+
+    def test_event_ticks(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
+                    start_tick = r["StartTick"]
+                    end_tick = r["EndTick"]
+                    for e in r["Kills"]:
+                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                    for e in r["Damages"]:
+                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                    for e in r["BombEvents"]:
+                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                    for e in r["WeaponFires"]:
+                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                    for e in r["Grenades"]:
+                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                    for e in r["Flashes"]:
+                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                    for e in r["Frames"]:
+                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
