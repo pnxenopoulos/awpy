@@ -220,6 +220,15 @@ class TestDemoParser:
                     == self.demo_data[demo]["json"]["GameRounds"][14]["TTeam"]
                 )
 
+    def test_round_winners(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
+                    if r["WinningTeam"] == "CT":
+                        assert r["WinningTeam"] == r["CTTeam"]
+                    else:
+                        assert r["WinningTeam"] == r["TTeam"]
+
     def test_pistol_rounds(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
