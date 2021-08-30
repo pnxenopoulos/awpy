@@ -1996,6 +1996,21 @@ func main() {
 		currentGame.Rounds[0].CTBeginEqVal = 1000
 		currentGame.Rounds[0].TBeginEqVal = 1000
 
+		// Make sure team names are correct
+		for i := range currentGame.Rounds {
+			if *currentGame.Rounds[i].WinningSide == "CT" {
+				if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].CTTeam {
+					currentGame.Rounds[i].TTeam = currentGame.Rounds[i].CTTeam
+					currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].WinningTeam
+				}
+			} else {
+				if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].TTeam {
+					currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].TTeam
+					currentGame.Rounds[i].TTeam = currentGame.Rounds[i].WinningTeam
+				}
+			}
+		}
+
 		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
 		/*
 		for i := range currentGame.Rounds {
