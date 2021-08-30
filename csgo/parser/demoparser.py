@@ -89,7 +89,7 @@ class DemoParser:
             )
             parse_rate = 128
             self.parse_rate = parse_rate
-        
+
         if parse_rate is None:
             self.logger.warning("No parse rate set")
             self.parse_rate = 128

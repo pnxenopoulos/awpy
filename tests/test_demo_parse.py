@@ -517,22 +517,31 @@ class TestDemoParser:
                 assert demo_util_dmg > util_dmg - 30
 
     def test_event_ticks(self):
+        """Tests to see if all events/frames occur within a round"""
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
                 for r in self.demo_data[demo]["json"]["GameRounds"]:
                     start_tick = r["StartTick"]
                     end_tick = r["EndTick"]
                     for e in r["Kills"]:
-                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
                     for e in r["Damages"]:
-                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
                     for e in r["BombEvents"]:
-                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
                     for e in r["WeaponFires"]:
-                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
                     for e in r["Grenades"]:
-                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
                     for e in r["Flashes"]:
-                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
                     for e in r["Frames"]:
-                        assert e["Tick"] > start_tick and e["Tick"] < end_tick
+                        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+
+    def test_defuse_round_end(self):
+        """Tests to see if on bomb defuse round ends that the last action is a bomb defuse"""
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]["GameRounds"]:
+                    if r["RoundEndReason"] == "BombDefused":
+                        assert r["BombEvents"][-1]["BombAction"] == "defuse"
