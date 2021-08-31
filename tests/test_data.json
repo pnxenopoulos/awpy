@@ -2,16 +2,140 @@
     "astralis-vs-liquid-m1-inferno": {
         "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m1-inferno.dem",
         "hltvUrl": "https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019",
-        "useForTests": true,
+        "useForTests": false,
         "rounds": 27,
         "totalKills": 177
     },
     "astralis-vs-liquid-m2-nuke": {
         "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem",
         "hltvUrl": "https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019",
-        "useForTests": false,
+        "useForTests": true,
+        "tickRate": 128,
+        "maxRounds": 30,
         "rounds": 28,
-        "totalKills": 178
+        "totalKills": 179,
+        "totalTeamkills": 1,
+        "totalHeadshots": 84,
+        "totalAssists": 35,
+        "totalFlashAssists": 4,
+        "totalDeaths": 180,
+        "totalFirstKills": 28,
+        "enemiesFlashed": 58,
+        "utilityDamage": 1075,
+        "KAST": {
+            "dupreeh": [
+                0.629,
+                0.729
+            ],
+            "Magisk": [
+                0.557,
+                0.657
+            ],
+            "device": [
+                0.629,
+                0.729
+            ],
+            "Xyp9x": [
+                0.664,
+                0.764
+            ],
+            "gla1ve": [
+                0.593,
+                0.693
+            ],
+            "NAF": [
+                0.593,
+                0.693
+            ],
+            "EliGe": [
+                0.450,
+                0.550
+            ],
+            "Twistzz": [
+                0.593,
+                0.693
+            ],
+            "nitr0": [
+                0.629,
+                0.729
+            ],
+            "Stewie2K": [
+                0.629,
+                0.729
+            ]
+        },
+        "ADR": {
+            "dupreeh": [
+                56,
+                67
+            ],
+            "Magisk": [
+                55,
+                65
+            ],
+            "device": [
+                68,
+                77
+            ],
+            "Xyp9x": [
+                85,
+                95
+            ],
+            "gla1ve": [
+                81,
+                91
+            ],
+            "NAF": [
+                72,
+                82
+            ],
+            "EliGe": [
+                80,
+                90
+            ],
+            "Twistzz": [
+                43,
+                53
+            ],
+            "nitr0": [
+                58,
+                69
+            ],
+            "Stewie2K": [
+                78,
+                88
+            ]
+        },
+        "roundEndReasons": [
+            "CTWin",
+            "BombDefused",
+            "TargetBombed",
+            "TerroristsWin",
+            "TerroristsWin",
+            "TargetBombed",
+            "TerroristsWin",
+            "TargetSaved",
+            "CTWin",
+            "TerroristsWin",
+            "CTWin",
+            "CTWin",
+            "TerroristsWin",
+            "CTWin",
+            "CTWin",
+            "TargetBombed",
+            "CTWin",
+            "CTWin",
+            "CTWin",
+            "TargetBombed",
+            "BombDefused",
+            "CTWin",
+            "CTWin",
+            "BombDefused",
+            "TerroristsWin",
+            "BombDefused",
+            "TargetBombed",
+            "BombDefused"
+        ]
     },
     "ence-vs-endpoint-m1-inferno": {
         "url": "https://storage.googleapis.com/csgo-tests/ence-vs-endpoint-m1-inferno.dem",

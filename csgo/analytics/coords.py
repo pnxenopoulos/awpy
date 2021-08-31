@@ -7,8 +7,7 @@ import numpy as np
 
 
 class Encoder:
-    """ Encodes map and places
-    """
+    """Encodes map and places"""
 
     def __init__(self):
         self.places = [

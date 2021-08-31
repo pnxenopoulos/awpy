@@ -40,6 +40,11 @@ data_df = demo_parser.parse(return_type="df")
 # You can also access the data in the file demoId_mapName.json, which is written in your working directory
 ```
 
+## Help! The parser doesn't work, is wrong, or lacks a feature
+If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcEKW). Please note that CSGO demos are imperfect. Sometimes there are mistakes. If you come across any, do not hesitate to open an issue, or to post it on our Discord, and we can investigate further. 
+
+This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues). If you come across a bug, please open an issue, and also consider bringing it to the community's attention in the Discord. Same goes for feature requests. Please checkout the `dev` branch to work on the library.
+
 ## Examples and Papers
 Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
 
@@ -70,8 +75,7 @@ This repository contains code for CSGO analysis. It is structured as follows:
 └── tests                         # Contains tests for the csgo package
 ```
 
-## Requests and Issues
-This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues). If you come across a bug, please open an issue, and also consider bringing it to the community's attention in the Discord. Same goes for feature requests. Please checkout the `dev` branch to work on the library.
-
 ## Acknowledgments
 This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages. To fix errors brought about in the gonav package from Go 1.14, we provide an updated version in the [gonavparse](https://github.com/pnxenopoulos/csgonavparse).
+
+Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage.

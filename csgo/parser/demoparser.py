@@ -14,15 +14,24 @@ class DemoParser:
     Attributes:
         demofile (string) : A string denoting the path to the demo file, which ends in .dem
         log (boolean)     : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
-        demo_id (string) : A unique demo name/game id. Default is inferred from demofile name
-        parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 32.
+        demo_id (string)  : A unique demo name/game id. Default is inferred from demofile name
+        parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
+        trade_time (int)  : Length of the window for a trade (in seconds). Default is 5.
+        buy_style (string): Buy style string, one of "hltv", ...
 
     Raises:
         ValueError : Raises a ValueError if the Golang version is lower than 1.14
     """
 
     def __init__(
-        self, demofile="", outpath=None, log=False, demo_id=None, parse_rate=None
+        self,
+        demofile="",
+        outpath=None,
+        log=False,
+        demo_id=None,
+        parse_rate=128,
+        trade_time=5,
+        buy_style="hltv",
     ):
         # Set up logger
         if log:
@@ -71,25 +80,63 @@ class DemoParser:
             self.outpath = os.path.abspath(outpath)
         self.logger.info("Setting demo id to " + self.demo_id)
 
-        # Handle parse rate. Must be a power of 2^0 to 2^7. If not, then default to 2^5.
+        # Handle parse rate. If the parse rate is less than 64, likely to be slow
+        if parse_rate < 1 or type(parse_rate) is not int:
+            self.logger.warning(
+                "Parse rate of "
+                + str(parse_rate)
+                + " not acceptable! Parse rate must be an integer greater than 0."
+            )
+            parse_rate = 128
+            self.parse_rate = parse_rate
+
         if parse_rate is None:
             self.logger.warning("No parse rate set")
-            self.parse_rate = 32
+            self.parse_rate = 128
         elif parse_rate == 1:
             self.logger.warning(
                 "A parse rate of 1 will parse EVERY tick. This process will be very slow."
             )
             self.parse_rate = 1
-        elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128]:
+        elif parse_rate < 64 and parse_rate > 1:
             self.logger.warning(
-                "Parse rate of "
-                + str(parse_rate)
-                + " not acceptable! Parse rate must be a power of 2 between 2^0 and 2^7. Setting to DEFAULT value of 32."
+                "A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos."
             )
-            self.parse_rate = 32
+            self.parse_rate = parse_rate
+        elif parse_rate >= 256:
+            self.logger.warning(
+                "A high parse rate means very few frames. Only use for testing purposes."
+            )
+            self.parse_rate = parse_rate
         else:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
+
+        # Handle trade time
+        if trade_time <= 0:
+            self.logger.warning(
+                "Trade time can't be negative, setting to default value of 5 seconds."
+            )
+            self.trade_time = 5
+        elif trade_time > 7:
+            self.logger.warning(
+                "Trade time of "
+                + str(trade_time)
+                + " is rather long. Consider a value between 4-7."
+            )
+        else:
+            self.trade_time = trade_time
+        self.logger.info("Setting trade time to " + str(self.trade_time))
+
+        # Handle buy style
+        if buy_style not in ["hltv", "csgo"]:
+            self.logger.warning(
+                "Buy style not one of hltv, csgo, will be set to hltv by default"
+            )
+            self.buy_style = "hltv"
+        else:
+            self.buy_style = buy_style
+        self.logger.info("Setting buy style to " + str(self.buy_style))
 
         # Set parse error to False
         self.parse_error = False
@@ -112,6 +159,8 @@ class DemoParser:
                 self.demofile,
                 "-parserate",
                 str(self.parse_rate),
+                "-tradetime",
+                str(self.trade_time),
                 "-demoid",
                 str(self.demo_id),
                 "-out",
@@ -164,7 +213,7 @@ class DemoParser:
                 return self.json
             elif return_type == "df":
                 demo_data = {}
-                demo_data["MatchId"] = self.json["MatchId"]
+                demo_data["MatchId"] = self.json["MatchID"]
                 demo_data["ClientName"] = self.json["ClientName"]
                 demo_data["MapName"] = self.json["MapName"]
                 demo_data["TickRate"] = self.json["TickRate"]
@@ -174,6 +223,9 @@ class DemoParser:
                 demo_data["Damages"] = self._parse_damages(return_type=return_type)
                 demo_data["Grenades"] = self._parse_grenades(return_type=return_type)
                 demo_data["Flashes"] = self._parse_flashes(return_type=return_type)
+                demo_data["WeaponFires"] = self._parse_weapon_fires(
+                    return_type=return_type
+                )
                 demo_data["BombEvents"] = self._parse_bomb_events(
                     return_type=return_type
                 )
@@ -219,18 +271,16 @@ class DemoParser:
                             frame_item["CTEqVal"] = frame["CT"]["TeamEqVal"]
                             frame_item["CTAlivePlayers"] = frame["CT"]["AlivePlayers"]
                             frame_item["CTUtility"] = frame["CT"]["TotalUtility"]
-                            frame_item["CTUtilityLevel"] = frame["CT"]["UtilityLevel"]
                             frame_item["CTToken"] = frame["CT"]["PositionToken"]
                         else:
                             frame_item["TTeamName"] = frame["T"]["TeamName"]
                             frame_item["TEqVal"] = frame["T"]["TeamEqVal"]
                             frame_item["TAlivePlayers"] = frame["T"]["AlivePlayers"]
                             frame_item["TUtility"] = frame["T"]["TotalUtility"]
-                            frame_item["TUtilityLevel"] = frame["T"]["UtilityLevel"]
                             frame_item["TToken"] = frame["T"]["PositionToken"]
                     frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
-            frames_df["MatchId"] = self.demo_id
+            frames_df["MatchId"] = self.json["MatchID"]
             frames_df["MapName"] = self.json["MapName"]
             if return_type == "list":
                 self.logger.info("Parsed frames to list")
@@ -272,34 +322,12 @@ class DemoParser:
                                 player_item["Second"] = frame["Second"]
                                 player_item["Side"] = side
                                 player_item["TeamName"] = frame[side]["TeamName"]
-                                player_item["PlayerName"] = player["Name"]
-                                player_item["PlayerSteamId"] = player["SteamId"]
-                                player_item["X"] = player["X"]
-                                player_item["Y"] = player["Y"]
-                                player_item["Z"] = player["Z"]
-                                player_item["ViewX"] = player["ViewX"]
-                                player_item["ViewY"] = player["ViewY"]
-                                player_item["AreaId"] = player["AreaId"]
-                                player_item["Hp"] = player["Hp"]
-                                player_item["Armor"] = player["Armor"]
-                                player_item["IsAlive"] = player["IsAlive"]
-                                player_item["IsFlashed"] = player["IsFlashed"]
-                                player_item["IsAirborne"] = player["IsAirborne"]
-                                player_item["IsDucking"] = player["IsDucking"]
-                                player_item["IsScoped"] = player["IsScoped"]
-                                player_item["IsWalking"] = player["IsWalking"]
-                                player_item["EqValue"] = player["EquipmentValue"]
-                                player_item["HasHelmet"] = player["HasHelmet"]
-                                player_item["HasDefuse"] = player["HasDefuse"]
-                                player_item["DistToBombsiteA"] = player[
-                                    "DistToBombsiteA"
-                                ]
-                                player_item["DistToBombsiteB"] = player[
-                                    "DistToBombsiteB"
-                                ]
+                                for col in player.keys():
+                                    if col != "Inventory":
+                                        player_item[col] = player[col]
                                 player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
-            player_frames_df["MatchId"] = self.demo_id
+            player_frames_df["MatchId"] = self.json["MatchID"]
             player_frames_df["MapName"] = self.json["MapName"]
             if return_type == "list":
                 self.logger.info("Parsed player frames to list")
@@ -326,28 +354,38 @@ class DemoParser:
 
         try:
             rounds = []
-            keys = [
+            cols = [
                 "RoundNum",
                 "StartTick",
-                "FreezeTimeEnd",
+                "FreezeTimeEndTick",
                 "EndTick",
                 "EndOfficialTick",
                 "TScore",
                 "CTScore",
+                "EndTScore",
+                "EndCTScore",
+                "TTeam",
+                "CTTeam",
                 "WinningSide",
                 "WinningTeam",
                 "LosingTeam",
                 "RoundEndReason",
-                "CTStartEqVal",
-                "CTBuyType",
                 "TStartEqVal",
+                "TRoundStartEqVal",
+                "TRoundStartMoney",
                 "TBuyType",
+                "TSpend",
+                "CTStartEqVal",
+                "CTRoundStartEqVal",
+                "CTRoundStartMoney",
+                "CTBuyType",
+                "CTSpend",
             ]
             for r in self.json["GameRounds"]:
                 round_item = {}
-                for k in keys:
+                for k in cols:
                     round_item[k] = r[k]
-                    round_item["MatchId"] = self.demo_id
+                    round_item["MatchId"] = self.json["MatchID"]
                     round_item["MapName"] = self.json["MapName"]
                 rounds.append(round_item)
             if return_type == "list":
@@ -380,7 +418,7 @@ class DemoParser:
                     for k in r["Kills"]:
                         new_k = k
                         new_k["RoundNum"] = r["RoundNum"]
-                        new_k["MatchId"] = self.demo_id
+                        new_k["MatchId"] = self.json["MatchID"]
                         new_k["MapName"] = self.json["MapName"]
                         kills.append(new_k)
             if return_type == "list":
@@ -389,6 +427,41 @@ class DemoParser:
             elif return_type == "df":
                 self.logger.info("Parsed kills to Pandas DataFrame")
                 return pd.DataFrame(kills)
+        except AttributeError:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def _parse_weapon_fires(self, return_type):
+        """Returns weapon fires as either a list or Pandas dataframe
+
+        Args:
+            return_type (string) : Either "list" or "df"
+
+        Returns:
+            A list or Pandas dataframe
+        """
+        if return_type not in ["list", "df"]:
+            self.logger.error(
+                "Parse weapon fires return_type must be either 'list' or 'df'"
+            )
+            raise ValueError("return_type must be either 'list' or 'df'")
+
+        try:
+            shots = []
+            for r in self.json["GameRounds"]:
+                if r["WeaponFires"] is not None:
+                    for wf in r["WeaponFires"]:
+                        new_wf = wf
+                        new_wf["RoundNum"] = r["RoundNum"]
+                        new_wf["MatchId"] = self.json["MatchID"]
+                        new_wf["MapName"] = self.json["MapName"]
+                        shots.append(new_wf)
+            if return_type == "list":
+                self.logger.info("Parsed weapon fires to list")
+                return shots
+            elif return_type == "df":
+                self.logger.info("Parsed weapon fires to Pandas DataFrame")
+                return pd.DataFrame(shots)
         except AttributeError:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
@@ -413,7 +486,7 @@ class DemoParser:
                     for d in r["Damages"]:
                         new_d = d
                         new_d["RoundNum"] = r["RoundNum"]
-                        new_d["MatchId"] = self.demo_id
+                        new_d["MatchId"] = self.json["MatchID"]
                         new_d["MapName"] = self.json["MapName"]
                         damages.append(new_d)
             if return_type == "list":
@@ -448,7 +521,7 @@ class DemoParser:
                     for g in r["Grenades"]:
                         new_g = g
                         new_g["RoundNum"] = r["RoundNum"]
-                        new_g["MatchId"] = self.demo_id
+                        new_g["MatchId"] = self.json["MatchID"]
                         new_g["MapName"] = self.json["MapName"]
                         grenades.append(new_g)
             if return_type == "list":
@@ -483,7 +556,7 @@ class DemoParser:
                     for b in r["BombEvents"]:
                         new_b = b
                         new_b["RoundNum"] = r["RoundNum"]
-                        new_b["MatchId"] = self.demo_id
+                        new_b["MatchId"] = self.json["MatchID"]
                         new_b["MapName"] = self.json["MapName"]
                         bomb_events.append(new_b)
             if return_type == "list":
@@ -516,7 +589,7 @@ class DemoParser:
                     for f in r["Flashes"]:
                         new_f = f
                         new_f["RoundNum"] = r["RoundNum"]
-                        new_f["MatchId"] = self.demo_id
+                        new_f["MatchId"] = self.json["MatchID"]
                         new_f["MapName"] = self.json["MapName"]
                         flashes.append(new_f)
             if return_type == "list":
