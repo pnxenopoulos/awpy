@@ -334,7 +334,7 @@ type PlayerInfo struct {
 	IsStanding      bool     `json:"IsStanding"`
 	IsScoped        bool     `json:"IsScoped"`
 	IsWalking       bool     `json:"IsWalking"`
-	IsUnknown       bool     `json:"IsUnkown"`
+	IsUnknown       bool     `json:"IsUnknown"`
 	Inventory       []string `json:"Inventory"`
 	EqVal           int64    `json:"EquipmentValue"`
 	Money           int64    `json:"Money"`
