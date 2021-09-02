@@ -113,7 +113,7 @@ type GrenadeAction struct {
 	GrenadeX        float64 `json:"GrenadeX"`
 	GrenadeY        float64 `json:"GrenadeY"`
 	GrenadeZ        float64 `json:"GrenadeZ"`
-	GrenadeAreaID   int64   `json:"GrenadeAreaID "`
+	GrenadeAreaID   int64   `json:"GrenadeAreaID"`
 	GrenadeAreaName string  `json:"GrenadeAreaName"`
 }
 
