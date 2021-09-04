@@ -48,7 +48,8 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
     elif metric.lower() == "difflib":
         entity_dict = {}
         for gn in game_names:
-            entity_dict[gn] = difflib.get_close_matches(gn, entity_names, n=1, cutoff=0.1)[0]
+            if gn is not None and gn is not np.nan:
+                entity_dict[gn] = difflib.get_close_matches(gn, entity_names, n=1, cutoff=0.1)[0]
         entity_dict[None] = None
         return entity_dict
     else:
