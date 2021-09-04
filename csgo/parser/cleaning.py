@@ -46,30 +46,30 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
     elif metric.lower() == "jaro":
         dist_metric = textdistance.jaro.distance
     elif metric.lower() == "difflib":
-        entity_dict = {}
+        entities = {}
         for gn in game_names:
             if gn is not None and gn is not np.nan:
                 closest_name = difflib.get_close_matches(gn, entity_names, n=1, cutoff=0.0)
                 if len(closest_name) > 0:
-                    entity_dict[gn] = closest_name[0]
+                    entities[gn] = closest_name[0]
                 else:
-                    entity_dict[gn] = None
-        entity_dict[None] = None
-        return entity_dict
+                    entities[gn] = None
+        entities[None] = None
+        return entities
     else:
         raise ValueError("Metric can only be LCSS, Hamming, Levenshtein or Jaro")
-    entity_dict = {}
+    entities = {}
     for gn in game_names:
-        name_distances = []
-        names = []
-        for p in entity_names:
-            if gn is not None and gn is not np.nan:
+        if gn is not None and gn is not np.nan:
+            name_distances = []
+            names = []
+            for p in entity_names:
                 name_distances.append(dist_metric(gn.lower(), p.lower()))
                 names.append(p)
-        if gn is not None and gn is not np.nan:
-            entity_dict[gn] = names[np.argmin(name_distances)]
-    entity_dict[None] = None
-    return entity_dict
+            entities[gn] = names[np.argmin(name_distances)]
+            popped_name = entity_names.pop(np.argmin(name_distances))
+    entities[None] = None
+    return entities
 
 
 def replace_entities(df, col_name, entity_dict):
