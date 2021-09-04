@@ -46,10 +46,16 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
     elif metric.lower() == "jaro":
         dist_metric = textdistance.jaro.distance
     elif metric.lower() == "difflib":
+        for i, e in enumerate(entity_names):
+            entity_names[i] = e.lower()
         entity_dict = {}
         for gn in game_names:
             if gn is not None and gn is not np.nan:
-                entity_dict[gn] = difflib.get_close_matches(gn, entity_names, n=1, cutoff=0.01)[0]
+                closest_name = difflib.get_close_matches(gn.lower(), entity_names, n=1, cutoff=0.0)
+                if len(closest_name) > 0:
+                    entity_dict[gn] = closest_name[0]
+                else:
+                    entity_dict[gn] = None
         entity_dict[None] = None
         return entity_dict
     else:
