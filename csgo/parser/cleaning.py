@@ -63,11 +63,12 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
         if gn is not None and gn is not np.nan:
             name_distances = []
             names = []
-            for p in entity_names:
-                name_distances.append(dist_metric(gn.lower(), p.lower()))
-                names.append(p)
-            entities[gn] = names[np.argmin(name_distances)]
-            popped_name = entity_names.pop(np.argmin(name_distances))
+            if len(entity_names) > 0:
+                for p in entity_names:
+                    name_distances.append(dist_metric(gn.lower(), p.lower()))
+                    names.append(p)
+                entities[gn] = names[np.argmin(name_distances)]
+                popped_name = entity_names.pop(np.argmin(name_distances))
     entities[None] = None
     return entities
 
