@@ -68,6 +68,8 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
                 names.append(p)
             entities[gn] = names[np.argmin(name_distances)]
             popped_name = entity_names.pop(np.argmin(name_distances))
+        if gn == '':
+            entities[gn] = None
     entities[None] = None
     return entities
 
