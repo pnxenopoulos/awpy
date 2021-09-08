@@ -60,14 +60,15 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
         raise ValueError("Metric can only be LCSS, Hamming, Levenshtein or Jaro")
     entities = {}
     for gn in game_names:
-        if gn is not None and gn is not np.nan:
+        if gn is not None and gn is not np.nan and gn != '':
             name_distances = []
             names = []
-            for p in entity_names:
-                name_distances.append(dist_metric(gn.lower(), p.lower()))
-                names.append(p)
-            entities[gn] = names[np.argmin(name_distances)]
-            popped_name = entity_names.pop(np.argmin(name_distances))
+            if len(entity_names) > 0:
+                for p in entity_names:
+                    name_distances.append(dist_metric(gn.lower(), p.lower()))
+                    names.append(p)
+                entities[gn] = names[np.argmin(name_distances)]
+                popped_name = entity_names.pop(np.argmin(name_distances))
         if gn == '':
             entities[gn] = None
     entities[None] = None
