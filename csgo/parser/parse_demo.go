@@ -36,6 +36,7 @@ type Game struct {
 	TradeTime     int64        `json:"TradeTime"`
 	RoundBuyStyle string       `json:"RoundBuyStyle"`
 	ServerVars    ServerConVar `json:"ServerVars"`
+	MMRanks       []MMRank     `json:"MatchmakingRanks"`
 	Rounds        []GameRound  `json:"GameRounds"`
 }
 
@@ -58,6 +59,15 @@ type ServerConVar struct {
 	MaxRounds                     int64 `json:"MaxRounds"`                     // mp_maxrounds
 	TimeoutsAllowed               int64 `json:"TimeoutsAllowed"`               // mp_team_timeout_max
 	CoachingAllowed               int64 `json:"CoachingAllowed"`               // sv_coaching_enabled
+}
+
+// MMRank holds the matchmaking ranks
+type MMRank struct {
+	SteamID    uint64  `json:"SteamID"`
+	RankChange float32 `json:"RankChange"`
+	RankOld    int     `json:"RankOld"`
+	RankNew    int     `json:"RankNew"`
+	WinCount   int     `json:"WinCount"`
 }
 
 // GameRound information and all of the associated events
@@ -741,6 +751,19 @@ func main() {
 	currentRound := GameRound{}
 
 	RoundRestartDelay := int64(5)
+
+	// Parse rank updates
+	p.RegisterEventHandler(func(e events.RankUpdate) {
+		rankUpdate := MMRank{}
+
+		rankUpdate.SteamID = e.SteamID64()
+		rankUpdate.RankChange = e.RankChange
+		rankUpdate.RankOld = e.RankOld
+		rankUpdate.RankNew = e.RankNew
+		rankUpdate.WinCount = e.WinCount
+
+		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
+	})
 
 	// Parse round starts
 	p.RegisterEventHandler(func(e events.RoundStart) {
