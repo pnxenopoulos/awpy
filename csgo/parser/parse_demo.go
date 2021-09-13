@@ -322,43 +322,51 @@ type TeamFrameInfo struct {
 
 // PlayerInfo at time t
 type PlayerInfo struct {
-	PlayerSteamID   int64    `json:"SteamID"`
-	PlayerName      string   `json:"Name"`
-	PlayerTeam      string   `json:"Team"`
-	PlayerSide      string   `json:"Side"`
-	X               float64  `json:"X"`
-	Y               float64  `json:"Y"`
-	Z               float64  `json:"Z"`
-	ViewX           float64  `json:"ViewX"`
-	ViewY           float64  `json:"ViewY"`
-	AreaID          int64    `json:"AreaID"`
-	AreaName        string   `json:"AreaName"`
-	Hp              int64    `json:"Hp"`
-	Armor           int64    `json:"Armor"`
-	ActiveWeapon    string   `json:"ActiveWeapon"`
-	TotalUtility    int64    `json:"TotalUtility"`
-	IsAlive         bool     `json:"IsAlive"`
-	IsBlinded       bool     `json:"IsBlinded"`
-	IsAirborne      bool     `json:"IsAirborne"`
-	IsDucking       bool     `json:"IsDucking"`
-	IsDuckingInProg bool     `json:"IsDuckingInProgress"`
-	IsUnducking     bool     `json:"IsUnDuckingInProgress"`
-	IsDefusing      bool     `json:"IsDefusing"`
-	IsPlanting      bool     `json:"IsPlanting"`
-	IsReloading     bool     `json:"IsReloading"`
-	IsInBombZone    bool     `json:"IsInBombZone"`
-	IsInBuyZone     bool     `json:"IsInBuyZone"`
-	IsStanding      bool     `json:"IsStanding"`
-	IsScoped        bool     `json:"IsScoped"`
-	IsWalking       bool     `json:"IsWalking"`
-	IsUnknown       bool     `json:"IsUnknown"`
-	Inventory       []string `json:"Inventory"`
-	EqVal           int64    `json:"EquipmentValue"`
-	Money           int64    `json:"Cash"`
-	HasHelmet       bool     `json:"HasHelmet"`
-	HasDefuse       bool     `json:"HasDefuse"`
-	DistToBombsiteA int64    `json:"DistToBombsiteA"`
-	DistToBombsiteB int64    `json:"DistToBombsiteB"`
+	PlayerSteamID   int64        `json:"SteamID"`
+	PlayerName      string       `json:"Name"`
+	PlayerTeam      string       `json:"Team"`
+	PlayerSide      string       `json:"Side"`
+	X               float64      `json:"X"`
+	Y               float64      `json:"Y"`
+	Z               float64      `json:"Z"`
+	ViewX           float64      `json:"ViewX"`
+	ViewY           float64      `json:"ViewY"`
+	AreaID          int64        `json:"AreaID"`
+	AreaName        string       `json:"AreaName"`
+	Hp              int64        `json:"Hp"`
+	Armor           int64        `json:"Armor"`
+	ActiveWeapon    string       `json:"ActiveWeapon"`
+	TotalUtility    int64        `json:"TotalUtility"`
+	IsAlive         bool         `json:"IsAlive"`
+	IsBlinded       bool         `json:"IsBlinded"`
+	IsAirborne      bool         `json:"IsAirborne"`
+	IsDucking       bool         `json:"IsDucking"`
+	IsDuckingInProg bool         `json:"IsDuckingInProgress"`
+	IsUnducking     bool         `json:"IsUnDuckingInProgress"`
+	IsDefusing      bool         `json:"IsDefusing"`
+	IsPlanting      bool         `json:"IsPlanting"`
+	IsReloading     bool         `json:"IsReloading"`
+	IsInBombZone    bool         `json:"IsInBombZone"`
+	IsInBuyZone     bool         `json:"IsInBuyZone"`
+	IsStanding      bool         `json:"IsStanding"`
+	IsScoped        bool         `json:"IsScoped"`
+	IsWalking       bool         `json:"IsWalking"`
+	IsUnknown       bool         `json:"IsUnknown"`
+	Inventory       []WeaponInfo `json:"Inventory"`
+	EqVal           int64        `json:"EquipmentValue"`
+	Money           int64        `json:"Cash"`
+	HasHelmet       bool         `json:"HasHelmet"`
+	HasDefuse       bool         `json:"HasDefuse"`
+	DistToBombsiteA int64        `json:"DistToBombsiteA"`
+	DistToBombsiteB int64        `json:"DistToBombsiteB"`
+}
+
+// WeaponInfo contains data on an inventory weapon
+type WeaponInfo struct {
+	WeaponName     string `json:"WeaponName"`
+	WeaponClass    string `json:"WeaponClass"`
+	AmmoInMagazine int64  `json:"AmmoInMagazine"`
+	AmmoInReserve  int64  `json:"AmmoInReserve"`
 }
 
 func convertRoundEndReason(r events.RoundEndReason) string {
@@ -426,6 +434,27 @@ func convertHitGroup(hg events.HitGroup) string {
 		return "Neck"   
 	case 10:
 		return "Gear"
+	default:
+		return "Unknown"
+	}
+}
+
+func convertWeaponClass(wc common.EquipmentClass) string {
+	switch weaponClass := wc; weaponClass {
+	case 0:
+		return "Unknown"
+	case 1:
+		return "Pistols"
+	case 2:
+		return "SMG"
+	case 3:
+		return "Heavy"
+	case 4:
+		return "Rifle"
+	case 5:
+		return "Equipment"
+	case 6:
+		return "Grenade"
 	default:
 		return "Unknown"
 	}
@@ -532,7 +561,15 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	for _, w := range p.Weapons() {
 		if w.String() != "Knife" {
 			// Can't drop the knife
-			currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
+			currentWeapon := WeaponInfo{}
+
+			currentWeapon.WeaponName = w.String()
+			currentWeapon.WeaponClass = convertWeaponClass(w.Class())
+			currentWeapon.AmmoInMagazine = int64(w.AmmoInMagazine())
+			currentWeapon.AmmoInReserve = int64(w.AmmoReserve())
+
+			//currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
+			currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
 			if w.Class() == 6 {
 				currentPlayer.TotalUtility = currentPlayer.TotalUtility + 1
 			}

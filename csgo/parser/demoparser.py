@@ -140,6 +140,7 @@ class DemoParser:
             self.buy_style = buy_style
 
         self.dmg_rolled = dmg_rolled
+        self.logger.info("Rollup damages set to " + str(self.dmg_rolled))
         self.logger.info("Setting buy style to " + str(self.buy_style))
 
         # Set parse error to False
