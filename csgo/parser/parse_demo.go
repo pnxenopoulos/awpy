@@ -79,6 +79,7 @@ type MMRank struct {
 // GameRound information and all of the associated events
 type GameRound struct {
 	RoundNum          int64              `json:"RoundNum"`
+	IsWarmup          bool               `json:"IsWarmup"`
 	StartTick         int64              `json:"StartTick"`
 	FreezeTimeEndTick int64              `json:"FreezeTimeEndTick"`
 	EndTick           int64              `json:"EndTick"`
@@ -823,6 +824,7 @@ func main() {
 		roundInFreezetime = 1
 		roundInEndTime = 0
 		currentRound = GameRound{}
+		currentRound.IsWarmup = gs.IsWarmupPeriod()
 		currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
 		currentRound.StartTick = int64(gs.IngameTick())
 		currentRound.TScore = int64(gs.TeamTerrorists().Score())
@@ -853,6 +855,40 @@ func main() {
 	// Parse round freezetime ends
 	p.RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
 		gs := p.GameState()
+
+		if roundStarted == 0 {
+			// This means the RoundStart event did not fire, but the freezetimeend did
+			roundStarted = 1
+			roundInEndTime = 0
+			currentRound = GameRound{}
+			currentRound.IsWarmup = gs.IsWarmupPeriod()
+			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
+			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
+			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
+			currentRound.TScore = int64(gs.TeamTerrorists().Score())
+			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+			currentRound.TTeam = &tTeam
+			currentRound.CTTeam = &ctTeam
+
+			// Parse round money
+			tPlayers := gs.TeamTerrorists().Members()
+			currentRound.TBeginMoney = 0
+			ctPlayers := gs.TeamCounterTerrorists().Members()
+			currentRound.CTBeginMoney = 0
+			for _, p := range tPlayers {
+				if p != nil {
+					currentRound.TBeginMoney += int64(p.Money())
+				}
+
+			}
+			for _, p := range ctPlayers {
+				if p != nil {
+					currentRound.CTBeginMoney += int64(p.Money())
+				}
+			}
+		}
 
 		roundInFreezetime = 0
 		currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
@@ -1348,10 +1384,10 @@ func main() {
 			switch e.Projectile.Thrower.Team {
 			case common.TeamTerrorists:
 				playerSide = "T"
-				currentGrenade.ThrowerTeam = &tTeam
+				currentGrenade.ThrowerTeam = tTeam
 			case common.TeamCounterTerrorists:
 				playerSide = "CT"
-				currentGrenade.ThrowerTeam = &ctTeam
+				currentGrenade.ThrowerTeam = ctTeam
 			case common.TeamSpectators:
 				playerSide = "Spectator"
 				currentGrenade.ThrowerTeam = ""
@@ -1878,6 +1914,16 @@ func main() {
 
 	// Clean rounds
 	if len(currentGame.Rounds) > 0 {
+		// Remove rounds where not warmup
+		var tempRoundsWarmup []GameRound
+		for i := range currentGame.Rounds {
+			currRound := currentGame.Rounds[i]
+			if !currRound.IsWarmup {
+				tempRoundsWarmup = append(tempRoundsWarmup, currRound)
+			}
+		}
+		currentGame.Rounds = tempRoundsWarmup
+
 		// Remove rounds where win reason doesn't exist
 		var tempRoundsReason []GameRound
 		for i := range currentGame.Rounds {
