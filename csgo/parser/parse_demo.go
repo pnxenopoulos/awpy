@@ -32,12 +32,18 @@ type Game struct {
 	Map           string       `json:"MapName"`
 	TickRate      int64        `json:"TickRate"`
 	PlaybackTicks int64        `json:"PlaybackTicks"`
-	ParseRate     int          `json:"ParseRate"`
-	TradeTime     int64        `json:"TradeTime"`
-	RoundBuyStyle string       `json:"RoundBuyStyle"`
+	ParsingOpts   ParserOpts   `json:"ParserParameters"`
 	ServerVars    ServerConVar `json:"ServerVars"`
 	MMRanks       []MMRank     `json:"MatchmakingRanks"`
 	Rounds        []GameRound  `json:"GameRounds"`
+}
+
+// ParserOpts holds parsing parameters
+type ParserOpts struct {
+	ParseRate     int          `json:"ParseRate"`
+	TradeTime     int64        `json:"TradeTime"`
+	RoundBuyStyle string       `json:"RoundBuyStyle"`
+	DamagesRolled bool         `json:"DamagesRolledUp"`
 }
 
 // ServerConVar holds server convars, like round timers and such
@@ -112,7 +118,7 @@ type GrenadeAction struct {
 	Second          float64 `json:"Second"`
 	ThrowerSteamID  int64   `json:"ThrowerSteamID"`
 	ThrowerName     string  `json:"ThrowerName"`
-	ThrowerTeam     *string `json:"ThrowerTeam"`
+	ThrowerTeam     string  `json:"ThrowerTeam"`
 	ThrowerSide     string  `json:"ThrowerSide"`
 	ThrowerX        float64 `json:"ThrowerX"`
 	ThrowerY        float64 `json:"ThrowerY"`
@@ -684,6 +690,7 @@ func main() {
 	parseRatePtr := fl.Int("parserate", 128, "Parse rate, indicates spacing between ticks")
 	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
 	roundBuyPtr := fl.String("buystyle", "hltv", "Round buy style")
+	damagesRolledPtr := fl.Bool("dmgrolled", false, "Roll up damages")
 	demoIDPtr := fl.String("demoid", "", "Demo string ID")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
@@ -694,6 +701,7 @@ func main() {
 	parseRate := *parseRatePtr
 	tradeTime := int64(*tradeTimePtr)
 	roundBuyStyle := *roundBuyPtr
+	damagesRolled := *damagesRolledPtr
 	outpath := *outpathPtr
 
 	// Read in demofile
@@ -744,9 +752,14 @@ func main() {
 	}
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
 	currentGame.ClientName = header.ClientName
-	currentGame.ParseRate = int(parseRate)
-	currentGame.TradeTime = tradeTime
-	currentGame.RoundBuyStyle = roundBuyStyle
+
+	// Set parsing options
+	parsingOpts := ParserOpts{}
+	parsingOpts.ParseRate = int(parseRate)
+	parsingOpts.TradeTime = tradeTime
+	parsingOpts.RoundBuyStyle = roundBuyStyle
+	parsingOpts.DamagesRolled = damagesRolled
+	currentGame.ParsingOpts = parsingOpts
 
 	currentRound := GameRound{}
 
@@ -856,8 +869,8 @@ func main() {
 			currentRound.CTSpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
 			currentRound.TSpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
 
-			currentRound.CTBuyType = parseTeamBuy(currentRound.CTBeginEqVal+currentRound.CTSpend, "CT", roundBuyStyle)
-			currentRound.TBuyType = parseTeamBuy(currentRound.TBeginEqVal+currentRound.TSpend, "T", roundBuyStyle)
+			currentRound.CTBuyType = parseTeamBuy(currentRound.CTBeginEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
+			currentRound.TBuyType = parseTeamBuy(currentRound.TBeginEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
 
 			currentRound.CTStartEqVal = currentRound.CTBeginEqVal + currentRound.CTSpend
 			currentRound.TStartEqVal = currentRound.TBeginEqVal + currentRound.TSpend
@@ -961,8 +974,8 @@ func main() {
 		currentRound.CTSpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
 		currentRound.TSpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
 
-		currentRound.CTBuyType = parseTeamBuy(currentRound.CTBeginEqVal+currentRound.CTSpend, "CT", roundBuyStyle)
-		currentRound.TBuyType = parseTeamBuy(currentRound.TBeginEqVal+currentRound.TSpend, "T", roundBuyStyle)
+		currentRound.CTBuyType = parseTeamBuy(currentRound.CTBeginEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
+		currentRound.TBuyType = parseTeamBuy(currentRound.TBeginEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
 
 		currentRound.CTStartEqVal = currentRound.CTBeginEqVal + currentRound.CTSpend
 		currentRound.TStartEqVal = currentRound.TBeginEqVal + currentRound.TSpend
@@ -1341,10 +1354,13 @@ func main() {
 				currentGrenade.ThrowerTeam = &ctTeam
 			case common.TeamSpectators:
 				playerSide = "Spectator"
+				currentGrenade.ThrowerTeam = ""
 			case common.TeamUnassigned:
 				playerSide = "Unassigned"
+				currentGrenade.ThrowerTeam = ""
 			default:
 				playerSide = "Unknown"
+				currentGrenade.ThrowerTeam = ""
 			}
 			currentGrenade.ThrowerSide = playerSide
 
@@ -1577,7 +1593,7 @@ func main() {
 			currentKill.IsFirstKill = true
 		} else {
 			currentKill.IsFirstKill = false
-			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill, currentGame.TickRate, tradeTime)
+			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
 			if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true {
 				currentKill.PlayerTradedName = currentRound.Kills[len(currentRound.Kills)-1].VictimName
 				currentKill.PlayerTradedSteamID = currentRound.Kills[len(currentRound.Kills)-1].VictimSteamID
@@ -1838,14 +1854,14 @@ func main() {
 			// add
 			currentRound.Frames = append(currentRound.Frames, currentFrame)
 
-			if currentFrameIdx == (currentGame.ParseRate - 1) {
+			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
 				currentFrameIdx = 0
 			} else {
 				currentFrameIdx = currentFrameIdx + 1
 			}
 			
 		} else {
-			if currentFrameIdx == (currentGame.ParseRate - 1) {
+			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
 				currentFrameIdx = 0
 			} else {
 				currentFrameIdx = currentFrameIdx + 1
@@ -2035,30 +2051,31 @@ func main() {
 		}
 
 		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
-		/*
-		for i := range currentGame.Rounds {
-			var tempDamages []DamageAction
-			for j := range currentGame.Rounds[i].Damages {
-				if j < len(currentGame.Rounds[i].Damages) && j > 0 {
-					if (len(tempDamages) > 0) &&
-						(currentGame.Rounds[i].Damages[j].Tick == tempDamages[len(tempDamages)-1].Tick) &&
-						(currentGame.Rounds[i].Damages[j].AttackerSteamID == tempDamages[len(tempDamages)-1].AttackerSteamID) &&
-						(currentGame.Rounds[i].Damages[j].VictimSteamID == tempDamages[len(tempDamages)-1].VictimSteamID) &&
-						(currentGame.Rounds[i].Damages[j].Weapon == tempDamages[len(tempDamages)-1].Weapon) {
-						tempDamages[len(tempDamages)].HpDamage = tempDamages[len(tempDamages)-1].HpDamage + currentGame.Rounds[i].Damages[j].HpDamage
-						tempDamages[len(tempDamages)].HpDamageTaken = tempDamages[len(tempDamages)-1].HpDamageTaken + currentGame.Rounds[i].Damages[j].HpDamageTaken
-						tempDamages[len(tempDamages)].ArmorDamage = tempDamages[len(tempDamages)-1].ArmorDamage + currentGame.Rounds[i].Damages[j].ArmorDamage
-						tempDamages[len(tempDamages)].ArmorDamageTaken = tempDamages[len(tempDamages)-1].ArmorDamageTaken + currentGame.Rounds[i].Damages[j].ArmorDamageTaken
+		if currentGame.ParsingOpts.DamagesRolled {
+			for i := range currentGame.Rounds {
+				var tempDamages []DamageAction
+				for j := range currentGame.Rounds[i].Damages {
+					if j < len(currentGame.Rounds[i].Damages) && j > 0 {
+						if (len(tempDamages) > 0) &&
+							(currentGame.Rounds[i].Damages[j].Tick == tempDamages[len(tempDamages)-1].Tick) &&
+							(currentGame.Rounds[i].Damages[j].AttackerSteamID == tempDamages[len(tempDamages)-1].AttackerSteamID) &&
+							(currentGame.Rounds[i].Damages[j].VictimSteamID == tempDamages[len(tempDamages)-1].VictimSteamID) &&
+							(currentGame.Rounds[i].Damages[j].Weapon == tempDamages[len(tempDamages)-1].Weapon) {
+							tempDamages[len(tempDamages)].HpDamage = tempDamages[len(tempDamages)-1].HpDamage + currentGame.Rounds[i].Damages[j].HpDamage
+							tempDamages[len(tempDamages)].HpDamageTaken = tempDamages[len(tempDamages)-1].HpDamageTaken + currentGame.Rounds[i].Damages[j].HpDamageTaken
+							tempDamages[len(tempDamages)].ArmorDamage = tempDamages[len(tempDamages)-1].ArmorDamage + currentGame.Rounds[i].Damages[j].ArmorDamage
+							tempDamages[len(tempDamages)].ArmorDamageTaken = tempDamages[len(tempDamages)-1].ArmorDamageTaken + currentGame.Rounds[i].Damages[j].ArmorDamageTaken
+						} else {
+							tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
+						}
 					} else {
 						tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
 					}
-				} else {
-					tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
 				}
+				currentGame.Rounds[i].Damages = tempDamages
 			}
-			currentGame.Rounds[i].Damages = tempDamages
-		} */
-
+		}
+		
 		// Write the JSON
 		file, _ := json.MarshalIndent(currentGame, "", " ")
 		_ = ioutil.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)

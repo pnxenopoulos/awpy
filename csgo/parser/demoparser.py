@@ -17,6 +17,7 @@ class DemoParser:
         demo_id (string)  : A unique demo name/game id. Default is inferred from demofile name
         parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
         trade_time (int)  : Length of the window for a trade (in seconds). Default is 5.
+        dmg_rolled (bool) : Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
         buy_style (string): Buy style string, one of "hltv", ...
 
     Raises:
@@ -31,6 +32,7 @@ class DemoParser:
         demo_id=None,
         parse_rate=128,
         trade_time=5,
+        dmg_rolled=False,
         buy_style="hltv",
     ):
         # Set up logger
@@ -136,6 +138,8 @@ class DemoParser:
             self.buy_style = "hltv"
         else:
             self.buy_style = buy_style
+
+        self.dmg_rolled = dmg_rolled
         self.logger.info("Setting buy style to " + str(self.buy_style))
 
         # Set parse error to False
@@ -161,6 +165,8 @@ class DemoParser:
                 str(self.parse_rate),
                 "-tradetime",
                 str(self.trade_time),
+                "-dmgrolled",
+                str(self.dmg_rolled),
                 "-demoid",
                 str(self.demo_id),
                 "-out",

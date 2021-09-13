@@ -140,6 +140,7 @@ class TestDemoParser:
         )
         assert self.parser_opts.trade_time == 7
         assert self.parser_opts.buy_style == "hltv"
+        assert self.parser_opts.dmg_rolled == False
 
     def test_bad_parse_opts(self):
         """Tests bad parsing options"""
@@ -295,6 +296,14 @@ class TestDemoParser:
                     len(self.demo_data[demo]["json"]["GameRounds"])
                     == self.demo_data[demo]["rounds"]
                 )
+
+    def test_parsed_opts(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                assert self.demo_data[demo]["json"]["ParserParameters"]["DamagesRolledUp"] == False
+                assert self.demo_data[demo]["json"]["ParserParameters"]["TradeTime"] == 5
+                assert self.demo_data[demo]["json"]["ParserParameters"]["RoundBuyStyle"] == "hltv"
+                assert self.demo_data[demo]["json"]["ParserParameters"]["ParseRate"] == 256
 
     def test_frames(self):
         for demo in self.demo_data:
