@@ -809,14 +809,13 @@ func main() {
 
 			// Change so that round restarts are parsed using the server convar
 			if serverConfig.RoundRestartDelay == 0 {
-				RoundRestartDelay = 5
+				RoundRestartDelay = 5 // This is default on many servers, I think
 			} else {
 				RoundRestartDelay = serverConfig.RoundRestartDelay
 			}
 		}
 
 		if roundStarted == 1 {
-			// Should the 5 second constant be changed?
 			currentGame.Rounds = append(currentGame.Rounds, currentRound)
 		}
 
@@ -856,8 +855,9 @@ func main() {
 	p.RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
 		gs := p.GameState()
 
-		if roundStarted == 0 {
+		if roundInFreezetime == 0 {
 			// This means the RoundStart event did not fire, but the freezetimeend did
+			currentGame.Rounds = append(currentGame.Rounds, currentRound)
 			roundStarted = 1
 			roundInEndTime = 0
 			currentRound = GameRound{}
