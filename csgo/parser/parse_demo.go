@@ -2014,7 +2014,7 @@ func main() {
 		var tempRoundsReason []GameRound
 		for i := range currentGame.Rounds {
 			currRound := currentGame.Rounds[i]
-			if currRound.Reason == "CTWin" || currRound.Reason == "BombDefused" || currRound.Reason == "TargetSaved" || currRound.Reason == "TerroristsWin" || currRound.Reason == "TargetBombed" {
+			if currRound.Reason == "CTWin" || currRound.Reason == "BombDefused" || currRound.Reason == "TargetSaved" || currRound.Reason == "TerroristsWin" || currRound.Reason == "TargetBombed" || currRound.Reason == "CTSurrender" || currRound.Reason == "TerroristsSurrender" {
 				tempRoundsReason = append(tempRoundsReason, currRound)
 			}
 		}
@@ -2121,7 +2121,7 @@ func main() {
 			} else if i > 0 {
 				currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndTScore
 				currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndCTScore
-				if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" {
+				if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" || currentGame.Rounds[i].Reason == "TerroristsSurrender" {
 					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
 					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
 				} else {
@@ -2132,7 +2132,7 @@ func main() {
 				// Set first round to 0-0, switch other scores
 				currentGame.Rounds[i].TScore = 0
 				currentGame.Rounds[i].CTScore = 0
-				if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" {
+				if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" || currentGame.Rounds[i].Reason == "CTSurrender" {
 					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
 					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
 				} else {
