@@ -72,7 +72,7 @@ class DemoParser:
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
         self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
-        if demo_id is None:
+        if (demo_id is None) | (demo_id == ""):
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
             self.demo_id = demo_id
