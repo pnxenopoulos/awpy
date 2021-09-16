@@ -58,7 +58,7 @@ class TestDemoParser:
         """Tests if a demo_id is correctly inferred"""
         self.parser_inferred_space = DemoParser(
             demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            demo_id=" ",
+            demo_id="",
             log=False,
         )
         assert self.parser_inferred_space.demo_id == "og-vs-natus-vincere-m1-dust2"
