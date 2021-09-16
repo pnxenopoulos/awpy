@@ -155,26 +155,27 @@ class DemoParser:
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
+        parser_cmd = [
+            "go",
+            "run",
+            "parse_demo.go",
+            "-demo",
+            self.demofile,
+            "-parserate",
+            str(self.parse_rate),
+            "-tradetime",
+            str(self.trade_time),
+            "-buystyle",
+            str(self.buy_style),
+            "-demoid",
+            str(self.demo_id),
+            "-out",
+            self.outpath,
+        ]
+        if self.dmg_rolled:
+            parser_cmd.append("--dmgrolled")
         proc = subprocess.Popen(
-            [
-                "go",
-                "run",
-                "parse_demo.go",
-                "-demo",
-                self.demofile,
-                "-parserate",
-                str(self.parse_rate),
-                "-tradetime",
-                str(self.trade_time),
-                "-buystyle",
-                str(self.buy_style),
-                "-dmgrolled",
-                str(self.dmg_rolled).lower(),
-                "-demoid",
-                str(self.demo_id),
-                "-out",
-                self.outpath,
-            ],
+            parser_cmd,
             stdout=subprocess.PIPE,
             cwd=path,
         )
