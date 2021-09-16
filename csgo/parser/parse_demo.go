@@ -71,8 +71,8 @@ type ServerConVar struct {
 type MMRank struct {
 	SteamID    uint64  `json:"SteamID"`
 	RankChange float32 `json:"RankChange"`
-	RankOld    int     `json:"RankOld"`
-	RankNew    int     `json:"RankNew"`
+	RankOld    string  `json:"RankOld"`
+	RankNew    string  `json:"RankNew"`
 	WinCount   int     `json:"WinCount"`
 }
 
@@ -367,6 +367,53 @@ type WeaponInfo struct {
 	WeaponClass    string `json:"WeaponClass"`
 	AmmoInMagazine int64  `json:"AmmoInMagazine"`
 	AmmoInReserve  int64  `json:"AmmoInReserve"`
+}
+
+func convertRank(r int) string {
+	switch rank := r; rank {
+	case -1:
+		return "Expired"
+	case 0:
+		return "Unranked"
+	case 1:
+		return "Silver 1"
+	case 2:
+		return "Silver 2"
+	case 3:
+		return "Silver 3"
+	case 4:
+		return "Silver 4"
+	case 5:
+		return "Silver Elite"
+	case 6:
+		return "Silver Elite Master"
+	case 7:
+		return "Gold Nova 1"
+	case 8:
+		return "Gold Nova 2"
+	case 9:
+		return "Gold Nova 3"
+	case 10:
+		return "Gold Nova Master"
+	case 11:
+		return "Master Guardian 1"
+	case 12:
+		return "Master Guardian 2"
+	case 13:
+		return "Master Guardian Elite"
+	case 14:
+		return "Distinguished Master Guardian"
+	case 15:
+		return "Legendary Eagle"
+	case 16:
+		return "Legendary Eagle Master"
+	case 17:
+		return "Supreme Master First Class"
+	case 18:
+		return "The Global Elite"
+	default:
+		return "Unranked"
+	}
 }
 
 func convertRoundEndReason(r events.RoundEndReason) string {
@@ -809,8 +856,8 @@ func main() {
 
 		rankUpdate.SteamID = e.SteamID64()
 		rankUpdate.RankChange = e.RankChange
-		rankUpdate.RankOld = e.RankOld
-		rankUpdate.RankNew = e.RankNew
+		rankUpdate.RankOld = convertRank(e.RankOld)
+		rankUpdate.RankNew = convertRank(e.RankNew)
 		rankUpdate.WinCount = e.WinCount
 
 		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
