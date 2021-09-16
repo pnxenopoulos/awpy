@@ -1488,7 +1488,9 @@ func main() {
 			currentGrenade.GrenadeZ = float64(grenadePos.Z)
 
 			// Add grenade event
-			currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
+			if playerSide == "CT" || playerSide == "T" {
+				currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
+			}
 		}
 	})
 
