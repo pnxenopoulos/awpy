@@ -1312,10 +1312,10 @@ func main() {
 			switch e.Projectile.Thrower.Team {
 			case common.TeamTerrorists:
 				playerSide = "T"
-				currentGrenade.ThrowerTeam = tTeam
+				currentGrenade.ThrowerTeam = &tTeam
 			case common.TeamCounterTerrorists:
 				playerSide = "CT"
-				currentGrenade.ThrowerTeam = ctTeam
+				currentGrenade.ThrowerTeam = &ctTeam
 			case common.TeamSpectators:
 				playerSide = "Spectator"
 			case common.TeamUnassigned:
