@@ -2156,11 +2156,13 @@ func main() {
 		}
 
 		// Make sure that teams are accurately set after half
-		if *currentGame.Rounds[15].CTTeam == *currentGame.Rounds[14].CTTeam {
-			currentGame.Rounds[15].CTTeam = currentGame.Rounds[14].TTeam
-			currentGame.Rounds[15].TTeam = currentGame.Rounds[14].CTTeam
+		if len(currentGame.Rounds) >= 15 {
+			if *currentGame.Rounds[15].CTTeam == *currentGame.Rounds[14].CTTeam {
+				currentGame.Rounds[15].CTTeam = currentGame.Rounds[14].TTeam
+				currentGame.Rounds[15].TTeam = currentGame.Rounds[14].CTTeam
+			}
 		}
-
+		
 		// Set the correct round start for round 0
 		currentGame.Rounds[0].CTBeginMoney = 4000
 		currentGame.Rounds[0].TBeginMoney = 4000
