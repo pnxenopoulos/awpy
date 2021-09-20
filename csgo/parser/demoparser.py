@@ -12,13 +12,14 @@ class DemoParser:
     """This class can parse a CSGO demofile to various outputs, such as JSON or CSV. Accessible via csgo.parser import DemoParser
 
     Attributes:
-        demofile (string) : A string denoting the path to the demo file, which ends in .dem
-        log (boolean)     : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
-        demo_id (string)  : A unique demo name/game id. Default is inferred from demofile name
-        parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
-        trade_time (int)  : Length of the window for a trade (in seconds). Default is 5.
-        dmg_rolled (bool) : Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
-        buy_style (string): Buy style string, one of "hltv", ...
+        demofile (string)   : A string denoting the path to the demo file, which ends in .dem
+        log (boolean)       : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
+        demo_id (string)    : A unique demo name/game id. Default is inferred from demofile name
+        parse_rate (int)    : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
+        parse_frames (bool) : Flag if you want to parse frames (trajectory data) or not
+        trade_time (int)    : Length of the window for a trade (in seconds). Default is 5.
+        dmg_rolled (bool)   : Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
+        buy_style (string)  : Buy style string, one of "hltv" or "csgo"
 
     Raises:
         ValueError : Raises a ValueError if the Golang version is lower than 1.14
@@ -31,6 +32,7 @@ class DemoParser:
         log=False,
         demo_id=None,
         parse_rate=128,
+        parse_frames=True,
         trade_time=5,
         dmg_rolled=False,
         buy_style="hltv",
@@ -140,6 +142,7 @@ class DemoParser:
             self.buy_style = buy_style
 
         self.dmg_rolled = dmg_rolled
+        self.parse_frames = parse_frames
         self.logger.info("Rollup damages set to " + str(self.dmg_rolled))
         self.logger.info("Setting buy style to " + str(self.buy_style))
 
@@ -174,6 +177,8 @@ class DemoParser:
         ]
         if self.dmg_rolled:
             parser_cmd.append("--dmgrolled")
+        if self.parse_frames:
+            parser_cmd.append("--parseframes")
         proc = subprocess.Popen(
             parser_cmd,
             stdout=subprocess.PIPE,

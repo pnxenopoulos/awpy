@@ -150,6 +150,7 @@ class TestDemoParser:
         assert self.parser_opts.trade_time == 7
         assert self.parser_opts.buy_style == "hltv"
         assert self.parser_opts.dmg_rolled == False
+        assert self.parser_opts.parse_frames == True
 
     def test_bad_parse_opts(self):
         """Tests bad parsing options"""
@@ -163,7 +164,7 @@ class TestDemoParser:
         assert self.parser_opts.trade_time == 5
         assert self.parser_opts.buy_style == "hltv"
 
-    def test_parse(self):
+    def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
         assert type(output_json) is dict

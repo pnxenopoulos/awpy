@@ -41,6 +41,7 @@ type Game struct {
 // ParserOpts holds parsing parameters
 type ParserOpts struct {
 	ParseRate     int          `json:"ParseRate"`
+	ParseFrames   bool         `json:"ParseFrames"`
 	TradeTime     int64        `json:"TradeTime"`
 	RoundBuyStyle string       `json:"RoundBuyStyle"`
 	DamagesRolled bool         `json:"DamagesRolledUp"`
@@ -773,6 +774,7 @@ func main() {
 	fl := new(flag.FlagSet)
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 128, "Parse rate, indicates spacing between ticks")
+	parseFramesPtr := fl.Bool("parseframes", false, "Parse frames")
 	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
 	roundBuyPtr := fl.String("buystyle", "hltv", "Round buy style")
 	damagesRolledPtr := fl.Bool("dmgrolled", false, "Roll up damages")
@@ -784,6 +786,7 @@ func main() {
 
 	demPath := *demoPathPtr
 	parseRate := *parseRatePtr
+	parseFrames := *parseFramesPtr
 	tradeTime := int64(*tradeTimePtr)
 	roundBuyStyle := *roundBuyPtr
 	damagesRolled := *damagesRolledPtr
@@ -1863,7 +1866,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
 
-		if (roundInFreezetime == 0) && (currentFrameIdx == 0) {
+		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
 			currentFrame.Tick = int64(gs.IngameTick())
 			currentFrame.Second = float64((float64(currentFrame.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
