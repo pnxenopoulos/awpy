@@ -54,6 +54,15 @@ class TestDemoParser:
         )
         assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
 
+    def test_demo_id_inferred_space(self):
+        """Tests if a demo_id is correctly inferred"""
+        self.parser_inferred_space = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demo_id="",
+            log=False,
+        )
+        assert self.parser_inferred_space.demo_id == "og-vs-natus-vincere-m1-dust2"
+
     def test_outpath(self):
         """Tests if the outpath is correctly recorded"""
         self.parser_outpath = DemoParser(
@@ -140,6 +149,8 @@ class TestDemoParser:
         )
         assert self.parser_opts.trade_time == 7
         assert self.parser_opts.buy_style == "hltv"
+        assert self.parser_opts.dmg_rolled == False
+        assert self.parser_opts.parse_frames == True
 
     def test_bad_parse_opts(self):
         """Tests bad parsing options"""
@@ -153,7 +164,7 @@ class TestDemoParser:
         assert self.parser_opts.trade_time == 5
         assert self.parser_opts.buy_style == "hltv"
 
-    def test_parse(self):
+    def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
         assert type(output_json) is dict
@@ -295,6 +306,14 @@ class TestDemoParser:
                     len(self.demo_data[demo]["json"]["GameRounds"])
                     == self.demo_data[demo]["rounds"]
                 )
+
+    def test_parsed_opts(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                assert self.demo_data[demo]["json"]["ParserParameters"]["DamagesRolledUp"] == False
+                assert self.demo_data[demo]["json"]["ParserParameters"]["TradeTime"] == 5
+                assert self.demo_data[demo]["json"]["ParserParameters"]["RoundBuyStyle"] == "hltv"
+                assert self.demo_data[demo]["json"]["ParserParameters"]["ParseRate"] == 256
 
     def test_frames(self):
         for demo in self.demo_data:
