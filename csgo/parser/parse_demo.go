@@ -682,10 +682,16 @@ func acceptableGamePhase(gs dem.GameState) bool {
 }
 
 func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
-	// If the the previous killer is not the person killed, it is not a trade
-	if *killB.VictimSteamID == *killA.AttackerSteamID {
-		if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
-			return true
+	// First, identify is killA has a killer. If there is no killer, there cannot be a trade
+	if killA.AttackerSteamID == nil {
+		return false
+	} else {
+		// If the the previous killer is not the person killed, it is not a trade
+		if *killB.VictimSteamID == *killA.AttackerSteamID {
+			if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
+				return true
+			}
+			return false
 		}
 		return false
 	}
