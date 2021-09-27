@@ -682,10 +682,16 @@ func acceptableGamePhase(gs dem.GameState) bool {
 }
 
 func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
-	// If the the previous killer is not the person killed, it is not a trade
-	if *killB.VictimSteamID == *killA.AttackerSteamID {
-		if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
-			return true
+	// First, identify is killA has a killer. If there is no killer, there cannot be a trade
+	if killA.AttackerSteamID == nil {
+		return false
+	} else {
+		// If the the previous killer is not the person killed, it is not a trade
+		if *killB.VictimSteamID == *killA.AttackerSteamID {
+			if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
+				return true
+			}
+			return false
 		}
 		return false
 	}
@@ -1140,12 +1146,14 @@ func main() {
 		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse_start"
 
-		// No BombSite info, must infer
-		if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
-			currentBomb.BombSite = "A"
-		} else {
-			currentBomb.BombSite = "B"
+		// Find bombsite where event is planted
+		bombSite := ""
+		for _, b := range currentRound.Bomb {
+			if b.BombAction == "plant" {
+				bombSite = b.BombSite
+			}
 		}
+		currentBomb.BombSite = bombSite	
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1168,12 +1176,14 @@ func main() {
 		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse_aborted"
 
-		// No BombSite info, must infer
-		if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
-			currentBomb.BombSite = "A"
-		} else {
-			currentBomb.BombSite = "B"
+		// Find bombsite where event is planted
+		bombSite := ""
+		for _, b := range currentRound.Bomb {
+			if b.BombAction == "plant" {
+				bombSite = b.BombSite
+			}
 		}
+		currentBomb.BombSite = bombSite	
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1428,17 +1438,14 @@ func main() {
 		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "plant_abort"
 
-		// No BombSite info, must infer
-		if len(currentRound.Frames) > 0 {
-			if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
-				currentBomb.BombSite = "A"
-			} else {
-				currentBomb.BombSite = "B"
+		// Find bombsite where event is planted
+		bombSite := ""
+		for _, b := range currentRound.Bomb {
+			if b.BombAction == "plant_begin" {
+				bombSite = b.BombSite
 			}
-		} else {
-			currentBomb.BombSite = "Unknown"
 		}
-		
+		currentBomb.BombSite = bombSite		
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name

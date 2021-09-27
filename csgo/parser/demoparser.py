@@ -140,11 +140,12 @@ class DemoParser:
             self.buy_style = "hltv"
         else:
             self.buy_style = buy_style
+        self.logger.info("Setting buy style to " + str(self.buy_style))
 
         self.dmg_rolled = dmg_rolled
         self.parse_frames = parse_frames
         self.logger.info("Rollup damages set to " + str(self.dmg_rolled))
-        self.logger.info("Setting buy style to " + str(self.buy_style))
+        self.logger.info("Parse frames set to " + str(self.parse_frames))
 
         # Set parse error to False
         self.parse_error = False
