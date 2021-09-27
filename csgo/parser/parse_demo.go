@@ -1148,7 +1148,7 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
-		for i, b := range currentGame.Bomb {
+		for i, b := range currentRound.Bomb {
 			if b.BombAction == "plant" {
 				bombSite = b.BombSite
 			}
@@ -1178,7 +1178,7 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
-		for i, b := range currentGame.Bomb {
+		for i, b := range currentRound.Bomb {
 			if b.BombAction == "plant" {
 				bombSite = b.BombSite
 			}
@@ -1440,7 +1440,7 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
-		for i, b := range currentGame.Bomb {
+		for i, b := range currentRound.Bomb {
 			if b.BombAction == "plant_begin" {
 				bombSite = b.BombSite
 			}
