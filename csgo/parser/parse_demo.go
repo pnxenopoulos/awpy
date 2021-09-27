@@ -1146,17 +1146,14 @@ func main() {
 		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse_start"
 
-		if currentGame.ParserOpts.ParseFrames {
-			// No BombSite info, must infer
-			if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
-				currentBomb.BombSite = "A"
-			} else {
-				currentBomb.BombSite = "B"
+		// Find bombsite where event is planted
+		bombSite := ""
+		for i, b := range currentGame.Bomb {
+			if b.BombAction == "plant" {
+				bombSite = b.BombSite
 			}
-		} else {
-			currentBomb.BombSite = e.Site
 		}
-		
+		currentBomb.BombSite = bombSite	
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1179,12 +1176,14 @@ func main() {
 		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse_aborted"
 
-		// No BombSite info, must infer
-		if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
-			currentBomb.BombSite = "A"
-		} else {
-			currentBomb.BombSite = "B"
+		// Find bombsite where event is planted
+		bombSite := ""
+		for i, b := range currentGame.Bomb {
+			if b.BombAction == "plant" {
+				bombSite = b.BombSite
+			}
 		}
+		currentBomb.BombSite = bombSite	
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1439,17 +1438,14 @@ func main() {
 		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "plant_abort"
 
-		// No BombSite info, must infer
-		if len(currentRound.Frames) > 0 {
-			if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
-				currentBomb.BombSite = "A"
-			} else {
-				currentBomb.BombSite = "B"
+		// Find bombsite where event is planted
+		bombSite := ""
+		for i, b := range currentGame.Bomb {
+			if b.BombAction == "plant_begin" {
+				bombSite = b.BombSite
 			}
-		} else {
-			currentBomb.BombSite = "Unknown"
 		}
-		
+		currentBomb.BombSite = bombSite		
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
