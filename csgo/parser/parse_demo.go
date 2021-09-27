@@ -1146,12 +1146,17 @@ func main() {
 		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse_start"
 
-		// No BombSite info, must infer
-		if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
-			currentBomb.BombSite = "A"
+		if currentGame.ParserOpts.ParseFrames {
+			// No BombSite info, must infer
+			if currentRound.Frames[len(currentRound.Frames)-1].BombDistToA < currentRound.Frames[len(currentRound.Frames)-1].BombDistToB {
+				currentBomb.BombSite = "A"
+			} else {
+				currentBomb.BombSite = "B"
+			}
 		} else {
-			currentBomb.BombSite = "B"
+			currentBomb.BombSite = e.Site
 		}
+		
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
