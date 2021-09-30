@@ -1500,7 +1500,7 @@ func main() {
 			currentGrenade.ThrowerSide = playerSide
 
 			// Player location (use weaponfire event)
-			playerPos = e.Projectile.Position()
+			playerPos := e.Projectile.Position()
 			playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 
 			playerArea := mesh.GetNearestArea(playerPoint, true)
