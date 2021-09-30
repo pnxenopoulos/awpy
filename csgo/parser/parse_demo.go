@@ -2025,14 +2025,14 @@ func main() {
 	// Clean rounds
 	if len(currentGame.Rounds) > 0 {
 		// Remove rounds where not warmup
-		var tempRoundsWarmup []GameRound
-		for i := range currentGame.Rounds {
-			currRound := currentGame.Rounds[i]
-			if !currRound.IsWarmup {
-				tempRoundsWarmup = append(tempRoundsWarmup, currRound)
-			}
-		}
-		currentGame.Rounds = tempRoundsWarmup
+		//var tempRoundsWarmup []GameRound
+		//for i := range currentGame.Rounds {
+		//	currRound := currentGame.Rounds[i]
+		//	if !currRound.IsWarmup {
+		//		tempRoundsWarmup = append(tempRoundsWarmup, currRound)
+		//	}
+		//}
+		//currentGame.Rounds = tempRoundsWarmup
 
 		// Remove rounds where win reason doesn't exist
 		var tempRoundsReason []GameRound
