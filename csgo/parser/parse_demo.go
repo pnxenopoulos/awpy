@@ -116,8 +116,10 @@ type GameRound struct {
 
 // GrenadeAction events
 type GrenadeAction struct {
-	Tick            int64   `json:"Tick"`
-	Second          float64 `json:"Second"`
+	ThrowTick       int64   `json:"ThrowTick"`
+	DestroyTick     int64   `json:"DestroyTick"`
+	ThrowSecond     float64 `json:"ThrowSecond"`
+	DestroySecond   float64 `json:"DestroySecond"`
 	ThrowerSteamID  int64   `json:"ThrowerSteamID"`
 	ThrowerName     string  `json:"ThrowerName"`
 	ThrowerTeam     string  `json:"ThrowerTeam"`
@@ -133,6 +135,7 @@ type GrenadeAction struct {
 	GrenadeZ        float64 `json:"GrenadeZ"`
 	GrenadeAreaID   int64   `json:"GrenadeAreaID"`
 	GrenadeAreaName string  `json:"GrenadeAreaName"`
+	UniqueID        int64
 }
 
 // BombAction events
@@ -1459,14 +1462,16 @@ func main() {
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
 
-	// Parse grenades
-	p.RegisterEventHandler(func(e events.GrenadeProjectileDestroy) {
+	// Parse grenade throws
+	p.RegisterEventHandler(func(e events.GrenadeProjectileThrow) {
 		gs := p.GameState()
 
 		if e.Projectile.Thrower != nil {
 			currentGrenade := GrenadeAction{}
-			currentGrenade.Tick = int64(gs.IngameTick())
-			currentGrenade.Second = float64((float64(currentGrenade.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+			currentGrenade.UniqueID = e.Projectile.UniqueID()
+			currentGrenade.ThrowTick = int64(gs.IngameTick())
+			currentGrenade.ThrowSecond = float64((float64(currentGrenade.ThrowTick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+
 			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
 			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
@@ -1522,31 +1527,45 @@ func main() {
 			currentGrenade.ThrowerY = float64(playerPoint.Y)
 			currentGrenade.ThrowerZ = float64(playerPoint.Z)
 
-			// Grenade Location
-			grenadePos := e.Projectile.Position()
-			grenadePoint := gonav.Vector3{X: float32(grenadePos.X), Y: float32(grenadePos.Y), Z: float32(grenadePos.Z)}
-			grenadeArea := mesh.GetNearestArea(grenadePoint, true)
-			var grenadeAreaID int64
-			grenadeAreaPlace := ""
-
-			if grenadeArea != nil {
-				grenadeAreaID = int64(grenadeArea.ID)
-				if grenadeArea.Place != nil {
-					grenadeAreaPlace = grenadeArea.Place.Name
-				} else {
-					grenadeAreaPlace = findAreaPlace(grenadeArea, mesh)
-				}
-			}
-
-			currentGrenade.GrenadeAreaID = grenadeAreaID
-			currentGrenade.GrenadeAreaName = grenadeAreaPlace
-			currentGrenade.GrenadeX = float64(grenadePos.X)
-			currentGrenade.GrenadeY = float64(grenadePos.Y)
-			currentGrenade.GrenadeZ = float64(grenadePos.Z)
-
 			// Add grenade event
 			if playerSide == "CT" || playerSide == "T" {
 				currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
+			}
+		}
+	})
+
+	// Parse grenade destroys
+	p.RegisterEventHandler(func(e events.GrenadeProjectileDestroy) {
+		gs := p.GameState()
+
+		if e.Projectile.Thrower != nil {
+			for i, g := range currentRound.Grenades {
+				if g.UniqueID == e.Projectile.UniqueID() {
+					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
+					currentRound.Grenades[i].DestroySecond = float64((float64(currentGrenade.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+
+					// Grenade Location
+					grenadePos := e.Projectile.Position()
+					grenadePoint := gonav.Vector3{X: float32(grenadePos.X), Y: float32(grenadePos.Y), Z: float32(grenadePos.Z)}
+					grenadeArea := mesh.GetNearestArea(grenadePoint, true)
+					var grenadeAreaID int64
+					grenadeAreaPlace := ""
+
+					if grenadeArea != nil {
+						grenadeAreaID = int64(grenadeArea.ID)
+						if grenadeArea.Place != nil {
+							grenadeAreaPlace = grenadeArea.Place.Name
+						} else {
+							grenadeAreaPlace = findAreaPlace(grenadeArea, mesh)
+						}
+					}
+
+					currentRound.Grenades[i].GrenadeAreaID = grenadeAreaID
+					currentRound.Grenades[i].GrenadeAreaName = grenadeAreaPlace
+					currentRound.Grenades[i].GrenadeX = float64(grenadePos.X)
+					currentRound.Grenades[i].GrenadeY = float64(grenadePos.Y)
+					currentRound.Grenades[i].GrenadeZ = float64(grenadePos.Z)
+				}
 			}
 		}
 	})
