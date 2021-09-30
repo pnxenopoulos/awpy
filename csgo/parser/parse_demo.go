@@ -1500,7 +1500,8 @@ func main() {
 			currentGrenade.ThrowerSide = playerSide
 
 			// Player location (use weaponfire event)
-			playerPoint := e.Projectile.Position()
+			playerPos = e.Projectile.Position()
+			playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 
 			playerArea := mesh.GetNearestArea(playerPoint, true)
 			var playerAreaID int64
@@ -1536,7 +1537,7 @@ func main() {
 			for i, g := range currentRound.Grenades {
 				if g.UniqueID == e.Projectile.UniqueID() {
 					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
-					currentRound.Grenades[i].DestroySecond = float64((float64(currentRound.Grenades[i].Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+					currentRound.Grenades[i].DestroySecond = float64((float64(currentRound.Grenades[i].DestroyTick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
