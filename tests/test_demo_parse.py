@@ -310,10 +310,20 @@ class TestDemoParser:
     def test_parsed_opts(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                assert self.demo_data[demo]["json"]["ParserParameters"]["DamagesRolledUp"] == False
-                assert self.demo_data[demo]["json"]["ParserParameters"]["TradeTime"] == 5
-                assert self.demo_data[demo]["json"]["ParserParameters"]["RoundBuyStyle"] == "hltv"
-                assert self.demo_data[demo]["json"]["ParserParameters"]["ParseRate"] == 256
+                assert (
+                    self.demo_data[demo]["json"]["ParserParameters"]["DamagesRolledUp"]
+                    == False
+                )
+                assert (
+                    self.demo_data[demo]["json"]["ParserParameters"]["TradeTime"] == 5
+                )
+                assert (
+                    self.demo_data[demo]["json"]["ParserParameters"]["RoundBuyStyle"]
+                    == "hltv"
+                )
+                assert (
+                    self.demo_data[demo]["json"]["ParserParameters"]["ParseRate"] == 256
+                )
 
     def test_frames(self):
         for demo in self.demo_data:
@@ -556,12 +566,16 @@ class TestDemoParser:
                             assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
                     if r["Grenades"] is not None:
                         for e in r["Grenades"]:
-                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
+                            assert (
+                                e["ThrowTick"] >= start_tick
+                                and e["DestroyTick"] <= end_tick
+                            )
+                            assert e["ThrowTick"] <= e["DestroyTick"]
                     if r["Flashes"] is not None:
                         for e in r["Flashes"]:
                             assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
                     # Technically frames could happen outside...shouldn't be a big deal
-                    #if r["Frames"] is not None:
+                    # if r["Frames"] is not None:
                     #    for e in r["Frames"]:
                     #        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
 
