@@ -1,0 +1,58 @@
+[
+    {
+        "map_name": "de_overpass",
+        "x": -4831,
+        "y": 1781,
+        "scale": 5.2
+    },
+    {
+        "map_name": "de_ancient",
+        "x": -2953,
+        "y": 2164,
+        "scale": 5
+    },
+    {
+        "map_name": "de_nuke",
+        "x": -3453,
+        "y": 2887,
+        "scale": 7,
+        "z_cutoff": -495
+    },
+    {
+        "map_name": "de_dust2",
+        "x": -2476,
+        "y": 3239,
+        "scale": 4.4
+    },
+    {
+        "map_name": "de_mirage",
+        "x": -3230,
+        "y": 1713,
+        "scale": 5
+    },
+    {
+        "map_name": "de_inferno",
+        "x": -2087,
+        "y": 3870,
+        "scale": 4.9
+    },
+    {
+        "map_name": "de_ancient",
+        "x": -2953,
+        "y": 2164,
+        "scale": 5
+    },
+    {
+        "map_name": "de_vertigo",
+        "x": -3168,
+        "y": 1762,
+        "scale": 4,
+        "z_cutoff": 11700
+    },
+    {
+        "map_name": "de_train",
+        "x": -2477,
+        "y": 2392,
+        "scale": 4.7
+    }
+]
