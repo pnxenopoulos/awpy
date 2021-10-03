@@ -27,350 +27,350 @@ import (
 
 // Game is the overall struct that holds everything
 type Game struct {
-	MatchName     string       `json:"MatchID"`
-	ClientName    string       `json:"ClientName"`
-	Map           string       `json:"MapName"`
-	TickRate      int64        `json:"TickRate"`
-	PlaybackTicks int64        `json:"PlaybackTicks"`
-	ParsingOpts   ParserOpts   `json:"ParserParameters"`
-	ServerVars    ServerConVar `json:"ServerVars"`
-	MMRanks       []MMRank     `json:"MatchmakingRanks"`
-	Rounds        []GameRound  `json:"GameRounds"`
+	MatchName     string       `json:"matchID"`
+	ClientName    string       `json:"clientName"`
+	Map           string       `json:"mapName"`
+	TickRate      int64        `json:"tickRate"`
+	PlaybackTicks int64        `json:"playbackTicks"`
+	ParsingOpts   ParserOpts   `json:"parserParameters"`
+	ServerVars    ServerConVar `json:"serverVars"`
+	MMRanks       []MMRank     `json:"matchmakingRanks"`
+	Rounds        []GameRound  `json:"gameRounds"`
 }
 
 // ParserOpts holds parsing parameters
 type ParserOpts struct {
-	ParseRate     int          `json:"ParseRate"`
-	ParseFrames   bool         `json:"ParseFrames"`
-	TradeTime     int64        `json:"TradeTime"`
-	RoundBuyStyle string       `json:"RoundBuyStyle"`
-	DamagesRolled bool         `json:"DamagesRolledUp"`
+	ParseRate     int          `json:"parseRate"`
+	ParseFrames   bool         `json:"parseFrames"`
+	TradeTime     int64        `json:"tradeTime"`
+	RoundBuyStyle string       `json:"roundBuyStyle"`
+	DamagesRolled bool         `json:"damagesRolledUp"`
 }
 
 // ServerConVar holds server convars, like round timers and such
 type ServerConVar struct {
-	CashBombDefused               int64 `json:"CashBombDefused"`               // cash_player_bomb_defused
-	CashBombPlanted               int64 `json:"CashBombPlanted"`               // cash_player_bomb_planted
-	CashWinBomb                   int64 `json:"CashTeamTWinBomb"`              // cash_team_terrorist_win_bomb
-	CashWinDefuse                 int64 `json:"CashWinDefuse"`                 // cash_team_win_by_defusing_bomb
-	CashWinTimeRunOut             int64 `json:"CashWinTimeRunOut"`             // cash_team_win_by_time_running_out_bomb
-	CashWinElimination            int64 `json:"CashWinElimination"`            // cash_team_elimination_bomb_map
-	CashPlayerKilledDefault       int64 `json:"CashPlayerKilledDefault"`       // cash_player_killed_enemy_default
-	CashTeamLoserBonus            int64 `json:"CashTeamLoserBonus"`            // cash_team_loser_bonus
-	CashTeamLoserBonusConsecutive int64 `json:"CashTeamLoserBonusConsecutive"` // cash_team_loser_bonus_consecutive_rounds
-	RoundTime                     int64 `json:"RoundTime"`                     // mp_roundtime_defuse
-	RoundRestartDelay             int64 `json:"RoundRestartDelay"`             // mp_round_restart_delay
-	FreezeTime                    int64 `json:"FreezeTime"`                    // mp_freezetime
-	BuyTime                       int64 `json:"BuyTime"`                       // mp_buytime
-	BombTimer                     int64 `json:"BombTimer"`                     // mp_c4timer
-	MaxRounds                     int64 `json:"MaxRounds"`                     // mp_maxrounds
-	TimeoutsAllowed               int64 `json:"TimeoutsAllowed"`               // mp_team_timeout_max
-	CoachingAllowed               int64 `json:"CoachingAllowed"`               // sv_coaching_enabled
+	CashBombDefused               int64 `json:"cashBombDefused"`               // cash_player_bomb_defused
+	CashBombPlanted               int64 `json:"cashBombPlanted"`               // cash_player_bomb_planted
+	CashWinBomb                   int64 `json:"cashTeamTWinBomb"`              // cash_team_terrorist_win_bomb
+	CashWinDefuse                 int64 `json:"cashWinDefuse"`                 // cash_team_win_by_defusing_bomb
+	CashWinTimeRunOut             int64 `json:"cashWinTimeRunOut"`             // cash_team_win_by_time_running_out_bomb
+	CashWinElimination            int64 `json:"cashWinElimination"`            // cash_team_elimination_bomb_map
+	CashPlayerKilledDefault       int64 `json:"cashPlayerKilledDefault"`       // cash_player_killed_enemy_default
+	CashTeamLoserBonus            int64 `json:"cashTeamLoserBonus"`            // cash_team_loser_bonus
+	CashTeamLoserBonusConsecutive int64 `json:"cashTeamLoserBonusConsecutive"` // cash_team_loser_bonus_consecutive_rounds
+	RoundTime                     int64 `json:"roundTime"`                     // mp_roundtime_defuse
+	RoundRestartDelay             int64 `json:"roundRestartDelay"`             // mp_round_restart_delay
+	FreezeTime                    int64 `json:"freezeTime"`                    // mp_freezetime
+	BuyTime                       int64 `json:"buyTime"`                       // mp_buytime
+	BombTimer                     int64 `json:"bombTimer"`                     // mp_c4timer
+	MaxRounds                     int64 `json:"maxRounds"`                     // mp_maxrounds
+	TimeoutsAllowed               int64 `json:"timeoutsAllowed"`               // mp_team_timeout_max
+	CoachingAllowed               int64 `json:"coachingAllowed"`               // sv_coaching_enabled
 }
 
 // MMRank holds the matchmaking ranks
 type MMRank struct {
-	SteamID    uint64  `json:"SteamID"`
-	RankChange float32 `json:"RankChange"`
-	RankOld    string  `json:"RankOld"`
-	RankNew    string  `json:"RankNew"`
-	WinCount   int     `json:"WinCount"`
+	SteamID    uint64  `json:"steamID"`
+	RankChange float32 `json:"rankChange"`
+	RankOld    string  `json:"rankOld"`
+	RankNew    string  `json:"rankNew"`
+	WinCount   int     `json:"winCount"`
 }
 
 // GameRound information and all of the associated events
 type GameRound struct {
-	RoundNum          int64              `json:"RoundNum"`
-	IsWarmup          bool               `json:"IsWarmup"`
-	StartTick         int64              `json:"StartTick"`
-	FreezeTimeEndTick int64              `json:"FreezeTimeEndTick"`
-	EndTick           int64              `json:"EndTick"`
-	EndOfficialTick   int64              `json:"EndOfficialTick"`
-	TScore            int64              `json:"TScore"`
-	CTScore           int64              `json:"CTScore"`
-	EndTScore         int64              `json:"EndTScore"`
-	EndCTScore        int64              `json:"EndCTScore"`
-	CTTeam            *string            `json:"CTTeam"`
-	TTeam             *string            `json:"TTeam"`
-	WinningSide       string             `json:"WinningSide"`
-	WinningTeam       *string            `json:"WinningTeam"`
-	LosingTeam        *string            `json:"LosingTeam"`
-	Reason            string             `json:"RoundEndReason"`
-	CTStartEqVal      int64              `json:"CTStartEqVal"`
-	CTBeginEqVal      int64              `json:"CTRoundStartEqVal"`
-	CTBeginMoney      int64              `json:"CTRoundStartMoney"`
-	CTBuyType         string             `json:"CTBuyType"`
-	CTSpend           int64              `json:"CTSpend"`
-	TStartEqVal       int64              `json:"TStartEqVal"`
-	TBeginEqVal       int64              `json:"TRoundStartEqVal"`
-	TBeginMoney       int64              `json:"TRoundStartMoney"`
-	TBuyType          string             `json:"TBuyType"`
-	TSpend            int64              `json:"TSpend"`
-	Kills             []KillAction       `json:"Kills"`
-	Damages           []DamageAction     `json:"Damages"`
-	Grenades          []GrenadeAction    `json:"Grenades"`
-	Bomb              []BombAction       `json:"BombEvents"`
-	WeaponFires       []WeaponFireAction `json:"WeaponFires"`
-	Flashes           []FlashAction      `json:"Flashes"`
-	Frames            []GameFrame        `json:"Frames"`
+	RoundNum          int64              `json:"roundNum"`
+	IsWarmup          bool               `json:"isWarmup"`
+	StartTick         int64              `json:"startTick"`
+	FreezeTimeEndTick int64              `json:"freezeTimeEndTick"`
+	EndTick           int64              `json:"endTick"`
+	EndOfficialTick   int64              `json:"endOfficialTick"`
+	TScore            int64              `json:"tScore"`
+	CTScore           int64              `json:"ctScore"`
+	EndTScore         int64              `json:"endTScore"`
+	EndCTScore        int64              `json:"endCTScore"`
+	CTTeam            *string            `json:"ctTeam"`
+	TTeam             *string            `json:"tTeam"`
+	WinningSide       string             `json:"winningSide"`
+	WinningTeam       *string            `json:"winningTeam"`
+	LosingTeam        *string            `json:"losingTeam"`
+	Reason            string             `json:"roundEndReason"`
+	CTStartEqVal      int64              `json:"ctStartEqVal"`
+	CTBeginEqVal      int64              `json:"ctRoundStartEqVal"`
+	CTBeginMoney      int64              `json:"ctRoundStartMoney"`
+	CTBuyType         string             `json:"ctBuyType"`
+	CTSpend           int64              `json:"ctSpend"`
+	TStartEqVal       int64              `json:"tStartEqVal"`
+	TBeginEqVal       int64              `json:"tRoundStartEqVal"`
+	TBeginMoney       int64              `json:"tRoundStartMoney"`
+	TBuyType          string             `json:"tBuyType"`
+	TSpend            int64              `json:"tSpend"`
+	Kills             []KillAction       `json:"kills"`
+	Damages           []DamageAction     `json:"damages"`
+	Grenades          []GrenadeAction    `json:"grenades"`
+	Bomb              []BombAction       `json:"bombEvents"`
+	WeaponFires       []WeaponFireAction `json:"weaponFires"`
+	Flashes           []FlashAction      `json:"flashes"`
+	Frames            []GameFrame        `json:"frames"`
 }
 
 // GrenadeAction events
 type GrenadeAction struct {
-	ThrowTick       int64   `json:"ThrowTick"`
-	DestroyTick     int64   `json:"DestroyTick"`
-	ThrowSecond     float64 `json:"ThrowSecond"`
-	DestroySecond   float64 `json:"DestroySecond"`
-	ThrowerSteamID  int64   `json:"ThrowerSteamID"`
-	ThrowerName     string  `json:"ThrowerName"`
-	ThrowerTeam     string  `json:"ThrowerTeam"`
-	ThrowerSide     string  `json:"ThrowerSide"`
-	ThrowerX        float64 `json:"ThrowerX"`
-	ThrowerY        float64 `json:"ThrowerY"`
-	ThrowerZ        float64 `json:"ThrowerZ"`
-	ThrowerAreaID   int64   `json:"ThrowerAreaID"`
-	ThrowerAreaName string  `json:"ThrowerAreaName"`
-	Grenade         string  `json:"GrenadeType"`
-	GrenadeX        float64 `json:"GrenadeX"`
-	GrenadeY        float64 `json:"GrenadeY"`
-	GrenadeZ        float64 `json:"GrenadeZ"`
-	GrenadeAreaID   int64   `json:"GrenadeAreaID"`
-	GrenadeAreaName string  `json:"GrenadeAreaName"`
+	ThrowTick       int64   `json:"throwTick"`
+	DestroyTick     int64   `json:"destroyTick"`
+	ThrowSecond     float64 `json:"throwSecond"`
+	DestroySecond   float64 `json:"destroySecond"`
+	ThrowerSteamID  int64   `json:"throwerSteamID"`
+	ThrowerName     string  `json:"throwerName"`
+	ThrowerTeam     string  `json:"throwerTeam"`
+	ThrowerSide     string  `json:"throwerSide"`
+	ThrowerX        float64 `json:"throwerX"`
+	ThrowerY        float64 `json:"throwerY"`
+	ThrowerZ        float64 `json:"throwerZ"`
+	ThrowerAreaID   int64   `json:"throwerAreaID"`
+	ThrowerAreaName string  `json:"throwerAreaName"`
+	Grenade         string  `json:"grenadeType"`
+	GrenadeX        float64 `json:"grenadeX"`
+	GrenadeY        float64 `json:"grenadeY"`
+	GrenadeZ        float64 `json:"grenadeZ"`
+	GrenadeAreaID   int64   `json:"grenadeAreaID"`
+	GrenadeAreaName string  `json:"grenadeAreaName"`
 	UniqueID        int64
 }
 
 // BombAction events
 type BombAction struct {
-	Tick          int64   `json:"Tick"`
-	Second        float64 `json:"Second"`
-	PlayerSteamID int64   `json:"PlayerSteamID"`
-	PlayerName    string  `json:"PlayerName"`
-	PlayerTeam    string  `json:"PlayerTeam"`
-	PlayerX       float64 `json:"PlayerX"`
-	PlayerY       float64 `json:"PlayerY"`
-	PlayerZ       float64 `json:"PlayerZ"`
-	BombAction    string  `json:"BombAction"`
-	BombSite      string  `json:"BombSite"`
+	Tick          int64   `json:"tick"`
+	Second        float64 `json:"second"`
+	PlayerSteamID int64   `json:"playerSteamID"`
+	PlayerName    string  `json:"playerName"`
+	PlayerTeam    string  `json:"playerTeam"`
+	PlayerX       float64 `json:"playerX"`
+	PlayerY       float64 `json:"playerY"`
+	PlayerZ       float64 `json:"playerZ"`
+	BombAction    string  `json:"bombAction"`
+	BombSite      string  `json:"bombSite"`
 }
 
 // DamageAction events
 type DamageAction struct {
-	Tick             int64    `json:"Tick"`
-	Second           float64  `json:"Second"`
-	AttackerSteamID  *int64   `json:"AttackerSteamID"`
-	AttackerName     *string  `json:"AttackerName"`
-	AttackerTeam     *string  `json:"AttackerTeam"`
-	AttackerSide     *string  `json:"AttackerSide"`
-	AttackerX        *float64 `json:"AttackerX"`
-	AttackerY        *float64 `json:"AttackerY"`
-	AttackerZ        *float64 `json:"AttackerZ"`
-	AttackerAreaID   *int64   `json:"AttackerAreaID"`
-	AttackerAreaName *string  `json:"AttackerAreaName"`
-	AttackerViewX    *float64 `json:"AttackerViewX"`
-	AttackerViewY    *float64 `json:"AttackerViewY"`
-	AttackerStrafe   *bool    `json:"AttackerStrafe"`
-	VictimSteamID    *int64   `json:"VictimSteamID"`
-	VictimName       *string  `json:"VictimName"`
-	VictimTeam       *string  `json:"VictimTeam"`
-	VictimSide       *string  `json:"VictimSide"`
-	VictimX          *float64 `json:"VictimX"`
-	VictimY          *float64 `json:"VictimY"`
-	VictimZ          *float64 `json:"VictimZ"`
-	VictimAreaID     *int64   `json:"VictimAreaID"`
-	VictimAreaName   *string  `json:"VictimAreaName"`
-	VictimViewX      *float64 `json:"VictimViewX"`
-	VictimViewY      *float64 `json:"VictimViewY"`
-	Weapon           string   `json:"Weapon"`
-	HpDamage         int64    `json:"HpDamage"`
-	HpDamageTaken    int64    `json:"HpDamageTaken"`
-	ArmorDamage      int64    `json:"ArmorDamage"`
-	ArmorDamageTaken int64    `json:"ArmorDamageTaken"`
-	HitGroup         string   `json:"HitGroup"`
+	Tick             int64    `json:"tick"`
+	Second           float64  `json:"second"`
+	AttackerSteamID  *int64   `json:"attackerSteamID"`
+	AttackerName     *string  `json:"attackerName"`
+	AttackerTeam     *string  `json:"attackerTeam"`
+	AttackerSide     *string  `json:"attackerSide"`
+	AttackerX        *float64 `json:"attackerX"`
+	AttackerY        *float64 `json:"attackerY"`
+	AttackerZ        *float64 `json:"attackerZ"`
+	AttackerAreaID   *int64   `json:"attackerAreaID"`
+	AttackerAreaName *string  `json:"attackerAreaName"`
+	AttackerViewX    *float64 `json:"attackerViewX"`
+	AttackerViewY    *float64 `json:"attackerViewY"`
+	AttackerStrafe   *bool    `json:"attackerStrafe"`
+	VictimSteamID    *int64   `json:"victimSteamID"`
+	VictimName       *string  `json:"victimName"`
+	VictimTeam       *string  `json:"victimTeam"`
+	VictimSide       *string  `json:"victimSide"`
+	VictimX          *float64 `json:"victimX"`
+	VictimY          *float64 `json:"victimY"`
+	VictimZ          *float64 `json:"victimZ"`
+	VictimAreaID     *int64   `json:"victimAreaID"`
+	VictimAreaName   *string  `json:"victimAreaName"`
+	VictimViewX      *float64 `json:"victimViewX"`
+	VictimViewY      *float64 `json:"victimViewY"`
+	Weapon           string   `json:"weapon"`
+	HpDamage         int64    `json:"hpDamage"`
+	HpDamageTaken    int64    `json:"hpDamageTaken"`
+	ArmorDamage      int64    `json:"armorDamage"`
+	ArmorDamageTaken int64    `json:"armorDamageTaken"`
+	HitGroup         string   `json:"hitGroup"`
 }
 
 // KillAction events
 type KillAction struct {
-	Tick                int64    `json:"Tick"`
-	Second              float64  `json:"Second"`
-	AttackerSteamID     *int64   `json:"AttackerSteamID"`
-	AttackerName        *string  `json:"AttackerName"`
-	AttackerTeam        *string  `json:"AttackerTeam"`
-	AttackerSide        *string  `json:"AttackerSide"`
-	AttackerX           *float64 `json:"AttackerX"`
-	AttackerY           *float64 `json:"AttackerY"`
-	AttackerZ           *float64 `json:"AttackerZ"`
-	AttackerAreaID      *int64   `json:"AttackerAreaID"`
-	AttackerAreaName    *string  `json:"AttackerAreaName"`
-	AttackerViewX       *float64 `json:"AttackerViewX"`
-	AttackerViewY       *float64 `json:"AttackerViewY"`
-	VictimSteamID       *int64   `json:"VictimSteamID"`
-	VictimName          *string  `json:"VictimName"`
-	VictimTeam          *string  `json:"VictimTeam"`
-	VictimSide          *string  `json:"VictimSide"`
-	VictimX             *float64 `json:"VictimX"`
-	VictimY             *float64 `json:"VictimY"`
-	VictimZ             *float64 `json:"VictimZ"`
-	VictimAreaID        *int64   `json:"VictimAreaID"`
-	VictimAreaName      *string  `json:"VictimAreaName"`
-	VictimViewX         *float64 `json:"VictimViewX"`
-	VictimViewY         *float64 `json:"VictimViewY"`
-	AssisterSteamID     *int64   `json:"AssisterSteamID"`
-	AssisterName        *string  `json:"AssisterName"`
-	AssisterTeam        *string  `json:"AssisterTeam"`
-	AssisterSide        *string  `json:"AssisterSide"`
-	IsSuicide           bool     `json:"IsSuicide"`
-	IsTeamkill          bool     `json:"IsTeamkill"`
-	IsWallbang          bool     `json:"IsWallbang"`
-	PenetratedObjects   int64    `json:"PenetratedObjects"`
-	IsFirstKill         bool     `json:"IsFirstKill"`
-	IsHeadshot          bool     `json:"IsHeadshot"`
-	VictimBlinded       bool     `json:"VictimBlinded"`
-	AttackerBlinded     bool     `json:"AttackerBlinded"`
-	FlashThrowerSteamID *int64   `json:"FlashThrowerSteamID"`
-	FlashThrowerName    *string  `json:"FlashThrowerName"`
-	FlashThrowerTeam    *string  `json:"FlashThrowerTeam"`
-	FlashThrowerSide    *string  `json:"FlashThrowerSide"`
-	NoScope             bool     `json:"NoScope"`
-	ThruSmoke           bool     `json:"ThruSmoke"`
-	Distance            float64  `json:"Distance"`
-	IsTrade             bool     `json:"IsTrade"`
-	PlayerTradedName    *string  `json:"PlayerTradedName"`
-	PlayerTradedTeam    *string  `json:"PlayerTradedTeam"`
-	PlayerTradedSteamID *int64   `json:"PlayerTradedSteamID"`
-	Weapon              string   `json:"Weapon"`
+	Tick                int64    `json:"tick"`
+	Second              float64  `json:"second"`
+	AttackerSteamID     *int64   `json:"attackerSteamID"`
+	AttackerName        *string  `json:"attackerName"`
+	AttackerTeam        *string  `json:"attackerTeam"`
+	AttackerSide        *string  `json:"attackerSide"`
+	AttackerX           *float64 `json:"attackerX"`
+	AttackerY           *float64 `json:"attackerY"`
+	AttackerZ           *float64 `json:"attackerZ"`
+	AttackerAreaID      *int64   `json:"attackerAreaID"`
+	AttackerAreaName    *string  `json:"attackerAreaName"`
+	AttackerViewX       *float64 `json:"attackerViewX"`
+	AttackerViewY       *float64 `json:"attackerViewY"`
+	VictimSteamID       *int64   `json:"victimSteamID"`
+	VictimName          *string  `json:"victimName"`
+	VictimTeam          *string  `json:"victimTeam"`
+	VictimSide          *string  `json:"victimSide"`
+	VictimX             *float64 `json:"victimX"`
+	VictimY             *float64 `json:"victimY"`
+	VictimZ             *float64 `json:"victimZ"`
+	VictimAreaID        *int64   `json:"victimAreaID"`
+	VictimAreaName      *string  `json:"victimAreaName"`
+	VictimViewX         *float64 `json:"victimViewX"`
+	VictimViewY         *float64 `json:"victimViewY"`
+	AssisterSteamID     *int64   `json:"assisterSteamID"`
+	AssisterName        *string  `json:"assisterName"`
+	AssisterTeam        *string  `json:"assisterTeam"`
+	AssisterSide        *string  `json:"assisterSide"`
+	IsSuicide           bool     `json:"isSuicide"`
+	IsTeamkill          bool     `json:"isTeamkill"`
+	IsWallbang          bool     `json:"isWallbang"`
+	PenetratedObjects   int64    `json:"penetratedObjects"`
+	IsFirstKill         bool     `json:"isFirstKill"`
+	IsHeadshot          bool     `json:"isHeadshot"`
+	VictimBlinded       bool     `json:"victimBlinded"`
+	AttackerBlinded     bool     `json:"attackerBlinded"`
+	FlashThrowerSteamID *int64   `json:"flashThrowerSteamID"`
+	FlashThrowerName    *string  `json:"flashThrowerName"`
+	FlashThrowerTeam    *string  `json:"flashThrowerTeam"`
+	FlashThrowerSide    *string  `json:"flashThrowerSide"`
+	NoScope             bool     `json:"noScope"`
+	ThruSmoke           bool     `json:"thruSmoke"`
+	Distance            float64  `json:"distance"`
+	IsTrade             bool     `json:"isTrade"`
+	PlayerTradedName    *string  `json:"playerTradedName"`
+	PlayerTradedTeam    *string  `json:"playerTradedTeam"`
+	PlayerTradedSteamID *int64   `json:"playerTradedSteamID"`
+	Weapon              string   `json:"weapon"`
 }
 
 // WeaponFireAction events
 type WeaponFireAction struct {
-	Tick           int64   `json:"Tick"`
-	Second         float64 `json:"Second"`
-	PlayerSteamID  int64   `json:"PlayerSteamID"`
-	PlayerName     string  `json:"PlayerName"`
-	PlayerTeam     string  `json:"PlayerTeam"`
-	PlayerSide     string  `json:"PlayerSide"`
-	PlayerX        float64 `json:"PlayerX"`
-	PlayerY        float64 `json:"PlayerY"`
-	PlayerZ        float64 `json:"PlayerZ"`
-	PlayerAreaID   int64   `json:"PlayerAreaID"`
-	PlayerAreaName string  `json:"PlayerAreaName"`
-	PlayerViewX    float64 `json:"PlayerViewX"`
-	PlayerViewY    float64 `json:"PlayerViewY"`
-	PlayerStrafe   bool    `json:"PlayerStrafe"`
-	Weapon         string  `json:"Weapon"`
+	Tick           int64   `json:"tick"`
+	Second         float64 `json:"second"`
+	PlayerSteamID  int64   `json:"playerSteamID"`
+	PlayerName     string  `json:"playerName"`
+	PlayerTeam     string  `json:"playerTeam"`
+	PlayerSide     string  `json:"playerSide"`
+	PlayerX        float64 `json:"playerX"`
+	PlayerY        float64 `json:"playerY"`
+	PlayerZ        float64 `json:"playerZ"`
+	PlayerAreaID   int64   `json:"playerAreaID"`
+	PlayerAreaName string  `json:"playerAreaName"`
+	PlayerViewX    float64 `json:"playerViewX"`
+	PlayerViewY    float64 `json:"playerViewY"`
+	PlayerStrafe   bool    `json:"playerStrafe"`
+	Weapon         string  `json:"weapon"`
 }
 
 // FlashAction events
 type FlashAction struct {
-	Tick             int64    `json:"Tick"`
-	Second           float64  `json:"Second"`
-	AttackerSteamID  int64    `json:"AttackerSteamID"`
-	AttackerName     string   `json:"AttackerName"`
-	AttackerTeam     string   `json:"AttackerTeam"`
-	AttackerSide     string   `json:"AttackerSide"`
-	AttackerX        float64  `json:"AttackerX"`
-	AttackerY        float64  `json:"AttackerY"`
-	AttackerZ        float64  `json:"AttackerZ"`
-	AttackerAreaID   int64    `json:"AttackerAreaID"`
-	AttackerAreaName string   `json:"AttackerAreaName"`
-	AttackerViewX    float64  `json:"AttackerViewX"`
-	AttackerViewY    float64  `json:"AttackerViewY"`
-	PlayerSteamID    *int64   `json:"PlayerSteamID"`
-	PlayerName       *string  `json:"PlayerName"`
-	PlayerTeam       *string  `json:"PlayerTeam"`
-	PlayerSide       *string  `json:"PlayerSide"`
-	PlayerX          *float64 `json:"PlayerX"`
-	PlayerY          *float64 `json:"PlayerY"`
-	PlayerZ          *float64 `json:"PlayerZ"`
-	PlayerAreaID     *int64   `json:"PlayerAreaID"`
-	PlayerAreaName   *string  `json:"PlayerAreaName"`
-	PlayerViewX      *float64 `json:"PlayerViewX"`
-	PlayerViewY      *float64 `json:"PlayerViewY"`
-	FlashDuration    *float64 `json:"FlashDuration"`
+	Tick             int64    `json:"tick"`
+	Second           float64  `json:"second"`
+	AttackerSteamID  int64    `json:"attackerSteamID"`
+	AttackerName     string   `json:"attackerName"`
+	AttackerTeam     string   `json:"attackerTeam"`
+	AttackerSide     string   `json:"attackerSide"`
+	AttackerX        float64  `json:"attackerX"`
+	AttackerY        float64  `json:"attackerY"`
+	AttackerZ        float64  `json:"attackerZ"`
+	AttackerAreaID   int64    `json:"attackerAreaID"`
+	AttackerAreaName string   `json:"attackerAreaName"`
+	AttackerViewX    float64  `json:"attackerViewX"`
+	AttackerViewY    float64  `json:"attackerViewY"`
+	PlayerSteamID    *int64   `json:"playerSteamID"`
+	PlayerName       *string  `json:"playerName"`
+	PlayerTeam       *string  `json:"playerTeam"`
+	PlayerSide       *string  `json:"playerSide"`
+	PlayerX          *float64 `json:"playerX"`
+	PlayerY          *float64 `json:"playerY"`
+	PlayerZ          *float64 `json:"playerZ"`
+	PlayerAreaID     *int64   `json:"playerAreaID"`
+	PlayerAreaName   *string  `json:"playerAreaName"`
+	PlayerViewX      *float64 `json:"playerViewX"`
+	PlayerViewY      *float64 `json:"playerViewY"`
+	FlashDuration    *float64 `json:"flashDuration"`
 }
 
 // GameFrame (game state at time t)
 type GameFrame struct {
-	Tick        int64         `json:"Tick"`
-	Second      float64       `json:"Second"`
-	FrameToken  string        `json:"PositionToken"`
-	TToken      string        `json:"TToken"`
-	CTToken     string        `json:"CTToken"`
-	T           TeamFrameInfo `json:"T"`
-	CT          TeamFrameInfo `json:"CT"`
-	World       []WorldObject `json:"World"`
-	BombDistToA int64         `json:"BombDistanceToA"`
-	BombDistToB int64         `json:"BombDistanceToB"`
-	BombPlanted bool          `json:"BombPlanted"`
-	BombSite    *string       `json:"BombSite"`
+	Tick        int64         `json:"tick"`
+	Second      float64       `json:"second"`
+	FrameToken  string        `json:"positionToken"`
+	TToken      string        `json:"tToken"`
+	CTToken     string        `json:"ctToken"`
+	T           TeamFrameInfo `json:"t"`
+	CT          TeamFrameInfo `json:"ct"`
+	World       []WorldObject `json:"world"`
+	BombDistToA int64         `json:"bombDistanceToA"`
+	BombDistToB int64         `json:"bombDistanceToB"`
+	BombPlanted bool          `json:"bombPlanted"`
+	BombSite    *string       `json:"bombSite"`
 }
 
 // WorldObject in the world, like a bomb
 type WorldObject struct {
-	ObjType  string  `json:"ObjectType"`
-	X        float64 `json:"X"`
-	Y        float64 `json:"Y"`
-	Z        float64 `json:"Z"`
-	AreaID   int64   `json:"AreaID"`
-	AreaName string  `json:"AreaName"`
+	ObjType  string  `json:"objectType"`
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+	Z        float64 `json:"z"`
+	AreaID   int64   `json:"areaID"`
+	AreaName string  `json:"areaName"`
 }
 
 // TeamFrameInfo at time t
 type TeamFrameInfo struct {
-	Side         string       `json:"Side"`
-	Team         string       `json:"TeamName"`
-	CurrentEqVal int64        `json:"TeamEqVal"`
-	PosToken     string       `json:"PositionToken"`
-	AlivePlayers int64        `json:"AlivePlayers"`
-	TotalUtility int64        `json:"TotalUtility"`
-	Players      []PlayerInfo `json:"Players"`
+	Side         string       `json:"side"`
+	Team         string       `json:"teamName"`
+	CurrentEqVal int64        `json:"teamEqVal"`
+	PosToken     string       `json:"positionToken"`
+	AlivePlayers int64        `json:"alivePlayers"`
+	TotalUtility int64        `json:"totalUtility"`
+	Players      []PlayerInfo `json:"players"`
 }
 
 // PlayerInfo at time t
 type PlayerInfo struct {
-	PlayerSteamID   int64        `json:"SteamID"`
-	PlayerName      string       `json:"Name"`
-	PlayerTeam      string       `json:"Team"`
-	PlayerSide      string       `json:"Side"`
-	X               float64      `json:"X"`
-	Y               float64      `json:"Y"`
-	Z               float64      `json:"Z"`
-	ViewX           float64      `json:"ViewX"`
-	ViewY           float64      `json:"ViewY"`
-	AreaID          int64        `json:"AreaID"`
-	AreaName        string       `json:"AreaName"`
-	Hp              int64        `json:"Hp"`
-	Armor           int64        `json:"Armor"`
-	ActiveWeapon    string       `json:"ActiveWeapon"`
-	TotalUtility    int64        `json:"TotalUtility"`
-	IsAlive         bool         `json:"IsAlive"`
-	IsBlinded       bool         `json:"IsBlinded"`
-	IsAirborne      bool         `json:"IsAirborne"`
-	IsDucking       bool         `json:"IsDucking"`
-	IsDuckingInProg bool         `json:"IsDuckingInProgress"`
-	IsUnducking     bool         `json:"IsUnDuckingInProgress"`
-	IsDefusing      bool         `json:"IsDefusing"`
-	IsPlanting      bool         `json:"IsPlanting"`
-	IsReloading     bool         `json:"IsReloading"`
-	IsInBombZone    bool         `json:"IsInBombZone"`
-	IsInBuyZone     bool         `json:"IsInBuyZone"`
-	IsStanding      bool         `json:"IsStanding"`
-	IsScoped        bool         `json:"IsScoped"`
-	IsWalking       bool         `json:"IsWalking"`
-	IsUnknown       bool         `json:"IsUnknown"`
-	Inventory       []WeaponInfo `json:"Inventory"`
-	EqVal           int64        `json:"EquipmentValue"`
-	Money           int64        `json:"Cash"`
-	HasHelmet       bool         `json:"HasHelmet"`
-	HasDefuse       bool         `json:"HasDefuse"`
-	DistToBombsiteA int64        `json:"DistToBombsiteA"`
-	DistToBombsiteB int64        `json:"DistToBombsiteB"`
+	PlayerSteamID   int64        `json:"steamID"`
+	PlayerName      string       `json:"name"`
+	PlayerTeam      string       `json:"team"`
+	PlayerSide      string       `json:"side"`
+	X               float64      `json:"x"`
+	Y               float64      `json:"y"`
+	Z               float64      `json:"z"`
+	ViewX           float64      `json:"viewX"`
+	ViewY           float64      `json:"viewY"`
+	AreaID          int64        `json:"areaID"`
+	AreaName        string       `json:"areaName"`
+	Hp              int64        `json:"hp"`
+	Armor           int64        `json:"armor"`
+	ActiveWeapon    string       `json:"activeWeapon"`
+	TotalUtility    int64        `json:"totalUtility"`
+	IsAlive         bool         `json:"isAlive"`
+	IsBlinded       bool         `json:"isBlinded"`
+	IsAirborne      bool         `json:"isAirborne"`
+	IsDucking       bool         `json:"isDucking"`
+	IsDuckingInProg bool         `json:"isDuckingInProgress"`
+	IsUnducking     bool         `json:"isUnDuckingInProgress"`
+	IsDefusing      bool         `json:"isDefusing"`
+	IsPlanting      bool         `json:"isPlanting"`
+	IsReloading     bool         `json:"isReloading"`
+	IsInBombZone    bool         `json:"isInBombZone"`
+	IsInBuyZone     bool         `json:"isInBuyZone"`
+	IsStanding      bool         `json:"isStanding"`
+	IsScoped        bool         `json:"isScoped"`
+	IsWalking       bool         `json:"isWalking"`
+	IsUnknown       bool         `json:"isUnknown"`
+	Inventory       []WeaponInfo `json:"inventory"`
+	EqVal           int64        `json:"equipmentValue"`
+	Money           int64        `json:"cash"`
+	HasHelmet       bool         `json:"hasHelmet"`
+	HasDefuse       bool         `json:"hasDefuse"`
+	DistToBombsiteA int64        `json:"distToBombsiteA"`
+	DistToBombsiteB int64        `json:"distToBombsiteB"`
 }
 
 // WeaponInfo contains data on an inventory weapon
 type WeaponInfo struct {
-	WeaponName     string `json:"WeaponName"`
-	WeaponClass    string `json:"WeaponClass"`
-	AmmoInMagazine int64  `json:"AmmoInMagazine"`
-	AmmoInReserve  int64  `json:"AmmoInReserve"`
+	WeaponName     string `json:"weaponName"`
+	WeaponClass    string `json:"weaponClass"`
+	AmmoInMagazine int64  `json:"ammoInMagazine"`
+	AmmoInReserve  int64  `json:"ammoInReserve"`
 }
 
 func convertRank(r int) string {

@@ -219,52 +219,52 @@ def accuracy(
             dataframe represented by weapon_fires to filter the weapon fire data
             by and the values are lists that contain the column filters.
     """
-    stats = ["PlayerName", "AttackerName", "Player"]
+    stats = ["playerName", "attackerName", "player"]
     if team:
-        stats = ["PlayerTeam", "AttackerTeam", "Team"]
+        stats = ["playerTeam", "attackerTeam", "team"]
     weapon_fires = calc_stats(
         weapon_fire_data,
         weapon_fire_filters,
         [stats[0]],
         [stats[0]],
         [["size"]],
-        [stats[2], "Weapon Fires"],
+        [stats[2], "weaponFires"],
     )
     strafe_fires = calc_stats(
-        weapon_fire_data.loc[weapon_fire_data["PlayerStrafe"] == True],
+        weapon_fire_data.loc[weapon_fire_data["playerStrafe"] == True],
         weapon_fire_filters,
         [stats[0]],
         [stats[0]],
         [["size"]],
-        [stats[2], "Strafe Fires"],
+        [stats[2], "strafeFires"],
     )
     hits = calc_stats(
-        damage_data.loc[damage_data["AttackerTeam"] != damage_data["VictimTeam"]],
+        damage_data.loc[damage_data["attackerTeam"] != damage_data["victimTeam"]],
         damage_filters,
         [stats[1]],
         [stats[1]],
         [["size"]],
-        [stats[2], "Hits"],
+        [stats[2], "hits"],
     )
     headshots = calc_stats(
         damage_data.loc[
-            (damage_data["AttackerTeam"] != damage_data["VictimTeam"])
-            & (damage_data["HitGroup"] == "Head")
+            (damage_data["attackerTeam"] != damage_data["victimTeam"])
+            & (damage_data["hitGroup"] == "Head")
         ],
         damage_filters,
         [stats[1]],
         [stats[1]],
         [["size"]],
-        [stats[2], "Headshots"],
+        [stats[2], "headshots"],
     )
     acc = weapon_fires.merge(strafe_fires, how="outer").fillna(0)
     acc = acc.merge(hits, how="outer").fillna(0)
     acc = acc.merge(headshots, how="outer").fillna(0)
-    acc["Strafe%"] = acc["Strafe Fires"] / acc["Weapon Fires"]
-    acc["ACC%"] = acc["Hits"] / acc["Weapon Fires"]
-    acc["HS ACC%"] = acc["Headshots"] / acc["Weapon Fires"]
-    acc = acc[[stats[2], "Weapon Fires", "Strafe%", "ACC%", "HS ACC%"]]
-    acc.sort_values(by="ACC%", ascending=False, inplace=True)
+    acc["strafe%"] = acc["strafeFires"] / acc["weaponFires"]
+    acc["acc%"] = acc["hits"] / acc["weaponFires"]
+    acc["hs_acc%"] = acc["headshots"] / acc["weaponFires"]
+    acc = acc[[stats[2], "weaponFires", "strafe%", "acc%", "hs_acc%"]]
+    acc.sort_values(by="acc%", ascending=False, inplace=True)
     acc.reset_index(drop=True, inplace=True)
     return acc
 
