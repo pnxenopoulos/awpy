@@ -94,6 +94,7 @@ type GameRound struct {
 	WinningSide       string             `json:"winningSide"`
 	WinningTeam       *string            `json:"winningTeam"`
 	LosingTeam        *string            `json:"losingTeam"`
+	BombPlantTick     int64              `json:"bombPlantTick"`
 	Reason            string             `json:"roundEndReason"`
 	CTStartEqVal      int64              `json:"ctStartEqVal"`
 	CTBeginEqVal      int64              `json:"ctRoundStartEqVal"`
@@ -297,8 +298,6 @@ type GameFrame struct {
 	T           TeamFrameInfo `json:"t"`
 	CT          TeamFrameInfo `json:"ct"`
 	World       []WorldObject `json:"world"`
-	BombDistToA int64         `json:"bombDistanceToA"`
-	BombDistToB int64         `json:"bombDistanceToB"`
 	BombPlanted bool          `json:"bombPlanted"`
 	BombSite    *string       `json:"bombSite"`
 }
@@ -361,8 +360,7 @@ type PlayerInfo struct {
 	Money           int64        `json:"cash"`
 	HasHelmet       bool         `json:"hasHelmet"`
 	HasDefuse       bool         `json:"hasDefuse"`
-	DistToBombsiteA int64        `json:"distToBombsiteA"`
-	DistToBombsiteB int64        `json:"distToBombsiteB"`
+	Ping            int64        `json:"ping"`
 }
 
 // WeaponInfo contains data on an inventory weapon
@@ -562,18 +560,6 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	currentPlayer.AreaID = playerAreaID
 	currentPlayer.AreaName = playerAreaPlace
 
-	// Calc bombsite distances
-	bombsiteA := m.GetPlaceByName("BombsiteA")
-	aCenter, _ := bombsiteA.GetEstimatedCenter()
-	aArea := m.GetNearestArea(aCenter, false)
-	bombsiteB := m.GetPlaceByName("BombsiteB")
-	bCenter, _ := bombsiteB.GetEstimatedCenter()
-	bArea := m.GetNearestArea(bCenter, false)
-	pathA, _ := gonav.SimpleBuildShortestPath(playerArea, aArea)
-	currentPlayer.DistToBombsiteA = int64(len(pathA.Nodes))
-	pathB, _ := gonav.SimpleBuildShortestPath(playerArea, bArea)
-	currentPlayer.DistToBombsiteB = int64(len(pathB.Nodes))
-
 	// Calc other metrics
 	currentPlayer.X = float64(playerPos.X)
 	currentPlayer.Y = float64(playerPos.Y)
@@ -601,6 +587,7 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	currentPlayer.HasHelmet = p.HasHelmet()
 	currentPlayer.Money = int64(p.Money())
 	currentPlayer.EqVal = int64(p.EquipmentValueCurrent())
+	currentPlayer.Ping = int64(p.Ping())
 	currentPlayer.TotalUtility = int64(0)
 	activeWeapon := ""
 
@@ -748,6 +735,7 @@ func createCountToken(alivePlaces []string, placeSl []string) string {
 	for i := range countToken {
 		countToken[i] = 0
 	}
+
 	// Loop through and add 1 where players are
 	if len(alivePlaces) > 0 {
 		for _, v := range alivePlaces {
@@ -755,6 +743,7 @@ func createCountToken(alivePlaces []string, placeSl []string) string {
 			countToken[vIDx] = countToken[vIDx] + 1
 		}
 	}
+
 	// Create string token
 	tokenStr := ""
 	for _, i := range countToken {
@@ -770,6 +759,15 @@ func cleanMapName(mapName string) string {
 		return mapName
 	}
 	return mapName[lastSlash+1 : len(mapName)]
+}
+
+func stringInSlice(a string, list []string) bool {
+    for _, b := range list {
+        if b == a {
+            return true
+        }
+    }
+    return false
 }
 
 // Main
@@ -817,6 +815,10 @@ func main() {
 	// Parse nav mesh given the map name
 	currentMap := header.MapName
 	currentMap = cleanMapName(currentMap)
+
+	//mapsWithNavFile := make([]string, 3)
+	//mapsWithNavFile[0] = ""
+	//navFileExists := stringInSlice(currentMap, mapsWithNavFile)
 
 	fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 	parserNav := gonav.Parser{Reader: fNav}
@@ -1402,6 +1404,7 @@ func main() {
 		currentBomb.PlayerZ = float64(playerPos.Z)
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		currentRound.BombPlantTick = currentBomb.Tick
 	})
 
 	// Parse bomb plants
@@ -1770,7 +1773,7 @@ func main() {
 			}
 		}
 		
-		// Add Kill event to maintained data
+		// Add Kill
 		currentRound.Kills = append(currentRound.Kills, currentKill)
 	})
 
@@ -1795,6 +1798,7 @@ func main() {
 			currentDamage.AttackerName = &e.Attacker.Name
 			attackerTeamName := e.Attacker.TeamState.ClanName()
 			currentDamage.AttackerTeam = &attackerTeamName
+
 			attackerSide := "Unknown"
 			switch e.Attacker.Team {
 			case common.TeamTerrorists:
@@ -1809,11 +1813,13 @@ func main() {
 				attackerSide = "Unknown"
 			}
 			currentDamage.AttackerSide = &attackerSide
+
 			attackerPos := e.Attacker.LastAlivePosition
 			attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 			attackerArea := mesh.GetNearestArea(attackerPoint, true)
 			var attackerAreaID int64
 			attackerAreaPlace := ""
+
 			if attackerArea != nil {
 				attackerAreaID = int64(attackerArea.ID)
 				if attackerArea.Place != nil {
@@ -1822,6 +1828,7 @@ func main() {
 					attackerAreaPlace = findAreaPlace(attackerArea, mesh)
 				}
 			}
+
 			currentDamage.AttackerAreaID = &attackerAreaID
 			currentDamage.AttackerAreaName = &attackerAreaPlace
 			currentDamage.AttackerX = &attackerPos.X
@@ -1842,6 +1849,7 @@ func main() {
 			currentDamage.VictimName = &e.Player.Name
 			victimTeamName := e.Player.TeamState.ClanName()
 			currentDamage.VictimTeam = &victimTeamName
+
 			victimSide := "Unknown"
 			switch e.Player.Team {
 			case common.TeamTerrorists:
@@ -1856,11 +1864,13 @@ func main() {
 				victimSide = "Unknown"
 			}
 			currentDamage.VictimSide = &victimSide
+
 			victimPos := e.Player.LastAlivePosition
 			victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
 			victimArea := mesh.GetNearestArea(victimPoint, true)
 			var victimAreaID int64
 			victimAreaPlace := ""
+
 			if victimArea != nil {
 				victimAreaID = int64(victimArea.ID)
 				if victimArea.Place != nil {
@@ -1869,6 +1879,7 @@ func main() {
 					victimAreaPlace = findAreaPlace(victimArea, mesh)
 				}
 			}
+
 			currentDamage.VictimAreaID = &victimAreaID
 			currentDamage.VictimAreaName = &victimAreaPlace
 			currentDamage.VictimX = &victimPos.X
@@ -1879,7 +1890,8 @@ func main() {
 			currentDamage.VictimViewX = &victimViewX
 			currentDamage.VictimViewY = &victimViewY
 		}
-		// add
+
+		// Add damages
 		currentRound.Damages = append(currentRound.Damages, currentDamage)
 	})
 
@@ -1891,20 +1903,6 @@ func main() {
 			currentFrame := GameFrame{}
 			currentFrame.Tick = int64(gs.IngameTick())
 			currentFrame.Second = float64((float64(currentFrame.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
-			// Parse bomb distance
-			bombsiteA := mesh.GetPlaceByName("BombsiteA")
-			aCenter, _ := bombsiteA.GetEstimatedCenter()
-			aArea := mesh.GetNearestArea(aCenter, false)
-			bombsiteB := mesh.GetPlaceByName("BombsiteB")
-			bCenter, _ := bombsiteB.GetEstimatedCenter()
-			bArea := mesh.GetNearestArea(bCenter, false)
-			bombPos := gs.Bomb().Position()
-			bombPosVector := gonav.Vector3{X: float32(bombPos.X), Y: float32(bombPos.Y), Z: float32(bombPos.Z)}
-			bombLocArea := mesh.GetNearestArea(bombPosVector, true)
-			pathA, _ := gonav.SimpleBuildShortestPath(bombLocArea, aArea)
-			currentFrame.BombDistToA = int64(len(pathA.Nodes))
-			pathB, _ := gonav.SimpleBuildShortestPath(bombLocArea, bArea)
-			currentFrame.BombDistToB = int64(len(pathB.Nodes))
 
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
@@ -1912,11 +1910,13 @@ func main() {
 			currentFrame.T.Team = gs.TeamTerrorists().ClanName()
 			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
 			tPlayers := gs.TeamTerrorists().Members()
+
 			for _, p := range tPlayers {
 				if p != nil {
 					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p, mesh))
 				}
 			}
+
 			tPlayerPlaces := createAlivePlayerSlice(currentFrame.T.Players)
 			tToken := createCountToken(tPlayerPlaces, placeSl)
 			currentFrame.T.PosToken = tToken
@@ -1929,11 +1929,13 @@ func main() {
 			currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
 			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
 			ctPlayers := gs.TeamCounterTerrorists().Members()
+
 			for _, p := range ctPlayers {
 				if p != nil {
 					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p, mesh))
 				}
 			}
+
 			ctPlayerPlaces := createAlivePlayerSlice(currentFrame.CT.Players)
 			ctToken := createCountToken(ctPlayerPlaces, placeSl)
 			currentFrame.CT.PosToken = ctToken
@@ -1942,6 +1944,7 @@ func main() {
 			currentFrame.TToken = tToken
 			currentFrame.CTToken = ctToken
 			currentFrame.FrameToken = tToken + ctToken
+
 			// Parse world (grenade) objects
 			allGrenades := gs.GrenadeProjectiles()
 			for _, ele := range allGrenades {
@@ -1967,6 +1970,7 @@ func main() {
 				currentWorldObj.Z = float64(objPos.Z)
 				currentFrame.World = append(currentFrame.World, currentWorldObj)
 			}
+
 			// Parse bomb
 			bombObj := gs.Bomb()
 			currentWorldObj := WorldObject{}
@@ -1997,7 +2001,7 @@ func main() {
 				currentFrame.BombPlanted = false
 			}
 
-			// add
+			// Add frame
 			currentRound.Frames = append(currentRound.Frames, currentFrame)
 
 			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
@@ -2024,190 +2028,6 @@ func main() {
 
 	// Clean rounds
 	if len(currentGame.Rounds) > 0 {
-		// Remove rounds where not warmup
-		//var tempRoundsWarmup []GameRound
-		//for i := range currentGame.Rounds {
-		//	currRound := currentGame.Rounds[i]
-		//	if !currRound.IsWarmup {
-		//		tempRoundsWarmup = append(tempRoundsWarmup, currRound)
-		//	}
-		//}
-		//currentGame.Rounds = tempRoundsWarmup
-
-		// Remove rounds where win reason doesn't exist
-		//var tempRoundsReason []GameRound
-		//for i := range currentGame.Rounds {
-		//	currRound := currentGame.Rounds[i]
-		//	if currRound.Reason == "CTWin" || currRound.Reason == "BombDefused" || currRound.Reason == "TargetSaved" || currRound.Reason == "TerroristsWin" || currRound.Reason == "TargetBombed" || currRound.Reason == "CTSurrender" || currRound.Reason == "TerroristsSurrender" {
-		//		tempRoundsReason = append(tempRoundsReason, currRound)
-		//	}
-		//}
-		//currentGame.Rounds = tempRoundsReason
-
-		// Remove rounds where kills are > 10
-		//var tempRoundsKills []GameRound
-		//for i := range currentGame.Rounds {
-		//	currRound := currentGame.Rounds[i]
-		//	if len(currRound.Kills) <= 10 {
-		//		tempRoundsKills = append(tempRoundsKills, currRound)
-		//	}
-		//}
-		//currentGame.Rounds = tempRoundsKills
-
-		// Remove rounds with missing end or start tick
-		// var tempRoundsTicks []GameRound
-		// for i := range currentGame.Rounds {
-		// 	currRound := currentGame.Rounds[i]
-		// 	if currRound.StartTick > 0 && currRound.EndTick > 0 {
-		// 		tempRoundsTicks = append(tempRoundsTicks, currRound)
-		// 	} else {
-		// 		if currRound.EndTick > 0 {
-		// 			tempRoundsTicks = append(tempRoundsTicks, currRound)
-		// 		}
-		// 	}
-		// }
-		// currentGame.Rounds = tempRoundsTicks
-
-		// Remove rounds that dip in score
-		// var tempRoundsDip []GameRound
-		// for i := range currentGame.Rounds {
-		// 	if i > 0 && i < len(currentGame.Rounds) {
-		// 		prevRound := currentGame.Rounds[i-1]
-		// 		currRound := currentGame.Rounds[i]
-		// 		if currRound.CTScore+currRound.TScore >= prevRound.CTScore+prevRound.TScore {
-		// 			tempRoundsDip = append(tempRoundsDip, currRound)
-		// 		}
-		// 	} else if i == 0 {
-		// 		currRound := currentGame.Rounds[i]
-		// 		tempRoundsDip = append(tempRoundsDip, currRound)
-		// 	}
-		// }
-		// currentGame.Rounds = tempRoundsDip
-
-		// Set first round scores to 0-0
-		// currentGame.Rounds[0].TScore = 0
-		// currentGame.Rounds[0].CTScore = 0
-
-		// Remove rounds where score doesn't change
-		// var tempRounds []GameRound
-		// for i := range currentGame.Rounds {
-		// 	if i < len(currentGame.Rounds)-1 {
-		// 		nextRound := currentGame.Rounds[i+1]
-		// 		currRound := currentGame.Rounds[i]
-		// 		if !(currRound.CTScore+currRound.TScore >= nextRound.CTScore+nextRound.TScore) {
-		// 			tempRounds = append(tempRounds, currRound)
-		// 		}
-		// 	} else {
-		// 		currRound := currentGame.Rounds[i]
-		// 		tempRounds = append(tempRounds, currRound)
-		// 	}
-
-		// }
-		// currentGame.Rounds = tempRounds
-
-		// Find the starting round. Starting round is defined as the first 0-0 round which has following rounds.
-		//startIDx := 0
-		//for i, r := range currentGame.Rounds {
-		//	if (i < len(currentGame.Rounds)-3) && (len(currentGame.Rounds) > 3) {
-		//		if (r.TScore+r.CTScore == 0) && (currentGame.Rounds[i+1].TScore+currentGame.Rounds[i+1].CTScore > 0) && (currentGame.Rounds[i+2].TScore+currentGame.Rounds[i+2].CTScore > 0) && (currentGame.Rounds[i+3].TScore+currentGame.Rounds[i+4].CTScore > 0) {
-		//			startIDx = i
-		//		}
-		//	}
-		//}
-		//currentGame.Rounds = currentGame.Rounds[startIDx:len(currentGame.Rounds)]
-
-		// Remove rounds with 0-0 scorelines that arent first
-		// var tempRoundsScores []GameRound
-		// for i := range currentGame.Rounds {
-		// 	currRound := currentGame.Rounds[i]
-		// 	if i > 0 {
-		// 		if currRound.TScore+currRound.CTScore > 0 {
-		// 			tempRoundsScores = append(tempRoundsScores, currRound)
-		// 		}
-		// 	} else {
-		// 		tempRoundsScores = append(tempRoundsScores, currRound)
-		// 	}
-		// }
-		// currentGame.Rounds = tempRoundsScores
-
-		// Determine scores
-		// for i := range currentGame.Rounds {
-		// 	if i == 15 {
-		// 		currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndCTScore
-		// 		currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndTScore
-		// 		if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" {
-		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
-		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
-		// 		} else {
-		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
-		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
-		// 		}
-		// 	} else if i > 0 {
-		// 		currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndTScore
-		// 		currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndCTScore
-		// 		if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" || currentGame.Rounds[i].Reason == "TerroristsSurrender" {
-		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
-		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
-		// 		} else {
-		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
-		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
-		// 		}
-		// 	} else if i == 0 {
-		// 		// Set first round to 0-0, switch other scores
-		// 		currentGame.Rounds[i].TScore = 0
-		// 		currentGame.Rounds[i].CTScore = 0
-		// 		if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" || currentGame.Rounds[i].Reason == "CTSurrender" {
-		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
-		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
-		// 		} else {
-		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
-		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
-		// 		}
-		// 	}
-		// }
-
-		// Set correct round numbers
-		// for i := range currentGame.Rounds {
-		// 	currentGame.Rounds[i].RoundNum = int64(i + 1)
-		// }
-
-		// Fix the rounds to have pistol rounds instead of ecos
-		// for i := range currentGame.Rounds {
-		// 	if i == 0 || i == 15 {
-		// 		currentGame.Rounds[i].CTBuyType = "Pistol"
-		// 		currentGame.Rounds[i].TBuyType = "Pistol"
-		// 	}
-		// }
-
-		// Make sure that teams are accurately set after half
-		// if len(currentGame.Rounds) >= 15 {
-		// 	if *currentGame.Rounds[15].CTTeam == *currentGame.Rounds[14].CTTeam {
-		// 		currentGame.Rounds[15].CTTeam = currentGame.Rounds[14].TTeam
-		// 		currentGame.Rounds[15].TTeam = currentGame.Rounds[14].CTTeam
-		// 	}
-		// }
-		
-		// Set the correct round start for round 0
-		// currentGame.Rounds[0].CTBeginMoney = 4000
-		// currentGame.Rounds[0].TBeginMoney = 4000
-		// currentGame.Rounds[0].CTBeginEqVal = 1000
-		// currentGame.Rounds[0].TBeginEqVal = 1000
-
-		// Make sure team names are correct
-		// for i := range currentGame.Rounds {
-		// 	if currentGame.Rounds[i].WinningSide == "CT" {
-		// 		if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].CTTeam {
-		// 			currentGame.Rounds[i].TTeam = currentGame.Rounds[i].CTTeam
-		// 			currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].WinningTeam
-		// 		}
-		// 	} else {
-		// 		if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].TTeam {
-		// 			currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].TTeam
-		// 			currentGame.Rounds[i].TTeam = currentGame.Rounds[i].WinningTeam
-		// 		}
-		// 	}
-		// }
-
 		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
 		if currentGame.ParsingOpts.DamagesRolled {
 			for i := range currentGame.Rounds {
