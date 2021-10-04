@@ -46,8 +46,6 @@ def _generate_team_vector_state(frame_side):
     armor_remaining = 0
     helmets_remaining = 0
     defuse_kits_remaining = 0
-    sum_team_dist_a = 0
-    sum_team_dist_b = 0
     for player in frame_side["Players"]:
         if player["IsAlive"]:
             eq_val += player["EquipmentValue"]
@@ -60,8 +58,6 @@ def _generate_team_vector_state(frame_side):
                 defuse_kits_remaining += 1
             if player["Hp"] == 100:
                 full_hp_players_remaining += 1
-            sum_team_dist_a += player["DistToBombsiteA"]
-            sum_team_dist_b += player["DistToBombsiteB"]
     return [
         eq_val,
         players_remaining,
@@ -70,8 +66,6 @@ def _generate_team_vector_state(frame_side):
         armor_remaining,
         helmets_remaining,
         defuse_kits_remaining,
-        sum_team_dist_a / players_remaining,
-        sum_team_dist_b / players_remaining,
     ]
 
 
@@ -89,8 +83,6 @@ def _generate_world_vector_state(frame):
         bomb_planted = 1
     return [
         frame["Second"],
-        frame["BombDistanceToA"],
-        frame["BombDistanceToB"],
         bomb_planted,
         frame["BombSite"],
     ]
