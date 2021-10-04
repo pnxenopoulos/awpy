@@ -2035,75 +2035,75 @@ func main() {
 		//currentGame.Rounds = tempRoundsWarmup
 
 		// Remove rounds where win reason doesn't exist
-		var tempRoundsReason []GameRound
-		for i := range currentGame.Rounds {
-			currRound := currentGame.Rounds[i]
-			if currRound.Reason == "CTWin" || currRound.Reason == "BombDefused" || currRound.Reason == "TargetSaved" || currRound.Reason == "TerroristsWin" || currRound.Reason == "TargetBombed" || currRound.Reason == "CTSurrender" || currRound.Reason == "TerroristsSurrender" {
-				tempRoundsReason = append(tempRoundsReason, currRound)
-			}
-		}
-		currentGame.Rounds = tempRoundsReason
+		//var tempRoundsReason []GameRound
+		//for i := range currentGame.Rounds {
+		//	currRound := currentGame.Rounds[i]
+		//	if currRound.Reason == "CTWin" || currRound.Reason == "BombDefused" || currRound.Reason == "TargetSaved" || currRound.Reason == "TerroristsWin" || currRound.Reason == "TargetBombed" || currRound.Reason == "CTSurrender" || currRound.Reason == "TerroristsSurrender" {
+		//		tempRoundsReason = append(tempRoundsReason, currRound)
+		//	}
+		//}
+		//currentGame.Rounds = tempRoundsReason
 
 		// Remove rounds where kills are > 10
-		var tempRoundsKills []GameRound
-		for i := range currentGame.Rounds {
-			currRound := currentGame.Rounds[i]
-			if len(currRound.Kills) <= 10 {
-				tempRoundsKills = append(tempRoundsKills, currRound)
-			}
-		}
-		currentGame.Rounds = tempRoundsKills
+		//var tempRoundsKills []GameRound
+		//for i := range currentGame.Rounds {
+		//	currRound := currentGame.Rounds[i]
+		//	if len(currRound.Kills) <= 10 {
+		//		tempRoundsKills = append(tempRoundsKills, currRound)
+		//	}
+		//}
+		//currentGame.Rounds = tempRoundsKills
 
 		// Remove rounds with missing end or start tick
-		var tempRoundsTicks []GameRound
-		for i := range currentGame.Rounds {
-			currRound := currentGame.Rounds[i]
-			if currRound.StartTick > 0 && currRound.EndTick > 0 {
-				tempRoundsTicks = append(tempRoundsTicks, currRound)
-			} else {
-				if currRound.EndTick > 0 {
-					tempRoundsTicks = append(tempRoundsTicks, currRound)
-				}
-			}
-		}
-		currentGame.Rounds = tempRoundsTicks
+		// var tempRoundsTicks []GameRound
+		// for i := range currentGame.Rounds {
+		// 	currRound := currentGame.Rounds[i]
+		// 	if currRound.StartTick > 0 && currRound.EndTick > 0 {
+		// 		tempRoundsTicks = append(tempRoundsTicks, currRound)
+		// 	} else {
+		// 		if currRound.EndTick > 0 {
+		// 			tempRoundsTicks = append(tempRoundsTicks, currRound)
+		// 		}
+		// 	}
+		// }
+		// currentGame.Rounds = tempRoundsTicks
 
 		// Remove rounds that dip in score
-		var tempRoundsDip []GameRound
-		for i := range currentGame.Rounds {
-			if i > 0 && i < len(currentGame.Rounds) {
-				prevRound := currentGame.Rounds[i-1]
-				currRound := currentGame.Rounds[i]
-				if currRound.CTScore+currRound.TScore >= prevRound.CTScore+prevRound.TScore {
-					tempRoundsDip = append(tempRoundsDip, currRound)
-				}
-			} else if i == 0 {
-				currRound := currentGame.Rounds[i]
-				tempRoundsDip = append(tempRoundsDip, currRound)
-			}
-		}
-		currentGame.Rounds = tempRoundsDip
+		// var tempRoundsDip []GameRound
+		// for i := range currentGame.Rounds {
+		// 	if i > 0 && i < len(currentGame.Rounds) {
+		// 		prevRound := currentGame.Rounds[i-1]
+		// 		currRound := currentGame.Rounds[i]
+		// 		if currRound.CTScore+currRound.TScore >= prevRound.CTScore+prevRound.TScore {
+		// 			tempRoundsDip = append(tempRoundsDip, currRound)
+		// 		}
+		// 	} else if i == 0 {
+		// 		currRound := currentGame.Rounds[i]
+		// 		tempRoundsDip = append(tempRoundsDip, currRound)
+		// 	}
+		// }
+		// currentGame.Rounds = tempRoundsDip
 
 		// Set first round scores to 0-0
-		currentGame.Rounds[0].TScore = 0
-		currentGame.Rounds[0].CTScore = 0
+		// currentGame.Rounds[0].TScore = 0
+		// currentGame.Rounds[0].CTScore = 0
 
 		// Remove rounds where score doesn't change
-		var tempRounds []GameRound
-		for i := range currentGame.Rounds {
-			if i < len(currentGame.Rounds)-1 {
-				nextRound := currentGame.Rounds[i+1]
-				currRound := currentGame.Rounds[i]
-				if !(currRound.CTScore+currRound.TScore >= nextRound.CTScore+nextRound.TScore) {
-					tempRounds = append(tempRounds, currRound)
-				}
-			} else {
-				currRound := currentGame.Rounds[i]
-				tempRounds = append(tempRounds, currRound)
-			}
+		// var tempRounds []GameRound
+		// for i := range currentGame.Rounds {
+		// 	if i < len(currentGame.Rounds)-1 {
+		// 		nextRound := currentGame.Rounds[i+1]
+		// 		currRound := currentGame.Rounds[i]
+		// 		if !(currRound.CTScore+currRound.TScore >= nextRound.CTScore+nextRound.TScore) {
+		// 			tempRounds = append(tempRounds, currRound)
+		// 		}
+		// 	} else {
+		// 		currRound := currentGame.Rounds[i]
+		// 		tempRounds = append(tempRounds, currRound)
+		// 	}
 
-		}
-		currentGame.Rounds = tempRounds
+		// }
+		// currentGame.Rounds = tempRounds
 
 		// Find the starting round. Starting round is defined as the first 0-0 round which has following rounds.
 		//startIDx := 0
@@ -2117,96 +2117,96 @@ func main() {
 		//currentGame.Rounds = currentGame.Rounds[startIDx:len(currentGame.Rounds)]
 
 		// Remove rounds with 0-0 scorelines that arent first
-		var tempRoundsScores []GameRound
-		for i := range currentGame.Rounds {
-			currRound := currentGame.Rounds[i]
-			if i > 0 {
-				if currRound.TScore+currRound.CTScore > 0 {
-					tempRoundsScores = append(tempRoundsScores, currRound)
-				}
-			} else {
-				tempRoundsScores = append(tempRoundsScores, currRound)
-			}
-		}
-		currentGame.Rounds = tempRoundsScores
+		// var tempRoundsScores []GameRound
+		// for i := range currentGame.Rounds {
+		// 	currRound := currentGame.Rounds[i]
+		// 	if i > 0 {
+		// 		if currRound.TScore+currRound.CTScore > 0 {
+		// 			tempRoundsScores = append(tempRoundsScores, currRound)
+		// 		}
+		// 	} else {
+		// 		tempRoundsScores = append(tempRoundsScores, currRound)
+		// 	}
+		// }
+		// currentGame.Rounds = tempRoundsScores
 
 		// Determine scores
-		for i := range currentGame.Rounds {
-			if i == 15 {
-				currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndCTScore
-				currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndTScore
-				if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" {
-					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
-					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
-				} else {
-					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
-					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
-				}
-			} else if i > 0 {
-				currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndTScore
-				currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndCTScore
-				if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" || currentGame.Rounds[i].Reason == "TerroristsSurrender" {
-					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
-					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
-				} else {
-					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
-					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
-				}
-			} else if i == 0 {
-				// Set first round to 0-0, switch other scores
-				currentGame.Rounds[i].TScore = 0
-				currentGame.Rounds[i].CTScore = 0
-				if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" || currentGame.Rounds[i].Reason == "CTSurrender" {
-					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
-					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
-				} else {
-					currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
-					currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
-				}
-			}
-		}
+		// for i := range currentGame.Rounds {
+		// 	if i == 15 {
+		// 		currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndCTScore
+		// 		currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndTScore
+		// 		if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" {
+		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
+		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
+		// 		} else {
+		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
+		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
+		// 		}
+		// 	} else if i > 0 {
+		// 		currentGame.Rounds[i].TScore = currentGame.Rounds[i-1].EndTScore
+		// 		currentGame.Rounds[i].CTScore = currentGame.Rounds[i-1].EndCTScore
+		// 		if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" || currentGame.Rounds[i].Reason == "TerroristsSurrender" {
+		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
+		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
+		// 		} else {
+		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
+		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
+		// 		}
+		// 	} else if i == 0 {
+		// 		// Set first round to 0-0, switch other scores
+		// 		currentGame.Rounds[i].TScore = 0
+		// 		currentGame.Rounds[i].CTScore = 0
+		// 		if currentGame.Rounds[i].Reason == "CTWin" || currentGame.Rounds[i].Reason == "BombDefused" || currentGame.Rounds[i].Reason == "TargetSaved" || currentGame.Rounds[i].Reason == "CTSurrender" {
+		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore
+		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore + 1
+		// 		} else {
+		// 			currentGame.Rounds[i].EndTScore = currentGame.Rounds[i].TScore + 1
+		// 			currentGame.Rounds[i].EndCTScore = currentGame.Rounds[i].CTScore
+		// 		}
+		// 	}
+		// }
 
 		// Set correct round numbers
-		for i := range currentGame.Rounds {
-			currentGame.Rounds[i].RoundNum = int64(i + 1)
-		}
+		// for i := range currentGame.Rounds {
+		// 	currentGame.Rounds[i].RoundNum = int64(i + 1)
+		// }
 
 		// Fix the rounds to have pistol rounds instead of ecos
-		for i := range currentGame.Rounds {
-			if i == 0 || i == 15 {
-				currentGame.Rounds[i].CTBuyType = "Pistol"
-				currentGame.Rounds[i].TBuyType = "Pistol"
-			}
-		}
+		// for i := range currentGame.Rounds {
+		// 	if i == 0 || i == 15 {
+		// 		currentGame.Rounds[i].CTBuyType = "Pistol"
+		// 		currentGame.Rounds[i].TBuyType = "Pistol"
+		// 	}
+		// }
 
 		// Make sure that teams are accurately set after half
-		if len(currentGame.Rounds) >= 15 {
-			if *currentGame.Rounds[15].CTTeam == *currentGame.Rounds[14].CTTeam {
-				currentGame.Rounds[15].CTTeam = currentGame.Rounds[14].TTeam
-				currentGame.Rounds[15].TTeam = currentGame.Rounds[14].CTTeam
-			}
-		}
+		// if len(currentGame.Rounds) >= 15 {
+		// 	if *currentGame.Rounds[15].CTTeam == *currentGame.Rounds[14].CTTeam {
+		// 		currentGame.Rounds[15].CTTeam = currentGame.Rounds[14].TTeam
+		// 		currentGame.Rounds[15].TTeam = currentGame.Rounds[14].CTTeam
+		// 	}
+		// }
 		
 		// Set the correct round start for round 0
-		currentGame.Rounds[0].CTBeginMoney = 4000
-		currentGame.Rounds[0].TBeginMoney = 4000
-		currentGame.Rounds[0].CTBeginEqVal = 1000
-		currentGame.Rounds[0].TBeginEqVal = 1000
+		// currentGame.Rounds[0].CTBeginMoney = 4000
+		// currentGame.Rounds[0].TBeginMoney = 4000
+		// currentGame.Rounds[0].CTBeginEqVal = 1000
+		// currentGame.Rounds[0].TBeginEqVal = 1000
 
 		// Make sure team names are correct
-		for i := range currentGame.Rounds {
-			if currentGame.Rounds[i].WinningSide == "CT" {
-				if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].CTTeam {
-					currentGame.Rounds[i].TTeam = currentGame.Rounds[i].CTTeam
-					currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].WinningTeam
-				}
-			} else {
-				if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].TTeam {
-					currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].TTeam
-					currentGame.Rounds[i].TTeam = currentGame.Rounds[i].WinningTeam
-				}
-			}
-		}
+		// for i := range currentGame.Rounds {
+		// 	if currentGame.Rounds[i].WinningSide == "CT" {
+		// 		if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].CTTeam {
+		// 			currentGame.Rounds[i].TTeam = currentGame.Rounds[i].CTTeam
+		// 			currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].WinningTeam
+		// 		}
+		// 	} else {
+		// 		if *currentGame.Rounds[i].WinningTeam != *currentGame.Rounds[i].TTeam {
+		// 			currentGame.Rounds[i].CTTeam = currentGame.Rounds[i].TTeam
+		// 			currentGame.Rounds[i].TTeam = currentGame.Rounds[i].WinningTeam
+		// 		}
+		// 	}
+		// }
 
 		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
 		if currentGame.ParsingOpts.DamagesRolled {
