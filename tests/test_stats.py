@@ -59,17 +59,17 @@ class TestStats:
         self.invalid_numeric_filter = {"Kills": [10]}
         self.invalid_logical_operator = {"Kills": ["=invalid=10"]}
         self.invalid_numeric_value = {"Kills": ["==1invalid0"]}
-        self.invalid_str_filter = {"AttackerName": [1]}
-        self.invalid_bool_filter = {"IsHeadshot": ["True"]}
+        self.invalid_str_filter = {"attackerName": [1]}
+        self.invalid_bool_filter = {"isHeadshot": ["True"]}
         self.filters = {
-            "AttackerTeam": ["Astralis"],
-            "RoundNum": ["<16"],
-            "IsHeadshot": [True],
+            "attackerTeam": ["Astralis"],
+            "roundNum": ["<16"],
+            "isHeadshot": [True],
         }
         self.filtered_kill_data = self.kill_data.loc[
-            (self.kill_data[("AttackerTeam")] == "Astralis")
-            & (self.kill_data["RoundNum"] < 16)
-            & (self.kill_data["IsHeadshot"] == True)
+            (self.kill_data[("attackerTeam")] == "Astralis")
+            & (self.kill_data["roundNum"] < 16)
+            & (self.kill_data["isHeadshot"] == True)
         ]
         self.kills = pd.DataFrame(
             {
@@ -80,7 +80,7 @@ class TestStats:
                     "dupreeh",
                     "gla1ve",
                 ],
-                "1st Half Headshot Kills": [3, 2, 7, 5, 2],
+                "1st Half HS Kills": [3, 2, 7, 5, 2],
             }
         )
 
@@ -147,8 +147,8 @@ class TestStats:
         assert calc_stats(
             self.kill_data,
             self.filters,
-            ["AttackerName"],
-            ["AttackerName"],
+            ["attackerName"],
+            ["attackerName"],
             [["size"]],
             ["Astralis Player", "1st Half Headshot Kills"],
         ).equals(self.kills)
