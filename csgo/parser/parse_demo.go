@@ -58,7 +58,8 @@ type ServerConVar struct {
 	CashPlayerKilledDefault       int64 `json:"cashPlayerKilledDefault"`       // cash_player_killed_enemy_default
 	CashTeamLoserBonus            int64 `json:"cashTeamLoserBonus"`            // cash_team_loser_bonus
 	CashTeamLoserBonusConsecutive int64 `json:"cashTeamLoserBonusConsecutive"` // cash_team_loser_bonus_consecutive_rounds
-	RoundTime                     int64 `json:"roundTime"`                     // mp_roundtime_defuse
+	RoundTime                     int64 `json:"roundTime"`                     // mp_roundtime
+	RoundTimeDefuse               int64 `json:"roundTimeDefuse"`               // mp_roundtime_defuse
 	RoundRestartDelay             int64 `json:"roundRestartDelay"`             // mp_round_restart_delay
 	FreezeTime                    int64 `json:"freezeTime"`                    // mp_freezetime
 	BuyTime                       int64 `json:"buyTime"`                       // mp_buytime
@@ -85,6 +86,7 @@ type GameRound struct {
 	FreezeTimeEndTick int64              `json:"freezeTimeEndTick"`
 	EndTick           int64              `json:"endTick"`
 	EndOfficialTick   int64              `json:"endOfficialTick"`
+	PlantTick         *int64             `json:"plantTick"`
 	TScore            int64              `json:"tScore"`
 	CTScore           int64              `json:"ctScore"`
 	EndTScore         int64              `json:"endTScore"`
@@ -291,7 +293,7 @@ type FlashAction struct {
 // GameFrame (game state at time t)
 type GameFrame struct {
 	Tick        int64         `json:"tick"`
-	Second      float64       `json:"second"`
+	Second      float64       `json:"secondsRemaining"`
 	FrameToken  string        `json:"positionToken"`
 	TToken      string        `json:"tToken"`
 	CTToken     string        `json:"ctToken"`
@@ -507,6 +509,21 @@ func convertWeaponClass(wc common.EquipmentClass) string {
 	default:
 		return "Unknown"
 	}
+}	
+
+func determineSecond(tick int64, currentGame Game, currentRound GameRound) float64 {
+	roundTime := currentGame.ServerVars.RoundTime
+
+	if roundTime == 0 {
+		roundTime = currentGame.ServerVars.RoundTimeDefuse
+	}
+
+	if currentRound.BombPlantTick == nil {
+		phaseEndTick := currentRound.FreezeTimeEndTick + int64(int64(currentGame.TickRate)*roundTime)
+	} else {
+		phaseEndTick := currentRound.BombPlantTick + int64(int64(currentGame.TickRate)*roundTime)
+	}
+	return float64((float64(tick) - float64(phaseEnd)) / float64(currentGame.TickRate))
 }
 
 func findAreaPlace(currArea *gonav.NavArea, mesh gonav.NavMesh) string {
@@ -895,7 +912,8 @@ func main() {
 			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
 			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
 			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
-			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
+			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime"], 10, 64)
+			serverConfig.RoundTimeDefuse, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
 			serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
 			serverConfig.FreezeTime, _ = strconv.ParseInt(conv["mp_freezetime"], 10, 64)
 			serverConfig.BuyTime, _ = strconv.ParseInt(conv["mp_buytime"], 10, 64)
@@ -1122,7 +1140,9 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		
+		float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse"
 		currentBomb.BombSite = ""
 		if e.Site == 65 {
@@ -1148,7 +1168,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse_start"
 
 		// Find bombsite where event is planted
@@ -1178,7 +1198,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse_aborted"
 
 		// Find bombsite where event is planted
@@ -1209,7 +1229,7 @@ func main() {
 		if e.Weapon.String() != "Knife" && e.Shooter != nil {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
-			currentWeaponFire.Second = float64((float64(currentWeaponFire.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, currentRound, currentGame)
 			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
 			currentWeaponFire.PlayerName = e.Shooter.Name
 			currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
@@ -1264,7 +1284,7 @@ func main() {
 		if e.Attacker != nil {
 			currentFlash := FlashAction{}
 			currentFlash.Tick = int64(gs.IngameTick())
-			currentFlash.Second = float64((float64(currentFlash.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+			currentFlash.Second = determineSecond(currentFlash.Tick, currentRound, currentGame)
 
 			// Attacker
 			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
@@ -1384,9 +1404,12 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant"
 		currentBomb.BombSite = ""
+
+		plantTick := int64(gs.IngameTick())
+		currentRound.PlantTick = &plantTick
 
 		if e.Site == 65 {
 			currentBomb.BombSite = "A"
@@ -1413,7 +1436,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant_begin"
 		currentBomb.BombSite = ""
 
@@ -1441,7 +1464,7 @@ func main() {
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant_abort"
 
 		// Find bombsite where event is planted
@@ -1473,7 +1496,7 @@ func main() {
 			currentGrenade := GrenadeAction{}
 			currentGrenade.UniqueID = e.Projectile.UniqueID()
 			currentGrenade.ThrowTick = int64(gs.IngameTick())
-			currentGrenade.ThrowSecond = float64((float64(currentGrenade.ThrowTick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+			currentGrenade.ThrowSecond = determineSecond(currentGrenade.Tick, currentRound, currentGame)
 
 			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
@@ -1540,7 +1563,7 @@ func main() {
 			for i, g := range currentRound.Grenades {
 				if g.UniqueID == e.Projectile.UniqueID() {
 					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
-					currentRound.Grenades[i].DestroySecond = float64((float64(currentRound.Grenades[i].DestroyTick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+					currentRound.Grenades[i].DestroySecond = determineSecond(currentRound.Grenades[i].Tick, currentRound, currentGame)
 
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
@@ -1574,7 +1597,7 @@ func main() {
 
 		currentKill := KillAction{}
 		currentKill.Tick = int64(gs.IngameTick())
-		currentKill.Second = float64((float64(currentKill.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+		currentKill.Second = determineSecond(currentKill.Tick, currentRound, currentGame)
 		currentKill.Weapon = e.Weapon.String()
 		currentKill.IsWallbang = e.IsWallBang()
 		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
@@ -1783,7 +1806,7 @@ func main() {
 
 		currentDamage := DamageAction{}
 		currentDamage.Tick = int64(gs.IngameTick())
-		currentDamage.Second = float64((float64(currentDamage.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+		currentDamage.Second = determineSecond(currentDamage.Tick, currentRound, currentGame)
 		currentDamage.Weapon = e.Weapon.String()
 		currentDamage.HitGroup = convertHitGroup(e.HitGroup)
 		currentDamage.HpDamage = int64(e.HealthDamage)
@@ -1898,11 +1921,12 @@ func main() {
 	// Parse a demo frame. If parse rate is 1, then every frame is parsed. If parse rate is 2, then every 2 frames is parsed, and so on
 	p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
+		gr := p.GameRules()
 
 		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
 			currentFrame.Tick = int64(gs.IngameTick())
-			currentFrame.Second = float64((float64(currentFrame.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
+			currentFrame.Second = determineSecond(currentFrame.Tick, currentRound, currentGame)
 
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
