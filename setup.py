@@ -18,6 +18,7 @@ setup(
         "": [
             "*.go",
             "data/map/*.png",
+            "data/map/*.json",
             "data/nav/*.nav",
             "data/nav/*.csv",
             "data/nav/*.xz",
