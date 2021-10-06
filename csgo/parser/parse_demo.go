@@ -940,6 +940,7 @@ func main() {
 	mapsWithNavFile[11] = "de_vertigo"
 	navFileExists := stringInSlice(currentMap, mapsWithNavFile)
 
+	mesh := gonav.NavMesh{}
 	if navFileExists {
 		fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 		parserNav := gonav.Parser{Reader: fNav}
@@ -1603,8 +1604,9 @@ func main() {
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
 		// Bomb event
+		plantTick := int64(gs.IngameTick())
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
-		currentRound.BombPlantTick = &int64(gs.IngameTick())
+		currentRound.BombPlantTick = &plantTick
 	})
 
 	// Parse bomb plants
@@ -1677,7 +1679,7 @@ func main() {
 			currentGrenade := GrenadeAction{}
 			currentGrenade.UniqueID = e.Projectile.UniqueID()
 			currentGrenade.ThrowTick = int64(gs.IngameTick())
-			currentGrenade.ThrowSecond = determineSecond(currentGrenade.Tick, currentRound, currentGame)
+			currentGrenade.ThrowSecond = determineSecond(currentGrenade.ThrowTick, currentRound, currentGame)
 
 			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
@@ -1748,7 +1750,7 @@ func main() {
 			for i, g := range currentRound.Grenades {
 				if g.UniqueID == e.Projectile.UniqueID() {
 					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
-					currentRound.Grenades[i].DestroySecond = determineSecond(currentRound.Grenades[i].Tick, currentRound, currentGame)
+					currentRound.Grenades[i].DestroySecond = determineSecond(currentRound.Grenades[i].DestroyTick, currentRound, currentGame)
 
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
