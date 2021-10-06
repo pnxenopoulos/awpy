@@ -1510,7 +1510,7 @@ func main() {
 		gs := p.GameState()
 
 		currentBomb := BombAction{}
-		currentBomb.Tick = 
+		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant"
 		currentBomb.BombSite = ""
