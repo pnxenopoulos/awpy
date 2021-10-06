@@ -196,14 +196,11 @@ class TestDemoParser:
     def test_parsed_metadata(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                assert (
-                    self.demo_data[demo]["json"]["tickRate"]
-                    == self.demo_data[demo]["tickRate"]
-                )
-                assert (
-                    self.demo_data[demo]["json"]["serverVars"]["maxRounds"]
-                    == self.demo_data[demo]["maxRounds"]
-                )
+                if self.demo_data[demo]["tickrate"]["test"]:
+                    assert (
+                        self.demo_data[demo]["userForTests"]["tickrate"]["value"]
+                        == self.demo_data[demo]["tickRate"]
+                    )
 
     def test_round_ticks(self):
         for demo in self.demo_data:
@@ -213,42 +210,15 @@ class TestDemoParser:
                     assert r["freezeTimeEndTick"] <= r["endTick"]
                     assert r["endTick"] <= r["endOfficialTick"]
 
-    def test_half_side_switch(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][15]["ctTeam"]
-                    == self.demo_data[demo]["json"]["gameRounds"][14]["tTeam"]
-                )
-
     def test_round_winners(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    if r["winningSide"] == "CT":
-                        assert r["winningTeam"] == r["ctTeam"]
-                    else:
-                        assert r["winningTeam"] == r["tTeam"]
-
-    def test_pistol_rounds(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][0]["ctBuyType"]
-                    == "Pistol"
-                )
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][0]["tBuyType"]
-                    == "Pistol"
-                )
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][15]["ctBuyType"]
-                    == "Pistol"
-                )
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][15]["tBuyType"]
-                    == "Pistol"
-                )
+                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
+                    if i in self.demo_data[demo]["useableRounds"]:
+                        if r["winningSide"] == "CT":
+                            assert r["winningTeam"] == r["ctTeam"]
+                        else:
+                            assert r["winningTeam"] == r["tTeam"]
 
     def test_start_money(self):
         for demo in self.demo_data:
@@ -273,39 +243,34 @@ class TestDemoParser:
     def test_eq_val(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    assert (
-                        r["ctStartEqVal"]
-                        <= r["ctRoundStartEqVal"] + r["ctRoundStartMoney"]
-                    )
-                    assert (
-                        r["tStartEqVal"]
-                        <= r["tRoundStartEqVal"] + r["tRoundStartMoney"]
-                    )
+                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
+                    if i in self.demo_data[demo]["useableRounds"]:
+                        assert (
+                            r["ctStartEqVal"]
+                            <= r["ctRoundStartEqVal"] + r["ctRoundStartMoney"]
+                        )
+                        assert (
+                            r["tStartEqVal"]
+                            <= r["tRoundStartEqVal"] + r["tRoundStartMoney"]
+                        )
 
     def test_kill_distances(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    for k in r["Kills"]:
-                        if not k["isSuicide"]:
-                            assert k["distance"] > 0
+                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
+                    if i in self.demo_data[demo]["useableRounds"]:
+                        for k in r["Kills"]:
+                            if not k["isSuicide"]:
+                                assert k["distance"] > 0
 
     def test_damage_amounts(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    for d in r["damages"]:
-                        assert d["hpDamage"] >= d["hpDamageTaken"]
-                        assert d["armorDamage"] >= d["armorDamageTaken"]
-
-    def test_parsed_json_rounds(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                assert (
-                    len(self.demo_data[demo]["json"]["gameRounds"])
-                    == self.demo_data[demo]["rounds"]
-                )
+                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
+                    if i in self.demo_data[demo]["useableRounds"]:
+                        for d in r["damages"]:
+                            assert d["hpDamage"] >= d["hpDamageTaken"]
+                            assert d["armorDamage"] >= d["armorDamageTaken"]
 
     def test_parsed_opts(self):
         for demo in self.demo_data:
@@ -328,261 +293,15 @@ class TestDemoParser:
     def test_frames(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    assert len(r["frames"]) > 0
+                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
+                    if i in self.demo_data[demo]["useableRounds"]:
+                        assert len(r["frames"]) > 0
 
     def test_player_counts(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    for f in r["frames"]:
-                        assert len(f["T"]["players"]) == 5
-                        assert len(f["CT"]["players"]) == 5
-
-    def _count_deaths(self, json):
-        total_deaths = 0
-        for r in json["gameRounds"]:
-            for _ in r["kills"]:
-                total_deaths += 1
-        return total_deaths
-
-    def test_parsed_deaths(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_deaths = self._count_deaths(self.demo_data[demo]["json"])
-                real_deaths = self.demo_data[demo]["totalDeaths"]
-                print(
-                    "[{0}] Parsed {1} deaths, real deathss are {2}".format(
-                        demo, demo_deaths, real_deaths
-                    )
-                )
-                assert demo_deaths == real_deaths
-
-    def _count_kills(self, json):
-        total_kills = 0
-        for r in json["gameRounds"]:
-            for k in r["kills"]:
-                if not k["isTeamkill"] and not k["isSuicide"]:
-                    total_kills += 1
-        return total_kills
-
-    def test_parsed_kills(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_kills = self._count_kills(self.demo_data[demo]["json"])
-                real_kills = self.demo_data[demo]["totalKills"]
-                print(
-                    "[{0}] Parsed {1} kills, real kills are {2}".format(
-                        demo, demo_kills, real_kills
-                    )
-                )
-                assert demo_kills == real_kills
-
-    def _count_teamkills(self, json):
-        total_teamkills = 0
-        for r in json["gameRounds"]:
-            for k in r["kills"]:
-                if k["isTeamkill"]:
-                    total_teamkills += 1
-        return total_teamkills
-
-    def test_parsed_teamkills(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_tk = self._count_teamkills(self.demo_data[demo]["json"])
-                real_tk = self.demo_data[demo]["totalTeamkills"]
-                print(
-                    "[{0}] Parsed {1} teamkills, real teamkills are {2}".format(
-                        demo, demo_tk, real_tk
-                    )
-                )
-                assert demo_tk == real_tk
-
-    def _count_firstkills(self, json):
-        total_firstkills = 0
-        for r in json["gameRounds"]:
-            for k in r["kills"]:
-                if k["isFirstKill"]:
-                    total_firstkills += 1
-        return total_firstkills
-
-    def test_parsed_firstkills(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_fk = self._count_firstkills(self.demo_data[demo]["json"])
-                real_fk = self.demo_data[demo]["totalFirstKills"]
-                print(
-                    "[{0}] Parsed {1} firstkills, real firstkills are {2}".format(
-                        demo, demo_fk, real_fk
-                    )
-                )
-                assert demo_fk == real_fk
-
-    def _count_headshots(self, json):
-        total_hs = 0
-        for r in json["gameRounds"]:
-            for k in r["Kills"]:
-                if k["isHeadshot"]:
-                    total_hs += 1
-        return total_hs
-
-    def test_parsed_headshots(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_hs = self._count_headshots(self.demo_data[demo]["json"])
-                real_hs = self.demo_data[demo]["totalHeadshots"]
-                print(
-                    "[{0}] Parsed {1} headshots, real headshots are {2}".format(
-                        demo, demo_hs, real_hs
-                    )
-                )
-                assert demo_hs == real_hs
-
-    def _count_assists(self, json):
-        total_ast = 0
-        for r in json["gameRounds"]:
-            for k in r["kills"]:
-                if k["assisterName"] and (k["assisterTeam"] != k["victimTeam"]):
-                    total_ast += 1
-                if (
-                    (k["flashThrowerName"] != k["assisterName"])
-                    and (k["flashThrowerTeam"] != k["victimTeam"])
-                    and (k["flashThrowerName"] is not None)
-                ):
-                    total_ast += 1
-        return total_ast
-
-    def test_parsed_assists(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_ast = self._count_assists(self.demo_data[demo]["json"])
-                real_ast = self.demo_data[demo]["totalAssists"]
-                print(
-                    "[{0}] Parsed {1} assists, real assists are {2}".format(
-                        demo, demo_ast, real_ast
-                    )
-                )
-                assert demo_ast == real_ast
-
-    def _count_flash_assists(self, json):
-        total_flash_ast = 0
-        for r in json["gameRounds"]:
-            for k in r["kills"]:
-                if k["flashThrowerName"] and (k["flashThrowerTeam"] != k["victimTeam"]):
-                    total_flash_ast += 1
-        return total_flash_ast
-
-    def test_parsed_flash_assists(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_flash_ast = self._count_flash_assists(self.demo_data[demo]["json"])
-                real_flash_ast = self.demo_data[demo]["totalFlashAssists"]
-                print(
-                    "[{0}] Parsed {1} flash assists, real flash assists are {2}".format(
-                        demo, demo_flash_ast, real_flash_ast
-                    )
-                )
-                assert demo_flash_ast == real_flash_ast
-
-    def test_parsed_roundendreasons(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
                 for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    assert (
-                        r["roundEndReason"]
-                        == self.demo_data[demo]["roundEndReasons"][i]
-                    )
-
-    def _count_enemies_flashed(self, json):
-        total_flashed = 0
-        for r in json["gameRounds"]:
-            if r["flashes"]:
-                for f in r["flashes"]:
-                    # Use 1.5 seconds as cutoff for "enemies flashed"
-                    if (
-                        (f["attackerTeam"] != f["playerTeam"])
-                        and ((f["playerSide"] == "T") or (f["playerSide"] == "CT"))
-                        and (f["flashDuration"] > 1.5)
-                    ):
-                        total_flashed += 1
-        return total_flashed
-
-    def test_parsed_enemies_flashed(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_enemies_flashed = self._count_enemies_flashed(
-                    self.demo_data[demo]["json"]
-                )
-                real_enemies_flashed = self.demo_data[demo]["enemiesFlashed"]
-                print(
-                    "[{0}] Parsed {1} enemies flashed, real enemies flashed are {2}".format(
-                        demo, demo_enemies_flashed, real_enemies_flashed
-                    )
-                )
-                assert demo_enemies_flashed == real_enemies_flashed
-
-    def _sum_util_dmg(self, json):
-        util_dmg = 0
-        for r in json["gameRounds"]:
-            for dmg in r["damages"]:
-                if (
-                    dmg["weapon"] in ["HE Grenade", "Molotov", "Incendiary Grenade"]
-                    and dmg["attackerTeam"] != dmg["victimTeam"]
-                ):
-                    util_dmg += dmg["hpDamageTaken"]
-        return util_dmg
-
-    def test_parsed_util_dmg(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                demo_util_dmg = self._sum_util_dmg(self.demo_data[demo]["json"])
-                util_dmg = self.demo_data[demo]["utilityDamage"]
-                print(
-                    "[{0}] Parsed {1} util dmg, real util dmg is {2}".format(
-                        demo, demo_util_dmg, util_dmg
-                    )
-                )
-                assert demo_util_dmg < util_dmg + 30
-                assert demo_util_dmg > util_dmg - 30
-
-    def test_event_ticks(self):
-        """Tests to see if all events/frames occur within a round"""
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["GameRounds"]:
-                    start_tick = r["StartTick"]
-                    end_tick = r["EndOfficialTick"]
-                    if r["Kills"] is not None:
-                        for e in r["Kills"]:
-                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    if r["Damages"] is not None:
-                        for e in r["Damages"]:
-                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    if r["BombEvents"] is not None:
-                        for e in r["BombEvents"]:
-                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    if r["WeaponFires"] is not None:
-                        for e in r["WeaponFires"]:
-                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    if r["Grenades"] is not None:
-                        for e in r["Grenades"]:
-                            assert (
-                                e["ThrowTick"] >= start_tick
-                                and e["DestroyTick"] <= end_tick
-                            )
-                            assert e["ThrowTick"] <= e["DestroyTick"]
-                    if r["Flashes"] is not None:
-                        for e in r["Flashes"]:
-                            assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-                    # Technically frames could happen outside...shouldn't be a big deal
-                    # if r["Frames"] is not None:
-                    #    for e in r["Frames"]:
-                    #        assert e["Tick"] >= start_tick and e["Tick"] <= end_tick
-
-    def test_defuse_round_end(self):
-        """Tests to see if on bomb defuse round ends that the last action is a bomb defuse"""
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["GameRounds"]:
-                    if r["RoundEndReason"] == "BombDefused":
-                        assert r["BombEvents"][-1]["BombAction"] == "defuse"
+                    if i in self.demo_data[demo]["useableRounds"]:
+                        for f in r["frames"]:
+                            assert len(f["T"]["players"]) == 5
+                            assert len(f["CT"]["players"]) == 5

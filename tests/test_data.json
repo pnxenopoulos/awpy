@@ -10,18 +10,80 @@
         "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem",
         "hltvUrl": "https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019",
         "useForTests": true,
-        "tickRate": 128,
-        "maxRounds": 30,
-        "rounds": 28,
-        "totalKills": 179,
-        "totalTeamkills": 1,
-        "totalHeadshots": 84,
-        "totalAssists": 35,
-        "totalFlashAssists": 4,
-        "totalDeaths": 180,
-        "totalFirstKills": 28,
-        "enemiesFlashed": 58,
-        "utilityDamage": 1075,
+        "useableRounds": [
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30
+        ],
+        "tickrate": {
+            "test": true,
+            "value": 128
+        },
+        "totalRounds": {
+            "test": true,
+            "value": 28
+        },
+        "totalKills": {
+            "test": true,
+            "value": 179
+        },
+        "totalTeamkills": {
+            "test": true,
+            "value": 1
+        },
+        "totalHeadshots": {
+            "test": true,
+            "value": 84
+        },
+        "totalAssists": {
+            "test": true,
+            "value": 35
+        },
+        "totalFlashAssists": {
+            "test": true,
+            "value": 1
+        },
+        "totalDeaths": {
+            "test": true,
+            "value": 180
+        },
+        "totalFirstKills": {
+            "test": true,
+            "value": 28
+        },
+        "enemiesFlashed": {
+            "test": true,
+            "value": 58
+        },
+        "utilityDamage": {
+            "test": true,
+            "value": 1075
+        },
         "KAST": {
             "dupreeh": [
                 0.629,
