@@ -103,7 +103,7 @@ type GameRound struct {
 	FreezeTimeEndTick int64              `json:"freezeTimeEndTick"`
 	EndTick           int64              `json:"endTick"`
 	EndOfficialTick   int64              `json:"endOfficialTick"`
-	PlantTick         *int64             `json:"plantTick"`
+	BombPlantTick     *int64             `json:"bombPlantTick"`
 	TScore            int64              `json:"tScore"`
 	CTScore           int64              `json:"ctScore"`
 	EndTScore         int64              `json:"endTScore"`
@@ -113,7 +113,6 @@ type GameRound struct {
 	WinningSide       string             `json:"winningSide"`
 	WinningTeam       *string            `json:"winningTeam"`
 	LosingTeam        *string            `json:"losingTeam"`
-	BombPlantTick     *int64             `json:"bombPlantTick"`
 	Reason            string             `json:"roundEndReason"`
 	CTStartEqVal      int64              `json:"ctStartEqVal"`
 	CTBeginEqVal      int64              `json:"ctRoundStartEqVal"`
@@ -925,7 +924,7 @@ func main() {
 	currentMap := header.MapName
 	currentMap = cleanMapName(currentMap)
 
-	mapsWithNavFile := make([]string, 3)
+	mapsWithNavFile := make([]string, 12)
 	mapsWithNavFile[0] = "de_ancient"
 	mapsWithNavFile[1] = "de_cache"
 	mapsWithNavFile[2] = "de_cbble"
@@ -941,13 +940,13 @@ func main() {
 	navFileExists := stringInSlice(currentMap, mapsWithNavFile)
 
 	mesh := gonav.NavMesh{}
+	var placeSl []string
 	if navFileExists {
 		fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 		parserNav := gonav.Parser{Reader: fNav}
 		mesh, _ := parserNav.Parse()
 
 		// Create list of places as parsed from the nav mesh
-		var placeSl []string
 		for _, currPlace := range mesh.Places {
 			placeSl = append(placeSl, currPlace.Name)
 		}
@@ -1584,9 +1583,6 @@ func main() {
 		currentBomb.BombAction = "plant"
 		currentBomb.BombSite = ""
 
-		plantTick := int64(gs.IngameTick())
-		currentRound.PlantTick = &plantTick
-
 		if e.Site == 65 {
 			currentBomb.BombSite = "A"
 		} else if e.Site == 66 {
@@ -1604,8 +1600,8 @@ func main() {
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
 		// Bomb event
-		plantTick := int64(gs.IngameTick())
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		plantTick := int64(gs.IngameTick())
 		currentRound.BombPlantTick = &plantTick
 	})
 
@@ -1770,8 +1766,8 @@ func main() {
 							}
 						}
 
-						currentRound.Grenades[i].GrenadeAreaID = grenadeAreaID
-						currentRound.Grenades[i].GrenadeAreaName = grenadeAreaPlace
+						currentRound.Grenades[i].GrenadeAreaID = &grenadeAreaID
+						currentRound.Grenades[i].GrenadeAreaName = &grenadeAreaPlace
 					}
 
 					currentRound.Grenades[i].GrenadeX = float64(grenadePos.X)
@@ -2127,7 +2123,6 @@ func main() {
 	// Parse a demo frame. If parse rate is 1, then every frame is parsed. If parse rate is 2, then every 2 frames is parsed, and so on
 	p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
-		gr := p.GameRules()
 
 		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
@@ -2159,13 +2154,13 @@ func main() {
 				ctPlayerPlaces := createAlivePlayerSlice(currentFrame.CT.Players)
 				ctToken := createCountToken(ctPlayerPlaces, placeSl)
 
-				frameToken := &tToken + &ctToken
+				frameToken := tToken + ctToken
 				
-				currentFrame.T.PosToken = *tToken
-				currentFrame.CT.PosToken = *ctToken
-				currentFrame.TToken = *tToken
-				currentFrame.CTToken = *ctToken
-				currentFrame.FrameToken = frameToken
+				currentFrame.T.PosToken = &tToken
+				currentFrame.CT.PosToken = &ctToken
+				currentFrame.TToken = &tToken
+				currentFrame.CTToken = &ctToken
+				currentFrame.FrameToken = &frameToken
 			}
 			
 			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
