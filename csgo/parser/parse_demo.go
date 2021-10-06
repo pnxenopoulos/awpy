@@ -59,7 +59,7 @@ type MatchPhases struct {
 	RoundEndedOfficial    []int64 `json:"roundEndedOfficial"`
 	GameHalfEnded         []int64 `json:"gameHalfEnded"`
 	MatchStart            []int64 `json:"matchStart"`
-	MatchStartChanged     []int64 `json:"matchStartChanged"`
+	MatchStartedChanged   []int64 `json:"matchStartedChanged"`
 	WarmupChanged         []int64 `json:"warmupChanged"`
 	TeamSwitch            []int64 `json:"teamSwitch"`
 }
@@ -113,7 +113,7 @@ type GameRound struct {
 	WinningSide       string             `json:"winningSide"`
 	WinningTeam       *string            `json:"winningTeam"`
 	LosingTeam        *string            `json:"losingTeam"`
-	BombPlantTick     int64              `json:"bombPlantTick"`
+	BombPlantTick     *int64             `json:"bombPlantTick"`
 	Reason            string             `json:"roundEndReason"`
 	CTStartEqVal      int64              `json:"ctStartEqVal"`
 	CTBeginEqVal      int64              `json:"ctRoundStartEqVal"`
@@ -528,7 +528,7 @@ func convertWeaponClass(wc common.EquipmentClass) string {
 	}
 }	
 
-func determineSecond(tick int64, currentGame Game, currentRound GameRound) float64 {
+func determineSecond(tick int64, currentRound GameRound, currentGame Game) float64 {
 	roundTime := currentGame.ServerVars.RoundTime
 
 	if roundTime == 0 {
@@ -540,7 +540,7 @@ func determineSecond(tick int64, currentGame Game, currentRound GameRound) float
 	} else {
 		phaseEndTick := currentRound.BombPlantTick + int64(int64(currentGame.TickRate)*roundTime)
 	}
-	return float64((float64(tick) - float64(phaseEnd)) / float64(currentGame.TickRate))
+	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
 }
 
 func findAreaPlace(currArea *gonav.NavArea, mesh gonav.NavMesh) string {
@@ -577,8 +577,10 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 		currentPlayer.PlayerSide = "Unknown"
 	}
 
-	if m != nil {
-		playerPos := p.LastAlivePosition
+	playerPos := p.LastAlivePosition
+
+	if &m != nil {
+		
 		playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 		playerArea := m.GetNearestArea(playerPoint, true)
 		var playerAreaID int64
@@ -759,7 +761,7 @@ func createAlivePlayerSlice(players []PlayerInfo) []string {
 	var alivePlayerPlaces []string
 	for _, p := range players {
 		if p.IsAlive {
-			alivePlayerPlaces = append(alivePlayerPlaces, p.AreaName)
+			alivePlayerPlaces = append(alivePlayerPlaces, &p.AreaName)
 		}
 	}
 	return alivePlayerPlaces
@@ -868,7 +870,6 @@ func main() {
 	mapsWithNavFile[11] = "de_vertigo"
 	navFileExists := stringInSlice(currentMap, mapsWithNavFile)
 
-	mesh := nil
 	if navFileExists {
 		fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 		parserNav := gonav.Parser{Reader: fNav}
@@ -959,10 +960,10 @@ func main() {
 		currentGame.MatchPhases.MatchStart = append(currentGame.MatchPhases.MatchStart, int64(gs.IngameTick()))
 	})
 
-	p.RegisterEventHandler(func(e events.MatchStartChanged) {
+	p.RegisterEventHandler(func(e events.MatchStartedChanged) {
 		gs := p.GameState()
 
-		currentGame.MatchPhases.MatchStartChanged = append(currentGame.MatchPhases.MatchStartChanged, int64(gs.IngameTick()))
+		currentGame.MatchPhases.MatchStartedChanged = append(currentGame.MatchPhases.MatchStartedChanged, int64(gs.IngameTick()))
 	})
 
 	p.RegisterEventHandler(func(e events.IsWarmupPeriodChanged) {
@@ -1344,7 +1345,7 @@ func main() {
 			// Player loc
 			playerPos := e.Shooter.LastAlivePosition
 
-			if mesh != nil {
+			if &mesh != nil {
 				playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 				playerArea := mesh.GetNearestArea(playerPoint, true)
 				var playerAreaID int64
@@ -1406,7 +1407,7 @@ func main() {
 			// Attacker loc
 			attackerPos := e.Attacker.LastAlivePosition
 
-			if mesh != nil {
+			if &mesh != nil {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -1461,7 +1462,7 @@ func main() {
 				// Player loc
 				playerPos := e.Player.LastAlivePosition
 
-				if mesh != nil {
+				if &mesh != nil {
 					playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 					playerArea := mesh.GetNearestArea(playerPoint, true)
 					var playerAreaID int64
@@ -1509,7 +1510,7 @@ func main() {
 		gs := p.GameState()
 
 		currentBomb := BombAction{}
-		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Tick = 
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant"
 		currentBomb.BombSite = ""
@@ -1533,7 +1534,7 @@ func main() {
 		currentBomb.PlayerZ = float64(playerPos.Z)
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
-		currentRound.BombPlantTick = currentBomb.Tick
+		currentRound.BombPlantTick = &int64(gs.IngameTick())
 	})
 
 	// Parse bomb plants
@@ -1634,7 +1635,7 @@ func main() {
 			// Player location (use weaponfire event)
 			playerPos := e.Projectile.Position()
 			
-			if mesh != nil {
+			if &mesh != nil {
 				playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 
 				playerArea := mesh.GetNearestArea(playerPoint, true)
@@ -1678,7 +1679,7 @@ func main() {
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
 					
-					if mesh != nil {
+					if &mesh != nil {
 						grenadePoint := gonav.Vector3{X: float32(grenadePos.X), Y: float32(grenadePos.Y), Z: float32(grenadePos.Z)}
 						grenadeArea := mesh.GetNearestArea(grenadePoint, true)
 						var grenadeAreaID int64
@@ -1745,7 +1746,7 @@ func main() {
 			currentKill.AttackerSide = &attackerSide
 			attackerPos := e.Killer.LastAlivePosition
 			
-			if mesh != nil {
+			if &mesh != nil {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -1798,7 +1799,7 @@ func main() {
 			currentKill.VictimSide = &victimSide
 			victimPos := e.Victim.LastAlivePosition
 			
-			if mesh != nil {
+			if &mesh != nil {
 				victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
 				victimArea := mesh.GetNearestArea(victimPoint, true)
 				var victimAreaID int64
@@ -1961,7 +1962,7 @@ func main() {
 
 			attackerPos := e.Attacker.LastAlivePosition
 			
-			if mesh != nil {
+			if &mesh != nil {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -2016,7 +2017,7 @@ func main() {
 
 			victimPos := e.Player.LastAlivePosition
 			
-			if mesh != nil {
+			if &mesh != nil {
 				victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
 				victimArea := mesh.GetNearestArea(victimPoint, true)
 				var victimAreaID int64
@@ -2105,7 +2106,7 @@ func main() {
 				currentWorldObj.ObjType = ele.WeaponInstance.String()
 				objPos := ele.Trajectory[len(ele.Trajectory)-1]
 				
-				if mesh != nil {
+				if &mesh != nil {
 					objPoint := gonav.Vector3{X: float32(objPos.X), Y: float32(objPos.Y), Z: float32(objPos.Z)}
 					objArea := mesh.GetNearestArea(objPoint, true)
 					var objAreaID int64
@@ -2134,7 +2135,7 @@ func main() {
 			currentWorldObj.ObjType = "bomb"
 			objPos := bombObj.Position()
 
-			if mesh != nil {
+			if &mesh != nil {
 				objPoint := gonav.Vector3{X: float32(objPos.X), Y: float32(objPos.Y), Z: float32(objPos.Z)}
 				objArea := mesh.GetNearestArea(objPoint, true)
 				var objAreaID int64
