@@ -35,6 +35,7 @@ type Game struct {
 	ParsingOpts   ParserOpts   `json:"parserParameters"`
 	ServerVars    ServerConVar `json:"serverVars"`
 	MatchPhases   MatchPhases  `json:"matchPhases"`
+	ParsedPlaces  []string     `json:"parsedPlaceNames"`
 	MMRanks       []MMRank     `json:"matchmakingRanks"`
 	Rounds        []GameRound  `json:"gameRounds"`
 }
@@ -317,7 +318,7 @@ type GameFrame struct {
 	CT          TeamFrameInfo `json:"ct"`
 	World       []WorldObject `json:"world"`
 	BombPlanted bool          `json:"bombPlanted"`
-	BombSite    *string       `json:"bombSite"`
+	BombSite    string        `json:"bombSite"`
 }
 
 // WorldObject in the world, like a bomb
@@ -817,7 +818,7 @@ func countUtility(players []PlayerInfo) int64 {
 	return totalUtility
 }
 
-func findIDx(sl []string, val string) int {
+func findIdx(sl []string, val string) int {
 	for p, v := range sl {
 		if v == val {
 			return p
@@ -844,10 +845,10 @@ func createCountToken(alivePlaces []string, placeSl []string) string {
 	}
 
 	// Loop through and add 1 where players are
-	if len(alivePlaces) > 0 {
+	if len(alivePlaces) > 0 && len(placeSl) > 0 {
 		for _, v := range alivePlaces {
-			vIDx := findIDx(placeSl, v)
-			countToken[vIDx] = countToken[vIDx] + 1
+			vIdx := findIdx(placeSl, v)
+			countToken[vIdx] = countToken[vIdx] + 1
 		}
 	}
 
@@ -940,11 +941,11 @@ func main() {
 	navFileExists := stringInSlice(currentMap, mapsWithNavFile)
 
 	mesh := gonav.NavMesh{}
-	var placeSl []string
+	placeSl := make([]string, 0)
 	if navFileExists {
 		fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 		parserNav := gonav.Parser{Reader: fNav}
-		mesh, _ := parserNav.Parse()
+		mesh, _ = parserNav.Parse()
 
 		// Create list of places as parsed from the nav mesh
 		for _, currPlace := range mesh.Places {
@@ -973,6 +974,10 @@ func main() {
 	}
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
 	currentGame.ClientName = header.ClientName
+
+	if navFileExists {
+		currentGame.ParsedPlaces = placeSl
+	}
 
 	// Set parsing options
 	parsingOpts := ParserOpts{}
@@ -2140,7 +2145,7 @@ func main() {
 				if p != nil {
 					if navFileExists {
 						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p, mesh))
-					} else{
+					} else {
 						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayerNoNav(p))
 					}
 					
@@ -2247,7 +2252,7 @@ func main() {
 			currentFrame.World = append(currentFrame.World, currentWorldObj)
 			if len(currentRound.Bomb) > 0 {
 				currentFrame.BombPlanted = true
-				currentFrame.BombSite = &currentRound.Bomb[0].BombSite
+				currentFrame.BombSite = currentRound.Bomb[0].BombSite
 			} else {
 				currentFrame.BombPlanted = false
 			}
