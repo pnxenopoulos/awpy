@@ -539,7 +539,7 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 	if currentRound.BombPlantTick == nil {
 		phaseEndTick := currentRound.FreezeTimeEndTick + int64(int64(currentGame.TickRate)*roundTime)
 	} else {
-		phaseEndTick := &currentRound.BombPlantTick + int64(int64(currentGame.TickRate)*roundTime)
+		phaseEndTick := *currentRound.BombPlantTick + int64(int64(currentGame.TickRate)*roundTime)
 	}
 	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
 }
@@ -579,25 +579,94 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	}
 
 	playerPos := p.LastAlivePosition
+	playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
+	playerArea := m.GetNearestArea(playerPoint, true)
+	var playerAreaID int64
+	playerAreaPlace := ""
 
-	if &m != nil {
-		
-		playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
-		playerArea := m.GetNearestArea(playerPoint, true)
-		var playerAreaID int64
-		playerAreaPlace := ""
+	if playerArea != nil {
+		playerAreaID = int64(playerArea.ID)
+		if playerArea.Place != nil {
+			playerAreaPlace = playerArea.Place.Name
+		} else {
+			playerAreaPlace = findAreaPlace(playerArea, m)
+		}
+	}
+	currentPlayer.AreaID = &playerAreaID
+	currentPlayer.AreaName = &playerAreaPlace
 
-		if playerArea != nil {
-			playerAreaID = int64(playerArea.ID)
-			if playerArea.Place != nil {
-				playerAreaPlace = playerArea.Place.Name
-			} else {
-				playerAreaPlace = findAreaPlace(playerArea, m)
+	// Calc other metrics
+	currentPlayer.X = float64(playerPos.X)
+	currentPlayer.Y = float64(playerPos.Y)
+	currentPlayer.Z = float64(playerPos.Z)
+	currentPlayer.ViewX = float64(p.ViewDirectionX())
+	currentPlayer.ViewY = float64(p.ViewDirectionY())
+	currentPlayer.Hp = int64(p.Health())
+	currentPlayer.Armor = int64(p.Armor())
+	currentPlayer.IsAlive = p.IsAlive()
+	currentPlayer.IsBlinded = p.IsBlinded()
+	currentPlayer.IsAirborne = p.IsAirborne()
+	currentPlayer.IsDefusing = p.IsDefusing
+	currentPlayer.IsPlanting = p.IsPlanting
+	currentPlayer.IsReloading = p.IsReloading
+	currentPlayer.IsDuckingInProg = p.IsDuckingInProgress()
+	currentPlayer.IsUnducking = p.IsUnDuckingInProgress()
+	currentPlayer.IsDucking = p.IsDucking()
+	currentPlayer.IsInBombZone = p.IsInBombZone()
+	currentPlayer.IsInBuyZone = p.IsInBuyZone()
+	currentPlayer.IsStanding = p.IsStanding()
+	currentPlayer.IsScoped = p.IsScoped()
+	currentPlayer.IsWalking = p.IsWalking()
+	currentPlayer.IsUnknown = p.IsUnknown
+	currentPlayer.HasDefuse = p.HasDefuseKit()
+	currentPlayer.HasHelmet = p.HasHelmet()
+	currentPlayer.Money = int64(p.Money())
+	currentPlayer.EqVal = int64(p.EquipmentValueCurrent())
+	currentPlayer.Ping = int64(p.Ping())
+	currentPlayer.TotalUtility = int64(0)
+	activeWeapon := ""
+
+	if p.IsAlive() {
+		activeWeapon = p.ActiveWeapon().String()
+	}
+
+	currentPlayer.ActiveWeapon = activeWeapon
+	for _, w := range p.Weapons() {
+		if w.String() != "Knife" {
+			// Can't drop the knife
+			currentWeapon := WeaponInfo{}
+
+			currentWeapon.WeaponName = w.String()
+			currentWeapon.WeaponClass = convertWeaponClass(w.Class())
+			currentWeapon.AmmoInMagazine = int64(w.AmmoInMagazine())
+			currentWeapon.AmmoInReserve = int64(w.AmmoReserve())
+
+			//currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
+			currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
+			if w.Class() == 6 {
+				currentPlayer.TotalUtility = currentPlayer.TotalUtility + 1
 			}
 		}
-		currentPlayer.AreaID = &playerAreaID
-		currentPlayer.AreaName = &playerAreaPlace
 	}
+	return currentPlayer
+}
+
+func parsePlayerNoNav(p *common.Player) PlayerInfo {
+	currentPlayer := PlayerInfo{}
+	currentPlayer.PlayerSteamID = int64(p.SteamID64)
+	currentPlayer.PlayerName = p.Name
+	currentPlayer.PlayerTeam = p.TeamState.ClanName()
+
+	switch p.Team {
+	case common.TeamTerrorists:
+		currentPlayer.PlayerSide = "T"
+	case common.TeamCounterTerrorists:
+		currentPlayer.PlayerSide = "CT"
+	default:
+		currentPlayer.PlayerSide = "Unknown"
+	}
+
+	playerPos := p.LastAlivePosition
 
 	// Calc other metrics
 	currentPlayer.X = float64(playerPos.X)
@@ -1344,7 +1413,7 @@ func main() {
 			// Player loc
 			playerPos := e.Shooter.LastAlivePosition
 
-			if &mesh != nil {
+			if navFileExists {
 				playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 				playerArea := mesh.GetNearestArea(playerPoint, true)
 				var playerAreaID int64
@@ -1406,7 +1475,7 @@ func main() {
 			// Attacker loc
 			attackerPos := e.Attacker.LastAlivePosition
 
-			if &mesh != nil {
+			if navFileExists {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -1461,7 +1530,7 @@ func main() {
 				// Player loc
 				playerPos := e.Player.LastAlivePosition
 
-				if &mesh != nil {
+				if navFileExists {
 					playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 					playerArea := mesh.GetNearestArea(playerPoint, true)
 					var playerAreaID int64
@@ -1640,7 +1709,7 @@ func main() {
 			// Player location (use weaponfire event)
 			playerPos := e.Projectile.Position()
 			
-			if &mesh != nil {
+			if navFileExists {
 				playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 
 				playerArea := mesh.GetNearestArea(playerPoint, true)
@@ -1684,7 +1753,7 @@ func main() {
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
 					
-					if &mesh != nil {
+					if navFileExists {
 						grenadePoint := gonav.Vector3{X: float32(grenadePos.X), Y: float32(grenadePos.Y), Z: float32(grenadePos.Z)}
 						grenadeArea := mesh.GetNearestArea(grenadePoint, true)
 						var grenadeAreaID int64
@@ -1751,7 +1820,7 @@ func main() {
 			currentKill.AttackerSide = &attackerSide
 			attackerPos := e.Killer.LastAlivePosition
 			
-			if &mesh != nil {
+			if navFileExists {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -1804,7 +1873,7 @@ func main() {
 			currentKill.VictimSide = &victimSide
 			victimPos := e.Victim.LastAlivePosition
 			
-			if &mesh != nil {
+			if navFileExists {
 				victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
 				victimArea := mesh.GetNearestArea(victimPoint, true)
 				var victimAreaID int64
@@ -1967,7 +2036,7 @@ func main() {
 
 			attackerPos := e.Attacker.LastAlivePosition
 			
-			if &mesh != nil {
+			if navFileExists {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -2022,7 +2091,7 @@ func main() {
 
 			victimPos := e.Player.LastAlivePosition
 			
-			if &mesh != nil {
+			if navFileExists {
 				victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
 				victimArea := mesh.GetNearestArea(victimPoint, true)
 				var victimAreaID int64
@@ -2072,11 +2141,16 @@ func main() {
 
 			for _, p := range tPlayers {
 				if p != nil {
-					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p, mesh))
+					if navFileExists {
+						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p, mesh))
+					} else{
+						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayerNoNav(p))
+					}
+					
 				}
 			}
 
-			if mesh != nil {
+			if navFileExists {
 				tPlayerPlaces := createAlivePlayerSlice(currentFrame.T.Players)
 				tToken := createCountToken(tPlayerPlaces, placeSl)
 
@@ -2104,10 +2178,14 @@ func main() {
 
 			for _, p := range ctPlayers {
 				if p != nil {
-					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p, mesh))
+					if navFileExists {
+						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p, mesh))
+					} else{
+						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayerNoNav(p))
+					}
+					
 				}
 			}
-
 			
 			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
 			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
@@ -2120,7 +2198,7 @@ func main() {
 				currentWorldObj.ObjType = ele.WeaponInstance.String()
 				objPos := ele.Trajectory[len(ele.Trajectory)-1]
 				
-				if &mesh != nil {
+				if navFileExists {
 					objPoint := gonav.Vector3{X: float32(objPos.X), Y: float32(objPos.Y), Z: float32(objPos.Z)}
 					objArea := mesh.GetNearestArea(objPoint, true)
 					var objAreaID int64
@@ -2149,7 +2227,7 @@ func main() {
 			currentWorldObj.ObjType = "bomb"
 			objPos := bombObj.Position()
 
-			if &mesh != nil {
+			if navFileExists {
 				objPoint := gonav.Vector3{X: float32(objPos.X), Y: float32(objPos.Y), Z: float32(objPos.Z)}
 				objArea := mesh.GetNearestArea(objPoint, true)
 				var objAreaID int64
