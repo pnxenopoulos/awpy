@@ -310,7 +310,7 @@ type FlashAction struct {
 // GameFrame (game state at time t)
 type GameFrame struct {
 	Tick        int64         `json:"tick"`
-	Second      float64       `json:"secondsRemaining"`
+	Second      float64       `json:"seconds"`
 	FrameToken  *string       `json:"positionToken"`
 	TToken      *string       `json:"tToken"`
 	CTToken     *string       `json:"ctToken"`
@@ -318,7 +318,7 @@ type GameFrame struct {
 	CT          TeamFrameInfo `json:"ct"`
 	World       []WorldObject `json:"world"`
 	BombPlanted bool          `json:"bombPlanted"`
-	BombSite    string        `json:"bombSite"`
+	BombSite    string        `json:"bombsite"`
 }
 
 // WorldObject in the world, like a bomb

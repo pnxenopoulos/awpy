@@ -229,7 +229,7 @@ class DemoParser:
                 return self.json
             elif return_type == "df":
                 demo_data = {}
-                demo_data["matchId"] = self.json["matchID"]
+                demo_data["matchID"] = self.json["matchID"]
                 demo_data["clientName"] = self.json["clientName"]
                 demo_data["mapName"] = self.json["mapName"]
                 demo_data["tickRate"] = self.json["tickRate"]
@@ -272,30 +272,30 @@ class DemoParser:
             raise ValueError("return_type must be either 'list' or 'df'")
         try:
             frames_dataframes = []
-            keys = ["tick", "second", "oositionToken", "tToken", "ctToken"]
-            for r in self.json["GameRounds"]:
-                for frame in r["Frames"]:
+            keys = ["tick", "second", "positionToken", "tToken", "ctToken"]
+            for r in self.json["gameRounds"]:
+                for frame in r["frames"]:
                     frame_item = {}
                     frame_item["roundNum"] = r["roundNum"]
                     for k in keys:
                         frame_item[k] = frame[k]
-                    for side in ["CT", "T"]:
-                        if side == "CT":
-                            frame_item["CTTeamName"] = frame["CT"]["TeamName"]
-                            frame_item["CTEqVal"] = frame["CT"]["TeamEqVal"]
-                            frame_item["CTAlivePlayers"] = frame["CT"]["AlivePlayers"]
-                            frame_item["CTUtility"] = frame["CT"]["TotalUtility"]
-                            frame_item["CTToken"] = frame["CT"]["PositionToken"]
+                    for side in ["ct", "t"]:
+                        if side == "ct":
+                            frame_item["ctTeamName"] = frame["ct"]["teamName"]
+                            frame_item["ctEqVal"] = frame["ct"]["teamEqVal"]
+                            frame_item["ctAlivePlayers"] = frame["ct"]["alivePlayers"]
+                            frame_item["ctUtility"] = frame["ct"]["totalUtility"]
+                            frame_item["ctToken"] = frame["ct"]["positionToken"]
                         else:
-                            frame_item["TTeamName"] = frame["T"]["TeamName"]
-                            frame_item["TEqVal"] = frame["T"]["TeamEqVal"]
-                            frame_item["TAlivePlayers"] = frame["T"]["AlivePlayers"]
-                            frame_item["TUtility"] = frame["T"]["TotalUtility"]
-                            frame_item["TToken"] = frame["T"]["PositionToken"]
+                            frame_item["tTeamName"] = frame["t"]["teamName"]
+                            frame_item["tEqVal"] = frame["t"]["teamEqVal"]
+                            frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
+                            frame_item["tUtility"] = frame["t"]["totalUtility"]
+                            frame_item["tToken"] = frame["t"]["positionToken"]
                     frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
-            frames_df["MatchId"] = self.json["MatchID"]
-            frames_df["MapName"] = self.json["MapName"]
+            frames_df["matchID"] = self.json["MatchID"]
+            frames_df["mapName"] = self.json["mapName"]
             if return_type == "list":
                 self.logger.info("Parsed frames to list")
                 return frames_dataframes
@@ -322,27 +322,27 @@ class DemoParser:
             raise ValueError("return_type must be either 'list' or 'df'")
         try:
             player_frames = []
-            for r in self.json["GameRounds"]:
-                for frame in r["Frames"]:
-                    for side in ["CT", "T"]:
-                        if frame[side]["Players"] is not None and (
-                            len(frame[side]["Players"])
+            for r in self.json["gameRounds"]:
+                for frame in r["frames"]:
+                    for side in ["ct", "t"]:
+                        if frame[side]["players"] is not None and (
+                            len(frame[side]["players"])
                             > 0  # Used to be == 5, to ensure the sides were equal.
                         ):
-                            for player in frame[side]["Players"]:
+                            for player in frame[side]["players"]:
                                 player_item = {}
-                                player_item["RoundNum"] = r["RoundNum"]
-                                player_item["Tick"] = frame["Tick"]
-                                player_item["Second"] = frame["Second"]
-                                player_item["Side"] = side
-                                player_item["TeamName"] = frame[side]["TeamName"]
+                                player_item["roundNum"] = r["roundNum"]
+                                player_item["tick"] = frame["tick"]
+                                player_item["second"] = frame["second"]
+                                player_item["side"] = side
+                                player_item["teamName"] = frame[side]["teamName"]
                                 for col in player.keys():
-                                    if col != "Inventory":
+                                    if col != "inventory":
                                         player_item[col] = player[col]
                                 player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
-            player_frames_df["MatchId"] = self.json["MatchID"]
-            player_frames_df["MapName"] = self.json["MapName"]
+            player_frames_df["matchID"] = self.json["matchID"]
+            player_frames_df["mapName"] = self.json["mapName"]
             if return_type == "list":
                 self.logger.info("Parsed player frames to list")
                 return player_frames
@@ -369,38 +369,38 @@ class DemoParser:
         try:
             rounds = []
             cols = [
-                "RoundNum",
-                "StartTick",
-                "FreezeTimeEndTick",
-                "EndTick",
-                "EndOfficialTick",
-                "TScore",
-                "CTScore",
-                "EndTScore",
-                "EndCTScore",
-                "TTeam",
-                "CTTeam",
-                "WinningSide",
-                "WinningTeam",
-                "LosingTeam",
-                "RoundEndReason",
-                "TStartEqVal",
-                "TRoundStartEqVal",
-                "TRoundStartMoney",
-                "TBuyType",
-                "TSpend",
-                "CTStartEqVal",
-                "CTRoundStartEqVal",
-                "CTRoundStartMoney",
-                "CTBuyType",
-                "CTSpend",
+                "roundNum",
+                "startTick",
+                "freezeTimeEndTick",
+                "endTick",
+                "endOfficialTick",
+                "tScore",
+                "ctScore",
+                "endTScore",
+                "endCTScore",
+                "tTeam",
+                "ctTeam",
+                "winningSide",
+                "winningTeam",
+                "losingTeam",
+                "roundEndReason",
+                "tStartEqVal",
+                "tRoundStartEqVal",
+                "tRoundStartMoney",
+                "tBuyType",
+                "tSpend",
+                "ctStartEqVal",
+                "ctRoundStartEqVal",
+                "ctRoundStartMoney",
+                "ctBuyType",
+                "ctSpend",
             ]
-            for r in self.json["GameRounds"]:
+            for r in self.json["gameRounds"]:
                 round_item = {}
                 for k in cols:
                     round_item[k] = r[k]
-                    round_item["MatchId"] = self.json["MatchID"]
-                    round_item["MapName"] = self.json["MapName"]
+                    round_item["matchID"] = self.json["matchID"]
+                    round_item["mapName"] = self.json["mapName"]
                 rounds.append(round_item)
             if return_type == "list":
                 self.logger.info("Parsed rounds to list")
@@ -427,13 +427,13 @@ class DemoParser:
 
         try:
             kills = []
-            for r in self.json["GameRounds"]:
-                if r["Kills"] is not None:
-                    for k in r["Kills"]:
+            for r in self.json["gameRounds"]:
+                if r["kills"] is not None:
+                    for k in r["kills"]:
                         new_k = k
-                        new_k["RoundNum"] = r["RoundNum"]
-                        new_k["MatchId"] = self.json["MatchID"]
-                        new_k["MapName"] = self.json["MapName"]
+                        new_k["roundNum"] = r["roundNum"]
+                        new_k["matchID"] = self.json["matchID"]
+                        new_k["mapName"] = self.json["mapName"]
                         kills.append(new_k)
             if return_type == "list":
                 self.logger.info("Parsed kills to list")
@@ -462,13 +462,13 @@ class DemoParser:
 
         try:
             shots = []
-            for r in self.json["GameRounds"]:
-                if r["WeaponFires"] is not None:
-                    for wf in r["WeaponFires"]:
+            for r in self.json["gameRounds"]:
+                if r["weaponFires"] is not None:
+                    for wf in r["weaponFires"]:
                         new_wf = wf
-                        new_wf["RoundNum"] = r["RoundNum"]
-                        new_wf["MatchId"] = self.json["MatchID"]
-                        new_wf["MapName"] = self.json["MapName"]
+                        new_wf["roundNum"] = r["roundNum"]
+                        new_wf["matchID"] = self.json["matchID"]
+                        new_wf["mapName"] = self.json["mapName"]
                         shots.append(new_wf)
             if return_type == "list":
                 self.logger.info("Parsed weapon fires to list")
@@ -495,13 +495,13 @@ class DemoParser:
 
         if self.json:
             damages = []
-            for r in self.json["GameRounds"]:
-                if r["Damages"] is not None:
-                    for d in r["Damages"]:
+            for r in self.json["gameRounds"]:
+                if r["damages"] is not None:
+                    for d in r["damages"]:
                         new_d = d
-                        new_d["RoundNum"] = r["RoundNum"]
-                        new_d["MatchId"] = self.json["MatchID"]
-                        new_d["MapName"] = self.json["MapName"]
+                        new_d["roundNum"] = r["roundNum"]
+                        new_d["matchID"] = self.json["matchID"]
+                        new_d["mapName"] = self.json["mapName"]
                         damages.append(new_d)
             if return_type == "list":
                 self.logger.info("Parsed damages to list")
@@ -530,13 +530,13 @@ class DemoParser:
 
         if self.json:
             grenades = []
-            for r in self.json["GameRounds"]:
-                if r["Grenades"] is not None:
-                    for g in r["Grenades"]:
+            for r in self.json["gameRounds"]:
+                if r["grenades"] is not None:
+                    for g in r["grenades"]:
                         new_g = g
-                        new_g["RoundNum"] = r["RoundNum"]
-                        new_g["MatchId"] = self.json["MatchID"]
-                        new_g["MapName"] = self.json["MapName"]
+                        new_g["roundNum"] = r["roundNum"]
+                        new_g["matchID"] = self.json["matchID"]
+                        new_g["mapName"] = self.json["mapName"]
                         grenades.append(new_g)
             if return_type == "list":
                 self.logger.info("Parsed grenades to list")
@@ -565,13 +565,13 @@ class DemoParser:
 
         if self.json:
             bomb_events = []
-            for r in self.json["GameRounds"]:
-                if r["BombEvents"] is not None:
-                    for b in r["BombEvents"]:
+            for r in self.json["gameRounds"]:
+                if r["bombEvents"] is not None:
+                    for b in r["bombEvents"]:
                         new_b = b
-                        new_b["RoundNum"] = r["RoundNum"]
-                        new_b["MatchId"] = self.json["MatchID"]
-                        new_b["MapName"] = self.json["MapName"]
+                        new_b["roundNum"] = r["roundNum"]
+                        new_b["matchID"] = self.json["matchID"]
+                        new_b["mapName"] = self.json["mapName"]
                         bomb_events.append(new_b)
             if return_type == "list":
                 self.logger.info("Parsed bomb_events to list")
@@ -598,13 +598,13 @@ class DemoParser:
 
         if self.json:
             flashes = []
-            for r in self.json["GameRounds"]:
-                if r["Flashes"] is not None:
-                    for f in r["Flashes"]:
+            for r in self.json["gameRounds"]:
+                if r["flashes"] is not None:
+                    for f in r["flashes"]:
                         new_f = f
-                        new_f["RoundNum"] = r["RoundNum"]
-                        new_f["MatchId"] = self.json["MatchID"]
-                        new_f["MapName"] = self.json["MapName"]
+                        new_f["roundNum"] = r["roundNum"]
+                        new_f["matchId"] = self.json["matchID"]
+                        new_f["mapName"] = self.json["mapName"]
                         flashes.append(new_f)
             if return_type == "list":
                 self.logger.info("Parsed flashes to list")

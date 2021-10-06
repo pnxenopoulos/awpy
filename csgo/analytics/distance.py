@@ -89,6 +89,10 @@ def point_distance(point_a, point_b, type="graph", map="de_dust2"):
     """
     if map not in [
         "de_dust2",
+        "de_cache",
+        "de_grind",
+        "de_mocha",
+        "de_ancient",
         "de_cbble",
         "de_inferno",
         "de_mirage",
