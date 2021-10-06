@@ -229,24 +229,24 @@ class DemoParser:
                 return self.json
             elif return_type == "df":
                 demo_data = {}
-                demo_data["MatchId"] = self.json["MatchID"]
-                demo_data["ClientName"] = self.json["ClientName"]
-                demo_data["MapName"] = self.json["MapName"]
-                demo_data["TickRate"] = self.json["TickRate"]
-                demo_data["PlaybackTicks"] = self.json["PlaybackTicks"]
-                demo_data["Rounds"] = self._parse_rounds(return_type=return_type)
-                demo_data["Kills"] = self._parse_kills(return_type=return_type)
-                demo_data["Damages"] = self._parse_damages(return_type=return_type)
-                demo_data["Grenades"] = self._parse_grenades(return_type=return_type)
-                demo_data["Flashes"] = self._parse_flashes(return_type=return_type)
-                demo_data["WeaponFires"] = self._parse_weapon_fires(
+                demo_data["matchId"] = self.json["matchID"]
+                demo_data["clientName"] = self.json["clientName"]
+                demo_data["mapName"] = self.json["mapName"]
+                demo_data["tickRate"] = self.json["tickRate"]
+                demo_data["playbackTicks"] = self.json["playbackTicks"]
+                demo_data["rounds"] = self._parse_rounds(return_type=return_type)
+                demo_data["kills"] = self._parse_kills(return_type=return_type)
+                demo_data["damages"] = self._parse_damages(return_type=return_type)
+                demo_data["grenades"] = self._parse_grenades(return_type=return_type)
+                demo_data["flashes"] = self._parse_flashes(return_type=return_type)
+                demo_data["weaponFires"] = self._parse_weapon_fires(
                     return_type=return_type
                 )
-                demo_data["BombEvents"] = self._parse_bomb_events(
+                demo_data["bombEvents"] = self._parse_bomb_events(
                     return_type=return_type
                 )
-                demo_data["Frames"] = self._parse_frames(return_type=return_type)
-                demo_data["PlayerFrames"] = self._parse_player_frames(
+                demo_data["frames"] = self._parse_frames(return_type=return_type)
+                demo_data["playerFrames"] = self._parse_player_frames(
                     return_type=return_type
                 )
                 self.logger.info("Returned dataframe output")
@@ -272,13 +272,11 @@ class DemoParser:
             raise ValueError("return_type must be either 'list' or 'df'")
         try:
             frames_dataframes = []
-            keys = ["Tick", "Second", "PositionToken", "TToken", "CTToken"]
+            keys = ["tick", "second", "oositionToken", "tToken", "ctToken"]
             for r in self.json["GameRounds"]:
                 for frame in r["Frames"]:
                     frame_item = {}
-                    frame_item["BombDistanceToA"] = frame["BombDistanceToA"]
-                    frame_item["BombDistanceToB"] = frame["BombDistanceToB"]
-                    frame_item["RoundNum"] = r["RoundNum"]
+                    frame_item["roundNum"] = r["roundNum"]
                     for k in keys:
                         frame_item[k] = frame[k]
                     for side in ["CT", "T"]:
