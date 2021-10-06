@@ -311,9 +311,9 @@ type FlashAction struct {
 type GameFrame struct {
 	Tick        int64         `json:"tick"`
 	Second      float64       `json:"secondsRemaining"`
-	FrameToken  string        `json:"positionToken"`
-	TToken      string        `json:"tToken"`
-	CTToken     string        `json:"ctToken"`
+	FrameToken  *string       `json:"positionToken"`
+	TToken      *string       `json:"tToken"`
+	CTToken     *string       `json:"ctToken"`
 	T           TeamFrameInfo `json:"t"`
 	CT          TeamFrameInfo `json:"ct"`
 	World       []WorldObject `json:"world"`
@@ -336,7 +336,7 @@ type TeamFrameInfo struct {
 	Side         string       `json:"side"`
 	Team         string       `json:"teamName"`
 	CurrentEqVal int64        `json:"teamEqVal"`
-	PosToken     string       `json:"positionToken"`
+	PosToken     *string      `json:"positionToken"`
 	AlivePlayers int64        `json:"alivePlayers"`
 	TotalUtility int64        `json:"totalUtility"`
 	Players      []PlayerInfo `json:"players"`
@@ -535,10 +535,11 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 		roundTime = currentGame.ServerVars.RoundTimeDefuse
 	}
 
+	var phaseEndTick int64
 	if currentRound.BombPlantTick == nil {
 		phaseEndTick := currentRound.FreezeTimeEndTick + int64(int64(currentGame.TickRate)*roundTime)
 	} else {
-		phaseEndTick := currentRound.BombPlantTick + int64(int64(currentGame.TickRate)*roundTime)
+		phaseEndTick := &currentRound.BombPlantTick + int64(int64(currentGame.TickRate)*roundTime)
 	}
 	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
 }
@@ -761,7 +762,7 @@ func createAlivePlayerSlice(players []PlayerInfo) []string {
 	var alivePlayerPlaces []string
 	for _, p := range players {
 		if p.IsAlive {
-			alivePlayerPlaces = append(alivePlayerPlaces, &p.AreaName)
+			alivePlayerPlaces = append(alivePlayerPlaces, *p.AreaName)
 		}
 	}
 	return alivePlayerPlaces
@@ -874,16 +875,16 @@ func main() {
 		fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
 		parserNav := gonav.Parser{Reader: fNav}
 		mesh, _ := parserNav.Parse()
-	}
-	
-	// Create list of places as parsed from the nav mesh
-	var placeSl []string
-	for _, currPlace := range mesh.Places {
-		placeSl = append(placeSl, currPlace.Name)
-	}
 
-	// Alphabetize the slice of places to standardize it
-	sort.Strings(placeSl)
+		// Create list of places as parsed from the nav mesh
+		var placeSl []string
+		for _, currPlace := range mesh.Places {
+			placeSl = append(placeSl, currPlace.Name)
+		}
+
+		// Alphabetize the slice of places to standardize it
+		sort.Strings(placeSl)
+	}
 
 	// Create flags to guIDe parsing
 	roundStarted := 0
@@ -1229,8 +1230,6 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
-		
-		float64((float64(currentBomb.Tick) - float64(currentRound.FreezeTimeEndTick)) / float64(currentGame.TickRate))
 		currentBomb.BombAction = "defuse"
 		currentBomb.BombSite = ""
 		if e.Site == 65 {
@@ -1527,11 +1526,13 @@ func main() {
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
 		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
 		currentBomb.PlayerX = float64(playerPos.X)
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
+
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 		currentRound.BombPlantTick = &int64(gs.IngameTick())
@@ -1556,11 +1557,13 @@ func main() {
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
 		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
 		currentBomb.PlayerX = float64(playerPos.X)
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
+
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
@@ -1586,11 +1589,13 @@ func main() {
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
 		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
 		currentBomb.PlayerX = float64(playerPos.X)
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
+
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
@@ -2071,9 +2076,22 @@ func main() {
 				}
 			}
 
-			tPlayerPlaces := createAlivePlayerSlice(currentFrame.T.Players)
-			tToken := createCountToken(tPlayerPlaces, placeSl)
-			currentFrame.T.PosToken = tToken
+			if mesh != nil {
+				tPlayerPlaces := createAlivePlayerSlice(currentFrame.T.Players)
+				tToken := createCountToken(tPlayerPlaces, placeSl)
+
+				ctPlayerPlaces := createAlivePlayerSlice(currentFrame.CT.Players)
+				ctToken := createCountToken(ctPlayerPlaces, placeSl)
+
+				frameToken := &tToken + &ctToken
+				
+				currentFrame.T.PosToken = *tToken
+				currentFrame.CT.PosToken = *ctToken
+				currentFrame.TToken = *tToken
+				currentFrame.CTToken = *ctToken
+				currentFrame.FrameToken = frameToken
+			}
+			
 			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
 			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
 
@@ -2090,14 +2108,10 @@ func main() {
 				}
 			}
 
-			ctPlayerPlaces := createAlivePlayerSlice(currentFrame.CT.Players)
-			ctToken := createCountToken(ctPlayerPlaces, placeSl)
-			currentFrame.CT.PosToken = ctToken
+			
 			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
 			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
-			currentFrame.TToken = tToken
-			currentFrame.CTToken = ctToken
-			currentFrame.FrameToken = tToken + ctToken
+			
 
 			// Parse world (grenade) objects
 			allGrenades := gs.GrenadeProjectiles()
