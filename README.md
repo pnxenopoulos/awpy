@@ -1,7 +1,7 @@
-[![Build](https://img.shields.io/badge/build-passing-success)](https://github.com/pnxenopoulos/csgo) [![Discord](https://img.shields.io/badge/chat-Discord-blue)](https://discord.gg/) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://github.com/pnxenopoulos/csgo/tree/main/csgo)
+[![Build](https://img.shields.io/badge/build-passing-success)](https://github.com/pnxenopoulos/csgo) [![Discord](https://img.shields.io/badge/chat-Discord-blue)](https://discord.gg/W34XjsSs2H) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE) [![Docs](https://img.shields.io/badge/doc-Documentation-blueviolet)](https://github.com/pnxenopoulos/csgo/tree/main/csgo/docs)
 
 # Analyzing Counter-Strike: Global Offensive Data
-The `csgo` package provides data parsing, analytics and (soon) visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/3JrhKYcEKW) for discussion around the library, along with other resources for esports analytics.
+The `csgo` package provides data parsing, analytics and (soon) visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library, along with other resources for esports analytics.
 
 ## Setup
 #### Requirements
@@ -26,12 +26,17 @@ data = demo_parser.parse()
 
 
 # The following keys exist
-data["MatchId"]
-data["ClientName"]
-data["MapName"]
-data["TickRate"]
-data["PlaybackTicks"]
-data["GameRounds"]
+data["matchID"]
+data["clientName"]
+data["mapName"]
+data["tickRate"]
+data["playbackTicks"]
+data["parserParameters"]
+data["serverVars"]
+data["matchPhases"]
+data["parsedPlaceNames"]
+data["matchmakingRanks"]
+data["gameRounds"]
 
 # You can also parse the data into dataframes using
 data_df = demo_parser.parse(return_type="df")
@@ -40,12 +45,8 @@ data_df = demo_parser.parse(return_type="df")
 # You can also access the data in the file demoId_mapName.json, which is written in your working directory
 ```
 
-## Help! 
-
 ## Help! The parser doesn't work, is wrong, or lacks a feature
-If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcEKW). Please note that CSGO demos are imperfect. Sometimes there are mistakes when parsing. If you come across any, do not hesitate to open an issue, or to post it on our Discord, and we can investigate further. 
-
-This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues). If you come across a bug, please open an issue, and also consider bringing it to the community's attention in the Discord. Same goes for feature requests. Please checkout the `dev` branch to work on the library.
+If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcEKW). Please note that CSGO demos are imperfect, but if you ask on Discord, we can try to figure out what the problem is. Also note that our library parses _everything_ it can. This means that some rounds you parse will need to be cleaned. We provide some functions for this in `csgo.parser.cleaning`. If you come across any issue, whether a demo doesn't parse, parsed demo data is incorrect or you want a new feature, do not hesitate to open an issue or ask on [Discord](https://discord.gg/W34XjsSs2H). You can see open issues [here](https://github.com/pnxenopoulos/csgo/issues) and can visit [our documentation](https://github.com/pnxenopoulos/csgo/tree/main/csgo/docs) for more information on the library's capabilities.
 
 ## Examples and Papers
 Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
