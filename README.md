@@ -1,4 +1,4 @@
-[![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/3JrhKYcEKW) [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE)
+[![Discord](https://img.shields.io/discord/868146581419999232.svg)](https://discord.gg/)   [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE)
 
 # Analyzing Counter-Strike: Global Offensive Data
 The `csgo` package provides data parsing, analytics and (soon) visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/3JrhKYcEKW) for discussion around the library, along with other resources for esports analytics.
@@ -40,8 +40,10 @@ data_df = demo_parser.parse(return_type="df")
 # You can also access the data in the file demoId_mapName.json, which is written in your working directory
 ```
 
+## Help! 
+
 ## Help! The parser doesn't work, is wrong, or lacks a feature
-If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcEKW). Please note that CSGO demos are imperfect. Sometimes there are mistakes. If you come across any, do not hesitate to open an issue, or to post it on our Discord, and we can investigate further. 
+If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcEKW). Please note that CSGO demos are imperfect. Sometimes there are mistakes when parsing. If you come across any, do not hesitate to open an issue, or to post it on our Discord, and we can investigate further. 
 
 This project uses GitHub issues to track issues and feature requests. You can see open requests [here](https://github.com/pnxenopoulos/csgo/issues). If you come across a bug, please open an issue, and also consider bringing it to the community's attention in the Discord. Same goes for feature requests. Please checkout the `dev` branch to work on the library.
 
@@ -57,6 +59,7 @@ Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive]
 
 Xenopoulos, Peter, et al. "[ggViz: Accelerating Large-Scale Esports Game Analysis](https://arxiv.org/pdf/2107.06495.pdf)."
 
+Xenopoulos, Peter, et al. "[Optimal Team Economic Decisions in Counter-Strike](https://arxiv.org/pdf/2109.12990)."
 
 ## Structure
 This repository contains code for CSGO analysis. It is structured as follows:
@@ -70,7 +73,7 @@ This repository contains code for CSGO analysis. It is structured as follows:
 │   │   └── nav                   # Map navigation files
 │   ├── parser                    # Code for CSGO demo parser
 │   └── visualization             # Code for CSGO visualization
-├── doc                           # Contains documentation, such as data dictionaries, etc.
+├── doc                           # Contains documentation
 ├── examples                      # Contains Jupyter Notebooks showing example code
 └── tests                         # Contains tests for the csgo package
 ```
