@@ -1,4 +1,5 @@
 # CSGO Python Library Parser
+[Index](README.md) | [Demofiles](demofiles.md) | [Parser](parser.md) | [Demo Cleaning](demo_cleaning.md) 
 
 ###### Table of Contents
 [Parser Parameters](#parser-parameters)
@@ -7,7 +8,7 @@
 
 [Match Phases](#match-phases)
 
-[Game Rounds](#game-rounds) ( [Kills](#kills) - [Damages](#damages) - [Grenades](#grenades) - [Bomb Events](#bomb-events) - [Flashes](#flashes) - [Frames](#frames))
+[Game Rounds](#game-rounds) ([Kills](#kills) - [Damages](#damages) - [Grenades](#grenades) - [Bomb Events](#bomb-events) - [Flashes](#flashes) - [Frames](#frames))
 
 In this document, we describe the parser and its associated output. The main feature of our library is the CSGO demo parsing functionality. Essentially, our library is a Python wrapper to [markus-wa's parser written in Go](https://github.com/markus-wa/demoinfocs-golang). As Markus' parser parses the raw events, we order them into a sensible hierarchy, and parse useful metadata for events and the demo itself. Although the library allows us to parse into JSON or Pandas DataFrames, the data itself is the same. For the purposes of this documentation, we will focus on the JSON output.
 
