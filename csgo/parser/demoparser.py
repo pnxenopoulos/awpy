@@ -337,7 +337,7 @@ class DemoParser:
                                     player_item = {}
                                     player_item["roundNum"] = r["roundNum"]
                                     player_item["tick"] = frame["tick"]
-                                    player_item["second"] = frame["second"]
+                                    player_item["seconds"] = frame["seconds"]
                                     player_item["side"] = side
                                     player_item["teamName"] = frame[side]["teamName"]
                                     for col in player.keys():
