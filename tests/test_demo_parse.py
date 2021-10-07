@@ -94,6 +94,16 @@ class TestDemoParser:
         )
         assert self.parser_bad_parse_rate.parse_rate == 128
 
+    def test_parse_rate_none(self):
+        """Tests if None parse rate revets"""
+        self.parser_none_parse_rate = DemoParser(
+            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            log=False,
+            demo_id="test",
+            parse_rate=None,
+        )
+        assert self.parser_bad_parse_rate.parse_rate == 128
+
     def test_parse_rate_float(self):
         """Tests if bad parse rates fail"""
         self.parser_bad_parse_rate = DemoParser(

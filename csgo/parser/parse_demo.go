@@ -537,9 +537,9 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 
 	var phaseEndTick int64
 	if currentRound.BombPlantTick == nil {
-		phaseEndTick = currentRound.FreezeTimeEndTick + int64(int64(currentGame.TickRate)*roundTime)
+		phaseEndTick = currentRound.FreezeTimeEndTick
 	} else {
-		phaseEndTick = *currentRound.BombPlantTick + int64(int64(currentGame.TickRate)*roundTime)
+		phaseEndTick = &currentRound.BombPlantTick
 	}
 	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
 }
@@ -1058,39 +1058,6 @@ func main() {
 		gs := p.GameState()
 		currentGame.MatchPhases.RoundStarted = append(currentGame.MatchPhases.RoundStarted, int64(gs.IngameTick()))
 
-		if convParsed == 0 {
-			// If convars are unparsed, record the convars of the server
-			serverConfig := ServerConVar{}
-			conv := gs.ConVars()
-			serverConfig.CashBombDefused, _ = strconv.ParseInt(conv["cash_player_bomb_defused"], 10, 64)
-			serverConfig.CashBombPlanted, _ = strconv.ParseInt(conv["cash_player_bomb_planted"], 10, 64)
-			serverConfig.CashWinBomb, _ = strconv.ParseInt(conv["cash_team_terrorist_win_bomb"], 10, 64)
-			serverConfig.CashWinDefuse, _ = strconv.ParseInt(conv["cash_team_win_by_defusing_bomb"], 10, 64)
-			serverConfig.CashWinTimeRunOut, _ = strconv.ParseInt(conv["cash_team_win_by_time_running_out_bomb"], 10, 64)
-			serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
-			serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
-			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
-			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
-			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
-			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime"], 10, 64)
-			serverConfig.RoundTimeDefuse, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
-			serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
-			serverConfig.FreezeTime, _ = strconv.ParseInt(conv["mp_freezetime"], 10, 64)
-			serverConfig.BuyTime, _ = strconv.ParseInt(conv["mp_buytime"], 10, 64)
-			serverConfig.BombTimer, _ = strconv.ParseInt(conv["mp_c4timer"], 10, 64)
-			serverConfig.TimeoutsAllowed, _ = strconv.ParseInt(conv["mp_team_timeout_max"], 10, 64)
-			serverConfig.CoachingAllowed, _ = strconv.ParseInt(conv["sv_coaching_enabled"], 10, 64)
-			currentGame.ServerVars = serverConfig
-			convParsed = 1
-
-			// Change so that round restarts are parsed using the server convar
-			if serverConfig.RoundRestartDelay == 0 {
-				RoundRestartDelay = 5 // This is default on many servers, I think
-			} else {
-				RoundRestartDelay = serverConfig.RoundRestartDelay
-			}
-		}
-
 		if roundStarted == 1 {
 			currentGame.Rounds = append(currentGame.Rounds, currentRound)
 		}
@@ -1139,6 +1106,40 @@ func main() {
 		ctTeam := gs.TeamCounterTerrorists().ClanName()
 		currentRound.TTeam = &tTeam
 		currentRound.CTTeam = &ctTeam
+
+		// If convars aren't parsed, do so
+		if convParsed == 0 {
+			// If convars are unparsed, record the convars of the server
+			serverConfig := ServerConVar{}
+			conv := gs.ConVars()
+			serverConfig.CashBombDefused, _ = strconv.ParseInt(conv["cash_player_bomb_defused"], 10, 64)
+			serverConfig.CashBombPlanted, _ = strconv.ParseInt(conv["cash_player_bomb_planted"], 10, 64)
+			serverConfig.CashWinBomb, _ = strconv.ParseInt(conv["cash_team_terrorist_win_bomb"], 10, 64)
+			serverConfig.CashWinDefuse, _ = strconv.ParseInt(conv["cash_team_win_by_defusing_bomb"], 10, 64)
+			serverConfig.CashWinTimeRunOut, _ = strconv.ParseInt(conv["cash_team_win_by_time_running_out_bomb"], 10, 64)
+			serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
+			serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
+			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
+			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
+			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
+			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime"], 10, 64)
+			serverConfig.RoundTimeDefuse, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
+			serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
+			serverConfig.FreezeTime, _ = strconv.ParseInt(conv["mp_freezetime"], 10, 64)
+			serverConfig.BuyTime, _ = strconv.ParseInt(conv["mp_buytime"], 10, 64)
+			serverConfig.BombTimer, _ = strconv.ParseInt(conv["mp_c4timer"], 10, 64)
+			serverConfig.TimeoutsAllowed, _ = strconv.ParseInt(conv["mp_team_timeout_max"], 10, 64)
+			serverConfig.CoachingAllowed, _ = strconv.ParseInt(conv["sv_coaching_enabled"], 10, 64)
+			currentGame.ServerVars = serverConfig
+			convParsed = 1
+
+			// Change so that round restarts are parsed using the server convar
+			if serverConfig.RoundRestartDelay == 0 {
+				RoundRestartDelay = 5 // This is default on many servers, I think
+			} else {
+				RoundRestartDelay = serverConfig.RoundRestartDelay
+			}
+		}
 
 		if roundInFreezetime == 0 {
 			// This means the RoundStart event did not fire, but the freezetimeend did
