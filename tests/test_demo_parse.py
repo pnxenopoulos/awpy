@@ -215,7 +215,7 @@ class TestDemoParser:
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
                 for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if not r["isWarmup"]:
+                    if not r["isWarmup"] and r["roundEndReason"] != "":
                         if i in self.demo_data[demo]["useableRounds"]:
                             if r["winningSide"] == "CT":
                                 assert r["winningTeam"] == r["ctTeam"]
