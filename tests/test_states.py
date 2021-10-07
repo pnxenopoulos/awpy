@@ -42,7 +42,7 @@ class TestStates:
 
     def test_output(self):
         """Tests that output is a dict with 3 keys"""
-        game_state = generate_game_state(self.data["gameRounds"][0]["frames"][0])
+        game_state = generate_game_state(self.data["gameRounds"][7]["frames"][0])
         assert type(game_state) == dict
         assert "ct" in game_state.keys()
         assert "t" in game_state.keys()
@@ -50,7 +50,7 @@ class TestStates:
 
     def test_vector_output(self):
         """Tests that the vector output is correct"""
-        game_state = generate_game_state(self.data["gameRounds"][0]["frames"][0])
+        game_state = generate_game_state(self.data["gameRounds"][7]["frames"][0])
         assert len(game_state["ct"]) == 9
         assert len(game_state["t"]) == 9
         assert len(game_state["global"]) == 5

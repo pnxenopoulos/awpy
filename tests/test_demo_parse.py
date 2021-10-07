@@ -198,7 +198,7 @@ class TestDemoParser:
             if self.demo_data[demo]["useForTests"]:
                 if self.demo_data[demo]["tickrate"]["test"]:
                     assert (
-                        self.demo_data[demo]["useForTests"]["tickrate"]["value"]
+                        self.demo_data[demo]["tickrate"]["value"]
                         == self.demo_data[demo]["json"]["tickRate"]
                     )
 
