@@ -15,3 +15,5 @@ MAP_NAV = pd.read_csv(path + "data/nav/map_nav.csv")
 
 with open(Path(path + "data/map/map_data.json")) as f:
     MAP_DATA = json.load(f)
+
+side_colors = {"ct": "#5d79ae", "t": "#de9b35"}
