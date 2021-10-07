@@ -1132,6 +1132,14 @@ func main() {
 		gs := p.GameState()
 		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded, int64(gs.IngameTick()))
 
+		// Reupdate the teams to make sure
+		currentRound.TScore = int64(gs.TeamTerrorists().Score())
+		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+		tTeam := gs.TeamTerrorists().ClanName()
+		ctTeam := gs.TeamCounterTerrorists().ClanName()
+		currentRound.TTeam = &tTeam
+		currentRound.CTTeam = &ctTeam
+
 		if roundInFreezetime == 0 {
 			// This means the RoundStart event did not fire, but the freezetimeend did
 			currentGame.Rounds = append(currentGame.Rounds, currentRound)

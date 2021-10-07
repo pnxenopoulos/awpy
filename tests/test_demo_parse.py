@@ -202,37 +202,40 @@ class TestDemoParser:
                         == self.demo_data[demo]["json"]["tickRate"]
                     )
 
-    # def test_round_ticks(self):
-    #     for demo in self.demo_data:
-    #         if self.demo_data[demo]["useForTests"]:
-    #             for r in self.demo_data[demo]["json"]["gameRounds"]:
-    #                 assert r["startTick"] <= r["freezeTimeEndTick"]
-    #                 assert r["freezeTimeEndTick"] <= r["endTick"]
-    #                 assert r["endTick"] <= r["endOfficialTick"]
+    def test_round_ticks(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for r in self.demo_data[demo]["json"]["gameRounds"]:
+                    if not r["isWarmup"]:
+                        assert r["startTick"] <= r["freezeTimeEndTick"]
+                        assert r["freezeTimeEndTick"] <= r["endTick"]
+                        assert r["endTick"] <= r["endOfficialTick"]
 
-    # def test_round_winners(self):
-    #     for demo in self.demo_data:
-    #         if self.demo_data[demo]["useForTests"]:
-    #             for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-    #                 if i in self.demo_data[demo]["useableRounds"]:
-    #                     if r["winningSide"] == "CT":
-    #                         assert r["winningTeam"] == r["ctTeam"]
-    #                     else:
-    #                         assert r["winningTeam"] == r["tTeam"]
+    def test_round_winners(self):
+        for demo in self.demo_data:
+            if self.demo_data[demo]["useForTests"]:
+                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
+                    if not r["isWarmup"]:
+                        if i in self.demo_data[demo]["useableRounds"]:
+                            if r["winningSide"] == "CT":
+                                assert r["winningTeam"] == r["ctTeam"]
+                            else:
+                                assert r["winningTeam"] == r["tTeam"]
 
     def test_eq_val(self):
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
                 for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if i in self.demo_data[demo]["useableRounds"]:
-                        assert (
-                            r["ctStartEqVal"]
-                            <= r["ctRoundStartEqVal"] + r["ctRoundStartMoney"]
-                        )
-                        assert (
-                            r["tStartEqVal"]
-                            <= r["tRoundStartEqVal"] + r["tRoundStartMoney"]
-                        )
+                    if not r["isWarmup"]:
+                        if i in self.demo_data[demo]["useableRounds"]:
+                            assert (
+                                r["ctStartEqVal"]
+                                <= r["ctRoundStartEqVal"] + r["ctRoundStartMoney"]
+                            )
+                            assert (
+                                r["tStartEqVal"]
+                                <= r["tRoundStartEqVal"] + r["tRoundStartMoney"]
+                            )
 
     def test_kill_distances(self):
         for demo in self.demo_data:
