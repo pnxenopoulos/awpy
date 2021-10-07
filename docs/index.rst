@@ -1,26 +1,26 @@
 Welcome to csgo's documentation!
-================================
+To learn about the parser, visit :doc:`parsing.rst`
+====================================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   parsing
 
 Parse
 ===================
 .. automodule:: csgo.parser.demoparser
     :members:
 
-.. automodule:: csgo.parser.matchparser
+Analytics
+===================
+.. automodule:: csgo.analytics
     :members:
 
-Events
+Visualization
 ===================
-.. automodule:: csgo.events
-    :members:
-
-Entities
-===================
-.. automodule:: csgo.entities
+.. automodule:: csgo.visualization
     :members:
 
 Indices and tables

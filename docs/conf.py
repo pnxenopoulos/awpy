@@ -14,16 +14,20 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(".."))
+autodoc_mock_imports = ["pandas"]
 
 
 # -- Project information -----------------------------------------------------
 
 project = "csgo"
-copyright = "2020, Peter Xenopoulos"
+copyright = "2021, Peter Xenopoulos"
 author = "Peter Xenopoulos"
 
 # The full version, including alpha/beta/rc tags
 release = "0.1"
+
+# Index rst
+master_doc = "index"
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,6 +44,13 @@ templates_path = ["_templates"]
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# Sources
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".txt": "restructuredtext",
+    ".md": "markdown",
+}
 
 
 # -- Options for HTML output -------------------------------------------------
