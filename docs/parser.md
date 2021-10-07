@@ -1,5 +1,5 @@
 # CSGO Python Library Parser
-[Index](README.md) | [Demofiles](demofiles.md) | [Parser](parser.md) | [Demo Cleaning](demo_cleaning.md) 
+[Index](README.md) | [Demofiles](demofiles.md) | [Parser](parser.md) | [Demo Cleaning](demo_cleaning.md) | [Analytics](analytics.md) | [Visualization](visualization.md)
 
 ###### Table of Contents
 [Parser Parameters](#parser-parameters)
