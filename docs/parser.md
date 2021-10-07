@@ -7,7 +7,7 @@
 
 [Match Phases](#match-phases)
 
-[Game Rounds](#game-rounds)
+[Game Rounds](#game-rounds) ( [Kills](#kills) - [Damages](#damages) - [Grenades](#grenades) - [Bomb Events](#bomb-events) - [Flashes](#flashes) - [Frames](#frames))
 
 In this document, we describe the parser and its associated output. The main feature of our library is the CSGO demo parsing functionality. Essentially, our library is a Python wrapper to [markus-wa's parser written in Go](https://github.com/markus-wa/demoinfocs-golang). As Markus' parser parses the raw events, we order them into a sensible hierarchy, and parse useful metadata for events and the demo itself. Although the library allows us to parse into JSON or Pandas DataFrames, the data itself is the same. For the purposes of this documentation, we will focus on the JSON output.
 
@@ -136,6 +136,251 @@ The `gameRounds` top-level key is the meat of the parser. This is where all play
     'weaponFires': [...],
     'flashes': [...],
     'frames': [...]
+}
+```
+
+##### Kills
+```
+{
+    'tick': 74156, 
+    'second': 52.9140625, 
+    'attackerSteamID': 76561197999004010, 
+    'attackerName': 'Stewie2K', 
+    'attackerTeam': 'Team Liquid', 
+    'attackerSide': 'CT', 
+    'attackerX': 467.9614562988281, 
+    'attackerY': -188.7003173828125, 
+    'attackerZ': -287.96875, 
+    'attackerAreaID': 3598, 
+    'attackerAreaName': 'BombsiteB', 
+    'attackerViewX': 96.2237548828125, 
+    'attackerViewY': 16.798095703125, 
+    'victimSteamID': 76561198004854956, 
+    'victimName': 'dupreeh', 
+    'victimTeam': 'Astralis', 
+    'victimSide': 'T', 
+    'victimX': 409.064697265625, 
+    'victimY': 184.4791259765625, 
+    'victimZ': -415.96875, 
+    'victimAreaID': 3515, 
+    'victimAreaName': 'Ramp', 
+    'victimViewX': 293.9337158203125, 
+    'victimViewY': 358.055419921875, 
+    'assisterSteamID': None, 
+    'assisterName': None, 
+    'assisterTeam': None, 
+    'assisterSide': None, 
+    'isSuicide': False, 
+    'isTeamkill': False, 
+    'isWallbang': False, // Should be true if penetratedObjects > 0
+    'penetratedObjects': 0, 
+    'isFirstKill': True, 
+    'isHeadshot': True, 
+    'victimBlinded': False, 
+    'attackerBlinded': False, 
+    'flashThrowerSteamID': None, 
+    'flashThrowerName': None, 
+    'flashThrowerTeam': None, 
+    'flashThrowerSide': None, 
+    'noScope': False, 
+    'thruSmoke': False, 
+    'distance': 398.8931249979475, // Uses in game units
+    'isTrade': False, 
+    'playerTradedName': None, 
+    'playerTradedTeam': None, 
+    'playerTradedSteamID': None, 
+    'weapon': 'Desert Eagle'
+}
+```
+
+##### Damages
+```
+{
+    'tick': 72762, 
+    'second': 42.0234375, 
+    'attackerSteamID': 76561198010511021, 
+    'attackerName': 'gla1ve', 
+    'attackerTeam': 'Astralis', 
+    'attackerSide': 'T', 
+    'attackerX': 1071.789794921875, 
+    'attackerY': -1843.035888671875, 
+    'attackerZ': -416.50506591796875, 
+    'attackerAreaID': 3558, 
+    'attackerAreaName': 'Outside', 
+    'attackerViewX': 90.8514404296875, 
+    'attackerViewY': 352.8863525390625, 
+    'attackerStrafe': False, // Was the attacker moving when he damaged?
+    'victimSteamID': 76561198001151695, 
+    'victimName': 'NAF', 
+    'victimTeam': 'Team Liquid', 
+    'victimSide': 'CT', 
+    'victimX': 1045.416259765625, 
+    'victimY': -541.6353149414062, 
+    'victimZ': -239.96875, 
+    'victimAreaID': 3459, 
+    'victimAreaName': 'Hell', 
+    'victimViewX': 273.1585693359375, 
+    'victimViewY': 10.9039306640625, 
+    'weapon': 'AK-47', 
+    'hpDamage': 26, // Damage can be greater than 100, like an AWP to the head
+    'hpDamageTaken': 26, // This value is capped to 100
+    'armorDamage': 3, 
+    'armorDamageTaken': 3, 
+    'hitGroup': 'Chest'
+}
+```
+
+##### Grenades
+```
+{
+    'throwTick': 68455, 
+    'destroyTick': 71116, // This is when the grenade is destroyed (i.e., it explodes, blooms, etc.) 
+    'throwSecond': 8.375, 
+    'destroySecond': 29.1640625, 
+    'throwerSteamID': 76561197999004010, 
+    'throwerName': 'Stewie2K', 
+    'throwerTeam': 'Team Liquid', 
+    'throwerSide': 'CT', 
+    'throwerX': 981.75, 
+    'throwerY': 35.65625, 
+    'throwerZ': -348.15625, 
+    'throwerAreaID': 2915, 
+    'throwerAreaName': 'Admin', 
+    'grenadeType': 'Smoke Grenade', 
+    'grenadeX': 93.75, 
+    'grenadeY': -227.96875, 
+    'grenadeZ': -414, 
+    'grenadeAreaID': 4009, 
+    'grenadeAreaName': 'Control', 
+    'UniqueID': 6643715706064775031
+}
+```
+
+##### Bomb Events
+```
+{
+    'tick': 81550, 
+    'second': 110.6796875, 
+    'playerSteamID': 76561197990682262, 
+    'playerName': 'Xyp9x', 
+    'playerTeam': 'Astralis', 
+    'playerX': 340.03125, 
+    'playerY': -823.4887084960938, 
+    'playerZ': -771.96875, 
+    'bombAction': 'plant_begin', // Can either be plant_begin/abort, or defused or planted
+    'bombSite': 'B'
+}
+```
+
+##### Flashes
+```
+{
+    'tick': 73475, 
+    'second': 47.59375, 
+    'attackerSteamID': 76561197983956651, 
+    'attackerName': 'Magisk', 
+    'attackerTeam': 'Astralis', 
+    'attackerSide': 'T', 
+    'attackerX': 144.73223876953125, 
+    'attackerY': -264.7706298828125, 
+    'attackerZ': -415.96875, 
+    'attackerAreaID': 491, 
+    'attackerAreaName': 'Trophy', 
+    'attackerViewX': 329.4195556640625, 
+    'attackerViewY': 10.008544921875, 
+    'playerSteamID': 76561197999004010, 
+    'playerName': 'Stewie2K', 
+    'playerTeam': 'Team Liquid', 
+    'playerSide': 'CT', 
+    'playerX': 447.8232421875, 
+    'playerY': -218.9803009033203, 
+    'playerZ': -287.96875, 
+    'playerAreaID': 3598, 
+    'playerAreaName': 'BombsiteB', 
+    'playerViewX': 242.90771484375, 
+    'playerViewY': 25.4937744140625, 
+    'flashDuration': 0.278546976
+}
+```
+
+##### Frames
+```
+{
+    'tick': 67465, 
+    'seconds': 0.640625, 
+    // Token is a unique identifier for the number of each side's players in a specific place.
+    // Described in "ggViz: Accelerating Large-Scale Esports Game Analysis" (https://arxiv.org/pdf/2107.06495.pdf)
+    'positionToken': '0000000000000000000000005000000000000000000000000000000000', 
+    'tToken': '00000000000000000000000050000', 
+    'ctToken': '00000000000000000000000000000', 
+    't': {
+        'side': 'T', 
+        'teamName': 'Astralis', 
+        'teamEqVal': 21600, 
+        'positionToken': '00000000000000000000000050000', 
+        'alivePlayers': 5, 
+        'totalUtility': 12, 
+        'players': [
+            {
+                'steamID': 76561197990682262, 
+                'name': 'Xyp9x', 
+                'team': 'Astralis', 
+                'side': 'T', 
+                'x': -1755.138427734375, 
+                'y': -1086.612548828125, 
+                'z': -415.0366516113281, 
+                'viewX': 354.90234375, 
+                'viewY': 7.7838134765625, 
+                'areaID': 3018, 
+                'areaName': 'TSpawn', 
+                'hp': 100, 
+                'armor': 87, 
+                'activeWeapon': 'Knife', 
+                'totalUtility': 4, 
+                'isAlive': True, 
+                'isBlinded': False, 
+                'isAirborne': False, 
+                'isDucking': False, 
+                'isDuckingInProgress': False, 
+                'isUnDuckingInProgress': False, 
+                'isDefusing': False, 
+                'isPlanting': False, 
+                'isReloading': False, 
+                'isInBombZone': False, 
+                'isInBuyZone': True, 
+                'isStanding': True, 
+                'isScoped': False, 
+                'isWalking': False, 
+                'isUnknown': False, 
+                'inventory': [
+                    {
+                        'weaponName': 'Molotov', 
+                        'weaponClass': 'Grenade', 
+                        'ammoInMagazine': 1, 
+                        'ammoInReserve': 0
+                    }, ...
+                ], 
+                'equipmentValue': 5050, 
+                'cash': 0, 
+                'hasHelmet': False, 
+                'hasDefuse': False, 
+                'ping': 5`
+            },  ...
+        ],
+    },
+    "ct": {...},
+    'world': [
+        {
+            'objectType': 'bomb', 
+            'x': -1694.0751953125, 
+            'y': -1096.5224609375, 
+            'z': -414.490478515625, 
+            'areaID': 138, 
+            'areaName': 'TSpawn'
+        }
+    ], 
+    'bombPlanted': False, 
+    'bombsite': ''
 }
 ```
 
