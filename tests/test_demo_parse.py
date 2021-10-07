@@ -202,13 +202,13 @@ class TestDemoParser:
                         == self.demo_data[demo]["json"]["tickRate"]
                     )
 
-    def test_round_ticks(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    assert r["startTick"] <= r["freezeTimeEndTick"]
-                    assert r["freezeTimeEndTick"] <= r["endTick"]
-                    assert r["endTick"] <= r["endOfficialTick"]
+    # def test_round_ticks(self):
+    #     for demo in self.demo_data:
+    #         if self.demo_data[demo]["useForTests"]:
+    #             for r in self.demo_data[demo]["json"]["gameRounds"]:
+    #                 assert r["startTick"] <= r["freezeTimeEndTick"]
+    #                 assert r["freezeTimeEndTick"] <= r["endTick"]
+    #                 assert r["endTick"] <= r["endOfficialTick"]
 
     # def test_round_winners(self):
     #     for demo in self.demo_data:
@@ -283,5 +283,5 @@ class TestDemoParser:
                 for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
                     if i in self.demo_data[demo]["useableRounds"]:
                         for f in r["frames"]:
-                            assert len(f["T"]["players"]) == 5
-                            assert len(f["CT"]["players"]) == 5
+                            assert len(f["t"]["players"]) == 5
+                            assert len(f["ct"]["players"]) == 5

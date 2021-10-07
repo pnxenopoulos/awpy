@@ -82,7 +82,7 @@ def _generate_world_vector_state(frame):
     if frame["bombPlanted"]:
         bomb_planted = 1
     return [
-        frame["second"],
+        frame["seconds"],
         bomb_planted,
         frame["bombsite"],
     ]
