@@ -1,4 +1,4 @@
-[![Discord](https://img.shields.io/badge/chat-Discord-blue)](https://discord.gg/)   [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE)
+[![Discord](https://img.shields.io/badge/chat-Discord-blue)](https://discord.gg/) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://github.com/pnxenopoulos/csgo/tree/main/csgo)
 
 # Analyzing Counter-Strike: Global Offensive Data
 The `csgo` package provides data parsing, analytics and (soon) visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/3JrhKYcEKW) for discussion around the library, along with other resources for esports analytics.
