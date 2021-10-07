@@ -198,7 +198,7 @@ class TestDemoParser:
             if self.demo_data[demo]["useForTests"]:
                 if self.demo_data[demo]["tickrate"]["test"]:
                     assert (
-                        self.demo_data[demo]["userForTests"]["tickrate"]["value"]
+                        self.demo_data[demo]["useForTests"]["tickrate"]["value"]
                         == self.demo_data[demo]["tickRate"]
                     )
 
@@ -219,26 +219,6 @@ class TestDemoParser:
                             assert r["winningTeam"] == r["ctTeam"]
                         else:
                             assert r["winningTeam"] == r["tTeam"]
-
-    def test_start_money(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][0]["ctRoundStartEqVal"]
-                    == 1000
-                )
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][0]["ctRoundStartMoney"]
-                    == 4000
-                )
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][0]["tRoundStartEqVal"]
-                    == 1000
-                )
-                assert (
-                    self.demo_data[demo]["json"]["gameRounds"][0]["tRoundStartMoney"]
-                    == 4000
-                )
 
     def test_eq_val(self):
         for demo in self.demo_data:

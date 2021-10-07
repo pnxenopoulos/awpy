@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from csgo import DIST, MAP_NAV, MAP_DATA
+from csgo import MAP_NAV, MAP_DATA
 
 
 class TestDataImports:
