@@ -49,13 +49,13 @@ class TestStats:
         )
 
         self.data = self.parser.parse(return_type="df")
-        self.damage_data = self.data["Damages"]
-        self.flash_data = self.data["Flashes"]
-        self.grenade_data = self.data["Grenades"]
-        self.kill_data = self.data["Kills"]
-        self.bomb_data = self.data["BombEvents"]
-        self.round_data = self.data["Rounds"]
-        self.weapon_fire_data = self.data["WeaponFires"]
+        self.damage_data = self.data["damages"]
+        self.flash_data = self.data["flashes"]
+        self.grenade_data = self.data["grenades"]
+        self.kill_data = self.data["kills"]
+        self.bomb_data = self.data["bombEvents"]
+        self.round_data = self.data["rounds"]
+        self.weapon_fire_data = self.data["weaponFires"]
         self.invalid_numeric_filter = {"Kills": [10]}
         self.invalid_logical_operator = {"Kills": ["=invalid=10"]}
         self.invalid_numeric_value = {"Kills": ["==1invalid0"]}
