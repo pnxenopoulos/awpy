@@ -274,24 +274,27 @@ class DemoParser:
             frames_dataframes = []
             keys = ["tick", "seconds", "positionToken", "tToken", "ctToken"]
             for r in self.json["gameRounds"]:
-                for frame in r["frames"]:
-                    frame_item = {}
-                    frame_item["roundNum"] = r["roundNum"]
-                    for k in keys:
-                        frame_item[k] = frame[k]
-                    for side in ["ct", "t"]:
-                        if side == "ct":
-                            frame_item["ctTeamName"] = frame["ct"]["teamName"]
-                            frame_item["ctEqVal"] = frame["ct"]["teamEqVal"]
-                            frame_item["ctAlivePlayers"] = frame["ct"]["alivePlayers"]
-                            frame_item["ctUtility"] = frame["ct"]["totalUtility"]
-                            frame_item["ctToken"] = frame["ct"]["positionToken"]
-                        else:
-                            frame_item["tTeamName"] = frame["t"]["teamName"]
-                            frame_item["tEqVal"] = frame["t"]["teamEqVal"]
-                            frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
-                            frame_item["tUtility"] = frame["t"]["totalUtility"]
-                            frame_item["tToken"] = frame["t"]["positionToken"]
+                if r["frames"]:
+                    for frame in r["frames"]:
+                        frame_item = {}
+                        frame_item["roundNum"] = r["roundNum"]
+                        for k in keys:
+                            frame_item[k] = frame[k]
+                        for side in ["ct", "t"]:
+                            if side == "ct":
+                                frame_item["ctTeamName"] = frame["ct"]["teamName"]
+                                frame_item["ctEqVal"] = frame["ct"]["teamEqVal"]
+                                frame_item["ctAlivePlayers"] = frame["ct"][
+                                    "alivePlayers"
+                                ]
+                                frame_item["ctUtility"] = frame["ct"]["totalUtility"]
+                                frame_item["ctToken"] = frame["ct"]["positionToken"]
+                            else:
+                                frame_item["tTeamName"] = frame["t"]["teamName"]
+                                frame_item["tEqVal"] = frame["t"]["teamEqVal"]
+                                frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
+                                frame_item["tUtility"] = frame["t"]["totalUtility"]
+                                frame_item["tToken"] = frame["t"]["positionToken"]
                     frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
             frames_df["matchID"] = self.json["MatchID"]
@@ -323,23 +326,24 @@ class DemoParser:
         try:
             player_frames = []
             for r in self.json["gameRounds"]:
-                for frame in r["frames"]:
-                    for side in ["ct", "t"]:
-                        if frame[side]["players"] is not None and (
-                            len(frame[side]["players"])
-                            > 0  # Used to be == 5, to ensure the sides were equal.
-                        ):
-                            for player in frame[side]["players"]:
-                                player_item = {}
-                                player_item["roundNum"] = r["roundNum"]
-                                player_item["tick"] = frame["tick"]
-                                player_item["second"] = frame["second"]
-                                player_item["side"] = side
-                                player_item["teamName"] = frame[side]["teamName"]
-                                for col in player.keys():
-                                    if col != "inventory":
-                                        player_item[col] = player[col]
-                                player_frames.append(player_item)
+                if r["frames"]:
+                    for frame in r["frames"]:
+                        for side in ["ct", "t"]:
+                            if frame[side]["players"] is not None and (
+                                len(frame[side]["players"])
+                                > 0  # Used to be == 5, to ensure the sides were equal.
+                            ):
+                                for player in frame[side]["players"]:
+                                    player_item = {}
+                                    player_item["roundNum"] = r["roundNum"]
+                                    player_item["tick"] = frame["tick"]
+                                    player_item["second"] = frame["second"]
+                                    player_item["side"] = side
+                                    player_item["teamName"] = frame[side]["teamName"]
+                                    for col in player.keys():
+                                        if col != "inventory":
+                                            player_item[col] = player[col]
+                                    player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
             player_frames_df["matchID"] = self.json["matchID"]
             player_frames_df["mapName"] = self.json["mapName"]
