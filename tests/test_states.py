@@ -37,20 +37,20 @@ class TestStates:
         """Tests that wrong state type raises error"""
         with pytest.raises(ValueError):
             generate_game_state(
-                self.data["GameRounds"][0]["Frames"][0], state_type="test"
+                self.data["gameRounds"][0]["frames"][0], state_type="test"
             )
 
     def test_output(self):
         """Tests that output is a dict with 3 keys"""
-        game_state = generate_game_state(self.data["GameRounds"][0]["Frames"][0])
+        game_state = generate_game_state(self.data["gameRounds"][0]["frames"][0])
         assert type(game_state) == dict
-        assert "CT" in game_state.keys()
-        assert "T" in game_state.keys()
-        assert "Global" in game_state.keys()
+        assert "ct" in game_state.keys()
+        assert "t" in game_state.keys()
+        assert "global" in game_state.keys()
 
     def test_vector_output(self):
         """Tests that the vector output is correct"""
-        game_state = generate_game_state(self.data["GameRounds"][0]["Frames"][0])
-        assert len(game_state["CT"]) == 9
-        assert len(game_state["T"]) == 9
-        assert len(game_state["Global"]) == 5
+        game_state = generate_game_state(self.data["gameRounds"][0]["frames"][0])
+        assert len(game_state["ct"]) == 9
+        assert len(game_state["t"]) == 9
+        assert len(game_state["global"]) == 5
