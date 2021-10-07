@@ -206,7 +206,7 @@ class TestDemoParser:
         for demo in self.demo_data:
             if self.demo_data[demo]["useForTests"]:
                 for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    if not r["isWarmup"]:
+                    if not r["isWarmup"] and r["roundEndReason"] != "":
                         assert r["startTick"] <= r["freezeTimeEndTick"]
                         assert r["freezeTimeEndTick"] <= r["endTick"]
                         assert r["endTick"] <= r["endOfficialTick"]
