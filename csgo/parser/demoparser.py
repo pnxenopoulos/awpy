@@ -272,7 +272,7 @@ class DemoParser:
             raise ValueError("return_type must be either 'list' or 'df'")
         try:
             frames_dataframes = []
-            keys = ["tick", "second", "positionToken", "tToken", "ctToken"]
+            keys = ["tick", "seconds", "positionToken", "tToken", "ctToken"]
             for r in self.json["gameRounds"]:
                 for frame in r["frames"]:
                     frame_item = {}
