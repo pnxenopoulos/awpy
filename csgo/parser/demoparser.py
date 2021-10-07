@@ -297,7 +297,7 @@ class DemoParser:
                                 frame_item["tToken"] = frame["t"]["positionToken"]
                     frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
-            frames_df["matchID"] = self.json["MatchID"]
+            frames_df["matchID"] = self.json["matchID"]
             frames_df["mapName"] = self.json["mapName"]
             if return_type == "list":
                 self.logger.info("Parsed frames to list")
