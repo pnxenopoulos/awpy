@@ -539,7 +539,7 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 	if currentRound.BombPlantTick == nil {
 		phaseEndTick = currentRound.FreezeTimeEndTick
 	} else {
-		phaseEndTick = &currentRound.BombPlantTick
+		phaseEndTick = *currentRound.BombPlantTick
 	}
 	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
 }
