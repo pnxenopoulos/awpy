@@ -18,5 +18,5 @@ class TestCSGOCoords:
         Tests that coords to area returns correctly.
         """
         coord = coords_to_area(x=0, y=0, z=64, map="de_dust2")
-        assert coord["AreaId"] == 7760
+        assert coord["AreaID"] == 7760
         assert coord["AreaName"] == "OutsideLong"

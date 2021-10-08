@@ -46,22 +46,18 @@ def _generate_team_vector_state(frame_side):
     armor_remaining = 0
     helmets_remaining = 0
     defuse_kits_remaining = 0
-    sum_team_dist_a = 0
-    sum_team_dist_b = 0
-    for player in frame_side["Players"]:
-        if player["IsAlive"]:
-            eq_val += player["EquipmentValue"]
+    for player in frame_side["players"]:
+        if player["isAlive"]:
+            eq_val += player["equipmentValue"]
             players_remaining += 1
-            hp_remaining += player["Hp"]
-            armor_remaining += player["Armor"]
-            if player["HasHelmet"]:
+            hp_remaining += player["hp"]
+            armor_remaining += player["armor"]
+            if player["hasHelmet"]:
                 helmets_remaining += 1
-            if player["HasDefuse"]:
+            if player["hasDefuse"]:
                 defuse_kits_remaining += 1
-            if player["Hp"] == 100:
+            if player["hp"] == 100:
                 full_hp_players_remaining += 1
-            sum_team_dist_a += player["DistToBombsiteA"]
-            sum_team_dist_b += player["DistToBombsiteB"]
     return [
         eq_val,
         players_remaining,
@@ -70,8 +66,6 @@ def _generate_team_vector_state(frame_side):
         armor_remaining,
         helmets_remaining,
         defuse_kits_remaining,
-        sum_team_dist_a / players_remaining,
-        sum_team_dist_b / players_remaining,
     ]
 
 
@@ -85,14 +79,12 @@ def _generate_world_vector_state(frame):
         A list with numeric elements
     """
     bomb_planted = 0
-    if frame["BombPlanted"]:
+    if frame["bombPlanted"]:
         bomb_planted = 1
     return [
-        frame["Second"],
-        frame["BombDistanceToA"],
-        frame["BombDistanceToB"],
+        frame["seconds"],
         bomb_planted,
-        frame["BombSite"],
+        frame["bombsite"],
     ]
 
 
@@ -117,9 +109,9 @@ def _generate_vector_state(frame):
         A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
     """
     state = {}
-    state["CT"] = _generate_team_vector_state(frame["CT"])
-    state["T"] = _generate_team_vector_state(frame["T"])
-    state["Global"] = _generate_world_vector_state(frame)
+    state["ct"] = _generate_team_vector_state(frame["ct"])
+    state["t"] = _generate_team_vector_state(frame["t"])
+    state["global"] = _generate_world_vector_state(frame)
     return state
 
 
@@ -132,7 +124,7 @@ def _generate_graph_state(frame):
     Returns:
         A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
     """
-    return {"CT": [], "T": [], "Global": []}
+    return {"ct": [], "t": [], "global": []}
 
 
 def _generate_set_state(frame):
@@ -144,4 +136,4 @@ def _generate_set_state(frame):
     Returns:
         A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
     """
-    return {"CT": [], "T": [], "Global": []}
+    return {"ct": [], "t": [], "global": []}

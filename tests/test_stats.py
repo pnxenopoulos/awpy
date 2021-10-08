@@ -49,27 +49,27 @@ class TestStats:
         )
 
         self.data = self.parser.parse(return_type="df")
-        self.damage_data = self.data["Damages"]
-        self.flash_data = self.data["Flashes"]
-        self.grenade_data = self.data["Grenades"]
-        self.kill_data = self.data["Kills"]
-        self.bomb_data = self.data["BombEvents"]
-        self.round_data = self.data["Rounds"]
-        self.weapon_fire_data = self.data["WeaponFires"]
+        self.damage_data = self.data["damages"]
+        self.flash_data = self.data["flashes"]
+        self.grenade_data = self.data["grenades"]
+        self.kill_data = self.data["kills"]
+        self.bomb_data = self.data["bombEvents"]
+        self.round_data = self.data["rounds"]
+        self.weapon_fire_data = self.data["weaponFires"]
         self.invalid_numeric_filter = {"Kills": [10]}
         self.invalid_logical_operator = {"Kills": ["=invalid=10"]}
         self.invalid_numeric_value = {"Kills": ["==1invalid0"]}
-        self.invalid_str_filter = {"AttackerName": [1]}
-        self.invalid_bool_filter = {"IsHeadshot": ["True"]}
+        self.invalid_str_filter = {"attackerName": [1]}
+        self.invalid_bool_filter = {"isHeadshot": ["True"]}
         self.filters = {
-            "AttackerTeam": ["Astralis"],
-            "RoundNum": ["<16"],
-            "IsHeadshot": [True],
+            "attackerTeam": ["Astralis"],
+            "roundNum": ["<16"],
+            "isHeadshot": [True],
         }
         self.filtered_kill_data = self.kill_data.loc[
-            (self.kill_data[("AttackerTeam")] == "Astralis")
-            & (self.kill_data["RoundNum"] < 16)
-            & (self.kill_data["IsHeadshot"] == True)
+            (self.kill_data[("attackerTeam")] == "Astralis")
+            & (self.kill_data["roundNum"] < 16)
+            & (self.kill_data["isHeadshot"] == True)
         ]
         self.kills = pd.DataFrame(
             {
@@ -80,7 +80,7 @@ class TestStats:
                     "dupreeh",
                     "gla1ve",
                 ],
-                "1st Half Headshot Kills": [3, 2, 7, 5, 2],
+                "1st Half HS Kills": [3, 2, 7, 5, 2],
             }
         )
 
@@ -116,163 +116,3 @@ class TestStats:
         """Tests check_filters function with an invalid boolean filter."""
         with pytest.raises(ValueError):
             check_filters(self.kill_data, self.invalid_bool_filter)
-
-    def test_num_filter_df(self):
-        """Tests num_filter_df function."""
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", "==", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] == 3]
-        )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", "!=", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] != 3]
-        )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", "<=", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] <= 3]
-        )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", ">=", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] >= 3]
-        )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", "<", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] < 3]
-        )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", ">", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] > 3]
-        )
-
-    def test_filter_df(self):
-        """Tests filter_df function."""
-        assert filter_df(self.kill_data, self.filters).equals(self.filtered_kill_data)
-
-    def test_calc_stats(self):
-        """Tests calc_stats function."""
-        assert calc_stats(
-            self.kill_data,
-            self.filters,
-            ["AttackerName"],
-            ["AttackerName"],
-            [["size"]],
-            ["Astralis Player", "1st Half Headshot Kills"],
-        ).equals(self.kills)
-
-    def test_accuracy(self):
-        """Tests accuracy function."""
-        assert (
-            round(accuracy(self.damage_data, self.weapon_fire_data)["ACC%"].sum(), 2)
-            == 1.83
-        )
-
-    def test_kast(self):
-        """Tests kast function."""
-        assert round(kast(self.kill_data, "KAST")["T"].sum(), 2) == 22
-
-    def test_kill_stats(self):
-        """Tests kill_stats function."""
-        assert (
-            round(
-                kill_stats(
-                    self.damage_data,
-                    self.kill_data,
-                    self.round_data,
-                    self.weapon_fire_data,
-                )["KDR"].sum(),
-                2,
-            )
-            == 10.1
-        )
-
-    def test_adr(self):
-        """Tests adr function."""
-        assert (
-            round(adr(self.damage_data, self.round_data)["Norm ADR"].sum(), 2) == 729.07
-        )
-
-    def test_util_dmg(self):
-        """Tests util_dmg function."""
-        assert (
-            round(util_dmg(self.damage_data, self.grenade_data)["UD Per Nade"].sum(), 2)
-            == 48.4
-        )
-
-    def test_flash_stats(self):
-        """Tests flash_stats function."""
-        assert (
-            flash_stats(self.flash_data, self.grenade_data, self.kill_data)["EF"].sum()
-            == 114
-        )
-
-    def test_bomb_stats(self):
-        """Tests bomb_stats function."""
-        assert bomb_stats(self.bomb_data)["Astralis Defuses"].sum() == 8
-
-    def test_econ_stats(self):
-        """Tests econ_stats function."""
-        assert econ_stats(self.round_data)["Avg Spend"].sum() == 53371
-
-    def test_weapon_type(self):
-        """Tests weapon_type function."""
-        assert weapon_type("Knife") == "Melee Kills"
-        assert weapon_type("CZ-75 Auto") == "Pistol Kills"
-        assert weapon_type("MAG-7") == "Shotgun Kills"
-        assert weapon_type("MAC-10") == "SMG Kills"
-        assert weapon_type("AK-47") == "Assault Rifle Kills"
-        assert weapon_type("M249") == "Machine Gun Kills"
-        assert weapon_type("AWP") == "Sniper Rifle Kills"
-        assert weapon_type("Molotov") == "Utility Kills"
-
-    def test_kill_breakdown(self):
-        """Tests kill_breakdown function."""
-        assert kill_breakdown(self.kill_data)["Assault Rifle Kills"].sum() == 127
-
-    def test_util_dmg_breakdown(self):
-        """Tests util_dmg_breakdown function."""
-        assert (
-            round(
-                util_dmg_breakdown(self.damage_data, self.grenade_data)[
-                    "UD Per Nade"
-                ].sum(),
-                2,
-            )
-            == 120.02
-        )
-
-    def test_win_breakdown(self):
-        """Tests win_breakdown function."""
-        assert win_breakdown(self.round_data)["T CT Elim Wins"].sum() == 6
-
-    def test_player_box_score(self):
-        """Tests player_box_score function."""
-        assert (
-            player_box_score(
-                self.damage_data,
-                self.flash_data,
-                self.grenade_data,
-                self.kill_data,
-                self.round_data,
-                self.weapon_fire_data,
-            )["K"].sum()
-            == 179
-        )
-
-    def test_team_box_score(self):
-        """Tests team_box_score function."""
-        assert (
-            team_box_score(
-                self.damage_data,
-                self.flash_data,
-                self.grenade_data,
-                self.kill_data,
-                self.round_data,
-                self.weapon_fire_data,
-            )
-            .iloc[4]
-            .sum()
-            == 180
-        )
-
-    def test_agg_damages(self):
-        """Tests agg_damages function."""
-        assert len(
-            agg_damages(
-                self.damage_data.copy(),
-            )
-            == 820
-        )

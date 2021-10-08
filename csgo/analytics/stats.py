@@ -219,9 +219,9 @@ def accuracy(
             dataframe represented by weapon_fires to filter the weapon fire data
             by and the values are lists that contain the column filters.
     """
-    stats = ["PlayerName", "AttackerName", "Player"]
+    stats = ["playerName", "attackerName", "player"]
     if team:
-        stats = ["PlayerTeam", "AttackerTeam", "Team"]
+        stats = ["playerTeam", "attackerTeam", "team"]
     weapon_fires = calc_stats(
         weapon_fire_data,
         weapon_fire_filters,
@@ -231,7 +231,7 @@ def accuracy(
         [stats[2], "Weapon Fires"],
     )
     strafe_fires = calc_stats(
-        weapon_fire_data.loc[weapon_fire_data["PlayerStrafe"] == True],
+        weapon_fire_data.loc[weapon_fire_data["playerStrafe"] == True],
         weapon_fire_filters,
         [stats[0]],
         [stats[0]],
@@ -239,7 +239,7 @@ def accuracy(
         [stats[2], "Strafe Fires"],
     )
     hits = calc_stats(
-        damage_data.loc[damage_data["AttackerTeam"] != damage_data["VictimTeam"]],
+        damage_data.loc[damage_data["attackerTeam"] != damage_data["victimTeam"]],
         damage_filters,
         [stats[1]],
         [stats[1]],
@@ -248,8 +248,8 @@ def accuracy(
     )
     headshots = calc_stats(
         damage_data.loc[
-            (damage_data["AttackerTeam"] != damage_data["VictimTeam"])
-            & (damage_data["HitGroup"] == "Head")
+            (damage_data["attackerTeam"] != damage_data["victimTeam"])
+            & (damage_data["hitGroup"] == "Head")
         ],
         damage_filters,
         [stats[1]],
@@ -263,7 +263,7 @@ def accuracy(
     acc["Strafe%"] = acc["Strafe Fires"] / acc["Weapon Fires"]
     acc["ACC%"] = acc["Hits"] / acc["Weapon Fires"]
     acc["HS ACC%"] = acc["Headshots"] / acc["Weapon Fires"]
-    acc = acc[[stats[2], "Weapon Fires", "Strafe%", "ACC%", "HS ACC%"]]
+    acc = acc[[stats[2], "WeaponFires", "Strafe%", "ACC%", "HS ACC%"]]
     acc.sort_values(by="ACC%", ascending=False, inplace=True)
     acc.reset_index(drop=True, inplace=True)
     return acc
@@ -297,48 +297,48 @@ def kast(
     for stat in kast_string.upper():
         columns.append(stat)
     killers = calc_stats(
-        kill_data.loc[kill_data["AttackerTeam"] != kill_data["VictimTeam"]],
+        kill_data.loc[kill_data["attackerTeam"] != kill_data["victimTeam"]],
         kill_filters,
-        ["RoundNum"],
-        ["AttackerName"],
+        ["roundNum"],
+        ["attackerName"],
         [["sum"]],
         ["RoundNum", "Killers"],
     )
     victims = calc_stats(
         kill_data,
         kill_filters,
-        ["RoundNum"],
-        ["VictimName"],
+        ["roundNum"],
+        ["victimName"],
         [["sum"]],
         ["RoundNum", "Victims"],
     )
     assisters = calc_stats(
-        kill_data.loc[kill_data["AssisterTeam"] != kill_data["VictimTeam"]].fillna(""),
+        kill_data.loc[kill_data["assisterTeam"] != kill_data["victimTeam"]].fillna(""),
         kill_filters,
-        ["RoundNum"],
-        ["AssisterName"],
+        ["roundNum"],
+        ["assisterName"],
         [["sum"]],
         ["RoundNum", "Assisters"],
     )
     traded = calc_stats(
         kill_data.loc[
-            (kill_data["AttackerTeam"] != kill_data["VictimTeam"])
-            & (kill_data["IsTrade"] == True)
+            (kill_data["attackerTeam"] != kill_data["victimTeam"])
+            & (kill_data["isTrade"] == True)
         ].fillna(""),
         kill_filters,
-        ["RoundNum"],
-        ["PlayerTradedName"],
+        ["roundNum"],
+        ["playerTradedName"],
         [["sum"]],
         ["RoundNum", "Traded"],
     )
     if flash_assists:
         flash_assisters = calc_stats(
             kill_data.loc[
-                kill_data["FlashThrowerTeam"] != kill_data["VictimTeam"]
+                kill_data["flashThrowerTeam"] != kill_data["victimTeam"]
             ].fillna(""),
             kill_filters,
-            ["RoundNum"],
-            ["FlashThrowerName"],
+            ["roundNum"],
+            ["flashThrowerName"],
             [["sum"]],
             ["RoundNum", "Flash Assisters"],
         )
@@ -421,17 +421,17 @@ def kill_stats(
             dataframe represented by weapon_fires to filter the weapon fire data
             by and the values are lists that contain the column filters.
     """
-    stats = ["AttackerName", "VictimName", "AssisterName", "FlashThrowerName", "Player"]
+    stats = ["attackerName", "victimName", "assisterName", "flashThrowerName", "player"]
     if team:
         stats = [
-            "AttackerTeam",
-            "VictimTeam",
-            "AssisterTeam",
-            "FlashThrowerTeam",
-            "Team",
+            "attackerTeam",
+            "victimTeam",
+            "assisterTeam",
+            "flashThrowerTeam",
+            "team",
         ]
     kills = calc_stats(
-        kill_data.loc[kill_data["AttackerTeam"] != kill_data["VictimTeam"]],
+        kill_data.loc[kill_data["attackerTeam"] != kill_data["victimTeam"]],
         kill_filters,
         [stats[0]],
         [stats[0]],
@@ -447,7 +447,7 @@ def kill_stats(
         [stats[4], "D"],
     )
     assists = calc_stats(
-        kill_data.loc[kill_data["AssisterTeam"] != kill_data["VictimTeam"]],
+        kill_data.loc[kill_data["assisterTeam"] != kill_data["victimTeam"]],
         kill_filters,
         [stats[2]],
         [stats[2]],
@@ -455,7 +455,7 @@ def kill_stats(
         [stats[4], "A"],
     )
     flash_assists = calc_stats(
-        kill_data.loc[kill_data["FlashThrowerTeam"] != kill_data["VictimTeam"]],
+        kill_data.loc[kill_data["flashThrowerTeam"] != kill_data["victimTeam"]],
         kill_filters,
         [stats[3]],
         [stats[3]],
@@ -464,8 +464,8 @@ def kill_stats(
     )
     first_kills = calc_stats(
         kill_data.loc[
-            (kill_data["AttackerTeam"] != kill_data["VictimTeam"])
-            & (kill_data["IsFirstKill"] == True)
+            (kill_data["attackerTeam"] != kill_data["victimTeam"])
+            & (kill_data["isFirstKill"] == True)
         ],
         kill_filters,
         [stats[0]],
@@ -475,8 +475,8 @@ def kill_stats(
     )
     first_deaths = calc_stats(
         kill_data.loc[
-            (kill_data["AttackerTeam"] != kill_data["VictimTeam"])
-            & (kill_data["IsFirstKill"] == True)
+            (kill_data["attackerTeam"] != kill_data["victimTeam"])
+            & (kill_data["isFirstKill"] == True)
         ],
         kill_filters,
         [stats[1]],
@@ -486,8 +486,8 @@ def kill_stats(
     )
     headshots = calc_stats(
         kill_data.loc[
-            (kill_data["AttackerTeam"] != kill_data["VictimTeam"])
-            & (kill_data["IsHeadshot"] == True)
+            (kill_data["attackerTeam"] != kill_data["victimTeam"])
+            & (kill_data["isHeadshot"] == True)
         ],
         kill_filters,
         [stats[0]],
@@ -496,10 +496,10 @@ def kill_stats(
         [stats[4], "HS"],
     )
     headshot_pct = calc_stats(
-        kill_data.loc[kill_data["AttackerTeam"] != kill_data["VictimTeam"]],
+        kill_data.loc[kill_data["attackerTeam"] != kill_data["victimTeam"]],
         kill_filters,
         [stats[0]],
-        ["IsHeadshot"],
+        ["isHeadshot"],
         [["mean"]],
         [stats[4], "HS%"],
     )
@@ -581,14 +581,14 @@ def adr(
             dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
     """
-    stats = ["AttackerName", "Player"]
+    stats = ["attackerName", "player"]
     if team:
-        stats = ["AttackerTeam", "Team"]
+        stats = ["attackerTeam", "team"]
     adr = calc_stats(
-        damage_data.loc[damage_data["AttackerTeam"] != damage_data["VictimTeam"]],
+        damage_data.loc[damage_data["attackerTeam"] != damage_data["victimTeam"]],
         damage_filters,
         [stats[0]],
-        ["HpDamageTaken", "HpDamage"],
+        ["hpDamageTaken", "hpDamage"],
         [["sum"], ["sum"]],
         [stats[1], "Norm ADR", "Raw ADR"],
     )
@@ -625,27 +625,27 @@ def util_dmg(
             dataframe represented by grenade_data to filter the grenade data by
             and the values are lists that contain the column filters.
     """
-    stats = ["AttackerName", "ThrowerName", "Player"]
+    stats = ["attackerName", "throwerName", "player"]
     if team:
-        stats = ["AttackerTeam", "ThrowerTeam", "Team"]
+        stats = ["attackerTeam", "throwerTeam", "team"]
     util_dmg = calc_stats(
         damage_data.loc[
-            (damage_data["AttackerTeam"] != damage_data["VictimTeam"])
+            (damage_data["attackerTeam"] != damage_data["victimTeam"])
             & (
-                damage_data["Weapon"].isin(
+                damage_data["weapon"].isin(
                     ["HE Grenade", "Incendiary Grenade", "Molotov"]
                 )
             )
         ],
         damage_filters,
         [stats[0]],
-        ["HpDamageTaken", "HpDamage"],
+        ["hpDamageTaken", "hpDamage"],
         [["sum"], ["sum"]],
         [stats[2], "Given UD", "UD"],
     )
     nades_thrown = calc_stats(
         grenade_data.loc[
-            grenade_data["GrenadeType"].isin(
+            grenade_data["grenadeType"].isin(
                 ["HE Grenade", "Incendiary Grenade", "Molotov"]
             )
         ],
@@ -695,11 +695,11 @@ def flash_stats(
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
     """
-    stats = ["AttackerName", "FlashThrowerName", "ThrowerName", "Player"]
+    stats = ["attackerName", "flashThrowerName", "throwerName", "player"]
     if team:
-        stats = ["AttackerTeam", "FlashThrowerTeam", "ThrowerTeam", "Team"]
+        stats = ["attackerTeam", "flashThrowerTeam", "throwerTeam", "team"]
     enemy_flashes = calc_stats(
-        flash_data.loc[flash_data["AttackerTeam"] != flash_data["PlayerTeam"]],
+        flash_data.loc[flash_data["attackerTeam"] != flash_data["playerTeam"]],
         flash_filters,
         [stats[0]],
         [stats[0]],
@@ -707,7 +707,7 @@ def flash_stats(
         [stats[3], "EF"],
     )
     flash_assists = calc_stats(
-        kill_data.loc[kill_data["FlashThrowerTeam"] != kill_data["VictimTeam"]],
+        kill_data.loc[kill_data["flashThrowerTeam"] != kill_data["victimTeam"]],
         kill_filters,
         [stats[1]],
         [stats[1]],
@@ -715,15 +715,15 @@ def flash_stats(
         [stats[3], "FA"],
     )
     blind_time = calc_stats(
-        flash_data.loc[flash_data["AttackerTeam"] != flash_data["PlayerTeam"]],
+        flash_data.loc[flash_data["attackerTeam"] != flash_data["playerTeam"]],
         flash_filters,
         [stats[0]],
-        ["FlashDuration"],
+        ["flashDuration"],
         [["sum"]],
         [stats[3], "EBT"],
     )
     team_flashes = calc_stats(
-        flash_data.loc[flash_data["AttackerTeam"] == flash_data["PlayerTeam"]],
+        flash_data.loc[flash_data["attackerTeam"] == flash_data["playerTeam"]],
         flash_filters,
         [stats[0]],
         [stats[0]],
@@ -731,7 +731,7 @@ def flash_stats(
         [stats[3], "TF"],
     )
     flashes_thrown = calc_stats(
-        grenade_data.loc[grenade_data["GrenadeType"] == "Flashbang"],
+        grenade_data.loc[grenade_data["grenadeType"] == "Flashbang"],
         flash_filters,
         [stats[2]],
         [stats[2]],
@@ -762,47 +762,47 @@ def bomb_stats(
             dataframe represented by bomb_data to filter the bomb data by and
             the values are lists that contain the column filters.
     """
-    team_one = bomb_data["PlayerTeam"].unique()[0]
-    team_two = bomb_data["PlayerTeam"].unique()[1]
+    team_one = bomb_data["playerTeam"].unique()[0]
+    team_two = bomb_data["playerTeam"].unique()[1]
     team_one_plants = calc_stats(
         bomb_data.loc[
-            (bomb_data["BombAction"] == "plant") & (bomb_data["PlayerTeam"] == team_one)
+            (bomb_data["bombAction"] == "plant") & (bomb_data["playerTeam"] == team_one)
         ],
         bomb_filters,
-        ["BombSite"],
-        ["BombSite"],
+        ["bombSite"],
+        ["bombSite"],
         [["size"]],
         ["Bombsite", f"{team_one} Plants"],
     )
     team_two_plants = calc_stats(
         bomb_data.loc[
-            (bomb_data["BombAction"] == "plant") & (bomb_data["PlayerTeam"] == team_two)
+            (bomb_data["bombAction"] == "plant") & (bomb_data["playerTeam"] == team_two)
         ],
         bomb_filters,
-        ["BombSite"],
-        ["BombSite"],
+        ["bombSite"],
+        ["bombSite"],
         [["size"]],
         ["Bombsite", f"{team_two} Plants"],
     )
     team_one_defuses = calc_stats(
         bomb_data.loc[
-            (bomb_data["BombAction"] == "defuse")
-            & (bomb_data["PlayerTeam"] == team_one)
+            (bomb_data["bombAction"] == "defuse")
+            & (bomb_data["playerTeam"] == team_one)
         ],
         bomb_filters,
-        ["BombSite"],
-        ["BombSite"],
+        ["bombSite"],
+        ["bombSite"],
         [["size"]],
         ["Bombsite", f"{team_one} Defuses"],
     )
     team_two_defuses = calc_stats(
         bomb_data.loc[
-            (bomb_data["BombAction"] == "defuse")
-            & (bomb_data["PlayerTeam"] == team_two)
+            (bomb_data["bombAction"] == "defuse")
+            & (bomb_data["playerTeam"] == team_two)
         ],
         bomb_filters,
-        ["BombSite"],
-        ["BombSite"],
+        ["bombSite"],
+        ["bombSite"],
         [["size"]],
         ["Bombsite", f"{team_two} Defuses"],
     )
@@ -850,8 +850,8 @@ def econ_stats(
     ct_stats = calc_stats(
         round_data,
         round_filters,
-        ["CTTeam"],
-        ["CTStartEqVal", "CTRoundStartMoney", "CTSpend"],
+        ["ctTeam"],
+        ["ctStartEqVal", "ctRoundStartMoney", "ctSpend"],
         [["mean"], ["mean"], ["mean"]],
         ["Side", "Avg EQ Value", "Avg Cash", "Avg Spend"],
     )
@@ -859,8 +859,8 @@ def econ_stats(
     ct_buys = calc_stats(
         round_data,
         round_filters,
-        ["CTTeam", "CTBuyType"],
-        ["CTBuyType"],
+        ["ctTeam", "ctBuyType"],
+        ["ctBuyType"],
         [["size"]],
         ["Side", "Buy Type", "Counts"],
     )
@@ -871,8 +871,8 @@ def econ_stats(
     t_stats = calc_stats(
         round_data,
         round_filters,
-        ["TTeam"],
-        ["TStartEqVal", "TRoundStartMoney", "TSpend"],
+        ["tTeam"],
+        ["tStartEqVal", "tRoundStartMoney", "tSpend"],
         [["mean"], ["mean"], ["mean"]],
         ["Side", "Avg EQ Value", "Avg Cash", "Avg Spend"],
     )
@@ -880,8 +880,8 @@ def econ_stats(
     t_buys = calc_stats(
         round_data,
         round_filters,
-        ["TTeam", "TBuyType"],
-        ["TBuyType"],
+        ["tTeam", "tBuyType"],
+        ["tBuyType"],
         [["size"]],
         ["Side", "Buy Type", "Counts"],
     )
@@ -944,14 +944,14 @@ def kill_breakdown(
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
     """
-    stats = ["AttackerName", "Player"]
+    stats = ["attackerName", "player"]
     if team:
-        stats = ["AttackerTeam", "Team"]
+        stats = ["attackerTeam", "team"]
     kill_breakdown = kill_data.loc[
-        kill_data["AttackerTeam"] != kill_data["VictimTeam"]
+        kill_data["attackerTeam"] != kill_data["victimTeam"]
     ].copy()
     kill_breakdown["Kills Type"] = kill_breakdown.apply(
-        lambda row: weapon_type(row["Weapon"]), axis=1
+        lambda row: weapon_type(row["weapon"]), axis=1
     )
     kill_breakdown = calc_stats(
         kill_breakdown,
@@ -1023,32 +1023,32 @@ def util_dmg_breakdown(
             dataframe represented by grenade_data to filter the grenade data by
             and the values are lists that contain the column filters.
     """
-    stats = ["AttackerName", "ThrowerName", "Player"]
+    stats = ["attackerName", "throwerName", "player"]
     if team:
-        stats = ["AttackerTeam", "ThrowerTeam", "Team"]
+        stats = ["attackerTeam", "throwerTeam", "team"]
     util_dmg = calc_stats(
         damage_data.loc[
-            (damage_data["AttackerTeam"] != damage_data["VictimTeam"])
+            (damage_data["attackerTeam"] != damage_data["victimTeam"])
             & (
-                damage_data["Weapon"].isin(
+                damage_data["weapon"].isin(
                     ["HE Grenade", "Incendiary Grenade", "Molotov"]
                 )
             )
         ],
         damage_filters,
-        [stats[0], "Weapon"],
-        ["HpDamageTaken", "HpDamage"],
+        [stats[0], "weapon"],
+        ["hpDamageTaken", "hpDamage"],
         [["sum"], ["sum"]],
         [stats[2], "Nade Type", "Given UD", "UD"],
     )
     nades_thrown = calc_stats(
         grenade_data.loc[
-            grenade_data["GrenadeType"].isin(
+            grenade_data["grenadeType"].isin(
                 ["HE Grenade", "Incendiary Grenade", "Molotov"]
             )
         ],
         grenade_filters,
-        [stats[1], "GrenadeType"],
+        [stats[1], "grenadeType"],
         [stats[1]],
         [["size"]],
         [stats[2], "Nade Type", "Nades Thrown"],
@@ -1090,8 +1090,8 @@ def win_breakdown(
     win_breakdown = calc_stats(
         round_data_copy,
         round_filters,
-        ["WinningTeam", "RoundEndReason"],
-        ["RoundEndReason"],
+        ["winningTeam", "roundEndReason"],
+        ["roundEndReason"],
         [["size"]],
         ["Team", "RoundEndReason", "Count"],
     )
