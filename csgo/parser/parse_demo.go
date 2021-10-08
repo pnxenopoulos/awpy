@@ -138,8 +138,8 @@ type GameRound struct {
 type GrenadeAction struct {
 	ThrowTick       int64   `json:"throwTick"`
 	DestroyTick     int64   `json:"destroyTick"`
-	ThrowSecond     float64 `json:"throwSecond"`
-	DestroySecond   float64 `json:"destroySecond"`
+	ThrowSecond     float64 `json:"throwSeconds"`
+	DestroySecond   float64 `json:"destroySeconds"`
 	ThrowerSteamID  int64   `json:"throwerSteamID"`
 	ThrowerName     string  `json:"throwerName"`
 	ThrowerTeam     string  `json:"throwerTeam"`
@@ -161,7 +161,7 @@ type GrenadeAction struct {
 // BombAction events
 type BombAction struct {
 	Tick          int64   `json:"tick"`
-	Second        float64 `json:"second"`
+	Second        float64 `json:"seconds"`
 	PlayerSteamID int64   `json:"playerSteamID"`
 	PlayerName    string  `json:"playerName"`
 	PlayerTeam    string  `json:"playerTeam"`
@@ -175,7 +175,7 @@ type BombAction struct {
 // DamageAction events
 type DamageAction struct {
 	Tick             int64    `json:"tick"`
-	Second           float64  `json:"second"`
+	Second           float64  `json:"seconds"`
 	AttackerSteamID  *int64   `json:"attackerSteamID"`
 	AttackerName     *string  `json:"attackerName"`
 	AttackerTeam     *string  `json:"attackerTeam"`
@@ -210,7 +210,7 @@ type DamageAction struct {
 // KillAction events
 type KillAction struct {
 	Tick                int64    `json:"tick"`
-	Second              float64  `json:"second"`
+	Second              float64  `json:"seconds"`
 	AttackerSteamID     *int64   `json:"attackerSteamID"`
 	AttackerName        *string  `json:"attackerName"`
 	AttackerTeam        *string  `json:"attackerTeam"`
@@ -262,7 +262,7 @@ type KillAction struct {
 // WeaponFireAction events
 type WeaponFireAction struct {
 	Tick           int64   `json:"tick"`
-	Second         float64 `json:"second"`
+	Second         float64 `json:"seconds"`
 	PlayerSteamID  int64   `json:"playerSteamID"`
 	PlayerName     string  `json:"playerName"`
 	PlayerTeam     string  `json:"playerTeam"`
@@ -281,7 +281,7 @@ type WeaponFireAction struct {
 // FlashAction events
 type FlashAction struct {
 	Tick             int64    `json:"tick"`
-	Second           float64  `json:"second"`
+	Second           float64  `json:"seconds"`
 	AttackerSteamID  int64    `json:"attackerSteamID"`
 	AttackerName     string   `json:"attackerName"`
 	AttackerTeam     string   `json:"attackerTeam"`

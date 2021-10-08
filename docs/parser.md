@@ -144,7 +144,7 @@ The `gameRounds` top-level key is the meat of the parser. This is where all play
 ```
 {
     'tick': 74156, 
-    'second': 52.9140625, 
+    'seconds': 52.9140625, 
     'attackerSteamID': 76561197999004010, 
     'attackerName': 'Stewie2K', 
     'attackerTeam': 'Team Liquid', 
@@ -198,7 +198,7 @@ The `gameRounds` top-level key is the meat of the parser. This is where all play
 ```
 {
     'tick': 72762, 
-    'second': 42.0234375, 
+    'seconds': 42.0234375, 
     'attackerSteamID': 76561198010511021, 
     'attackerName': 'gla1ve', 
     'attackerTeam': 'Astralis', 
@@ -235,9 +235,9 @@ The `gameRounds` top-level key is the meat of the parser. This is where all play
 ```
 {
     'throwTick': 68455, 
-    'destroyTick': 71116, // This is when the grenade is destroyed (i.e., it explodes, blooms, etc.) 
-    'throwSecond': 8.375, 
-    'destroySecond': 29.1640625, 
+    'destroyTick': 71116, // This is when the grenade is destroyed
+    'throwSeconds': 8.375, 
+    'destroySeconds': 29.1640625, 
     'throwerSteamID': 76561197999004010, 
     'throwerName': 'Stewie2K', 
     'throwerTeam': 'Team Liquid', 
@@ -261,7 +261,7 @@ The `gameRounds` top-level key is the meat of the parser. This is where all play
 ```
 {
     'tick': 81550, 
-    'second': 110.6796875, 
+    'seconds': 110.6796875, 
     'playerSteamID': 76561197990682262, 
     'playerName': 'Xyp9x', 
     'playerTeam': 'Astralis', 
@@ -277,7 +277,7 @@ The `gameRounds` top-level key is the meat of the parser. This is where all play
 ```
 {
     'tick': 73475, 
-    'second': 47.59375, 
+    'seconds': 47.59375, 
     'attackerSteamID': 76561197983956651, 
     'attackerName': 'Magisk', 
     'attackerTeam': 'Astralis', 
