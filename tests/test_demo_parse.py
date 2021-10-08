@@ -260,12 +260,15 @@ class TestDemoParser:
             if self.demo_data[demo]["useForTests"]:
                 for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
                     if i in self.demo_data[demo]["useableRounds"]:
-                        for e in r["kills"]:
-                            assert e["seconds"] >= 0
-                        for e in r["damages"]:
-                            assert e["seconds"] >= 0
-                        for e in r["bombEvents"]:
-                            assert e["seconds"] >= 0
+                        if r["kills"]:
+                            for e in r["kills"]:
+                                assert e["seconds"] >= 0
+                        if r["damages"]:
+                            for e in r["damages"]:
+                                assert e["seconds"] >= 0
+                        if r["bombEvents"]:
+                            for e in r["bombEvents"]:
+                                assert e["seconds"] >= 0
 
     def test_parsed_opts(self):
         for demo in self.demo_data:
