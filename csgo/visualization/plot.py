@@ -9,6 +9,7 @@ import matplotlib.image as mpimg
 
 from csgo import MAP_DATA
 
+path = os.path.join(os.path.dirname(__file__), "")
 
 def plot_map(map_name="de_dust2", type="original", dark=False):
     """Plots the map"""
