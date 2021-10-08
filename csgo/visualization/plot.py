@@ -9,17 +9,15 @@ import matplotlib.image as mpimg
 
 from csgo import MAP_DATA
 
-path = os.path.join(os.path.dirname(__file__), "")
-
 def plot_map(map_name="de_dust2", type="original", dark=False):
     """Plots the map"""
     if type == "original":
-        map_bg = mpimg.imread("""../data/map/{0}.png""".format(map_name))
+        map_bg = mpimg.imread(os.path.join(os.path.dirname(__file__), "") + """../data/map/{0}.png""".format(map_name))
     else:
         col = "light"
         if dark:
             col = "dark"
-        map_bg = mpimg.imread("""../data/map/{0}_{1}.png""".format(map_name, col))
+        map_bg = mpimg.imread(os.path.join(os.path.dirname(__file__), "") + """../data/map/{0}_{1}.png""".format(map_name, col))
     fig, ax = plt.subplots()
     ax.imshow(map_bg, zorder=0)
     return fig, ax
