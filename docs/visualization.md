@@ -4,8 +4,11 @@
 ###### Table of Contents
 
 [Transforming Coordinates](#transforming-coordinates)
+
 [Displaying the Map](#map-display)
+
 [Animated Trajectories](#animated-trajectories)
+
 [Nade Maps](#nade-maps)
 
 ##### Transforming Coordinates
