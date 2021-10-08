@@ -9,9 +9,9 @@ import matplotlib.image as mpimg
 
 from csgo import MAP_DATA
 
-def plot_map(map_name="de_dust2", type="original", dark=False):
+def plot_map(map_name="de_dust2", map_type="original", dark=False):
     """Plots the map"""
-    if type == "original":
+    if map_type == "original":
         map_bg = mpimg.imread(os.path.join(os.path.dirname(__file__), "") + """../data/map/{0}.png""".format(map_name))
     else:
         col = "light"
@@ -48,12 +48,12 @@ def plot_positions(
     colors=[],
     markers=[],
     map_name="de_ancient",
-    type="original",
+    map_type="original",
     dark=False,
     apply_transformation=False,
 ):
     """Plots positions"""
-    f, a = plot_map(map_name=map_name, type=type, dark=dark)
+    f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for p, c, m in zip(positions, colors, markers):
         if apply_transformation:
             a.scatter(
@@ -69,11 +69,11 @@ def plot_positions(
     return f, a
 
 
-def plot_round(filename, frames, map_name="de_ancient", type="original", dark=False):
+def plot_round(filename, frames, map_name="de_ancient", map_type="original", dark=False):
     """Creates gif from frame. Writes to filename"""
     if os.path.isdir("csgo_tmp"):
-        shutil.rmtree("tmp/")
-    os.mkdir("tmp")
+        shutil.rmtree("csgo_tmp/")
+    os.mkdir("csgo_tmp")
     image_files = []
     for i, f in tqdm(enumerate(frames)):
         positions = []
@@ -99,7 +99,7 @@ def plot_round(filename, frames, map_name="de_ancient", type="original", dark=Fa
             colors=colors,
             markers=markers,
             map_name=map_name,
-            type=type,
+            map_type=map_type,
             dark=dark,
         )
         image_files.append("csgo_tmp/{}.png".format(i))
@@ -114,10 +114,10 @@ def plot_round(filename, frames, map_name="de_ancient", type="original", dark=Fa
 
 
 def plot_nades(
-    rounds, nades=[], side="CT", map_name="de_ancient", type="original", dark=False
+    rounds, nades=[], side="CT", map_name="de_ancient", map_type="original", dark=False
 ):
     """Plot grenades"""
-    f, a = plot_map(map_name=map_name, type=type, dark=dark)
+    f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for r in rounds:
         if r["grenades"]:
             for g in r["grenades"]:
