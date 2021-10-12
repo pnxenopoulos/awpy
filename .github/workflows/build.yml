@@ -4,7 +4,7 @@ name: build
 
 on:
   push:
-    branches: [main]
+    branches: [main, gh-workflows-build]
   pull_request:
     branches: [main]
 
