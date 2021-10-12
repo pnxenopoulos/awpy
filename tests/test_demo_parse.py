@@ -13,16 +13,17 @@ class TestDemoParser:
     """
 
     def setup_class(self):
-        """Setup class by defining the base parser, demofile list, demofile to use for specific tests"""
-        self.parser = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=True,
-            demo_id="test",
-            parse_rate=256,
-        )
-
+        """Setup class by defining loading dictionary of test demo files"""
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
+        for file in self.demo_data:
+            if self.demo_data[file]:
+                self._get_demofile(self.demo_data[file]["url"], file)
+        self.parser = DemoParser(
+            demofile="default.dem",
+            log=True,
+            parse_rate=256
+        )
 
     def teardown_class(self):
         """Set parser to none, deletes all demofiles and JSON"""
@@ -49,29 +50,25 @@ class TestDemoParser:
     def test_demo_id_inferred(self):
         """Tests if a demo_id is correctly inferred"""
         self.parser_inferred = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="default.dem",
             log=False,
         )
-        assert self.parser_inferred.demo_id == "og-vs-natus-vincere-m1-dust2"
-
-    def test_demo_id_inferred_space(self):
-        """Tests if a demo_id is correctly inferred"""
-        self.parser_inferred_space = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            demo_id="",
-            log=False,
-        )
-        assert self.parser_inferred_space.demo_id == "og-vs-natus-vincere-m1-dust2"
+        assert self.parser_inferred.demo_id == "default"
 
     def test_outpath(self):
         """Tests if the outpath is correctly recorded"""
         self.parser_outpath = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem", log=False, outpath="."
+            demofile="default.dem", log=False, outpath="."
         )
         assert self.parser_outpath.outpath == os.getcwd()
 
     def test_demo_id_given(self):
-        """Tests if a demo_id is correctly inferred"""
+        """Tests if a demo_id is correctly set"""
+        self.parser_inferred = DemoParser(
+            demofile="default.dem",
+            demo_id="test",
+            log=False,
+        )
         assert self.parser.demo_id == "test"
 
     def test_wrong_demo_path(self):
@@ -84,54 +81,35 @@ class TestDemoParser:
                 parse_rate=128,
             )
 
-    def test_parse_rate_negative(self):
+    def test_parse_rate(self):
         """Tests if bad parse rates fail"""
-        self.parser_bad_parse_rate = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+        self.parser_neg_parse_rate = DemoParser(
+            demofile="default.dem",
             log=False,
             demo_id="test",
             parse_rate=-1,
         )
-        assert self.parser_bad_parse_rate.parse_rate == 128
-
-    def test_parse_rate_float(self):
-        """Tests if bad parse rates fail"""
-        self.parser_bad_parse_rate = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+        assert self.parser_neg_parse_rate.parse_rate == 128
+        self.parser_float_parse_rate = DemoParser(
+            demofile="default.dem",
             log=False,
             demo_id="test",
             parse_rate=64.5,
         )
-        assert self.parser_bad_parse_rate.parse_rate == 128
-
-    def test_parse_rate_one(self):
-        """Tests if parse rate can be set to 1"""
-        self.parser_diff_parse_rate = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
-            log=False,
-            demo_id="test",
-            parse_rate=1,
-        )
-        assert self.parser_diff_parse_rate.parse_rate == 1
-
-    def test_parse_rate_good(self):
-        """Tests if good parse rates are set"""
-        self.parser_diff_parse_rate = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+        assert self.parser_float_parse_rate.parse_rate == 128   
+        self.parser_good_parse_rate = DemoParser(
+            demofile="default.dem",
             log=False,
             demo_id="test",
             parse_rate=16,
         )
-        assert self.parser_diff_parse_rate.parse_rate == 16
-
-    def test_parse_rate_inferred(self):
-        """Tests if good parse rates are set"""
+        assert self.parser_good_parse_rate.parse_rate == 16   
         self.parser_inferred_parse_rate = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="default.dem",
             log=False,
             demo_id="test",
         )
-        assert self.parser_inferred_parse_rate.parse_rate == 128
+        assert self.parser_inferred_parse_rate.parse_rate == 128  
 
     def test_logger_set(self):
         """Tests if log file is created"""
@@ -141,7 +119,7 @@ class TestDemoParser:
     def test_parse_opts(self):
         """Tests parsing options"""
         self.parser_opts = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+            demofile="default.dem",
             log=False,
             demo_id="test",
             trade_time=7,
@@ -151,155 +129,65 @@ class TestDemoParser:
         assert self.parser_opts.buy_style == "hltv"
         assert self.parser_opts.dmg_rolled == False
         assert self.parser_opts.parse_frames == True
-
-    def test_bad_parse_opts(self):
-        """Tests bad parsing options"""
-        self.parser_opts = DemoParser(
-            demofile="tests/og-vs-natus-vincere-m1-dust2.dem",
+        self.bad_parser_opts = DemoParser(
+            demofile="default.dem",
             log=False,
             demo_id="test",
             trade_time=-2,
             buy_style="test",
         )
-        assert self.parser_opts.trade_time == 5
-        assert self.parser_opts.buy_style == "hltv"
+        assert self.bad_parser_opts.trade_time == 5
+        assert self.bad_parser_opts.buy_style == "hltv"    
 
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
         assert type(output_json) is dict
-        assert os.path.exists("test.json")
-        assert self.parser.output_file == "test.json"
+        assert os.path.exists("default.json")
+        assert self.parser.output_file == "default.json"
 
-    def test_parse(self):
-        parse_errors = 0
-        for file in self.demo_data:
-            if self.demo_data[file]["useForTests"]:
-                self._get_demofile(self.demo_data[file]["url"], file)
-                self.parser = DemoParser(
-                    demofile=file + ".dem",
-                    log=True,
-                    demo_id=file,
-                    parse_rate=256,
-                )
-                self.parser.parse()
-                if self.parser.parse_error == True:
-                    # If error, count it
-                    parse_errors += 1
-                else:
-                    # If not, then add the JSON
-                    with open(file + ".json") as f:
-                        self.demo_data[file]["json"] = json.load(f)
-                self._delete_demofile(file)
-        assert parse_errors == 0
+    def test_unexpected_end(self):
+        """Tests if the unexpected end demo fails"""
+        with pytest.raises(FileNotFoundError):
+            self.parser_unexpected = DemoParser(
+                demofile="unexpected_end_of_demo.dem",
+                log=False,
+                parse_rate=256,
+            )
 
-    def test_parsed_metadata(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                if self.demo_data[demo]["tickrate"]["test"]:
-                    assert (
-                        self.demo_data[demo]["tickrate"]["value"]
-                        == self.demo_data[demo]["json"]["tickRate"]
-                    )
+    def test_parse_valve_matchmaking(self):
+        """Tests if demos parse correctly"""
+        self.valve_mm = DemoParser(demofile="valve_matchmaking.dem", log=False, parse_rate=256)
+        self.valve_mm_data = self.valve_mm.parse()
+        assert len(self.valve_mm_data['gameRounds']) == 26
 
-    def test_round_ticks(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for r in self.demo_data[demo]["json"]["gameRounds"]:
-                    if not r["isWarmup"] and r["roundEndReason"] != "":
-                        assert r["startTick"] <= r["freezeTimeEndTick"]
-                        assert r["freezeTimeEndTick"] <= r["endTick"]
-                        assert r["endTick"] <= r["endOfficialTick"]
+    def test_ot_demos(self):
+        """Test overtime demos"""
+        self.esea_ot = DemoParser(demofile="esea_mdl_ot.dem", log=False, parse_rate=256)
+        self.esea_ot_data = self.esea_ot.parse()
+        self.faceit_ot = DemoParser(demofile="faceit_mdl_ot.dem", log=False, parse_rate=256)
+        self.faceit_ot_data = self.faceit_ot.parse()
+        assert len(self.esea_ot_data['gameRounds']) > 30
+        assert len(self.faceit_ot_data['gameRounds']) > 30
 
-    def test_round_winners(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if not r["isWarmup"] and r["roundEndReason"] != "":
-                        if i in self.demo_data[demo]["useableRounds"]:
-                            if r["winningSide"] == "CT":
-                                assert r["winningTeam"] == r["ctTeam"]
-                            else:
-                                assert r["winningTeam"] == r["tTeam"]
-
-    def test_eq_val(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if not r["isWarmup"]:
-                        if i in self.demo_data[demo]["useableRounds"]:
-                            assert (
-                                r["ctStartEqVal"]
-                                <= r["ctRoundStartEqVal"] + r["ctRoundStartMoney"]
-                            )
-                            assert (
-                                r["tStartEqVal"]
-                                <= r["tRoundStartEqVal"] + r["tRoundStartMoney"]
-                            )
-
-    def test_kill_distances(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if i in self.demo_data[demo]["useableRounds"]:
-                        for k in r["kills"]:
-                            if not k["isSuicide"]:
-                                assert k["distance"] > 0
-
-    def test_damage_amounts(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if i in self.demo_data[demo]["useableRounds"]:
-                        for d in r["damages"]:
-                            assert d["hpDamage"] >= d["hpDamageTaken"]
-                            assert d["armorDamage"] >= d["armorDamageTaken"]
-
-    def test_seconds_parsing(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if i in self.demo_data[demo]["useableRounds"]:
-                        if r["kills"]:
-                            for e in r["kills"]:
-                                assert e["seconds"] >= 0
-                        if r["damages"]:
-                            for e in r["damages"]:
-                                assert e["seconds"] >= 0
-                        if r["bombEvents"]:
-                            for e in r["bombEvents"]:
-                                assert e["seconds"] >= 0
-
-    def test_parsed_opts(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                assert (
-                    self.demo_data[demo]["json"]["parserParameters"]["damagesRolledUp"]
-                    == False
-                )
-                assert (
-                    self.demo_data[demo]["json"]["parserParameters"]["tradeTime"] == 5
-                )
-                assert (
-                    self.demo_data[demo]["json"]["parserParameters"]["roundBuyStyle"]
-                    == "hltv"
-                )
-                assert (
-                    self.demo_data[demo]["json"]["parserParameters"]["parseRate"] == 256
-                )
-
-    def test_frames(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if i in self.demo_data[demo]["useableRounds"]:
-                        assert len(r["frames"]) > 0
-
-    def test_player_counts(self):
-        for demo in self.demo_data:
-            if self.demo_data[demo]["useForTests"]:
-                for i, r in enumerate(self.demo_data[demo]["json"]["gameRounds"]):
-                    if i in self.demo_data[demo]["useableRounds"]:
-                        for f in r["frames"]:
-                            assert len(f["t"]["players"]) == 5
-                            assert len(f["ct"]["players"]) == 5
+    def test_default_parse(self):
+        """Tests default parse"""
+        self.default_data = self.parser.parse()
+        assert self.default_data['mapName'] == 'de_cache'
+        assert self.default_data['tickRate'] == 128
+        assert self.default_data['clientName'] == 'GOTV Demo'
+        assert len(self.default_data['gameRounds']) == 33
+        assert (
+            self.default_data["parserParameters"]["damagesRolledUp"]
+            == False
+        )
+        assert (
+            self.default_data["parserParameters"]["tradeTime"] == 5
+        )
+        assert (
+            self.default_data["parserParameters"]["roundBuyStyle"]
+            == "hltv"
+        )
+        assert (
+            self.default_data["parserParameters"]["parseRate"] == 256
+        )
