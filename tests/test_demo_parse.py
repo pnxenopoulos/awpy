@@ -37,12 +37,14 @@ class TestDemoParser:
             for f in filtered_files:
                 os.remove(f)
 
-    def _get_demofile(self, demo_link, demo_name):
+    @staticmethod
+    def _get_demofile(demo_link, demo_name):
         print("Requesting " + demo_link)
         r = requests.get(demo_link)
         open(demo_name + ".dem", "wb").write(r.content)
 
-    def _delete_demofile(self, demo_name):
+    @staticmethod
+    def _delete_demofile(demo_name):
         print("Removing " + demo_name)
         os.remove(demo_name + ".dem")
 
