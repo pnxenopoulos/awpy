@@ -1,5 +1,6 @@
 import json
 import os
+import requests
 import pytest
 import pandas as pd
 
