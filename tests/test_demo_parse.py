@@ -17,8 +17,7 @@ class TestDemoParser:
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
         for file in self.demo_data:
-            if self.demo_data[file]:
-                self._get_demofile(self.demo_data[file]["url"], file)
+            self._get_demofile(demo_link=self.demo_data[file]["url"], demo_name=file)
         self.parser = DemoParser(
             demofile="default.dem",
             log=True,
