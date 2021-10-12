@@ -1,3 +1,4 @@
+import json
 import os
 import pytest
 import pandas as pd
@@ -14,11 +15,13 @@ class TestStates:
 
     def setup_class(self):
         """Setup class by instantiating parser"""
+        with open("tests/test_data.json") as f:
+            self.demo_data = json.load(f)
+        self._get_demofile(demo_link=self.demo_data["default"]["url"], demo_name="default")
         self.parser = DemoParser(
             demofile="default.dem",
             log=True,
-            demo_id="test",
-            parse_rate=256,
+            parse_rate=256
         )
         self.data = self.parser.parse()
 

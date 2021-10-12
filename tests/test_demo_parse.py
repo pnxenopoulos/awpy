@@ -154,8 +154,8 @@ class TestDemoParser:
             log=False,
             parse_rate=256,
         )
+        with pytest.raises(FileNotFoundError):
         d = self.parser_unexpected.parse()
-        assert self.parser_unexpected.parse_error
 
     def test_parse_valve_matchmaking(self):
         """Tests if demos parse correctly"""
