@@ -161,13 +161,10 @@ class TestDemoParser:
 
     def test_ot_demos(self):
         """Test overtime demos"""
-        self.esea_ot = DemoParser(demofile="esea_mdl_ot.dem", log=False, parse_rate=256)
-        self.esea_ot_data = self.esea_ot.parse()
         self.faceit_ot = DemoParser(
-            demofile="faceit_mdl_ot.dem", log=False, parse_rate=256
+            demofile="faceit_ecs_ot.dem", log=False, parse_rate=256
         )
         self.faceit_ot_data = self.faceit_ot.parse()
-        assert len(self.esea_ot_data["gameRounds"]) > 30
         assert len(self.faceit_ot_data["gameRounds"]) > 30
 
     def test_default_parse(self):

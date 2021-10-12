@@ -27,6 +27,26 @@ class TestStates:
         """Set parser to none"""
         self.parser = None
         self.data = None
+        files_in_directory = os.listdir()
+        filtered_files = [
+            file
+            for file in files_in_directory
+            if file.endswith(".dem") or file.endswith(".json")
+        ]
+        if len(filtered_files) > 0:
+            for f in filtered_files:
+                os.remove(f)
+
+    @staticmethod
+    def _get_demofile(demo_link, demo_name):
+        print("Requesting " + demo_link)
+        r = requests.get(demo_link)
+        open(demo_name + ".dem", "wb").write(r.content)
+
+    @staticmethod
+    def _delete_demofile(demo_name):
+        print("Removing " + demo_name)
+        os.remove(demo_name + ".dem")
 
     def test_wrong_frame_input(self):
         """Tests that wrong frame type raises error"""
