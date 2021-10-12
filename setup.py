@@ -13,7 +13,7 @@ setup(
         "matplotlib>=3.1.2",
         "textdistance>=4.2.0",
         "imageio>=2.9.0",
-        "tqdm>=4.55.2"
+        "tqdm>=4.55.2",
     ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
@@ -33,7 +33,7 @@ setup(
     author_email="xenopoulos@nyu.edu",
     description="Counter-Strike: Global Offensive data parsing, analysis and visualization functions",
     keywords="esports sports-analytics csgo counter-strike",
-    url="https://github.com/pnxenopoulos/csgo", 
+    url="https://github.com/pnxenopoulos/csgo",
     project_urls={
         "Issues": "https://github.com/pnxenopoulos/csgo/issues",
         "Documentation": "https://github.com/pnxenopoulos/csgo/tree/main/docs",
