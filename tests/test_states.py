@@ -17,12 +17,10 @@ class TestStates:
         """Setup class by instantiating parser"""
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
-        self._get_demofile(demo_link=self.demo_data["default"]["url"], demo_name="default")
-        self.parser = DemoParser(
-            demofile="default.dem",
-            log=True,
-            parse_rate=256
+        self._get_demofile(
+            demo_link=self.demo_data["default"]["url"], demo_name="default"
         )
+        self.parser = DemoParser(demofile="default.dem", log=True, parse_rate=256)
         self.data = self.parser.parse()
 
     def teardown_class(self):

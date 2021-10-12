@@ -18,11 +18,7 @@ class TestDemoParser:
             self.demo_data = json.load(f)
         for file in self.demo_data:
             self._get_demofile(demo_link=self.demo_data[file]["url"], demo_name=file)
-        self.parser = DemoParser(
-            demofile="default.dem",
-            log=True,
-            parse_rate=256
-        )
+        self.parser = DemoParser(demofile="default.dem", log=True, parse_rate=256)
 
     def teardown_class(self):
         """Set parser to none, deletes all demofiles and JSON"""
@@ -58,9 +54,7 @@ class TestDemoParser:
 
     def test_outpath(self):
         """Tests if the outpath is correctly recorded"""
-        self.parser_outpath = DemoParser(
-            demofile="default.dem", log=False, outpath="."
-        )
+        self.parser_outpath = DemoParser(demofile="default.dem", log=False, outpath=".")
         assert self.parser_outpath.outpath == os.getcwd()
 
     def test_demo_id_given(self):
@@ -97,20 +91,20 @@ class TestDemoParser:
             demo_id="test",
             parse_rate=64.5,
         )
-        assert self.parser_float_parse_rate.parse_rate == 128   
+        assert self.parser_float_parse_rate.parse_rate == 128
         self.parser_good_parse_rate = DemoParser(
             demofile="default.dem",
             log=False,
             demo_id="test",
             parse_rate=16,
         )
-        assert self.parser_good_parse_rate.parse_rate == 16   
+        assert self.parser_good_parse_rate.parse_rate == 16
         self.parser_inferred_parse_rate = DemoParser(
             demofile="default.dem",
             log=False,
             demo_id="test",
         )
-        assert self.parser_inferred_parse_rate.parse_rate == 128  
+        assert self.parser_inferred_parse_rate.parse_rate == 128
 
     def test_logger_set(self):
         """Tests if log file is created"""
@@ -138,7 +132,7 @@ class TestDemoParser:
             buy_style="test",
         )
         assert self.bad_parser_opts.trade_time == 5
-        assert self.bad_parser_opts.buy_style == "hltv"    
+        assert self.bad_parser_opts.buy_style == "hltv"
 
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
@@ -155,41 +149,35 @@ class TestDemoParser:
             parse_rate=256,
         )
         with pytest.raises(FileNotFoundError):
-        d = self.parser_unexpected.parse()
+            d = self.parser_unexpected.parse()
 
     def test_parse_valve_matchmaking(self):
         """Tests if demos parse correctly"""
-        self.valve_mm = DemoParser(demofile="valve_matchmaking.dem", log=False, parse_rate=256)
+        self.valve_mm = DemoParser(
+            demofile="valve_matchmaking.dem", log=False, parse_rate=256
+        )
         self.valve_mm_data = self.valve_mm.parse()
-        assert len(self.valve_mm_data['gameRounds']) == 26
+        assert len(self.valve_mm_data["gameRounds"]) == 26
 
     def test_ot_demos(self):
         """Test overtime demos"""
         self.esea_ot = DemoParser(demofile="esea_mdl_ot.dem", log=False, parse_rate=256)
         self.esea_ot_data = self.esea_ot.parse()
-        self.faceit_ot = DemoParser(demofile="faceit_mdl_ot.dem", log=False, parse_rate=256)
+        self.faceit_ot = DemoParser(
+            demofile="faceit_mdl_ot.dem", log=False, parse_rate=256
+        )
         self.faceit_ot_data = self.faceit_ot.parse()
-        assert len(self.esea_ot_data['gameRounds']) > 30
-        assert len(self.faceit_ot_data['gameRounds']) > 30
+        assert len(self.esea_ot_data["gameRounds"]) > 30
+        assert len(self.faceit_ot_data["gameRounds"]) > 30
 
     def test_default_parse(self):
         """Tests default parse"""
         self.default_data = self.parser.parse()
-        assert self.default_data['mapName'] == 'de_cache'
-        assert self.default_data['tickRate'] == 128
-        assert self.default_data['clientName'] == 'GOTV Demo'
-        assert len(self.default_data['gameRounds']) == 33
-        assert (
-            self.default_data["parserParameters"]["damagesRolledUp"]
-            == False
-        )
-        assert (
-            self.default_data["parserParameters"]["tradeTime"] == 5
-        )
-        assert (
-            self.default_data["parserParameters"]["roundBuyStyle"]
-            == "hltv"
-        )
-        assert (
-            self.default_data["parserParameters"]["parseRate"] == 256
-        )
+        assert self.default_data["mapName"] == "de_cache"
+        assert self.default_data["tickRate"] == 128
+        assert self.default_data["clientName"] == "GOTV Demo"
+        assert len(self.default_data["gameRounds"]) == 33
+        assert self.default_data["parserParameters"]["damagesRolledUp"] == False
+        assert self.default_data["parserParameters"]["tradeTime"] == 5
+        assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
+        assert self.default_data["parserParameters"]["parseRate"] == 256
