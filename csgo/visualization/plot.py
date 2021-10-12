@@ -9,15 +9,22 @@ import matplotlib.image as mpimg
 
 from csgo import MAP_DATA
 
+
 def plot_map(map_name="de_dust2", map_type="original", dark=False):
     """Plots the map"""
     if map_type == "original":
-        map_bg = mpimg.imread(os.path.join(os.path.dirname(__file__), "") + """../data/map/{0}.png""".format(map_name))
+        map_bg = mpimg.imread(
+            os.path.join(os.path.dirname(__file__), "")
+            + """../data/map/{0}.png""".format(map_name)
+        )
     else:
         col = "light"
         if dark:
             col = "dark"
-        map_bg = mpimg.imread(os.path.join(os.path.dirname(__file__), "") + """../data/map/{0}_{1}.png""".format(map_name, col))
+        map_bg = mpimg.imread(
+            os.path.join(os.path.dirname(__file__), "")
+            + """../data/map/{0}_{1}.png""".format(map_name, col)
+        )
     fig, ax = plt.subplots()
     ax.imshow(map_bg, zorder=0)
     return fig, ax
@@ -69,7 +76,9 @@ def plot_positions(
     return f, a
 
 
-def plot_round(filename, frames, map_name="de_ancient", map_type="original", dark=False):
+def plot_round(
+    filename, frames, map_name="de_ancient", map_type="original", dark=False
+):
     """Creates gif from frame. Writes to filename"""
     if os.path.isdir("csgo_tmp"):
         shutil.rmtree("csgo_tmp/")

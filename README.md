@@ -1,4 +1,4 @@
-[![Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Build](https://img.shields.io/badge/build-passing-success)](https://github.com/pnxenopoulos/csgo) [![Docs](https://img.shields.io/badge/doc-Documentation-informational)](https://github.com/pnxenopoulos/csgo/tree/main/docs) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE) 
+[![Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Build](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://github.com/pnxenopoulos/csgo/tree/main/docs) [![GitHub issues](https://img.shields.io/github/issues/pnxenopoulos/csgo)](https://github.com/pnxenopoulos/csgo/issues) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE) 
 
 # Analyzing Counter-Strike: Global Offensive Data
 The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library, along with other resources for esports analytics.
@@ -64,6 +64,9 @@ Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive]
 Xenopoulos, Peter, et al. "[ggViz: Accelerating Large-Scale Esports Game Analysis](https://arxiv.org/pdf/2107.06495.pdf)."
 
 Xenopoulos, Peter, et al. "[Optimal Team Economic Decisions in Counter-Strike](https://arxiv.org/pdf/2109.12990)."
+
+## Contributing
+We welcome any contributions people would like to make. You can visit the issue page to see what issues are still open, or you can message on Discord. We will always have a need for writing tests and expanding functionality. We also see contributors as those who use the library to produce interesting content (such as tweets, analyses, papers, etc.)
 
 ## Structure
 This repository contains code for CSGO analysis. It is structured as follows:

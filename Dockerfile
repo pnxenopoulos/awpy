@@ -24,8 +24,5 @@ WORKDIR $LIB_HOME
 COPY . ./
 RUN pip3 install -r requirements.txt
 
-# Get file for local tests
-RUN wget https://storage.googleapis.com/csgo-tests/og-vs-natus-vincere-m1-dust2.dem -O tests/og-vs-natus-vincere-m1-dust2.dem
-
 # Run tests
 ENTRYPOINT ["./run_tests.sh"]
