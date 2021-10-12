@@ -70,7 +70,7 @@ class TestDemoParser:
             demo_id="test",
             log=False,
         )
-        assert self.parser.demo_id == "test"
+        assert self.parser_inferred.demo_id == "test"
 
     def test_wrong_demo_path(self):
         """Tests if failure on wrong demofile path"""
@@ -149,12 +149,13 @@ class TestDemoParser:
 
     def test_unexpected_end(self):
         """Tests if the unexpected end demo fails"""
-        with pytest.raises(FileNotFoundError):
-            self.parser_unexpected = DemoParser(
-                demofile="unexpected_end_of_demo.dem",
-                log=False,
-                parse_rate=256,
-            )
+        self.parser_unexpected = DemoParser(
+            demofile="unexpected_end_of_demo.dem",
+            log=False,
+            parse_rate=256,
+        )
+        d = self.parser_unexpected.parse()
+        assert self.parser_unexpected.parse_error
 
     def test_parse_valve_matchmaking(self):
         """Tests if demos parse correctly"""
