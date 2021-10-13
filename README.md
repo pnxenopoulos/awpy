@@ -4,11 +4,9 @@
 The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library, along with other resources for esports analytics. 
 
 ## Table of Contents
-[Setup](#setup)
+[Setup and Installation](#setup)
 
-[Example Code](#example-code)
-
-[Example Projects](#example-projects)
+[Example Code and Projects](#example-code)
 
 [Contributing](#contributing)
 
@@ -74,10 +72,12 @@ You can also visit [the documentation](https://github.com/pnxenopoulos/csgo/blob
 Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive](https://arxiv.org/pdf/2011.01324.pdf)." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
 
 ## Contributing
-We welcome any contributions people would like to make. You can visit the issue page to see what issues are still open, or you can message on Discord. We will always have a need for writing tests and expanding functionality. We also see contributors as those who use the library to produce interesting content (such as tweets, analyses, papers, etc.)
+We welcome any contributions from the community. You can visit the issue page to see what issues are still open, or you can message on Discord. We will always have a need for writing tests and expanding functionality. Currently, we are focused on refining our tests and on building more visualization functions. We also see contributors as those who use the library to produce interesting content (such as tweets, analyses, papers, etc.) -- you can see more examples of community content [here](https://github.com/pnxenopoulos/csgo/blob/main/docs/projects.md).
+
+When contributing code, be sure to lint your code using `black`, and to run the tests using `pytest`.
 
 ## Structure
-This repository contains code for CSGO analysis. It is structured as follows:
+This csgo Python library is structured as follows:
 
 ```
 .
