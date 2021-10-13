@@ -4,7 +4,7 @@
 ###### Table of Contents
 [Papers](#papers)
 
-[Visualizations](#visualizationa)
+[Visualizations](#visualizations)
 
 [Blog Posts](#blog-posts)
 
