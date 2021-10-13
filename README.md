@@ -19,6 +19,9 @@ The `csgo` package provides data parsing, analytics and visualization capabiliti
 #### Installation
 To install `csgo`, clone the repository by running `git clone https://github.com/pnxenopoulos/csgo`. Then, change directories to the newly cloned repository, and install the library by running `python setup.py install`. For more help, you can visit the installation channel in our Discord.
 
+#### Colab Notebook
+Do your work in Colab? No problem, the csgo Python library runs there, too. Check out how to [setup csgo Python library in Google Colab](https://colab.research.google.com/drive/1xiXeWHSAlqYNa-xjSK9B2xalvLMpIlJF?usp=sharing).
+
 ## Example Code
 Using the `csgo` package is straightforward. Just choose a demofile and have output in a JSON or Pandas DataFrame in a few seconds. Use the example below to get started.
 
