@@ -93,12 +93,7 @@ class DemoParser:
             parse_rate = 128
             self.parse_rate = parse_rate
 
-        if parse_rate == 1:
-            self.logger.warning(
-                "A parse rate of 1 will parse EVERY tick. This process will be very slow."
-            )
-            self.parse_rate = 1
-        elif parse_rate < 64 and parse_rate > 1:
+        if parse_rate < 64 and parse_rate > 1:
             self.logger.warning(
                 "A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos."
             )

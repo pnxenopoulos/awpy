@@ -1,7 +1,9 @@
 import json
 import os
+import pandas as pd
 import pytest
 import requests
+
 
 from csgo.parser import DemoParser
 
@@ -178,3 +180,21 @@ class TestDemoParser:
         assert self.default_data["parserParameters"]["tradeTime"] == 5
         assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
         assert self.default_data["parserParameters"]["parseRate"] == 256
+
+    def test_default_parse_df(self):
+        """Tests default parse to dataframe"""
+        self.default_data_df = self.parser.parse(return_type="df")
+        assert type(self.default_data_df["rounds"]) == pd.DataFrame
+        assert type(self.default_data_df["kills"]) == pd.DataFrame
+        assert type(self.default_data_df["damages"]) == pd.DataFrame
+        assert type(self.default_data_df["grenades"]) == pd.DataFrame
+        assert type(self.default_data_df["flashes"]) == pd.DataFrame
+        assert type(self.default_data_df["weaponFires"]) == pd.DataFrame
+        assert type(self.default_data_df["bombEvents"]) == pd.DataFrame
+        assert type(self.default_data_df["frames"]) == pd.DataFrame
+        assert type(self.default_data_df["playerFrames"]) == pd.DataFrame
+
+    def test_wrong_return_type(self):
+        """Tests if wrong return type errors out"""
+        with pytest.raises(ValueError):
+            d = self.parser.parse(return_type="i_am_wrong")
