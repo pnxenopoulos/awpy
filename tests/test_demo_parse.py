@@ -201,12 +201,13 @@ class TestDemoParser:
 
     def test_no_json(self):
         """Tests parsing with no json"""
+        self.parser_new = DemoParser(demofile="default.dem", log=False, parse_rate=256)
         with pytest.raises(AttributeError):
-            d = self.parser._parse_bomb_events()
-            d = self.parser._parse_flashes()
-            d = self.parser._parse_damages()
-            d = self.parser._parse_grenades()
-            d = self.parser._parse_kills()
-            d = self.parser._parse_frames()
-            d = self.parser._parse_player_frames()
-            d = self.parser._parse_weapon_fires()
+            d = self.parser_new._parse_bomb_events()
+            d = self.parser_new._parse_flashes()
+            d = self.parser_new._parse_damages()
+            d = self.parser_new._parse_grenades()
+            d = self.parser_new._parse_kills()
+            d = self.parser_new._parse_frames()
+            d = self.parser_new._parse_player_frames()
+            d = self.parser_new._parse_weapon_fires()
