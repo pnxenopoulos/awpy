@@ -7,21 +7,6 @@ import re
 import subprocess
 
 
-# class NpEncoder(json.JSONEncoder):
-#     """ Class to change numpy encodings for JSON file writing
-#     """
-
-#     def default(self, obj):
-#         if isinstance(obj, np.integer):
-#             return int(obj)
-#         elif isinstance(obj, np.floating):
-#             return float(obj)
-#         elif isinstance(obj, np.ndarray):
-#             return obj.tolist()
-#         else:
-#             return super(NpEncoder, self).default(obj)
-
-
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature. Stolen from https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python"""
 

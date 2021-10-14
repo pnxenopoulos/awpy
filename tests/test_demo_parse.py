@@ -201,7 +201,7 @@ class TestDemoParser:
 
     def test_no_json(self):
         """Tests parsing with no json"""
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(AttributeError):
             d = self.parser._parse_bomb_events()
             d = self.parser._parse_flashes()
             d = self.parser._parse_damages()

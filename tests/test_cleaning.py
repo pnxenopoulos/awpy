@@ -43,6 +43,13 @@ class TestCleaning:
         c = associate_entities(a, b, metric="jaro")
         assert c["misutaaa-"] == "misuta"
 
+    def test_difflib(self):
+        """Test difflib"""
+        a = ["misutaaa-", "ZyW0o//", "peeter"]
+        b = ["misuta", "Zywoo", "peter"]
+        c = associate_entities(a, b, metric="difflib")
+        assert c["misutaaa-"] == "misuta"
+
     def test_wrong_metric(self):
         """Tests if submitting a wrong metric raises an error."""
         a = ["misutaaa-", "ZyW0o//"]
