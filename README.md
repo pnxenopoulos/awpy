@@ -12,6 +12,8 @@ The `csgo` package provides data parsing, analytics and visualization capabiliti
 
 [Structure](#structure)
 
+[Acknowledgments](#acknowledgments)
+
 ## Setup
 #### Requirements
 `csgo` requires [Python](https://www.python.org/downloads/) >= 3.7 and [Golang](https://golang.org/dl/) >= 1.16. Python acts as a wrapper for the Go code which parses demofiles.
@@ -98,5 +100,7 @@ This csgo Python library is structured as follows:
 
 ## Acknowledgments
 This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) and [gonav](https://github.com/mrazza/gonav) packages. To fix errors brought about in the gonav package from Go 1.14, we provide an updated version in the [gonavparse](https://github.com/pnxenopoulos/csgonavparse).
+
+Big shoutout to [SimpleRadar](https://readtldr.gg/simpleradar?utm_source=github&utm_id=xenos-csgo-parser) for allowing use of their map images.
 
 Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage.
