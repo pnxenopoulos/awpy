@@ -198,3 +198,15 @@ class TestDemoParser:
         """Tests if wrong return type errors out"""
         with pytest.raises(ValueError):
             d = self.parser.parse(return_type="i_am_wrong")
+
+    def test_no_json(self):
+        """Tests parsing with no json"""
+        with pytest.raises(FileNotFoundError):
+            d = self.parser._parse_bomb_events()
+            d = self.parser._parse_flashes()
+            d = self.parser._parse_damages()
+            d = self.parser._parse_grenades()
+            d = self.parser._parse_kills()
+            d = self.parser._parse_frames()
+            d = self.parser._parse_player_frames()
+            d = self.parser._parse_weapon_fires()
