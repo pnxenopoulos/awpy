@@ -93,12 +93,7 @@ class DemoParser:
             parse_rate = 128
             self.parse_rate = parse_rate
 
-        if parse_rate == 1:
-            self.logger.warning(
-                "A parse rate of 1 will parse EVERY tick. This process will be very slow."
-            )
-            self.parse_rate = 1
-        elif parse_rate < 64 and parse_rate > 1:
+        if parse_rate < 64 and parse_rate > 1:
             self.logger.warning(
                 "A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos."
             )
@@ -230,21 +225,15 @@ class DemoParser:
                 demo_data["mapName"] = self.json["mapName"]
                 demo_data["tickRate"] = self.json["tickRate"]
                 demo_data["playbackTicks"] = self.json["playbackTicks"]
-                demo_data["rounds"] = self._parse_rounds(return_type=return_type)
-                demo_data["kills"] = self._parse_kills(return_type=return_type)
-                demo_data["damages"] = self._parse_damages(return_type=return_type)
-                demo_data["grenades"] = self._parse_grenades(return_type=return_type)
-                demo_data["flashes"] = self._parse_flashes(return_type=return_type)
-                demo_data["weaponFires"] = self._parse_weapon_fires(
-                    return_type=return_type
-                )
-                demo_data["bombEvents"] = self._parse_bomb_events(
-                    return_type=return_type
-                )
-                demo_data["frames"] = self._parse_frames(return_type=return_type)
-                demo_data["playerFrames"] = self._parse_player_frames(
-                    return_type=return_type
-                )
+                demo_data["rounds"] = self._parse_rounds()
+                demo_data["kills"] = self._parse_kills()
+                demo_data["damages"] = self._parse_damages()
+                demo_data["grenades"] = self._parse_grenades()
+                demo_data["flashes"] = self._parse_flashes()
+                demo_data["weaponFires"] = self._parse_weapon_fires()
+                demo_data["bombEvents"] = self._parse_bomb_events()
+                demo_data["frames"] = self._parse_frames()
+                demo_data["playerFrames"] = self._parse_player_frames()
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
@@ -254,19 +243,13 @@ class DemoParser:
             self.logger.error("JSON couldn't be returned")
             raise AttributeError("No JSON parsed!")
 
-    def _parse_frames(self, return_type):
+    def _parse_frames(self):
         """Returns frames as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse frames return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
-        try:
+        if self.json:
             frames_dataframes = []
             keys = ["tick", "seconds", "positionToken", "tToken", "ctToken"]
             for r in self.json["gameRounds"]:
@@ -295,31 +278,18 @@ class DemoParser:
             frames_df = pd.DataFrame(frames_dataframes)
             frames_df["matchID"] = self.json["matchID"]
             frames_df["mapName"] = self.json["mapName"]
-            if return_type == "list":
-                self.logger.info("Parsed frames to list")
-                return frames_dataframes
-            elif return_type == "df":
-                self.logger.info("Parsed frames to Pandas DataFrame")
-                return pd.DataFrame(frames_dataframes)
-        except AttributeError:
+            return pd.DataFrame(frames_dataframes)
+        else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _parse_player_frames(self, return_type):
+    def _parse_player_frames(self):
         """Returns player frames as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error(
-                "Parse player frames return_type must be either 'list' or 'df'"
-            )
-            raise ValueError("return_type must be either 'list' or 'df'")
-        try:
+        if self.json:
             player_frames = []
             for r in self.json["gameRounds"]:
                 if r["frames"]:
@@ -343,30 +313,18 @@ class DemoParser:
             player_frames_df = pd.DataFrame(player_frames)
             player_frames_df["matchID"] = self.json["matchID"]
             player_frames_df["mapName"] = self.json["mapName"]
-            if return_type == "list":
-                self.logger.info("Parsed player frames to list")
-                return player_frames
-            elif return_type == "df":
-                self.logger.info("Parsed player frames to Pandas DataFrame")
-                return pd.DataFrame(player_frames_df)
-        except AttributeError:
+            return pd.DataFrame(player_frames_df)
+        else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _parse_rounds(self, return_type):
+    def _parse_rounds(self):
         """Returns rounds as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse rounds return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
-
-        try:
+        if self.json:
             rounds = []
             cols = [
                 "roundNum",
@@ -402,30 +360,18 @@ class DemoParser:
                     round_item["matchID"] = self.json["matchID"]
                     round_item["mapName"] = self.json["mapName"]
                 rounds.append(round_item)
-            if return_type == "list":
-                self.logger.info("Parsed rounds to list")
-                return rounds
-            elif return_type == "df":
-                self.logger.info("Parsed rounds to Pandas DataFrame")
-                return pd.DataFrame(rounds)
-        except AttributeError:
+            return pd.DataFrame(rounds)
+        else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _parse_kills(self, return_type):
+    def _parse_kills(self):
         """Returns kills as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
-
-        try:
+        if self.json:
             kills = []
             for r in self.json["gameRounds"]:
                 if r["kills"] is not None:
@@ -435,32 +381,18 @@ class DemoParser:
                         new_k["matchID"] = self.json["matchID"]
                         new_k["mapName"] = self.json["mapName"]
                         kills.append(new_k)
-            if return_type == "list":
-                self.logger.info("Parsed kills to list")
-                return kills
-            elif return_type == "df":
-                self.logger.info("Parsed kills to Pandas DataFrame")
-                return pd.DataFrame(kills)
-        except AttributeError:
+            return pd.DataFrame(kills)
+        else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _parse_weapon_fires(self, return_type):
+    def _parse_weapon_fires(self):
         """Returns weapon fires as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error(
-                "Parse weapon fires return_type must be either 'list' or 'df'"
-            )
-            raise ValueError("return_type must be either 'list' or 'df'")
-
-        try:
+        if self.json:
             shots = []
             for r in self.json["gameRounds"]:
                 if r["weaponFires"] is not None:
@@ -470,29 +402,17 @@ class DemoParser:
                         new_wf["matchID"] = self.json["matchID"]
                         new_wf["mapName"] = self.json["mapName"]
                         shots.append(new_wf)
-            if return_type == "list":
-                self.logger.info("Parsed weapon fires to list")
-                return shots
-            elif return_type == "df":
-                self.logger.info("Parsed weapon fires to Pandas DataFrame")
-                return pd.DataFrame(shots)
-        except AttributeError:
+            return pd.DataFrame(shots)
+        else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _parse_damages(self, return_type):
+    def _parse_damages(self):
         """Returns damages as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse damages return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
-
         if self.json:
             damages = []
             for r in self.json["gameRounds"]:
@@ -503,31 +423,17 @@ class DemoParser:
                         new_d["matchID"] = self.json["matchID"]
                         new_d["mapName"] = self.json["mapName"]
                         damages.append(new_d)
-            if return_type == "list":
-                self.logger.info("Parsed damages to list")
-                return damages
-            elif return_type == "df":
-                self.logger.info("Parsed damages to Pandas DataFrame")
-                return pd.DataFrame(damages)
+            return pd.DataFrame(damages)
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _parse_grenades(self, return_type):
+    def _parse_grenades(self):
         """Returns grenades as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error(
-                "Parse grenades return_type must be either 'list' or 'df'"
-            )
-            raise ValueError("return_type must be either 'list' or 'df'")
-
         if self.json:
             grenades = []
             for r in self.json["gameRounds"]:
@@ -538,31 +444,17 @@ class DemoParser:
                         new_g["matchID"] = self.json["matchID"]
                         new_g["mapName"] = self.json["mapName"]
                         grenades.append(new_g)
-            if return_type == "list":
-                self.logger.info("Parsed grenades to list")
-                return grenades
-            elif return_type == "df":
-                self.logger.info("Parsed grenades to Pandas DataFrame")
-                return pd.DataFrame(grenades)
+            return pd.DataFrame(grenades)
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _parse_bomb_events(self, return_type):
+    def _parse_bomb_events(self):
         """Returns bomb events as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error(
-                "Parse bomb events return_type must be either 'list' or 'df'"
-            )
-            raise ValueError("return_type must be either 'list' or 'df'")
-
         if self.json:
             bomb_events = []
             for r in self.json["gameRounds"]:
@@ -573,29 +465,17 @@ class DemoParser:
                         new_b["matchID"] = self.json["matchID"]
                         new_b["mapName"] = self.json["mapName"]
                         bomb_events.append(new_b)
-            if return_type == "list":
-                self.logger.info("Parsed bomb_events to list")
-                return bomb_events
-            elif return_type == "df":
-                self.logger.info("Parsed bomb_events to Pandas DataFrame")
-                return pd.DataFrame(bomb_events)
+            return pd.DataFrame(bomb_events)
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _parse_flashes(self, return_type):
+    def _parse_flashes(self):
         """Returns flashes as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
 
         Returns:
             A list or Pandas dataframe
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse flashes return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
-
         if self.json:
             flashes = []
             for r in self.json["gameRounds"]:
@@ -606,12 +486,7 @@ class DemoParser:
                         new_f["matchId"] = self.json["matchID"]
                         new_f["mapName"] = self.json["mapName"]
                         flashes.append(new_f)
-            if return_type == "list":
-                self.logger.info("Parsed flashes to list")
-                return flashes
-            elif return_type == "df":
-                self.logger.info("Parsed flashes to Pandas DataFrame")
-                return pd.DataFrame(flashes)
+            return pd.DataFrame(flashes)
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")

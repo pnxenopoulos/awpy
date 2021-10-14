@@ -37,7 +37,9 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
         entities[None] = None
         return entities
     else:
-        raise ValueError("Metric can only be LCSS, Hamming, Levenshtein or Jaro")
+        raise ValueError(
+            "Metric can only be lcss, hamming, levenshtein, jaro or difflib"
+        )
     entities = {}
     for gn in game_names:
         if gn is not None and gn is not np.nan and gn != "":
