@@ -23,3 +23,4 @@ Xenopoulos, P., Coelho, B., & Silva, C. (2021). [Optimal Team Economic Decisions
 [Aleksib dust2 grenade map](https://twitter.com/lakshyaag/status/1444310712935874563)
 
 ## Blog Posts
+[Nkashyap’s MVP Breakdowns: S1mple at IEM Cologne](https://nikhilesh-kashyap2903.medium.com/this-piece-continues-my-attempts-to-drive-deeper-insights-into-counter-strike-history-by-utilizing-ce5dc287ac0f)
