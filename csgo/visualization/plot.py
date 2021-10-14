@@ -30,24 +30,13 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
     return fig, ax
 
 
-# Position functions courtesy of PureSkill.gg
-def position_transform_x(map_name, position_x):
-    start_x = MAP_DATA[map_name]["x"]
+# Position function courtesy of PureSkill.gg
+def position_transform(map_name, position, axis):
+    start = MAP_DATA[map_name][axis]
     scale = MAP_DATA[map_name]["scale"]
-    x_pos = position_x
-    x_pos = x_pos - start_x
-    x_pos = x_pos / scale
-    return x_pos
-
-
-# Position functions courtesy of PureSkill.gg
-def position_transform_y(map_name, position_y):
-    start_y = MAP_DATA[map_name]["y"]
-    scale = MAP_DATA[map_name]["scale"]
-    y_pos = position_y
-    y_pos = start_y - y_pos
-    y_pos = y_pos / scale
-    return y_pos
+    pos = position - start
+    pos = pos / scale
+    return pos
 
 
 def plot_positions(
@@ -64,8 +53,8 @@ def plot_positions(
     for p, c, m in zip(positions, colors, markers):
         if apply_transformation:
             a.scatter(
-                x=position_transform_x(map_name, p[0]),
-                y=position_transform_y(map_name, p[1]),
+                x=position_transform(map_name, p[0], "x"),
+                y=position_transform(map_name, p[1], "y"),
                 c=c,
                 marker=m,
             )
@@ -99,8 +88,8 @@ def plot_round(
                 else:
                     markers.append(".")
                 pos = (
-                    position_transform_x(map_name, p["x"]),
-                    position_transform_y(map_name, p["y"]),
+                    position_transform(map_name, p["x"], "x"),
+                    position_transform(map_name, p["y"], "y"),
                 )
                 positions.append(pos)
         f, a = plot_positions(
@@ -131,10 +120,10 @@ def plot_nades(
         if r["grenades"]:
             for g in r["grenades"]:
                 if g["throwerSide"] == side:
-                    start_x = position_transform_x(map_name, g["throwerX"])
-                    start_y = position_transform_y(map_name, g["throwerY"])
-                    end_x = position_transform_x(map_name, g["grenadeX"])
-                    end_y = position_transform_y(map_name, g["grenadeY"])
+                    start_x = position_transform(map_name, g["throwerX"], "x")
+                    start_y = position_transform(map_name, g["throwerY"], "x")
+                    end_x = position_transform(map_name, g["grenadeX"], "y")
+                    end_y = position_transform(map_name, g["grenadeY"], "y")
                     if g["grenadeType"] in nades:
                         if (
                             g["grenadeType"] == "Incendiary Grenade"
