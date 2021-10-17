@@ -27,17 +27,19 @@ import (
 
 // Game is the overall struct that holds everything
 type Game struct {
-	MatchName     string       `json:"matchID"`
-	ClientName    string       `json:"clientName"`
-	Map           string       `json:"mapName"`
-	TickRate      int64        `json:"tickRate"`
-	PlaybackTicks int64        `json:"playbackTicks"`
-	ParsingOpts   ParserOpts   `json:"parserParameters"`
-	ServerVars    ServerConVar `json:"serverVars"`
-	MatchPhases   MatchPhases  `json:"matchPhases"`
-	ParsedPlaces  []string     `json:"parsedPlaceNames"`
-	MMRanks       []MMRank     `json:"matchmakingRanks"`
-	Rounds        []GameRound  `json:"gameRounds"`
+	MatchName      string       `json:"matchID"`
+	ClientName     string       `json:"clientName"`
+	Map            string       `json:"mapName"`
+	TickRate       int64        `json:"tickRate"`
+	PlaybackTicks  int64        `json:"playbackTicks"`
+	PlaybackFrames int64       `json:"playbackFrames"`
+	ParsedToFrame  int64        `json:"parsedToFrame"`
+	ParsingOpts    ParserOpts   `json:"parserParameters"`
+	ServerVars     ServerConVar `json:"serverVars"`
+	MatchPhases    MatchPhases  `json:"matchPhases"`
+	ParsedPlaces   []string     `json:"parsedPlaceNames"`
+	MMRanks        []MMRank     `json:"matchmakingRanks"`
+	Rounds         []GameRound  `json:"gameRounds"`
 }
 
 // ParserOpts holds parsing parameters
@@ -973,6 +975,7 @@ func main() {
 		currentGame.TickRate = int64(p.TickRate())
 	}
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
+	currentGame.PlaybackFrames = int64(header.PlaybackFrames)
 	currentGame.ClientName = header.ClientName
 
 	if navFileExists {
@@ -2286,7 +2289,7 @@ func main() {
 
 	// Parse demofile to end
 	err = p.ParseToEnd()
-	checkError(err)
+	currentGame.ParsedToFrame = int64(p.CurrentFrame())
 
 	// Add the most recent round
 	currentGame.Rounds = append(currentGame.Rounds, currentRound)
@@ -2323,11 +2326,14 @@ func main() {
 		file, _ := json.MarshalIndent(currentGame, "", " ")
 		_ = ioutil.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
 	}
+
+	// Check error
+	checkError(err)
 }
 
 // Function to handle errors
 func checkError(err error) {
-	if err != nil {
+	if (err != nil) {
 		panic(err)
 	}
 }
