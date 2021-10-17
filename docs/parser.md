@@ -30,7 +30,7 @@ What do we do next? Our data is written to `data`, which is a dictionary. The to
 - `clientName` (usually GOTV demo)
 - `mapName` (Even for workshop maps of old official maps, the name is parsed to be the map name, i.e. `de_nuke_12345` becomes `de_nuke`)
 - `tickRate` (The tickrate that the demo was recorded, or -1 if the demo header isn't available)
-- `playbackTicks` (Total number of ticks in the demo)
+- `playbackTicks` (Total number of ticks in the demo. If 0, demo is likely corrupted.)
 - `playbackFrames` (Total number of frames, which is a collection of ticks)
 - `parsedToFrame` (Frame number parsed until, useful if there are errors)
 - `parserParameters` (Parsing parameters passed via `DemoParser` class)
