@@ -490,3 +490,106 @@ class DemoParser:
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
+
+    def clean_rounds(
+        self,
+        remove_warmups=True,
+        remove_knifes=True,
+        bad_round_endings=["Draw", "Unknown"],
+        remove_excess_kills=True,
+        remove_time=True,
+    ):
+        """Redo for sphinx"""
+        if self.json:
+            pass
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def _rewrite_json(self):
+        """Rewrite the JSON file"""
+        with open(self.output_file, "w") as fp:
+            json.dump(self.json, fp)
+
+    def _renumber_rounds(self):
+        """Renumbers rounds"""
+        if self.json:
+            for i, r in enumerate(self.json["gameRounds"]):
+                self.json["gameRounds"]["roundNum"] = i + 1
+            self._rewrite_json()
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def remove_warmups(self):
+        """Remove warmup rounds from JSON."""
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json:
+                if not r["isWarmup"]:
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+            self._rewrite_json()
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def remove_end_round(self, bad_endings=["Draw", "Unknown"]):
+        """Remove rounds with bad endings from JSON."""
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json:
+                if r["roundEndReason"] not in bad_endings:
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+            self._rewrite_json()
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def remove_knife_rounds(self):
+        """Remove knife round."""
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json:
+                if not r["isWarmup"]:
+                    total_kills = len(r["kills"])
+                    total_knife_kills = 0
+                    for k in r["kills"]:
+                        if k["weapon"] == "Knife":
+                            total_knife_kills += 1
+                    if total_knife_kills != total_kills:
+                        cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+            self._rewrite_json()
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def remove_excess_kill_rounds(self):
+        """Removes rounds with too many kills."""
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json:
+                if not r["isWarmup"]:
+                    total_kills = len(r["kills"])
+                    if total_kills <= 10:
+                        cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+            self._rewrite_json()
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def remove_time_rounds(self, time_minimum=10):
+        """Removes rounds that are too short or too long"""
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json:
+                if r["startTick"] <= r["endTick"]:
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+            self._rewrite_json()
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
