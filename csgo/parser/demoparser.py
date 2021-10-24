@@ -495,28 +495,33 @@ class DemoParser:
         self,
         remove_warmups=True,
         remove_knifes=True,
-        bad_round_endings=["Draw", "Unknown"],
+        bad_round_endings=["Draw", "Unknown", ""],
         remove_excess_kills=True,
         remove_time=True,
     ):
         """Redo for sphinx"""
         if self.json:
-            pass
+            self.remove_warmups()
+            self.remove_time_rounds()
+            self.remove_knife_rounds()
+            self.remove_excess_kill_rounds()
+            self.remove_end_round()
+            self.renumber_rounds()
+            self.write_json()
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def _rewrite_json(self):
+    def write_json(self):
         """Rewrite the JSON file"""
         with open(self.output_file, "w") as fp:
             json.dump(self.json, fp)
 
-    def _renumber_rounds(self):
+    def renumber_rounds(self):
         """Renumbers rounds"""
-        if self.json:
+        if self.json["gameRounds"]:
             for i, r in enumerate(self.json["gameRounds"]):
-                self.json["gameRounds"]["roundNum"] = i + 1
-            self._rewrite_json()
+                self.json["gameRounds"][i]["roundNum"] = i + 1
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
@@ -525,11 +530,10 @@ class DemoParser:
         """Remove warmup rounds from JSON."""
         if self.json:
             cleaned_rounds = []
-            for r in self.json:
+            for r in self.json["gameRounds"]:
                 if not r["isWarmup"]:
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
-            self._rewrite_json()
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
@@ -538,11 +542,10 @@ class DemoParser:
         """Remove rounds with bad endings from JSON."""
         if self.json:
             cleaned_rounds = []
-            for r in self.json:
+            for r in self.json["gameRounds"]:
                 if r["roundEndReason"] not in bad_endings:
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
-            self._rewrite_json()
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
@@ -551,8 +554,8 @@ class DemoParser:
         """Remove knife round."""
         if self.json:
             cleaned_rounds = []
-            for r in self.json:
-                if not r["isWarmup"]:
+            for r in self.json["gameRounds"]:
+                if not r["isWarmup"] and r["kills"]:
                     total_kills = len(r["kills"])
                     total_knife_kills = 0
                     for k in r["kills"]:
@@ -561,7 +564,6 @@ class DemoParser:
                     if total_knife_kills != total_kills:
                         cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
-            self._rewrite_json()
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
@@ -570,13 +572,13 @@ class DemoParser:
         """Removes rounds with too many kills."""
         if self.json:
             cleaned_rounds = []
-            for r in self.json:
+            for r in self.json["gameRounds"]:
                 if not r["isWarmup"]:
-                    total_kills = len(r["kills"])
-                    if total_kills <= 10:
-                        cleaned_rounds.append(r)
+                    if r["kills"] is not None:
+                        total_kills = len(r["kills"])
+                        if total_kills <= 10:
+                            cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
-            self._rewrite_json()
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
@@ -585,11 +587,10 @@ class DemoParser:
         """Removes rounds that are too short or too long"""
         if self.json:
             cleaned_rounds = []
-            for r in self.json:
+            for r in self.json["gameRounds"]:
                 if r["startTick"] <= r["endTick"]:
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
-            self._rewrite_json()
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
