@@ -534,7 +534,7 @@ class DemoParser:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def remove_end_round(self, bad_endings=["Draw", "Unknown"]):
+    def remove_end_round(self, bad_endings=["Draw", "Unknown", ""]):
         """Remove rounds with bad endings from JSON."""
         if self.json:
             cleaned_rounds = []
