@@ -5,7 +5,6 @@ import imageio
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 
 from csgo import MAP_DATA
 
@@ -13,7 +12,7 @@ from csgo import MAP_DATA
 def plot_map(map_name="de_dust2", map_type="original", dark=False):
     """Plots the map"""
     if map_type == "original":
-        map_bg = mpimg.imread(
+        map_bg = imageio.imread(
             os.path.join(os.path.dirname(__file__), "")
             + """../data/map/{0}.png""".format(map_name)
         )
@@ -21,7 +20,7 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
         col = "light"
         if dark:
             col = "dark"
-        map_bg = mpimg.imread(
+        map_bg = imageio.imread(
             os.path.join(os.path.dirname(__file__), "")
             + """../data/map/{0}_{1}.png""".format(map_name, col)
         )

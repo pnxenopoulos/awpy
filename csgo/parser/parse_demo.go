@@ -533,6 +533,10 @@ func convertWeaponClass(wc common.EquipmentClass) string {
 func determineSecond(tick int64, currentRound GameRound, currentGame Game) float64 {
 	roundTime := currentGame.ServerVars.RoundTime
 
+	if tick <= 0 {
+		return float64(0)
+	}
+
 	if roundTime == 0 {
 		roundTime = currentGame.ServerVars.RoundTimeDefuse
 	}
