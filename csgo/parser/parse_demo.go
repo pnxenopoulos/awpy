@@ -2267,8 +2267,12 @@ func main() {
 			currentWorldObj.Z = float64(objPos.Z)
 			currentFrame.World = append(currentFrame.World, currentWorldObj)
 			if len(currentRound.Bomb) > 0 {
-				currentFrame.BombPlanted = true
-				currentFrame.BombSite = currentRound.Bomb[0].BombSite
+				for _, b := range currentRound.Bomb {
+					if b.BombAction = "plant" {
+						currentFrame.BombPlanted = true
+						currentFrame.BombSite = b.BombSite
+					}
+				}	
 			} else {
 				currentFrame.BombPlanted = false
 			}
