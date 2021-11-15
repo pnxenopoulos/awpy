@@ -33,9 +33,16 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
 def position_transform(map_name, position, axis):
     start = MAP_DATA[map_name][axis]
     scale = MAP_DATA[map_name]["scale"]
-    pos = position - start
-    pos = pos / scale
-    return pos
+    if axis == "x":
+        pos = position - start
+        pos /= scale
+        return pos
+    elif axis == "y":
+        pos = start - position
+        pos /= scale
+        return pos
+    else:
+        return None
 
 
 def plot_positions(
@@ -120,8 +127,8 @@ def plot_nades(
             for g in r["grenades"]:
                 if g["throwerSide"] == side:
                     start_x = position_transform(map_name, g["throwerX"], "x")
-                    start_y = position_transform(map_name, g["throwerY"], "x")
-                    end_x = position_transform(map_name, g["grenadeX"], "y")
+                    start_y = position_transform(map_name, g["throwerY"], "y")
+                    end_x = position_transform(map_name, g["grenadeX"], "x")
                     end_y = position_transform(map_name, g["grenadeY"], "y")
                     if g["grenadeType"] in nades:
                         if (
