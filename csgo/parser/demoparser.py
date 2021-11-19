@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import subprocess
-import simplejson
 import pandas as pd
 
 from csgo.utils import check_go_version
