@@ -573,7 +573,7 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
-	if (p.TeamState.ClanName() != nil) {
+	if (p.TeamState != nil) {
 		currentPlayer.PlayerTeam = p.TeamState.ClanName()
 	}
 	
@@ -663,7 +663,7 @@ func parsePlayerNoNav(p *common.Player) PlayerInfo {
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
-	if (p.TeamState.ClanName() != nil) {
+	if (p.TeamState != nil) {
 		currentPlayer.PlayerTeam = p.TeamState.ClanName()
 	}
 
@@ -1082,7 +1082,7 @@ func main() {
 		currentRound.StartTick = int64(gs.IngameTick())
 		currentRound.TScore = int64(gs.TeamTerrorists().Score())
 		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		if (gs.TeamTerrorists().ClanName() != nil) && (gs.TeamCounterTerrorists().ClanName() != nil) {
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 			tTeam := gs.TeamTerrorists().ClanName()
 			ctTeam := gs.TeamCounterTerrorists().ClanName()
 			currentRound.TTeam = &tTeam
@@ -1115,7 +1115,7 @@ func main() {
 		// Reupdate the teams to make sure
 		currentRound.TScore = int64(gs.TeamTerrorists().Score())
 		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		if (gs.TeamTerrorists().ClanName() != nil) && (gs.TeamCounterTerrorists().ClanName() != nil) {
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 			tTeam := gs.TeamTerrorists().ClanName()
 			ctTeam := gs.TeamCounterTerrorists().ClanName()
 			currentRound.TTeam = &tTeam
@@ -1168,7 +1168,7 @@ func main() {
 			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
 			currentRound.TScore = int64(gs.TeamTerrorists().Score())
 			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-			if (gs.TeamTerrorists().ClanName() != nil) && (gs.TeamCounterTerrorists().ClanName() != nil) {
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 				tTeam := gs.TeamTerrorists().ClanName()
 				ctTeam := gs.TeamCounterTerrorists().ClanName()
 				currentRound.TTeam = &tTeam
@@ -1235,7 +1235,7 @@ func main() {
 				currentRound.Reason = "TerroristsWin"
 				currentRound.EndTScore = currentRound.TScore + 1
 				currentRound.EndCTScore = currentRound.CTScore
-				if (gs.TeamTerrorists().ClanName() != nil) && (gs.TeamCounterTerrorists().ClanName() != nil) {
+				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 					tTeam := gs.TeamTerrorists().ClanName()
 					ctTeam := gs.TeamCounterTerrorists().ClanName()
 					currentRound.WinningTeam = &tTeam
@@ -1246,7 +1246,7 @@ func main() {
 				currentRound.Reason = "CTWin"
 				currentRound.EndCTScore = currentRound.CTScore + 1
 				currentRound.EndTScore = currentRound.TScore
-				if (gs.TeamTerrorists().ClanName() != nil) && (gs.TeamCounterTerrorists().ClanName() != nil) {
+				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 					tTeam := gs.TeamTerrorists().ClanName()
 					ctTeam := gs.TeamCounterTerrorists().ClanName()
 					currentRound.WinningTeam = &ctTeam
@@ -1272,7 +1272,7 @@ func main() {
 			currentRound.StartTick = 0
 			currentRound.TScore = 0
 			currentRound.CTScore = 0
-			if (gs.TeamTerrorists().ClanName() != nil) && (gs.TeamCounterTerrorists().ClanName() != nil) {
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 				tTeam := gs.TeamTerrorists().ClanName()
 				ctTeam := gs.TeamCounterTerrorists().ClanName()
 				currentRound.TTeam = &tTeam
@@ -1305,7 +1305,7 @@ func main() {
 		currentRound.Reason = convertRoundEndReason(e.Reason)
 		currentRound.WinningSide = winningTeam
 
-		if (gs.TeamTerrorists().ClanName() != nil) && (gs.TeamCounterTerrorists().ClanName() != nil) {
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 			tTeam := gs.TeamTerrorists().ClanName()
 			ctTeam := gs.TeamCounterTerrorists().ClanName()
 
@@ -1347,7 +1347,7 @@ func main() {
 		}
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState.ClanName() != nil) {
+		if (e.Player.TeamState != nil) {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1381,7 +1381,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState.ClanName() != nil) {
+		if (e.Player.TeamState != nil) {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1415,7 +1415,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState.ClanName() != nil) {
+		if (e.Player.TeamState != nil) {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1439,7 +1439,7 @@ func main() {
 			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, currentRound, currentGame)
 			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
 			currentWeaponFire.PlayerName = e.Shooter.Name
-			if (e.Shooter.TeamState.ClanName() != nil) {
+			if (e.Shooter.TeamState != nil) {
 				currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
 			}
 			playerSide := "Unknown"
@@ -1503,7 +1503,7 @@ func main() {
 			// Attacker
 			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
 			currentFlash.AttackerName = e.Attacker.Name
-			if (e.Attacker.TeamState.ClanName() != nil) {
+			if (e.Attacker.TeamState != nil) {
 				currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
 			}
 			attackerSide := "Unknown"
@@ -1640,7 +1640,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState.ClanName() != nil) {
+		if (e.Player.TeamState != nil) {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1674,7 +1674,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState.ClanName() != nil) {
+		if (e.Player.TeamState != nil) {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1708,7 +1708,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState.ClanName() != nil) {
+		if (e.Player.TeamState != nil) {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1739,7 +1739,7 @@ func main() {
 
 			tTeam := ""
 			ctTeam := ""
-			if (gs.TeamTerrorists().ClanName() != nil) && (gs.TeamCounterTerrorists().ClanName() != nil) {
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 				tTeam = gs.TeamTerrorists().ClanName()
 				ctTeam = gs.TeamCounterTerrorists().ClanName()
 			}
@@ -1857,7 +1857,7 @@ func main() {
 			attackerSteamID := int64(e.Killer.SteamID64)
 			currentKill.AttackerSteamID = &attackerSteamID
 			currentKill.AttackerName = &e.Killer.Name
-			if (e.Killer.TeamState.ClanName() != nil) {
+			if (e.Killer.TeamState != nil) {
 				attackerTeamName := e.Killer.TeamState.ClanName()
 				currentKill.AttackerTeam = &attackerTeamName
 			}
@@ -1912,7 +1912,7 @@ func main() {
 			victimSteamID := int64(e.Victim.SteamID64)
 			currentKill.VictimSteamID = &victimSteamID
 			currentKill.VictimName = &e.Victim.Name
-			if (e.Victim.TeamState.ClanName() != nil) {
+			if (e.Victim.TeamState != nil) {
 				victimTeamName := e.Victim.TeamState.ClanName()
 				currentKill.VictimTeam = &victimTeamName
 			}
@@ -2000,7 +2000,7 @@ func main() {
 			assistSteamID := int64(e.Assister.SteamID64)
 			currentKill.AssisterSteamID = &assistSteamID
 			currentKill.AssisterName = &e.Assister.Name
-			if (e.Assister.TeamState.ClanName() != nil) {
+			if (e.Assister.TeamState != nil) {
 				assistTeamName := e.Assister.TeamState.ClanName()
 				currentKill.AssisterTeam = &assistTeamName
 			}
@@ -2079,7 +2079,7 @@ func main() {
 			attackerSteamID := int64(e.Attacker.SteamID64)
 			currentDamage.AttackerSteamID = &attackerSteamID
 			currentDamage.AttackerName = &e.Attacker.Name
-			if (e.Attacker.TeamState.ClanName() != nil) {
+			if (e.Attacker.TeamState != nil) {
 				attackerTeamName := e.Attacker.TeamState.ClanName()
 				currentDamage.AttackerTeam = &attackerTeamName
 			}
@@ -2136,7 +2136,7 @@ func main() {
 			victimSteamID := int64(e.Player.SteamID64)
 			currentDamage.VictimSteamID = &victimSteamID
 			currentDamage.VictimName = &e.Player.Name
-			if (e.Player.TeamState.ClanName() != nil) {
+			if (e.Player.TeamState != nil) {
 				victimTeamName := e.Player.TeamState.ClanName()
 				currentDamage.VictimTeam = &victimTeamName
 			}
@@ -2201,7 +2201,7 @@ func main() {
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
 			currentFrame.T.Side = "T"
-			if (gs.TeamTerrorists().ClanName() != nil) {
+			if (gs.TeamTerrorists() != nil) {
 				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
 			}
 			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
@@ -2240,7 +2240,7 @@ func main() {
 			// Parse CT
 			currentFrame.CT = TeamFrameInfo{}
 			currentFrame.CT.Side = "CT"
-			if (gs.TeamCounterTerrorists().ClanName() != nil) {
+			if (gs.TeamCounterTerrorists() != nil) {
 				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
 			}
 			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
