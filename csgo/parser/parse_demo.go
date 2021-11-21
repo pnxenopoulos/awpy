@@ -12,6 +12,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
@@ -138,32 +139,35 @@ type GameRound struct {
 
 // GrenadeAction events
 type GrenadeAction struct {
-	ThrowTick       int64   `json:"throwTick"`
-	DestroyTick     int64   `json:"destroyTick"`
-	ThrowSecond     float64 `json:"throwSeconds"`
-	DestroySecond   float64 `json:"destroySeconds"`
-	ThrowerSteamID  int64   `json:"throwerSteamID"`
-	ThrowerName     string  `json:"throwerName"`
-	ThrowerTeam     string  `json:"throwerTeam"`
-	ThrowerSide     string  `json:"throwerSide"`
-	ThrowerX        float64 `json:"throwerX"`
-	ThrowerY        float64 `json:"throwerY"`
-	ThrowerZ        float64 `json:"throwerZ"`
-	ThrowerAreaID   *int64  `json:"throwerAreaID"`
-	ThrowerAreaName *string `json:"throwerAreaName"`
-	Grenade         string  `json:"grenadeType"`
-	GrenadeX        float64 `json:"grenadeX"`
-	GrenadeY        float64 `json:"grenadeY"`
-	GrenadeZ        float64 `json:"grenadeZ"`
-	GrenadeAreaID   *int64  `json:"grenadeAreaID"`
-	GrenadeAreaName *string `json:"grenadeAreaName"`
-	UniqueID        int64
+	ThrowTick         int64   `json:"throwTick"`
+	DestroyTick       int64   `json:"destroyTick"`
+	ThrowSecond       float64 `json:"throwSeconds"`
+	ThrowClockTime    string  `json:"throwClockTime"`
+	DestroySecond     float64 `json:"destroySeconds"`
+	DestroyClockTime  string  `json:"throwClockTime"`
+	ThrowerSteamID    int64   `json:"throwerSteamID"`
+	ThrowerName       string  `json:"throwerName"`
+	ThrowerTeam       string  `json:"throwerTeam"`
+	ThrowerSide       string  `json:"throwerSide"`
+	ThrowerX          float64 `json:"throwerX"`
+	ThrowerY          float64 `json:"throwerY"`
+	ThrowerZ          float64 `json:"throwerZ"`
+	ThrowerAreaID     *int64  `json:"throwerAreaID"`
+	ThrowerAreaName   *string `json:"throwerAreaName"`
+	Grenade           string  `json:"grenadeType"`
+	GrenadeX          float64 `json:"grenadeX"`
+	GrenadeY          float64 `json:"grenadeY"`
+	GrenadeZ          float64 `json:"grenadeZ"`
+	GrenadeAreaID     *int64  `json:"grenadeAreaID"`
+	GrenadeAreaName   *string `json:"grenadeAreaName"`
+	UniqueID          int64
 }
 
 // BombAction events
 type BombAction struct {
 	Tick          int64   `json:"tick"`
 	Second        float64 `json:"seconds"`
+	ClockTime     string  `json:"clockTime`
 	PlayerSteamID int64   `json:"playerSteamID"`
 	PlayerName    string  `json:"playerName"`
 	PlayerTeam    string  `json:"playerTeam"`
@@ -178,6 +182,7 @@ type BombAction struct {
 type DamageAction struct {
 	Tick             int64    `json:"tick"`
 	Second           float64  `json:"seconds"`
+	ClockTime        string   `json:"clockTime"`
 	AttackerSteamID  *int64   `json:"attackerSteamID"`
 	AttackerName     *string  `json:"attackerName"`
 	AttackerTeam     *string  `json:"attackerTeam"`
@@ -213,6 +218,7 @@ type DamageAction struct {
 type KillAction struct {
 	Tick                int64    `json:"tick"`
 	Second              float64  `json:"seconds"`
+	ClockTime           string   `json:"clockTime"`
 	AttackerSteamID     *int64   `json:"attackerSteamID"`
 	AttackerName        *string  `json:"attackerName"`
 	AttackerTeam        *string  `json:"attackerTeam"`
@@ -265,6 +271,7 @@ type KillAction struct {
 type WeaponFireAction struct {
 	Tick           int64   `json:"tick"`
 	Second         float64 `json:"seconds"`
+	ClockTime      string  `json:"clockTime"`
 	PlayerSteamID  int64   `json:"playerSteamID"`
 	PlayerName     string  `json:"playerName"`
 	PlayerTeam     string  `json:"playerTeam"`
@@ -284,6 +291,7 @@ type WeaponFireAction struct {
 type FlashAction struct {
 	Tick             int64    `json:"tick"`
 	Second           float64  `json:"seconds"`
+	ClockTime        string   `json:"clockTime"`
 	AttackerSteamID  int64    `json:"attackerSteamID"`
 	AttackerName     string   `json:"attackerName"`
 	AttackerTeam     string   `json:"attackerTeam"`
@@ -313,6 +321,7 @@ type FlashAction struct {
 type GameFrame struct {
 	Tick        int64         `json:"tick"`
 	Second      float64       `json:"seconds"`
+	ClockTime   string        `json:"clockTime"`
 	FrameToken  *string       `json:"positionToken"`
 	TToken      *string       `json:"tToken"`
 	CTToken     *string       `json:"ctToken"`
@@ -548,6 +557,39 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 		phaseEndTick = *currentRound.BombPlantTick
 	}
 	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
+}
+
+func formatTimeNumber(num int64) string {
+	if num < 10 {
+		return "0" + fmt.Sprint(num)
+	} else {
+		return fmt.Sprint(num)
+	}
+}
+
+func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) string {
+	roundTime := currentGame.ServerVars.RoundTime
+
+	if tick <= 0 {
+		return "00:00"
+	}
+
+	if roundTime == 0 {
+		roundTime = currentGame.ServerVars.RoundTimeDefuse
+	}
+
+	var seconds_remaining float64
+	var phaseEndTick int64
+	if currentRound.BombPlantTick == nil {
+		phaseEndTick = currentRound.FreezeTimeEndTick
+		seconds_remaining = 115 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
+	} else {
+		phaseEndTick = *currentRound.BombPlantTick
+		seconds_remaining = 40 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
+	}
+	minutes := int64(math.Floor((seconds_remaining/60)))
+	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
+	return formatTimeNumber(minutes) + ":" + formatTimeNumber(seconds)
 }
 
 func findAreaPlace(currArea *gonav.NavArea, mesh gonav.NavMesh) string {
@@ -1338,6 +1380,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse"
 		currentBomb.BombSite = ""
 		if e.Site == 65 {
@@ -1368,6 +1411,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse_start"
 
 		// Find bombsite where event is planted
@@ -1402,6 +1446,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse_aborted"
 
 		// Find bombsite where event is planted
@@ -1437,6 +1482,7 @@ func main() {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
 			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, currentRound, currentGame)
+			currentWeaponFire.ClockTime = calculateClocktime(currentWeaponFire.Tick, currentRound, currentGame)
 			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
 			currentWeaponFire.PlayerName = e.Shooter.Name
 			if (e.Shooter.TeamState != nil) {
@@ -1499,6 +1545,7 @@ func main() {
 			currentFlash := FlashAction{}
 			currentFlash.Tick = int64(gs.IngameTick())
 			currentFlash.Second = determineSecond(currentFlash.Tick, currentRound, currentGame)
+			currentFlash.ClockTime = calculateClocktime(currentFlash.Tick, currentRound, currentGame)
 
 			// Attacker
 			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
@@ -1629,6 +1676,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant"
 		currentBomb.BombSite = ""
 
@@ -1663,6 +1711,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant_begin"
 		currentBomb.BombSite = ""
 
@@ -1695,6 +1744,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant_abort"
 
 		// Find bombsite where event is planted
@@ -1731,6 +1781,7 @@ func main() {
 			currentGrenade.UniqueID = e.Projectile.UniqueID()
 			currentGrenade.ThrowTick = int64(gs.IngameTick())
 			currentGrenade.ThrowSecond = determineSecond(currentGrenade.ThrowTick, currentRound, currentGame)
+			currentGrenade.ThrowClockTime = calculateClocktime(currentGrenade.ThrowTick, currentRound, currentGame)
 
 			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
@@ -1806,7 +1857,7 @@ func main() {
 				if g.UniqueID == e.Projectile.UniqueID() {
 					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
 					currentRound.Grenades[i].DestroySecond = determineSecond(currentRound.Grenades[i].DestroyTick, currentRound, currentGame)
-
+					currentRound.Grenades[i].DestroyClockTime = calculateClocktime(currentRound.Grenades[i].DestroyTick, currentRound, currentGame)
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
 					
@@ -1844,6 +1895,7 @@ func main() {
 		currentKill := KillAction{}
 		currentKill.Tick = int64(gs.IngameTick())
 		currentKill.Second = determineSecond(currentKill.Tick, currentRound, currentGame)
+		currentKill.ClockTime = calculateClocktime(currentKill.Tick, currentRound, currentGame)
 		currentKill.Weapon = e.Weapon.String()
 		currentKill.IsWallbang = e.IsWallBang()
 		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
@@ -2067,6 +2119,7 @@ func main() {
 		currentDamage := DamageAction{}
 		currentDamage.Tick = int64(gs.IngameTick())
 		currentDamage.Second = determineSecond(currentDamage.Tick, currentRound, currentGame)
+		currentDamage.ClockTime = calculateClocktime(currentDamage.Tick, currentRound, currentGame)
 		currentDamage.Weapon = e.Weapon.String()
 		currentDamage.HitGroup = convertHitGroup(e.HitGroup)
 		currentDamage.HpDamage = int64(e.HealthDamage)
@@ -2197,6 +2250,7 @@ func main() {
 			currentFrame := GameFrame{}
 			currentFrame.Tick = int64(gs.IngameTick())
 			currentFrame.Second = determineSecond(currentFrame.Tick, currentRound, currentGame)
+			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, currentRound, currentGame)
 
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
