@@ -515,7 +515,7 @@ class DemoParser:
     def write_json(self):
         """Rewrite the JSON file"""
         with open(self.output_file, "w") as fp:
-            json.dump(self.json, fp)
+            json.dump(self.json, fp, indent=4)
 
     def renumber_rounds(self):
         """Renumbers rounds"""
