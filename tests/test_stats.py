@@ -32,29 +32,32 @@ class TestStats:
     """Class to test the statistics functions.
     Uses https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
     """
+    def clean(df: pd.DataFrame) -> pd.DataFrame:
+        df_copy = df.copy()
+        df_copy = df_copy.loc[(df_copy["roundNum"]>3) & (df_copy["roundNum"]<32)].copy()
+        df_copy.reset_index(inplace=True, drop=True)
+        df_copy["roundNum"]=df_copy["roundNum"]-3
+        return df_copy
 
     def setup_class(self):
         """Sets up class by defining the parser, filters, and dataframes."""
         with open("tests/test_data.json") as f:
             self.demo_data = json.load(f)
-
         r = requests.get(self.demo_data["astralis-vs-liquid-m2-nuke"]["url"])
         open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
-
         self.parser = DemoParser(
             demofile="astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
             parse_rate=256,
         )
-
         self.data = self.parser.parse(return_type="df")
-        self.damage_data = self.data["Damages"]
-        self.flash_data = self.data["Flashes"]
-        self.grenade_data = self.data["Grenades"]
-        self.kill_data = self.data["Kills"]
-        self.bomb_data = self.data["BombEvents"]
-        self.round_data = self.data["Rounds"]
-        self.weapon_fire_data = self.data["WeaponFires"]
+        self.bomb_data = clean(self.data["bombEvents"])
+        self.damage_data = clean(self.data["damages"])
+        self.flash_data = clean(self.data["flashes"])
+        self.grenade_data = clean(self.data["grenades"])
+        self.kill_data = clean(self.data["killss"])
+        self.round_data = clean(self.data["rounds"])
+        self.weapon_fire_data = clean(self.data["weaponFires"])
         self.invalid_numeric_filter = {"Kills": [10]}
         self.invalid_logical_operator = {"Kills": ["=invalid=10"]}
         self.invalid_numeric_value = {"Kills": ["==1invalid0"]}
@@ -70,7 +73,7 @@ class TestStats:
             & (self.kill_data["roundNum"] < 16)
             & (self.kill_data["isHeadshot"] == True)
         ]
-        self.kills = pd.DataFrame(
+        self.hs = pd.DataFrame(
             {
                 "Astralis Player": [
                     "Magisk",
@@ -79,7 +82,7 @@ class TestStats:
                     "dupreeh",
                     "gla1ve",
                 ],
-                "1st Half HS Kills": [3, 2, 7, 5, 2],
+                "1st Half HS": [3, 2, 7, 5, 2],
             }
         )
 
@@ -118,23 +121,23 @@ class TestStats:
 
     def test_num_filter_df(self):
         """Tests num_filter_df function."""
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", "==", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] == 3]
+        assert num_filter_df(self.hs, "1st Half HS", "==", 3.0).equals(
+            self.hs.loc[self.hs["1st Half HS"] == 3]
         )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", "!=", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] != 3]
+        assert num_filter_df(self.hs, "1st Half HS", "!=", 3.0).equals(
+            self.hs.loc[self.hs["1st Half HS"] != 3]
         )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", "<=", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] <= 3]
+        assert num_filter_df(self.hs, "1st Half HS", "<=", 3.0).equals(
+            self.hs.loc[self.hs["1st Half HS"] <= 3]
         )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", ">=", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] >= 3]
+        assert num_filter_df(self.hs, "1st Half HS", ">=", 3.0).equals(
+            self.hs.loc[self.hs["1st Half HS"] >= 3]
         )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", "<", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] < 3]
+        assert num_filter_df(self.hs, "1st Half HS", "<", 3.0).equals(
+            self.hs.loc[self.hs["1st Half HS"] < 3]
         )
-        assert num_filter_df(self.kills, "1st Half Headshot Kills", ">", 3.0).equals(
-            self.kills.loc[self.kills["1st Half Headshot Kills"] > 3]
+        assert num_filter_df(self.hs, "1st Half HS", ">", 3.0).equals(
+            self.hs.loc[self.hs["1st Half HS"] > 3]
         )
 
     def test_filter_df(self):
@@ -150,7 +153,7 @@ class TestStats:
             ["attackerName"],
             [["size"]],
             ["Astralis Player", "1st Half Headshot Kills"],
-        ).equals(self.kills)
+        ).equals(self.hs)
 
     def test_accuracy(self):
         """Tests accuracy function."""
@@ -161,7 +164,7 @@ class TestStats:
 
     def test_kast(self):
         """Tests kast function."""
-        assert round(kast(self.kill_data, "KAST")["T"].sum(), 2) == 22
+        assert round(kast(self.kill_data)["T"].sum(), 2) == 22
 
     def test_kill_stats(self):
         """Tests kill_stats function."""

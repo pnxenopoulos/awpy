@@ -219,9 +219,9 @@ def accuracy(
             dataframe represented by weapon_fires to filter the weapon fire data
             by and the values are lists that contain the column filters.
     """
-    stats = ["playerName", "attackerName", "player"]
+    stats = ["playerName", "attackerName", "Player"]
     if team:
-        stats = ["playerTeam", "attackerTeam", "team"]
+        stats = ["playerTeam", "attackerTeam", "Team"]
     weapon_fires = calc_stats(
         weapon_fire_data,
         weapon_fire_filters,
@@ -263,7 +263,7 @@ def accuracy(
     acc["Strafe%"] = acc["Strafe Fires"] / acc["Weapon Fires"]
     acc["ACC%"] = acc["Hits"] / acc["Weapon Fires"]
     acc["HS ACC%"] = acc["Headshots"] / acc["Weapon Fires"]
-    acc = acc[[stats[2], "WeaponFires", "Strafe%", "ACC%", "HS ACC%"]]
+    acc = acc[[stats[2], "Weapon Fires", "Strafe%", "ACC%", "HS ACC%"]]
     acc.sort_values(by="ACC%", ascending=False, inplace=True)
     acc.reset_index(drop=True, inplace=True)
     return acc
@@ -348,7 +348,7 @@ def kast(
     kast_data = killers.merge(assisters, how="outer").fillna("")
     kast_data = kast_data.merge(victims, how="outer").fillna("")
     kast_data = kast_data.merge(traded, how="outer").fillna("")
-    for player in kill_data["AttackerName"].unique():
+    for player in kill_data["attackerName"].unique():
         kast_counts[player] = [[0, 0, 0, 0] for i in range(len(kast_data))]
         kast_rounds[player] = [0, 0, 0, 0, 0]
     for rd in kast_data.index:
@@ -421,14 +421,14 @@ def kill_stats(
             dataframe represented by weapon_fires to filter the weapon fire data
             by and the values are lists that contain the column filters.
     """
-    stats = ["attackerName", "victimName", "assisterName", "flashThrowerName", "player"]
+    stats = ["attackerName", "victimName", "assisterName", "flashThrowerName", "Player"]
     if team:
         stats = [
             "attackerTeam",
             "victimTeam",
             "assisterTeam",
             "flashThrowerTeam",
-            "team",
+            "Team",
         ]
     kills = calc_stats(
         kill_data.loc[kill_data["attackerTeam"] != kill_data["victimTeam"]],
@@ -439,12 +439,7 @@ def kill_stats(
         [stats[4], "K"],
     )
     deaths = calc_stats(
-        kill_data,
-        death_filters,
-        [stats[1]],
-        [stats[1]],
-        [["size"]],
-        [stats[4], "D"],
+        kill_data, death_filters, [stats[1]], [stats[1]], [["size"]], [stats[4], "D"],
     )
     assists = calc_stats(
         kill_data.loc[kill_data["assisterTeam"] != kill_data["victimTeam"]],
@@ -581,9 +576,9 @@ def adr(
             dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
     """
-    stats = ["attackerName", "player"]
+    stats = ["attackerName", "Player"]
     if team:
-        stats = ["attackerTeam", "team"]
+        stats = ["attackerTeam", "Team"]
     adr = calc_stats(
         damage_data.loc[damage_data["attackerTeam"] != damage_data["victimTeam"]],
         damage_filters,
@@ -625,9 +620,9 @@ def util_dmg(
             dataframe represented by grenade_data to filter the grenade data by
             and the values are lists that contain the column filters.
     """
-    stats = ["attackerName", "throwerName", "player"]
+    stats = ["attackerName", "throwerName", "Player"]
     if team:
-        stats = ["attackerTeam", "throwerTeam", "team"]
+        stats = ["attackerTeam", "throwerTeam", "Team"]
     util_dmg = calc_stats(
         damage_data.loc[
             (damage_data["attackerTeam"] != damage_data["victimTeam"])
@@ -695,9 +690,9 @@ def flash_stats(
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
     """
-    stats = ["attackerName", "flashThrowerName", "throwerName", "player"]
+    stats = ["attackerName", "flashThrowerName", "throwerName", "Player"]
     if team:
-        stats = ["attackerTeam", "flashThrowerTeam", "throwerTeam", "team"]
+        stats = ["attackerTeam", "flashThrowerTeam", "throwerTeam", "Team"]
     enemy_flashes = calc_stats(
         flash_data.loc[flash_data["attackerTeam"] != flash_data["playerTeam"]],
         flash_filters,
@@ -751,8 +746,7 @@ def flash_stats(
 
 
 def bomb_stats(
-    bomb_data: pd.DataFrame,
-    bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
+    bomb_data: pd.DataFrame, bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with bomb event statistics.
 
@@ -944,9 +938,9 @@ def kill_breakdown(
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
     """
-    stats = ["attackerName", "player"]
+    stats = ["attackerName", "Player"]
     if team:
-        stats = ["attackerTeam", "team"]
+        stats = ["attackerTeam", "Team"]
     kill_breakdown = kill_data.loc[
         kill_data["attackerTeam"] != kill_data["victimTeam"]
     ].copy()
@@ -1023,9 +1017,9 @@ def util_dmg_breakdown(
             dataframe represented by grenade_data to filter the grenade data by
             and the values are lists that contain the column filters.
     """
-    stats = ["attackerName", "throwerName", "player"]
+    stats = ["attackerName", "throwerName", "Player"]
     if team:
-        stats = ["attackerTeam", "throwerTeam", "team"]
+        stats = ["attackerTeam", "throwerTeam", "Team"]
     util_dmg = calc_stats(
         damage_data.loc[
             (damage_data["attackerTeam"] != damage_data["victimTeam"])
