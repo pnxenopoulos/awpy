@@ -12,6 +12,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
@@ -27,17 +28,19 @@ import (
 
 // Game is the overall struct that holds everything
 type Game struct {
-	MatchName     string       `json:"matchID"`
-	ClientName    string       `json:"clientName"`
-	Map           string       `json:"mapName"`
-	TickRate      int64        `json:"tickRate"`
-	PlaybackTicks int64        `json:"playbackTicks"`
-	ParsingOpts   ParserOpts   `json:"parserParameters"`
-	ServerVars    ServerConVar `json:"serverVars"`
-	MatchPhases   MatchPhases  `json:"matchPhases"`
-	ParsedPlaces  []string     `json:"parsedPlaceNames"`
-	MMRanks       []MMRank     `json:"matchmakingRanks"`
-	Rounds        []GameRound  `json:"gameRounds"`
+	MatchName      string       `json:"matchID"`
+	ClientName     string       `json:"clientName"`
+	Map            string       `json:"mapName"`
+	TickRate       int64        `json:"tickRate"`
+	PlaybackTicks  int64        `json:"playbackTicks"`
+	PlaybackFrames int64       `json:"playbackFrames"`
+	ParsedToFrame  int64        `json:"parsedToFrame"`
+	ParsingOpts    ParserOpts   `json:"parserParameters"`
+	ServerVars     ServerConVar `json:"serverVars"`
+	MatchPhases    MatchPhases  `json:"matchPhases"`
+	ParsedPlaces   []string     `json:"parsedPlaceNames"`
+	MMRanks        []MMRank     `json:"matchmakingRanks"`
+	Rounds         []GameRound  `json:"gameRounds"`
 }
 
 // ParserOpts holds parsing parameters
@@ -136,32 +139,35 @@ type GameRound struct {
 
 // GrenadeAction events
 type GrenadeAction struct {
-	ThrowTick       int64   `json:"throwTick"`
-	DestroyTick     int64   `json:"destroyTick"`
-	ThrowSecond     float64 `json:"throwSeconds"`
-	DestroySecond   float64 `json:"destroySeconds"`
-	ThrowerSteamID  int64   `json:"throwerSteamID"`
-	ThrowerName     string  `json:"throwerName"`
-	ThrowerTeam     string  `json:"throwerTeam"`
-	ThrowerSide     string  `json:"throwerSide"`
-	ThrowerX        float64 `json:"throwerX"`
-	ThrowerY        float64 `json:"throwerY"`
-	ThrowerZ        float64 `json:"throwerZ"`
-	ThrowerAreaID   *int64  `json:"throwerAreaID"`
-	ThrowerAreaName *string `json:"throwerAreaName"`
-	Grenade         string  `json:"grenadeType"`
-	GrenadeX        float64 `json:"grenadeX"`
-	GrenadeY        float64 `json:"grenadeY"`
-	GrenadeZ        float64 `json:"grenadeZ"`
-	GrenadeAreaID   *int64  `json:"grenadeAreaID"`
-	GrenadeAreaName *string `json:"grenadeAreaName"`
-	UniqueID        int64
+	ThrowTick         int64   `json:"throwTick"`
+	DestroyTick       int64   `json:"destroyTick"`
+	ThrowSecond       float64 `json:"throwSeconds"`
+	ThrowClockTime    string  `json:"throwClockTime"`
+	DestroySecond     float64 `json:"destroySeconds"`
+	DestroyClockTime  string  `json:"throwClockTime"`
+	ThrowerSteamID    int64   `json:"throwerSteamID"`
+	ThrowerName       string  `json:"throwerName"`
+	ThrowerTeam       string  `json:"throwerTeam"`
+	ThrowerSide       string  `json:"throwerSide"`
+	ThrowerX          float64 `json:"throwerX"`
+	ThrowerY          float64 `json:"throwerY"`
+	ThrowerZ          float64 `json:"throwerZ"`
+	ThrowerAreaID     *int64  `json:"throwerAreaID"`
+	ThrowerAreaName   *string `json:"throwerAreaName"`
+	Grenade           string  `json:"grenadeType"`
+	GrenadeX          float64 `json:"grenadeX"`
+	GrenadeY          float64 `json:"grenadeY"`
+	GrenadeZ          float64 `json:"grenadeZ"`
+	GrenadeAreaID     *int64  `json:"grenadeAreaID"`
+	GrenadeAreaName   *string `json:"grenadeAreaName"`
+	UniqueID          int64
 }
 
 // BombAction events
 type BombAction struct {
 	Tick          int64   `json:"tick"`
 	Second        float64 `json:"seconds"`
+	ClockTime     string  `json:"clockTime`
 	PlayerSteamID int64   `json:"playerSteamID"`
 	PlayerName    string  `json:"playerName"`
 	PlayerTeam    string  `json:"playerTeam"`
@@ -176,6 +182,7 @@ type BombAction struct {
 type DamageAction struct {
 	Tick             int64    `json:"tick"`
 	Second           float64  `json:"seconds"`
+	ClockTime        string   `json:"clockTime"`
 	AttackerSteamID  *int64   `json:"attackerSteamID"`
 	AttackerName     *string  `json:"attackerName"`
 	AttackerTeam     *string  `json:"attackerTeam"`
@@ -211,6 +218,7 @@ type DamageAction struct {
 type KillAction struct {
 	Tick                int64    `json:"tick"`
 	Second              float64  `json:"seconds"`
+	ClockTime           string   `json:"clockTime"`
 	AttackerSteamID     *int64   `json:"attackerSteamID"`
 	AttackerName        *string  `json:"attackerName"`
 	AttackerTeam        *string  `json:"attackerTeam"`
@@ -263,6 +271,7 @@ type KillAction struct {
 type WeaponFireAction struct {
 	Tick           int64   `json:"tick"`
 	Second         float64 `json:"seconds"`
+	ClockTime      string  `json:"clockTime"`
 	PlayerSteamID  int64   `json:"playerSteamID"`
 	PlayerName     string  `json:"playerName"`
 	PlayerTeam     string  `json:"playerTeam"`
@@ -282,6 +291,7 @@ type WeaponFireAction struct {
 type FlashAction struct {
 	Tick             int64    `json:"tick"`
 	Second           float64  `json:"seconds"`
+	ClockTime        string   `json:"clockTime"`
 	AttackerSteamID  int64    `json:"attackerSteamID"`
 	AttackerName     string   `json:"attackerName"`
 	AttackerTeam     string   `json:"attackerTeam"`
@@ -311,6 +321,7 @@ type FlashAction struct {
 type GameFrame struct {
 	Tick        int64         `json:"tick"`
 	Second      float64       `json:"seconds"`
+	ClockTime   string        `json:"clockTime"`
 	FrameToken  *string       `json:"positionToken"`
 	TToken      *string       `json:"tToken"`
 	CTToken     *string       `json:"ctToken"`
@@ -531,6 +542,10 @@ func convertWeaponClass(wc common.EquipmentClass) string {
 func determineSecond(tick int64, currentRound GameRound, currentGame Game) float64 {
 	roundTime := currentGame.ServerVars.RoundTime
 
+	if tick <= 0 {
+		return float64(0)
+	}
+
 	if roundTime == 0 {
 		roundTime = currentGame.ServerVars.RoundTimeDefuse
 	}
@@ -542,6 +557,39 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 		phaseEndTick = *currentRound.BombPlantTick
 	}
 	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
+}
+
+func formatTimeNumber(num int64) string {
+	if num < 10 {
+		return "0" + fmt.Sprint(num)
+	} else {
+		return fmt.Sprint(num)
+	}
+}
+
+func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) string {
+	roundTime := currentGame.ServerVars.RoundTime
+
+	if tick <= 0 {
+		return "00:00"
+	}
+
+	if roundTime == 0 {
+		roundTime = currentGame.ServerVars.RoundTimeDefuse
+	}
+
+	var seconds_remaining float64
+	var phaseEndTick int64
+	if currentRound.BombPlantTick == nil {
+		phaseEndTick = currentRound.FreezeTimeEndTick
+		seconds_remaining = 115 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
+	} else {
+		phaseEndTick = *currentRound.BombPlantTick
+		seconds_remaining = 40 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
+	}
+	minutes := int64(math.Floor((seconds_remaining/60)))
+	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
+	return formatTimeNumber(minutes) + ":" + formatTimeNumber(seconds)
 }
 
 func findAreaPlace(currArea *gonav.NavArea, mesh gonav.NavMesh) string {
@@ -567,8 +615,10 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
-	currentPlayer.PlayerTeam = p.TeamState.ClanName()
-
+	if (p.TeamState != nil) {
+		currentPlayer.PlayerTeam = p.TeamState.ClanName()
+	}
+	
 	switch p.Team {
 	case common.TeamTerrorists:
 		currentPlayer.PlayerSide = "T"
@@ -655,7 +705,9 @@ func parsePlayerNoNav(p *common.Player) PlayerInfo {
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
-	currentPlayer.PlayerTeam = p.TeamState.ClanName()
+	if (p.TeamState != nil) {
+		currentPlayer.PlayerTeam = p.TeamState.ClanName()
+	}
 
 	switch p.Team {
 	case common.TeamTerrorists:
@@ -973,6 +1025,7 @@ func main() {
 		currentGame.TickRate = int64(p.TickRate())
 	}
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
+	currentGame.PlaybackFrames = int64(header.PlaybackFrames)
 	currentGame.ClientName = header.ClientName
 
 	if navFileExists {
@@ -1071,11 +1124,13 @@ func main() {
 		currentRound.StartTick = int64(gs.IngameTick())
 		currentRound.TScore = int64(gs.TeamTerrorists().Score())
 		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		tTeam := gs.TeamTerrorists().ClanName()
-		ctTeam := gs.TeamCounterTerrorists().ClanName()
-		currentRound.TTeam = &tTeam
-		currentRound.CTTeam = &ctTeam
-
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+			currentRound.TTeam = &tTeam
+			currentRound.CTTeam = &ctTeam
+		} 
+		
 		// Parse round money
 		tPlayers := gs.TeamTerrorists().Members()
 		currentRound.TBeginMoney = 0
@@ -1102,10 +1157,12 @@ func main() {
 		// Reupdate the teams to make sure
 		currentRound.TScore = int64(gs.TeamTerrorists().Score())
 		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		tTeam := gs.TeamTerrorists().ClanName()
-		ctTeam := gs.TeamCounterTerrorists().ClanName()
-		currentRound.TTeam = &tTeam
-		currentRound.CTTeam = &ctTeam
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+			currentRound.TTeam = &tTeam
+			currentRound.CTTeam = &ctTeam
+		}
 
 		// If convars aren't parsed, do so
 		if convParsed == 0 {
@@ -1153,10 +1210,12 @@ func main() {
 			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
 			currentRound.TScore = int64(gs.TeamTerrorists().Score())
 			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-			currentRound.TTeam = &tTeam
-			currentRound.CTTeam = &ctTeam
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
 
 			// Parse round money
 			tPlayers := gs.TeamTerrorists().Members()
@@ -1218,19 +1277,23 @@ func main() {
 				currentRound.Reason = "TerroristsWin"
 				currentRound.EndTScore = currentRound.TScore + 1
 				currentRound.EndCTScore = currentRound.CTScore
-				tTeam := gs.TeamTerrorists().ClanName()
-				ctTeam := gs.TeamCounterTerrorists().ClanName()
-				currentRound.WinningTeam = &tTeam
-				currentRound.LosingTeam = &ctTeam
+				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+					tTeam := gs.TeamTerrorists().ClanName()
+					ctTeam := gs.TeamCounterTerrorists().ClanName()
+					currentRound.WinningTeam = &tTeam
+					currentRound.LosingTeam = &ctTeam
+				}
 				currentRound.WinningSide = "T"
 			} else {
 				currentRound.Reason = "CTWin"
 				currentRound.EndCTScore = currentRound.CTScore + 1
 				currentRound.EndTScore = currentRound.TScore
-				tTeam := gs.TeamTerrorists().ClanName()
-				ctTeam := gs.TeamCounterTerrorists().ClanName()
-				currentRound.WinningTeam = &ctTeam
-				currentRound.LosingTeam = &tTeam
+				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+					tTeam := gs.TeamTerrorists().ClanName()
+					ctTeam := gs.TeamCounterTerrorists().ClanName()
+					currentRound.WinningTeam = &ctTeam
+					currentRound.LosingTeam = &tTeam
+				}
 				currentRound.WinningSide = "CT"
 			}
 		} else {
@@ -1251,10 +1314,12 @@ func main() {
 			currentRound.StartTick = 0
 			currentRound.TScore = 0
 			currentRound.CTScore = 0
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-			currentRound.TTeam = &tTeam
-			currentRound.CTTeam = &ctTeam
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
 
 			// Parse round spend
 			currentRound.TBeginMoney = 800 * 5
@@ -1282,15 +1347,17 @@ func main() {
 		currentRound.Reason = convertRoundEndReason(e.Reason)
 		currentRound.WinningSide = winningTeam
 
-		tTeam := gs.TeamTerrorists().ClanName()
-		ctTeam := gs.TeamCounterTerrorists().ClanName()
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
 
-		if winningTeam == "CT" {
-			currentRound.LosingTeam = &tTeam
-			currentRound.WinningTeam = &ctTeam
-		} else if winningTeam == "T" {
-			currentRound.LosingTeam = &ctTeam
-			currentRound.WinningTeam = &tTeam
+			if winningTeam == "CT" {
+				currentRound.LosingTeam = &tTeam
+				currentRound.WinningTeam = &ctTeam
+			} else if winningTeam == "T" {
+				currentRound.LosingTeam = &ctTeam
+				currentRound.WinningTeam = &tTeam
+			}
 		}
 
 		currentRound.CTBeginEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
@@ -1313,6 +1380,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse"
 		currentBomb.BombSite = ""
 		if e.Site == 65 {
@@ -1322,7 +1390,9 @@ func main() {
 		}
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		if (e.Player.TeamState != nil) {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
@@ -1341,6 +1411,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse_start"
 
 		// Find bombsite where event is planted
@@ -1354,7 +1425,9 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		if (e.Player.TeamState != nil) {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
@@ -1373,6 +1446,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse_aborted"
 
 		// Find bombsite where event is planted
@@ -1386,7 +1460,9 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		if (e.Player.TeamState != nil) {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
@@ -1406,9 +1482,12 @@ func main() {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
 			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, currentRound, currentGame)
+			currentWeaponFire.ClockTime = calculateClocktime(currentWeaponFire.Tick, currentRound, currentGame)
 			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
 			currentWeaponFire.PlayerName = e.Shooter.Name
-			currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
+			if (e.Shooter.TeamState != nil) {
+				currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
+			}
 			playerSide := "Unknown"
 			switch e.Shooter.Team {
 			case common.TeamTerrorists:
@@ -1466,11 +1545,14 @@ func main() {
 			currentFlash := FlashAction{}
 			currentFlash.Tick = int64(gs.IngameTick())
 			currentFlash.Second = determineSecond(currentFlash.Tick, currentRound, currentGame)
+			currentFlash.ClockTime = calculateClocktime(currentFlash.Tick, currentRound, currentGame)
 
 			// Attacker
 			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
 			currentFlash.AttackerName = e.Attacker.Name
-			currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
+			if (e.Attacker.TeamState != nil) {
+				currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
+			}
 			attackerSide := "Unknown"
 			switch e.Attacker.Team {
 			case common.TeamTerrorists:
@@ -1594,6 +1676,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant"
 		currentBomb.BombSite = ""
 
@@ -1605,7 +1688,9 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		if (e.Player.TeamState != nil) {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
@@ -1626,6 +1711,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant_begin"
 		currentBomb.BombSite = ""
 
@@ -1637,7 +1723,9 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		if (e.Player.TeamState != nil) {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
@@ -1656,6 +1744,7 @@ func main() {
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant_abort"
 
 		// Find bombsite where event is planted
@@ -1669,7 +1758,9 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		if (e.Player.TeamState != nil) {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
@@ -1690,15 +1781,20 @@ func main() {
 			currentGrenade.UniqueID = e.Projectile.UniqueID()
 			currentGrenade.ThrowTick = int64(gs.IngameTick())
 			currentGrenade.ThrowSecond = determineSecond(currentGrenade.ThrowTick, currentRound, currentGame)
+			currentGrenade.ThrowClockTime = calculateClocktime(currentGrenade.ThrowTick, currentRound, currentGame)
 
 			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
 			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
 			playerSide := "Unknown"
 
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-
+			tTeam := ""
+			ctTeam := ""
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam = gs.TeamTerrorists().ClanName()
+				ctTeam = gs.TeamCounterTerrorists().ClanName()
+			}
+			
 			switch e.Projectile.Thrower.Team {
 			case common.TeamTerrorists:
 				playerSide = "T"
@@ -1761,7 +1857,7 @@ func main() {
 				if g.UniqueID == e.Projectile.UniqueID() {
 					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
 					currentRound.Grenades[i].DestroySecond = determineSecond(currentRound.Grenades[i].DestroyTick, currentRound, currentGame)
-
+					currentRound.Grenades[i].DestroyClockTime = calculateClocktime(currentRound.Grenades[i].DestroyTick, currentRound, currentGame)
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
 					
@@ -1799,6 +1895,7 @@ func main() {
 		currentKill := KillAction{}
 		currentKill.Tick = int64(gs.IngameTick())
 		currentKill.Second = determineSecond(currentKill.Tick, currentRound, currentGame)
+		currentKill.ClockTime = calculateClocktime(currentKill.Tick, currentRound, currentGame)
 		currentKill.Weapon = e.Weapon.String()
 		currentKill.IsWallbang = e.IsWallBang()
 		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
@@ -1812,8 +1909,10 @@ func main() {
 			attackerSteamID := int64(e.Killer.SteamID64)
 			currentKill.AttackerSteamID = &attackerSteamID
 			currentKill.AttackerName = &e.Killer.Name
-			attackerTeamName := e.Killer.TeamState.ClanName()
-			currentKill.AttackerTeam = &attackerTeamName
+			if (e.Killer.TeamState != nil) {
+				attackerTeamName := e.Killer.TeamState.ClanName()
+				currentKill.AttackerTeam = &attackerTeamName
+			}
 			attackerSide := "Unknown"
 
 			switch e.Killer.Team {
@@ -1865,8 +1964,10 @@ func main() {
 			victimSteamID := int64(e.Victim.SteamID64)
 			currentKill.VictimSteamID = &victimSteamID
 			currentKill.VictimName = &e.Victim.Name
-			victimTeamName := e.Victim.TeamState.ClanName()
-			currentKill.VictimTeam = &victimTeamName
+			if (e.Victim.TeamState != nil) {
+				victimTeamName := e.Victim.TeamState.ClanName()
+				currentKill.VictimTeam = &victimTeamName
+			}
 			victimSide := "Unknown"
 
 			switch e.Victim.Team {
@@ -1951,8 +2052,10 @@ func main() {
 			assistSteamID := int64(e.Assister.SteamID64)
 			currentKill.AssisterSteamID = &assistSteamID
 			currentKill.AssisterName = &e.Assister.Name
-			assistTeamName := e.Assister.TeamState.ClanName()
-			currentKill.AssisterTeam = &assistTeamName
+			if (e.Assister.TeamState != nil) {
+				assistTeamName := e.Assister.TeamState.ClanName()
+				currentKill.AssisterTeam = &assistTeamName
+			}
 			assisterSide := "Unknown"
 			switch e.Assister.Team {
 			case common.TeamTerrorists:
@@ -2016,6 +2119,7 @@ func main() {
 		currentDamage := DamageAction{}
 		currentDamage.Tick = int64(gs.IngameTick())
 		currentDamage.Second = determineSecond(currentDamage.Tick, currentRound, currentGame)
+		currentDamage.ClockTime = calculateClocktime(currentDamage.Tick, currentRound, currentGame)
 		currentDamage.Weapon = e.Weapon.String()
 		currentDamage.HitGroup = convertHitGroup(e.HitGroup)
 		currentDamage.HpDamage = int64(e.HealthDamage)
@@ -2028,8 +2132,10 @@ func main() {
 			attackerSteamID := int64(e.Attacker.SteamID64)
 			currentDamage.AttackerSteamID = &attackerSteamID
 			currentDamage.AttackerName = &e.Attacker.Name
-			attackerTeamName := e.Attacker.TeamState.ClanName()
-			currentDamage.AttackerTeam = &attackerTeamName
+			if (e.Attacker.TeamState != nil) {
+				attackerTeamName := e.Attacker.TeamState.ClanName()
+				currentDamage.AttackerTeam = &attackerTeamName
+			}
 
 			attackerSide := "Unknown"
 			switch e.Attacker.Team {
@@ -2083,9 +2189,11 @@ func main() {
 			victimSteamID := int64(e.Player.SteamID64)
 			currentDamage.VictimSteamID = &victimSteamID
 			currentDamage.VictimName = &e.Player.Name
-			victimTeamName := e.Player.TeamState.ClanName()
-			currentDamage.VictimTeam = &victimTeamName
-
+			if (e.Player.TeamState != nil) {
+				victimTeamName := e.Player.TeamState.ClanName()
+				currentDamage.VictimTeam = &victimTeamName
+			}
+			
 			victimSide := "Unknown"
 			switch e.Player.Team {
 			case common.TeamTerrorists:
@@ -2142,11 +2250,14 @@ func main() {
 			currentFrame := GameFrame{}
 			currentFrame.Tick = int64(gs.IngameTick())
 			currentFrame.Second = determineSecond(currentFrame.Tick, currentRound, currentGame)
+			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, currentRound, currentGame)
 
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
 			currentFrame.T.Side = "T"
-			currentFrame.T.Team = gs.TeamTerrorists().ClanName()
+			if (gs.TeamTerrorists() != nil) {
+				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
+			}
 			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
 			tPlayers := gs.TeamTerrorists().Members()
 
@@ -2183,7 +2294,9 @@ func main() {
 			// Parse CT
 			currentFrame.CT = TeamFrameInfo{}
 			currentFrame.CT.Side = "CT"
-			currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
+			if (gs.TeamCounterTerrorists() != nil) {
+				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
+			}
 			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 
@@ -2260,8 +2373,12 @@ func main() {
 			currentWorldObj.Z = float64(objPos.Z)
 			currentFrame.World = append(currentFrame.World, currentWorldObj)
 			if len(currentRound.Bomb) > 0 {
-				currentFrame.BombPlanted = true
-				currentFrame.BombSite = currentRound.Bomb[0].BombSite
+				for _, b := range currentRound.Bomb {
+					if b.BombAction == "plant" {
+						currentFrame.BombPlanted = true
+						currentFrame.BombSite = b.BombSite
+					}
+				}	
 			} else {
 				currentFrame.BombPlanted = false
 			}
@@ -2286,7 +2403,7 @@ func main() {
 
 	// Parse demofile to end
 	err = p.ParseToEnd()
-	checkError(err)
+	currentGame.ParsedToFrame = int64(p.CurrentFrame())
 
 	// Add the most recent round
 	currentGame.Rounds = append(currentGame.Rounds, currentRound)
@@ -2323,11 +2440,14 @@ func main() {
 		file, _ := json.MarshalIndent(currentGame, "", " ")
 		_ = ioutil.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
 	}
+
+	// Check error
+	checkError(err)
 }
 
 // Function to handle errors
 func checkError(err error) {
-	if err != nil {
+	if (err != nil) {
 		panic(err)
 	}
 }

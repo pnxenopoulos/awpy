@@ -143,16 +143,6 @@ class TestDemoParser:
         assert os.path.exists("default.json")
         assert self.parser.output_file == "default.json"
 
-    def test_unexpected_end(self):
-        """Tests if the unexpected end demo fails"""
-        self.parser_unexpected = DemoParser(
-            demofile="unexpected_end_of_demo.dem",
-            log=False,
-            parse_rate=256,
-        )
-        with pytest.raises(FileNotFoundError):
-            d = self.parser_unexpected.parse()
-
     def test_parse_valve_matchmaking(self):
         """Tests if demos parse correctly"""
         self.valve_mm = DemoParser(

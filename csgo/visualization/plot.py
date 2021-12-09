@@ -5,7 +5,6 @@ import imageio
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 
 from csgo import MAP_DATA
 
@@ -13,7 +12,7 @@ from csgo import MAP_DATA
 def plot_map(map_name="de_dust2", map_type="original", dark=False):
     """Plots the map"""
     if map_type == "original":
-        map_bg = mpimg.imread(
+        map_bg = imageio.imread(
             os.path.join(os.path.dirname(__file__), "")
             + """../data/map/{0}.png""".format(map_name)
         )
@@ -21,7 +20,7 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
         col = "light"
         if dark:
             col = "dark"
-        map_bg = mpimg.imread(
+        map_bg = imageio.imread(
             os.path.join(os.path.dirname(__file__), "")
             + """../data/map/{0}_{1}.png""".format(map_name, col)
         )
@@ -34,9 +33,16 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
 def position_transform(map_name, position, axis):
     start = MAP_DATA[map_name][axis]
     scale = MAP_DATA[map_name]["scale"]
-    pos = position - start
-    pos = pos / scale
-    return pos
+    if axis == "x":
+        pos = position - start
+        pos /= scale
+        return pos
+    elif axis == "y":
+        pos = start - position
+        pos /= scale
+        return pos
+    else:
+        return None
 
 
 def plot_positions(
@@ -121,8 +127,8 @@ def plot_nades(
             for g in r["grenades"]:
                 if g["throwerSide"] == side:
                     start_x = position_transform(map_name, g["throwerX"], "x")
-                    start_y = position_transform(map_name, g["throwerY"], "x")
-                    end_x = position_transform(map_name, g["grenadeX"], "y")
+                    start_y = position_transform(map_name, g["throwerY"], "y")
+                    end_x = position_transform(map_name, g["grenadeX"], "x")
                     end_y = position_transform(map_name, g["grenadeY"], "y")
                     if g["grenadeType"] in nades:
                         if (
