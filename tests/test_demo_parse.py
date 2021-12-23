@@ -46,6 +46,21 @@ class TestDemoParser:
         print("Removing " + demo_name)
         os.remove(demo_name + ".dem")
 
+    @staticmethod
+    def _check_round_scores(rounds):
+        for i, r in enumerate(rounds):
+            if i == 0:
+                assert r["tScore"] == 0
+                assert r["ctScore"] == 0
+            if i > 0 and i != len(rounds):
+                winningSide = rounds[i-1]["winningSide"]
+                if winningSide == "ct":
+                    assert r["ctScore"] > rounds[i-1]["ctScore"]
+                    assert r["tScore"] == rounds[i-1]["tScore"]
+                if winningSide == "t":
+                    assert r["ctScore"] == rounds[i-1]["ctScore"]
+                    assert r["tScore"] > rounds[i-1]["tScore"]
+
     def test_demo_id_inferred(self):
         """Tests if a demo_id is correctly inferred"""
         self.parser_inferred = DemoParser(
@@ -215,3 +230,12 @@ class TestDemoParser:
                     if e["victimName"] == "Charmees":
                         charmees_found += 1
         assert charmees_found > 0
+
+    def test_warmup(self):
+        """ Tests if warmup rounds are properly parsing
+        """
+        self.warmup_parser = DemoParser(demofile="warmup_test.dem", log=False, parse_frames=False)
+        self.warmup_data = self.warmup_parser.parse()
+        self.warmup_data = self.warmup_parser.clean_rounds()
+        assert len(self.warmup_data["gameRounds"]) == 30
+        self._check_round_scores(self.warmup_data["gameRounds"])

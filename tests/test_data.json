@@ -16,5 +16,8 @@
     },
     "bot_name_test": {
         "url": "https://storage.googleapis.com/csgo-tests/bot_name_test.dem"
+    },
+    "warmup_test": {
+        "url": "https://storage.googleapis.com/csgo-tests/warmup_test.dem"
     }
 }

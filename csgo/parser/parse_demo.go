@@ -1305,6 +1305,16 @@ func main() {
 	// Parse round ends
 	p.RegisterEventHandler(func(e events.RoundEnd) {
 		gs := p.GameState()
+		
+		if roundStarted == 1 {
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
+		}
+		
 		currentGame.MatchPhases.RoundEnded = append(currentGame.MatchPhases.RoundEnded, int64(gs.IngameTick()))
 
 		if roundStarted == 0 {
