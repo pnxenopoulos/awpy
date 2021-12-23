@@ -1908,7 +1908,7 @@ func main() {
 		if e.Killer != nil {
 			attackerSteamID := int64(e.Killer.SteamID64)
 			currentKill.AttackerSteamID = &attackerSteamID
-			attackerName := e.Killer.String()
+			attackerName := e.Killer.Name
 			currentKill.AttackerName = &attackerName
 			if (e.Killer.TeamState != nil) {
 				attackerTeamName := e.Killer.TeamState.ClanName()
@@ -1964,7 +1964,7 @@ func main() {
 		if e.Victim != nil {
 			victimSteamID := int64(e.Victim.SteamID64)
 			currentKill.VictimSteamID = &victimSteamID
-			victimName := e.Victim.String()
+			victimName := e.Victim.Name
 			currentKill.VictimName = &victimName
 			if (e.Victim.TeamState != nil) {
 				victimTeamName := e.Victim.TeamState.ClanName()
@@ -2053,7 +2053,7 @@ func main() {
 		if e.Assister != nil {
 			assistSteamID := int64(e.Assister.SteamID64)
 			currentKill.AssisterSteamID = &assistSteamID
-			assisterName := e.Assister.String()
+			assisterName := e.Assister.Name
 			currentKill.AssisterName = &assisterName
 			if (e.Assister.TeamState != nil) {
 				assistTeamName := e.Assister.TeamState.ClanName()
@@ -2134,7 +2134,7 @@ func main() {
 		if e.Attacker != nil {
 			attackerSteamID := int64(e.Attacker.SteamID64)
 			currentDamage.AttackerSteamID = &attackerSteamID
-			attackerName := e.Attacker.String()
+			attackerName := e.Attacker.Name
 			currentDamage.AttackerName = &attackerName
 			if (e.Attacker.TeamState != nil) {
 				attackerTeamName := e.Attacker.TeamState.ClanName()
@@ -2192,9 +2192,8 @@ func main() {
 		if e.Player != nil {
 			victimSteamID := int64(e.Player.SteamID64)
 			currentDamage.VictimSteamID = &victimSteamID
-			victimName := e.Player.String()
+			victimName := e.Player.Name
 			currentDamage.VictimName = &victimName
-			currentDamage.VictimName = &e.Player.Name
 			if (e.Player.TeamState != nil) {
 				victimTeamName := e.Player.TeamState.ClanName()
 				currentDamage.VictimTeam = &victimTeamName
