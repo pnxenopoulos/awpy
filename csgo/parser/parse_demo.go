@@ -2053,7 +2053,8 @@ func main() {
 		if e.Assister != nil {
 			assistSteamID := int64(e.Assister.SteamID64)
 			currentKill.AssisterSteamID = &assistSteamID
-			currentKill.AssisterName = &e.Assister.Name
+			assisterName := e.Assister.String()
+			currentKill.AssisterName = &assisterName
 			if (e.Assister.TeamState != nil) {
 				assistTeamName := e.Assister.TeamState.ClanName()
 				currentKill.AssisterTeam = &assistTeamName
