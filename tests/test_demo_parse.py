@@ -219,7 +219,7 @@ class TestDemoParser:
     def test_warmup(self):
         """ Tests if warmup rounds are properly parsing
         """
-        self.warmup_parser = DemoParser(demofille="warmup_test.dem", log=False, parse_frames=False)
+        self.warmup_parser = DemoParser(demofile="warmup_test.dem", log=False, parse_frames=False)
         self.warmup_data = self.warmup_parser.parse()
         self.warmup_data = self.warmup_parser.clean_rounds()
         assert len(self.warmup_data["gameRounds"]) == 30
