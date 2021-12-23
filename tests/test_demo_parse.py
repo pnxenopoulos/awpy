@@ -215,3 +215,11 @@ class TestDemoParser:
                     if e["victimName"] == "Charmees":
                         charmees_found += 1
         assert charmees_found > 0
+
+    def test_warmup(self):
+        """ Tests if warmup rounds are properly parsing
+        """
+        self.warmup_parser = DemoParser(demofille="warmup_test.dem", log=False, parse_frames=False)
+        self.warmup_data = self.warmup_parser.parse()
+        self.warmup_data = self.warmup_parser.clean_rounds()
+        assert len(self.warmup_data["gameRounds"]) == 30

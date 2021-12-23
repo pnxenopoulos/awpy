@@ -496,10 +496,9 @@ class DemoParser:
         remove_warmups=True,
         remove_knifes=True,
         bad_round_endings=["Draw", "Unknown", ""],
-        remove_excess_kills=True,
         remove_time=True,
     ):
-        """Redo for sphinx"""
+        """Cleans rounds to remove warmups, knives, bad round endings, etc."""
         if self.json:
             self.remove_warmups()
             self.remove_time_rounds()
@@ -508,6 +507,7 @@ class DemoParser:
             self.remove_end_round()
             self.renumber_rounds()
             self.write_json()
+            return self.json
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
@@ -533,6 +533,11 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if not r["isWarmup"]:
                     cleaned_rounds.append(r)
+            if "warmupChanged" in self.json["matchPhases"]:
+                last_warmup_changed = self.json["matchPhases"]["warmupChanged"][-1]
+                for r in self.json["gameRounds"]:
+                    if r["startTick"] > last_warmup_changed:
+                        cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error("JSON not found. Run .parse()")
