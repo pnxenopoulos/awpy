@@ -533,6 +533,7 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if not r["isWarmup"]:
                     cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
             if "warmupChanged" in self.json["matchPhases"]:
                 last_warmup_changed = self.json["matchPhases"]["warmupChanged"][-1]
                 for r in self.json["gameRounds"]:
