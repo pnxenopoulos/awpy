@@ -201,3 +201,17 @@ class TestDemoParser:
             d = self.parser_new._parse_frames()
             d = self.parser_new._parse_player_frames()
             d = self.parser_new._parse_weapon_fires()
+
+    def test_bot_name(self):
+        """Tests if bot naming is correct (brought up by Charmees).
+        Original error had "Troy" (bot) showing up instead of "Charmees" (player)
+        """
+        self.bot_name_parser = DemoParser(demofile="bot_name_test.dem", log=False, parse_frames=False)
+        self.bot_name_data = self.bot_name_parser.parse()
+        charmees_found = 0
+        for r in self.bot_name_data["gameRounds"]:
+            if r["damages"]:
+                for e in r["damages"]:
+                    if e["victimName"] == "Charmees":
+                        charmees_found += 1
+        assert charmees_found > 0

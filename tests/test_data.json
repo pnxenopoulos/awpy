@@ -13,5 +13,8 @@
     },
     "faceit_ecs_ot": {
         "url": "https://storage.googleapis.com/csgo-tests/faceit_ecs_ot.dem"
+    },
+    "bot_name_test": {
+        "url": "https://storage.googleapis.com/csgo-tests/bot_name_test.dem"
     }
 }
