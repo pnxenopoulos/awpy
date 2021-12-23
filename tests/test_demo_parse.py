@@ -56,7 +56,9 @@ class TestDemoParser:
                 winningSide = rounds[i-1]["winningSide"]
                 if winningSide == "ct":
                     assert r["ctScore"] > rounds[i-1]["ctScore"]
-                else:
+                    assert r["tScore"] == rounds[i-1]["tScore"]
+                if winningSide == "t":
+                    assert r["ctScore"] == rounds[i-1]["ctScore"]
                     assert r["tScore"] > rounds[i-1]["tScore"]
 
     def test_demo_id_inferred(self):
