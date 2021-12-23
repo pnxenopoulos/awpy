@@ -529,17 +529,20 @@ class DemoParser:
     def remove_warmups(self):
         """Remove warmup rounds from JSON."""
         if self.json:
+            # Remove warmups which are flagged as warmups
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
                 if not r["isWarmup"]:
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
             cleaned_rounds = []
+            # Now, remove warmups where the demo may have started recording in the middle of a warmup round
             if "warmupChanged" in self.json["matchPhases"]:
-                last_warmup_changed = self.json["matchPhases"]["warmupChanged"][-1]
-                for r in self.json["gameRounds"]:
-                    if r["startTick"] > last_warmup_changed:
-                        cleaned_rounds.append(r)
+                if len(self.json["matchPhases"]["warmupChanged"]) > 1:
+                    last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
+                    for r in self.json["gameRounds"]:
+                        if r["startTick"] > last_warmup_changed:
+                            cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error("JSON not found. Run .parse()")
