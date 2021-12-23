@@ -506,6 +506,7 @@ class DemoParser:
             self.remove_excess_kill_rounds()
             self.remove_end_round()
             self.renumber_rounds()
+            self.rescore_rounds()
             self.write_json()
             return self.json
         else:
@@ -522,6 +523,32 @@ class DemoParser:
         if self.json["gameRounds"]:
             for i, r in enumerate(self.json["gameRounds"]):
                 self.json["gameRounds"][i]["roundNum"] = i + 1
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def rescore_rounds(self):
+        """Rescores the rounds"""
+        if self.json["gameRounds"]:
+            for i, r in enumerate(self.json["gameRounds"]):
+                if i == 0:
+                    self.json["gameRounds"][i]["tScore"] = 0
+                    self.json["gameRounds"][i]["ctScore"] = 0
+                    if self.json["gameRounds"][i]["winningSide"] == "ct":
+                        self.json["gameRounds"][i]["endCTScore"] = 1
+                        self.json["gameRounds"][i]["endTScore"] = 0
+                    if self.json["gameRounds"][i]["winningSide"] == "t":
+                        self.json["gameRounds"][i]["endCTScore"] = 0
+                        self.json["gameRounds"][i]["endTScore"] = 1
+                elif i > 0:
+                    self.json["gameRounds"][i]["tScore"] = self.json["gameRounds"][i-1]["endTScore"]
+                    self.json["gameRounds"][i]["ctScore"] = self.json["gameRounds"][i-1]["endCTScore"]
+                    if self.json["gameRounds"][i]["winningSide"] == "ct":
+                        self.json["gameRounds"][i]["endCTScore"] = self.json["gameRounds"][i]["ctScore"] + 1
+                        self.json["gameRounds"][i]["endTScore"] = self.json["gameRounds"][i]["tScore"]
+                    if self.json["gameRounds"][i]["winningSide"] == "t":
+                        self.json["gameRounds"][i]["endCTScore"] = self.json["gameRounds"][i]["ctScore"]
+                        self.json["gameRounds"][i]["endTScore"] = self.json["gameRounds"][i]["tScore"] + 1
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
