@@ -566,7 +566,6 @@ class DemoParser:
                 if not r["isWarmup"]:
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
-            cleaned_rounds = []
             # Now, remove warmups where the demo may have started recording in the middle of a warmup round
             if "warmupChanged" in self.json["matchPhases"]:
                 if len(self.json["matchPhases"]["warmupChanged"]) > 1:
