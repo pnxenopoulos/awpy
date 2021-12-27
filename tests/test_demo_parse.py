@@ -186,7 +186,7 @@ class TestDemoParser:
         assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
         assert self.default_data["parserParameters"]["parseRate"] == 256
         for r in self.default_data["gameRounds"]:
-            assert r["bombEvents"]
+            assert r["bombEvents"] is not None
 
     def test_default_parse_df(self):
         """Tests default parse to dataframe"""
