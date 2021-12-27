@@ -185,6 +185,14 @@ class TestDemoParser:
         assert self.default_data["parserParameters"]["tradeTime"] == 5
         assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
         assert self.default_data["parserParameters"]["parseRate"] == 256
+        for r in self.default_data["gameRounds"]:
+            assert type(r["bombEvents"]) == list
+            assert type(r["damages"]) == list
+            assert type(r["kills"]) == list
+            assert type(r["flashes"]) == list
+            assert type(r["grenades"]) == list
+            assert type(r["weaponFires"]) == list
+            assert type(r["frames"]) == list
 
     def test_default_parse_df(self):
         """Tests default parse to dataframe"""

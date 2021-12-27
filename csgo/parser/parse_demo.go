@@ -845,7 +845,6 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 		}
 		return false
 	}
-	return false
 }
 
 func countAlivePlayers(players []PlayerInfo) int64 {
@@ -1044,6 +1043,21 @@ func main() {
 
 	RoundRestartDelay := int64(5)
 
+	// Create empty lists
+	currentGame.MMRanks = []MMRank{}
+	currentGame.MatchPhases.AnnFinalRound = []int64{}
+	currentGame.MatchPhases.AnnFinalRound = []int64{}
+	currentGame.MatchPhases.AnnMatchStarted = []int64{}
+	currentGame.MatchPhases.GameHalfEnded = []int64{}
+	currentGame.MatchPhases.MatchStart = []int64{}
+	currentGame.MatchPhases.MatchStartedChanged = []int64{}
+	currentGame.MatchPhases.WarmupChanged = []int64{}
+	currentGame.MatchPhases.TeamSwitch = []int64{}
+	currentGame.MatchPhases.RoundStarted = []int64{}
+	currentGame.MatchPhases.RoundFreezeEnded = []int64{}
+	currentGame.MatchPhases.RoundEnded = []int64{}
+	currentGame.MatchPhases.RoundEndedOfficial = []int64{}
+
 	// Parse rank updates
 	p.RegisterEventHandler(func(e events.RankUpdate) {
 		rankUpdate := MMRank{}
@@ -1119,6 +1133,17 @@ func main() {
 		roundInFreezetime = 1
 		roundInEndTime = 0
 		currentRound = GameRound{}
+
+		// Create empty action lists
+		currentRound.Bomb = []BombAction{}
+		currentRound.Damages = []DamageAction{}
+		currentRound.Flashes = []FlashAction{}
+		currentRound.Frames = []GameFrame{}
+		currentRound.Grenades = []GrenadeAction{}
+		currentRound.Kills = []KillAction{}
+		currentRound.WeaponFires = []WeaponFireAction{}
+
+		// Parse flags
 		currentRound.IsWarmup = gs.IsWarmupPeriod()
 		currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
 		currentRound.StartTick = int64(gs.IngameTick())
@@ -1204,6 +1229,16 @@ func main() {
 			roundStarted = 1
 			roundInEndTime = 0
 			currentRound = GameRound{}
+
+			// Create empty action lists
+			currentRound.Bomb = []BombAction{}
+			currentRound.Damages = []DamageAction{}
+			currentRound.Flashes = []FlashAction{}
+			currentRound.Frames = []GameFrame{}
+			currentRound.Grenades = []GrenadeAction{}
+			currentRound.Kills = []KillAction{}
+			currentRound.WeaponFires = []WeaponFireAction{}
+
 			currentRound.IsWarmup = gs.IsWarmupPeriod()
 			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
 			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
@@ -2279,6 +2314,11 @@ func main() {
 
 		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
+
+			// Create empty player lists
+			currentFrame.CT.Players = []PlayerInfo{}
+			currentFrame.T.Players = []PlayerInfo{}
+
 			currentFrame.Tick = int64(gs.IngameTick())
 			currentFrame.Second = determineSecond(currentFrame.Tick, currentRound, currentGame)
 			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, currentRound, currentGame)
