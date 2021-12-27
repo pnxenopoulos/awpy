@@ -60,8 +60,8 @@ class DemoParser:
         # Check if Golang is >= 1.14
         acceptable_go = check_go_version()
         if not acceptable_go:
-            self.logger.error("Go version too low! Needs 1.14.0")
-            raise ValueError("Go version too low! Needs 1.14.0")
+            self.logger.error("Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0.")
+            raise ValueError("Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0.")
         else:
             self.logger.info("Go version>=1.14.0")
 
