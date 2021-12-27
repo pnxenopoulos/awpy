@@ -512,7 +512,6 @@ class DemoParser:
         if self.json:
             self.remove_warmups()
             self.remove_time_rounds()
-            self.remove_time_rounds()
             self.remove_knife_rounds()
             self.remove_excess_kill_rounds()
             self.remove_end_round()
@@ -584,18 +583,6 @@ class DemoParser:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def remove_round_times(self):
-        """Remove rounds which have start/end ticks which don't make sense."""
-        if self.json:
-            cleaned_rounds = []
-            for r in self.json["gameRounds"]:
-                if (r["starTick"] < r["endTick"]) and (r["starTick"] > r["endOfficialTick"]):
-                    cleaned_rounds.append(r)
-            self.json["gameRounds"] = cleaned_rounds
-        else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
-
     def remove_end_round(self, bad_endings=["Draw", "Unknown", ""]):
         """Remove rounds with bad endings from JSON."""
         if self.json:
@@ -642,11 +629,11 @@ class DemoParser:
             raise AttributeError("JSON not found. Run .parse()")
 
     def remove_time_rounds(self, time_minimum=10):
-        """Removes rounds that are too short or too long"""
+        """Removes rounds with incorrect start/end ticks."""
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
-                if r["startTick"] <= r["endTick"]:
+                if (r["startTick"] <= r["endTick"]) or (r["startTick"] <= r["endOfficialTick"]) or (r["startTick"] <= r["freezeTimeEndTick"]):
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
