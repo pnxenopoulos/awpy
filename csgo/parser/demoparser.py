@@ -219,21 +219,7 @@ class DemoParser:
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = {}
-                demo_data["matchID"] = self.json["matchID"]
-                demo_data["clientName"] = self.json["clientName"]
-                demo_data["mapName"] = self.json["mapName"]
-                demo_data["tickRate"] = self.json["tickRate"]
-                demo_data["playbackTicks"] = self.json["playbackTicks"]
-                demo_data["rounds"] = self._parse_rounds()
-                demo_data["kills"] = self._parse_kills()
-                demo_data["damages"] = self._parse_damages()
-                demo_data["grenades"] = self._parse_grenades()
-                demo_data["flashes"] = self._parse_flashes()
-                demo_data["weaponFires"] = self._parse_weapon_fires()
-                demo_data["bombEvents"] = self._parse_bomb_events()
-                demo_data["frames"] = self._parse_frames()
-                demo_data["playerFrames"] = self._parse_player_frames()
+                demo_data = self._parse_json()
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
@@ -242,6 +228,30 @@ class DemoParser:
         else:
             self.logger.error("JSON couldn't be returned")
             raise AttributeError("No JSON parsed!")
+
+    def _parse_json(self):
+        """Returns JSON into dictionary where keys correspond to data frames
+
+        Returns:
+            A dictionary of output
+        """
+        demo_data = {}
+        demo_data["matchID"] = self.json["matchID"]
+        demo_data["clientName"] = self.json["clientName"]
+        demo_data["mapName"] = self.json["mapName"]
+        demo_data["tickRate"] = self.json["tickRate"]
+        demo_data["playbackTicks"] = self.json["playbackTicks"]
+        demo_data["rounds"] = self._parse_rounds()
+        demo_data["kills"] = self._parse_kills()
+        demo_data["damages"] = self._parse_damages()
+        demo_data["grenades"] = self._parse_grenades()
+        demo_data["flashes"] = self._parse_flashes()
+        demo_data["weaponFires"] = self._parse_weapon_fires()
+        demo_data["bombEvents"] = self._parse_bomb_events()
+        demo_data["frames"] = self._parse_frames()
+        demo_data["playerFrames"] = self._parse_player_frames()
+        self.logger.info("Returned dataframe output")
+        return demo_data
 
     def _parse_frames(self):
         """Returns frames as either a list or Pandas dataframe
@@ -502,6 +512,7 @@ class DemoParser:
         if self.json:
             self.remove_warmups()
             self.remove_time_rounds()
+            self.remove_time_rounds()
             self.remove_knife_rounds()
             self.remove_excess_kill_rounds()
             self.remove_end_round()
@@ -556,20 +567,30 @@ class DemoParser:
     def remove_warmups(self):
         """Remove warmup rounds from JSON."""
         if self.json:
-            # Remove warmups which are flagged as warmups
             cleaned_rounds = []
-            for r in self.json["gameRounds"]:
-                if not r["isWarmup"]:
-                    cleaned_rounds.append(r)
-            self.json["gameRounds"] = cleaned_rounds
-            cleaned_rounds = []
-            # Now, remove warmups where the demo may have started recording in the middle of a warmup round
+            # Remove warmups where the demo may have started recording in the middle of a warmup round
             if "warmupChanged" in self.json["matchPhases"]:
                 if len(self.json["matchPhases"]["warmupChanged"]) > 1:
                     last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
                     for r in self.json["gameRounds"]:
-                        if r["startTick"] > last_warmup_changed:
+                        if (r["startTick"] > last_warmup_changed) and (not r["isWarmup"]):
                             cleaned_rounds.append(r)
+                else:
+                    for r in self.json["gameRounds"]:
+                        if not r["isWarmup"]:
+                            cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def remove_round_times(self):
+        """Remove rounds which have start/end ticks which don't make sense."""
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json["gameRounds"]:
+                if (r["starTick"] < r["endTick"]) and (r["starTick"] > r["endOfficialTick"]):
+                    cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error("JSON not found. Run .parse()")

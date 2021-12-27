@@ -175,7 +175,7 @@ type BombAction struct {
 	PlayerY       float64 `json:"playerY"`
 	PlayerZ       float64 `json:"playerZ"`
 	BombAction    string  `json:"bombAction"`
-	BombSite      string  `json:"bombSite"`
+	BombSite      *string `json:"bombSite"`
 }
 
 // DamageAction events
@@ -1392,12 +1392,14 @@ func main() {
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse"
-		currentBomb.BombSite = ""
+		bombSite := ""
 		if e.Site == 65 {
-			currentBomb.BombSite = "A"
+			bombSite = "A"
 		} else if e.Site == 66 {
-			currentBomb.BombSite = "B"
+			bombSite = "B"
 		}
+		currentBomb.BombSite = &bombSite
+
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
 		if (e.Player.TeamState != nil) {
@@ -1410,7 +1412,7 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// add
+		// add bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
 
@@ -1426,12 +1428,14 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
+		bombPlantFound := false
 		for _, b := range currentRound.Bomb {
 			if b.BombAction == "plant" {
-				bombSite = b.BombSite
+				bombSite = *b.BombSite
+				bombPlantFound = true
 			}
 		}
-		currentBomb.BombSite = bombSite	
+		currentBomb.BombSite = &bombSite	
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1446,7 +1450,9 @@ func main() {
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
 		// add
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
 	})
 
 	// Parse bomb defuses
@@ -1461,12 +1467,14 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
+		bombPlantFound := false
 		for _, b := range currentRound.Bomb {
 			if b.BombAction == "plant" {
-				bombSite = b.BombSite
+				bombSite = *b.BombSite
+				bombPlantFound = true
 			}
 		}
-		currentBomb.BombSite = bombSite	
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1480,8 +1488,10 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// add
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		// Add Bomb Event
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
 	})
 
 	// Parse weapon fires
@@ -1688,13 +1698,14 @@ func main() {
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant"
-		currentBomb.BombSite = ""
 
+		bombSite := ""
 		if e.Site == 65 {
-			currentBomb.BombSite = "A"
+			bombSite = "A"
 		} else if e.Site == 66 {
-			currentBomb.BombSite = "B"
+			bombSite = "B"
 		}
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1723,13 +1734,14 @@ func main() {
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant_begin"
-		currentBomb.BombSite = ""
 
+		bombSite := ""
 		if e.Site == 65 {
-			currentBomb.BombSite = "A"
+			bombSite = "A"
 		} else if e.Site == 66 {
-			currentBomb.BombSite = "B"
+			bombSite = "B"
 		}
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1759,12 +1771,14 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
+		bombPlantFound := false
 		for _, b := range currentRound.Bomb {
 			if b.BombAction == "plant_begin" {
-				bombSite = b.BombSite
+				bombSite = *b.BombSite
+				bombPlantFound = true
 			}
 		}
-		currentBomb.BombSite = bombSite		
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1778,8 +1792,10 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// Bomb event
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		// Add Bomb event
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
 	})
 
 	// Parse grenade throws
@@ -2391,7 +2407,7 @@ func main() {
 				for _, b := range currentRound.Bomb {
 					if b.BombAction == "plant" {
 						currentFrame.BombPlanted = true
-						currentFrame.BombSite = b.BombSite
+						currentFrame.BombSite = *b.BombSite
 					}
 				}	
 			} else {
