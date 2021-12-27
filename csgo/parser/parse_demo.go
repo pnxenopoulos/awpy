@@ -845,7 +845,6 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 		}
 		return false
 	}
-	return false
 }
 
 func countAlivePlayers(players []PlayerInfo) int64 {
@@ -1230,6 +1229,16 @@ func main() {
 			roundStarted = 1
 			roundInEndTime = 0
 			currentRound = GameRound{}
+
+			// Create empty action lists
+			currentRound.Bomb = []BombAction{}
+			currentRound.Damages = []DamageAction{}
+			currentRound.Flashes = []FlashAction{}
+			currentRound.Frames = []GameFrame{}
+			currentRound.Grenades = []GrenadeAction{}
+			currentRound.Kills = []KillAction{}
+			currentRound.WeaponFires = []WeaponFireAction{}
+
 			currentRound.IsWarmup = gs.IsWarmupPeriod()
 			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
 			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
