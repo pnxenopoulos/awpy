@@ -1410,7 +1410,7 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// add
+		// add bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
 
@@ -1480,8 +1480,10 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// add
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		// Add Bomb Event
+		if bombSite != "" {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
 	})
 
 	// Parse weapon fires
@@ -1778,8 +1780,10 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// Bomb event
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		// Add Bomb event
+		if bombSite != "" {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
 	})
 
 	// Parse grenade throws
