@@ -2407,7 +2407,7 @@ func main() {
 				for _, b := range currentRound.Bomb {
 					if b.BombAction == "plant" {
 						currentFrame.BombPlanted = true
-						currentFrame.BombSite = b.BombSite
+						currentFrame.BombSite = *b.BombSite
 					}
 				}	
 			} else {
