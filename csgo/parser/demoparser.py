@@ -194,7 +194,7 @@ class DemoParser:
         """
         json_path = self.outpath + "/" + self.output_file
         self.logger.info("Reading in JSON from " + self.output_file)
-        with open(json_path) as f:
+        with open(json_path, encoding="utf8") as f:
             demo_data = json.load(f)
         self.json = demo_data
         self.logger.info(
