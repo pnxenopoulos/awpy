@@ -240,10 +240,35 @@ class TestDemoParser:
         assert charmees_found > 0
 
     def test_warmup(self):
-        """ Tests if warmup rounds are properly parsing
+        """Tests if warmup rounds are properly parsing.
         """
         self.warmup_parser = DemoParser(demofile="warmup_test.dem", log=False, parse_frames=False)
         self.warmup_data = self.warmup_parser.parse()
         self.warmup_data = self.warmup_parser.clean_rounds()
         assert len(self.warmup_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_data["gameRounds"])
+
+    def test_bomb_sites(self):
+        """Tests that both bombsite A and B show up.
+        """
+        self.bombsite_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
+        self.bombsite_data = self.bombsite_parser.parse()
+        for r in self.bombsite_data["gameRounds"]:
+            for e in r["bombEvents"]:
+                assert (e["bombSite"] == "A") or (e["bombSite"] == "B")
+
+    def test_phase_lists(self):
+        """Tests that phase lists are lists.
+        """
+        self.phase_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
+        self.phase_data = self.phase_parser.parse()
+        for phase in self.phase_data["matchPhases"].keys():
+            assert type(self.phase_data["matchPhases"][phase]) == list
+
+    def test_round_clean(self):
+        """ Tests that remove time rounds is working.
+        """
+        self.round_clean_parser = DemoParser(demofile="round_clean_test.dem", log=False, parse_frames=False)
+        self.round_clean_data = self.round_clean_parser.parse()
+        self.round_clean_parser.remove_time_rounds()
+        assert len(self.round_clean_data["gameRounds"]) == 24

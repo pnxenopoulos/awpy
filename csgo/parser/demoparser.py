@@ -235,23 +235,27 @@ class DemoParser:
         Returns:
             A dictionary of output
         """
-        demo_data = {}
-        demo_data["matchID"] = self.json["matchID"]
-        demo_data["clientName"] = self.json["clientName"]
-        demo_data["mapName"] = self.json["mapName"]
-        demo_data["tickRate"] = self.json["tickRate"]
-        demo_data["playbackTicks"] = self.json["playbackTicks"]
-        demo_data["rounds"] = self._parse_rounds()
-        demo_data["kills"] = self._parse_kills()
-        demo_data["damages"] = self._parse_damages()
-        demo_data["grenades"] = self._parse_grenades()
-        demo_data["flashes"] = self._parse_flashes()
-        demo_data["weaponFires"] = self._parse_weapon_fires()
-        demo_data["bombEvents"] = self._parse_bomb_events()
-        demo_data["frames"] = self._parse_frames()
-        demo_data["playerFrames"] = self._parse_player_frames()
-        self.logger.info("Returned dataframe output")
-        return demo_data
+        if self.json:
+            demo_data = {}
+            demo_data["matchID"] = self.json["matchID"]
+            demo_data["clientName"] = self.json["clientName"]
+            demo_data["mapName"] = self.json["mapName"]
+            demo_data["tickRate"] = self.json["tickRate"]
+            demo_data["playbackTicks"] = self.json["playbackTicks"]
+            demo_data["rounds"] = self._parse_rounds()
+            demo_data["kills"] = self._parse_kills()
+            demo_data["damages"] = self._parse_damages()
+            demo_data["grenades"] = self._parse_grenades()
+            demo_data["flashes"] = self._parse_flashes()
+            demo_data["weaponFires"] = self._parse_weapon_fires()
+            demo_data["bombEvents"] = self._parse_bomb_events()
+            demo_data["frames"] = self._parse_frames()
+            demo_data["playerFrames"] = self._parse_player_frames()
+            self.logger.info("Returned dataframe output")
+            return demo_data
+        else:
+            self.logger.error("JSON couldn't be returned")
+            raise AttributeError("No JSON parsed!")
 
     def _parse_frames(self):
         """Returns frames as either a list or Pandas dataframe
@@ -284,7 +288,7 @@ class DemoParser:
                                 frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
                                 frame_item["tUtility"] = frame["t"]["totalUtility"]
                                 frame_item["tToken"] = frame["t"]["positionToken"]
-                    frames_dataframes.append(frame_item)
+                        frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
             frames_df["matchID"] = self.json["matchID"]
             frames_df["mapName"] = self.json["mapName"]
@@ -628,12 +632,12 @@ class DemoParser:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def remove_time_rounds(self, time_minimum=10):
+    def remove_time_rounds(self):
         """Removes rounds with incorrect start/end ticks."""
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
-                if (r["startTick"] <= r["endTick"]) or (r["startTick"] <= r["endOfficialTick"]) or (r["startTick"] <= r["freezeTimeEndTick"]):
+                if (r["startTick"] <= r["endTick"]) and (r["startTick"] <= r["endOfficialTick"]) and (r["startTick"] <= r["freezeTimeEndTick"]):
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
