@@ -266,9 +266,9 @@ class TestDemoParser:
             assert type(self.bombsite_data["matchPhases"][phase]) == list
 
     def test_round_clean(self):
-        """ Tests that round clean is working.
+        """ Tests that remove time rounds is working.
         """
         self.round_clean_parser = DemoParser(demofile="round_clean_test.dem", log=False, parse_frames=False)
         self.round_clean_data = self.round_clean_parser.parse()
-        self.round_clean_data = self.round_clean_parser.clean_rounds()
+        self.round_clean_data = self.round_clean_parser.remove_time_rounds()
         assert len(self.round_clean_data["gameRounds"]) == 24
