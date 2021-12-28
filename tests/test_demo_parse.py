@@ -260,15 +260,15 @@ class TestDemoParser:
     def test_phase_lists(self):
         """Tests that phase lists are lists.
         """
-        self.bombsite_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
-        self.bombsite_data = self.bombsite_parser.parse()
-        for phase in self.bombsite_data["matchPhases"].keys():
-            assert type(self.bombsite_data["matchPhases"][phase]) == list
+        self.phase_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
+        self.phase_data = self.phase_parser.parse()
+        for phase in self.phase_data["matchPhases"].keys():
+            assert type(self.phase_data["matchPhases"][phase]) == list
 
     def test_round_clean(self):
         """ Tests that remove time rounds is working.
         """
         self.round_clean_parser = DemoParser(demofile="round_clean_test.dem", log=False, parse_frames=False)
         self.round_clean_data = self.round_clean_parser.parse()
-        self.round_clean_data = self.round_clean_parser.remove_time_rounds()
+        self.round_clean_parser.remove_time_rounds()
         assert len(self.round_clean_data["gameRounds"]) == 24
