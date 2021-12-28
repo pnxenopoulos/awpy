@@ -1,3 +1,5 @@
+module github.com/pnxenopoulos/csgo
+
 go 1.17
 
 require (
