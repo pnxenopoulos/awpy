@@ -240,10 +240,27 @@ class TestDemoParser:
         assert charmees_found > 0
 
     def test_warmup(self):
-        """ Tests if warmup rounds are properly parsing
+        """Tests if warmup rounds are properly parsing.
         """
         self.warmup_parser = DemoParser(demofile="warmup_test.dem", log=False, parse_frames=False)
         self.warmup_data = self.warmup_parser.parse()
         self.warmup_data = self.warmup_parser.clean_rounds()
         assert len(self.warmup_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_data["gameRounds"])
+
+    def test_bomb_sites(self):
+        """Tests that both bombsite A and B show up.
+        """
+        self.bombsite_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
+        self.bombsite_data = self.bombsite_parser.parse()
+        for r in self.bombsite_data:
+            for e in r["bombEvents"]:
+                assert (e["bombSite"] == "A") or (e["bombSite"] == "B")
+
+    def test_round_clean(self):
+        """ Tests that round clean is working.
+        """
+        self.round_clean_parser = DemoParser(demofile="round_clean_test.dem", log=False, parse_frames=False)
+        self.round_clean_data = self.round_clean_parser.parse()
+        self.round_clean_data = self.round_clean_parser.clean_rounds()
+        assert len(self.round_clean_data["gameRounds"]) == 24

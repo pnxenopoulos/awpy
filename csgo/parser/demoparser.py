@@ -628,12 +628,12 @@ class DemoParser:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def remove_time_rounds(self, time_minimum=10):
+    def remove_time_rounds(self):
         """Removes rounds with incorrect start/end ticks."""
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
-                if (r["startTick"] <= r["endTick"]) or (r["startTick"] <= r["endOfficialTick"]) or (r["startTick"] <= r["freezeTimeEndTick"]):
+                if (r["startTick"] <= r["endTick"]) and (r["startTick"] <= r["endOfficialTick"]) and (r["startTick"] <= r["freezeTimeEndTick"]):
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
