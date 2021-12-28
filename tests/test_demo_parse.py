@@ -257,6 +257,14 @@ class TestDemoParser:
             for e in r["bombEvents"]:
                 assert (e["bombSite"] == "A") or (e["bombSite"] == "B")
 
+    def test_phase_lists(self):
+        """Tests that phase lists are lists.
+        """
+        self.bombsite_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
+        self.bombsite_data = self.bombsite_parser.parse()
+        for phase in self.bombsite_data["matchPhases"].keys():
+            assert type(self.bombsite_data["matchPhases"][phase]) == list
+
     def test_round_clean(self):
         """ Tests that round clean is working.
         """
