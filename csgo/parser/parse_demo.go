@@ -1041,12 +1041,21 @@ func main() {
 
 	currentRound := GameRound{}
 
+	// Create empty action lists for first round
+	currentRound.Bomb = []BombAction{}
+	currentRound.Damages = []DamageAction{}
+	currentRound.Flashes = []FlashAction{}
+	currentRound.Frames = []GameFrame{}
+	currentRound.Grenades = []GrenadeAction{}
+	currentRound.Kills = []KillAction{}
+	currentRound.WeaponFires = []WeaponFireAction{}
+
 	RoundRestartDelay := int64(5)
 
 	// Create empty lists
 	currentGame.MMRanks = []MMRank{}
 	currentGame.MatchPhases.AnnFinalRound = []int64{}
-	currentGame.MatchPhases.AnnFinalRound = []int64{}
+	currentGame.MatchPhases.AnnLastRoundHalf = []int64{}
 	currentGame.MatchPhases.AnnMatchStarted = []int64{}
 	currentGame.MatchPhases.GameHalfEnded = []int64{}
 	currentGame.MatchPhases.MatchStart = []int64{}
