@@ -254,8 +254,9 @@ class TestDemoParser:
         self.bombsite_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
         self.bombsite_data = self.bombsite_parser.parse()
         for r in self.bombsite_data:
-            for e in r["bombEvents"]:
-                assert (e["bombSite"] == "A") or (e["bombSite"] == "B")
+            if len(r["bombEvents"] > 0):
+                for e in r["bombEvents"]:
+                    assert (e["bombSite"] == "A") or (e["bombSite"] == "B")
 
     def test_round_clean(self):
         """ Tests that round clean is working.
