@@ -22,7 +22,7 @@ setup(
             "*.go",
             "data/map/*.png",
             "data/map/*.json",
-            "data/nav/*.nav",
+            "data/nav/*.txt",
             "data/nav/*.csv",
             "*.mod",
             "*.sum",

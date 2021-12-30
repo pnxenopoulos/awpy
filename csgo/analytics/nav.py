@@ -20,7 +20,10 @@ def point_in_area(map_name, area_id, point):
         raise ValueError("Area ID not found.")
     if len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
-    if (point[0] > NAV[map_name][area_id]["NorthWestX"]) and (point[0] < NAV[map_name][area_id]["SouthEastX"]) and (point[1] < NAV[map_name][area_id]["NorthWestY"]) and (point[1] > NAV[map_name][area_id]["SouthEastY"]) and (point[2] > NAV[map_name][area_id]["NorthWestZ"]) and (point[2] < NAV[map_name][area_id]["SouthEastZ"]):
+    contains_x = min(NAV[map_name][area_id]["NorthWestX"], NAV[map_name][area_id]["SouthEastX"]) < point[0] < max(NAV[map_name][area_id]["NorthWestX"], NAV[map_name][area_id]["SouthEastX"])
+    contains_y = min(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"]) < point[0] < max(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"])
+    contains_z = min(NAV[map_name][area_id]["NorthWestZ"], NAV[map_name][area_id]["SouthEastZ"]) < point[0] < max(NAV[map_name][area_id]["NorthWestZ"], NAV[map_name][area_id]["SouthEastZ"])
+    if contains_x and contains_y and contains_z:
         return True
 
 def find_area(map_name, point):
