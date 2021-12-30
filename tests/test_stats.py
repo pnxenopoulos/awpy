@@ -83,7 +83,7 @@ class TestStats:
                     "dupreeh",
                     "gla1ve",
                 ],
-                "1st Half Headshot Kills": [3, 1, 4, 4, 2],
+                "1st Half Headshot Kills": [3, 2, 7, 5, 2],
             }
         )
 
