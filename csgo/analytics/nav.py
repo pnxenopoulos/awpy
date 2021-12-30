@@ -50,14 +50,15 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         raise ValueError("dist_type can only be graph or geodesic")
     G = NAV_GRAPHS[map_name]
     if dist_type == "graph":
-        return len(nx.shortest_path(G, area_a, area_b))
+        return len(nx.shortest_path(G, area_a, area_b))-1
     if dist_type == "geodesic":
         def dist(a, b):
             return G.nodes()[a]["Size"] + G.nodes()[b]["Size"]
         geodesic_path = nx.astar_path(G, area_a, area_b, heuristic=dist)
         geodesic_cost = 0
-        for area in geodesic_path:
-            geodesic_cost += G.nodes()[area]["Size"]
+        for i, area in enumerate(geodesic_path):
+            if i > 0:
+                geodesic_cost += G.nodes()[area]["Size"]
     return 0
 
 def point_distance(map_name, point_a, point_b, dist_type="graph"):
@@ -69,14 +70,21 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         point_b (list)     : Point as a list (x,y,z)
         dist_type (string) : String indicating the type of distance to use.
     """
-    if map_name not in NAV.keys():
-        raise ValueError("Map not found.")
+    
     
     if dist_type == "graph":
+        if map_name not in NAV.keys():
+            raise ValueError("Map not found.")
+        if len(point_a) != 3 or len(point_b) != 3:
+            raise ValueError("When using graph or geodesic distance, point must be X/Y/Z")
         area_a = find_area(map_name, point_a)["AreaId"]
         area_b = find_area(map_name, point_b)["AreaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "geodesic":
+        if map_name not in NAV.keys():
+            raise ValueError("Map not found.")
+        if len(point_a) != 3 or len(point_b) != 3:
+            raise ValueError("When using graph or geodesic distance, point must be X/Y/Z")
         area_a = find_area(map_name, point_a)["AreaId"]
         area_b = find_area(map_name, point_b)["AreaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
