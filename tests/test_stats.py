@@ -83,7 +83,7 @@ class TestStats:
                     "dupreeh",
                     "gla1ve",
                 ],
-                "1st Half Headshot Kills": [3, 2, 7, 5, 2],
+                ""1st Half HS": [3, 2, 7, 5, 2],
             }
         )
 
@@ -153,7 +153,7 @@ class TestStats:
             ["attackerName"],
             ["attackerName"],
             [["size"]],
-            ["Astralis Player", "1st Half Headshot Kills"],
+            ["Astralis Player", ""1st Half HS""],
         ).equals(self.hs)
 
     def test_accuracy(self):
