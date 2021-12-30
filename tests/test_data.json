@@ -25,5 +25,8 @@
     },
     "round_clean_test": {
         "url": "https://storage.googleapis.com/csgo-tests/003485491058068947013_0999056837.dem"
+    },
+    "astralis-vs-liquid-m2-nuke": {
+        "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem"
     }
 }
