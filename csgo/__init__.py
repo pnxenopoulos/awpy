@@ -23,9 +23,9 @@ for m in NAV.keys():
     for a in NAV[m].keys():
         r = NAV[m][a]
         G.add_nodes_from([
-            (r["AreaId"], {
-                "MapName": r["MapName"],
-                "AreaID": r["AreaId"], 
+            (a, {
+                "MapName": m,
+                "AreaID": a, 
                 "AreaName": r["AreaName"], 
                 "NorthWestX": r["NorthWestX"],
                 "NorthWestY": r["NorthWestY"],
