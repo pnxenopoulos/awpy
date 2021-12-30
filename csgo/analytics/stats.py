@@ -675,7 +675,8 @@ def rating(
     kill_stats = kill_stats.merge(adr_stats, how="outer").fillna(0)
     kill_stats = kill_stats.merge(kast_stats, how="outer").fillna(0)
     kill_stats["Impact"] = 2.13*kill_stats["KPR"] + 0.42*kill_stats["APR"] - 0.41
-    kill_stats["Rating"] = 0.0073*kill_stats["KAST"] + 0.3591*kill_stats["KPR"] - 0.5329*kill_stats["DPR"] + 0.2372*kill_stats["Impact"] + 0.0032*kill_stats["ADR"] + 0.1587
+    kill_stats["Rating"] = 0.73*kill_stats["KAST"] + 0.3591*kill_stats["KPR"] - 0.5329*kill_stats["DPR"] + 0.2372*kill_stats["Impact"] + 0.0032*kill_stats["ADR"] + 0.1587
+    kill_stats = kill_stats[["Player", "Impact", "Rating"]]
     kill_stats.sort_values(by="Rating", ascending=False, inplace=True)
     kill_stats.reset_index(drop=True, inplace=True)
     return kill_stats
