@@ -54,7 +54,7 @@ def transform_csv_to_json(sampleCsv):
             curDic = {}
             for curFeature in sampleCsv.columns:
                 if curFeature not in ['MapName', 'AreaId']:
-                    curDic[curFeature] = str(curTile[curFeature])
+                    curDic[curFeature] = curTile[curFeature]
             mapDic[curTile['AreaId']] = curDic
         finalDic[curMap] = mapDic
     return finalDic
