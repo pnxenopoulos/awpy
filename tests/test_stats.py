@@ -83,7 +83,7 @@ class TestStats:
                     "dupreeh",
                     "gla1ve",
                 ],
-                ""1st Half HS": [3, 2, 7, 5, 2],
+                "1st Half HS": [3, 2, 7, 5, 2],
             }
         )
 
