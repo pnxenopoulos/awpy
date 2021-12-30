@@ -11,6 +11,7 @@ setup(
         "numpy>=1.18.1",
         "scipy>=1.4.1",
         "matplotlib>=3.1.2",
+        "networkx>=2.6.3",
         "textdistance>=4.2.0",
         "imageio>=2.9.0",
         "tqdm>=4.55.2",
@@ -23,7 +24,6 @@ setup(
             "data/map/*.json",
             "data/nav/*.nav",
             "data/nav/*.csv",
-            "data/nav/*.xz",
             "*.mod",
             "*.sum",
         ]
