@@ -153,7 +153,7 @@ class TestStats:
             ["attackerName"],
             ["attackerName"],
             [["size"]],
-            ["Astralis Player", "1st Half HS""],
+            ["Astralis Player", "1st Half HS"],
         ).equals(self.hs)
 
     def test_accuracy(self):
