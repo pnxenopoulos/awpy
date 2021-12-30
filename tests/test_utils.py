@@ -1,6 +1,4 @@
-import os
 import pytest
-import pandas as pd
 
 from csgo.utils import AutoVivification, check_go_version, is_in_range
 

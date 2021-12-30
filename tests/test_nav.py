@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 
 from csgo import NAV
-from csgo.analytics.nav import point_distance, point_in_area, PlaceEncoder
+from csgo.analytics.nav import area_distance, find_area, point_distance, point_in_area, PlaceEncoder
 
 class TestNav:
     """Class to test the nav-related functions."""
@@ -24,12 +24,28 @@ class TestNav:
     def test_find_area(self):
         """ Tests find_area
         """
-        assert True
+        with pytest.raises(ValueError):
+            find_area(map_name="test", point=[0, 0, 0])
+        with pytest.raises(ValueError):
+            find_area(map_name="de_dust2", point=[0, 0])
+        avg_x = (NAV["de_dust2"][7233]["NorthWestX"] + NAV["de_dust2"][7233]["SouthEastX"])/2
+        avg_y = (NAV["de_dust2"][7233]["NorthWestY"] + NAV["de_dust2"][7233]["SouthEastY"])/2
+        avg_z = (NAV["de_dust2"][7233]["NorthWestZ"] + NAV["de_dust2"][7233]["SouthEastZ"])/2
+        area_found = find_area(map_name="de_dust2", point=[avg_x, avg_y, avg_z])
+        assert type(area_found) == dict
+        assert area_found["AreaId"] == 7233
 
     def test_area_distance(self):
         """ Tests area distance
         """
-        assert True
+        with pytest.raises(ValueError):
+            area_distance(map_name="test", area_a=7233, area_b=7233, dist_type="graph")
+        with pytest.raises(ValueError):
+            area_distance(map_name="de_dust2", area_a=0, area_b=0, dist_type="graph")
+        with pytest.raises(ValueError):
+            area_distance(map_name="de_dust2", area_a=7233, area_b=7233, dist_type="test")
+        assert area_distance(map_name="de_dust2", area_a=7233, area_b=7233, dist_type="graph") == 0
+        assert area_distance(map_name="de_dust2", area_a=7233, area_b=7233, dist_type="geodesic") == 0
 
     def test_point_distance(self):
         """ Tests point distance
