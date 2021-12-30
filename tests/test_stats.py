@@ -49,14 +49,14 @@ class TestStats:
         self.parser = DemoParser(
             demofile="astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
-            parse_rate=256,
+            parse_frames=False,
         )
         self.data = self.parser.parse(return_type="df")
         self.bomb_data = self.clean(self.data["bombEvents"])
         self.damage_data = self.clean(self.data["damages"])
         self.flash_data = self.clean(self.data["flashes"])
         self.grenade_data = self.clean(self.data["grenades"])
-        self.kill_data = self.clean(self.data["killss"])
+        self.kill_data = self.clean(self.data["kills"])
         self.round_data = self.clean(self.data["rounds"])
         self.weapon_fire_data = self.clean(self.data["weaponFires"])
         self.invalid_numeric_filter = {"Kills": [10]}
