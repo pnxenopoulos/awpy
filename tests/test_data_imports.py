@@ -19,7 +19,8 @@ class TestDataImports:
         assert NAV["de_dust2"][152]["AreaName"] == "Garage"
 
     def test_nav_graphs(self):
-        assert type(NAV_GRAPHS) == networkx.Graph
+        assert type(NAV_GRAPHS) == dict
+        assert type(NAV_GRAPHS["de_dust2"]) == networkx.Graph
 
     def test_map_data(self):
         """Tests the nav data"""
