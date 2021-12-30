@@ -640,8 +640,7 @@ def rating(
     adr_stats = adr(damage_data, round_data, damage_filters, round_filters)
     adr_stats = adr_stats[["Player", "Norm ADR"]]
     adr_stats.columns = ["Player", "ADR"]
-    stats = ["attackerName", "Player"]
-    # Could add an "if team" condition here...
+    stats = ["attackerName", "victimName", "assisterName", "flashThrowerName", "Player"]
     kills = calc_stats(
         kill_data.loc[kill_data["attackerTeam"] != kill_data["victimTeam"]],
         kill_filters,
