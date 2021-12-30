@@ -24,6 +24,7 @@ from csgo.analytics.stats import (
     win_breakdown,
     player_box_score,
     team_box_score,
+    rating
 )
 from csgo.analytics.utils import agg_damages
 
@@ -51,13 +52,13 @@ class TestStats:
             parse_rate=256,
         )
         self.data = self.parser.parse(return_type="df")
-        self.bomb_data = clean(self.data["bombEvents"])
-        self.damage_data = clean(self.data["damages"])
-        self.flash_data = clean(self.data["flashes"])
-        self.grenade_data = clean(self.data["grenades"])
-        self.kill_data = clean(self.data["killss"])
-        self.round_data = clean(self.data["rounds"])
-        self.weapon_fire_data = clean(self.data["weaponFires"])
+        self.bomb_data = self.clean(self.data["bombEvents"])
+        self.damage_data = self.clean(self.data["damages"])
+        self.flash_data = self.clean(self.data["flashes"])
+        self.grenade_data = self.clean(self.data["grenades"])
+        self.kill_data = self.clean(self.data["killss"])
+        self.round_data = self.clean(self.data["rounds"])
+        self.weapon_fire_data = self.clean(self.data["weaponFires"])
         self.invalid_numeric_filter = {"Kills": [10]}
         self.invalid_logical_operator = {"Kills": ["=invalid=10"]}
         self.invalid_numeric_value = {"Kills": ["==1invalid0"]}
@@ -278,3 +279,13 @@ class TestStats:
             )
             == 820
         )
+
+    def test_rating(self):
+        """Tests rating function."""
+        rating_df = rating(
+                self.damage_data,
+                self.kill_data,
+                self.round_data
+            )
+        assert rating_df.iloc[0].Rating < 1.3
+        assert rating_df.iloc[0].Rating > 1.2
