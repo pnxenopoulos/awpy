@@ -30,8 +30,11 @@ def find_area(map_name, point):
         raise ValueError("Point must be a list [X,Y,Z]")
     for area in NAV[map_name].keys():
         if point_in_area(map_name, area, point):
-            return NAV[map_name][area]
-    return {"mapName": map_name, "areaID": None}
+            nav_to_return = NAV[map_name][area]
+            nav_to_return["MapName"] = map_name
+            nav_to_return["AreaId"] = area
+            return nav_to_return
+    return {"MapName": map_name, "AreaId": None}
 
 def area_distance(map_name, area_a, area_b, dist_type="graph"):
     """ Returns the distance between two areas.
@@ -46,7 +49,7 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         raise ValueError("Map not found.")
     if (area_a not in NAV[map_name].keys()) or (area_b not in NAV[map_name].keys()):
         raise ValueError("Area ID not found.")
-    if dist_type in ["graph", "geodesic"]:
+    if dist_type not in ["graph", "geodesic"]:
         raise ValueError("dist_type can only be graph or geodesic")
     G = NAV_GRAPHS[map_name]
     if dist_type == "graph":
