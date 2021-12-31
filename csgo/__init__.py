@@ -12,11 +12,16 @@ path = os.path.join(os.path.dirname(__file__), "")
 # Create nav tile info
 nav_dfs = []
 for file in os.listdir(path + "data/nav/"):
+    if "de_dust2" in file:
+        df = pd.read_csv(path + "data/nav/" + file)
+        print(df[df["areaId"] == 152])
     if file.endswith(".csv"):
         nav_dfs.append(pd.read_csv(path + "data/nav/" + file))
 NAV_CSV = pd.concat(nav_dfs)
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
+print(NAV_CSV[NAV_CSV["areaId"] == 152])
 NAV = transform_csv_to_json(NAV_CSV)
+print(NAV["de_dust2"][152])
 
 # Create nav graphs
 NAV_GRAPHS = {}
