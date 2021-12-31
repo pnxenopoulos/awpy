@@ -16,6 +16,7 @@ for file in os.listdir(path + "data/nav/"):
         df = pd.read_csv(path + "data/nav/" + file)
         print("-----")
         print(df.columns)
+        print(df[df["areaId"] == 152])
         print("-----")
         nav_dfs.append(df)
 NAV_CSV = pd.concat(nav_dfs)
