@@ -10,13 +10,13 @@ class TestDataImports:
 
     def test_nav_csv(self):
         """Tests the nav dataframe"""
-        assert NAV_CSV[NAV_CSV["MapName"] == "de_cbble"].shape[0] == 1180
+        assert NAV_CSV[NAV_CSV["mapName"] == "de_cbble"].shape[0] == 1180
         assert NAV_CSV.isna().sum().sum() == 0
 
     def test_nav(self):
         assert type(NAV) == dict
         assert type(NAV["de_dust2"][152])
-        assert NAV["de_dust2"][152]["AreaName"] == "Garage"
+        assert NAV["de_dust2"][152]["areaName"] == "Garage"
 
     def test_nav_graphs(self):
         assert type(NAV_GRAPHS) == dict
