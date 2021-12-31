@@ -49,9 +49,9 @@ def find_closest_area(map_name, point):
             avg_y = (NAV[map_name][area]["northWestY"] + NAV[map_name][area]["southEastY"])/2
             avg_z = (NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"])/2
             dist = np.sqrt((point[0]-avg_x)**2 + (point[1]-avg_y)**2 + (point[2]-avg_z)**2)
-            if dist < closest_area["Distance"]:
-                closest_area["AreaId"] = area
-                closest_area["Distance"] = dist
+            if dist < closest_area["distance"]:
+                closest_area["areaId"] = area
+                closest_area["distance"] = dist
     return closest_area
 
 def area_distance(map_name, area_a, area_b, dist_type="graph"):

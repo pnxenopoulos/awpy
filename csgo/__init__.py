@@ -14,7 +14,8 @@ nav_dfs = []
 for file in os.listdir(path + "data/nav/"):
     if "de_dust2" in file:
         df = pd.read_csv(path + "data/nav/" + file)
-        print(df[df["areaId"] == 152])
+        print(df.columns)
+        #print(df[df["areaId"] == 152])
     if file.endswith(".csv"):
         df = pd.read_csv(path + "data/nav/" + file)
         nav_dfs.append(df)
