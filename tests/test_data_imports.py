@@ -2,7 +2,7 @@ import os
 import pytest
 import networkx
 
-from csgo import MAP_DATA, NAV, NAV_CSV, NAV_GRAPHS
+from csgo.data import MAP_DATA, NAV, NAV_CSV, NAV_GRAPHS
 
 
 class TestDataImports:
