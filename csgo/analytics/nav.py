@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 
-from csgo import NAV, NAV_GRAPHS
+from csgo.data import NAV, NAV_GRAPHS
 from scipy.spatial import distance
 
 def point_in_area(map_name, area_id, point):
