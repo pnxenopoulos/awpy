@@ -13,7 +13,11 @@ from pathlib import Path
 path = os.path.join(os.path.dirname(__file__), "")
 
 # Create nav tile info
-NAV_CSV = pd.read_csv(path + "data/nav/map_nav.csv")
+nav_dfs = []
+for file in os.listdir(path + "data/nav/"):
+    if file.endswith(".csv"):
+        nav_dfs.append(pd.read_csv(path + "data/nav/" + file))
+NAV_CSV = pd.concat(nav_dfs)
 NAV = transform_csv_to_json(NAV_CSV)
 
 # Create nav graphs
@@ -38,9 +42,6 @@ for m in NAV.keys():
                     (r["NorthWestY"]-r["SouthEastY"])**2 +
                     (r["NorthWestZ"]-r["SouthEastZ"])**2
                 ),
-                "HidingSpots": r["HidingSpots"],
-                "EarliestOccupyTimeFirstTeam": r["EarliestOccupyTimeFirstTeam"],
-                "EarliestOccupyTimeSecondTeam": r["EarliestOccupyTimeSecondTeam"]
             }),
         ])
     edge_list = open(path + "data/nav/" + m + ".txt", 'r')
