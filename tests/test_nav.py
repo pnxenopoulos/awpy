@@ -25,13 +25,13 @@ class TestNav:
         """ Tests find_area
         """
         with pytest.raises(ValueError):
-            find_area(map_name="test", point=[0, 0, 0])
+            find_closest_area(map_name="test", point=[0, 0, 0])
         with pytest.raises(ValueError):
-            find_area(map_name="de_dust2", point=[0, 0])
+            find_closest_area(map_name="de_dust2", point=[0, 0])
         avg_x = (NAV["de_dust2"][152]["NorthWestX"] + NAV["de_dust2"][152]["SouthEastX"])/2
         avg_y = (NAV["de_dust2"][152]["NorthWestY"] + NAV["de_dust2"][152]["SouthEastY"])/2
         avg_z = (NAV["de_dust2"][152]["NorthWestZ"] + NAV["de_dust2"][152]["SouthEastZ"])/2
-        area_found = find_area(map_name="de_dust2", point=[avg_x, avg_y, avg_z])
+        area_found = find_closest_area(map_name="de_dust2", point=[avg_x, avg_y, avg_z])
         assert type(area_found) == dict
         assert area_found["AreaId"] == 152
 
