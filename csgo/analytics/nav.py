@@ -70,8 +70,12 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
     if dist_type not in ["graph", "geodesic"]:
         raise ValueError("dist_type can only be graph or geodesic")
     G = NAV_GRAPHS[map_name]
+    distance_obj = {"distanceType": dist_type, "distance": None, "areas": []}
     if dist_type == "graph":
-        return len(nx.shortest_path(G, area_a, area_b))-1
+        discovered_path = nx.shortest_path(G, area_a, area_b)
+        distance_obj["distance"] = len(discovered_path)-1
+        distance_obj["areas"] = discovered_path
+        return distance_obj
     if dist_type == "geodesic":
         def dist(a, b):
             return G.nodes()[a]["size"] + G.nodes()[b]["size"]
@@ -80,7 +84,9 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         for i, area in enumerate(geodesic_path):
             if i > 0:
                 geodesic_cost += G.nodes()[area]["size"]
-    return 0
+        distance_obj["distance"] = geodesic_cost
+        distance_obj["areas"] = geodesic_path
+        return distance_obj
 
 def point_distance(map_name, point_a, point_b, dist_type="graph"):
     """ Returns the distance between two points.
@@ -91,8 +97,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         point_b (list)     : Point as a list (x,y,z)
         dist_type (string) : String indicating the type of distance to use.
     """
-    
-    
+    distance_obj = {"distanceType": dist_type, "distance": None, "areas": []}
     if dist_type == "graph":
         if map_name not in NAV.keys():
             raise ValueError("Map not found.")
@@ -110,13 +115,17 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "euclidean":
-        return distance.euclidean(point_a, point_b)
+        distance_obj = distance.euclidean(point_a, point_b)
+        return distance_obj
     elif dist_type == "manhattan":
-        return distance.cityblock(point_a, point_b)
+        distance_obj = distance.cityblock(point_a, point_b)
+        return distance_obj
     elif dist_type == "canberra":
-        return distance.canberra(point_a, point_b)
+        distance_obj = distance.canberra(point_a, point_b)
+        return distance_obj
     elif dist_type == "cosine":
-        return distance.cosine(point_a, point_b)
+        distance_obj = distance.cosine(point_a, point_b)
+        return distance_obj
 
 class PlaceEncoder:
     """Encodes map and places"""
