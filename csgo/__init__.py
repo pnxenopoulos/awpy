@@ -14,15 +14,17 @@ nav_dfs = []
 for file in os.listdir(path + "data/nav/"):
     if file.endswith(".csv"):
         df = pd.read_csv(path + "data/nav/" + file)
-        print("-----")
-        print(df.columns)
-        print(df[df["areaId"] == 152])
-        print("-----")
+        if "dust2" in file:
+            print("-----")
+            print(df.columns)
+            print(df[df["areaId"] == 152])
+            print("-----")
         nav_dfs.append(df)
 NAV_CSV = pd.concat(nav_dfs)
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
 print("-----")
 print(NAV_CSV.columns)
+print(NAV_CSV[(NAV_CSV["areaId"] == 152) & (NAV_CSV["mapName"] == "de_dust2")])
 print("-----")
 NAV = transform_csv_to_json(NAV_CSV)
 print(NAV["de_dust2"][152])
