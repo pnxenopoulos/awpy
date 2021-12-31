@@ -16,7 +16,8 @@ for file in os.listdir(path + "data/nav/"):
         df = pd.read_csv(path + "data/nav/" + file)
         print(df[df["areaId"] == 152])
     if file.endswith(".csv"):
-        nav_dfs.append(pd.read_csv(path + "data/nav/" + file))
+        df = pd.read_csv(path + "data/nav/" + file)
+        nav_dfs.append(df)
 NAV_CSV = pd.concat(nav_dfs)
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
 print(NAV_CSV[NAV_CSV["areaId"] == 152])
