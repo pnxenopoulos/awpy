@@ -21,10 +21,12 @@ def point_in_area(map_name, area_id, point):
     if len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
     contains_x = min(NAV[map_name][area_id]["NorthWestX"], NAV[map_name][area_id]["SouthEastX"]) < point[0] < max(NAV[map_name][area_id]["NorthWestX"], NAV[map_name][area_id]["SouthEastX"])
-    contains_y = min(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"]) < point[0] < max(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"])
-    contains_z = min(NAV[map_name][area_id]["NorthWestZ"], NAV[map_name][area_id]["SouthEastZ"]) < point[0] < max(NAV[map_name][area_id]["NorthWestZ"], NAV[map_name][area_id]["SouthEastZ"])
+    contains_y = min(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"]) < point[1] < max(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"])
+    contains_z = min(NAV[map_name][area_id]["NorthWestZ"], NAV[map_name][area_id]["SouthEastZ"]) < point[2] < max(NAV[map_name][area_id]["NorthWestZ"], NAV[map_name][area_id]["SouthEastZ"])
     if contains_x and contains_y and contains_z:
         return True
+    else:
+        return False
 
 def find_area(map_name, point):
     if map_name not in NAV.keys():
