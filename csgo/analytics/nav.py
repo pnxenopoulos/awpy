@@ -1,4 +1,5 @@
 import networkx as nx
+import numpy as np
 
 from csgo import NAV, NAV_GRAPHS
 from scipy.spatial import distance
@@ -22,24 +23,36 @@ def point_in_area(map_name, area_id, point):
         raise ValueError("Point must be a list [X,Y,Z]")
     contains_x = min(NAV[map_name][area_id]["NorthWestX"], NAV[map_name][area_id]["SouthEastX"]) < point[0] < max(NAV[map_name][area_id]["NorthWestX"], NAV[map_name][area_id]["SouthEastX"])
     contains_y = min(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"]) < point[1] < max(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"])
-    contains_z = min(NAV[map_name][area_id]["NorthWestZ"], NAV[map_name][area_id]["SouthEastZ"]) < point[2] < max(NAV[map_name][area_id]["NorthWestZ"], NAV[map_name][area_id]["SouthEastZ"])
-    if contains_x and contains_y and contains_z:
+    if contains_x and contains_y:
         return True
     else:
         return False
 
-def find_area(map_name, point):
+def find_closest_area(map_name, point):
+    """ Finds the closest area
+
+    Args:
+        map_name (string) : Map to search
+        point (list)      : Point as a list (x,y,z)
+
+    Returns:
+        A dict containing info on the closest area
+    """
     if map_name not in NAV.keys():
         raise ValueError("Map not found.")
     if len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
+    closest_area = {"MapName": map_name, "AreaId": None, "Distance": 999999}
     for area in NAV[map_name].keys():
         if point_in_area(map_name, area, point):
-            nav_to_return = NAV[map_name][area]
-            nav_to_return["MapName"] = map_name
-            nav_to_return["AreaId"] = area
-            return nav_to_return
-    return {"MapName": map_name, "AreaId": None}
+            avg_x = (area["NorthWestX"] + area["SouthEastX"])/2
+            avg_y = (area["NorthWestY"] + area["SouthEastY"])/2
+            avg_z = (area["NorthWestZ"] + area["SouthEastZ"])/2
+            dist = np.sqrt((point[0]-avg_x)**2 + (point[1]-avg_y)**2 + (point[2]-avg_z)**2)
+            if dist < closest_area["Distance"]:
+                closest_area["AreaId"] = area
+                closest_area["Distance"] = dist
+    return closest_area
 
 def area_distance(map_name, area_a, area_b, dist_type="graph"):
     """ Returns the distance between two areas.
@@ -85,16 +98,16 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
             raise ValueError("When using graph or geodesic distance, point must be X/Y/Z")
-        area_a = find_area(map_name, point_a)["AreaId"]
-        area_b = find_area(map_name, point_b)["AreaId"]
+        area_a = find_closest_area(map_name, point_a)["AreaId"]
+        area_b = find_closest_area(map_name, point_b)["AreaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "geodesic":
         if map_name not in NAV.keys():
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
             raise ValueError("When using graph or geodesic distance, point must be X/Y/Z")
-        area_a = find_area(map_name, point_a)["AreaId"]
-        area_b = find_area(map_name, point_b)["AreaId"]
+        area_a = find_closest_area(map_name, point_a)["AreaId"]
+        area_b = find_closest_area(map_name, point_b)["AreaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "euclidean":
         return distance.euclidean(point_a, point_b)
