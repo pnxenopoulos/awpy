@@ -5,10 +5,7 @@ import numpy as np
 import networkx as nx
 
 from csgo.utils import transform_csv_to_json
-
 from pathlib import Path
-
-# import brotli
 
 path = os.path.join(os.path.dirname(__file__), "")
 
