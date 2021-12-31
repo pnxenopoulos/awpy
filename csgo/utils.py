@@ -49,7 +49,7 @@ def transform_csv_to_json(sampleCsv):
     finalDic = {}
     for curMap in sampleCsv['mapName'].unique():
         mapDic = {}
-        for i in range(len(sampleCsv[sampleCsv['mapName'] == curMap])):
+        for i in sampleCsv[sampleCsv['mapName'] == curMap].index:
             curTile = sampleCsv.iloc[i]
             curDic = {}
             for curFeature in sampleCsv.columns:
