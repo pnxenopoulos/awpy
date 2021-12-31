@@ -16,7 +16,7 @@ for file in os.listdir(path + "data/nav/"):
         df = pd.read_csv(path + "data/nav/" + file)
         nav_dfs.append(df)
 
-NAV_CSV = pd.concat(nav_dfs)
+NAV_CSV = pd.concat(nav_dfs, ignore_index=True)
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
 NAV = transform_csv_to_json(NAV_CSV)
 
