@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 
 from csgo import NAV
-from csgo.analytics.nav import area_distance, find_area, point_distance, point_in_area, PlaceEncoder
+from csgo.analytics.nav import area_distance, find_closest_area, point_distance, point_in_area, PlaceEncoder
 
 class TestNav:
     """Class to test the nav-related functions."""
