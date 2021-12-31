@@ -18,6 +18,7 @@ for file in os.listdir(path + "data/nav/"):
     if file.endswith(".csv"):
         nav_dfs.append(pd.read_csv(path + "data/nav/" + file))
 NAV_CSV = pd.concat(nav_dfs)
+NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
 NAV = transform_csv_to_json(NAV_CSV)
 
 # Create nav graphs
