@@ -28,19 +28,19 @@ for m in NAV.keys():
         r = NAV[m][a]
         G.add_nodes_from([
             (a, {
-                "MapName": m,
-                "AreaID": a, 
-                "AreaName": r["AreaName"], 
-                "NorthWestX": r["NorthWestX"],
-                "NorthWestY": r["NorthWestY"],
-                "NorthWestZ": r["NorthWestZ"],
-                "SouthEastX": r["SouthEastX"],
-                "SouthEastY": r["SouthEastY"],
-                "SouthEastZ": r["SouthEastZ"],
-                "Size": np.sqrt(
-                    (r["NorthWestX"]-r["SouthEastX"])**2 +
-                    (r["NorthWestY"]-r["SouthEastY"])**2 +
-                    (r["NorthWestZ"]-r["SouthEastZ"])**2
+                "mapName": m,
+                "areaID": a, 
+                "areaName": r["areaName"], 
+                "northWestX": r["northWestX"],
+                "northWestY": r["northWestY"],
+                "northWestZ": r["northWestZ"],
+                "southEastX": r["southEastX"],
+                "southEastY": r["southEastY"],
+                "southEastZ": r["southEastZ"],
+                "size": np.sqrt(
+                    (r["northWestX"]-r["southEastX"])**2 +
+                    (r["northWestY"]-r["southEastY"])**2 +
+                    (r["northWestZ"]-r["southEastZ"])**2
                 ),
             }),
         ])

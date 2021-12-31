@@ -47,14 +47,14 @@ def transform_csv_to_json(sampleCsv):
     """ From Adi.
     """
     finalDic = {}
-    for curMap in sampleCsv['MapName'].unique():
+    for curMap in sampleCsv['mapName'].unique():
         mapDic = {}
-        for i in range(len(sampleCsv[sampleCsv['MapName'] == curMap])):
+        for i in range(len(sampleCsv[sampleCsv['mapName'] == curMap])):
             curTile = sampleCsv.iloc[i]
             curDic = {}
             for curFeature in sampleCsv.columns:
-                if curFeature not in ['MapName', 'AreaId']:
+                if curFeature not in ['mapName', 'areaId']:
                     curDic[curFeature] = curTile[curFeature]
-            mapDic[curTile['AreaId']] = curDic
+            mapDic[curTile['areaId']] = curDic
         finalDic[curMap] = mapDic
     return finalDic

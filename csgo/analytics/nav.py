@@ -21,8 +21,8 @@ def point_in_area(map_name, area_id, point):
         raise ValueError("Area ID not found.")
     if len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
-    contains_x = min(NAV[map_name][area_id]["NorthWestX"], NAV[map_name][area_id]["SouthEastX"]) < point[0] < max(NAV[map_name][area_id]["NorthWestX"], NAV[map_name][area_id]["SouthEastX"])
-    contains_y = min(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"]) < point[1] < max(NAV[map_name][area_id]["NorthWestY"], NAV[map_name][area_id]["SouthEastY"])
+    contains_x = min(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"]) < point[0] < max(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"])
+    contains_y = min(NAV[map_name][area_id]["northWestY"], NAV[map_name][area_id]["southEastY"]) < point[1] < max(NAV[map_name][area_id]["northWestY"], NAV[map_name][area_id]["southEastY"])
     if contains_x and contains_y:
         return True
     else:
@@ -42,12 +42,12 @@ def find_closest_area(map_name, point):
         raise ValueError("Map not found.")
     if len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
-    closest_area = {"MapName": map_name, "AreaId": None, "Distance": 999999}
+    closest_area = {"mapName": map_name, "areaId": None, "distance": 999999}
     for area in NAV[map_name].keys():
         if point_in_area(map_name, area, point):
-            avg_x = (NAV[map_name][area]["NorthWestX"] + NAV[map_name][area]["SouthEastX"])/2
-            avg_y = (NAV[map_name][area]["NorthWestY"] + NAV[map_name][area]["SouthEastY"])/2
-            avg_z = (NAV[map_name][area]["NorthWestZ"] + NAV[map_name][area]["SouthEastZ"])/2
+            avg_x = (NAV[map_name][area]["northWestX"] + NAV[map_name][area]["southEastX"])/2
+            avg_y = (NAV[map_name][area]["northWestY"] + NAV[map_name][area]["southEastY"])/2
+            avg_z = (NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"])/2
             dist = np.sqrt((point[0]-avg_x)**2 + (point[1]-avg_y)**2 + (point[2]-avg_z)**2)
             if dist < closest_area["Distance"]:
                 closest_area["AreaId"] = area
@@ -74,12 +74,12 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         return len(nx.shortest_path(G, area_a, area_b))-1
     if dist_type == "geodesic":
         def dist(a, b):
-            return G.nodes()[a]["Size"] + G.nodes()[b]["Size"]
+            return G.nodes()[a]["size"] + G.nodes()[b]["size"]
         geodesic_path = nx.astar_path(G, area_a, area_b, heuristic=dist)
         geodesic_cost = 0
         for i, area in enumerate(geodesic_path):
             if i > 0:
-                geodesic_cost += G.nodes()[area]["Size"]
+                geodesic_cost += G.nodes()[area]["size"]
     return 0
 
 def point_distance(map_name, point_a, point_b, dist_type="graph"):
@@ -98,16 +98,16 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
             raise ValueError("When using graph or geodesic distance, point must be X/Y/Z")
-        area_a = find_closest_area(map_name, point_a)["AreaId"]
-        area_b = find_closest_area(map_name, point_b)["AreaId"]
+        area_a = find_closest_area(map_name, point_a)["areaId"]
+        area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "geodesic":
         if map_name not in NAV.keys():
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
             raise ValueError("When using graph or geodesic distance, point must be X/Y/Z")
-        area_a = find_closest_area(map_name, point_a)["AreaId"]
-        area_b = find_closest_area(map_name, point_b)["AreaId"]
+        area_a = find_closest_area(map_name, point_a)["areaId"]
+        area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "euclidean":
         return distance.euclidean(point_a, point_b)
