@@ -115,16 +115,16 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "euclidean":
-        distance_obj = distance.euclidean(point_a, point_b)
+        distance_obj["distance"] = distance.euclidean(point_a, point_b)
         return distance_obj
     elif dist_type == "manhattan":
-        distance_obj = distance.cityblock(point_a, point_b)
+        distance_obj["distance"] = distance.cityblock(point_a, point_b)
         return distance_obj
     elif dist_type == "canberra":
-        distance_obj = distance.canberra(point_a, point_b)
+        distance_obj["distance"] = distance.canberra(point_a, point_b)
         return distance_obj
     elif dist_type == "cosine":
-        distance_obj = distance.cosine(point_a, point_b)
+        distance_obj["distance"] = distance.cosine(point_a, point_b)
         return distance_obj
 
 class PlaceEncoder:
