@@ -16,10 +16,10 @@ class TestNav:
             point_in_area(map_name="de_dust2", area_id=0, point=[0,0,0])
         with pytest.raises(ValueError):
             point_in_area(map_name="test", area_id=0, point=[0])
-        avg_x = (NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"])/2
-        avg_y = (NAV["de_dust2"][152]["northWestY"] + NAV["de_dust2"][152]["southEastY"])/2
-        avg_z = (NAV["de_dust2"][152]["northWestZ"] + NAV["de_dust2"][152]["southEastZ"])/2
-        assert point_in_area(map_name="de_dust2", area_id=152, point=[avg_x,avg_y,avg_z])
+        avg_x = (NAV["de_dust2"][150]["northWestX"] + NAV["de_dust2"][150]["southEastX"])/2
+        avg_y = (NAV["de_dust2"][150]["northWestY"] + NAV["de_dust2"][150]["southEastY"])/2
+        avg_z = (NAV["de_dust2"][150]["northWestZ"] + NAV["de_dust2"][150]["southEastZ"])/2
+        assert point_in_area(map_name="de_dust2", area_id=150, point=[avg_x,avg_y,avg_z])
 
     def test_find_area(self):
         """ Tests find_area
@@ -28,24 +28,24 @@ class TestNav:
             find_closest_area(map_name="test", point=[0, 0, 0])
         with pytest.raises(ValueError):
             find_closest_area(map_name="de_dust2", point=[0, 0])
-        avg_x = (NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"])/2
-        avg_y = (NAV["de_dust2"][152]["northWestY"] + NAV["de_dust2"][152]["southEastY"])/2
-        avg_z = (NAV["de_dust2"][152]["northWestZ"] + NAV["de_dust2"][152]["southEastZ"])/2
+        avg_x = (NAV["de_dust2"][150]["northWestX"] + NAV["de_dust2"][150]["southEastX"])/2
+        avg_y = (NAV["de_dust2"][150]["northWestY"] + NAV["de_dust2"][150]["southEastY"])/2
+        avg_z = (NAV["de_dust2"][150]["northWestZ"] + NAV["de_dust2"][150]["southEastZ"])/2
         area_found = find_closest_area(map_name="de_dust2", point=[avg_x, avg_y, avg_z])
         assert type(area_found) == dict
-        assert area_found["areaId"] == 152
+        assert area_found["areaId"] == 150
 
     def test_area_distance(self):
         """ Tests area distance
         """
         with pytest.raises(ValueError):
-            area_distance(map_name="test", area_a=152, area_b=152, dist_type="graph")
+            area_distance(map_name="test", area_a=150, area_b=150, dist_type="graph")
         with pytest.raises(ValueError):
             area_distance(map_name="de_dust2", area_a=0, area_b=0, dist_type="graph")
         with pytest.raises(ValueError):
-            area_distance(map_name="de_dust2", area_a=152, area_b=152, dist_type="test")
-        assert area_distance(map_name="de_dust2", area_a=152, area_b=152, dist_type="graph") == 0
-        assert area_distance(map_name="de_dust2", area_a=152, area_b=152, dist_type="geodesic") == 0
+            area_distance(map_name="de_dust2", area_a=150, area_b=150, dist_type="test")
+        assert area_distance(map_name="de_dust2", area_a=150, area_b=150, dist_type="graph") == 0
+        assert area_distance(map_name="de_dust2", area_a=150, area_b=150, dist_type="geodesic") == 0
 
     def test_point_distance(self):
         """ Tests point distance
@@ -62,9 +62,9 @@ class TestNav:
         assert point_distance(map_name="de_dust2", point_a=[0, 0], point_b=[1, 1], dist_type="manhattan") == 2
         assert point_distance(map_name="de_dust2", point_a=[0, 0], point_b=[1, 1], dist_type="canberra") == 2.0
         assert point_distance(map_name="de_dust2", point_a=[-1, 5], point_b=[2, 1], dist_type="cosine") == 0.7368825942078912
-        avg_x = (NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"])/2
-        avg_y = (NAV["de_dust2"][152]["northWestY"] + NAV["de_dust2"][152]["southEastY"])/2
-        avg_z = (NAV["de_dust2"][152]["northWestZ"] + NAV["de_dust2"][152]["southEastZ"])/2
+        avg_x = (NAV["de_dust2"][150]["northWestX"] + NAV["de_dust2"][150]["southEastX"])/2
+        avg_y = (NAV["de_dust2"][150]["northWestY"] + NAV["de_dust2"][150]["southEastY"])/2
+        avg_z = (NAV["de_dust2"][150]["northWestZ"] + NAV["de_dust2"][150]["southEastZ"])/2
         assert point_distance(map_name="de_dust2", point_a=[avg_x,avg_y,avg_z], point_b=[avg_x,avg_y,avg_z], dist_type="graph") == 0
         assert point_distance(map_name="de_dust2", point_a=[avg_x,avg_y,avg_z], point_b=[avg_x,avg_y,avg_z], dist_type="geodesic") == 0
 

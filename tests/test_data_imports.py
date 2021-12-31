@@ -15,8 +15,8 @@ class TestDataImports:
     def test_nav(self):
         assert type(NAV) == dict
         print(NAV["de_dust2"].keys())
-        assert type(NAV["de_dust2"][152])
-        assert NAV["de_dust2"][152]["areaName"] == "Garage"
+        assert type(NAV["de_dust2"][150])
+        assert NAV["de_dust2"][150]["areaName"] == "Garage"
 
     def test_nav_graphs(self):
         assert type(NAV_GRAPHS) == dict
