@@ -20,7 +20,7 @@ for file in os.listdir(path + "data/nav/"):
         nav_dfs.append(df)
 NAV_CSV = pd.concat(nav_dfs)
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
-print(NAV_CSV[NAV_CSV["areaId"] == 152])
+#print(NAV_CSV[NAV_CSV["areaId"] == 152])
 NAV = transform_csv_to_json(NAV_CSV)
 print(NAV["de_dust2"][152])
 
