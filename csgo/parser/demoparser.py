@@ -272,7 +272,7 @@ class DemoParser:
                                 frame_item["tEqVal"] = frame["t"]["teamEqVal"]
                                 frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
                                 frame_item["tUtility"] = frame["t"]["totalUtility"]
-                    frames_dataframes.append(frame_item)
+                        frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
             frames_df["matchID"] = self.json["matchID"]
             frames_df["mapName"] = self.json["mapName"]
