@@ -251,7 +251,7 @@ class DemoParser:
         """
         if self.json:
             frames_dataframes = []
-            keys = ["tick", "seconds", "positionToken", "tToken", "ctToken"]
+            keys = ["tick", "seconds"]
             for r in self.json["gameRounds"]:
                 if r["frames"]:
                     for frame in r["frames"]:
