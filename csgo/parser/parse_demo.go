@@ -23,7 +23,7 @@ import (
 	dem "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs"
 	common "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/common"
 	events "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/events"
-	gonav "github.com/pnxenopoulos/csgonavparse"
+	//gonav "github.com/pnxenopoulos/csgonavparse"
 )
 
 // Game is the overall struct that holds everything
@@ -152,14 +152,14 @@ type GrenadeAction struct {
 	ThrowerX          float64 `json:"throwerX"`
 	ThrowerY          float64 `json:"throwerY"`
 	ThrowerZ          float64 `json:"throwerZ"`
-	ThrowerAreaID     *int64  `json:"throwerAreaID"`
-	ThrowerAreaName   *string `json:"throwerAreaName"`
+	//ThrowerAreaID     *int64  `json:"throwerAreaID"`
+	//ThrowerAreaName   *string `json:"throwerAreaName"`
 	Grenade           string  `json:"grenadeType"`
 	GrenadeX          float64 `json:"grenadeX"`
 	GrenadeY          float64 `json:"grenadeY"`
 	GrenadeZ          float64 `json:"grenadeZ"`
-	GrenadeAreaID     *int64  `json:"grenadeAreaID"`
-	GrenadeAreaName   *string `json:"grenadeAreaName"`
+	//GrenadeAreaID     *int64  `json:"grenadeAreaID"`
+	//GrenadeAreaName   *string `json:"grenadeAreaName"`
 	UniqueID          int64
 }
 
@@ -190,8 +190,8 @@ type DamageAction struct {
 	AttackerX        *float64 `json:"attackerX"`
 	AttackerY        *float64 `json:"attackerY"`
 	AttackerZ        *float64 `json:"attackerZ"`
-	AttackerAreaID   *int64   `json:"attackerAreaID"`
-	AttackerAreaName *string  `json:"attackerAreaName"`
+	//AttackerAreaID   *int64   `json:"attackerAreaID"`
+	//AttackerAreaName *string  `json:"attackerAreaName"`
 	AttackerViewX    *float64 `json:"attackerViewX"`
 	AttackerViewY    *float64 `json:"attackerViewY"`
 	AttackerStrafe   *bool    `json:"attackerStrafe"`
@@ -202,8 +202,8 @@ type DamageAction struct {
 	VictimX          *float64 `json:"victimX"`
 	VictimY          *float64 `json:"victimY"`
 	VictimZ          *float64 `json:"victimZ"`
-	VictimAreaID     *int64   `json:"victimAreaID"`
-	VictimAreaName   *string  `json:"victimAreaName"`
+	//VictimAreaID     *int64   `json:"victimAreaID"`
+	//VictimAreaName   *string  `json:"victimAreaName"`
 	VictimViewX      *float64 `json:"victimViewX"`
 	VictimViewY      *float64 `json:"victimViewY"`
 	Weapon           string   `json:"weapon"`
@@ -237,8 +237,8 @@ type KillAction struct {
 	VictimX             *float64 `json:"victimX"`
 	VictimY             *float64 `json:"victimY"`
 	VictimZ             *float64 `json:"victimZ"`
-	VictimAreaID        *int64   `json:"victimAreaID"`
-	VictimAreaName      *string  `json:"victimAreaName"`
+	//VictimAreaID        *int64   `json:"victimAreaID"`
+	//VictimAreaName      *string  `json:"victimAreaName"`
 	VictimViewX         *float64 `json:"victimViewX"`
 	VictimViewY         *float64 `json:"victimViewY"`
 	AssisterSteamID     *int64   `json:"assisterSteamID"`
@@ -279,8 +279,8 @@ type WeaponFireAction struct {
 	PlayerX        float64 `json:"playerX"`
 	PlayerY        float64 `json:"playerY"`
 	PlayerZ        float64 `json:"playerZ"`
-	PlayerAreaID   *int64  `json:"playerAreaID"`
-	PlayerAreaName *string `json:"playerAreaName"`
+	//PlayerAreaID   *int64  `json:"playerAreaID"`
+	//PlayerAreaName *string `json:"playerAreaName"`
 	PlayerViewX    float64 `json:"playerViewX"`
 	PlayerViewY    float64 `json:"playerViewY"`
 	PlayerStrafe   bool    `json:"playerStrafe"`
@@ -299,8 +299,8 @@ type FlashAction struct {
 	AttackerX        float64  `json:"attackerX"`
 	AttackerY        float64  `json:"attackerY"`
 	AttackerZ        float64  `json:"attackerZ"`
-	AttackerAreaID   *int64   `json:"attackerAreaID"`
-	AttackerAreaName *string  `json:"attackerAreaName"`
+	//AttackerAreaID   *int64   `json:"attackerAreaID"`
+	//AttackerAreaName *string  `json:"attackerAreaName"`
 	AttackerViewX    float64  `json:"attackerViewX"`
 	AttackerViewY    float64  `json:"attackerViewY"`
 	PlayerSteamID    *int64   `json:"playerSteamID"`
@@ -310,8 +310,8 @@ type FlashAction struct {
 	PlayerX          *float64 `json:"playerX"`
 	PlayerY          *float64 `json:"playerY"`
 	PlayerZ          *float64 `json:"playerZ"`
-	PlayerAreaID     *int64   `json:"playerAreaID"`
-	PlayerAreaName   *string  `json:"playerAreaName"`
+	//PlayerAreaID     *int64   `json:"playerAreaID"`
+	//PlayerAreaName   *string  `json:"playerAreaName"`
 	PlayerViewX      *float64 `json:"playerViewX"`
 	PlayerViewY      *float64 `json:"playerViewY"`
 	FlashDuration    *float64 `json:"flashDuration"`
@@ -322,9 +322,9 @@ type GameFrame struct {
 	Tick        int64         `json:"tick"`
 	Second      float64       `json:"seconds"`
 	ClockTime   string        `json:"clockTime"`
-	FrameToken  *string       `json:"positionToken"`
-	TToken      *string       `json:"tToken"`
-	CTToken     *string       `json:"ctToken"`
+	//FrameToken  *string       `json:"positionToken"`
+	//TToken      *string       `json:"tToken"`
+	//CTToken     *string       `json:"ctToken"`
 	T           TeamFrameInfo `json:"t"`
 	CT          TeamFrameInfo `json:"ct"`
 	World       []WorldObject `json:"world"`
@@ -338,8 +338,8 @@ type WorldObject struct {
 	X        float64 `json:"x"`
 	Y        float64 `json:"y"`
 	Z        float64 `json:"z"`
-	AreaID   *int64  `json:"areaID"`
-	AreaName *string `json:"areaName"`
+	//AreaID   *int64  `json:"areaID"`
+	//AreaName *string `json:"areaName"`
 }
 
 // TeamFrameInfo at time t
@@ -347,7 +347,7 @@ type TeamFrameInfo struct {
 	Side         string       `json:"side"`
 	Team         string       `json:"teamName"`
 	CurrentEqVal int64        `json:"teamEqVal"`
-	PosToken     *string      `json:"positionToken"`
+	//PosToken     *string      `json:"positionToken"`
 	AlivePlayers int64        `json:"alivePlayers"`
 	TotalUtility int64        `json:"totalUtility"`
 	Players      []PlayerInfo `json:"players"`
@@ -364,8 +364,8 @@ type PlayerInfo struct {
 	Z               float64      `json:"z"`
 	ViewX           float64      `json:"viewX"`
 	ViewY           float64      `json:"viewY"`
-	AreaID          *int64       `json:"areaID"`
-	AreaName        *string      `json:"areaName"`
+	//AreaID          *int64       `json:"areaID"`
+	//AreaName        *string      `json:"areaName"`
 	Hp              int64        `json:"hp"`
 	Armor           int64        `json:"armor"`
 	ActiveWeapon    string       `json:"activeWeapon"`
@@ -592,6 +592,7 @@ func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) st
 	return formatTimeNumber(minutes) + ":" + formatTimeNumber(seconds)
 }
 
+/*
 func findAreaPlace(currArea *gonav.NavArea, mesh gonav.NavMesh) string {
 	name := ""
 	if currArea.Place != nil {
@@ -610,8 +611,11 @@ func findAreaPlace(currArea *gonav.NavArea, mesh gonav.NavMesh) string {
 	}
 	return name
 }
+*/
 
-func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
+/*
+func parsePlayer(p *common.Player) PlayerInfo {
+	// , m gonav.NavMesh
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
@@ -634,6 +638,7 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	var playerAreaID int64
 	playerAreaPlace := ""
 
+	 
 	if playerArea != nil {
 		playerAreaID = int64(playerArea.ID)
 		if playerArea.Place != nil {
@@ -644,6 +649,7 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 	}
 	currentPlayer.AreaID = &playerAreaID
 	currentPlayer.AreaName = &playerAreaPlace
+	
 
 	// Calc other metrics
 	currentPlayer.X = float64(playerPos.X)
@@ -699,7 +705,8 @@ func parsePlayer(p *common.Player, m gonav.NavMesh) PlayerInfo {
 		}
 	}
 	return currentPlayer
-}
+} 
+*/
 
 func parsePlayerNoNav(p *common.Player) PlayerInfo {
 	currentPlayer := PlayerInfo{}
@@ -879,7 +886,7 @@ func findIdx(sl []string, val string) int {
 	return -1
 }
 
-func createAlivePlayerSlice(players []PlayerInfo) []string {
+/* func createAlivePlayerSlice(players []PlayerInfo) []string {
 	var alivePlayerPlaces []string
 	for _, p := range players {
 		if p.IsAlive {
@@ -887,9 +894,9 @@ func createAlivePlayerSlice(players []PlayerInfo) []string {
 		}
 	}
 	return alivePlayerPlaces
-}
+} */
 
-func createCountToken(alivePlaces []string, placeSl []string) string {
+/* func createCountToken(alivePlaces []string, placeSl []string) string {
 	// Create count token, initialize to 0
 	countToken := make([]int, len(placeSl))
 	for i := range countToken {
@@ -911,6 +918,7 @@ func createCountToken(alivePlaces []string, placeSl []string) string {
 	}
 	return tokenStr
 }
+ */
 
 // Define cleaning functions
 func cleanMapName(mapName string) string {
@@ -977,7 +985,7 @@ func main() {
 	currentMap := header.MapName
 	currentMap = cleanMapName(currentMap)
 
-	mapsWithNavFile := make([]string, 12)
+	/* mapsWithNavFile := make([]string, 12)
 	mapsWithNavFile[0] = "de_ancient"
 	mapsWithNavFile[1] = "de_cache"
 	mapsWithNavFile[2] = "de_cbble"
@@ -990,9 +998,9 @@ func main() {
 	mapsWithNavFile[9] = "de_overpass"
 	mapsWithNavFile[10] = "de_train"
 	mapsWithNavFile[11] = "de_vertigo"
-	navFileExists := stringInSlice(currentMap, mapsWithNavFile)
+	navFileExists := stringInSlice(currentMap, mapsWithNavFile) */
 
-	mesh := gonav.NavMesh{}
+	/* mesh := gonav.NavMesh{}
 	placeSl := make([]string, 0)
 	if navFileExists {
 		fNav, _ := os.Open("../data/nav/" + currentMap + ".nav")
@@ -1006,7 +1014,7 @@ func main() {
 
 		// Alphabetize the slice of places to standardize it
 		sort.Strings(placeSl)
-	}
+	} */
 
 	// Create flags to guIDe parsing
 	roundStarted := 0
@@ -1028,9 +1036,9 @@ func main() {
 	currentGame.PlaybackFrames = int64(header.PlaybackFrames)
 	currentGame.ClientName = header.ClientName
 
-	if navFileExists {
+	/* if navFileExists {
 		currentGame.ParsedPlaces = placeSl
-	}
+	} */
 
 	// Set parsing options
 	parsingOpts := ParserOpts{}
@@ -1516,7 +1524,7 @@ func main() {
 			// Player loc
 			playerPos := e.Shooter.LastAlivePosition
 
-			if navFileExists {
+			/* if navFileExists {
 				playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 				playerArea := mesh.GetNearestArea(playerPoint, true)
 				var playerAreaID int64
@@ -1532,7 +1540,7 @@ func main() {
 
 				currentWeaponFire.PlayerAreaID = &playerAreaID
 				currentWeaponFire.PlayerAreaName = &playerAreaPlace
-			}
+			} */
 			
 			currentWeaponFire.PlayerX = float64(playerPos.X)
 			currentWeaponFire.PlayerY = float64(playerPos.Y)
@@ -1581,7 +1589,7 @@ func main() {
 			// Attacker loc
 			attackerPos := e.Attacker.LastAlivePosition
 
-			if navFileExists {
+			/* if navFileExists {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -1597,7 +1605,7 @@ func main() {
 
 				currentFlash.AttackerAreaID = &attackerAreaID
 				currentFlash.AttackerAreaName = &attackerAreaPlace
-			}
+			} */
 			
 			currentFlash.AttackerX = float64(attackerPos.X)
 			currentFlash.AttackerY = float64(attackerPos.Y)
@@ -1636,7 +1644,7 @@ func main() {
 				// Player loc
 				playerPos := e.Player.LastAlivePosition
 
-				if navFileExists {
+				/* if navFileExists {
 					playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 					playerArea := mesh.GetNearestArea(playerPoint, true)
 					var playerAreaID int64
@@ -1653,7 +1661,7 @@ func main() {
 
 					currentFlash.PlayerAreaID = &playerAreaID
 					currentFlash.PlayerAreaName = &playerAreaPlace
-				}
+				} */
 				
 				playerX := float64(playerPos.X)
 				playerY := float64(playerPos.Y)
@@ -1827,7 +1835,7 @@ func main() {
 			// Player location (use weaponfire event)
 			playerPos := e.Projectile.Position()
 			
-			if navFileExists {
+			/* if navFileExists {
 				playerPoint := gonav.Vector3{X: float32(playerPos.X), Y: float32(playerPos.Y), Z: float32(playerPos.Z)}
 
 				playerArea := mesh.GetNearestArea(playerPoint, true)
@@ -1845,7 +1853,7 @@ func main() {
 
 				currentGrenade.ThrowerAreaID = &playerAreaID
 				currentGrenade.ThrowerAreaName = &playerAreaPlace
-			}
+			} */
 
 			currentGrenade.ThrowerX = float64(playerPos.X)
 			currentGrenade.ThrowerY = float64(playerPos.Y)
@@ -1871,7 +1879,7 @@ func main() {
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
 					
-					if navFileExists {
+					/* if navFileExists {
 						grenadePoint := gonav.Vector3{X: float32(grenadePos.X), Y: float32(grenadePos.Y), Z: float32(grenadePos.Z)}
 						grenadeArea := mesh.GetNearestArea(grenadePoint, true)
 						var grenadeAreaID int64
@@ -1888,7 +1896,7 @@ func main() {
 
 						currentRound.Grenades[i].GrenadeAreaID = &grenadeAreaID
 						currentRound.Grenades[i].GrenadeAreaName = &grenadeAreaPlace
-					}
+					} */
 
 					currentRound.Grenades[i].GrenadeX = float64(grenadePos.X)
 					currentRound.Grenades[i].GrenadeY = float64(grenadePos.Y)
@@ -1942,7 +1950,7 @@ func main() {
 			currentKill.AttackerSide = &attackerSide
 			attackerPos := e.Killer.LastAlivePosition
 			
-			if navFileExists {
+			/* if navFileExists {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -1959,7 +1967,7 @@ func main() {
 
 				currentKill.AttackerAreaID = &attackerAreaID
 				currentKill.AttackerAreaName = &attackerAreaPlace
-			}
+			} */
 
 			currentKill.AttackerX = &attackerPos.X
 			currentKill.AttackerY = &attackerPos.Y
@@ -1998,7 +2006,7 @@ func main() {
 			currentKill.VictimSide = &victimSide
 			victimPos := e.Victim.LastAlivePosition
 			
-			if navFileExists {
+			/* if navFileExists {
 				victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
 				victimArea := mesh.GetNearestArea(victimPoint, true)
 				var victimAreaID int64
@@ -2015,7 +2023,7 @@ func main() {
 
 				currentKill.VictimAreaID = &victimAreaID
 				currentKill.VictimAreaName = &victimAreaPlace
-			}
+			} */
 
 			currentKill.VictimX = &victimPos.X
 			currentKill.VictimY = &victimPos.Y
@@ -2168,7 +2176,7 @@ func main() {
 
 			attackerPos := e.Attacker.LastAlivePosition
 			
-			if navFileExists {
+			/* if navFileExists {
 				attackerPoint := gonav.Vector3{X: float32(attackerPos.X), Y: float32(attackerPos.Y), Z: float32(attackerPos.Z)}
 				attackerArea := mesh.GetNearestArea(attackerPoint, true)
 				var attackerAreaID int64
@@ -2185,7 +2193,7 @@ func main() {
 
 				currentDamage.AttackerAreaID = &attackerAreaID
 				currentDamage.AttackerAreaName = &attackerAreaPlace
-			}
+			} */
 
 			currentDamage.AttackerX = &attackerPos.X
 			currentDamage.AttackerY = &attackerPos.Y
@@ -2226,7 +2234,7 @@ func main() {
 
 			victimPos := e.Player.LastAlivePosition
 			
-			if navFileExists {
+			/* if navFileExists {
 				victimPoint := gonav.Vector3{X: float32(victimPos.X), Y: float32(victimPos.Y), Z: float32(victimPos.Z)}
 				victimArea := mesh.GetNearestArea(victimPoint, true)
 				var victimAreaID int64
@@ -2243,7 +2251,8 @@ func main() {
 
 				currentDamage.VictimAreaID = &victimAreaID
 				currentDamage.VictimAreaName = &victimAreaPlace
-			}
+			} */
+
 			currentDamage.VictimX = &victimPos.X
 			currentDamage.VictimY = &victimPos.Y
 			currentDamage.VictimZ = &victimPos.Z
@@ -2278,16 +2287,11 @@ func main() {
 
 			for _, p := range tPlayers {
 				if p != nil {
-					if navFileExists {
-						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p, mesh))
-					} else {
-						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayerNoNav(p))
-					}
-					
+					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayerNoNav(p))
 				}
 			}
 
-			if navFileExists {
+			/* if navFileExists {
 				tPlayerPlaces := createAlivePlayerSlice(currentFrame.T.Players)
 				tToken := createCountToken(tPlayerPlaces, placeSl)
 
@@ -2301,7 +2305,7 @@ func main() {
 				currentFrame.TToken = &tToken
 				currentFrame.CTToken = &ctToken
 				currentFrame.FrameToken = &frameToken
-			}
+			} */
 			
 			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
 			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
@@ -2317,12 +2321,7 @@ func main() {
 
 			for _, p := range ctPlayers {
 				if p != nil {
-					if navFileExists {
-						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p, mesh))
-					} else{
-						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayerNoNav(p))
-					}
-					
+					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayerNoNav(p))
 				}
 			}
 			
@@ -2337,7 +2336,7 @@ func main() {
 				currentWorldObj.ObjType = ele.WeaponInstance.String()
 				objPos := ele.Trajectory[len(ele.Trajectory)-1]
 				
-				if navFileExists {
+				/* if navFileExists {
 					objPoint := gonav.Vector3{X: float32(objPos.X), Y: float32(objPos.Y), Z: float32(objPos.Z)}
 					objArea := mesh.GetNearestArea(objPoint, true)
 					var objAreaID int64
@@ -2352,7 +2351,7 @@ func main() {
 					}
 					currentWorldObj.AreaID = &objAreaID
 					currentWorldObj.AreaName = &objAreaPlace
-				}
+				} */
 
 				currentWorldObj.X = float64(objPos.X)
 				currentWorldObj.Y = float64(objPos.Y)
@@ -2366,7 +2365,7 @@ func main() {
 			currentWorldObj.ObjType = "bomb"
 			objPos := bombObj.Position()
 
-			if navFileExists {
+			/* if navFileExists {
 				objPoint := gonav.Vector3{X: float32(objPos.X), Y: float32(objPos.Y), Z: float32(objPos.Z)}
 				objArea := mesh.GetNearestArea(objPoint, true)
 				var objAreaID int64
@@ -2381,7 +2380,7 @@ func main() {
 				}
 				currentWorldObj.AreaID = &objAreaID
 				currentWorldObj.AreaName = &objAreaPlace
-			}
+			} */
 
 			currentWorldObj.X = float64(objPos.X)
 			currentWorldObj.Y = float64(objPos.Y)
