@@ -267,13 +267,11 @@ class DemoParser:
                                     "alivePlayers"
                                 ]
                                 frame_item["ctUtility"] = frame["ct"]["totalUtility"]
-                                frame_item["ctToken"] = frame["ct"]["positionToken"]
                             else:
                                 frame_item["tTeamName"] = frame["t"]["teamName"]
                                 frame_item["tEqVal"] = frame["t"]["teamEqVal"]
                                 frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
                                 frame_item["tUtility"] = frame["t"]["totalUtility"]
-                                frame_item["tToken"] = frame["t"]["positionToken"]
                     frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
             frames_df["matchID"] = self.json["matchID"]
