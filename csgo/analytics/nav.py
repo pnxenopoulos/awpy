@@ -4,8 +4,9 @@ import numpy as np
 from csgo.data import NAV, NAV_GRAPHS
 from scipy.spatial import distance
 
+
 def point_in_area(map_name, area_id, point):
-    """ Returns if the point is within an area id for a map.
+    """Returns if the point is within an area id for a map.
 
     Args:
         map_name (string) : Map to search
@@ -21,15 +22,28 @@ def point_in_area(map_name, area_id, point):
         raise ValueError("Area ID not found.")
     if len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
-    contains_x = min(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"]) < point[0] < max(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"])
-    contains_y = min(NAV[map_name][area_id]["northWestY"], NAV[map_name][area_id]["southEastY"]) < point[1] < max(NAV[map_name][area_id]["northWestY"], NAV[map_name][area_id]["southEastY"])
+    contains_x = (
+        min(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"])
+        < point[0]
+        < max(
+            NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"]
+        )
+    )
+    contains_y = (
+        min(NAV[map_name][area_id]["northWestY"], NAV[map_name][area_id]["southEastY"])
+        < point[1]
+        < max(
+            NAV[map_name][area_id]["northWestY"], NAV[map_name][area_id]["southEastY"]
+        )
+    )
     if contains_x and contains_y:
         return True
     else:
         return False
 
+
 def find_closest_area(map_name, point):
-    """ Finds the closest area
+    """Finds the closest area
 
     Args:
         map_name (string) : Map to search
@@ -45,17 +59,28 @@ def find_closest_area(map_name, point):
     closest_area = {"mapName": map_name, "areaId": None, "distance": 999999}
     for area in NAV[map_name].keys():
         if point_in_area(map_name, area, point):
-            avg_x = (NAV[map_name][area]["northWestX"] + NAV[map_name][area]["southEastX"])/2
-            avg_y = (NAV[map_name][area]["northWestY"] + NAV[map_name][area]["southEastY"])/2
-            avg_z = (NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"])/2
-            dist = np.sqrt((point[0]-avg_x)**2 + (point[1]-avg_y)**2 + (point[2]-avg_z)**2)
+            avg_x = (
+                NAV[map_name][area]["northWestX"] + NAV[map_name][area]["southEastX"]
+            ) / 2
+            avg_y = (
+                NAV[map_name][area]["northWestY"] + NAV[map_name][area]["southEastY"]
+            ) / 2
+            avg_z = (
+                NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"]
+            ) / 2
+            dist = np.sqrt(
+                (point[0] - avg_x) ** 2
+                + (point[1] - avg_y) ** 2
+                + (point[2] - avg_z) ** 2
+            )
             if dist < closest_area["distance"]:
                 closest_area["areaId"] = area
                 closest_area["distance"] = dist
     return closest_area
 
+
 def area_distance(map_name, area_a, area_b, dist_type="graph"):
-    """ Returns the distance between two areas.
+    """Returns the distance between two areas.
 
     Args:
         map_name (string)  : Map to search
@@ -73,12 +98,14 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
     distance_obj = {"distanceType": dist_type, "distance": None, "areas": []}
     if dist_type == "graph":
         discovered_path = nx.shortest_path(G, area_a, area_b)
-        distance_obj["distance"] = len(discovered_path)-1
+        distance_obj["distance"] = len(discovered_path) - 1
         distance_obj["areas"] = discovered_path
         return distance_obj
     if dist_type == "geodesic":
+
         def dist(a, b):
             return G.nodes()[a]["size"] + G.nodes()[b]["size"]
+
         geodesic_path = nx.astar_path(G, area_a, area_b, heuristic=dist)
         geodesic_cost = 0
         for i, area in enumerate(geodesic_path):
@@ -88,8 +115,9 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         distance_obj["areas"] = geodesic_path
         return distance_obj
 
+
 def point_distance(map_name, point_a, point_b, dist_type="graph"):
-    """ Returns the distance between two points.
+    """Returns the distance between two points.
 
     Args:
         map_name (string)  : Map to search
@@ -102,7 +130,9 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         if map_name not in NAV.keys():
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
-            raise ValueError("When using graph or geodesic distance, point must be X/Y/Z")
+            raise ValueError(
+                "When using graph or geodesic distance, point must be X/Y/Z"
+            )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
@@ -110,7 +140,9 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         if map_name not in NAV.keys():
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
-            raise ValueError("When using graph or geodesic distance, point must be X/Y/Z")
+            raise ValueError(
+                "When using graph or geodesic distance, point must be X/Y/Z"
+            )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
@@ -126,6 +158,16 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
     elif dist_type == "cosine":
         distance_obj["distance"] = distance.cosine(point_a, point_b)
         return distance_obj
+
+
+def generate_position_token(frame):
+    """Generates the position token for a game frame.
+
+    Args:
+        frame (dict): A game frame
+    """
+    return None
+
 
 class PlaceEncoder:
     """Encodes map and places"""

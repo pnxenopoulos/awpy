@@ -43,18 +43,18 @@ def is_in_range(value, min, max):
     else:
         return False
 
+
 def transform_csv_to_json(sampleCsv):
-    """ From Adi.
-    """
+    """From Adi."""
     finalDic = {}
-    for curMap in sampleCsv['mapName'].unique():
+    for curMap in sampleCsv["mapName"].unique():
         mapDic = {}
-        for i in sampleCsv[sampleCsv['mapName'] == curMap].index:
+        for i in sampleCsv[sampleCsv["mapName"] == curMap].index:
             curTile = sampleCsv.iloc[i]
             curDic = {}
             for curFeature in sampleCsv.columns:
-                if curFeature not in ['mapName', 'areaId']:
+                if curFeature not in ["mapName", "areaId"]:
                     curDic[curFeature] = curTile[curFeature]
-            mapDic[curTile['areaId']] = curDic
+            mapDic[curTile["areaId"]] = curDic
         finalDic[curMap] = mapDic
     return finalDic

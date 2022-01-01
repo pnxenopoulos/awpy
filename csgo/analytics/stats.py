@@ -440,7 +440,12 @@ def kill_stats(
         [stats[4], "K"],
     )
     deaths = calc_stats(
-        kill_data, death_filters, [stats[1]], [stats[1]], [["size"]], [stats[4], "D"],
+        kill_data,
+        death_filters,
+        [stats[1]],
+        [stats[1]],
+        [["size"]],
+        [stats[4], "D"],
     )
     assists = calc_stats(
         kill_data.loc[kill_data["assisterTeam"] != kill_data["victimTeam"]],
@@ -598,6 +603,7 @@ def adr(
     adr.reset_index(drop=True, inplace=True)
     return adr
 
+
 def rating(
     damage_data: pd.DataFrame,
     kill_data: pd.DataFrame,
@@ -651,7 +657,12 @@ def rating(
         [stats[4], "K"],
     )
     deaths = calc_stats(
-        kill_data, death_filters, [stats[1]], [stats[1]], [["size"]], [stats[4], "D"],
+        kill_data,
+        death_filters,
+        [stats[1]],
+        [stats[1]],
+        [["size"]],
+        [stats[4], "D"],
     )
     assists = calc_stats(
         kill_data.loc[kill_data["assisterTeam"] != kill_data["victimTeam"]],
@@ -675,8 +686,15 @@ def rating(
     kill_stats = kill_stats[["Player", "KPR", "DPR", "APR"]]
     kill_stats = kill_stats.merge(adr_stats, how="outer").fillna(0)
     kill_stats = kill_stats.merge(kast_stats, how="outer").fillna(0)
-    kill_stats["Impact"] = 2.13*kill_stats["KPR"] + 0.42*kill_stats["APR"] - 0.41
-    kill_stats["Rating"] = 0.73*kill_stats["KAST"] + 0.3591*kill_stats["KPR"] - 0.5329*kill_stats["DPR"] + 0.2372*kill_stats["Impact"] + 0.0032*kill_stats["ADR"] + 0.1587
+    kill_stats["Impact"] = 2.13 * kill_stats["KPR"] + 0.42 * kill_stats["APR"] - 0.41
+    kill_stats["Rating"] = (
+        0.73 * kill_stats["KAST"]
+        + 0.3591 * kill_stats["KPR"]
+        - 0.5329 * kill_stats["DPR"]
+        + 0.2372 * kill_stats["Impact"]
+        + 0.0032 * kill_stats["ADR"]
+        + 0.1587
+    )
     kill_stats = kill_stats[["Player", "Impact", "Rating"]]
     kill_stats.sort_values(by="Rating", ascending=False, inplace=True)
     kill_stats.reset_index(drop=True, inplace=True)
@@ -831,7 +849,8 @@ def flash_stats(
 
 
 def bomb_stats(
-    bomb_data: pd.DataFrame, bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
+    bomb_data: pd.DataFrame,
+    bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with bomb event statistics.
 
@@ -1274,7 +1293,15 @@ def player_box_score(
         kill_filters,
     )
     f_stats = f_stats[["Player", "EF", "EF Per Throw"]]
-    rating_stats = rating(damage_data, kill_data, round_data, damage_filters, death_filters, kill_filters, round_filters)
+    rating_stats = rating(
+        damage_data,
+        kill_data,
+        round_data,
+        damage_filters,
+        death_filters,
+        kill_filters,
+        round_filters,
+    )
     box_score = k_stats.merge(adr_stats, how="outer").fillna(0)
     box_score = box_score.merge(ud_stats, how="outer").fillna(0)
     box_score = box_score.merge(f_stats, how="outer").fillna(0)

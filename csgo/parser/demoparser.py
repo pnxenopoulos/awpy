@@ -60,8 +60,12 @@ class DemoParser:
         # Check if Golang is >= 1.14
         acceptable_go = check_go_version()
         if not acceptable_go:
-            self.logger.error("Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0.")
-            raise ValueError("Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0.")
+            self.logger.error(
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+            )
+            raise ValueError(
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+            )
         else:
             self.logger.info("Go version>=1.14.0")
 
@@ -553,14 +557,26 @@ class DemoParser:
                         self.json["gameRounds"][i]["endCTScore"] = 0
                         self.json["gameRounds"][i]["endTScore"] = 1
                 elif i > 0:
-                    self.json["gameRounds"][i]["tScore"] = self.json["gameRounds"][i-1]["endTScore"]
-                    self.json["gameRounds"][i]["ctScore"] = self.json["gameRounds"][i-1]["endCTScore"]
+                    self.json["gameRounds"][i]["tScore"] = self.json["gameRounds"][
+                        i - 1
+                    ]["endTScore"]
+                    self.json["gameRounds"][i]["ctScore"] = self.json["gameRounds"][
+                        i - 1
+                    ]["endCTScore"]
                     if self.json["gameRounds"][i]["winningSide"] == "ct":
-                        self.json["gameRounds"][i]["endCTScore"] = self.json["gameRounds"][i]["ctScore"] + 1
-                        self.json["gameRounds"][i]["endTScore"] = self.json["gameRounds"][i]["tScore"]
+                        self.json["gameRounds"][i]["endCTScore"] = (
+                            self.json["gameRounds"][i]["ctScore"] + 1
+                        )
+                        self.json["gameRounds"][i]["endTScore"] = self.json[
+                            "gameRounds"
+                        ][i]["tScore"]
                     if self.json["gameRounds"][i]["winningSide"] == "t":
-                        self.json["gameRounds"][i]["endCTScore"] = self.json["gameRounds"][i]["ctScore"]
-                        self.json["gameRounds"][i]["endTScore"] = self.json["gameRounds"][i]["tScore"] + 1
+                        self.json["gameRounds"][i]["endCTScore"] = self.json[
+                            "gameRounds"
+                        ][i]["ctScore"]
+                        self.json["gameRounds"][i]["endTScore"] = (
+                            self.json["gameRounds"][i]["tScore"] + 1
+                        )
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
@@ -574,7 +590,9 @@ class DemoParser:
                 if len(self.json["matchPhases"]["warmupChanged"]) > 1:
                     last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
                     for r in self.json["gameRounds"]:
-                        if (r["startTick"] > last_warmup_changed) and (not r["isWarmup"]):
+                        if (r["startTick"] > last_warmup_changed) and (
+                            not r["isWarmup"]
+                        ):
                             cleaned_rounds.append(r)
                 else:
                     for r in self.json["gameRounds"]:
@@ -635,7 +653,11 @@ class DemoParser:
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
-                if (r["startTick"] <= r["endTick"]) and (r["startTick"] <= r["endOfficialTick"]) and (r["startTick"] <= r["freezeTimeEndTick"]):
+                if (
+                    (r["startTick"] <= r["endTick"])
+                    and (r["startTick"] <= r["endOfficialTick"])
+                    and (r["startTick"] <= r["freezeTimeEndTick"])
+                ):
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:

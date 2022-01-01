@@ -26,25 +26,30 @@ for m in NAV.keys():
     G = nx.Graph()
     for a in NAV[m].keys():
         r = NAV[m][a]
-        G.add_nodes_from([
-            (a, {
-                "mapName": m,
-                "areaID": a, 
-                "areaName": r["areaName"], 
-                "northWestX": r["northWestX"],
-                "northWestY": r["northWestY"],
-                "northWestZ": r["northWestZ"],
-                "southEastX": r["southEastX"],
-                "southEastY": r["southEastY"],
-                "southEastZ": r["southEastZ"],
-                "size": np.sqrt(
-                    (r["northWestX"]-r["southEastX"])**2 +
-                    (r["northWestY"]-r["southEastY"])**2 +
-                    (r["northWestZ"]-r["southEastZ"])**2
+        G.add_nodes_from(
+            [
+                (
+                    a,
+                    {
+                        "mapName": m,
+                        "areaID": a,
+                        "areaName": r["areaName"],
+                        "northWestX": r["northWestX"],
+                        "northWestY": r["northWestY"],
+                        "northWestZ": r["northWestZ"],
+                        "southEastX": r["southEastX"],
+                        "southEastY": r["southEastY"],
+                        "southEastZ": r["southEastZ"],
+                        "size": np.sqrt(
+                            (r["northWestX"] - r["southEastX"]) ** 2
+                            + (r["northWestY"] - r["southEastY"]) ** 2
+                            + (r["northWestZ"] - r["southEastZ"]) ** 2
+                        ),
+                    },
                 ),
-            }),
-        ])
-    edge_list = open(path + "nav/" + m + ".txt", 'r')
+            ]
+        )
+    edge_list = open(path + "nav/" + m + ".txt", "r")
     edge_list_lines = edge_list.readlines()
     for line in edge_list_lines:
         areas = line.strip().split(",")

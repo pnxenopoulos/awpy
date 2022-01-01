@@ -53,13 +53,13 @@ class TestDemoParser:
                 assert r["tScore"] == 0
                 assert r["ctScore"] == 0
             if i > 0 and i != len(rounds):
-                winningSide = rounds[i-1]["winningSide"]
+                winningSide = rounds[i - 1]["winningSide"]
                 if winningSide == "ct":
-                    assert r["ctScore"] > rounds[i-1]["ctScore"]
-                    assert r["tScore"] == rounds[i-1]["tScore"]
+                    assert r["ctScore"] > rounds[i - 1]["ctScore"]
+                    assert r["tScore"] == rounds[i - 1]["tScore"]
                 if winningSide == "t":
-                    assert r["ctScore"] == rounds[i-1]["ctScore"]
-                    assert r["tScore"] > rounds[i-1]["tScore"]
+                    assert r["ctScore"] == rounds[i - 1]["ctScore"]
+                    assert r["tScore"] > rounds[i - 1]["tScore"]
 
     def test_demo_id_inferred(self):
         """Tests if a demo_id is correctly inferred"""
@@ -229,7 +229,9 @@ class TestDemoParser:
         """Tests if bot naming is correct (brought up by Charmees).
         Original error had "Troy" (bot) showing up instead of "Charmees" (player)
         """
-        self.bot_name_parser = DemoParser(demofile="bot_name_test.dem", log=False, parse_frames=False)
+        self.bot_name_parser = DemoParser(
+            demofile="bot_name_test.dem", log=False, parse_frames=False
+        )
         self.bot_name_data = self.bot_name_parser.parse()
         charmees_found = 0
         for r in self.bot_name_data["gameRounds"]:
@@ -240,35 +242,39 @@ class TestDemoParser:
         assert charmees_found > 0
 
     def test_warmup(self):
-        """Tests if warmup rounds are properly parsing.
-        """
-        self.warmup_parser = DemoParser(demofile="warmup_test.dem", log=False, parse_frames=False)
+        """Tests if warmup rounds are properly parsing."""
+        self.warmup_parser = DemoParser(
+            demofile="warmup_test.dem", log=False, parse_frames=False
+        )
         self.warmup_data = self.warmup_parser.parse()
         self.warmup_data = self.warmup_parser.clean_rounds()
         assert len(self.warmup_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_data["gameRounds"])
 
     def test_bomb_sites(self):
-        """Tests that both bombsite A and B show up.
-        """
-        self.bombsite_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
+        """Tests that both bombsite A and B show up."""
+        self.bombsite_parser = DemoParser(
+            demofile="bombsite_test.dem", log=False, parse_frames=False
+        )
         self.bombsite_data = self.bombsite_parser.parse()
         for r in self.bombsite_data["gameRounds"]:
             for e in r["bombEvents"]:
                 assert (e["bombSite"] == "A") or (e["bombSite"] == "B")
 
     def test_phase_lists(self):
-        """Tests that phase lists are lists.
-        """
-        self.phase_parser = DemoParser(demofile="bombsite_test.dem", log=False, parse_frames=False)
+        """Tests that phase lists are lists."""
+        self.phase_parser = DemoParser(
+            demofile="bombsite_test.dem", log=False, parse_frames=False
+        )
         self.phase_data = self.phase_parser.parse()
         for phase in self.phase_data["matchPhases"].keys():
             assert type(self.phase_data["matchPhases"][phase]) == list
 
     def test_round_clean(self):
-        """ Tests that remove time rounds is working.
-        """
-        self.round_clean_parser = DemoParser(demofile="round_clean_test.dem", log=False, parse_frames=False)
+        """Tests that remove time rounds is working."""
+        self.round_clean_parser = DemoParser(
+            demofile="round_clean_test.dem", log=False, parse_frames=False
+        )
         self.round_clean_data = self.round_clean_parser.parse()
         self.round_clean_parser.remove_time_rounds()
         assert len(self.round_clean_data["gameRounds"]) == 24
