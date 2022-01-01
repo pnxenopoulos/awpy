@@ -349,8 +349,9 @@ def kast(
     kast_data = kast_data.merge(victims, how="outer").fillna("")
     kast_data = kast_data.merge(traded, how="outer").fillna("")
     for player in kill_data["attackerName"].unique():
-        kast_counts[player] = [[0, 0, 0, 0] for i in range(len(kast_data))]
-        kast_rounds[player] = [0, 0, 0, 0, 0]
+        if player is not None:
+            kast_counts[player] = [[0, 0, 0, 0] for i in range(len(kast_data))]
+            kast_rounds[player] = [0, 0, 0, 0, 0]
     for rd in kast_data.index:
         for player in kast_counts:
             if "K" in kast_string.upper():
