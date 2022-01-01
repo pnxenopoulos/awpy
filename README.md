@@ -16,7 +16,7 @@ The `csgo` package provides data parsing, analytics and visualization capabiliti
 
 ## Setup
 #### Requirements
-`csgo` requires [Python](https://www.python.org/downloads/) >= 3.8 and [Golang](https://golang.org/dl/) >= 1.16. Python acts as a wrapper for the Go code which parses demofiles.
+`csgo` requires [Python](https://www.python.org/downloads/) >= 3.8 and [Golang](https://golang.org/dl/) >= 1.17. Python acts as a wrapper for the Go code which parses demofiles.
 
 #### Installation
 To install `csgo`, clone the repository by running `git clone https://github.com/pnxenopoulos/csgo`. Then, change directories to the newly cloned repository, and install the library by running `python setup.py install`. For more help, you can visit the installation channel in our Discord.

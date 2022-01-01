@@ -175,7 +175,7 @@ type BombAction struct {
 	PlayerY       float64 `json:"playerY"`
 	PlayerZ       float64 `json:"playerZ"`
 	BombAction    string  `json:"bombAction"`
-	BombSite      string  `json:"bombSite"`
+	BombSite      *string `json:"bombSite"`
 }
 
 // DamageAction events
@@ -852,7 +852,6 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 		}
 		return false
 	}
-	return false
 }
 
 func countAlivePlayers(players []PlayerInfo) int64 {
@@ -1050,7 +1049,31 @@ func main() {
 
 	currentRound := GameRound{}
 
+	// Create empty action lists for first round
+	currentRound.Bomb = []BombAction{}
+	currentRound.Damages = []DamageAction{}
+	currentRound.Flashes = []FlashAction{}
+	currentRound.Frames = []GameFrame{}
+	currentRound.Grenades = []GrenadeAction{}
+	currentRound.Kills = []KillAction{}
+	currentRound.WeaponFires = []WeaponFireAction{}
+
 	RoundRestartDelay := int64(5)
+
+	// Create empty lists
+	currentGame.MMRanks = []MMRank{}
+	currentGame.MatchPhases.AnnFinalRound = []int64{}
+	currentGame.MatchPhases.AnnLastRoundHalf = []int64{}
+	currentGame.MatchPhases.AnnMatchStarted = []int64{}
+	currentGame.MatchPhases.GameHalfEnded = []int64{}
+	currentGame.MatchPhases.MatchStart = []int64{}
+	currentGame.MatchPhases.MatchStartedChanged = []int64{}
+	currentGame.MatchPhases.WarmupChanged = []int64{}
+	currentGame.MatchPhases.TeamSwitch = []int64{}
+	currentGame.MatchPhases.RoundStarted = []int64{}
+	currentGame.MatchPhases.RoundFreezeEnded = []int64{}
+	currentGame.MatchPhases.RoundEnded = []int64{}
+	currentGame.MatchPhases.RoundEndedOfficial = []int64{}
 
 	// Parse rank updates
 	p.RegisterEventHandler(func(e events.RankUpdate) {
@@ -1127,6 +1150,17 @@ func main() {
 		roundInFreezetime = 1
 		roundInEndTime = 0
 		currentRound = GameRound{}
+
+		// Create empty action lists
+		currentRound.Bomb = []BombAction{}
+		currentRound.Damages = []DamageAction{}
+		currentRound.Flashes = []FlashAction{}
+		currentRound.Frames = []GameFrame{}
+		currentRound.Grenades = []GrenadeAction{}
+		currentRound.Kills = []KillAction{}
+		currentRound.WeaponFires = []WeaponFireAction{}
+
+		// Parse flags
 		currentRound.IsWarmup = gs.IsWarmupPeriod()
 		currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
 		currentRound.StartTick = int64(gs.IngameTick())
@@ -1212,6 +1246,16 @@ func main() {
 			roundStarted = 1
 			roundInEndTime = 0
 			currentRound = GameRound{}
+
+			// Create empty action lists
+			currentRound.Bomb = []BombAction{}
+			currentRound.Damages = []DamageAction{}
+			currentRound.Flashes = []FlashAction{}
+			currentRound.Frames = []GameFrame{}
+			currentRound.Grenades = []GrenadeAction{}
+			currentRound.Kills = []KillAction{}
+			currentRound.WeaponFires = []WeaponFireAction{}
+
 			currentRound.IsWarmup = gs.IsWarmupPeriod()
 			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
 			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
@@ -1400,12 +1444,14 @@ func main() {
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "defuse"
-		currentBomb.BombSite = ""
+		bombSite := ""
 		if e.Site == 65 {
-			currentBomb.BombSite = "A"
+			bombSite = "A"
 		} else if e.Site == 66 {
-			currentBomb.BombSite = "B"
+			bombSite = "B"
 		}
+		currentBomb.BombSite = &bombSite
+
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
 		if (e.Player.TeamState != nil) {
@@ -1418,7 +1464,7 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// add
+		// add bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
 	})
 
@@ -1434,12 +1480,14 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
+		bombPlantFound := false
 		for _, b := range currentRound.Bomb {
 			if b.BombAction == "plant" {
-				bombSite = b.BombSite
+				bombSite = *b.BombSite
+				bombPlantFound = true
 			}
 		}
-		currentBomb.BombSite = bombSite	
+		currentBomb.BombSite = &bombSite	
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1454,7 +1502,9 @@ func main() {
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
 		// add
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
 	})
 
 	// Parse bomb defuses
@@ -1469,12 +1519,14 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
+		bombPlantFound := false
 		for _, b := range currentRound.Bomb {
 			if b.BombAction == "plant" {
-				bombSite = b.BombSite
+				bombSite = *b.BombSite
+				bombPlantFound = true
 			}
 		}
-		currentBomb.BombSite = bombSite	
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1488,8 +1540,10 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// add
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		// Add Bomb Event
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
 	})
 
 	// Parse weapon fires
@@ -1696,13 +1750,14 @@ func main() {
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant"
-		currentBomb.BombSite = ""
 
+		bombSite := ""
 		if e.Site == 65 {
-			currentBomb.BombSite = "A"
+			bombSite = "A"
 		} else if e.Site == 66 {
-			currentBomb.BombSite = "B"
+			bombSite = "B"
 		}
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1731,13 +1786,14 @@ func main() {
 		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
 		currentBomb.BombAction = "plant_begin"
-		currentBomb.BombSite = ""
 
+		bombSite := ""
 		if e.Site == 65 {
-			currentBomb.BombSite = "A"
+			bombSite = "A"
 		} else if e.Site == 66 {
-			currentBomb.BombSite = "B"
+			bombSite = "B"
 		}
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1767,12 +1823,14 @@ func main() {
 
 		// Find bombsite where event is planted
 		bombSite := ""
+		bombPlantFound := false
 		for _, b := range currentRound.Bomb {
 			if b.BombAction == "plant_begin" {
-				bombSite = b.BombSite
+				bombSite = *b.BombSite
+				bombPlantFound = true
 			}
 		}
-		currentBomb.BombSite = bombSite		
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1786,8 +1844,10 @@ func main() {
 		currentBomb.PlayerY = float64(playerPos.Y)
 		currentBomb.PlayerZ = float64(playerPos.Z)
 
-		// Bomb event
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		// Add Bomb event
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
 	})
 
 	// Parse grenade throws
@@ -2272,6 +2332,11 @@ func main() {
 
 		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
+
+			// Create empty player lists
+			currentFrame.CT.Players = []PlayerInfo{}
+			currentFrame.T.Players = []PlayerInfo{}
+
 			currentFrame.Tick = int64(gs.IngameTick())
 			currentFrame.Second = determineSecond(currentFrame.Tick, currentRound, currentGame)
 			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, currentRound, currentGame)
@@ -2390,7 +2455,7 @@ func main() {
 				for _, b := range currentRound.Bomb {
 					if b.BombAction == "plant" {
 						currentFrame.BombPlanted = true
-						currentFrame.BombSite = b.BombSite
+						currentFrame.BombSite = *b.BombSite
 					}
 				}	
 			} else {
