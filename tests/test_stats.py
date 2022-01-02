@@ -24,7 +24,7 @@ from csgo.analytics.stats import (
     win_breakdown,
     player_box_score,
     team_box_score,
-    rating
+    rating,
 )
 from csgo.analytics.utils import agg_damages
 
@@ -33,11 +33,14 @@ class TestStats:
     """Class to test the statistics functions.
     Uses https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
     """
+
     def clean(df: pd.DataFrame) -> pd.DataFrame:
         df_copy = df.copy()
-        df_copy = df_copy.loc[(df_copy["roundNum"]>3) & (df_copy["roundNum"]<32)].copy()
+        df_copy = df_copy.loc[
+            (df_copy["roundNum"] > 3) & (df_copy["roundNum"] < 32)
+        ].copy()
         df_copy.reset_index(inplace=True, drop=True)
-        df_copy["roundNum"]=df_copy["roundNum"]-3
+        df_copy["roundNum"] = df_copy["roundNum"] - 3
         return df_copy
 
     def setup_class(self):
@@ -282,10 +285,6 @@ class TestStats:
 
     def test_rating(self):
         """Tests rating function."""
-        rating_df = rating(
-                self.damage_data,
-                self.kill_data,
-                self.round_data
-            )
+        rating_df = rating(self.damage_data, self.kill_data, self.round_data)
         assert rating_df.iloc[0].Rating < 1.3
         assert rating_df.iloc[0].Rating > 1.2
