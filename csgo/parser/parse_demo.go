@@ -693,11 +693,13 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 		return false
 	} else {
 		// If the the previous killer is not the person killed, it is not a trade
-		if *killB.VictimSteamID == *killA.AttackerSteamID {
-			if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
-				return true
+		if killB.VictimSteamID != nil {
+			if *killB.VictimSteamID == *killA.AttackerSteamID {
+				if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
+					return true
+				}
+				return false
 			}
-			return false
 		}
 		return false
 	}
