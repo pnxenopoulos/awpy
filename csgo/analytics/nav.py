@@ -43,7 +43,7 @@ def point_in_area(map_name, area_id, point):
 
 
 def find_closest_area(map_name, point):
-    """Finds the closest area
+    """Finds the closest area. Searches through all the areas by comparing point to area centerpoint.
 
     Args:
         map_name (string) : Map to search
@@ -58,24 +58,23 @@ def find_closest_area(map_name, point):
         raise ValueError("Point must be a list [X,Y,Z]")
     closest_area = {"mapName": map_name, "areaId": None, "distance": 999999}
     for area in NAV[map_name].keys():
-        if point_in_area(map_name, area, point):
-            avg_x = (
-                NAV[map_name][area]["northWestX"] + NAV[map_name][area]["southEastX"]
-            ) / 2
-            avg_y = (
-                NAV[map_name][area]["northWestY"] + NAV[map_name][area]["southEastY"]
-            ) / 2
-            avg_z = (
-                NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"]
-            ) / 2
-            dist = np.sqrt(
-                (point[0] - avg_x) ** 2
-                + (point[1] - avg_y) ** 2
-                + (point[2] - avg_z) ** 2
-            )
-            if dist < closest_area["distance"]:
-                closest_area["areaId"] = area
-                closest_area["distance"] = dist
+        avg_x = (
+            NAV[map_name][area]["northWestX"] + NAV[map_name][area]["southEastX"]
+        ) / 2
+        avg_y = (
+            NAV[map_name][area]["northWestY"] + NAV[map_name][area]["southEastY"]
+        ) / 2
+        avg_z = (
+            NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"]
+        ) / 2
+        dist = np.sqrt(
+            (point[0] - avg_x) ** 2
+            + (point[1] - avg_y) ** 2
+            + (point[2] - avg_z) ** 2
+        )
+        if dist < closest_area["distance"]:
+            closest_area["areaId"] = area
+            closest_area["distance"] = dist
     return closest_area
 
 
