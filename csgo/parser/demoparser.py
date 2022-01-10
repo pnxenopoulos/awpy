@@ -594,10 +594,13 @@ class DemoParser:
             cleaned_rounds = []
             # Remove warmups where the number of players is too large
             for r in self.json["gameRounds"]:
+                unclean_frames = 0
                 if len(r["frames"]) > 0:
                     for f in r["frames"]:
                         if (len(f["ct"]["players"]) == 5) and (len(f["t"]["players"]) == 5):
-                            cleaned_rounds.append(r)
+                            unclean_frames += 1
+                if unclean_frames == 0:
+                    cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error("JSON not found. Run .parse()")
