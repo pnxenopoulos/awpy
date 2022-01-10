@@ -513,6 +513,7 @@ class DemoParser:
         remove_knifes=True,
         bad_round_endings=["Draw", "Unknown", ""],
         remove_time=True,
+        return_type="json"
     ):
         """Cleans rounds to remove warmups, knives, bad round endings, etc."""
         if self.json:
@@ -524,7 +525,12 @@ class DemoParser:
             self.renumber_rounds()
             self.rescore_rounds()
             self.write_json()
-            return self.json
+            if return_type == "json":
+                return self.json
+            elif return_type == "df":
+                demo_data = self._parse_json()
+                self.logger.info("Returned dataframe output")
+                return demo_data
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
