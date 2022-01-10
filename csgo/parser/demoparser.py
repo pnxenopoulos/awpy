@@ -520,7 +520,7 @@ class DemoParser:
             self.remove_warmups()
             self.remove_time_rounds()
             self.remove_knife_rounds()
-            self.remove_bad_players()
+            # self.remove_bad_players()
             self.remove_excess_kill_rounds()
             self.remove_end_round()
             self.renumber_rounds()
@@ -597,7 +597,7 @@ class DemoParser:
                 unclean_frames = 0
                 if len(r["frames"]) > 0:
                     for f in r["frames"]:
-                        if (len(f["ct"]["players"]) == 5) and (len(f["t"]["players"]) == 5):
+                        if (len(f["ct"]["players"]) != 5) and (len(f["t"]["players"]) != 5):
                             unclean_frames += 1
                 if unclean_frames == 0:
                     cleaned_rounds.append(r)
