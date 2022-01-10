@@ -278,6 +278,7 @@ def kast(
     kast_rounds = {}
     for stat in kast_string.upper():
         columns.append(stat)
+    kill_data = kill_data[~kill_data["attackerName"].isna()]
     killers = calc_stats(
         kill_data.loc[kill_data["attackerTeam"] != kill_data["victimTeam"]],
         kill_filters,
