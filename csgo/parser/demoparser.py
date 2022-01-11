@@ -220,7 +220,7 @@ class DemoParser:
             A dictionary of output
         """
         self._parse_demo()
-        self.read_json()
+        self.read_json(json_path=self.outpath + "/" + self.output_file)
         if self.json:
             self.logger.info("JSON output found")
             if return_type == "json":
