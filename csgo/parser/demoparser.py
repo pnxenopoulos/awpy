@@ -523,7 +523,7 @@ class DemoParser:
             self.remove_warmups()
             self.remove_time_rounds()
             self.remove_knife_rounds()
-            # self.remove_bad_players()
+            self.remove_excess_players()
             self.remove_excess_kill_rounds()
             self.remove_end_round()
             self.renumber_rounds()
@@ -542,7 +542,7 @@ class DemoParser:
     def write_json(self):
         """Rewrite the JSON file"""
         with open(self.output_file, "w", encoding="utf8") as fp:
-            json.dump(self.json, fp, indent=4)
+            json.dump(self.json, fp)
 
     def renumber_rounds(self):
         """Renumbers rounds"""
@@ -591,21 +591,18 @@ class DemoParser:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def remove_bad_players(self):
+    def remove_excess_players(self):
         """Remove rounds with too many or too few players from JSON."""
         if self.json:
             cleaned_rounds = []
-            # Remove warmups where the number of players is too large
+            # Remove rounds where the number of players is too large
             for r in self.json["gameRounds"]:
-                unclean_frames = 0
                 if len(r["frames"]) > 0:
-                    for f in r["frames"]:
-                        if (len(f["ct"]["players"]) != 5) and (
-                            len(f["t"]["players"]) != 5
-                        ):
-                            unclean_frames += 1
-                if unclean_frames == 0:
-                    cleaned_rounds.append(r)
+                    f = r["frames"][0]
+                    if (len(f["ct"]["players"]) <= 5) and (
+                        len(f["t"]["players"]) <= 5
+                    ):
+                        cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error("JSON not found. Run .parse()")
