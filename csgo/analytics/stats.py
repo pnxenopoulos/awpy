@@ -577,6 +577,70 @@ def adr(
     adr.reset_index(drop=True, inplace=True)
     return adr
 
+
+def util_dmg(
+    damage_data: pd.DataFrame,
+    grenade_data: pd.DataFrame,
+    team: bool = False,
+    damage_filters: Dict[str, Union[List[bool], List[str]]] = {},
+    grenade_filters: Dict[str, Union[List[bool], List[str]]] = {},
+) -> pd.DataFrame:
+    """Returns a dataframe with utility damage statistics.
+    Args:
+        damage_data: A dataframe with damage data.
+        grenade_data: A dataframe with grenade data.
+        team: A boolean specifying whether to calculate statistics for each team
+            or for each player. The default is to calculate statistics for
+            each player.
+        damage_filters: A dictionary where the keys are the columns of the
+            dataframe represented by damage_data to filter the damage data by
+            and the values are lists that contain the column filters.
+        grenade_filters: A dictionary where the keys are the columns of the
+            dataframe represented by grenade_data to filter the grenade data by
+            and the values are lists that contain the column filters.
+    """
+    stats = ["attackerName", "throwerName", "Player"]
+    if team:
+        stats = ["attackerTeam", "throwerTeam", "Team"]
+    util_dmg = calc_stats(
+        damage_data.loc[
+            (damage_data["attackerTeam"] != damage_data["victimTeam"])
+            & (
+                damage_data["weapon"].isin(
+                    ["HE Grenade", "Incendiary Grenade", "Molotov"]
+                )
+            )
+        ],
+        damage_filters,
+        [stats[0]],
+        ["hpDamageTaken", "hpDamage"],
+        [["sum"], ["sum"]],
+        [stats[2], "Given UD", "UD"],
+    )
+    nades_thrown = calc_stats(
+        grenade_data.loc[
+            grenade_data["grenadeType"].isin(
+                ["HE Grenade", "Incendiary Grenade", "Molotov"]
+            )
+        ],
+        grenade_filters,
+        [stats[1]],
+        [stats[1]],
+        [["size"]],
+        [stats[2], "Nades Thrown"],
+    )
+    util_dmg_stats = util_dmg.merge(nades_thrown, how="outer").fillna(0)
+    util_dmg_stats["Given UD Per Nade"] = (
+        util_dmg_stats["Given UD"] / util_dmg_stats["Nades Thrown"]
+    )
+    util_dmg_stats["UD Per Nade"] = (
+        util_dmg_stats["UD"] / util_dmg_stats["Nades Thrown"]
+    )
+    util_dmg_stats.sort_values(by="Given UD", ascending=False, inplace=True)
+    util_dmg_stats.reset_index(drop=True, inplace=True)
+    return util_dmg_stats
+
+
 def rating(
     damage_data: pd.DataFrame,
     kill_data: pd.DataFrame,
@@ -646,75 +710,19 @@ def rating(
     kill_stats = kill_stats[["Player", "KPR", "DPR", "APR"]]
     kill_stats = kill_stats.merge(adr_stats, how="outer").fillna(0)
     kill_stats = kill_stats.merge(kast_stats, how="outer").fillna(0)
-    kill_stats["Impact"] = 2.13*kill_stats["KPR"] + 0.42*kill_stats["APR"] - 0.41
-    kill_stats["Rating"] = 0.73*kill_stats["KAST"] + 0.3591*kill_stats["KPR"] - 0.5329*kill_stats["DPR"] + 0.2372*kill_stats["Impact"] + 0.0032*kill_stats["ADR"] + 0.1587
+    kill_stats["Impact"] = 2.13 * kill_stats["KPR"] + 0.42 * kill_stats["APR"] - 0.41
+    kill_stats["Rating"] = (
+        0.73 * kill_stats["KAST"]
+        + 0.3591 * kill_stats["KPR"]
+        - 0.5329 * kill_stats["DPR"]
+        + 0.2372 * kill_stats["Impact"]
+        + 0.0032 * kill_stats["ADR"]
+        + 0.1587
+    )
     kill_stats = kill_stats[["Player", "Impact", "Rating"]]
     kill_stats.sort_values(by="Rating", ascending=False, inplace=True)
     kill_stats.reset_index(drop=True, inplace=True)
     return kill_stats
-
-
-def util_dmg(
-    damage_data: pd.DataFrame,
-    grenade_data: pd.DataFrame,
-    team: bool = False,
-    damage_filters: Dict[str, Union[List[bool], List[str]]] = {},
-    grenade_filters: Dict[str, Union[List[bool], List[str]]] = {},
-) -> pd.DataFrame:
-    """Returns a dataframe with utility damage statistics.
-    Args:
-        damage_data: A dataframe with damage data.
-        grenade_data: A dataframe with grenade data.
-        team: A boolean specifying whether to calculate statistics for each team
-            or for each player. The default is to calculate statistics for
-            each player.
-        damage_filters: A dictionary where the keys are the columns of the
-            dataframe represented by damage_data to filter the damage data by
-            and the values are lists that contain the column filters.
-        grenade_filters: A dictionary where the keys are the columns of the
-            dataframe represented by grenade_data to filter the grenade data by
-            and the values are lists that contain the column filters.
-    """
-    stats = ["attackerName", "throwerName", "Player"]
-    if team:
-        stats = ["attackerTeam", "throwerTeam", "Team"]
-    util_dmg = calc_stats(
-        damage_data.loc[
-            (damage_data["attackerTeam"] != damage_data["victimTeam"])
-            & (
-                damage_data["weapon"].isin(
-                    ["HE Grenade", "Incendiary Grenade", "Molotov"]
-                )
-            )
-        ],
-        damage_filters,
-        [stats[0]],
-        ["hpDamageTaken", "hpDamage"],
-        [["sum"], ["sum"]],
-        [stats[2], "Given UD", "UD"],
-    )
-    nades_thrown = calc_stats(
-        grenade_data.loc[
-            grenade_data["grenadeType"].isin(
-                ["HE Grenade", "Incendiary Grenade", "Molotov"]
-            )
-        ],
-        grenade_filters,
-        [stats[1]],
-        [stats[1]],
-        [["size"]],
-        [stats[2], "Nades Thrown"],
-    )
-    util_dmg_stats = util_dmg.merge(nades_thrown, how="outer").fillna(0)
-    util_dmg_stats["Given UD Per Nade"] = (
-        util_dmg_stats["Given UD"] / util_dmg_stats["Nades Thrown"]
-    )
-    util_dmg_stats["UD Per Nade"] = (
-        util_dmg_stats["UD"] / util_dmg_stats["Nades Thrown"]
-    )
-    util_dmg_stats.sort_values(by="Given UD", ascending=False, inplace=True)
-    util_dmg_stats.reset_index(drop=True, inplace=True)
-    return util_dmg_stats
 
 
 def flash_stats(
@@ -1237,7 +1245,15 @@ def player_box_score(
         kill_filters,
     )
     f_stats = f_stats[["Player", "EF", "EF Per Throw"]]
-    rating_stats = rating(damage_data, kill_data, round_data, damage_filters, death_filters, kill_filters, round_filters)
+    rating_stats = rating(
+        damage_data,
+        kill_data,
+        round_data,
+        damage_filters,
+        death_filters,
+        kill_filters,
+        round_filters,
+    )
     box_score = k_stats.merge(adr_stats, how="outer").fillna(0)
     box_score = box_score.merge(ud_stats, how="outer").fillna(0)
     box_score = box_score.merge(f_stats, how="outer").fillna(0)

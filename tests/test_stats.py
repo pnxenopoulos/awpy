@@ -15,6 +15,7 @@ from csgo.analytics.stats import (
     kill_stats,
     adr,
     util_dmg,
+    rating,
     flash_stats,
     bomb_stats,
     econ_stats,
@@ -24,7 +25,6 @@ from csgo.analytics.stats import (
     win_breakdown,
     player_box_score,
     team_box_score,
-    rating,
 )
 from csgo.analytics.utils import agg_damages
 
@@ -79,13 +79,7 @@ class TestStats:
         ]
         self.hs = pd.DataFrame(
             {
-                "Astralis Player": [
-                    "Magisk",
-                    "Xyp9x",
-                    "device",
-                    "dupreeh",
-                    "gla1ve",
-                ],
+                "Astralis Player": ["Magisk", "Xyp9x", "device", "dupreeh", "gla1ve",],
                 "1st Half HS": [3, 2, 7, 5, 2],
             }
         )
@@ -198,6 +192,18 @@ class TestStats:
             == 48.4
         )
 
+    def test_rating(self):
+        """Tests rating function."""
+        assert (
+            round(
+                rating(self.damage_data, self.kill_data, self.round_data)[
+                    "Rating"
+                ].sum(),
+                2,
+            )
+            == 9.82
+        )
+
     def test_flash_stats(self):
         """Tests flash_stats function."""
         assert (
@@ -276,12 +282,7 @@ class TestStats:
 
     def test_agg_damages(self):
         """Tests agg_damages function."""
-        assert len(
-            agg_damages(
-                self.damage_data.copy(),
-            )
-            == 820
-        )
+        assert len(agg_damages(self.damage_data.copy(),) == 820)
 
     def test_rating(self):
         """Tests rating function."""
