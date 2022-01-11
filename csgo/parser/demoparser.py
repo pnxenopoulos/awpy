@@ -514,18 +514,26 @@ class DemoParser:
         self,
         remove_warmups=True,
         remove_knifes=True,
-        bad_round_endings=["Draw", "Unknown", ""],
-        remove_time=True,
+        remove_bad_timings=True,
+        remove_excess_players=True,
+        remove_excess_kills=True,
+        remove_bad_endings=True,
         return_type="json",
     ):
         """Cleans rounds to remove warmups, knives, bad round endings, etc."""
         if self.json:
-            self.remove_warmups()
-            self.remove_time_rounds()
-            self.remove_knife_rounds()
-            self.remove_excess_players()
-            self.remove_excess_kill_rounds()
-            self.remove_end_round()
+            if remove_warmups:
+                self.remove_warmups()
+            if remove_knifes:
+                self.remove_knife_rounds()
+            if remove_bad_timings:
+                self.remove_time_rounds()
+            if remove_excess_players:
+                self.remove_excess_players()
+            if remove_excess_kills:
+                self.remove_excess_kill_rounds()
+            if remove_bad_endings:
+                self.remove_end_round()
             self.renumber_rounds()
             self.rescore_rounds()
             self.write_json()
