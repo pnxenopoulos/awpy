@@ -26,7 +26,6 @@ from csgo.analytics.stats import (
     team_box_score,
     rating,
 )
-from csgo.analytics.utils import agg_damages
 
 
 class TestStats:
@@ -272,15 +271,6 @@ class TestStats:
             .iloc[4]
             .sum()
             == 180
-        )
-
-    def test_agg_damages(self):
-        """Tests agg_damages function."""
-        assert len(
-            agg_damages(
-                self.damage_data.copy(),
-            )
-            == 820
         )
 
     def test_rating(self):

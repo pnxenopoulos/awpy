@@ -9,20 +9,24 @@ def extract_num_filters(
 ) -> Tuple[List[str], List[float]]:
     """Extracts the numeric column filters from a key-value pair in a
        dictionary.
+
     Extracts logical operators and numeric values from the column filters in the
     the value of a specified key in the dictionary represented by filters.
+
     Args:
         filters: A dictionary where the keys are the columns of the dataframe
             represented by df to filter the data by and the values are lists
             that contain the column filters.
         key: The key in the dictionary represented by filters for which the
             numeric column filters should be extracted.
+
     Returns:
         A tuple of two lists where the first list contains all of the logical
         operators in the column filters in the value of a specified key and the
         second list contains all of the numeric values in the column filters in
         the value of a specified key. For example:
         ([">", "<"], [15.0, 25.0])
+
     Raises:
         ValueError: The value of the specified key contains a column filter of
             type boolean.
@@ -60,16 +64,19 @@ def extract_num_filters(
 
 def check_filters(df: pd.DataFrame, filters: Dict[str, Union[List[bool], List[str]]]):
     """Checks if the column filters are valid.
+
     Iterates through each key-value pair in the dictionary represented by
     filters and checks if the column filters for columns of type boolean are
     of type boolean and the column filters for columns of type string are of
     type string. Calls the function extract_numeric_filters to check if the
     column filters for columns of type float and integer are valid.
+
     Args:
         df: A dataframe to be filtered.
         filters: A dictionary where the keys are the columns of the dataframe
             represented by df to filter the data by and the values are lists
             that contain the column filters.
+
     Raises:
         ValueError: The value of a key corresponding to a column of type boolean
             contains a column filter of a different type.
@@ -95,12 +102,14 @@ def check_filters(df: pd.DataFrame, filters: Dict[str, Union[List[bool], List[st
 
 def num_filter_df(df: pd.DataFrame, col: str, sign: str, val: float) -> pd.DataFrame:
     """Filters numeric data in a dataframe.
+
     Args:
         df: A dataframe to be filtered.
         col: A column of the dataframe represented by df to filter by.
         sign: A logical operator representing the operation to filter the
             dataframe represented by df by.
         val: A numeric value to filter the dataframe represented by df by.
+
     Returns:
         A filtered dataframe.
     """
@@ -120,14 +129,17 @@ def filter_df(
     df: pd.DataFrame, filters: Dict[str, Union[List[bool], List[str]]]
 ) -> pd.DataFrame:
     """Filters data in a dataframe.
+
     Filters a dataframe for columns of type boolean and string and calls the
     function num_filter_df to filter a dataframe for columns of type float
     and integer.
+
     Args:
         df: A dataframe to be filtered.
         filters: A dictionary where the keys are the columns of the dataframe
             represented by df to filter the data by and the values are lists
             that contain the column filters.
+
     Returns:
         A filtered dataframe.
     """
@@ -138,7 +150,7 @@ def filter_df(
             df_copy = df_copy.loc[df_copy[key].isin(filters[key])]
         else:
             i = 0
-            for sign in extract_num_filters(filters, key)[0]:
+            for _ in extract_num_filters(filters, key)[0]:
                 val = extract_num_filters(filters, key)[1][i]
                 df_copy = num_filter_df(
                     df_copy, key, extract_num_filters(filters, key)[0][i], val
@@ -156,8 +168,10 @@ def calc_stats(
     col_names: List[str],
 ) -> pd.DataFrame:
     """Calculates statistics for a dataframe.
+
     Calls the function filter_df to filter a data in dataframe and then performs
     groupby and aggregation operations on the dataframe and renames the columns.
+
     Args:
         df: A dataframe from which statistics should be calculated.
         filters: A dictionary where the keys are the columns of the dataframe
@@ -170,6 +184,7 @@ def calc_stats(
         agg: The aggregation operations to be applied to the columns in the list
             represented by col_to_agg.
         col_names: Column names for the returned dataframe.
+
     Returns:
         A dataframe with the specified statistics.
     """
@@ -189,6 +204,7 @@ def accuracy(
     weapon_fire_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with accuracy statistics.
+
     Args:
         damage_data: A dataframe with damage data.
         weapon_fire_data: A dataframe with weapon fire data.
@@ -201,6 +217,9 @@ def accuracy(
         weapon_fire_filters: A dictionary where the keys are the columns of the
             dataframe represented by weapon_fires to filter the weapon fire data
             by and the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with the total shots, strafe shots, hits, accuracy (hits/total number of shots), headshot accuracy (head hits/total number of shots)
     """
     stats = ["playerName", "attackerName", "Player"]
     if team:
@@ -260,6 +279,7 @@ def kast(
     death_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with KAST statistics.
+
     Args:
         kill_data: A dataframe with kill data.
         kast_string: A string specifying which combination of KAST statistics
@@ -272,6 +292,9 @@ def kast(
         death_filters: A dictionary where the keys are the columns of the
             dataframe represented by kill_data to filter the death data by and
             the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe containing the percentage of a player's rounds with at least one of (K)ill, (A)ssist, (S)urvival and (T)rades.
     """
     columns = ["Player", f"{kast_string.upper()}%"]
     kast_counts = {}
@@ -384,6 +407,7 @@ def kill_stats(
     weapon_fire_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with kill statistics.
+
     Args:
         damage_data: A dataframe with damage data.
         kill_data: A dataframe with kill data.
@@ -408,6 +432,9 @@ def kill_stats(
         weapon_fire_filters: A dictionary where the keys are the columns of the
             dataframe represented by weapon_fires to filter the weapon fire data
             by and the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with kills, deaths, assists, flash assists, first kills/deaths, headshots, headshot kills/total kills, KAST and accuracy statistics.
     """
     stats = ["attackerName", "victimName", "assisterName", "flashThrowerName", "Player"]
     if team:
@@ -555,6 +582,7 @@ def adr(
     round_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with ADR statistics.
+
     Args:
         damage_data: A dataframe with damage data.
         round_data: A dataframe with round data.
@@ -567,6 +595,9 @@ def adr(
         round_filters: A dictionary where the keys are the columns of the
             dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with the average damage per round (ADR).
     """
     stats = ["attackerName", "Player"]
     if team:
@@ -600,8 +631,10 @@ def rating(
     round_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with an HLTV-esque rating, found by doing:
+
     Rating = 0.0073*KAST + 0.3591*KPR + -0.5329*DPR + 0.2372*Impact + 0.0032*ADR + 0.1587
     where Impact = 2.13*KPR + 0.42*Assist per Round -0.41
+
     Args:
         damage_data: A dataframe with damage data.
         kill_data: A dataframe with damage data.
@@ -618,6 +651,9 @@ def rating(
         round_filters: A dictionary where the keys are the columns of the
             dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with the impact rating and rating 2.0
     """
     kast_stats = kast(kill_data, "KAST", kill_filters, death_filters)
     kast_stats = kast_stats[["Player", "KAST%"]]
@@ -687,6 +723,7 @@ def util_dmg(
     grenade_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with utility damage statistics.
+
     Args:
         damage_data: A dataframe with damage data.
         grenade_data: A dataframe with grenade data.
@@ -699,6 +736,9 @@ def util_dmg(
         grenade_filters: A dictionary where the keys are the columns of the
             dataframe represented by grenade_data to filter the grenade data by
             and the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with nades thrown, given utility damage (UD) per nade
     """
     stats = ["attackerName", "throwerName", "Player"]
     if team:
@@ -752,6 +792,7 @@ def flash_stats(
     kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with flashbang statistics.
+
     Args:
         flash_data: A dataframe with flash data.
         grenade_data: A dataframe with grenade data.
@@ -768,6 +809,9 @@ def flash_stats(
         kill_filters: A dictionary where the keys are the columns of the
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with the effective flashes (EF), flash assists (FA), effective blind time (EBT), team flashes (TF), total flashes
     """
     stats = ["attackerName", "flashThrowerName", "throwerName", "Player"]
     if team:
@@ -829,11 +873,15 @@ def bomb_stats(
     bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with bomb event statistics.
+
     Args:
         bomb_data: A dataframe with bomb event data.
         bomb_filters: A dictionary where the keys are the columns of the
             dataframe represented by bomb_data to filter the bomb data by and
             the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with bomb plant summaries.
     """
     team_one = bomb_data["playerTeam"].unique()[0]
     team_two = bomb_data["playerTeam"].unique()[1]
@@ -913,11 +961,15 @@ def econ_stats(
     round_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with economy statistics.
+
     Args:
         round_data: A dataframe with round data.
         round_filters: A dictionary where the keys are the columns of the
             dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with round economy summaries.
     """
     ct_stats = calc_stats(
         round_data,
@@ -970,7 +1022,14 @@ def econ_stats(
 
 
 def weapon_type(weapon: str) -> str:
-    """Returns the weapon type of a weapon."""
+    """Returns the weapon type of a weapon.
+
+    Args:
+        weapon: Weapon name
+
+    Returns:
+        A string for the weapon type (Knife, Pistol, Shotgun, SMG, Assault Rifle, Machine Gun, Sniper Rifle, Utility)
+    """
     if weapon in ["Knife"]:
         return "Melee Kills"
     elif weapon in [
@@ -1006,6 +1065,7 @@ def kill_breakdown(
     kill_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with kills broken down by weapon type.
+
     Args:
         kill_data: A dataframe with kill data.
         team: A boolean specifying whether to calculate statistics for each team
@@ -1014,6 +1074,9 @@ def kill_breakdown(
         kill_filters: A dictionary where the keys are the columns of the
             dataframe represented by kill_data to filter the kill data by and
             the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with kill type statistics.
     """
     stats = ["attackerName", "Player"]
     if team:
@@ -1080,6 +1143,7 @@ def util_dmg_breakdown(
 ) -> pd.DataFrame:
     """Returns a dataframe with utility damage statistics broken down by grenade
        type.
+
     Args:
         damage_data: A dataframe with damage data.
         grenade_data: A dataframe with grenade data.
@@ -1092,6 +1156,9 @@ def util_dmg_breakdown(
         grenade_filters: A dictionary where the keys are the columns of the
             dataframe represented by grenade_data to filter the grenade data by
             and the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with utility damage summary.
     """
     stats = ["attackerName", "throwerName", "Player"]
     if team:
@@ -1144,11 +1211,15 @@ def win_breakdown(
     round_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with wins broken down by round end reason.
+
     Args:
         round_data: A dataframe with round data.
         round_filters: A dictionary where the keys are the columns of the
             dataframe represented by round_data to filter the round data by and
             the values are lists that contain the column filters.
+
+    Returns:
+        A dataframe with round wins described by reason.
     """
     round_data_copy = round_data.copy()
     round_data_copy.replace("BombDefused", "CT Bomb Defusal Wins", inplace=True)
@@ -1206,6 +1277,7 @@ def player_box_score(
     weapon_fire_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a player box score dataframe.
+
     Args:
        damage_data: A dataframe with damage data.
        flash_data: A dataframe with flash data.
@@ -1234,6 +1306,9 @@ def player_box_score(
        weapon_fire_filters: A dictionary where the keys are the columns of the
            dataframe to filter the weapon fire data by and the values are lists
            that contain the column filters.
+
+    Returns:
+        A dataframe with player summaries.
     """
     k_stats = kill_stats(
         damage_data,
@@ -1295,6 +1370,7 @@ def team_box_score(
     weapon_fire_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a team box score dataframe.
+
     Args:
        damage_data: A dataframe with damage data.
        flash_data: A dataframe with flash data.
@@ -1323,6 +1399,9 @@ def team_box_score(
        weapon_fire_filters: A dictionary where the keys are the columns of the
            dataframe to filter the weapon fire data by and the values are lists
            that contain the column filters.
+
+    Returns:
+        A dataframe with team summaries.
     """
     k_stats = kill_stats(
         damage_data,

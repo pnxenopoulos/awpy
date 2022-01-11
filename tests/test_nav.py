@@ -5,6 +5,7 @@ from csgo.data import NAV
 from csgo.analytics.nav import (
     area_distance,
     find_closest_area,
+    generate_position_token,
     point_distance,
     point_in_area,
     PlaceEncoder,
@@ -159,6 +160,14 @@ class TestNav:
             )["distance"]
             == 0
         )
+
+    def test_position_token(self):
+        """Tests that position token returns correct values"""
+        token = generate_position_token()
+        assert type(token) == dict
+        assert "tToken" in token.keys()
+        assert "ctToken" in token.keys()
+        assert "token" in token.keys()
 
     def test_place_encode(self):
         """Tests that place encoding works for correct values"""
