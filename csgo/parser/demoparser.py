@@ -57,23 +57,6 @@ class DemoParser:
             )
             self.logger = logging.getLogger("CSGODemoParser")
 
-        # Check if Golang is >= 1.14
-        acceptable_go = check_go_version()
-        if not acceptable_go:
-            self.logger.error(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.16.0."
-            )
-            raise ValueError(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.16.0."
-            )
-        else:
-            self.logger.info("Go version>=1.16.0")
-
-        # Check if demofile exists
-        if not os.path.exists(os.path.abspath(demofile)):
-            self.logger.error("Demofile path does not exist!")
-            raise ValueError("Demofile path does not exist!")
-
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
         self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
@@ -151,6 +134,23 @@ class DemoParser:
         Returns:
             Outputs a JSON file to current working directory.
         """
+        # Check if Golang is >= 1.14
+        acceptable_go = check_go_version()
+        if not acceptable_go:
+            self.logger.error(
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+            )
+            raise ValueError(
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+            )
+        else:
+            self.logger.info("Go version>=1.14.0")
+
+        # Check if demofile exists
+        if not os.path.exists(os.path.abspath(self.demofile)):
+            self.logger.error("Demofile path does not exist!")
+            raise ValueError("Demofile path does not exist!")
+
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
@@ -192,14 +192,16 @@ class DemoParser:
 
     def read_json(self, json_path):
         """Reads the JSON file given a JSON path. Typically called after _parse_demo() or for demos you already have parsed.
-
         Args:
             json_path (string) : Path to JSON file
-
         Returns:
             JSON in Python dictionary form.
         """
-        self.logger.info("Reading in JSON from " + json_path)
+        # Check if demofile exists
+        if not os.path.exists(os.path.abspath(json_path)):
+            self.logger.error("JSON path does not exist!")
+            raise ValueError("JSON path does not exist!")
+        # Read in json to .json attribute
         with open(json_path, encoding="utf8") as f:
             demo_data = json.load(f)
         self.json = demo_data
@@ -209,7 +211,7 @@ class DemoParser:
         return demo_data
 
     def parse(self, return_type="json"):
-        """Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
+        """Wrapper for _parse_demo() and read_json(). Provided for user convenience.
 
         Args:
             return_type (string) : Either "json" or "df"
@@ -218,13 +220,13 @@ class DemoParser:
             A dictionary of output
         """
         self._parse_demo()
-        self.read_json(json_path=self.outpath + "/" + self.output_file)
+        self.read_json()
         if self.json:
-            self.logger.info("Successfully parsed and returned JSON output")
+            self.logger.info("JSON output found")
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = self._parse_json_to_df()
+                demo_data = self._parse_json()
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
@@ -234,7 +236,7 @@ class DemoParser:
             self.logger.error("JSON couldn't be returned")
             raise AttributeError("No JSON parsed!")
 
-    def _parse_json_to_df(self):
+    def _parse_json(self):
         """Returns JSON into dictionary where keys correspond to data frames
 
         Returns:
@@ -521,7 +523,7 @@ class DemoParser:
             self.remove_warmups()
             self.remove_time_rounds()
             self.remove_knife_rounds()
-            self.remove_excess_players()
+            # self.remove_bad_players()
             self.remove_excess_kill_rounds()
             self.remove_end_round()
             self.renumber_rounds()
@@ -530,7 +532,7 @@ class DemoParser:
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = self._parse_json_to_df()
+                demo_data = self._parse_json()
                 self.logger.info("Returned cleaned dataframe output")
                 return demo_data
         else:
@@ -589,17 +591,17 @@ class DemoParser:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def remove_excess_players(self):
+    def remove_bad_players(self):
         """Remove rounds with too many or too few players from JSON."""
         if self.json:
             cleaned_rounds = []
-            # Remove rounds where the number of players is too large
+            # Remove warmups where the number of players is too large
             for r in self.json["gameRounds"]:
                 unclean_frames = 0
                 if len(r["frames"]) > 0:
                     for f in r["frames"]:
-                        if (len(f["ct"]["players"]) > 5) and (
-                            len(f["t"]["players"]) > 5
+                        if (len(f["ct"]["players"]) != 5) and (
+                            len(f["t"]["players"]) != 5
                         ):
                             unclean_frames += 1
                 if unclean_frames == 0:
@@ -618,9 +620,10 @@ class DemoParser:
                 if len(self.json["matchPhases"]["warmupChanged"]) > 1:
                     last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
                     for r in self.json["gameRounds"]:
-                        if r["startTick"] >= last_warmup_changed:
+                        if (r["startTick"] > last_warmup_changed) and (
+                            not r["isWarmup"]
+                        ):
                             cleaned_rounds.append(r)
-
                 else:
                     for r in self.json["gameRounds"]:
                         if not r["isWarmup"]:

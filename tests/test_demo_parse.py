@@ -92,6 +92,7 @@ class TestDemoParser:
                 demo_id="test",
                 parse_rate=128,
             )
+            self.parser_wrong_demo_path.parse()
 
     def test_parse_rate(self):
         """Tests if bad parse rates fail"""
@@ -150,6 +151,12 @@ class TestDemoParser:
         )
         assert self.bad_parser_opts.trade_time == 5
         assert self.bad_parser_opts.buy_style == "hltv"
+
+    def test_read_json_bad_path(self):
+        """Tests if the read_json fails on bad path"""
+        p = DemoParser()
+        with pytest.raises(ValueError):
+            p.read_json("bad_json.json")
 
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
