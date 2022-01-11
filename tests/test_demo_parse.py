@@ -254,7 +254,9 @@ class TestDemoParser:
             demofile="warmup_test.dem", log=False, parse_frames=False
         )
         self.warmup_data = self.warmup_parser.parse()
-        self.warmup_data = self.warmup_parser.clean_rounds(remove_excess_players=False)
+        self.warmup_data = self.warmup_parser.clean_rounds(
+            remove_excess_players=False,
+        )
         assert len(self.warmup_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_data["gameRounds"])
 

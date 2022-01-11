@@ -607,9 +607,7 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if len(r["frames"]) > 0:
                     f = r["frames"][0]
-                    if (len(f["ct"]["players"]) <= 5) and (
-                        len(f["t"]["players"]) <= 5
-                    ):
+                    if (len(f["ct"]["players"]) <= 5) and (len(f["t"]["players"]) <= 5):
                         cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
