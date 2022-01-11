@@ -186,6 +186,7 @@ type DamageAction struct {
 	AttackerViewX    *float64 `json:"attackerViewX"`
 	AttackerViewY    *float64 `json:"attackerViewY"`
 	AttackerStrafe   *bool    `json:"attackerStrafe"`
+	AttackerAccPen   *float64 `json:"attackerInaccuracyPenalty"`
 	VictimSteamID    *int64   `json:"victimSteamID"`
 	VictimName       *string  `json:"victimName"`
 	VictimTeam       *string  `json:"victimTeam"`
@@ -269,6 +270,7 @@ type WeaponFireAction struct {
 	PlayerViewX    float64 `json:"playerViewX"`
 	PlayerViewY    float64 `json:"playerViewY"`
 	PlayerStrafe   bool    `json:"playerStrafe"`
+	Inaccuracy     float64 `json:"accuracyPenalty"`
 	Weapon         string  `json:"weapon"`
 }
 
@@ -1403,6 +1405,12 @@ func main() {
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
+			AccuracyPenalty := float64(0)
+			if e.Weapon != nil {
+				m_fAccuracyPenalty := e.Weapon.Entity.PropertyValueMust("m_fAccuracyPenalty")
+				AccuracyPenalty = float64(m_fAccuracyPenalty.FloatVal)
+			}
+			currentWeaponFire.Inaccuracy = AccuracyPenalty
 
 			// add
 			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
@@ -1933,6 +1941,13 @@ func main() {
 			currentDamage.AttackerViewY = &attackerViewY
 			attackerStrafe := e.Attacker.IsWalking()
 			currentDamage.AttackerStrafe = &attackerStrafe
+
+			AccuracyPenalty := float64(0)
+			if e.Weapon != nil {
+				m_fAccuracyPenalty := e.Weapon.Entity.PropertyValueMust("m_fAccuracyPenalty")
+				AccuracyPenalty = float64(m_fAccuracyPenalty.FloatVal)
+			}
+			currentDamage.AttackerAccPen = &AccuracyPenalty
 		}
 
 		// Victim

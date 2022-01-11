@@ -61,13 +61,13 @@ class DemoParser:
         acceptable_go = check_go_version()
         if not acceptable_go:
             self.logger.error(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.16.0."
             )
             raise ValueError(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.16.0."
             )
         else:
-            self.logger.info("Go version>=1.14.0")
+            self.logger.info("Go version>=1.16.0")
 
         # Check if demofile exists
         if not os.path.exists(os.path.abspath(demofile)):
@@ -190,14 +190,16 @@ class DemoParser:
             self.logger.error("No file produced, error in calling Golang")
             self.logger.error(stdout)
 
-    def _read_json(self):
-        """Reads the JSON file created by _parse_demo()
+    def read_json(self, json_path):
+        """Reads the JSON file given a JSON path. Typically called after _parse_demo() or for demos you already have parsed.
+
+        Args:
+            json_path (string) : Path to JSON file
 
         Returns:
-            A dictionary of the JSON output of _parse_demo()
+            JSON in Python dictionary form.
         """
-        json_path = self.outpath + "/" + self.output_file
-        self.logger.info("Reading in JSON from " + self.output_file)
+        self.logger.info("Reading in JSON from " + json_path)
         with open(json_path, encoding="utf8") as f:
             demo_data = json.load(f)
         self.json = demo_data
@@ -216,14 +218,13 @@ class DemoParser:
             A dictionary of output
         """
         self._parse_demo()
-        self._read_json()
+        self.read_json(json_path=self.outpath + "/" + self.output_file)
         if self.json:
-            self.logger.info("Successfully parsed JSON output")
-            self.logger.info("Successfully returned JSON output")
+            self.logger.info("Successfully parsed and returned JSON output")
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = self._parse_json()
+                demo_data = self._parse_json_to_df()
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
@@ -233,7 +234,7 @@ class DemoParser:
             self.logger.error("JSON couldn't be returned")
             raise AttributeError("No JSON parsed!")
 
-    def _parse_json(self):
+    def _parse_json_to_df(self):
         """Returns JSON into dictionary where keys correspond to data frames
 
         Returns:
@@ -513,14 +514,14 @@ class DemoParser:
         remove_knifes=True,
         bad_round_endings=["Draw", "Unknown", ""],
         remove_time=True,
-        return_type="json"
+        return_type="json",
     ):
         """Cleans rounds to remove warmups, knives, bad round endings, etc."""
         if self.json:
             self.remove_warmups()
             self.remove_time_rounds()
             self.remove_knife_rounds()
-            # self.remove_bad_players()
+            self.remove_excess_players()
             self.remove_excess_kill_rounds()
             self.remove_end_round()
             self.renumber_rounds()
@@ -529,7 +530,7 @@ class DemoParser:
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = self._parse_json()
+                demo_data = self._parse_json_to_df()
                 self.logger.info("Returned cleaned dataframe output")
                 return demo_data
         else:
@@ -588,16 +589,18 @@ class DemoParser:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
 
-    def remove_bad_players(self):
+    def remove_excess_players(self):
         """Remove rounds with too many or too few players from JSON."""
         if self.json:
             cleaned_rounds = []
-            # Remove warmups where the number of players is too large
+            # Remove rounds where the number of players is too large
             for r in self.json["gameRounds"]:
                 unclean_frames = 0
                 if len(r["frames"]) > 0:
                     for f in r["frames"]:
-                        if (len(f["ct"]["players"]) != 5) and (len(f["t"]["players"]) != 5):
+                        if (len(f["ct"]["players"]) > 5) and (
+                            len(f["t"]["players"]) > 5
+                        ):
                             unclean_frames += 1
                 if unclean_frames == 0:
                     cleaned_rounds.append(r)
@@ -615,10 +618,9 @@ class DemoParser:
                 if len(self.json["matchPhases"]["warmupChanged"]) > 1:
                     last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
                     for r in self.json["gameRounds"]:
-                        if (r["startTick"] > last_warmup_changed) and (
-                            not r["isWarmup"]
-                        ):
+                        if r["startTick"] >= last_warmup_changed:
                             cleaned_rounds.append(r)
+
                 else:
                     for r in self.json["gameRounds"]:
                         if not r["isWarmup"]:
