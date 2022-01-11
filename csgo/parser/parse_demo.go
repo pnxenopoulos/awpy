@@ -17,19 +17,20 @@ import (
 
 // Game is the overall struct that holds the parsed demo data
 type Game struct {
-	MatchName      string       `json:"matchID"`
-	ClientName     string       `json:"clientName"`
-	Map            string       `json:"mapName"`
-	TickRate       int64        `json:"tickRate"`
-	PlaybackTicks  int64        `json:"playbackTicks"`
-	PlaybackFrames int64        `json:"playbackFrames"`
-	ParsedToFrame  int64        `json:"parsedToFrame"`
-	ParsingOpts    ParserOpts   `json:"parserParameters"`
-	ServerVars     ServerConVar `json:"serverVars"`
-	MatchPhases    MatchPhases  `json:"matchPhases"`
-	ParsedPlaces   []string     `json:"parsedPlaceNames"`
-	MMRanks        []MMRank     `json:"matchmakingRanks"`
-	Rounds         []GameRound  `json:"gameRounds"`
+	MatchName      string          `json:"matchID"`
+	ClientName     string          `json:"clientName"`
+	Map            string          `json:"mapName"`
+	TickRate       int64           `json:"tickRate"`
+	PlaybackTicks  int64           `json:"playbackTicks"`
+	PlaybackFrames int64           `json:"playbackFrames"`
+	ParsedToFrame  int64           `json:"parsedToFrame"`
+	ParsingOpts    ParserOpts      `json:"parserParameters"`
+	ServerVars     ServerConVar    `json:"serverVars"`
+	MatchPhases    MatchPhases     `json:"matchPhases"`
+	ParsedPlaces   []string        `json:"parsedPlaceNames"`
+	MMRanks        []MMRank        `json:"matchmakingRanks"`
+	Connections    []ConnectAction `json:"playerConnections"`
+	Rounds         []GameRound     `json:"gameRounds"`
 }
 
 // ParserOpts holds the parameters passed to the parser
@@ -86,6 +87,13 @@ type MMRank struct {
 	RankOld    string  `json:"rankOld"`
 	RankNew    string  `json:"rankNew"`
 	WinCount   int     `json:"winCount"`
+}
+
+// ConnectAction is the act of connecting or disconnecting to the server
+type ConnectAction struct {
+	Tick        int64  `json:"tick"`
+	ConnectType string `json:"action"`
+	SteamID     uint64 `json:"steamID"`
 }
 
 // GameRound contains round info and events
@@ -607,7 +615,7 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	currentPlayer.TotalUtility = int64(0)
 	activeWeapon := ""
 
-	if p.IsAlive() {
+	if (p.IsAlive()) && (p.ActiveWeapon() != nil) {
 		activeWeapon = p.ActiveWeapon().String()
 	}
 
@@ -821,10 +829,6 @@ func main() {
 	currentGame.PlaybackFrames = int64(header.PlaybackFrames)
 	currentGame.ClientName = header.ClientName
 
-	/* if navFileExists {
-		currentGame.ParsedPlaces = placeSl
-	} */
-
 	// Set parsing options
 	parsingOpts := ParserOpts{}
 	parsingOpts.ParseRate = int(parseRate)
@@ -872,6 +876,34 @@ func main() {
 		rankUpdate.WinCount = e.WinCount
 
 		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
+	})
+
+	// Parse player connects
+	p.RegisterEventHandler(func(e events.PlayerConnect) {
+		if e.Player != nil {
+			gs := p.GameState()
+			playerConnected := ConnectAction{}
+			
+			playerConnected.Tick = int64(gs.IngameTick())
+			playerConnected.ConnectType = "connect"
+			playerConnected.SteamID = e.Player.SteamID64
+
+			currentGame.Connections = append(currentGame.Connections, playerConnected)
+		}
+	})
+
+	// Parse player disconnects
+	p.RegisterEventHandler(func(e events.PlayerDisconnected) {
+		if e.Player != nil {
+			gs := p.GameState()
+			playerConnected := ConnectAction{}
+			
+			playerConnected.Tick = int64(gs.IngameTick())
+			playerConnected.ConnectType = "disconnect"
+			playerConnected.SteamID = e.Player.SteamID64
+
+			currentGame.Connections = append(currentGame.Connections, playerConnected)
+		}
 	})
 
 	// Parse the match phases

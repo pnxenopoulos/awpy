@@ -278,6 +278,7 @@ def kast(
     kast_rounds = {}
     for stat in kast_string.upper():
         columns.append(stat)
+    kill_data = kill_data[~kill_data["attackerName"].isna()]
     killers = calc_stats(
         kill_data.loc[kill_data["attackerTeam"] != kill_data["victimTeam"]],
         kill_filters,
@@ -330,7 +331,13 @@ def kast(
     kast_data = killers.merge(assisters, how="outer").fillna("")
     kast_data = kast_data.merge(victims, how="outer").fillna("")
     kast_data = kast_data.merge(traded, how="outer").fillna("")
-    for player in kill_data["attackerName"].unique():
+    killer_names = kill_data["attackerName"].tolist()
+    cleaned_killer_names = []
+    for x in killer_names:
+        if x != None:
+            cleaned_killer_names.append(x)
+    cleaned_killer_names = pd.Series(cleaned_killer_names)
+    for player in cleaned_killer_names:
         kast_counts[player] = [[0, 0, 0, 0] for i in range(len(kast_data))]
         kast_rounds[player] = [0, 0, 0, 0, 0]
     for rd in kast_data.index:

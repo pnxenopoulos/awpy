@@ -520,6 +520,7 @@ class DemoParser:
             self.remove_warmups()
             self.remove_time_rounds()
             self.remove_knife_rounds()
+            # self.remove_bad_players()
             self.remove_excess_kill_rounds()
             self.remove_end_round()
             self.renumber_rounds()
@@ -529,7 +530,7 @@ class DemoParser:
                 return self.json
             elif return_type == "df":
                 demo_data = self._parse_json()
-                self.logger.info("Returned dataframe output")
+                self.logger.info("Returned cleaned dataframe output")
                 return demo_data
         else:
             self.logger.error("JSON not found. Run .parse()")
@@ -583,6 +584,24 @@ class DemoParser:
                         self.json["gameRounds"][i]["endTScore"] = (
                             self.json["gameRounds"][i]["tScore"] + 1
                         )
+        else:
+            self.logger.error("JSON not found. Run .parse()")
+            raise AttributeError("JSON not found. Run .parse()")
+
+    def remove_bad_players(self):
+        """Remove rounds with too many or too few players from JSON."""
+        if self.json:
+            cleaned_rounds = []
+            # Remove warmups where the number of players is too large
+            for r in self.json["gameRounds"]:
+                unclean_frames = 0
+                if len(r["frames"]) > 0:
+                    for f in r["frames"]:
+                        if (len(f["ct"]["players"]) != 5) and (len(f["t"]["players"]) != 5):
+                            unclean_frames += 1
+                if unclean_frames == 0:
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error("JSON not found. Run .parse()")
             raise AttributeError("JSON not found. Run .parse()")
