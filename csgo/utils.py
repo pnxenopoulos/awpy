@@ -45,7 +45,7 @@ def is_in_range(value, min, max):
 
 
 def transform_csv_to_json(sampleCsv):
-    """From Adi."""
+    """From Adi. Used to transform a nav file CSV to JSON."""
     finalDic = {}
     for curMap in sampleCsv["mapName"].unique():
         mapDic = {}
