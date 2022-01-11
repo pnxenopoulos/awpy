@@ -163,7 +163,8 @@ class TestNav:
 
     def test_position_token(self):
         """Tests that position token returns correct values"""
-        token = generate_position_token()
+        frame = {}
+        token = generate_position_token(frame)
         assert type(token) == dict
         assert "tToken" in token.keys()
         assert "ctToken" in token.keys()
