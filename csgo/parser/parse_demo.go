@@ -22,12 +22,11 @@ type Game struct {
 	Map            string          `json:"mapName"`
 	TickRate       int64           `json:"tickRate"`
 	PlaybackTicks  int64           `json:"playbackTicks"`
-	PlaybackFrames int64           `json:"playbackFrames"`
-	ParsedToFrame  int64           `json:"parsedToFrame"`
+	PlaybackFrames int64           `json:"playbackFramesCount"`
+	ParsedToFrame  int64           `json:"parsedToFrameIdx"`
 	ParsingOpts    ParserOpts      `json:"parserParameters"`
 	ServerVars     ServerConVar    `json:"serverVars"`
 	MatchPhases    MatchPhases     `json:"matchPhases"`
-	ParsedPlaces   []string        `json:"parsedPlaceNames"`
 	MMRanks        []MMRank        `json:"matchmakingRanks"`
 	Connections    []ConnectAction `json:"playerConnections"`
 	Rounds         []GameRound     `json:"gameRounds"`
@@ -1024,6 +1023,9 @@ func main() {
 			currentRound.CTTeam = &ctTeam
 		}
 
+		// Determine if round is still in warmup mode
+		currentRound.IsWarmup = gs.IsWarmupPeriod()
+
 		// If convars aren't parsed, do so
 		if convParsed == 0 {
 			// If convars are unparsed, record the convars of the server
@@ -1059,7 +1061,7 @@ func main() {
 		}
 
 		if roundInFreezetime == 0 {
-			// This means the RoundStart event did not fire, but the freezetimeend did
+			// This means the RoundStart event did not fire, but the FreezeTimeEnd did
 			currentGame.Rounds = append(currentGame.Rounds, currentRound)
 			roundStarted = 1
 			roundInEndTime = 0
