@@ -261,7 +261,7 @@ class TestDemoParser:
         assert len(self.warmup_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_data["gameRounds"])
         self.warmup_parser_sneem = DemoParser(
-            demofile="vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=False
+            demofile="vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
         )
         self.warmup_sneem_data = self.warmup_parser_sneem.parse()
         self.warmup_sneem_data = self.warmup_parser_sneem.clean_rounds(
