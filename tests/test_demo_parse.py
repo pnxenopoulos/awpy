@@ -155,7 +155,7 @@ class TestDemoParser:
     def test_read_json_bad_path(self):
         """Tests if the read_json fails on bad path"""
         p = DemoParser()
-        with pytest.raises(ValueError):
+        with pytest.raises(FileNotFoundError):
             p.read_json("bad_json.json")
 
     def test_parse_output_type(self):
