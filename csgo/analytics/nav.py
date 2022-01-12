@@ -6,12 +6,12 @@ from scipy.spatial import distance
 
 
 def point_in_area(map_name, area_id, point):
-    """Returns if the point is within an area id for a map.
+    """Returns if the point is within a nav area for a map.
 
     Args:
-        map_name (string) : Map to search
-        area_id (int)     : Area ID as an integer
-        point (list)      : Point as a list (x,y,z)
+        map_name (string): Map to search
+        area_id (int): Area ID as an integer
+        point (list): Point as a list [x,y,z]
 
     Returns:
         boolean : True if area contains the point, false if not
@@ -43,11 +43,11 @@ def point_in_area(map_name, area_id, point):
 
 
 def find_closest_area(map_name, point):
-    """Finds the closest area. Searches through all the areas by comparing point to area centerpoint.
+    """Finds the closest area in the nav mesh. Searches through all the areas by comparing point to area centerpoint.
 
     Args:
-        map_name (string) : Map to search
-        point (list)      : Point as a list (x,y,z)
+        map_name (string): Map to search
+        point (list): Point as a list [x,y,z]
 
     Returns:
         A dict containing info on the closest area
@@ -68,9 +68,7 @@ def find_closest_area(map_name, point):
             NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"]
         ) / 2
         dist = np.sqrt(
-            (point[0] - avg_x) ** 2
-            + (point[1] - avg_y) ** 2
-            + (point[2] - avg_z) ** 2
+            (point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2 + (point[2] - avg_z) ** 2
         )
         if dist < closest_area["distance"]:
             closest_area["areaId"] = area
@@ -79,13 +77,16 @@ def find_closest_area(map_name, point):
 
 
 def area_distance(map_name, area_a, area_b, dist_type="graph"):
-    """Returns the distance between two areas.
+    """Returns the distance between two areas. Dist type an be graph or geodesic.
 
     Args:
-        map_name (string)  : Map to search
-        area_a (int)       : Area id
-        area_b (int)       : Area id
-        dist_type (string) : String indicating the type of distance to use.
+        map_name (string): Map to search
+        area_a (int): Area id
+        area_b (int): Area id
+        dist_type (string): String indicating the type of distance to use (graph or geodesic)
+
+    Returns:
+        A dict containing info on the path between two areas.
     """
     if map_name not in NAV.keys():
         raise ValueError("Map not found.")
@@ -119,10 +120,13 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
     """Returns the distance between two points.
 
     Args:
-        map_name (string)  : Map to search
-        point_a (list)     : Point as a list (x,y,z)
-        point_b (list)     : Point as a list (x,y,z)
-        dist_type (string) : String indicating the type of distance to use.
+        map_name (string): Map to search
+        point_a (list): Point as a list (x,y,z)
+        point_b (list): Point as a list (x,y,z)
+        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidena, manhattan, canberra or cosine.
+
+    Returns:
+        A dict containing info on the distance between two points.
     """
     distance_obj = {"distanceType": dist_type, "distance": None, "areas": []}
     if dist_type == "graph":
@@ -164,8 +168,15 @@ def generate_position_token(frame):
 
     Args:
         frame (dict): A game frame
+
+    Returns:
+        A dict containing the T token, CT token and combined token (T + CT concatenated)
     """
-    return None
+    token = {}
+    token["tToken"] = ""
+    token["ctToken"] = ""
+    token["token"] = ""
+    return token
 
 
 class PlaceEncoder:

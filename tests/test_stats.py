@@ -26,7 +26,6 @@ from csgo.analytics.stats import (
     team_box_score,
     rating,
 )
-from csgo.analytics.utils import agg_damages
 
 
 class TestStats:
@@ -35,6 +34,7 @@ class TestStats:
     """
 
     def clean(df: pd.DataFrame) -> pd.DataFrame:
+        """This code was made before .clean_rounds() existed. 4-31 are the clean rounds."""
         df_copy = df.copy()
         df_copy = df_copy.loc[
             (df_copy["roundNum"] > 3) & (df_copy["roundNum"] < 32)
@@ -272,15 +272,6 @@ class TestStats:
             .iloc[4]
             .sum()
             == 180
-        )
-
-    def test_agg_damages(self):
-        """Tests agg_damages function."""
-        assert len(
-            agg_damages(
-                self.damage_data.copy(),
-            )
-            == 820
         )
 
     def test_rating(self):

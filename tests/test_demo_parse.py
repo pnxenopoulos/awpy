@@ -85,13 +85,14 @@ class TestDemoParser:
 
     def test_wrong_demo_path(self):
         """Tests if failure on wrong demofile path"""
-        with pytest.raises(ValueError):
+        with pytest.raises(FileNotFoundError):
             self.parser_wrong_demo_path = DemoParser(
                 demofile="bad.dem",
                 log=False,
                 demo_id="test",
                 parse_rate=128,
             )
+            self.parser_wrong_demo_path.parse()
 
     def test_parse_rate(self):
         """Tests if bad parse rates fail"""
@@ -150,6 +151,12 @@ class TestDemoParser:
         )
         assert self.bad_parser_opts.trade_time == 5
         assert self.bad_parser_opts.buy_style == "hltv"
+
+    def test_read_json_bad_path(self):
+        """Tests if the read_json fails on bad path"""
+        p = DemoParser()
+        with pytest.raises(FileNotFoundError):
+            p.read_json("bad_json.json")
 
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
@@ -247,7 +254,9 @@ class TestDemoParser:
             demofile="warmup_test.dem", log=False, parse_frames=False
         )
         self.warmup_data = self.warmup_parser.parse()
-        self.warmup_data = self.warmup_parser.clean_rounds()
+        self.warmup_data = self.warmup_parser.clean_rounds(
+            remove_excess_players=False,
+        )
         assert len(self.warmup_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_data["gameRounds"])
 

@@ -8,20 +8,20 @@ from csgo.utils import check_go_version
 
 
 class DemoParser:
-    """This class can parse a CSGO demofile to various outputs, such as JSON or CSV. Accessible via csgo.parser import DemoParser
+    """DemoParser can parse, load and clean data from a CSGO demofile. Can be instantiated without a specified demofile.
 
     Attributes:
-        demofile (string)   : A string denoting the path to the demo file, which ends in .dem
-        log (boolean)       : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
-        demo_id (string)    : A unique demo name/game id. Default is inferred from demofile name
-        parse_rate (int)    : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
-        parse_frames (bool) : Flag if you want to parse frames (trajectory data) or not
-        trade_time (int)    : Length of the window for a trade (in seconds). Default is 5.
-        dmg_rolled (bool)   : Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
-        buy_style (string)  : Buy style string, one of "hltv" or "csgo"
+        demofile (string): A string denoting the path to the demo file, which ends in .dem
+        log (boolean): A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
+        demo_id (string): A unique demo name/game id. Default is inferred from demofile name
+        parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
+        parse_frames (bool): Flag if you want to parse frames (trajectory data) or not
+        trade_time (int): Length of the window for a trade (in seconds). Default is 5.
+        dmg_rolled (bool): Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
+        buy_style (string): Buy style string, one of "hltv" or "csgo"
 
     Raises:
-        ValueError : Raises a ValueError if the Golang version is lower than 1.14
+        ValueError: Raises a ValueError if the Golang version is lower than 1.14
     """
 
     def __init__(
@@ -56,23 +56,6 @@ class DemoParser:
                 datefmt="%H:%M:%S",
             )
             self.logger = logging.getLogger("CSGODemoParser")
-
-        # Check if Golang is >= 1.14
-        acceptable_go = check_go_version()
-        if not acceptable_go:
-            self.logger.error(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
-            )
-            raise ValueError(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
-            )
-        else:
-            self.logger.info("Go version>=1.14.0")
-
-        # Check if demofile exists
-        if not os.path.exists(os.path.abspath(demofile)):
-            self.logger.error("Demofile path does not exist!")
-            raise ValueError("Demofile path does not exist!")
 
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
@@ -130,7 +113,7 @@ class DemoParser:
         # Handle buy style
         if buy_style not in ["hltv", "csgo"]:
             self.logger.warning(
-                "Buy style not one of hltv, csgo, will be set to hltv by default"
+                "Buy style specified is not one of hltv, csgo, will be set to hltv by default"
             )
             self.buy_style = "hltv"
         else:
@@ -145,12 +128,33 @@ class DemoParser:
         # Set parse error to False
         self.parse_error = False
 
-    def _parse_demo(self):
-        """Parse a demofile using the Go script parse_demo.go -- this function takes no arguments, all arguments are set in initialization.
+    def parse_demo(self):
+        """Parse a demofile using the Go script parse_demo.go -- this function needs the .demofile to be set in the class, and the file needs to exist.
 
         Returns:
             Outputs a JSON file to current working directory.
+
+        Raises:
+            ValueError: Raises a ValueError if the Golang version is lower than 1.14
+            FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.
         """
+        # Check if Golang version is compatible
+        acceptable_go = check_go_version()
+        if not acceptable_go:
+            self.logger.error(
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+            )
+            raise ValueError(
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+            )
+        else:
+            self.logger.info("Go version>=1.14.0")
+
+        # Check if demofile exists
+        if not os.path.exists(os.path.abspath(self.demofile)):
+            self.logger.error("Demofile path does not exist!")
+            raise FileNotFoundError("Demofile path does not exist!")
+
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
@@ -190,16 +194,27 @@ class DemoParser:
             self.logger.error("No file produced, error in calling Golang")
             self.logger.error(stdout)
 
-    def _read_json(self):
-        """Reads the JSON file created by _parse_demo()
+    def read_json(self, json_path):
+        """Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.
+
+        Args:
+            json_path (string): Path to JSON file
 
         Returns:
-            A dictionary of the JSON output of _parse_demo()
+            JSON in Python dictionary form
+
+        Raises:
+            FileNotFoundError: Raises a FileNotFoundError if the JSON path doesn't exist
         """
-        json_path = self.outpath + "/" + self.output_file
-        self.logger.info("Reading in JSON from " + self.output_file)
+        # Check if JSON exists
+        if not os.path.exists(os.path.abspath(json_path)):
+            self.logger.error("JSON path does not exist!")
+            raise FileNotFoundError("JSON path does not exist!")
+
+        # Read in json to .json attribute
         with open(json_path, encoding="utf8") as f:
             demo_data = json.load(f)
+
         self.json = demo_data
         self.logger.info(
             "JSON data loaded, available in the `json` attribute to parser"
@@ -207,23 +222,26 @@ class DemoParser:
         return demo_data
 
     def parse(self, return_type="json"):
-        """Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
+        """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
-            return_type (string) : Either "json" or "df"
+            return_type (string): Either "json" or "df"
 
         Returns:
-            A dictionary of output
+            A dictionary of output (which is parsed to a JSON file in the working directory)
+
+        Raises:
+            ValueError: Raises a ValueError if the return_type is not "json" or "df"
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        self._parse_demo()
-        self._read_json()
+        self.parse_demo()
+        self.read_json(json_path=self.outpath + "/" + self.output_file)
         if self.json:
-            self.logger.info("Successfully parsed JSON output")
-            self.logger.info("Successfully returned JSON output")
+            self.logger.info("JSON output found")
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = self._parse_json()
+                demo_data = self.parse_json_to_df()
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
@@ -231,13 +249,16 @@ class DemoParser:
                 raise ValueError("return_type must be either 'json' or 'df'")
         else:
             self.logger.error("JSON couldn't be returned")
-            raise AttributeError("No JSON parsed!")
+            raise AttributeError("No JSON parsed! Error in producing JSON.")
 
-    def _parse_json(self):
+    def parse_json_to_df(self):
         """Returns JSON into dictionary where keys correspond to data frames
 
         Returns:
             A dictionary of output
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             demo_data = {}
@@ -258,14 +279,21 @@ class DemoParser:
             self.logger.info("Returned dataframe output")
             return demo_data
         else:
-            self.logger.error("JSON couldn't be returned")
-            raise AttributeError("No JSON parsed!")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_frames(self):
-        """Returns frames as either a list or Pandas dataframe
+        """Returns frames as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
+            A Pandas dataframe where each row is a frame (game state) in the demo, which is a discrete point of time.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             frames_dataframes = []
@@ -296,14 +324,21 @@ class DemoParser:
             frames_df["mapName"] = self.json["mapName"]
             return pd.DataFrame(frames_dataframes)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_player_frames(self):
-        """Returns player frames as either a list or Pandas dataframe
+        """Returns player frames as a Pandas dataframe.
 
         Returns:
-            A list or Pandas dataframe
+            A Pandas dataframe where each row is a player's attributes at a given frame (game state).
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             player_frames = []
@@ -331,14 +366,21 @@ class DemoParser:
             player_frames_df["mapName"] = self.json["mapName"]
             return pd.DataFrame(player_frames_df)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_rounds(self):
-        """Returns rounds as either a list or Pandas dataframe
+        """Returns rounds as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
+            A Pandas dataframe where each row is a round
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             rounds = []
@@ -378,14 +420,21 @@ class DemoParser:
                 rounds.append(round_item)
             return pd.DataFrame(rounds)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_kills(self):
-        """Returns kills as either a list or Pandas dataframe
+        """Returns kills as either a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
+            A Pandas dataframe where each row is a kill
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             kills = []
@@ -399,14 +448,21 @@ class DemoParser:
                         kills.append(new_k)
             return pd.DataFrame(kills)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_weapon_fires(self):
         """Returns weapon fires as either a list or Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
+            A  Pandas dataframe where each row is a weapon fire event
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             shots = []
@@ -420,14 +476,21 @@ class DemoParser:
                         shots.append(new_wf)
             return pd.DataFrame(shots)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_damages(self):
-        """Returns damages as either a list or Pandas dataframe
+        """Returns damages as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
+            A Pandas dataframe where each row is a damage event.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             damages = []
@@ -441,14 +504,21 @@ class DemoParser:
                         damages.append(new_d)
             return pd.DataFrame(damages)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_grenades(self):
-        """Returns grenades as either a list or Pandas dataframe
+        """Returns grenades as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
+            A list or Pandas dataframe where each row is a grenade throw
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             grenades = []
@@ -462,14 +532,21 @@ class DemoParser:
                         grenades.append(new_g)
             return pd.DataFrame(grenades)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_bomb_events(self):
-        """Returns bomb events as either a list or Pandas dataframe
+        """Returns bomb events as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
+            A Pandas dataframe where each row is a bomb event (defuse, plant, etc.)
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             bomb_events = []
@@ -483,14 +560,21 @@ class DemoParser:
                         bomb_events.append(new_b)
             return pd.DataFrame(bomb_events)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def _parse_flashes(self):
-        """Returns flashes as either a list or Pandas dataframe
+        """Returns flashes as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
+            A Pandas dataframe where each row is a flash event.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             flashes = []
@@ -504,54 +588,98 @@ class DemoParser:
                         flashes.append(new_f)
             return pd.DataFrame(flashes)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def clean_rounds(
         self,
         remove_warmups=True,
         remove_knifes=True,
-        bad_round_endings=["Draw", "Unknown", ""],
-        remove_time=True,
-        return_type="json"
+        remove_bad_timings=True,
+        remove_excess_players=True,
+        remove_excess_kills=True,
+        remove_bad_endings=True,
+        return_type="json",
     ):
-        """Cleans rounds to remove warmups, knives, bad round endings, etc."""
+        """Cleans a parsed demofile JSON.
+
+        Args:
+            remove_warmups (bool, optional): Remove warmup rounds. Defaults to True.
+            remove_knifes (bool, optional): Remove knife rounds. Defaults to True.
+            remove_bad_timings (bool, optional): Remove bad timings. Defaults to True.
+            remove_excess_players (bool, optional): Remove rounds with more than 5 players. Defaults to True.
+            remove_excess_kills (bool, optional): Remove rounds with more than 10 kills. Defaults to True.
+            remove_bad_endings (bool, optional): Remove rounds with bad round end reasons. Defaults to True.
+            return_type (str, optional): Return JSON or DataFrame. Defaults to "json".
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+
+        Returns:
+            dict: A dictionary of the cleaned demo.
+        """
         if self.json:
-            self.remove_warmups()
-            self.remove_time_rounds()
-            self.remove_knife_rounds()
-            # self.remove_bad_players()
-            self.remove_excess_kill_rounds()
-            self.remove_end_round()
+            if remove_warmups:
+                self.remove_warmups()
+            if remove_knifes:
+                self.remove_knife_rounds()
+            if remove_bad_timings:
+                self.remove_time_rounds()
+            if remove_excess_players:
+                self.remove_excess_players()
+            if remove_excess_kills:
+                self.remove_excess_kill_rounds()
+            if remove_bad_endings:
+                self.remove_end_round()
             self.renumber_rounds()
             self.rescore_rounds()
             self.write_json()
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = self._parse_json()
+                demo_data = self.parse_json_to_df()
                 self.logger.info("Returned cleaned dataframe output")
                 return demo_data
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def write_json(self):
         """Rewrite the JSON file"""
         with open(self.output_file, "w", encoding="utf8") as fp:
-            json.dump(self.json, fp, indent=4)
+            json.dump(self.json, fp)
 
     def renumber_rounds(self):
-        """Renumbers rounds"""
+        """Renumbers the rounds.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute has a "gameRounds" key.
+        """
         if self.json["gameRounds"]:
             for i, r in enumerate(self.json["gameRounds"]):
                 self.json["gameRounds"][i]["roundNum"] = i + 1
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def rescore_rounds(self):
-        """Rescores the rounds"""
+        """Rescore the rounds based on round end reason.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute has a "gameRounds" key.
+        """
         if self.json["gameRounds"]:
             for i, r in enumerate(self.json["gameRounds"]):
                 if i == 0:
@@ -585,29 +713,42 @@ class DemoParser:
                             self.json["gameRounds"][i]["tScore"] + 1
                         )
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
-    def remove_bad_players(self):
-        """Remove rounds with too many or too few players from JSON."""
+    def remove_excess_players(self):
+        """Removes rounds where there are more than 5 players on a side.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             cleaned_rounds = []
-            # Remove warmups where the number of players is too large
+            # Remove rounds where the number of players is too large
             for r in self.json["gameRounds"]:
-                unclean_frames = 0
                 if len(r["frames"]) > 0:
-                    for f in r["frames"]:
-                        if (len(f["ct"]["players"]) != 5) and (len(f["t"]["players"]) != 5):
-                            unclean_frames += 1
-                if unclean_frames == 0:
-                    cleaned_rounds.append(r)
+                    f = r["frames"][0]
+                    if (len(f["ct"]["players"]) <= 5) and (len(f["t"]["players"]) <= 5):
+                        cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def remove_warmups(self):
-        """Remove warmup rounds from JSON."""
+        """Removes warmup rounds.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             cleaned_rounds = []
             # Remove warmups where the demo may have started recording in the middle of a warmup round
@@ -619,17 +760,30 @@ class DemoParser:
                             not r["isWarmup"]
                         ):
                             cleaned_rounds.append(r)
+                        if r["startTick"] == last_warmup_changed:
+                            cleaned_rounds.append(r)
                 else:
                     for r in self.json["gameRounds"]:
                         if not r["isWarmup"]:
                             cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def remove_end_round(self, bad_endings=["Draw", "Unknown", ""]):
-        """Remove rounds with bad endings from JSON."""
+        """Removes rounds with bad end reason.
+
+        Args:
+            bad_endings (list, optional): List of bad round end reasons. Defaults to ["Draw", "Unknown", ""].
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
@@ -637,11 +791,19 @@ class DemoParser:
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def remove_knife_rounds(self):
-        """Remove knife round."""
+        """Removes knife rounds.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
@@ -655,11 +817,19 @@ class DemoParser:
                         cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def remove_excess_kill_rounds(self):
-        """Removes rounds with too many kills."""
+        """Removes rounds with more than 10 kills.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
@@ -670,11 +840,19 @@ class DemoParser:
                             cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def remove_time_rounds(self):
-        """Removes rounds with incorrect start/end ticks."""
+        """Remove rounds with odd round timings.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
@@ -686,5 +864,9 @@ class DemoParser:
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
