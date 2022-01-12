@@ -2065,7 +2065,7 @@ func main() {
 			}
 
 			// Add frame
-			if (len(currentFrame.CT.Players) > 0) | (len(currentFrame.T.Players) > 0) {
+			if (len(currentFrame.CT.Players) > 0) || (len(currentFrame.T.Players) > 0) {
 				currentRound.Frames = append(currentRound.Frames, currentFrame)
 			}
 			
