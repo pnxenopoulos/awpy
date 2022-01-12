@@ -623,6 +623,7 @@ class DemoParser:
             dict: A dictionary of the cleaned demo.
         """
         if self.json:
+            self.remove_rounds_with_no_frames()
             if remove_warmups:
                 self.remove_warmups()
             if remove_knifes:
@@ -712,6 +713,26 @@ class DemoParser:
                         self.json["gameRounds"][i]["endTScore"] = (
                             self.json["gameRounds"][i]["tScore"] + 1
                         )
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_rounds_with_no_frames(self):
+        """Removes rounds with no frames
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json["gameRounds"]:
+                if len(r["frames"]) > 0:
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
@@ -833,8 +854,8 @@ class DemoParser:
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
-                if not r["isWarmup"]:
-                    if r["kills"] is not None:
+                if not r["isWarmup"] and r["kills"]:
+                    if len(r["kills"]) > 0:
                         total_kills = len(r["kills"])
                         if total_kills <= 10:
                             cleaned_rounds.append(r)
