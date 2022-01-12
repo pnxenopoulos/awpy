@@ -760,6 +760,8 @@ class DemoParser:
                             not r["isWarmup"]
                         ):
                             cleaned_rounds.append(r)
+                        if r["startTick"] == last_warmup_changed:
+                            cleaned_rounds.append(r)
                 else:
                     for r in self.json["gameRounds"]:
                         if not r["isWarmup"]:
