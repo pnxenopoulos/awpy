@@ -34,6 +34,7 @@ class TestStats:
     """
 
     def clean(df: pd.DataFrame) -> pd.DataFrame:
+        """This code was made before .clean_rounds() existed. 4-31 are the clean rounds."""
         df_copy = df.copy()
         df_copy = df_copy.loc[
             (df_copy["roundNum"] > 3) & (df_copy["roundNum"] < 32)
