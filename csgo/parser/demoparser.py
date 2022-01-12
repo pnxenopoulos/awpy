@@ -597,6 +597,7 @@ class DemoParser:
 
     def clean_rounds(
         self,
+        remove_no_frames=True,
         remove_warmups=True,
         remove_knifes=True,
         remove_bad_timings=True,
@@ -608,6 +609,7 @@ class DemoParser:
         """Cleans a parsed demofile JSON.
 
         Args:
+            remove_no_frames (bool, optional): Remove rounds where there are no frames. Default to True.
             remove_warmups (bool, optional): Remove warmup rounds. Defaults to True.
             remove_knifes (bool, optional): Remove knife rounds. Defaults to True.
             remove_bad_timings (bool, optional): Remove bad timings. Defaults to True.
@@ -623,6 +625,12 @@ class DemoParser:
             dict: A dictionary of the cleaned demo.
         """
         if self.json:
+            if remove_no_frames:
+                if not self.parse_frames:
+                    self.logger.warning(
+                        "parse_frames is set to False, must be true for remove_no_frames to work."
+                    )
+                self.remove_rounds_with_no_frames()
             if remove_warmups:
                 self.remove_warmups()
             if remove_knifes:
@@ -712,6 +720,26 @@ class DemoParser:
                         self.json["gameRounds"][i]["endTScore"] = (
                             self.json["gameRounds"][i]["tScore"] + 1
                         )
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_rounds_with_no_frames(self):
+        """Removes rounds with no frames
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json["gameRounds"]:
+                if len(r["frames"]) > 0:
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
@@ -833,8 +861,8 @@ class DemoParser:
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
-                if not r["isWarmup"]:
-                    if r["kills"] is not None:
+                if not r["isWarmup"] and r["kills"]:
+                    if len(r["kills"]) > 0:
                         total_kills = len(r["kills"])
                         if total_kills <= 10:
                             cleaned_rounds.append(r)
