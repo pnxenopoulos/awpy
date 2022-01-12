@@ -597,6 +597,7 @@ class DemoParser:
 
     def clean_rounds(
         self,
+        remove_no_frames=True,
         remove_warmups=True,
         remove_knifes=True,
         remove_bad_timings=True,
@@ -608,6 +609,7 @@ class DemoParser:
         """Cleans a parsed demofile JSON.
 
         Args:
+            remove_no_frames (bool, optional): Remove rounds where there are no frames. Default to True.
             remove_warmups (bool, optional): Remove warmup rounds. Defaults to True.
             remove_knifes (bool, optional): Remove knife rounds. Defaults to True.
             remove_bad_timings (bool, optional): Remove bad timings. Defaults to True.
@@ -623,7 +625,12 @@ class DemoParser:
             dict: A dictionary of the cleaned demo.
         """
         if self.json:
-            self.remove_rounds_with_no_frames()
+            if remove_no_frames:
+                if not self.parse_frames:
+                    self.logger.warning(
+                        "parse_frames is set to False, must be true for remove_no_frames to work."
+                    )
+                self.remove_rounds_with_no_frames()
             if remove_warmups:
                 self.remove_warmups()
             if remove_knifes:
