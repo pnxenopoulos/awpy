@@ -28,5 +28,8 @@
     },
     "astralis-vs-liquid-m2-nuke": {
         "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem"
+    },
+    "vitality-vs-g2-m2-mirage": {
+        "url": "https://storage.googleapis.com/csgo-tests/vitality-vs-g2-m2-mirage.dem"
     }
 }
