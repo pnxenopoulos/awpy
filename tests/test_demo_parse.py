@@ -85,7 +85,7 @@ class TestDemoParser:
 
     def test_wrong_demo_path(self):
         """Tests if failure on wrong demofile path"""
-        with pytest.raises(ValueError):
+        with pytest.raises(FileNotFoundError):
             self.parser_wrong_demo_path = DemoParser(
                 demofile="bad.dem",
                 log=False,
