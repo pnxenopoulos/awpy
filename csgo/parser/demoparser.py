@@ -234,14 +234,14 @@ class DemoParser:
             ValueError: Raises a ValueError if the return_type is not "json" or "df"
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        self._parse_demo()
+        self.parse_demo()
         self.read_json(json_path=self.outpath + "/" + self.output_file)
         if self.json:
             self.logger.info("JSON output found")
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = self._parse_json()
+                demo_data = self.parse_json_to_df()
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
