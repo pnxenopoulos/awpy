@@ -605,6 +605,7 @@ class DemoParser:
         remove_excess_kills=True,
         remove_bad_endings=True,
         return_type="json",
+        json_indent=None,
     ):
         """Cleans a parsed demofile JSON.
 
@@ -645,7 +646,7 @@ class DemoParser:
                 self.remove_end_round()
             self.renumber_rounds()
             self.rescore_rounds()
-            self.write_json()
+            self.write_json(indent=json_indent)
             if return_type == "json":
                 return self.json
             elif return_type == "df":
@@ -660,10 +661,10 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def write_json(self):
+    def write_json(self, indent=None):
         """Rewrite the JSON file"""
         with open(self.output_file, "w", encoding="utf8") as fp:
-            json.dump(self.json, fp)
+            json.dump(self.json, fp, indent=indent)
 
     def renumber_rounds(self):
         """Renumbers the rounds.
