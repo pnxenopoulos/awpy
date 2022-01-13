@@ -761,11 +761,14 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if len(r["frames"]) > 0:
                     f = r["frames"][0]
-                    if f["ct"]["players"] == None or f["t"]["players"] == None:
-                        cleaned_rounds.append(r)
-                        self.logger.warning("This round does not have players for at least one side in its first frame. Not cleaning excess players. Consider running the clean_rounds function with remove_excess_players=False!")
-                    elif (len(f["ct"]["players"]) <= 5) and (len(f["t"]["players"]) <= 5):
-                        cleaned_rounds.append(r)
+                    if f["ct"]["players"] == None:
+                        if f["t"]["players"] == None:
+                            pass
+                        elif len(f["t"]["players"]) <= 5:
+                            cleaned_rounds.append(r)
+                    elif len(f["ct"]["players"]) <= 5:
+                        if (f["t"]["players"] == None) or (len(f["t"]["players"]) <= 5):
+                            cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
