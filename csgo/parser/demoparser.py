@@ -631,10 +631,6 @@ class DemoParser:
         """
         if self.json:
             if remove_no_frames:
-                if not self.parse_frames:
-                    self.logger.warning(
-                        "parse_frames is set to False, must be true for remove_no_frames to work."
-                    )
                 self.remove_rounds_with_no_frames()
             if remove_warmups:
                 self.remove_warmups()
@@ -740,11 +736,16 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
-            cleaned_rounds = []
-            for r in self.json["gameRounds"]:
-                if len(r["frames"]) > 0:
-                    cleaned_rounds.append(r)
-            self.json["gameRounds"] = cleaned_rounds
+            if not self.parse_frames:
+                    self.logger.warning(
+                        "parse_frames is set to False, must be true for remove_no_frames to work. Skipping remove_no_frames."
+                    )
+            else:
+                cleaned_rounds = []
+                for r in self.json["gameRounds"]:
+                    if len(r["frames"]) > 0:
+                        cleaned_rounds.append(r)
+                self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
@@ -760,20 +761,25 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
-            cleaned_rounds = []
-            # Remove rounds where the number of players is too large
-            for r in self.json["gameRounds"]:
-                if len(r["frames"]) > 0:
-                    f = r["frames"][0]
-                    if f["ct"]["players"] == None:
-                        if f["t"]["players"] == None:
-                            pass
-                        elif len(f["t"]["players"]) <= 5:
-                            cleaned_rounds.append(r)
-                    elif len(f["ct"]["players"]) <= 5:
-                        if (f["t"]["players"] == None) or (len(f["t"]["players"]) <= 5):
-                            cleaned_rounds.append(r)
-            self.json["gameRounds"] = cleaned_rounds
+            if not self.parse_frames:
+                    self.logger.warning(
+                        "parse_frames is set to False, must be true for remove_no_frames to work. Skipping remove_no_frames."
+                    )
+            else:
+                cleaned_rounds = []
+                # Remove rounds where the number of players is too large
+                for r in self.json["gameRounds"]:
+                    if len(r["frames"]) > 0:
+                        f = r["frames"][0]
+                        if f["ct"]["players"] == None:
+                            if f["t"]["players"] == None:
+                                pass
+                            elif len(f["t"]["players"]) <= 5:
+                                cleaned_rounds.append(r)
+                        elif len(f["ct"]["players"]) <= 5:
+                            if (f["t"]["players"] == None) or (len(f["t"]["players"]) <= 5):
+                                cleaned_rounds.append(r)
+                self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
