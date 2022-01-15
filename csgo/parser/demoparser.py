@@ -763,7 +763,7 @@ class DemoParser:
         if self.json:
             if not self.parse_frames:
                     self.logger.warning(
-                        "parse_frames is set to False, must be true for remove_no_frames to work. Skipping remove_no_frames."
+                        "parse_frames is set to False, must be true for remove_excess_players to work. Skipping remove_excess_players."
                     )
             else:
                 cleaned_rounds = []
