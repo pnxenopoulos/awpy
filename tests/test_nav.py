@@ -8,7 +8,6 @@ from csgo.analytics.nav import (
     generate_position_token,
     point_distance,
     point_in_area,
-    PlaceEncoder,
 )
 
 
