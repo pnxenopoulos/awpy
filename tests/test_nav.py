@@ -188,6 +188,3 @@ class TestNav:
         )
         with pytest.raises(ValueError):
             generate_position_token("de_does_not_exist", frame)
-        with pytest.raises(ValueError):
-            frame["ct"]["players"] == []
-            generate_position_token("de_nuke", frame)
