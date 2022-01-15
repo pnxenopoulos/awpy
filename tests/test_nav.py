@@ -8,7 +8,6 @@ from csgo.analytics.nav import (
     generate_position_token,
     point_distance,
     point_in_area,
-    PlaceEncoder,
 )
 
 
@@ -163,17 +162,29 @@ class TestNav:
 
     def test_position_token(self):
         """Tests that position token returns correct values"""
-        frame = {}
-        token = generate_position_token(frame)
+        map_name = "de_nuke"
+        frame = {
+            "ct": {
+                "players": [
+                    {"x": -814.4315185546875, "y": -950.5277099609375, "z": -413.96875}
+                ]
+            },
+            "t": {
+                "players": [
+                    {"x": -814.4315185546875, "y": -950.5277099609375, "z": -413.96875}
+                ]
+            },
+        }
+        token = generate_position_token(map_name, frame)
         assert type(token) == dict
         assert "tToken" in token.keys()
         assert "ctToken" in token.keys()
         assert "token" in token.keys()
-
-    def test_place_encode(self):
-        """Tests that place encoding works for correct values"""
-        e = PlaceEncoder()
-        assert np.sum(e.encode("place", "TSpawn")) == 1
-        assert np.sum(e.encode("place", "TSpawnnn")) == 0
-        assert np.sum(e.encode("map", "de_dust2")) == 1
-        assert np.sum(e.encode("map", "de_dust0")) == 0
+        assert token["tToken"] == "000000000000000000100000000000"
+        assert token["ctToken"] == "000000000000000000100000000000"
+        assert (
+            token["token"]
+            == "000000000000000000100000000000000000000000000000100000000000"
+        )
+        with pytest.raises(ValueError):
+            generate_position_token("de_does_not_exist", frame)
