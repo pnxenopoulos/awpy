@@ -35,6 +35,7 @@ class DemoParser:
         trade_time=5,
         dmg_rolled=False,
         buy_style="hltv",
+        json_indentation=False,
     ):
         # Set up logger
         if log:
@@ -122,8 +123,10 @@ class DemoParser:
 
         self.dmg_rolled = dmg_rolled
         self.parse_frames = parse_frames
+        self.json_indentation = json_indentation
         self.logger.info("Rollup damages set to " + str(self.dmg_rolled))
         self.logger.info("Parse frames set to " + str(self.parse_frames))
+        self.logger.info("Output json indentation set to " + str(self.json_indentation))
 
         # Set parse error to False
         self.parse_error = False
@@ -179,6 +182,8 @@ class DemoParser:
             self.parser_cmd.append("--dmgrolled")
         if self.parse_frames:
             self.parser_cmd.append("--parseframes")
+        if self.json_indentation:
+            self.parser_cmd.append("--jsonindentation")
         proc = subprocess.Popen(
             self.parser_cmd,
             stdout=subprocess.PIPE,
@@ -605,7 +610,6 @@ class DemoParser:
         remove_excess_kills=True,
         remove_bad_endings=True,
         return_type="json",
-        json_indent=None,
     ):
         """Cleans a parsed demofile JSON.
 
@@ -646,7 +650,7 @@ class DemoParser:
                 self.remove_end_round()
             self.renumber_rounds()
             self.rescore_rounds()
-            self.write_json(indent=json_indent)
+            self.write_json()
             if return_type == "json":
                 return self.json
             elif return_type == "df":
@@ -661,10 +665,10 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def write_json(self, indent=None):
+    def write_json(self):
         """Rewrite the JSON file"""
         with open(self.output_file, "w", encoding="utf8") as fp:
-            json.dump(self.json, fp, indent=indent)
+            json.dump(self.json, fp, indent=(1 if self.json_indentation else None))
 
     def renumber_rounds(self):
         """Renumbers the rounds.
