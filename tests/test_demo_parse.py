@@ -297,3 +297,12 @@ class TestDemoParser:
         self.round_clean_data = self.round_clean_parser.parse()
         self.round_clean_parser.remove_time_rounds()
         assert len(self.round_clean_data["gameRounds"]) == 24
+
+    def test_player_clean(self):
+        """Tests that remove excess players is working."""
+        self.player_clean_parser = DemoParser(
+            demofile="pov-clean.dem", log=False, parse_frames=True
+        )
+        self.player_clean_data = self.round_clean_parser.parse()
+        self.player_clean_parser.remove_excess_players()
+        assert len(self.player_clean_data["gameRounds"]) == 28
