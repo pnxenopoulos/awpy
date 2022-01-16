@@ -303,6 +303,6 @@ class TestDemoParser:
         self.player_clean_parser = DemoParser(
             demofile="pov-clean.dem", log=False, parse_frames=True
         )
-        self.player_clean_data = self.round_clean_parser.parse()
+        self.player_clean_data = self.player_clean_parser.parse()
         self.player_clean_parser.remove_excess_players()
         assert len(self.player_clean_data["gameRounds"]) == 28
