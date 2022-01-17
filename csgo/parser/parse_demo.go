@@ -2041,7 +2041,7 @@ func main() {
 			tPlayers := gs.TeamTerrorists().Members()
 
 			for _, p := range tPlayers {
-				if (p != nil) & (playerInList(p, tPlayers) == false) {
+				if (p != nil) & (playerInList(p, currentFrame.T.Players) == false) {
 					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p))
 				}
 			}
@@ -2059,7 +2059,7 @@ func main() {
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 
 			for _, p := range ctPlayers {
-				if (p != nil) & (playerInList(p, ctPlayers) == false) {
+				if (p != nil) & (playerInList(p, currentFrame.CT.Players) == false) {
 					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p))
 				}
 			}
