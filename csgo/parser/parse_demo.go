@@ -363,7 +363,11 @@ type PlayerInfo struct {
 	IsUnknown       bool         `json:"isUnknown"`
 	Inventory       []WeaponInfo `json:"inventory"`
 	EqVal           int64        `json:"equipmentValue"`
+	EqValFreeze     int64        `json:"equipmentValueFreezetimeEnd"`
+	EqValStart      int64        `json:"equipmentValueRoundStart"`
 	Money           int64        `json:"cash"`
+	MoneySpentRound int64        `json:"cashSpendThisRound"`
+	MoneySpentTotal int64        `json:"cashSpendTotal"`
 	HasHelmet       bool         `json:"hasHelmet"`
 	HasDefuse       bool         `json:"hasDefuse"`
 	Ping            int64        `json:"ping"`
@@ -626,7 +630,11 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	currentPlayer.HasDefuse = p.HasDefuseKit()
 	currentPlayer.HasHelmet = p.HasHelmet()
 	currentPlayer.Money = int64(p.Money())
+	currentPlayer.MoneySpentRound = int64(p.MoneySpentThisRound())
+	currentPlayer.MoneySpentTotal = int64(p.MoneySpentTotal())
 	currentPlayer.EqVal = int64(p.EquipmentValueCurrent())
+	currentPlayer.EqValFreeze = int64(p.equipmentValueFreezetimeEnd())
+	currentPlayer.EqValStart = int64(p.equipmentValueRoundStart())
 	currentPlayer.Ping = int64(p.Ping())
 	currentPlayer.TotalUtility = int64(0)
 	activeWeapon := ""
