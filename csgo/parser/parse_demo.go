@@ -200,6 +200,9 @@ type DamageAction struct {
 	ArmorDamage      int64    `json:"armorDamage"`
 	ArmorDamageTaken int64    `json:"armorDamageTaken"`
 	HitGroup         string   `json:"hitGroup"`
+	IsTeamDmg        bool     `json:"isFriendlyFire"`
+	Distance         float64  `json:"distance"`
+	ZoomLevel        *int64    `json:"zoomLevel"`
 }
 
 // KillAction events
@@ -269,6 +272,7 @@ type WeaponFireAction struct {
 	PlayerViewY    float64 `json:"playerViewY"`
 	PlayerStrafe   bool    `json:"playerStrafe"`
 	Weapon         string  `json:"weapon"`
+	ZoomLevel      int64    `json:"zoomLevel"`
 }
 
 // FlashAction events
@@ -562,6 +566,19 @@ func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) st
 	minutes := int64(math.Floor((seconds_remaining/60)))
 	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
 	return formatTimeNumber(minutes) + ":" + formatTimeNumber(seconds)
+}
+
+func playerInList(p *common.Player, players []PlayerInfo) bool {
+	if len(players) > 0 {
+		for _, i := range players {
+			if int64(p.SteamID64) == i.PlayerSteamID {
+				return True
+			}
+		}
+	} else {
+		return false
+	}
+	return false
 }
 
 func parsePlayer(p *common.Player) PlayerInfo {
@@ -1407,6 +1424,7 @@ func main() {
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
+			currentWeaponFire.ZoomLevel := int64(e.Attacker.Equipment.ZoomLevel())
 
 			// add
 			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
@@ -1937,6 +1955,9 @@ func main() {
 			currentDamage.AttackerViewY = &attackerViewY
 			attackerStrafe := e.Attacker.IsWalking()
 			currentDamage.AttackerStrafe = &attackerStrafe
+
+			zoomLevel := int64(e.Attacker.Equipment.ZoomLevel())
+			currentDamage.ZoomLevel = &zoomLevel
 		}
 
 		// Victim
@@ -1974,6 +1995,21 @@ func main() {
 			victimViewY := float64(e.Player.ViewDirectionY())
 			currentDamage.VictimViewX = &victimViewX
 			currentDamage.VictimViewY = &victimViewY
+
+			// Parse team damage
+			currentDamage.IsTeamDmg = false
+			if *currentDamage.AttackerSide == *currentDamage.VictimSide {
+				currentDamage.IsTeamDmg = true
+			}
+
+			// Parse distance
+			currentDamage.Distance = 0.0
+			if e.Attacker != nil {
+				X := math.Pow((*currentDamage.AttackerX - *currentDamage.VictimX), 2)
+				Y := math.Pow((*currentDamage.AttackerY - *currentDamage.VictimY), 2)
+				Z := math.Pow((*currentDamage.AttackerZ - *currentDamage.VictimZ), 2)
+				currentDamage.Distance = math.Sqrt(X + Y + Z)
+			}
 		}
 
 		// Add damages
@@ -2005,7 +2041,7 @@ func main() {
 			tPlayers := gs.TeamTerrorists().Members()
 
 			for _, p := range tPlayers {
-				if p != nil {
+				if (p != nil) & (!playerInList(p, tPlayers)) {
 					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p))
 				}
 			}
@@ -2023,7 +2059,7 @@ func main() {
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 
 			for _, p := range ctPlayers {
-				if p != nil {
+				if (p != nil) & (!playerInList(p, ctPlayers)) {
 					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p))
 				}
 			}
