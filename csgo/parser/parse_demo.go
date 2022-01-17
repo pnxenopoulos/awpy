@@ -1998,7 +1998,7 @@ func main() {
 
 			// Parse team damage
 			currentDamage.IsTeamDmg = false
-			if *currentDamage.AttackerSide == *currentDamage.VictimSide {
+			if (*currentDamage.AttackerSide == *currentDamage.VictimSide) & (e.Attacker != nil) & (e.Victim != nil) {
 				currentDamage.IsTeamDmg = true
 			}
 
