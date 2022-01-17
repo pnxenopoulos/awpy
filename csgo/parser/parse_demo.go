@@ -572,7 +572,7 @@ func playerInList(p *common.Player, players []PlayerInfo) bool {
 	if len(players) > 0 {
 		for _, i := range players {
 			if int64(p.SteamID64) == i.PlayerSteamID {
-				return True
+				return true
 			}
 		}
 	} else {
@@ -1424,7 +1424,7 @@ func main() {
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
-			currentWeaponFire.ZoomLevel := int64(e.Attacker.Equipment.ZoomLevel())
+			currentWeaponFire.ZoomLevel = int64(e.Shooter.Equipment.ZoomLevel())
 
 			// add
 			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
@@ -2041,7 +2041,7 @@ func main() {
 			tPlayers := gs.TeamTerrorists().Members()
 
 			for _, p := range tPlayers {
-				if (p != nil) & (!playerInList(p, tPlayers)) {
+				if (p != nil) & (playerInList(p, tPlayers) == false) {
 					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p))
 				}
 			}
@@ -2059,7 +2059,7 @@ func main() {
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 
 			for _, p := range ctPlayers {
-				if (p != nil) & (!playerInList(p, ctPlayers)) {
+				if (p != nil) & (playerInList(p, ctPlayers) == false) {
 					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p))
 				}
 			}
