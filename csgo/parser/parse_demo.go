@@ -1424,7 +1424,7 @@ func main() {
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
-			currentWeaponFire.ZoomLevel = int64(e.Shooter.Equipment.ZoomLevel())
+			currentWeaponFire.ZoomLevel = int64(e.Shooter.Weapon.ZoomLevel())
 
 			// add
 			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
@@ -1956,7 +1956,7 @@ func main() {
 			attackerStrafe := e.Attacker.IsWalking()
 			currentDamage.AttackerStrafe = &attackerStrafe
 
-			zoomLevel := int64(e.Attacker.Equipment.ZoomLevel())
+			zoomLevel := int64(e.Attacker.Weapon.ZoomLevel())
 			currentDamage.ZoomLevel = &zoomLevel
 		}
 
@@ -2041,8 +2041,10 @@ func main() {
 			tPlayers := gs.TeamTerrorists().Members()
 
 			for _, p := range tPlayers {
-				if (p != nil) & (playerInList(p, currentFrame.T.Players) == false) {
-					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p))
+				if p != nil {
+					if playerInList(p, currentFrame.T.Players) == false {
+						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p))
+					}
 				}
 			}
 			
@@ -2059,8 +2061,10 @@ func main() {
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 
 			for _, p := range ctPlayers {
-				if (p != nil) & (playerInList(p, currentFrame.CT.Players) == false) {
-					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p))
+				if p != nil {
+					if playerInList(p, currentFrame.CT.Players) == false {
+						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p))
+					}
 				}
 			}
 			
