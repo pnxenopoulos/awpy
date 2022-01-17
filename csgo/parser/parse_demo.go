@@ -633,7 +633,7 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	currentPlayer.MoneySpentRound = int64(p.MoneySpentThisRound())
 	currentPlayer.MoneySpentTotal = int64(p.MoneySpentTotal())
 	currentPlayer.EqVal = int64(p.EquipmentValueCurrent())
-	currentPlayer.EqValFreeze = int64(p.EquipmentValueFreezetimeEnd())
+	currentPlayer.EqValFreeze = int64(p.EquipmentValueFreezeTimeEnd())
 	currentPlayer.EqValStart = int64(p.EquipmentValueRoundStart())
 	currentPlayer.Ping = int64(p.Ping())
 	currentPlayer.TotalUtility = int64(0)
