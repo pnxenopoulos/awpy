@@ -31,5 +31,8 @@
     },
     "vitality-vs-g2-m2-mirage": {
         "url": "https://storage.googleapis.com/csgo-tests/vitality-vs-g2-m2-mirage.dem"
+    },
+    "pov-clean": {
+        "url": "https://storage.googleapis.com/csgo-tests/041.dem"
     }
 }

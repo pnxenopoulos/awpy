@@ -778,6 +778,7 @@ func main() {
 	roundBuyPtr := fl.String("buystyle", "hltv", "Round buy style")
 	damagesRolledPtr := fl.Bool("dmgrolled", false, "Roll up damages")
 	demoIDPtr := fl.String("demoid", "", "Demo string ID")
+	jsonIndentationPtr := fl.Bool("jsonindentation", false, "Indent JSON file")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
@@ -789,6 +790,7 @@ func main() {
 	tradeTime := int64(*tradeTimePtr)
 	roundBuyStyle := *roundBuyPtr
 	damagesRolled := *damagesRolledPtr
+	jsonIndentation := *jsonIndentationPtr
 	outpath := *outpathPtr
 
 	// Read in demofile
@@ -2120,7 +2122,12 @@ func main() {
 		}
 		
 		// Write the JSON
-		file, _ := json.MarshalIndent(currentGame, "", " ")
+		var file []byte
+		if jsonIndentation {
+			file, _ = json.MarshalIndent(currentGame, "", " ")
+		} else {
+			file, _ = json.Marshal(currentGame)
+		}
 		_ = ioutil.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
 	}
 
