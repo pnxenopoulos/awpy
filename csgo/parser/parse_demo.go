@@ -1424,7 +1424,7 @@ func main() {
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
-			currentWeaponFire.ZoomLevel = int64(e.Shooter.Weapon.ZoomLevel())
+			currentWeaponFire.ZoomLevel = int64(e.Weapon.ZoomLevel())
 
 			// add
 			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
@@ -1956,7 +1956,7 @@ func main() {
 			attackerStrafe := e.Attacker.IsWalking()
 			currentDamage.AttackerStrafe = &attackerStrafe
 
-			zoomLevel := int64(e.Attacker.Weapon.ZoomLevel())
+			zoomLevel := int64(e.Weapon.ZoomLevel())
 			currentDamage.ZoomLevel = &zoomLevel
 		}
 
