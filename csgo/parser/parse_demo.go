@@ -272,7 +272,7 @@ type WeaponFireAction struct {
 	PlayerViewY    float64 `json:"playerViewY"`
 	PlayerStrafe   bool    `json:"playerStrafe"`
 	Weapon         string  `json:"weapon"`
-	ZoomLevel      int64    `json:"zoomLevel"`
+	ZoomLevel      int64   `json:"zoomLevel"`
 }
 
 // FlashAction events
@@ -371,6 +371,7 @@ type PlayerInfo struct {
 	HasHelmet       bool         `json:"hasHelmet"`
 	HasDefuse       bool         `json:"hasDefuse"`
 	Ping            int64        `json:"ping"`
+	ZoomLevel       int64   `json:"zoomLevel"`
 }
 
 // WeaponInfo contains data on an inventory weapon
@@ -641,6 +642,7 @@ func parsePlayer(p *common.Player) PlayerInfo {
 
 	if (p.IsAlive()) && (p.ActiveWeapon() != nil) {
 		activeWeapon = p.ActiveWeapon().String()
+		currentPlayer.ZoomLevel = int64(p.ActiveWeapon().ZoomLevel())
 	}
 
 	currentPlayer.ActiveWeapon = activeWeapon
