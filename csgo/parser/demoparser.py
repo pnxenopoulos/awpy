@@ -645,7 +645,7 @@ class DemoParser:
             if remove_bad_endings:
                 self.remove_end_round()
             self.renumber_rounds()
-            self.rescore_rounds()
+            # self.rescore_rounds() -- Need to edit to take into account half switches
             self.write_json()
             if return_type == "json":
                 return self.json
@@ -737,9 +737,9 @@ class DemoParser:
         """
         if self.json:
             if not self.parse_frames:
-                    self.logger.warning(
-                        "parse_frames is set to False, must be true for remove_no_frames to work. Skipping remove_no_frames."
-                    )
+                self.logger.warning(
+                    "parse_frames is set to False, must be true for remove_no_frames to work. Skipping remove_no_frames."
+                )
             else:
                 cleaned_rounds = []
                 for r in self.json["gameRounds"]:
@@ -762,9 +762,9 @@ class DemoParser:
         """
         if self.json:
             if not self.parse_frames:
-                    self.logger.warning(
-                        "parse_frames is set to False, must be true for remove_excess_players to work. Skipping remove_excess_players."
-                    )
+                self.logger.warning(
+                    "parse_frames is set to False, must be true for remove_excess_players to work. Skipping remove_excess_players."
+                )
             else:
                 cleaned_rounds = []
                 # Remove rounds where the number of players is too large
@@ -777,7 +777,9 @@ class DemoParser:
                             elif len(f["t"]["players"]) <= 5:
                                 cleaned_rounds.append(r)
                         elif len(f["ct"]["players"]) <= 5:
-                            if (f["t"]["players"] == None) or (len(f["t"]["players"]) <= 5):
+                            if (f["t"]["players"] == None) or (
+                                len(f["t"]["players"]) <= 5
+                            ):
                                 cleaned_rounds.append(r)
                 self.json["gameRounds"] = cleaned_rounds
         else:
