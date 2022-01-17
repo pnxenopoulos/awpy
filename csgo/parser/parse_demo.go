@@ -637,12 +637,12 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	currentPlayer.EqValFreeze = int64(p.EquipmentValueFreezeTimeEnd())
 	currentPlayer.EqValStart = int64(p.EquipmentValueRoundStart())
 	currentPlayer.Ping = int64(p.Ping())
-	currentPlayer.ZoomLevel = int64(p.ActiveWeapon().ZoomLevel())
 	currentPlayer.TotalUtility = int64(0)
 	activeWeapon := ""
 
 	if (p.IsAlive()) && (p.ActiveWeapon() != nil) {
 		activeWeapon = p.ActiveWeapon().String()
+		currentPlayer.ZoomLevel = int64(p.ActiveWeapon().ZoomLevel())
 	}
 
 	currentPlayer.ActiveWeapon = activeWeapon
