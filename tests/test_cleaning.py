@@ -2,7 +2,7 @@ import pytest
 
 import pandas as pd
 
-from csgo.parser.cleaning import associate_entities, replace_entities, remove_dupes
+from csgo.parser.cleaning import associate_entities, replace_entities
 
 
 class TestCleaning:
@@ -43,6 +43,13 @@ class TestCleaning:
         c = associate_entities(a, b, metric="jaro")
         assert c["misutaaa-"] == "misuta"
 
+    def test_difflib(self):
+        """Test difflib"""
+        a = ["misutaaa-", "ZyW0o//", "peeter"]
+        b = ["misuta", "Zywoo", "peter"]
+        c = associate_entities(a, b, metric="difflib")
+        assert c["misutaaa-"] == "misuta"
+
     def test_wrong_metric(self):
         """Tests if submitting a wrong metric raises an error."""
         a = ["misutaaa-", "ZyW0o//"]
@@ -67,9 +74,3 @@ class TestCleaning:
         entities = {"DE": "Germany", "US": "USA", "BR": "Brazil"}
         with pytest.raises(ValueError):
             replace_entities(df, "Countryyy", entities)
-
-    def test_remove_dupes(self):
-        """Tests remove dupes"""
-        df = pd.DataFrame({"Person": ["peter", "peter"], "Country": ["US", "US"]})
-        no_dupes = remove_dupes(df, cols=["Person", "Country"])
-        assert no_dupes.shape[0] == 1

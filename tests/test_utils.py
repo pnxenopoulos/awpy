@@ -1,8 +1,6 @@
-import os
 import pytest
-import pandas as pd
 
-from csgo.utils import AutoVivification, check_go_version
+from csgo.utils import AutoVivification, check_go_version, is_in_range
 
 
 class TestUtils:
@@ -18,3 +16,8 @@ class TestUtils:
         a = AutoVivification()
         a["Ping"]["Pong"] = "Test"
         assert a["Ping"]["Pong"] == "Test"
+
+    def test_is_in_range(self):
+        """Tests if in range"""
+        assert is_in_range(0, -1, 1)
+        assert not is_in_range(-100, -1, 1)

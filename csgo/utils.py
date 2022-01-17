@@ -7,21 +7,6 @@ import re
 import subprocess
 
 
-# class NpEncoder(json.JSONEncoder):
-#     """ Class to change numpy encodings for JSON file writing
-#     """
-
-#     def default(self, obj):
-#         if isinstance(obj, np.integer):
-#             return int(obj)
-#         elif isinstance(obj, np.floating):
-#             return float(obj)
-#         elif isinstance(obj, np.ndarray):
-#             return obj.tolist()
-#         else:
-#             return super(NpEncoder, self).default(obj)
-
-
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature. Stolen from https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python"""
 
@@ -50,3 +35,26 @@ def check_go_version():
     except Exception as e:
         print(e)
         return False
+
+
+def is_in_range(value, min, max):
+    if value >= min and value <= max:
+        return True
+    else:
+        return False
+
+
+def transform_csv_to_json(sampleCsv):
+    """From Adi. Used to transform a nav file CSV to JSON."""
+    finalDic = {}
+    for curMap in sampleCsv["mapName"].unique():
+        mapDic = {}
+        for i in sampleCsv[sampleCsv["mapName"] == curMap].index:
+            curTile = sampleCsv.iloc[i]
+            curDic = {}
+            for curFeature in sampleCsv.columns:
+                if curFeature not in ["mapName", "areaId"]:
+                    curDic[curFeature] = curTile[curFeature]
+            mapDic[curTile["areaId"]] = curDic
+        finalDic[curMap] = mapDic
+    return finalDic

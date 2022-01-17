@@ -1,0 +1,4 @@
+# CSGO Demofiles
+[Index](README.md) | [Data](data.md) | [Demofiles](demofiles.md) | [Parser](parser.md) | [Demo Cleaning](demo_cleaning.md) | [Analytics](analytics.md) | [Visualization](visualization.md)
+
+Demo files (`.dem`) are used to record games in CSGO (but really, most source engine-based games). The official Valve wiki page is found [here](https://developer.valvesoftware.com/wiki/DEM_Format). You can acquire demofiles in a variety of ways, such as through HLTV, FACEIT, or through playing your own matchmaking games. Effectively, these files contain a serialization of events that occured in a CSGO match. Most demos we see are recorded by the server (GOTV). Demofiles are often messy, and may not align 1:1 with the actual game. Here is an overview of how our parser fits in with demo files.

@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import re
 import subprocess
 import pandas as pd
 
@@ -9,20 +8,33 @@ from csgo.utils import check_go_version
 
 
 class DemoParser:
-    """This class can parse a CSGO demofile to various outputs, such as JSON or CSV. Accessible via csgo.parser import DemoParser
+    """DemoParser can parse, load and clean data from a CSGO demofile. Can be instantiated without a specified demofile.
 
     Attributes:
-        demofile (string) : A string denoting the path to the demo file, which ends in .dem
-        log (boolean)     : A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
-        demo_id (string) : A unique demo name/game id. Default is inferred from demofile name
-        parse_rate (int)  : One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 32.
+        demofile (string): A string denoting the path to the demo file, which ends in .dem
+        log (boolean): A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
+        demo_id (string): A unique demo name/game id. Default is inferred from demofile name
+        parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
+        parse_frames (bool): Flag if you want to parse frames (trajectory data) or not
+        trade_time (int): Length of the window for a trade (in seconds). Default is 5.
+        dmg_rolled (bool): Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
+        buy_style (string): Buy style string, one of "hltv" or "csgo"
 
     Raises:
-        ValueError : Raises a ValueError if the Golang version is lower than 1.14
+        ValueError: Raises a ValueError if the Golang version is lower than 1.14
     """
 
     def __init__(
-        self, demofile="", outpath=None, log=False, demo_id=None, parse_rate=None
+        self,
+        demofile="",
+        outpath=None,
+        log=False,
+        demo_id=None,
+        parse_rate=128,
+        parse_frames=True,
+        trade_time=5,
+        dmg_rolled=False,
+        buy_style="hltv",
     ):
         # Set up logger
         if log:
@@ -45,23 +57,10 @@ class DemoParser:
             )
             self.logger = logging.getLogger("CSGODemoParser")
 
-        # Check if Golang is >= 1.14
-        acceptable_go = check_go_version()
-        if not acceptable_go:
-            self.logger.error("Go version too low! Needs 1.14.0")
-            raise ValueError("Go version too low! Needs 1.14.0")
-        else:
-            self.logger.info("Go version>=1.14.0")
-
-        # Check if demofile exists
-        if not os.path.exists(os.path.abspath(demofile)):
-            self.logger.error("Demofile path does not exist!")
-            raise ValueError("Demofile path does not exist!")
-
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
         self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
-        if demo_id is None:
+        if (demo_id is None) | (demo_id == ""):
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
             self.demo_id = demo_id
@@ -71,50 +70,117 @@ class DemoParser:
             self.outpath = os.path.abspath(outpath)
         self.logger.info("Setting demo id to " + self.demo_id)
 
-        # Handle parse rate. Must be a power of 2^0 to 2^7. If not, then default to 2^5.
-        if parse_rate is None:
-            self.logger.warning("No parse rate set")
-            self.parse_rate = 32
-        elif parse_rate == 1:
-            self.logger.warning("A parse rate of 1 will parse EVERY tick. This process will be very slow.")
-            self.parse_rate = 1
-        elif parse_rate not in [1, 2, 4, 8, 16, 32, 64, 128]:
+        # Handle parse rate. If the parse rate is less than 64, likely to be slow
+        if parse_rate < 1 or type(parse_rate) is not int:
             self.logger.warning(
                 "Parse rate of "
                 + str(parse_rate)
-                + " not acceptable! Parse rate must be a power of 2 between 2^0 and 2^7. Setting to DEFAULT value of 32."
+                + " not acceptable! Parse rate must be an integer greater than 0."
             )
-            self.parse_rate = 32
+            parse_rate = 128
+            self.parse_rate = parse_rate
+
+        if parse_rate < 64 and parse_rate > 1:
+            self.logger.warning(
+                "A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos."
+            )
+            self.parse_rate = parse_rate
+        elif parse_rate >= 256:
+            self.logger.warning(
+                "A high parse rate means very few frames. Only use for testing purposes."
+            )
+            self.parse_rate = parse_rate
         else:
             self.parse_rate = parse_rate
         self.logger.info("Setting parse rate to " + str(self.parse_rate))
 
+        # Handle trade time
+        if trade_time <= 0:
+            self.logger.warning(
+                "Trade time can't be negative, setting to default value of 5 seconds."
+            )
+            self.trade_time = 5
+        elif trade_time > 7:
+            self.logger.warning(
+                "Trade time of "
+                + str(trade_time)
+                + " is rather long. Consider a value between 4-7."
+            )
+        else:
+            self.trade_time = trade_time
+        self.logger.info("Setting trade time to " + str(self.trade_time))
+
+        # Handle buy style
+        if buy_style not in ["hltv", "csgo"]:
+            self.logger.warning(
+                "Buy style specified is not one of hltv, csgo, will be set to hltv by default"
+            )
+            self.buy_style = "hltv"
+        else:
+            self.buy_style = buy_style
+        self.logger.info("Setting buy style to " + str(self.buy_style))
+
+        self.dmg_rolled = dmg_rolled
+        self.parse_frames = parse_frames
+        self.logger.info("Rollup damages set to " + str(self.dmg_rolled))
+        self.logger.info("Parse frames set to " + str(self.parse_frames))
+
         # Set parse error to False
         self.parse_error = False
 
-    def _parse_demo(self):
-        """Parse a demofile using the Go script parse_demo.go -- this function takes no arguments, all arguments are set in initialization.
+    def parse_demo(self):
+        """Parse a demofile using the Go script parse_demo.go -- this function needs the .demofile to be set in the class, and the file needs to exist.
 
         Returns:
             Outputs a JSON file to current working directory.
+
+        Raises:
+            ValueError: Raises a ValueError if the Golang version is lower than 1.14
+            FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.
         """
+        # Check if Golang version is compatible
+        acceptable_go = check_go_version()
+        if not acceptable_go:
+            self.logger.error(
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+            )
+            raise ValueError(
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+            )
+        else:
+            self.logger.info("Go version>=1.14.0")
+
+        # Check if demofile exists
+        if not os.path.exists(os.path.abspath(self.demofile)):
+            self.logger.error("Demofile path does not exist!")
+            raise FileNotFoundError("Demofile path does not exist!")
+
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
+        self.parser_cmd = [
+            "go",
+            "run",
+            "parse_demo.go",
+            "-demo",
+            self.demofile,
+            "-parserate",
+            str(self.parse_rate),
+            "-tradetime",
+            str(self.trade_time),
+            "-buystyle",
+            str(self.buy_style),
+            "-demoid",
+            str(self.demo_id),
+            "-out",
+            self.outpath,
+        ]
+        if self.dmg_rolled:
+            self.parser_cmd.append("--dmgrolled")
+        if self.parse_frames:
+            self.parser_cmd.append("--parseframes")
         proc = subprocess.Popen(
-            [
-                "go",
-                "run",
-                "parse_demo.go",
-                "-demo",
-                self.demofile,
-                "-parserate",
-                str(self.parse_rate),
-                "-demoid",
-                str(self.demo_id),
-                "-out",
-                self.outpath,
-            ],
+            self.parser_cmd,
             stdout=subprocess.PIPE,
             cwd=path,
         )
@@ -128,16 +194,27 @@ class DemoParser:
             self.logger.error("No file produced, error in calling Golang")
             self.logger.error(stdout)
 
-    def _read_json(self):
-        """Reads the JSON file created by _parse_demo()
+    def read_json(self, json_path):
+        """Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.
+
+        Args:
+            json_path (string): Path to JSON file
 
         Returns:
-            A dictionary of the JSON output of _parse_demo()
+            JSON in Python dictionary form
+
+        Raises:
+            FileNotFoundError: Raises a FileNotFoundError if the JSON path doesn't exist
         """
-        json_path = self.outpath + "/" + self.output_file
-        self.logger.info("Reading in JSON from " + self.output_file)
-        with open(json_path) as f:
+        # Check if JSON exists
+        if not os.path.exists(os.path.abspath(json_path)):
+            self.logger.error("JSON path does not exist!")
+            raise FileNotFoundError("JSON path does not exist!")
+
+        # Read in json to .json attribute
+        with open(json_path, encoding="utf8") as f:
             demo_data = json.load(f)
+
         self.json = demo_data
         self.logger.info(
             "JSON data loaded, available in the `json` attribute to parser"
@@ -145,40 +222,26 @@ class DemoParser:
         return demo_data
 
     def parse(self, return_type="json"):
-        """Wrapper for _parse_demo() and _read_json(). Provided for user convenience.
+        """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
-            return_type (string) : Either "json" or "df"
+            return_type (string): Either "json" or "df"
 
         Returns:
-            A dictionary of output
+            A dictionary of output (which is parsed to a JSON file in the working directory)
+
+        Raises:
+            ValueError: Raises a ValueError if the return_type is not "json" or "df"
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        self._parse_demo()
-        self._read_json()
+        self.parse_demo()
+        self.read_json(json_path=self.outpath + "/" + self.output_file)
         if self.json:
-            self.logger.info("Successfully parsed JSON output")
-            self.logger.info("Successfully returned JSON output")
+            self.logger.info("JSON output found")
             if return_type == "json":
                 return self.json
             elif return_type == "df":
-                demo_data = {}
-                demo_data["MatchId"] = self.json["MatchId"]
-                demo_data["ClientName"] = self.json["ClientName"]
-                demo_data["MapName"] = self.json["MapName"]
-                demo_data["TickRate"] = self.json["TickRate"]
-                demo_data["PlaybackTicks"] = self.json["PlaybackTicks"]
-                demo_data["Rounds"] = self._parse_rounds(return_type=return_type)
-                demo_data["Kills"] = self._parse_kills(return_type=return_type)
-                demo_data["Damages"] = self._parse_damages(return_type=return_type)
-                demo_data["Grenades"] = self._parse_grenades(return_type=return_type)
-                demo_data["Flashes"] = self._parse_flashes(return_type=return_type)
-                demo_data["BombEvents"] = self._parse_bomb_events(
-                    return_type=return_type
-                )
-                demo_data["Frames"] = self._parse_frames(return_type=return_type)
-                demo_data["PlayerFrames"] = self._parse_player_frames(
-                    return_type=return_type
-                )
+                demo_data = self.parse_json_to_df()
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
@@ -186,342 +249,652 @@ class DemoParser:
                 raise ValueError("return_type must be either 'json' or 'df'")
         else:
             self.logger.error("JSON couldn't be returned")
-            raise AttributeError("No JSON parsed!")
+            raise AttributeError("No JSON parsed! Error in producing JSON.")
 
-    def _parse_frames(self, return_type):
-        """Returns frames as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
+    def parse_json_to_df(self):
+        """Returns JSON into dictionary where keys correspond to data frames
 
         Returns:
-            A list or Pandas dataframe
+            A dictionary of output
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse frames return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
-        try:
-            frames_dataframes = []
-            keys = ["Tick", "Second", "PositionToken", "TToken", "CTToken"]
-            for r in self.json["GameRounds"]:
-                for frame in r["Frames"]:
-                    frame_item = {}
-                    frame_item["BombDistanceToA"] = frame["BombDistanceToA"]
-                    frame_item["BombDistanceToB"] = frame["BombDistanceToB"]
-                    frame_item["RoundNum"] = r["RoundNum"]
-                    for k in keys:
-                        frame_item[k] = frame[k]
-                    for side in ["CT", "T"]:
-                        if side == "CT":
-                            frame_item["CTTeamName"] = frame["CT"]["TeamName"]
-                            frame_item["CTEqVal"] = frame["CT"]["TeamEqVal"]
-                            frame_item["CTAlivePlayers"] = frame["CT"]["AlivePlayers"]
-                            frame_item["CTUtility"] = frame["CT"]["TotalUtility"]
-                            frame_item["CTUtilityLevel"] = frame["CT"]["UtilityLevel"]
-                            frame_item["CTToken"] = frame["CT"]["PositionToken"]
-                        else:
-                            frame_item["TTeamName"] = frame["T"]["TeamName"]
-                            frame_item["TEqVal"] = frame["T"]["TeamEqVal"]
-                            frame_item["TAlivePlayers"] = frame["T"]["AlivePlayers"]
-                            frame_item["TUtility"] = frame["T"]["TotalUtility"]
-                            frame_item["TUtilityLevel"] = frame["T"]["UtilityLevel"]
-                            frame_item["TToken"] = frame["T"]["PositionToken"]
-                    frames_dataframes.append(frame_item)
-            frames_df = pd.DataFrame(frames_dataframes)
-            frames_df["MatchId"] = self.demo_id
-            frames_df["MapName"] = self.json["MapName"]
-            if return_type == "list":
-                self.logger.info("Parsed frames to list")
-                return frames_dataframes
-            elif return_type == "df":
-                self.logger.info("Parsed frames to Pandas DataFrame")
-                return pd.DataFrame(frames_dataframes)
-        except AttributeError:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
-
-    def _parse_player_frames(self, return_type):
-        """Returns player frames as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
-
-        Returns:
-            A list or Pandas dataframe
-        """
-        if return_type not in ["list", "df"]:
+        if self.json:
+            demo_data = {}
+            demo_data["matchID"] = self.json["matchID"]
+            demo_data["clientName"] = self.json["clientName"]
+            demo_data["mapName"] = self.json["mapName"]
+            demo_data["tickRate"] = self.json["tickRate"]
+            demo_data["playbackTicks"] = self.json["playbackTicks"]
+            demo_data["rounds"] = self._parse_rounds()
+            demo_data["kills"] = self._parse_kills()
+            demo_data["damages"] = self._parse_damages()
+            demo_data["grenades"] = self._parse_grenades()
+            demo_data["flashes"] = self._parse_flashes()
+            demo_data["weaponFires"] = self._parse_weapon_fires()
+            demo_data["bombEvents"] = self._parse_bomb_events()
+            demo_data["frames"] = self._parse_frames()
+            demo_data["playerFrames"] = self._parse_player_frames()
+            self.logger.info("Returned dataframe output")
+            return demo_data
+        else:
             self.logger.error(
-                "Parse player frames return_type must be either 'list' or 'df'"
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise ValueError("return_type must be either 'list' or 'df'")
-        try:
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def _parse_frames(self):
+        """Returns frames as a Pandas dataframe
+
+        Returns:
+            A Pandas dataframe where each row is a frame (game state) in the demo, which is a discrete point of time.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            frames_dataframes = []
+            keys = ["tick", "seconds"]
+            for r in self.json["gameRounds"]:
+                if r["frames"]:
+                    for frame in r["frames"]:
+                        frame_item = {}
+                        frame_item["roundNum"] = r["roundNum"]
+                        for k in keys:
+                            frame_item[k] = frame[k]
+                        for side in ["ct", "t"]:
+                            if side == "ct":
+                                frame_item["ctTeamName"] = frame["ct"]["teamName"]
+                                frame_item["ctEqVal"] = frame["ct"]["teamEqVal"]
+                                frame_item["ctAlivePlayers"] = frame["ct"][
+                                    "alivePlayers"
+                                ]
+                                frame_item["ctUtility"] = frame["ct"]["totalUtility"]
+                            else:
+                                frame_item["tTeamName"] = frame["t"]["teamName"]
+                                frame_item["tEqVal"] = frame["t"]["teamEqVal"]
+                                frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
+                                frame_item["tUtility"] = frame["t"]["totalUtility"]
+                        frames_dataframes.append(frame_item)
+            frames_df = pd.DataFrame(frames_dataframes)
+            frames_df["matchID"] = self.json["matchID"]
+            frames_df["mapName"] = self.json["mapName"]
+            return pd.DataFrame(frames_dataframes)
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def _parse_player_frames(self):
+        """Returns player frames as a Pandas dataframe.
+
+        Returns:
+            A Pandas dataframe where each row is a player's attributes at a given frame (game state).
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
             player_frames = []
-            for r in self.json["GameRounds"]:
-                for frame in r["Frames"]:
-                    for side in ["CT", "T"]:
-                        if frame[side]["Players"] is not None and (
-                            len(frame[side]["Players"]) > 0  # Used to be == 5, to ensure the sides were equal.
-                        ):
-                            for player in frame[side]["Players"]:
-                                player_item = {}
-                                player_item["RoundNum"] = r["RoundNum"]
-                                player_item["Tick"] = frame["Tick"]
-                                player_item["Second"] = frame["Second"]
-                                player_item["Side"] = side
-                                player_item["TeamName"] = frame[side]["TeamName"]
-                                player_item["PlayerName"] = player["Name"]
-                                player_item["PlayerSteamId"] = player["SteamId"]
-                                player_item["X"] = player["X"]
-                                player_item["Y"] = player["Y"]
-                                player_item["Z"] = player["Z"]
-                                player_item["ViewX"] = player["ViewX"]
-                                player_item["ViewY"] = player["ViewY"]
-                                player_item["AreaId"] = player["AreaId"]
-                                player_item["Hp"] = player["Hp"]
-                                player_item["Armor"] = player["Armor"]
-                                player_item["IsAlive"] = player["IsAlive"]
-                                player_item["IsFlashed"] = player["IsFlashed"]
-                                player_item["IsAirborne"] = player["IsAirborne"]
-                                player_item["IsDucking"] = player["IsDucking"]
-                                player_item["IsScoped"] = player["IsScoped"]
-                                player_item["IsWalking"] = player["IsWalking"]
-                                player_item["EqValue"] = player["EquipmentValue"]
-                                player_item["HasHelmet"] = player["HasHelmet"]
-                                player_item["HasDefuse"] = player["HasDefuse"]
-                                player_item["DistToBombsiteA"] = player[
-                                    "DistToBombsiteA"
-                                ]
-                                player_item["DistToBombsiteB"] = player[
-                                    "DistToBombsiteB"
-                                ]
-                                player_frames.append(player_item)
+            for r in self.json["gameRounds"]:
+                if r["frames"]:
+                    for frame in r["frames"]:
+                        for side in ["ct", "t"]:
+                            if frame[side]["players"] is not None and (
+                                len(frame[side]["players"])
+                                > 0  # Used to be == 5, to ensure the sides were equal.
+                            ):
+                                for player in frame[side]["players"]:
+                                    player_item = {}
+                                    player_item["roundNum"] = r["roundNum"]
+                                    player_item["tick"] = frame["tick"]
+                                    player_item["seconds"] = frame["seconds"]
+                                    player_item["side"] = side
+                                    player_item["teamName"] = frame[side]["teamName"]
+                                    for col in player.keys():
+                                        if col != "inventory":
+                                            player_item[col] = player[col]
+                                    player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
-            player_frames_df["MatchId"] = self.demo_id
-            player_frames_df["MapName"] = self.json["MapName"]
-            if return_type == "list":
-                self.logger.info("Parsed player frames to list")
-                return player_frames
-            elif return_type == "df":
-                self.logger.info("Parsed player frames to Pandas DataFrame")
-                return pd.DataFrame(player_frames_df)
-        except AttributeError:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            player_frames_df["matchID"] = self.json["matchID"]
+            player_frames_df["mapName"] = self.json["mapName"]
+            return pd.DataFrame(player_frames_df)
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
-    def _parse_rounds(self, return_type):
-        """Returns rounds as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
+    def _parse_rounds(self):
+        """Returns rounds as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
-        """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse rounds return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
+            A Pandas dataframe where each row is a round
 
-        try:
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
             rounds = []
-            keys = [
-                "RoundNum",
-                "StartTick",
-                "FreezeTimeEnd",
-                "EndTick",
-                "EndOfficialTick",
-                "TScore",
-                "CTScore",
-                "WinningSide",
-                "WinningTeam",
-                "LosingTeam",
-                "RoundEndReason",
-                "CTStartEqVal",
-                "CTBuyType",
-                "TStartEqVal",
-                "TBuyType",
+            cols = [
+                "roundNum",
+                "startTick",
+                "freezeTimeEndTick",
+                "endTick",
+                "endOfficialTick",
+                "tScore",
+                "ctScore",
+                "endTScore",
+                "endCTScore",
+                "tTeam",
+                "ctTeam",
+                "winningSide",
+                "winningTeam",
+                "losingTeam",
+                "roundEndReason",
+                "tStartEqVal",
+                "tRoundStartEqVal",
+                "tRoundStartMoney",
+                "tBuyType",
+                "tSpend",
+                "ctStartEqVal",
+                "ctRoundStartEqVal",
+                "ctRoundStartMoney",
+                "ctBuyType",
+                "ctSpend",
             ]
-            for r in self.json["GameRounds"]:
+            for r in self.json["gameRounds"]:
                 round_item = {}
-                for k in keys:
+                for k in cols:
                     round_item[k] = r[k]
-                    round_item["MatchId"] = self.demo_id
-                    round_item["MapName"] = self.json["MapName"]
+                    round_item["matchID"] = self.json["matchID"]
+                    round_item["mapName"] = self.json["mapName"]
                 rounds.append(round_item)
-            if return_type == "list":
-                self.logger.info("Parsed rounds to list")
-                return rounds
-            elif return_type == "df":
-                self.logger.info("Parsed rounds to Pandas DataFrame")
-                return pd.DataFrame(rounds)
-        except AttributeError:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            return pd.DataFrame(rounds)
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
-    def _parse_kills(self, return_type):
-        """Returns kills as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
+    def _parse_kills(self):
+        """Returns kills as either a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
-        """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse kills return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
+            A Pandas dataframe where each row is a kill
 
-        try:
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
             kills = []
-            for r in self.json["GameRounds"]:
-                if r["Kills"] is not None:
-                    for k in r["Kills"]:
+            for r in self.json["gameRounds"]:
+                if r["kills"] is not None:
+                    for k in r["kills"]:
                         new_k = k
-                        new_k["RoundNum"] = r["RoundNum"]
-                        new_k["MatchId"] = self.demo_id
-                        new_k["MapName"] = self.json["MapName"]
+                        new_k["roundNum"] = r["roundNum"]
+                        new_k["matchID"] = self.json["matchID"]
+                        new_k["mapName"] = self.json["mapName"]
                         kills.append(new_k)
-            if return_type == "list":
-                self.logger.info("Parsed kills to list")
-                return kills
-            elif return_type == "df":
-                self.logger.info("Parsed kills to Pandas DataFrame")
-                return pd.DataFrame(kills)
-        except AttributeError:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            return pd.DataFrame(kills)
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
-    def _parse_damages(self, return_type):
-        """Returns damages as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
+    def _parse_weapon_fires(self):
+        """Returns weapon fires as either a list or Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
-        """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse damages return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
+            A  Pandas dataframe where each row is a weapon fire event
 
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            shots = []
+            for r in self.json["gameRounds"]:
+                if r["weaponFires"] is not None:
+                    for wf in r["weaponFires"]:
+                        new_wf = wf
+                        new_wf["roundNum"] = r["roundNum"]
+                        new_wf["matchID"] = self.json["matchID"]
+                        new_wf["mapName"] = self.json["mapName"]
+                        shots.append(new_wf)
+            return pd.DataFrame(shots)
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def _parse_damages(self):
+        """Returns damages as a Pandas dataframe
+
+        Returns:
+            A Pandas dataframe where each row is a damage event.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             damages = []
-            for r in self.json["GameRounds"]:
-                if r["Damages"] is not None:
-                    for d in r["Damages"]:
+            for r in self.json["gameRounds"]:
+                if r["damages"] is not None:
+                    for d in r["damages"]:
                         new_d = d
-                        new_d["RoundNum"] = r["RoundNum"]
-                        new_d["MatchId"] = self.demo_id
-                        new_d["MapName"] = self.json["MapName"]
+                        new_d["roundNum"] = r["roundNum"]
+                        new_d["matchID"] = self.json["matchID"]
+                        new_d["mapName"] = self.json["mapName"]
                         damages.append(new_d)
-            if return_type == "list":
-                self.logger.info("Parsed damages to list")
-                return damages
-            elif return_type == "df":
-                self.logger.info("Parsed damages to Pandas DataFrame")
-                return pd.DataFrame(damages)
+            return pd.DataFrame(damages)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
-    def _parse_grenades(self, return_type):
-        """Returns grenades as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
+    def _parse_grenades(self):
+        """Returns grenades as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
-        """
-        if return_type not in ["list", "df"]:
-            self.logger.error(
-                "Parse grenades return_type must be either 'list' or 'df'"
-            )
-            raise ValueError("return_type must be either 'list' or 'df'")
+            A list or Pandas dataframe where each row is a grenade throw
 
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             grenades = []
-            for r in self.json["GameRounds"]:
-                if r["Grenades"] is not None:
-                    for g in r["Grenades"]:
+            for r in self.json["gameRounds"]:
+                if r["grenades"] is not None:
+                    for g in r["grenades"]:
                         new_g = g
-                        new_g["RoundNum"] = r["RoundNum"]
-                        new_g["MatchId"] = self.demo_id
-                        new_g["MapName"] = self.json["MapName"]
+                        new_g["roundNum"] = r["roundNum"]
+                        new_g["matchID"] = self.json["matchID"]
+                        new_g["mapName"] = self.json["mapName"]
                         grenades.append(new_g)
-            if return_type == "list":
-                self.logger.info("Parsed grenades to list")
-                return grenades
-            elif return_type == "df":
-                self.logger.info("Parsed grenades to Pandas DataFrame")
-                return pd.DataFrame(grenades)
+            return pd.DataFrame(grenades)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
-    def _parse_bomb_events(self, return_type):
-        """Returns bomb events as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
+    def _parse_bomb_events(self):
+        """Returns bomb events as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
-        """
-        if return_type not in ["list", "df"]:
-            self.logger.error(
-                "Parse bomb events return_type must be either 'list' or 'df'"
-            )
-            raise ValueError("return_type must be either 'list' or 'df'")
+            A Pandas dataframe where each row is a bomb event (defuse, plant, etc.)
 
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             bomb_events = []
-            for r in self.json["GameRounds"]:
-                if r["BombEvents"] is not None:
-                    for b in r["BombEvents"]:
+            for r in self.json["gameRounds"]:
+                if r["bombEvents"] is not None:
+                    for b in r["bombEvents"]:
                         new_b = b
-                        new_b["RoundNum"] = r["RoundNum"]
-                        new_b["MatchId"] = self.demo_id
-                        new_b["MapName"] = self.json["MapName"]
+                        new_b["roundNum"] = r["roundNum"]
+                        new_b["matchID"] = self.json["matchID"]
+                        new_b["mapName"] = self.json["mapName"]
                         bomb_events.append(new_b)
-            if return_type == "list":
-                self.logger.info("Parsed bomb_events to list")
-                return bomb_events
-            elif return_type == "df":
-                self.logger.info("Parsed bomb_events to Pandas DataFrame")
-                return pd.DataFrame(bomb_events)
+            return pd.DataFrame(bomb_events)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
-    def _parse_flashes(self, return_type):
-        """Returns flashes as either a list or Pandas dataframe
-
-        Args:
-            return_type (string) : Either "list" or "df"
+    def _parse_flashes(self):
+        """Returns flashes as a Pandas dataframe
 
         Returns:
-            A list or Pandas dataframe
-        """
-        if return_type not in ["list", "df"]:
-            self.logger.error("Parse flashes return_type must be either 'list' or 'df'")
-            raise ValueError("return_type must be either 'list' or 'df'")
+            A Pandas dataframe where each row is a flash event.
 
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
         if self.json:
             flashes = []
-            for r in self.json["GameRounds"]:
-                if r["Flashes"] is not None:
-                    for f in r["Flashes"]:
+            for r in self.json["gameRounds"]:
+                if r["flashes"] is not None:
+                    for f in r["flashes"]:
                         new_f = f
-                        new_f["RoundNum"] = r["RoundNum"]
-                        new_f["MatchId"] = self.demo_id
-                        new_f["MapName"] = self.json["MapName"]
+                        new_f["roundNum"] = r["roundNum"]
+                        new_f["matchId"] = self.json["matchID"]
+                        new_f["mapName"] = self.json["mapName"]
                         flashes.append(new_f)
-            if return_type == "list":
-                self.logger.info("Parsed flashes to list")
-                return flashes
-            elif return_type == "df":
-                self.logger.info("Parsed flashes to Pandas DataFrame")
-                return pd.DataFrame(flashes)
+            return pd.DataFrame(flashes)
         else:
-            self.logger.error("JSON not found. Run .parse()")
-            raise AttributeError("JSON not found. Run .parse()")
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def clean_rounds(
+        self,
+        remove_no_frames=True,
+        remove_warmups=True,
+        remove_knifes=True,
+        remove_bad_timings=True,
+        remove_excess_players=True,
+        remove_excess_kills=True,
+        remove_bad_endings=True,
+        return_type="json",
+    ):
+        """Cleans a parsed demofile JSON.
+
+        Args:
+            remove_no_frames (bool, optional): Remove rounds where there are no frames. Default to True.
+            remove_warmups (bool, optional): Remove warmup rounds. Defaults to True.
+            remove_knifes (bool, optional): Remove knife rounds. Defaults to True.
+            remove_bad_timings (bool, optional): Remove bad timings. Defaults to True.
+            remove_excess_players (bool, optional): Remove rounds with more than 5 players. Defaults to True.
+            remove_excess_kills (bool, optional): Remove rounds with more than 10 kills. Defaults to True.
+            remove_bad_endings (bool, optional): Remove rounds with bad round end reasons. Defaults to True.
+            return_type (str, optional): Return JSON or DataFrame. Defaults to "json".
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+
+        Returns:
+            dict: A dictionary of the cleaned demo.
+        """
+        if self.json:
+            if remove_no_frames:
+                if not self.parse_frames:
+                    self.logger.warning(
+                        "parse_frames is set to False, must be true for remove_no_frames to work."
+                    )
+                self.remove_rounds_with_no_frames()
+            if remove_warmups:
+                self.remove_warmups()
+            if remove_knifes:
+                self.remove_knife_rounds()
+            if remove_bad_timings:
+                self.remove_time_rounds()
+            if remove_excess_players:
+                self.remove_excess_players()
+            if remove_excess_kills:
+                self.remove_excess_kill_rounds()
+            if remove_bad_endings:
+                self.remove_end_round()
+            self.renumber_rounds()
+            self.rescore_rounds()
+            self.write_json()
+            if return_type == "json":
+                return self.json
+            elif return_type == "df":
+                demo_data = self.parse_json_to_df()
+                self.logger.info("Returned cleaned dataframe output")
+                return demo_data
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def write_json(self):
+        """Rewrite the JSON file"""
+        with open(self.output_file, "w", encoding="utf8") as fp:
+            json.dump(self.json, fp)
+
+    def renumber_rounds(self):
+        """Renumbers the rounds.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute has a "gameRounds" key.
+        """
+        if self.json["gameRounds"]:
+            for i, r in enumerate(self.json["gameRounds"]):
+                self.json["gameRounds"][i]["roundNum"] = i + 1
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def rescore_rounds(self):
+        """Rescore the rounds based on round end reason.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute has a "gameRounds" key.
+        """
+        if self.json["gameRounds"]:
+            for i, r in enumerate(self.json["gameRounds"]):
+                if i == 0:
+                    self.json["gameRounds"][i]["tScore"] = 0
+                    self.json["gameRounds"][i]["ctScore"] = 0
+                    if self.json["gameRounds"][i]["winningSide"] == "ct":
+                        self.json["gameRounds"][i]["endCTScore"] = 1
+                        self.json["gameRounds"][i]["endTScore"] = 0
+                    if self.json["gameRounds"][i]["winningSide"] == "t":
+                        self.json["gameRounds"][i]["endCTScore"] = 0
+                        self.json["gameRounds"][i]["endTScore"] = 1
+                elif i > 0:
+                    self.json["gameRounds"][i]["tScore"] = self.json["gameRounds"][
+                        i - 1
+                    ]["endTScore"]
+                    self.json["gameRounds"][i]["ctScore"] = self.json["gameRounds"][
+                        i - 1
+                    ]["endCTScore"]
+                    if self.json["gameRounds"][i]["winningSide"] == "ct":
+                        self.json["gameRounds"][i]["endCTScore"] = (
+                            self.json["gameRounds"][i]["ctScore"] + 1
+                        )
+                        self.json["gameRounds"][i]["endTScore"] = self.json[
+                            "gameRounds"
+                        ][i]["tScore"]
+                    if self.json["gameRounds"][i]["winningSide"] == "t":
+                        self.json["gameRounds"][i]["endCTScore"] = self.json[
+                            "gameRounds"
+                        ][i]["ctScore"]
+                        self.json["gameRounds"][i]["endTScore"] = (
+                            self.json["gameRounds"][i]["tScore"] + 1
+                        )
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_rounds_with_no_frames(self):
+        """Removes rounds with no frames
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json["gameRounds"]:
+                if len(r["frames"]) > 0:
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_excess_players(self):
+        """Removes rounds where there are more than 5 players on a side.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            # Remove rounds where the number of players is too large
+            for r in self.json["gameRounds"]:
+                if len(r["frames"]) > 0:
+                    f = r["frames"][0]
+                    if (len(f["ct"]["players"]) <= 5) and (len(f["t"]["players"]) <= 5):
+                        cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_warmups(self):
+        """Removes warmup rounds.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            # Remove warmups where the demo may have started recording in the middle of a warmup round
+            if "warmupChanged" in self.json["matchPhases"]:
+                if len(self.json["matchPhases"]["warmupChanged"]) > 1:
+                    last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
+                    for r in self.json["gameRounds"]:
+                        if (r["startTick"] > last_warmup_changed) and (
+                            not r["isWarmup"]
+                        ):
+                            cleaned_rounds.append(r)
+                        if r["startTick"] == last_warmup_changed:
+                            cleaned_rounds.append(r)
+                else:
+                    for r in self.json["gameRounds"]:
+                        if not r["isWarmup"]:
+                            cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_end_round(self, bad_endings=["Draw", "Unknown", ""]):
+        """Removes rounds with bad end reason.
+
+        Args:
+            bad_endings (list, optional): List of bad round end reasons. Defaults to ["Draw", "Unknown", ""].
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json["gameRounds"]:
+                if r["roundEndReason"] not in bad_endings:
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_knife_rounds(self):
+        """Removes knife rounds.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json["gameRounds"]:
+                if not r["isWarmup"] and r["kills"]:
+                    total_kills = len(r["kills"])
+                    total_knife_kills = 0
+                    for k in r["kills"]:
+                        if k["weapon"] == "Knife":
+                            total_knife_kills += 1
+                    if total_knife_kills != total_kills:
+                        cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_excess_kill_rounds(self):
+        """Removes rounds with more than 10 kills.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json["gameRounds"]:
+                if not r["isWarmup"] and r["kills"]:
+                    if len(r["kills"]) > 0:
+                        total_kills = len(r["kills"])
+                        if total_kills <= 10:
+                            cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_time_rounds(self):
+        """Remove rounds with odd round timings.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            for r in self.json["gameRounds"]:
+                if (
+                    (r["startTick"] <= r["endTick"])
+                    and (r["startTick"] <= r["endOfficialTick"])
+                    and (r["startTick"] <= r["freezeTimeEndTick"])
+                ):
+                    cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
