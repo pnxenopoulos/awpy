@@ -1109,9 +1109,11 @@ func main() {
 			}
 
 			// See if start tick happened during a team switch. If so, then recalc scores.
-			if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch) - 1] {
-				currentRound.TScore = int64(gs.TeamTerrorists().Score())
-				currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+			if len(currentGame.MatchPhases.TeamSwitch) > 0 {
+				if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch) - 1] {
+					currentRound.TScore = int64(gs.TeamTerrorists().Score())
+					currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+				}
 			}
 
 			// Parse round money
