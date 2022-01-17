@@ -1998,8 +1998,12 @@ func main() {
 
 			// Parse team damage
 			currentDamage.IsTeamDmg = false
-			if (*currentDamage.AttackerSide == *currentDamage.VictimSide) & (e.Attacker != nil) & (e.Victim != nil) {
-				currentDamage.IsTeamDmg = true
+			if currentDamage.AttackerSide != nil {
+				if currentDamage.VictimSide != nil {
+					if (*currentDamage.AttackerSide == *currentDamage.VictimSide) {
+						currentDamage.IsTeamDmg = true
+					}
+				}
 			}
 
 			// Parse distance
