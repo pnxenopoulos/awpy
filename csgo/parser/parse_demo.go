@@ -559,6 +559,10 @@ func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) st
 		roundTime = currentGame.ServerVars.RoundTimeDefuse
 	}
 
+	if tick >= currentRound.EndTick {
+		return "00:00"
+	}
+
 	var seconds_remaining float64
 	var phaseEndTick int64
 	if currentRound.BombPlantTick == nil {
@@ -570,6 +574,7 @@ func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) st
 	}
 	minutes := int64(math.Floor((seconds_remaining/60)))
 	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
+
 	return formatTimeNumber(minutes) + ":" + formatTimeNumber(seconds)
 }
 
