@@ -340,6 +340,9 @@ type PlayerInfo struct {
 	X               float64      `json:"x"`
 	Y               float64      `json:"y"`
 	Z               float64      `json:"z"`
+	Vel_X           float64      `json:"velX"`
+	Vel_Y           float64      `json:"velY"`
+	Vel_Z           float64      `json:"velZ"`
 	ViewX           float64      `json:"viewX"`
 	ViewY           float64      `json:"viewY"`
 	Hp              int64        `json:"hp"`
@@ -371,7 +374,7 @@ type PlayerInfo struct {
 	HasHelmet       bool         `json:"hasHelmet"`
 	HasDefuse       bool         `json:"hasDefuse"`
 	Ping            int64        `json:"ping"`
-	ZoomLevel       int64   `json:"zoomLevel"`
+	ZoomLevel       int64        `json:"zoomLevel"`
 }
 
 // WeaponInfo contains data on an inventory weapon
@@ -609,11 +612,16 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	}
 
 	playerPos := p.LastAlivePosition
+	playerVelocity := p.Velocity()
+    // Velocity shown with cl_showpos 1 can be calculated with math.sqrt(vel_x * vel_x + vel_y * vel_y)
 
 	// Calc other metrics
 	currentPlayer.X = float64(playerPos.X)
 	currentPlayer.Y = float64(playerPos.Y)
 	currentPlayer.Z = float64(playerPos.Z)
+	currentPlayer.Vel_X = float64(playerVelocity.X)
+	currentPlayer.Vel_Y = float64(playerVelocity.Y)
+	currentPlayer.Vel_Z = float64(playerVelocity.Z)
 	currentPlayer.ViewX = float64(p.ViewDirectionX())
 	currentPlayer.ViewY = float64(p.ViewDirectionY())
 	currentPlayer.Hp = int64(p.Health())
