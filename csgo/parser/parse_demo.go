@@ -613,7 +613,7 @@ func parsePlayer(p *common.Player) PlayerInfo {
 
 	playerPos := p.LastAlivePosition
 	playerVelocity := p.Velocity()
-    // Velocity shown with cl_showpos 1 can be calculated with math.sqrt(vel_x * vel_x + vel_y * vel_y)
+	// Velocity shown with cl_showpos 1 can be calculated with math.sqrt(velX * velX + velY * velY)
 
 	// Calc other metrics
 	currentPlayer.X = float64(playerPos.X)
