@@ -610,6 +610,7 @@ class DemoParser:
         remove_excess_kills=True,
         remove_bad_endings=True,
         return_type="json",
+        save_to_json=True,
     ):
         """Cleans a parsed demofile JSON.
 
