@@ -200,6 +200,9 @@ type DamageAction struct {
 	ArmorDamage      int64    `json:"armorDamage"`
 	ArmorDamageTaken int64    `json:"armorDamageTaken"`
 	HitGroup         string   `json:"hitGroup"`
+	IsTeamDmg        bool     `json:"isFriendlyFire"`
+	Distance         float64  `json:"distance"`
+	ZoomLevel        *int64    `json:"zoomLevel"`
 }
 
 // KillAction events
@@ -269,6 +272,7 @@ type WeaponFireAction struct {
 	PlayerViewY    float64 `json:"playerViewY"`
 	PlayerStrafe   bool    `json:"playerStrafe"`
 	Weapon         string  `json:"weapon"`
+	ZoomLevel      int64   `json:"zoomLevel"`
 }
 
 // FlashAction events
@@ -359,10 +363,15 @@ type PlayerInfo struct {
 	IsUnknown       bool         `json:"isUnknown"`
 	Inventory       []WeaponInfo `json:"inventory"`
 	EqVal           int64        `json:"equipmentValue"`
+	EqValFreeze     int64        `json:"equipmentValueFreezetimeEnd"`
+	EqValStart      int64        `json:"equipmentValueRoundStart"`
 	Money           int64        `json:"cash"`
+	MoneySpentRound int64        `json:"cashSpendThisRound"`
+	MoneySpentTotal int64        `json:"cashSpendTotal"`
 	HasHelmet       bool         `json:"hasHelmet"`
 	HasDefuse       bool         `json:"hasDefuse"`
 	Ping            int64        `json:"ping"`
+	ZoomLevel       int64   `json:"zoomLevel"`
 }
 
 // WeaponInfo contains data on an inventory weapon
@@ -561,7 +570,25 @@ func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) st
 	}
 	minutes := int64(math.Floor((seconds_remaining/60)))
 	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
+	
+	if (minutes < 0) || (seconds < 0) {
+		return "00:00"
+	}
+
 	return formatTimeNumber(minutes) + ":" + formatTimeNumber(seconds)
+}
+
+func playerInList(p *common.Player, players []PlayerInfo) bool {
+	if len(players) > 0 {
+		for _, i := range players {
+			if int64(p.SteamID64) == i.PlayerSteamID {
+				return true
+			}
+		}
+	} else {
+		return false
+	}
+	return false
 }
 
 func parsePlayer(p *common.Player) PlayerInfo {
@@ -609,13 +636,18 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	currentPlayer.HasDefuse = p.HasDefuseKit()
 	currentPlayer.HasHelmet = p.HasHelmet()
 	currentPlayer.Money = int64(p.Money())
+	currentPlayer.MoneySpentRound = int64(p.MoneySpentThisRound())
+	currentPlayer.MoneySpentTotal = int64(p.MoneySpentTotal())
 	currentPlayer.EqVal = int64(p.EquipmentValueCurrent())
+	currentPlayer.EqValFreeze = int64(p.EquipmentValueFreezeTimeEnd())
+	currentPlayer.EqValStart = int64(p.EquipmentValueRoundStart())
 	currentPlayer.Ping = int64(p.Ping())
 	currentPlayer.TotalUtility = int64(0)
 	activeWeapon := ""
 
 	if (p.IsAlive()) && (p.ActiveWeapon() != nil) {
 		activeWeapon = p.ActiveWeapon().String()
+		currentPlayer.ZoomLevel = int64(p.ActiveWeapon().ZoomLevel())
 	}
 
 	currentPlayer.ActiveWeapon = activeWeapon
@@ -778,6 +810,7 @@ func main() {
 	roundBuyPtr := fl.String("buystyle", "hltv", "Round buy style")
 	damagesRolledPtr := fl.Bool("dmgrolled", false, "Roll up damages")
 	demoIDPtr := fl.String("demoid", "", "Demo string ID")
+	jsonIndentationPtr := fl.Bool("jsonindentation", false, "Indent JSON file")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
@@ -789,6 +822,7 @@ func main() {
 	tradeTime := int64(*tradeTimePtr)
 	roundBuyStyle := *roundBuyPtr
 	damagesRolled := *damagesRolledPtr
+	jsonIndentation := *jsonIndentationPtr
 	outpath := *outpathPtr
 
 	// Read in demofile
@@ -1087,6 +1121,14 @@ func main() {
 				ctTeam := gs.TeamCounterTerrorists().ClanName()
 				currentRound.TTeam = &tTeam
 				currentRound.CTTeam = &ctTeam
+			}
+
+			// See if start tick happened during a team switch. If so, then recalc scores.
+			if len(currentGame.MatchPhases.TeamSwitch) > 0 {
+				if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch) - 1] {
+					currentRound.TScore = int64(gs.TeamTerrorists().Score())
+					currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+				}
 			}
 
 			// Parse round money
@@ -1405,6 +1447,7 @@ func main() {
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
+			currentWeaponFire.ZoomLevel = int64(e.Weapon.ZoomLevel())
 
 			// add
 			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
@@ -1935,6 +1978,9 @@ func main() {
 			currentDamage.AttackerViewY = &attackerViewY
 			attackerStrafe := e.Attacker.IsWalking()
 			currentDamage.AttackerStrafe = &attackerStrafe
+
+			zoomLevel := int64(e.Weapon.ZoomLevel())
+			currentDamage.ZoomLevel = &zoomLevel
 		}
 
 		// Victim
@@ -1972,6 +2018,25 @@ func main() {
 			victimViewY := float64(e.Player.ViewDirectionY())
 			currentDamage.VictimViewX = &victimViewX
 			currentDamage.VictimViewY = &victimViewY
+
+			// Parse team damage
+			currentDamage.IsTeamDmg = false
+			if currentDamage.AttackerSide != nil {
+				if currentDamage.VictimSide != nil {
+					if (*currentDamage.AttackerSide == *currentDamage.VictimSide) {
+						currentDamage.IsTeamDmg = true
+					}
+				}
+			}
+
+			// Parse distance
+			currentDamage.Distance = 0.0
+			if e.Attacker != nil {
+				X := math.Pow((*currentDamage.AttackerX - *currentDamage.VictimX), 2)
+				Y := math.Pow((*currentDamage.AttackerY - *currentDamage.VictimY), 2)
+				Z := math.Pow((*currentDamage.AttackerZ - *currentDamage.VictimZ), 2)
+				currentDamage.Distance = math.Sqrt(X + Y + Z)
+			}
 		}
 
 		// Add damages
@@ -2004,7 +2069,9 @@ func main() {
 
 			for _, p := range tPlayers {
 				if p != nil {
-					currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p))
+					if playerInList(p, currentFrame.T.Players) == false {
+						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p))
+					}
 				}
 			}
 			
@@ -2022,7 +2089,9 @@ func main() {
 
 			for _, p := range ctPlayers {
 				if p != nil {
-					currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p))
+					if playerInList(p, currentFrame.CT.Players) == false {
+						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p))
+					}
 				}
 			}
 			
@@ -2120,7 +2189,12 @@ func main() {
 		}
 		
 		// Write the JSON
-		file, _ := json.MarshalIndent(currentGame, "", " ")
+		var file []byte
+		if jsonIndentation {
+			file, _ = json.MarshalIndent(currentGame, "", " ")
+		} else {
+			file, _ = json.Marshal(currentGame)
+		}
 		_ = ioutil.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
 	}
 
