@@ -43,7 +43,7 @@ class TestStats:
             demofile="astralis-vs-liquid-m2-nuke.dem", demo_id="TEST"
         )
         self.data = self.parser.parse(return_type="df")
-        self.parser.clean_rounds(return_type="df")
+        self.data = self.parser.clean_rounds(return_type="df")
         self.invalid_numeric_filter = {"Kills": [10]}
         self.invalid_logical_operator = {"Kills": ["=invalid=10"]}
         self.invalid_numeric_value = {"Kills": ["==1invalid0"]}
