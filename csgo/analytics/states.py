@@ -40,8 +40,8 @@ def generate_team_vector_state(frame_side):
         A list with numeric elements
     """
     team_state = {}
-    team_state["eqVal"] = 0
-    team_state["playersRemaining"] = 0
+    team_state["eqVal"] = frame_side["teamEqVal"]
+    team_state["playersRemaining"] = frame_side["alivePlayers"]
     team_state["fullHpPlayersRemaining"] = 0
     team_state["hp"] = 0
     team_state["armor"] = 0
@@ -49,16 +49,11 @@ def generate_team_vector_state(frame_side):
     team_state["defuseKits"] = 0
     for player in frame_side["players"]:
         if player["isAlive"]:
-            team_state["eqVal"] += player["equipmentValue"]
-            team_state["playersRemaining"] += 1
             team_state["hp"] += player["hp"]
             team_state["armor"] += player["armor"]
-            if player["hasHelmet"]:
-                team_state["helmets"] += 1
-            if player["hasDefuse"]:
-                team_state["defuseKits"] += 1
-            if player["hp"] == 100:
-                team_state["fullHpPlayersRemaining"] += 1
+            team_state["helmets"] += player["hasHelmet"]
+            team_state["defuseKits"] += player["hasDefuse"]
+            team_state["fullHpPlayersRemaining"] += player["hp"] == 100
     return team_state
 
 
@@ -73,8 +68,7 @@ def generate_world_vector_state(frame):
     """
     world_state = {}
     world_state["bombPlanted"] = 0
-    if frame["bombPlanted"]:
-        world_state["bombPlanted"] = 1
+    world_state["bombPlanted"] += frame["bombPlanted"]
     world_state["secondsRemainingInPhase"] = frame["seconds"]
     world_state["bombsite"] = frame["bombsite"]
     return world_state

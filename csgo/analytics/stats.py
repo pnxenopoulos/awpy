@@ -454,12 +454,7 @@ def kill_stats(
         [stats[4], "K"],
     )
     deaths = calc_stats(
-        kill_data,
-        death_filters,
-        [stats[1]],
-        [stats[1]],
-        [["size"]],
-        [stats[4], "D"],
+        kill_data, death_filters, [stats[1]], [stats[1]], [["size"]], [stats[4], "D"],
     )
     assists = calc_stats(
         kill_data.loc[kill_data["assisterTeam"] != kill_data["victimTeam"]],
@@ -671,12 +666,7 @@ def rating(
         [stats[4], "K"],
     )
     deaths = calc_stats(
-        kill_data,
-        death_filters,
-        [stats[1]],
-        [stats[1]],
-        [["size"]],
-        [stats[4], "D"],
+        kill_data, death_filters, [stats[1]], [stats[1]], [["size"]], [stats[4], "D"],
     )
     assists = calc_stats(
         kill_data.loc[kill_data["assisterTeam"] != kill_data["victimTeam"]],
@@ -869,8 +859,7 @@ def flash_stats(
 
 
 def bomb_stats(
-    bomb_data: pd.DataFrame,
-    bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
+    bomb_data: pd.DataFrame, bomb_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
     """Returns a dataframe with bomb event statistics.
 
