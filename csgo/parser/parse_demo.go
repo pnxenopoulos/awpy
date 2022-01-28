@@ -340,6 +340,9 @@ type PlayerInfo struct {
 	X               float64      `json:"x"`
 	Y               float64      `json:"y"`
 	Z               float64      `json:"z"`
+	VelX            float64      `json:"velocityX"`
+	VelY            float64      `json:"velocityY"`
+	VelZ            float64      `json:"velocityZ"`
 	ViewX           float64      `json:"viewX"`
 	ViewY           float64      `json:"viewY"`
 	Hp              int64        `json:"hp"`
@@ -370,6 +373,7 @@ type PlayerInfo struct {
 	MoneySpentTotal int64        `json:"cashSpendTotal"`
 	HasHelmet       bool         `json:"hasHelmet"`
 	HasDefuse       bool         `json:"hasDefuse"`
+	HasBomb         bool         `json:"hasBomb"`
 	Ping            int64        `json:"ping"`
 	ZoomLevel       int64   `json:"zoomLevel"`
 }
@@ -609,11 +613,15 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	}
 
 	playerPos := p.LastAlivePosition
+	playerVel := p.Velocity()
 
 	// Calc other metrics
 	currentPlayer.X = float64(playerPos.X)
 	currentPlayer.Y = float64(playerPos.Y)
 	currentPlayer.Z = float64(playerPos.Z)
+	currentPlayer.VelX = float64(playerVel.X)
+	currentPlayer.VelY = float64(playerVel.Y)
+	currentPlayer.VelZ = float64(playerVel.Z)
 	currentPlayer.ViewX = float64(p.ViewDirectionX())
 	currentPlayer.ViewY = float64(p.ViewDirectionY())
 	currentPlayer.Hp = int64(p.Health())
@@ -651,8 +659,9 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	}
 
 	currentPlayer.ActiveWeapon = activeWeapon
+	currentPlayer.HasBomb = false
 	for _, w := range p.Weapons() {
-		if w.String() != "Knife" {
+		if (w.String() != "Knife") && (w.String() != "C4") {
 			// Can't drop the knife
 			currentWeapon := WeaponInfo{}
 
@@ -666,6 +675,10 @@ func parsePlayer(p *common.Player) PlayerInfo {
 			if w.Class() == 6 {
 				currentPlayer.TotalUtility = currentPlayer.TotalUtility + 1
 			}
+		}
+
+		if (w.String() == "C4") {
+			currentPlayer.HasBomb = true
 		}
 	}
 	return currentPlayer
@@ -1412,7 +1425,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.WeaponFire) {
 		gs := p.GameState()
 
-		if e.Weapon.String() != "Knife" && e.Shooter != nil {
+		if (e.Weapon.String() != "Knife") && (w.String() != "C4") && (e.Shooter != nil) {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
 			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, currentRound, currentGame)

@@ -19,7 +19,7 @@ The `csgo` package provides data parsing, analytics and visualization capabiliti
 `csgo` requires [Python](https://www.python.org/downloads/) >= 3.8 and [Golang](https://golang.org/dl/) >= 1.17. Python acts as a wrapper for the Go code which parses demofiles.
 
 #### Installation
-To install `csgo`, clone the repository by running `git clone https://github.com/pnxenopoulos/csgo`. Then, change directories to the newly cloned repository, and install the library by running `python setup.py install`. For more help, you can visit the installation channel in our Discord.
+To install `csgo`, you can run `pip install git+https://github.com/pnxenopoulos/csgo@main`. To update the library, just run the command again. For more help, you can visit the installation channel in our Discord.
 
 #### Colab Notebook
 Do your work in Colab? No problem, the csgo Python library runs there, too. Check out how to [setup csgo Python library in Google Colab](https://colab.research.google.com/drive/1xiXeWHSAlqYNa-xjSK9B2xalvLMpIlJF?usp=sharing).
