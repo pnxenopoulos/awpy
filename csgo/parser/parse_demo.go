@@ -1425,7 +1425,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.WeaponFire) {
 		gs := p.GameState()
 
-		if (e.Weapon.String() != "Knife") && (w.String() != "C4") && (e.Shooter != nil) {
+		if (e.Weapon.String() != "Knife") && (e.Weapon.String() != "C4") && (e.Shooter != nil) {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
 			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, currentRound, currentGame)
