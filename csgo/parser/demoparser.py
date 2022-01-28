@@ -610,6 +610,7 @@ class DemoParser:
         remove_excess_kills=True,
         remove_bad_endings=True,
         return_type="json",
+        save_to_json=True,
     ):
         """Cleans a parsed demofile JSON.
 
@@ -622,6 +623,7 @@ class DemoParser:
             remove_excess_kills (bool, optional): Remove rounds with more than 10 kills. Defaults to True.
             remove_bad_endings (bool, optional): Remove rounds with bad round end reasons. Defaults to True.
             return_type (str, optional): Return JSON or DataFrame. Defaults to "json".
+            save_to_json (bool, optional): Whether to write the JSON to a file. Defaults to True.
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
@@ -646,7 +648,8 @@ class DemoParser:
                 self.remove_end_round()
             self.renumber_rounds()
             # self.rescore_rounds() -- Need to edit to take into account half switches
-            self.write_json()
+            if save_to_json:
+                self.write_json()
             if return_type == "json":
                 return self.json
             elif return_type == "df":
