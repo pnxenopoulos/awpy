@@ -2148,7 +2148,11 @@ func main() {
 
 			// Add frame
 			if (len(currentFrame.CT.Players) > 0) || (len(currentFrame.T.Players) > 0) {
-				currentRound.Frames = append(currentRound.Frames, currentFrame)
+				if (len(currentRound.Frames) > 0) {
+					if currentRound.Frames[len(currentRound.Frames)-1].Tick < currentFrame.Tick {
+						currentRound.Frames = append(currentRound.Frames, currentFrame)
+					}
+				}
 			}
 			
 			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
