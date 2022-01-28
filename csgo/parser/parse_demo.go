@@ -2152,6 +2152,8 @@ func main() {
 					if currentRound.Frames[len(currentRound.Frames)-1].Tick < currentFrame.Tick {
 						currentRound.Frames = append(currentRound.Frames, currentFrame)
 					}
+				} else {
+					currentRound.Frames = append(currentRound.Frames, currentFrame)
 				}
 			}
 			
