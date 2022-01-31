@@ -1,4 +1,4 @@
-[![Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Build](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://pycsgo.readthedocs.io/en/latest/) [![GitHub issues](https://img.shields.io/github/issues/pnxenopoulos/csgo)](https://github.com/pnxenopoulos/csgo/issues) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE) 
+[![Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Build](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://pycsgo.readthedocs.io/en/latest/) [![GitHub issues](https://img.shields.io/github/issues/pnxenopoulos/csgo)](https://github.com/pnxenopoulos/csgo/issues) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/main/LICENSE) 
 
 # Analyzing Counter-Strike: Global Offensive Data
 The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library, along with other resources for esports analytics. 
@@ -68,8 +68,8 @@ If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcE
 ## Examples and Projects
 Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
 
-- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/master/examples/00_Parsing_a_CSGO_Demofile.ipynb)
-- [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/master/examples/01_Basic_CSGO_Analysis.ipynb)
+- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb)
+- [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/main/examples/01_Basic_CSGO_Analysis.ipynb)
 - [CSGO visualization](https://github.com/pnxenopoulos/csgo/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
 - [Working with navigation meshes.ipynb](https://github.com/pnxenopoulos/csgo/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb)
 
