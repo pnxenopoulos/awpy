@@ -7,3 +7,4 @@ textdistance>=4.2.0
 requests>=2.25.1
 imageio>=2.9.0
 tqdm>=4.55.2
+sphinx-rtd-theme>=1.0.0
