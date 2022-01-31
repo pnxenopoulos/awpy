@@ -1,111 +1,142 @@
-
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
-    <title>Welcome to csgo’s documentation! &#8212; csgo 1.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>csgo Python Library &mdash; csgo 1.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <link rel="next" title="&lt;no title&gt;" href="installation.html" /> 
+</head>
 
-  </head><body>
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="#" class="icon icon-home"> csgo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">csgo Python Library</a><ul>
+<li><a class="reference internal" href="#using-csgo">Using csgo</a></li>
+<li><a class="reference internal" href="#csgo-modules">csgo Modules</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">csgo</a>
+      </nav>
 
-          <div class="body" role="main">
-            
-  <section id="welcome-to-csgo-s-documentation">
-<h1>Welcome to csgo’s documentation!<a class="headerlink" href="#welcome-to-csgo-s-documentation" title="Permalink to this headline">¶</a></h1>
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+      <li>csgo Python Library</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="csgo-python-library">
+<h1>csgo Python Library<a class="headerlink" href="#csgo-python-library" title="Permalink to this headline"></a></h1>
+<p><a class="reference external" href="https://discord.gg/W34XjsSs2H"><img alt="Discord" src="https://img.shields.io/discord/868146581419999232?color=blue&amp;label=Discord&amp;logo=discord" /></a> <a class="reference external" href="https://github.com/pnxenopoulos/csgo"><img alt="Github" src="https://img.shields.io/badge/github-repo-yellowgreen" /></a> <a class="reference external" href="https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml"><img alt="Build" src="https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg" /></a> <a class="reference external" href="https://github.com/pnxenopoulos/csgo/blob/main/LICENSE"><img alt="Licence" src="https://img.shields.io/badge/license-MIT-lightgrey" /></a></p>
+<p>This Python library allows a user to parse, analyze and visualize Counter-Strike: Global Offensive (CSGO) demo files. You can visit the <a class="reference external" href="https://github.com/pnxenopoulos/csgo">repository</a> to view the source code, examples and data. Please join the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a> server if you would like to join our esports analytics community or to receive help with the library. Use the <a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a> to search the documentation, or visit the <span class="xref std std-ref">index</span>.</p>
+<p>If you decide to use this library, please the following paper.</p>
+<blockquote>
+<div><p>Xenopoulos, P., Doraiswamy, H., &amp; Silva, C. (2020, December). Valuing Player Actions in Counter-Strike: Global Offensive. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.</p>
+</div></blockquote>
+<section id="using-csgo">
+<h2>Using csgo<a class="headerlink" href="#using-csgo" title="Permalink to this headline"></a></h2>
+<dl class="simple">
+<dt><a class="reference internal" href="installation.html"><span class="doc">&lt;no title&gt;</span></a></dt><dd><p>How to install the csgo Python library.</p>
+</dd>
+<dt><span class="xref std std-doc">examples</span></dt><dd><p>Examples Jupyter notebooks to help get you started.</p>
+</dd>
+<dt><span class="xref std std-doc">projects</span></dt><dd><p>Projects that use the csgo Python library.</p>
+</dd>
+</dl>
+</section>
+<section id="csgo-modules">
+<h2>csgo Modules<a class="headerlink" href="#csgo-modules" title="Permalink to this headline"></a></h2>
+<dl class="simple">
+<dt><span class="xref std std-doc">analytics</span></dt><dd><p>Analytics module.</p>
+</dd>
+<dt><span class="xref std std-doc">data</span></dt><dd><p>Data module.</p>
+</dd>
+<dt><span class="xref std std-doc">parser</span></dt><dd><p>Parsing module.</p>
+</dd>
+<dt><span class="xref std std-doc">visualization</span></dt><dd><p>Visualization module.</p>
+</dd>
+</dl>
+<div class="toctree-wrapper compound">
+</div>
 <div class="toctree-wrapper compound">
 </div>
 </section>
-<section id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
-</ul>
 </section>
 
 
+           </div>
           </div>
-          
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Peter Xenopoulos.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="#">csgo</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="#">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2022, Peter Xenopoulos.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="_sources/index.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>
