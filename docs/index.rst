@@ -24,7 +24,7 @@ This Python library allows a user to parse, analyze and visualize Counter-Strike
 .. _repository: https://github.com/pnxenopoulos/csgo
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-If you decide to use this library, please the following paper.
+If you decide to use this library, please cite the following paper.
 
    Xenopoulos, P., Doraiswamy, H., & Silva, C. (2020, December). Valuing Player Actions in Counter-Strike: Global Offensive. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.
 
