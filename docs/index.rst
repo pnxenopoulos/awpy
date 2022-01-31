@@ -5,15 +5,19 @@
 
 Welcome to csgo's documentation!
 ================================
+|Discord| |Github| |Build| |Licence|
 
 .. |Discord| image:: https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord
    :target: https://discord.gg/W34XjsSs2H
+   
+.. |Github| image:: https://img.shields.io/badge/github-repo-yellowgreen
+   :target: https://github.com/pnxenopoulos/csgo
    
 .. |Build| image:: https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg
    :target: https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml
    
 .. |Licence| image:: https://img.shields.io/badge/license-MIT-lightgrey
-   :target: https://github.com/pnxenopoulos/csgo/blob/master/LICENSE
+   :target: https://github.com/pnxenopoulos/csgo/blob/main/LICENSE
    
 The csgo project supports Python 3.7+. You can visit the `repository`_ to see the code, examples and data.
 
