@@ -60,7 +60,7 @@ data_df = demo_parser.parse(return_type="df")
 ```
 
 ### Help! The parser returns weird rounds.
-Please note that the parser parses _everything_ in the demo. This means that you may have rounds from the warmup (denoted with the `isWarmup` flag), rounds that may have ended in a draw, and other odd-looking rounds. You will have to do your own cleaning, although we hope that whatever functions exist in `csgo.parser.cleaning` can help you (namely, the `.clean_rounds()` method).
+Please note that the parser parses _everything_ in the demo. This means that you may have rounds from the warmup (denoted with the `isWarmup` flag), rounds that may have ended in a draw, and other odd-looking rounds. Try using the `DemoParser.clean_rounds()` method to clean up. Note that this is not going to be 100 percent perfect.
 
 ### Help! The parser doesn't work or lacks a feature
 If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcEKW). CSGO demos are oftentimes imperfect, but if you ask on Discord, we can try to figure out what the problem is. Also, note the help section above. If you come across any issue, whether a demo doesn't parse, parsed demo data is incorrect or you want a new feature, do not hesitate to open an issue or ask on [Discord](https://discord.gg/W34XjsSs2H). You can see open issues [here](https://github.com/pnxenopoulos/csgo/issues) and can visit [our documentation](https://pycsgo.readthedocs.io/en/latest/) for more information on the library's capabilities.
