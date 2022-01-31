@@ -5,22 +5,33 @@
 
 Welcome to csgo's documentation!
 ================================
-.. automodule:: analytics
-   :members:
 
-.. automodule:: data
-   :members:
+.. |Discord| image:: https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord
+   :target: https://discord.gg/W34XjsSs2H
+   
+.. |Build| image:: https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg
+   :target: https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml
+   
+.. |Licence| image:: https://img.shields.io/badge/license-MIT-lightgrey
+   :target: https://github.com/pnxenopoulos/csgo/blob/master/LICENSE
+   
+The csgo project supports Python 3.7+. You can visit the `repository`_ to see the code, examples and data.
 
-.. automodule:: parser
-   :members:
-
-.. automodule:: visualization
-   :members:
+.. _repository: https://github.com/pnxenopoulos/csgo
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
+   install
+   
+.. automodule:: analytics
 
+.. automodule:: data
+
+.. automodule:: parser
+
+.. automodule:: visualization
 
 
 Indices and tables
