@@ -70,8 +70,8 @@ Take a look at the following Jupyter notebooks provided in our `examples/` direc
 
 - [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb)
 - [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/main/examples/01_Basic_CSGO_Analysis.ipynb)
-- [CSGO visualization](https://github.com/pnxenopoulos/csgo/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
-- [Working with navigation meshes.ipynb](https://github.com/pnxenopoulos/csgo/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb)
+- [Basic CSGO visualization](https://github.com/pnxenopoulos/csgo/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
+- [Working with navigation meshes](https://github.com/pnxenopoulos/csgo/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb)
 
 If you use the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive*, below. If you use the parser for any analysis on Twitter, we kindly ask you to cite back to the parser, so that others may know how you parsed your data. If you have a paper that uses the parser, please let us know in Discord so we can add it! Here is the paper citation:
 

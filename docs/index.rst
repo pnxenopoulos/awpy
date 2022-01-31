@@ -19,7 +19,7 @@ csgo Python Library
 .. |Licence| image:: https://img.shields.io/badge/license-MIT-lightgrey
    :target: https://github.com/pnxenopoulos/csgo/blob/main/LICENSE
    
-This Python library allows a user to parse, analyze and visualize Counter-Strike: Global Offensive (CSGO) demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help with the library. Use the :ref:`search` to search the documentation, or visit the :ref:`index`.
+This Python library allows a user to parse, analyze and visualize Counter-Strike: Global Offensive (CSGO) demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help with the library.
 
 .. _repository: https://github.com/pnxenopoulos/csgo
 .. _Discord: https://discord.gg/W34XjsSs2H
