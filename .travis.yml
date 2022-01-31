@@ -1,0 +1,41 @@
+language: python
+
+python:
+    - 3.6
+    - 3.7
+    - 3.8
+
+before_install:
+    - python --version
+    - pip install pip
+    - pip install pytest
+    - pip install codecov
+    - pip install pytest-cov
+    - wget -O tests/og-vs-natus-vincere-m1-dust2.dem http://www.peterxeno.com/csgo/og-vs-natus-vincere-m1-dust2.dem
+    - cd
+    - mkdir tmp
+    - cd tmp
+    - wget https://dl.google.com/go/go1.14.3.linux-amd64.tar.gz
+    - sudo tar -xvf go1.14.3.linux-amd64.tar.gz
+    - sudo mv go /usr/local
+    - export GOROOT=/usr/local/go
+    - export GOPATH=$HOME/go
+    - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+    - source ~/.profile
+    - cd /home/travis/build/pnxenopoulos/csgo
+
+install:
+    - pip install -r requirements.txt
+
+script:
+    - coverage run -m pytest
+
+after_success:
+    - coverage report -m
+    - bash <(curl -s https://codecov.io/bash)
+
+after_failure:
+    - pwd
+    - ls
+    - ls tests/
+    - cat csgo_demoparser.log
