@@ -39,6 +39,12 @@ Using csgo
 :doc:`projects`
    Projects that use the csgo Python library.
 
+:doc:`faq`
+   Need help? Check the FAQs first.
+
+:doc:`license`
+   License and acknowledgments.
+
 csgo Modules
 ------------
 :doc:`analytics`

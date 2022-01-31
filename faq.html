@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; csgo 1.0 documentation</title>
+  <title>Frequently Asked Questions (FAQs) &mdash; csgo 1.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -15,7 +16,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="#" />
+    <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
 </head>
 
@@ -60,8 +61,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Index</li>
+      <li>Frequently Asked Questions (FAQs)</li>
       <li class="wy-breadcrumbs-aside">
+            <a href="_sources/faq.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -69,12 +71,20 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- 
-</div>
+  <section id="frequently-asked-questions-faqs">
+<h1>Frequently Asked Questions (FAQs)<a class="headerlink" href="#frequently-asked-questions-faqs" title="Permalink to this headline"></a></h1>
+<p>This is a nonexhaustive list of frequently asked questions.</p>
+<dl class="simple">
+<dt><strong>Do I need Golang to run this</strong></dt><dd><p>You don’t <em>need</em> Golang to install this library or access any part of it. However, <strong>you need Golang 1.16+ to parse demofiles using this library</strong>.</p>
+</dd>
+<dt><strong>The parser returns weird rounds or data</strong></dt><dd><p>Please note that the parser parses <em>everything</em> in a demo. This means that you may have rounds from the warmup, rounds that may have ended in a draw, and other odd-looking rounds. Try using the <cite>DemoParser.clean_rounds()</cite> method to clean up. Note that this is not going to be 100 percent perfect. If you still have bad data, ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>.</p>
+</dd>
+<dt><strong>Data I want is missing</strong></dt><dd><p>Feel free to open an <a class="reference external" href="https://github.com/pnxenopoulos/csgo/issues">issue</a> or to ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>, and we can see if such a feature is possible.</p>
+</dd>
+<dt><strong>Where can I get documentation for the parsed data structure/keys?</strong></dt><dd><p>Please look at <a class="reference external" href="http://google.com">this documentation</a>.</p>
+</dd>
+</dl>
+</section>
 
 
            </div>
