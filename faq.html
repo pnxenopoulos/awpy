@@ -17,7 +17,9 @@
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="License and Acknowledgments" href="license.html" />
+    <link rel="prev" title="Projects" href="projects.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -36,10 +38,12 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Example Notebooks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="projects.html">Projects</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Frequently Asked Questions (FAQs)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Acknowledgments</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
 <ul>
@@ -75,13 +79,13 @@
 <h1>Frequently Asked Questions (FAQs)<a class="headerlink" href="#frequently-asked-questions-faqs" title="Permalink to this headline"></a></h1>
 <p>This is a nonexhaustive list of frequently asked questions.</p>
 <dl class="simple">
-<dt><strong>Do I need Golang to run this</strong></dt><dd><p>You don’t <em>need</em> Golang to install this library or access any part of it. However, <strong>you need Golang 1.16+ to parse demofiles using this library</strong>.</p>
+<dt><strong>Q:</strong> Do I need Golang to run this</dt><dd><p>You don’t <em>need</em> Golang to install this library or access any part of it. However, <strong>you need Golang 1.16+ to parse demofiles using this library</strong>.</p>
 </dd>
-<dt><strong>The parser returns weird rounds or data</strong></dt><dd><p>Please note that the parser parses <em>everything</em> in a demo. This means that you may have rounds from the warmup, rounds that may have ended in a draw, and other odd-looking rounds. Try using the <cite>DemoParser.clean_rounds()</cite> method to clean up. Note that this is not going to be 100 percent perfect. If you still have bad data, ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>.</p>
+<dt><strong>Q:</strong> The parser returns weird rounds or data</dt><dd><p>Please note that the parser parses <em>everything</em> in a demo. This means that you may have rounds from the warmup, rounds that may have ended in a draw, and other odd-looking rounds. Try using the <cite>DemoParser.clean_rounds()</cite> method to clean up. Note that this is not going to be 100 percent perfect. If you still have bad data, ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>.</p>
 </dd>
-<dt><strong>Data I want is missing</strong></dt><dd><p>Feel free to open an <a class="reference external" href="https://github.com/pnxenopoulos/csgo/issues">issue</a> or to ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>, and we can see if such a feature is possible.</p>
+<dt><strong>Q:</strong> Data I want is missing</dt><dd><p>Feel free to open an <a class="reference external" href="https://github.com/pnxenopoulos/csgo/issues">issue</a> or to ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>, and we can see if such a feature is possible.</p>
 </dd>
-<dt><strong>Where can I get documentation for the parsed data structure/keys?</strong></dt><dd><p>Please look at <a class="reference external" href="http://google.com">this documentation</a>.</p>
+<dt><strong>Q:</strong> Where can I get documentation for the parsed data structure/keys?</dt><dd><p>Please look at <a class="reference internal" href="parser_output.html"><span class="doc">Example Parser JSON</span></a>.</p>
 </dd>
 </dl>
 </section>
@@ -89,7 +93,10 @@
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="projects.html" class="btn btn-neutral float-left" title="Projects" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="license.html" class="btn btn-neutral float-right" title="License and Acknowledgments" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

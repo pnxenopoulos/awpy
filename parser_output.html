@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Example Parser JSON &mdash; csgo 1.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> csgo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Example Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projects.html">Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions (FAQs)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License and Acknowledgments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="analytics.html"><cite>csgo.analytics</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="parser.html"><cite>csgo.parser</cite></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">csgo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Example Parser JSON</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/parser_output.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="example-parser-json">
+<h1>Example Parser JSON<a class="headerlink" href="#example-parser-json" title="Permalink to this headline"></a></h1>
+<p>When using <cite>csgo.DemoParser</cite>, you create a <cite>JSON</cite> output file. This is generally a large file, and is described by the JSON structure contained in this documentation.</p>
+<p><strong>Contents</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#top-level-keys"><span class="std std-ref">Top level keys</span></a></p></li>
+<li><p><a class="reference internal" href="#rounds"><span class="std std-ref">Rounds</span></a></p></li>
+<li><p><a class="reference internal" href="#kills"><span class="std std-ref">Kills</span></a></p></li>
+<li><p><a class="reference internal" href="#damages"><span class="std std-ref">Damages</span></a></p></li>
+<li><p><a class="reference internal" href="#grenades"><span class="std std-ref">Grenades</span></a></p></li>
+<li><p><a class="reference internal" href="#bomb-events"><span class="std std-ref">Bomb Events</span></a></p></li>
+<li><p><a class="reference internal" href="#weapon-fires"><span class="std std-ref">Weapon Fires</span></a></p></li>
+<li><p><a class="reference internal" href="#flashes"><span class="std std-ref">Flashes</span></a></p></li>
+<li><p><a class="reference internal" href="#frames"><span class="std std-ref">Frames</span></a></p></li>
+</ul>
+<section id="top-level-keys">
+<h2>Top level keys<a class="headerlink" href="#top-level-keys" title="Permalink to this headline"></a></h2>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &quot;matchID&quot;: &quot;003486831536689381471_0732641554&quot;,  # Set to be the name of the demo file
+    &quot;clientName&quot;: &quot;GOTV Demo&quot;,                      # Client which recorded the demo
+    &quot;mapName&quot;: &quot;de_inferno&quot;,
+    &quot;tickRate&quot;: 64,                                 # Server tick rate
+    &quot;playbackTicks&quot;: 161695,                        # Total ticks in the demo
+    &quot;playbackFramesCount&quot;: 80775,                   # Total number of frames
+    &quot;parsedToFrameIdx&quot;: 80790,                      # Parsed until X frame
+    &quot;parserParameters&quot;: {                           # All the below parameters are set in DemoParser
+        &quot;parseRate&quot;: 256,                           # Parse rate set in DemoParser. Represents spacing between recorded frames.
+        &quot;parseFrames&quot;: false,
+        &quot;tradeTime&quot;: 5,
+        &quot;roundBuyStyle&quot;: &quot;hltv&quot;,                    # HLTV represents round buys (e.g., full eco, full buy, etc.) as they do in HLTV.
+        &quot;damagesRolledUp&quot;: false                    # Sometimes damages can happen in the same tick. This option means they are combined.
+    },
+    &quot;serverVars&quot;: {                                 # Server cvars
+        &quot;cashBombDefused&quot;: 0,
+        &quot;cashBombPlanted&quot;: 0,
+        &quot;cashTeamTWinBomb&quot;: 0,
+        &quot;cashWinDefuse&quot;: 3500,
+        &quot;cashWinTimeRunOut&quot;: 0,
+        &quot;cashWinElimination&quot;: 0,
+        &quot;cashPlayerKilledDefault&quot;: 0,
+        &quot;cashTeamLoserBonus&quot;: 0,
+        &quot;cashTeamLoserBonusConsecutive&quot;: 0,
+        &quot;roundTime&quot;: 0,
+        &quot;roundTimeDefuse&quot;: 0,
+        &quot;roundRestartDelay&quot;: 0,
+        &quot;freezeTime&quot;: 15,
+        &quot;buyTime&quot;: 20,
+        &quot;bombTimer&quot;: 0,
+        &quot;maxRounds&quot;: 30,
+        &quot;timeoutsAllowed&quot;: 0,
+        &quot;coachingAllowed&quot;: 0
+    },
+    &quot;matchPhases&quot;: {                                # Contains lists with the ticks on which certain round/phase events happened
+        &quot;announcementLastRoundHalf&quot;: [...],
+        &quot;announcementFinalRound&quot;: [...],
+        &quot;announcementMatchStarted&quot;: [...],
+        &quot;roundStarted&quot;: [...],
+        &quot;roundEnded&quot;: [...],
+        &quot;roundFreezetimeEnded&quot;: [...],
+        &quot;roundEndedOfficial&quot;: [...],
+        &quot;gameHalfEnded&quot;: [...],
+        &quot;matchStart&quot;: [...],
+        &quot;matchStartedChanged&quot;: [...],
+        &quot;warmupChanged&quot;: [...],
+        &quot;teamSwitch&quot;: [...]
+    },
+    &quot;matchmakingRanks&quot;: [                           # Contains a list of players and their win counts and rank info. Only for MM demos.
+        {
+            &quot;steamID&quot;: 76561198060045535,
+            &quot;rankChange&quot;: 0,
+            &quot;rankOld&quot;: &quot;The Global Elite&quot;,
+            &quot;rankNew&quot;: &quot;The Global Elite&quot;,
+            &quot;winCount&quot;: 629
+        },
+        ...
+    ],
+    &quot;playerConnections&quot;: [                          # List of player connect/disconnect events
+        {
+            &quot;tick&quot;: 0,
+            &quot;action&quot;: &quot;connect&quot;,
+            &quot;steamID&quot;: 76561198000441323
+        },
+        {
+            &quot;tick&quot;: 161259,
+            &quot;action&quot;: &quot;disconnect&quot;,
+            &quot;steamID&quot;: 76561198043315625
+        },
+        ...
+    ],
+    &quot;gameRounds&quot;: [{...}]                           # Game rounds
+}
+</pre></div>
+</div>
+</section>
+<section id="rounds">
+<h2>Rounds<a class="headerlink" href="#rounds" title="Permalink to this headline"></a></h2>
+<p>This object contains round information and events. The possible round end reasons are <cite>TargetBombed</cite>, <cite>VIPEscaped</cite>, <cite>VIPKilled</cite>, <cite>TerroristsEscaped</cite>, <cite>CTStoppedEscape</cite>, <cite>TerroristsStopped</cite>, <cite>BombDefused</cite>, <cite>CTWin</cite>, <cite>TerroristsWin</cite>, <cite>Draw</cite>, <cite>HostagesRescued</cite>, <cite>TargetSaved</cite>, <cite>HostagesNotRescued</cite>, <cite>TerroristsNotEscaped</cite>, <cite>VIPNotEscaped</cite>, <cite>GameStart</cite>, <cite>TerroristsSurrender</cite>, <cite>CTSurrender</cite>.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &quot;roundNum&quot;: 1,
+    &quot;isWarmup&quot;: false,                  # True if the round is a warmup round
+    &quot;startTick&quot;: 6980,
+    &quot;freezeTimeEndTick&quot;: 7936,
+    &quot;endTick&quot;: 14512,                   # Tick when end condition is reached, but round is not officialy over
+    &quot;endOfficialTick&quot;: 14832,
+    &quot;bombPlantTick&quot;: 12450,
+    &quot;tScore&quot;: 0,
+    &quot;ctScore&quot;: 0,
+    &quot;endTScore&quot;: 1,
+    &quot;endCTScore&quot;: 0,
+    &quot;ctTeam&quot;: &quot;&quot;,
+    &quot;tTeam&quot;: &quot;&quot;,
+    &quot;winningSide&quot;: &quot;T&quot;,
+    &quot;winningTeam&quot;: &quot;&quot;,
+    &quot;losingTeam&quot;: &quot;&quot;,
+    &quot;roundEndReason&quot;: &quot;TerroristsWin&quot;,
+    &quot;ctStartEqVal&quot;: 3650,
+    &quot;ctRoundStartEqVal&quot;: 1000,
+    &quot;ctRoundStartMoney&quot;: 80000,
+    &quot;ctBuyType&quot;: &quot;Full Eco&quot;,
+    &quot;ctSpend&quot;: 2650,
+    &quot;tStartEqVal&quot;: 4400,
+    &quot;tRoundStartEqVal&quot;: 1000,
+    &quot;tRoundStartMoney&quot;: 80000,
+    &quot;tBuyType&quot;: &quot;Full Eco&quot;,
+    &quot;tSpend&quot;: 3400,
+    &quot;kills&quot;: [...],                      # Kills
+    &quot;damages&quot;: [...],                    # Damages
+    &quot;grenades&quot;: [...],                   # Grenade throws
+    &quot;bombEvents&quot;: [...],                 # Bomb events (plants, defuses, etc.)
+    &quot;weaponFires&quot;: [...],                # Shots
+    &quot;flashes&quot;: [...],                    # Flashes
+    &quot;frames&quot;: [...]                      # Frames (game snapshots)
+}
+</pre></div>
+</div>
+</section>
+<section id="kills">
+<h2>Kills<a class="headerlink" href="#kills" title="Permalink to this headline"></a></h2>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &#39;tick&#39;: 9582,
+    &#39;seconds&#39;: 25.71875,
+    &#39;clockTime&#39;: &#39;01:30&#39;,
+    &#39;attackerSteamID&#39;: 76561198088580941,
+    &#39;attackerName&#39;: &#39;febix&#39;,
+    &#39;attackerTeam&#39;: &#39;&#39;,
+    &#39;attackerSide&#39;: &#39;T&#39;,
+    &#39;attackerX&#39;: 509.1275939941406,
+    &#39;attackerY&#39;: 630.7955322265625,
+    &#39;attackerZ&#39;: 86.98412322998047,
+    &#39;attackerViewX&#39;: 327.601318359375,
+    &#39;attackerViewY&#39;: 1.9775390625,
+    &#39;victimSteamID&#39;: 76561198084596669,
+    &#39;victimName&#39;: &#39;Rullaan Spotil KANDALFWOZ ;)&#39;,
+    &#39;victimTeam&#39;: &#39;&#39;,
+    &#39;victimSide&#39;: &#39;CT&#39;,
+    &#39;victimX&#39;: 781.4129638671875,
+    &#39;victimY&#39;: 491.81201171875,
+    &#39;victimZ&#39;: 87.30707550048828,
+    &#39;victimViewX&#39;: 153.6328125,
+    &#39;victimViewY&#39;: 1.0711669921875,
+    &#39;assisterSteamID&#39;: None,                       # If there is an assister, this data will not be None
+    &#39;assisterName&#39;: None,
+    &#39;assisterTeam&#39;: None,
+    &#39;assisterSide&#39;: None,
+    &#39;isSuicide&#39;: False,
+    &#39;isTeamkill&#39;: False,
+    &#39;isWallbang&#39;: False,
+    &#39;penetratedObjects&#39;: 0,
+    &#39;isFirstKill&#39;: True,
+    &#39;isHeadshot&#39;: True,
+    &#39;victimBlinded&#39;: False,
+    &#39;attackerBlinded&#39;: False,
+    &#39;flashThrowerSteamID&#39;: None,
+    &#39;flashThrowerName&#39;: None,
+    &#39;flashThrowerTeam&#39;: None,
+    &#39;flashThrowerSide&#39;: None,
+    &#39;noScope&#39;: False,
+    &#39;thruSmoke&#39;: False,
+    &#39;distance&#39;: 305.7054888578491,                 # Distance between attacker and victim
+    &#39;isTrade&#39;: False,
+    &#39;playerTradedName&#39;: None,
+    &#39;playerTradedTeam&#39;: None,
+    &#39;playerTradedSteamID&#39;: None,
+    &#39;weapon&#39;: &#39;Glock-18&#39;
+}
+</pre></div>
+</div>
+</section>
+<section id="damages">
+<h2>Damages<a class="headerlink" href="#damages" title="Permalink to this headline"></a></h2>
+<p>The possible hit groups are <cite>Generic</cite>, <cite>Head</cite>, <cite>Chest</cite>, <cite>Stomach</cite>, <cite>LeftArm</cite>, <cite>RightArm</cite>, <cite>LeftLeg</cite>, <cite>RightLeg</cite>, <cite>Gear</cite>.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &#39;tick&#39;: 8172,
+    &#39;seconds&#39;: 3.6875,
+    &#39;clockTime&#39;: &#39;01:52&#39;,
+    &#39;attackerSteamID&#39;: 76561198035759667,
+    &#39;attackerName&#39;: &#39;alo0o0o0o0&#39;,
+    &#39;attackerTeam&#39;: &#39;&#39;,
+    &#39;attackerSide&#39;: &#39;T&#39;,
+    &#39;attackerX&#39;: -1184.6986083984375,
+    &#39;attackerY&#39;: 477.1373596191406,
+    &#39;attackerZ&#39;: -55.96875,
+    &#39;attackerViewX&#39;: 56.79931640625,
+    &#39;attackerViewY&#39;: 3.3837890625,
+    &#39;attackerStrafe&#39;: False,                 # Was the attacker moving when they shot
+    &#39;victimSteamID&#39;: 76561197960742750,
+    &#39;victimName&#39;: &#39;howl&#39;,
+    &#39;victimTeam&#39;: &#39;&#39;,
+    &#39;victimSide&#39;: &#39;T&#39;,
+    &#39;victimX&#39;: -1125.4398193359375,
+    &#39;victimY&#39;: 520.9878540039062,
+    &#39;victimZ&#39;: -51.978607177734375,
+    &#39;victimViewX&#39;: 9.2230224609375,
+    &#39;victimViewY&#39;: 0.6097412109375,
+    &#39;weapon&#39;: &#39;Knife&#39;,
+    &#39;hpDamage&#39;: 61,                          # Can be over 100 (e.g., AWP headshots)
+    &#39;hpDamageTaken&#39;: 61,                     # Damage actually taken by the victim
+    &#39;armorDamage&#39;: 5,
+    &#39;armorDamageTaken&#39;: 5,
+    &#39;hitGroup&#39;: &#39;Generic&#39;,
+    &#39;isFriendlyFire&#39;: True,
+    &#39;distance&#39;: 73.82676464998524,
+    &#39;zoomLevel&#39;: 0                           # 0 for no zoom, 1 for half zoom, 2 for full zoom
+}
+</pre></div>
+</div>
+</section>
+<section id="grenades">
+<h2>Grenades<a class="headerlink" href="#grenades" title="Permalink to this headline"></a></h2>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &#39;throwTick&#39;: 8500,
+    &#39;destroyTick&#39;: 8860,                  # When was the entity destroyed
+    &#39;throwSeconds&#39;: 8.8125,
+    &#39;throwClockTime&#39;: &#39;01:47&#39;,
+    &#39;destroySeconds&#39;: 14.4375,
+    &#39;destroyClockTime&#39;: &#39;01:41&#39;,
+    &#39;throwerSteamID&#39;: 76561198098005932,
+    &#39;throwerName&#39;: &#39;aidan&#39;,
+    &#39;throwerTeam&#39;: &#39;&#39;,
+    &#39;throwerSide&#39;: &#39;CT&#39;,
+    &#39;throwerX&#39;: 1330.09375,
+    &#39;throwerY&#39;: 570.0625,
+    &#39;throwerZ&#39;: 200.96875,
+    &#39;grenadeType&#39;: &#39;HE Grenade&#39;,
+    &#39;grenadeX&#39;: 53.96875,
+    &#39;grenadeY&#39;: 671.5,
+    &#39;grenadeZ&#39;: 68.09375,
+    &#39;UniqueID&#39;: 5031578313293207366        # Unique entity ID
+}
+</pre></div>
+</div>
+</section>
+<section id="bomb-events">
+<h2>Bomb Events<a class="headerlink" href="#bomb-events" title="Permalink to this headline"></a></h2>
+<p>The bomb action can be <cite>defuse</cite>, <cite>defuse_start</cite>, <cite>defuse_aborted</cite>, <cite>plant</cite>, <cite>plant_start</cite>, <cite>plant_aborted</cite>.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &#39;tick&#39;: 12250,
+    &#39;seconds&#39;: 67.40625,
+    &#39;clockTime&#39;: &#39;00:48&#39;,
+    &#39;playerSteamID&#39;: 76561198043315625,
+    &#39;playerName&#39;: &#39;Beach&#39;,
+    &#39;playerTeam&#39;: &#39;&#39;,
+    &#39;playerX&#39;: 2160.965576171875,
+    &#39;playerY&#39;: 144.39041137695312,
+    &#39;playerZ&#39;: 160.03125,
+    &#39;bombAction&#39;: &#39;plant_begin&#39;,
+    &#39;bombSite&#39;: &#39;A&#39;
+}
+</pre></div>
+</div>
+</section>
+<section id="weapon-fires">
+<h2>Weapon Fires<a class="headerlink" href="#weapon-fires" title="Permalink to this headline"></a></h2>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &#39;tick&#39;: 8492,
+    &#39;seconds&#39;: 8.6875,
+    &#39;clockTime&#39;: &#39;01:47&#39;,
+    &#39;playerSteamID&#39;: 76561198098005932,
+    &#39;playerName&#39;: &#39;aidan&#39;,
+    &#39;playerTeam&#39;: &#39;&#39;,
+    &#39;playerSide&#39;: &#39;CT&#39;,
+    &#39;playerX&#39;: 1377.0318603515625,
+    &#39;playerY&#39;: 566.3394775390625,
+    &#39;playerZ&#39;: 131.50010681152344,
+    &#39;playerViewX&#39;: 175.49560546875,
+    &#39;playerViewY&#39;: 355.4901123046875,
+    &#39;playerStrafe&#39;: False,
+    &#39;weapon&#39;: &#39;HE Grenade&#39;,
+    &#39;zoomLevel&#39;: 0
+}
+</pre></div>
+</div>
+</section>
+<section id="flashes">
+<h2>Flashes<a class="headerlink" href="#flashes" title="Permalink to this headline"></a></h2>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &#39;tick&#39;: 9518,
+    &#39;seconds&#39;: 24.71875,
+    &#39;clockTime&#39;: &#39;01:31&#39;,
+    &#39;attackerSteamID&#39;: 76561198098005932,
+    &#39;attackerName&#39;: &#39;aidan&#39;,
+    &#39;attackerTeam&#39;: &#39;&#39;,
+    &#39;attackerSide&#39;: &#39;CT&#39;,
+    &#39;attackerX&#39;: 1434.30224609375,
+    &#39;attackerY&#39;: 2835.972412109375,
+    &#39;attackerZ&#39;: 127.61480712890625,
+    &#39;attackerViewX&#39;: 154.5062255859375,
+    &#39;attackerViewY&#39;: 317.7081298828125,
+    &#39;playerSteamID&#39;: 76561198060045535,
+    &#39;playerName&#39;: &#39;Daniel&#39;,
+    &#39;playerTeam&#39;: &#39;&#39;,
+    &#39;playerSide&#39;: &#39;CT&#39;,
+    &#39;playerX&#39;: 923.0872192382812,
+    &#39;playerY&#39;: 2777.9443359375,
+    &#39;playerZ&#39;: 128.74525451660156,
+    &#39;playerViewX&#39;: 239.095458984375,
+    &#39;playerViewY&#39;: 358.2037353515625,
+    &#39;flashDuration&#39;: 2.676444416
+}
+</pre></div>
+</div>
+</section>
+<section id="frames">
+<h2>Frames<a class="headerlink" href="#frames" title="Permalink to this headline"></a></h2>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &#39;tick&#39;: 8174,
+    &#39;seconds&#39;: 3.71875,
+    &#39;clockTime&#39;: &#39;01:52&#39;,
+    &#39;t&#39;: {
+        &#39;side&#39;: &#39;T&#39;,
+        &#39;teamName&#39;: &#39;&#39;,
+        &#39;teamEqVal&#39;: 3550,
+        &#39;alivePlayers&#39;: 5,
+        &#39;totalUtility&#39;: 1,
+        &#39;players&#39;: [{                            # List of player objects with the following structure
+            &#39;steamID&#39;: 76561198035759667,
+            &#39;name&#39;: &#39;alo0o0o0o0&#39;,
+            &#39;team&#39;: &#39;&#39;,
+            &#39;side&#39;: &#39;T&#39;,
+            &#39;x&#39;: -1179.1435546875,
+            &#39;y&#39;: 483.21026611328125,
+            &#39;z&#39;: -55.96875,
+            &#39;velocityX&#39;: 109.83319854736328,
+            &#39;velocityY&#39;: 91.87308502197266,
+            &#39;velocityZ&#39;: 0,
+            &#39;viewX&#39;: 56.84326171875,
+            &#39;viewY&#39;: 3.33984375,
+            &#39;hp&#39;: 100,
+            &#39;armor&#39;: 0,
+            &#39;activeWeapon&#39;: &#39;Knife&#39;,             # Weapon the player is currently holding
+            &#39;totalUtility&#39;: 0,
+            &#39;isAlive&#39;: True,
+            &#39;isBlinded&#39;: False,
+            &#39;isAirborne&#39;: False,
+            &#39;isDucking&#39;: False,
+            &#39;isDuckingInProgress&#39;: False,
+            &#39;isUnDuckingInProgress&#39;: False,
+            &#39;isDefusing&#39;: False,
+            &#39;isPlanting&#39;: False,
+            &#39;isReloading&#39;: False,
+            &#39;isInBombZone&#39;: False,
+            &#39;isInBuyZone&#39;: False,
+            &#39;isStanding&#39;: True,
+            &#39;isScoped&#39;: False,
+            &#39;isWalking&#39;: False,
+            &#39;isUnknown&#39;: False,
+            &#39;inventory&#39;: [{                     # List of weapons
+                &#39;weaponName&#39;: &#39;Glock-18&#39;,
+                &#39;weaponClass&#39;: &#39;Pistols&#39;,
+                &#39;ammoInMagazine&#39;: 20,
+                &#39;ammoInReserve&#39;: 120
+            }],
+            &#39;equipmentValue&#39;: 200,
+            &#39;equipmentValueFreezetimeEnd&#39;: 200,
+            &#39;equipmentValueRoundStart&#39;: 200,
+            &#39;cash&#39;: 800,
+            &#39;cashSpendThisRound&#39;: 0,
+            &#39;cashSpendTotal&#39;: 0,                # Cash spent the entire game
+            &#39;hasHelmet&#39;: False,
+            &#39;hasDefuse&#39;: False,
+            &#39;hasBomb&#39;: False,
+            &#39;ping&#39;: 32,
+            &#39;zoomLevel&#39;: 0
+            }]
+        },
+        &#39;ct&#39;: {...},                            # Same structure as &#39;t&#39;
+        &#39;world&#39;: [{                             # List of world objects, like bombs, mollies or smokes
+                &#39;objectType&#39;: &#39;bomb&#39;,
+                &#39;x&#39;: -1215.3546142578125,
+                &#39;y&#39;: 470.23406982421875,
+                &#39;z&#39;: -55.96875
+        }],
+        &#39;bombPlanted&#39;: False,
+        &#39;bombsite&#39;: &#39;&#39;
+}
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Peter Xenopoulos.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
