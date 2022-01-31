@@ -22,7 +22,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
-        if: github.event_name != 'pull_request'
       - name: Trigger RTDs build
         uses: dfm/rtds-action@v1
         with:
