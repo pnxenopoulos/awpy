@@ -5,6 +5,17 @@
 
 Welcome to csgo's documentation!
 ================================
+.. automodule:: analytics
+   :members:
+
+.. automodule:: data
+   :members:
+
+.. automodule:: parser
+   :members:
+
+.. automodule:: visualization
+   :members:
 
 .. toctree::
    :maxdepth: 2

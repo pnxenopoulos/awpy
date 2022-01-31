@@ -1,4 +1,4 @@
-[![Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Build](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://github.com/pnxenopoulos/csgo/tree/main/docs) [![GitHub issues](https://img.shields.io/github/issues/pnxenopoulos/csgo)](https://github.com/pnxenopoulos/csgo/issues) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE) 
+[![Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Build](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://pycsgo.readthedocs.io/en/latest/) [![GitHub issues](https://img.shields.io/github/issues/pnxenopoulos/csgo)](https://github.com/pnxenopoulos/csgo/issues) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/csgo/blob/master/LICENSE) 
 
 # Analyzing Counter-Strike: Global Offensive Data
 The `csgo` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful information pertaining to the `csgo` package. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library, along with other resources for esports analytics. 
@@ -60,10 +60,10 @@ data_df = demo_parser.parse(return_type="df")
 ```
 
 ### Help! The parser returns weird rounds.
-Please note that the parser parses _everything_ in the demo. This means that you may have rounds from the warmup (denoted with the `isWarmup` flag), rounds that may have ended in a draw, and other odd-looking rounds. You will have to do your own cleaning, although we hope that whatever functions exist in `csgo.parser.cleaning` can help you.
+Please note that the parser parses _everything_ in the demo. This means that you may have rounds from the warmup (denoted with the `isWarmup` flag), rounds that may have ended in a draw, and other odd-looking rounds. Try using the `DemoParser.clean_rounds()` method to clean up. Note that this is not going to be 100 percent perfect.
 
 ### Help! The parser doesn't work or lacks a feature
-If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcEKW). CSGO demos are oftentimes imperfect, but if you ask on Discord, we can try to figure out what the problem is. Also, note the help section above. If you come across any issue, whether a demo doesn't parse, parsed demo data is incorrect or you want a new feature, do not hesitate to open an issue or ask on [Discord](https://discord.gg/W34XjsSs2H). You can see open issues [here](https://github.com/pnxenopoulos/csgo/issues) and can visit [our documentation](https://github.com/pnxenopoulos/csgo/tree/main/csgo/docs) for more information on the library's capabilities.
+If you need help with the parser, join our [Discord](https://discord.gg/3JrhKYcEKW). CSGO demos are oftentimes imperfect, but if you ask on Discord, we can try to figure out what the problem is. Also, note the help section above. If you come across any issue, whether a demo doesn't parse, parsed demo data is incorrect or you want a new feature, do not hesitate to open an issue or ask on [Discord](https://discord.gg/W34XjsSs2H). You can see open issues [here](https://github.com/pnxenopoulos/csgo/issues) and can visit [our documentation](https://pycsgo.readthedocs.io/en/latest/) for more information on the library's capabilities.
 
 ## Examples and Projects
 Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
@@ -71,8 +71,9 @@ Take a look at the following Jupyter notebooks provided in our `examples/` direc
 - [Parsing a CSGO demofile](https://github.com/pnxenopoulos/csgo/blob/master/examples/00_Parsing_a_CSGO_Demofile.ipynb)
 - [Basic CSGO analysis](https://github.com/pnxenopoulos/csgo/blob/master/examples/01_Basic_CSGO_Analysis.ipynb)
 - [CSGO visualization](https://github.com/pnxenopoulos/csgo/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
+- [Working with navigation meshes.ipynb](https://github.com/pnxenopoulos/csgo/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb)
 
-You can also visit [the documentation](https://github.com/pnxenopoulos/csgo/blob/main/docs/projects.md) to see examples of content that uses the csgo Python library. If you use the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive*, below. If you use the parser for any analysis on Twitter, we kindly ask you to cite back to the parser, so that others may know how you parsed your data. If you have a paper that uses the parser, please let us know in Discord so we can add it! Here is the paper citation:
+If you use the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive*, below. If you use the parser for any analysis on Twitter, we kindly ask you to cite back to the parser, so that others may know how you parsed your data. If you have a paper that uses the parser, please let us know in Discord so we can add it! Here is the paper citation:
 
 Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive](https://arxiv.org/pdf/2011.01324.pdf)." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
 
