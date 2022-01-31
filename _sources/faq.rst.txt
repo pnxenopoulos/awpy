@@ -3,13 +3,13 @@ Frequently Asked Questions (FAQs)
 
 This is a nonexhaustive list of frequently asked questions.
 
-**Q:** Do I need Golang to run this
+**Q:** Do I need Golang to run this?
     You don't *need* Golang to install this library or access any part of it. However, **you need Golang 1.16+ to parse demofiles using this library**.
 
-**Q:** The parser returns weird rounds or data
+**Q:** The parser returns weird rounds or data!
     Please note that the parser parses *everything* in a demo. This means that you may have rounds from the warmup, rounds that may have ended in a draw, and other odd-looking rounds. Try using the `DemoParser.clean_rounds()` method to clean up. Note that this is not going to be 100 percent perfect. If you still have bad data, ask in the `Discord <https://discord.gg/W34XjsSs2H>`_.
 
-**Q:** Data I want is missing
+**Q:** Data I want is missing!
     Feel free to open an `issue <https://github.com/pnxenopoulos/csgo/issues>`_ or to ask in the `Discord <https://discord.gg/W34XjsSs2H>`_, and we can see if such a feature is possible.
 
 **Q:** Where can I get documentation for the parsed data structure/keys?
