@@ -15,12 +15,6 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
-      #- name: Trigger RTDs build
-      #  uses: dfm/rtds-action@v1
-      #  with:
-      #    webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
-      #    webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-      #    commit_ref: ${{ github.ref }}
       - name: Build and Commit
         uses: sphinx-notes/pages@v2
       - name: Push changes
@@ -28,3 +22,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
+      - name: Trigger RTDs build
+        uses: dfm/rtds-action@v1
+        with:
+          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
+          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
+          commit_ref: ${{ github.ref }}
