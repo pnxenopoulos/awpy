@@ -89,12 +89,10 @@ This csgo Python library is structured as follows:
 .
 ├── csgo
 │   ├── analytics                 # Code for CSGO analytics
-│   ├── data                      
-│   │   ├── map                   # Map images, map data
-│   │   └── nav                   # Map navigation files
+│   ├── data                      # Code for dealnig with CSGO map and nav data
 │   ├── parser                    # Code for CSGO demo parser
 │   └── visualization             # Code for CSGO visualization
-├── doc                           # Contains documentation markdown files
+├── doc                           # Contains documentation files
 ├── examples                      # Contains Jupyter Notebooks showing example code
 └── tests                         # Contains tests for the csgo package
 ```
