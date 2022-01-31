@@ -69,6 +69,8 @@ csgo Modules
    installation
    examples
    projects
+   faq
+   license
 
 .. toctree::
    :caption: Documentation

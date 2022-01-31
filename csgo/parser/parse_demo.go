@@ -217,8 +217,6 @@ type KillAction struct {
 	AttackerX           *float64 `json:"attackerX"`
 	AttackerY           *float64 `json:"attackerY"`
 	AttackerZ           *float64 `json:"attackerZ"`
-	AttackerAreaID      *int64   `json:"attackerAreaID"`
-	AttackerAreaName    *string  `json:"attackerAreaName"`
 	AttackerViewX       *float64 `json:"attackerViewX"`
 	AttackerViewY       *float64 `json:"attackerViewY"`
 	VictimSteamID       *int64   `json:"victimSteamID"`
