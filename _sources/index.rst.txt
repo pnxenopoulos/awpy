@@ -24,10 +24,6 @@ This Python library allows a user to parse, analyze and visualize Counter-Strike
 .. _repository: https://github.com/pnxenopoulos/csgo
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-If you decide to use this library, please cite the following paper.
-
-   Xenopoulos, P., Doraiswamy, H., & Silva, C. (2020, December). Valuing Player Actions in Counter-Strike: Global Offensive. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.
-
 Using this library to parse CSGO demos is as easy as below:
 
 .. code-block:: python
@@ -67,6 +63,11 @@ Using this library to parse CSGO demos is as easy as below:
    data_df = demo_parser.parse(return_type="df")
 
    # The parser also writes a JSON file of the output named demo_id.json
+
+If you decide to use this library, please cite the following paper.
+
+   Xenopoulos, P., Doraiswamy, H., & Silva, C. (2020, December). Valuing Player Actions in Counter-Strike: Global Offensive. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.
+
 
 Using csgo
 ----------
