@@ -50,8 +50,7 @@
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="parser.html">Parser</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Visualization</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#csgo-visualization"><cite>csgo.visualization</cite></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-csgo.visualization.plot">csgo.visualization.plot module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.visualization.plot">csgo.visualization.plot</a></li>
 </ul>
 </li>
 </ul>
@@ -83,39 +82,107 @@
   <section id="visualization">
 <h1>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline"></a></h1>
 <p>This module contains functions for visualization.</p>
-<section id="csgo-visualization">
-<h2><cite>csgo.visualization</cite><a class="headerlink" href="#csgo-visualization" title="Permalink to this headline"></a></h2>
-</section>
 <section id="module-csgo.visualization.plot">
-<span id="csgo-visualization-plot-module"></span><h2>csgo.visualization.plot module<a class="headerlink" href="#module-csgo.visualization.plot" title="Permalink to this headline"></a></h2>
+<span id="csgo-visualization-plot"></span><h2>csgo.visualization.plot<a class="headerlink" href="#module-csgo.visualization.plot" title="Permalink to this headline"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.visualization.plot.plot_map">
 <span class="sig-prename descclassname"><span class="pre">csgo.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'de_dust2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'original'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dark</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/visualization/plot.html#plot_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.visualization.plot.plot_map" title="Permalink to this definition"></a></dt>
-<dd><p>Plots the map</p>
+<dd><p>Plots a blank map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>map_type</strong> (<em>string</em>) – “original” or “simpleradar”</p></li>
+<li><p><strong>dark</strong> (<em>boolean</em>) – Only for use with map_type=”simpleradar”. Indicates if you want to use the SimpleRadar dark map type</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.visualization.plot.plot_nades">
 <span class="sig-prename descclassname"><span class="pre">csgo.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_nades</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nades</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CT'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'de_ancient'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'original'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dark</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/visualization/plot.html#plot_nades"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.visualization.plot.plot_nades" title="Permalink to this definition"></a></dt>
-<dd><p>Plot grenades</p>
+<dd><p>Plots grenade trajectories.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rounds</strong> (<em>list</em>) – List of round objects from a parsed demo</p></li>
+<li><p><strong>nades</strong> (<em>list</em>) – List of grenade types to plot</p></li>
+<li><p><strong>side</strong> (<em>string</em>) – Specify side to plot grenades. Either “CT” or “T”.</p></li>
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>map_type</strong> (<em>string</em>) – “original” or “simpleradar”</p></li>
+<li><p><strong>dark</strong> (<em>boolean</em>) – Only for use with map_type=”simpleradar”. Indicates if you want to use the SimpleRadar dark map type</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>matplotlib fig and ax</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.visualization.plot.plot_positions">
 <span class="sig-prename descclassname"><span class="pre">csgo.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'de_ancient'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'original'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dark</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_transformation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/visualization/plot.html#plot_positions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.visualization.plot.plot_positions" title="Permalink to this definition"></a></dt>
-<dd><p>Plots positions</p>
+<dd><p>Plots player positions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>positions</strong> (<em>list</em>) – List of lists of length 2 ([[x,y], …])</p></li>
+<li><p><strong>colors</strong> (<em>list</em>) – List of colors for each player</p></li>
+<li><p><strong>markers</strong> (<em>list</em>) – List of marker types for each player</p></li>
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>map_type</strong> (<em>string</em>) – “original” or “simpleradar”</p></li>
+<li><p><strong>dark</strong> (<em>boolean</em>) – Only for use with map_type=”simpleradar”. Indicates if you want to use the SimpleRadar dark map type</p></li>
+<li><p><strong>apply_transformation</strong> (<em>boolean</em>) – Indicates if you need to also use position_transform() for the X/Y coordinates</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>matplotlib fig and ax</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.visualization.plot.plot_round">
 <span class="sig-prename descclassname"><span class="pre">csgo.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">plot_round</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'de_ancient'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'original'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dark</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/visualization/plot.html#plot_round"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.visualization.plot.plot_round" title="Permalink to this definition"></a></dt>
-<dd><p>Creates gif from frame. Writes to filename</p>
+<dd><p>Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>string</em>) – Filename to save the gif</p></li>
+<li><p><strong>frames</strong> (<em>list</em>) – List of frames from a parsed demo</p></li>
+<li><p><strong>markers</strong> (<em>list</em>) – List of marker types for each player</p></li>
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>map_type</strong> (<em>string</em>) – “original” or “simpleradar”</p></li>
+<li><p><strong>dark</strong> (<em>boolean</em>) – Only for use with map_type=”simpleradar”. Indicates if you want to use the SimpleRadar dark map type</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>matplotlib fig and ax, saves .gif</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.visualization.plot.position_transform">
 <span class="sig-prename descclassname"><span class="pre">csgo.visualization.plot.</span></span><span class="sig-name descname"><span class="pre">position_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/visualization/plot.html#position_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.visualization.plot.position_transform" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Transforms an X or Y coordinate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>position</strong> (<em>float</em>) – X or Y coordinate</p></li>
+<li><p><strong>axis</strong> (<em>string</em>) – Either “x” or “y” (lowercase)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 </section>

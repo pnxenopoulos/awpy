@@ -48,11 +48,10 @@
 <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Analytics</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#csgo-analytics"><cite>csgo.analytics</cite></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.nav">csgo.analytics.nav module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.states">csgo.analytics.states module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.stats">csgo.analytics.stats module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.wpa">csgo.analytics.wpa module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.nav">csgo.analytics.nav</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.states">csgo.analytics.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.stats">csgo.analytics.stats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.wpa">csgo.analytics.wpa</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data</a></li>
@@ -87,11 +86,8 @@
   <section id="analytics">
 <h1>Analytics<a class="headerlink" href="#analytics" title="Permalink to this headline"></a></h1>
 <p>This is the analytics module. You can use it to calculate statistics on your parsed demos, such as Rating, ADR, and so on.</p>
-<section id="csgo-analytics">
-<h2><cite>csgo.analytics</cite><a class="headerlink" href="#csgo-analytics" title="Permalink to this headline"></a></h2>
-</section>
 <section id="module-csgo.analytics.nav">
-<span id="csgo-analytics-nav-module"></span><h2>csgo.analytics.nav module<a class="headerlink" href="#module-csgo.analytics.nav" title="Permalink to this headline"></a></h2>
+<span id="csgo-analytics-nav"></span><h2>csgo.analytics.nav<a class="headerlink" href="#module-csgo.analytics.nav" title="Permalink to this headline"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.analytics.nav.area_distance">
 <span class="sig-prename descclassname"><span class="pre">csgo.analytics.nav.</span></span><span class="sig-name descname"><span class="pre">area_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/nav.html#area_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.nav.area_distance" title="Permalink to this definition"></a></dt>
@@ -179,15 +175,12 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>True if area contains the point, false if not</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>boolean</p>
-</dd>
 </dl>
 </dd></dl>
 
 </section>
 <section id="module-csgo.analytics.states">
-<span id="csgo-analytics-states-module"></span><h2>csgo.analytics.states module<a class="headerlink" href="#module-csgo.analytics.states" title="Permalink to this headline"></a></h2>
+<span id="csgo-analytics-states"></span><h2>csgo.analytics.states<a class="headerlink" href="#module-csgo.analytics.states" title="Permalink to this headline"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.analytics.states.generate_game_state">
 <span class="sig-prename descclassname"><span class="pre">csgo.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_game_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/states.html#generate_game_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.states.generate_game_state" title="Permalink to this definition"></a></dt>
@@ -295,7 +288,7 @@
 
 </section>
 <section id="module-csgo.analytics.stats">
-<span id="csgo-analytics-stats-module"></span><h2>csgo.analytics.stats module<a class="headerlink" href="#module-csgo.analytics.stats" title="Permalink to this headline"></a></h2>
+<span id="csgo-analytics-stats"></span><h2>csgo.analytics.stats<a class="headerlink" href="#module-csgo.analytics.stats" title="Permalink to this headline"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.analytics.stats.accuracy">
 <span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#accuracy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.accuracy" title="Permalink to this definition"></a></dt>
@@ -446,10 +439,7 @@ the values are lists that contain the column filters.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.analytics.stats.extract_num_filters">
 <span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">extract_num_filters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#extract_num_filters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.extract_num_filters" title="Permalink to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Extracts the numeric column filters from a key-value pair in a</dt><dd><p>dictionary.</p>
-</dd>
-</dl>
+<dd><p>Extracts the numeric column filters from a key-value pair in a dictionary.</p>
 <p>Extracts logical operators and numeric values from the column filters in the
 the value of a specified key in the dictionary represented by filters.</p>
 <dl class="field-list simple">
@@ -785,10 +775,7 @@ and the values are lists that contain the column filters.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.analytics.stats.util_dmg_breakdown">
 <span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">util_dmg_breakdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#util_dmg_breakdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.util_dmg_breakdown" title="Permalink to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Returns a dataframe with utility damage statistics broken down by grenade</dt><dd><p>type.</p>
-</dd>
-</dl>
+<dd><p>Returns a dataframe with utility damage statistics broken down by grenade type.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -846,7 +833,7 @@ the values are lists that contain the column filters.</p></li>
 
 </section>
 <section id="module-csgo.analytics.wpa">
-<span id="csgo-analytics-wpa-module"></span><h2>csgo.analytics.wpa module<a class="headerlink" href="#module-csgo.analytics.wpa" title="Permalink to this headline"></a></h2>
+<span id="csgo-analytics-wpa"></span><h2>csgo.analytics.wpa<a class="headerlink" href="#module-csgo.analytics.wpa" title="Permalink to this headline"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="csgo.analytics.wpa.round_win_probability">
 <span class="sig-prename descclassname"><span class="pre">csgo.analytics.wpa.</span></span><span class="sig-name descname"><span class="pre">round_win_probability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ct_score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/wpa.html#round_win_probability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.wpa.round_win_probability" title="Permalink to this definition"></a></dt>

@@ -3,10 +3,7 @@ Parser
 
 This is the parser module. You can use it to parse and clean CSGO demos. To see what parsed demo looks like, and what the JSON keys indicate, please visit :doc:`parser_output`.
 
-`csgo.parser`
--------------
-
-csgo.parser.cleaning module
+csgo.parser.cleaning
 ---------------------------
 
 .. automodule:: csgo.parser.cleaning
@@ -14,7 +11,7 @@ csgo.parser.cleaning module
    :undoc-members:
    :show-inheritance:
 
-csgo.parser.demoparser module
+csgo.parser.demoparser
 -----------------------------
 
 .. automodule:: csgo.parser.demoparser

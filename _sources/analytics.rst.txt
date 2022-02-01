@@ -3,10 +3,7 @@ Analytics
 
 This is the analytics module. You can use it to calculate statistics on your parsed demos, such as Rating, ADR, and so on.
 
-`csgo.analytics`
--------------
-
-csgo.analytics.nav module
+csgo.analytics.nav
 -------------------------
 
 .. automodule:: csgo.analytics.nav
@@ -14,7 +11,7 @@ csgo.analytics.nav module
    :undoc-members:
    :show-inheritance:
 
-csgo.analytics.states module
+csgo.analytics.states
 ----------------------------
 
 .. automodule:: csgo.analytics.states
@@ -22,7 +19,7 @@ csgo.analytics.states module
    :undoc-members:
    :show-inheritance:
 
-csgo.analytics.stats module
+csgo.analytics.stats
 ---------------------------
 
 .. automodule:: csgo.analytics.stats
@@ -30,7 +27,7 @@ csgo.analytics.stats module
    :undoc-members:
    :show-inheritance:
 
-csgo.analytics.wpa module
+csgo.analytics.wpa
 -------------------------
 
 .. automodule:: csgo.analytics.wpa

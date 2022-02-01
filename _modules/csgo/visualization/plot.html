@@ -87,7 +87,16 @@
 
 
 <div class="viewcode-block" id="plot_map"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.plot_map">[docs]</a><span class="k">def</span> <span class="nf">plot_map</span><span class="p">(</span><span class="n">map_name</span><span class="o">=</span><span class="s2">&quot;de_dust2&quot;</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="s2">&quot;original&quot;</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Plots the map&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Plots a blank map.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        map_type (string): &quot;original&quot; or &quot;simpleradar&quot;</span>
+<span class="sd">        dark (boolean): Only for use with map_type=&quot;simpleradar&quot;. Indicates if you want to use the SimpleRadar dark map type</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">map_type</span> <span class="o">==</span> <span class="s2">&quot;original&quot;</span><span class="p">:</span>
         <span class="n">map_bg</span> <span class="o">=</span> <span class="n">imageio</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span>
             <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
@@ -108,6 +117,16 @@
 
 <span class="c1"># Position function courtesy of PureSkill.gg</span>
 <div class="viewcode-block" id="position_transform"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.position_transform">[docs]</a><span class="k">def</span> <span class="nf">position_transform</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">axis</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Transforms an X or Y coordinate.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        position (float): X or Y coordinate</span>
+<span class="sd">        axis (string): Either &quot;x&quot; or &quot;y&quot; (lowercase)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">start</span> <span class="o">=</span> <span class="n">MAP_DATA</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">axis</span><span class="p">]</span>
     <span class="n">scale</span> <span class="o">=</span> <span class="n">MAP_DATA</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="s2">&quot;scale&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
@@ -131,7 +150,20 @@
     <span class="n">dark</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">apply_transformation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Plots positions&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Plots player positions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        positions (list): List of lists of length 2 ([[x,y], ...])</span>
+<span class="sd">        colors (list): List of colors for each player</span>
+<span class="sd">        markers (list): List of marker types for each player</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        map_type (string): &quot;original&quot; or &quot;simpleradar&quot;</span>
+<span class="sd">        dark (boolean): Only for use with map_type=&quot;simpleradar&quot;. Indicates if you want to use the SimpleRadar dark map type</span>
+<span class="sd">        apply_transformation (boolean): Indicates if you need to also use position_transform() for the X/Y coordinates</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        matplotlib fig and ax</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">f</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">plot_map</span><span class="p">(</span><span class="n">map_name</span><span class="o">=</span><span class="n">map_name</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="n">map_type</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="n">dark</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">markers</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">apply_transformation</span><span class="p">:</span>
@@ -151,7 +183,19 @@
 <div class="viewcode-block" id="plot_round"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.plot_round">[docs]</a><span class="k">def</span> <span class="nf">plot_round</span><span class="p">(</span>
     <span class="n">filename</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">map_name</span><span class="o">=</span><span class="s2">&quot;de_ancient&quot;</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="s2">&quot;original&quot;</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Creates gif from frame. Writes to filename&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filename (string): Filename to save the gif</span>
+<span class="sd">        frames (list): List of frames from a parsed demo</span>
+<span class="sd">        markers (list): List of marker types for each player</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        map_type (string): &quot;original&quot; or &quot;simpleradar&quot;</span>
+<span class="sd">        dark (boolean): Only for use with map_type=&quot;simpleradar&quot;. Indicates if you want to use the SimpleRadar dark map type</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        matplotlib fig and ax, saves .gif</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s2">&quot;csgo_tmp&quot;</span><span class="p">):</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s2">&quot;csgo_tmp/&quot;</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s2">&quot;csgo_tmp&quot;</span><span class="p">)</span>
@@ -211,7 +255,19 @@
 <div class="viewcode-block" id="plot_nades"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.plot_nades">[docs]</a><span class="k">def</span> <span class="nf">plot_nades</span><span class="p">(</span>
     <span class="n">rounds</span><span class="p">,</span> <span class="n">nades</span><span class="o">=</span><span class="p">[],</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;CT&quot;</span><span class="p">,</span> <span class="n">map_name</span><span class="o">=</span><span class="s2">&quot;de_ancient&quot;</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="s2">&quot;original&quot;</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Plot grenades&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Plots grenade trajectories.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        rounds (list): List of round objects from a parsed demo</span>
+<span class="sd">        nades (list): List of grenade types to plot</span>
+<span class="sd">        side (string): Specify side to plot grenades. Either &quot;CT&quot; or &quot;T&quot;.</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        map_type (string): &quot;original&quot; or &quot;simpleradar&quot;</span>
+<span class="sd">        dark (boolean): Only for use with map_type=&quot;simpleradar&quot;. Indicates if you want to use the SimpleRadar dark map type</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        matplotlib fig and ax</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">f</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">plot_map</span><span class="p">(</span><span class="n">map_name</span><span class="o">=</span><span class="n">map_name</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="n">map_type</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="n">dark</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rounds</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;grenades&quot;</span><span class="p">]:</span>
