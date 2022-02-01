@@ -28,13 +28,53 @@ If you decide to use this library, please cite the following paper.
 
    Xenopoulos, P., Doraiswamy, H., & Silva, C. (2020, December). Valuing Player Actions in Counter-Strike: Global Offensive. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.
 
+Using this library to parse CSGO demos is as easy as below:
+
+.. code-block:: python
+
+   from csgo.parser import DemoParser
+
+   # Set the parse_rate equal to the tick rate at which you would like to parse the frames of the demo.
+   # This parameter only matters if parse_frames=True ()
+   # For reference, MM demos are usually 64 ticks, and pro/FACEIT demos are usually 128 ticks.
+   demo_parser = DemoParser(demofile="og-vs-natus-vincere-m1-dust2.dem", 
+                            demo_id="og-vs-natus-vincere", 
+                            parse_frames=True,
+                            parse_rate=128)
+
+
+   # Parse the demofile, output results to dictionary with df name as key
+   data = demo_parser.parse()
+
+
+   # There are a variety of top level keys
+   # You can view game rounds and events in 'gameRounds']
+   data["matchID"]
+   data["clientName"]
+   data["mapName"]
+   data["tickRate"]
+   data["playbackTicks"]
+   data["playbackFramesCount"]
+   data["parsedToFrameIdx"]
+   data["parserParameters"]
+   data["serverVars"]
+   data["matchPhases"]
+   data["matchmakingRanks"]
+   data["playerConnections"]
+   data["gameRounds"] # From this value, you can extract player events via: data['gameRounds'][i]['kills'], etc.
+
+   # You can also parse the data into dataframes using
+   data_df = demo_parser.parse(return_type="df")
+
+   # The parser also writes a JSON file of the output named demo_id.json
+
 Using csgo
 ----------
 :doc:`installation`
    How to install the csgo Python library.
 
 :doc:`examples`
-   Examples Jupyter notebooks to help get you started.
+   Examples code and Jupyter notebooks to help get you started.
 
 :doc:`projects`
    Projects that use the csgo Python library.
