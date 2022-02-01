@@ -6,6 +6,10 @@ This module contains functions for visualization.
 `csgo.visualization`
 -------------
 
-.. automodule:: csgo.visualization
-    :members:
-    :show-inheritance:
+csgo.visualization.plot module
+------------------------------
+
+.. automodule:: csgo.visualization.plot
+   :members:
+   :undoc-members:
+   :show-inheritance:

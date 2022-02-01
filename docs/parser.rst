@@ -6,6 +6,18 @@ This is the parser module. You can use it to parse and clean CSGO demos. To see 
 `csgo.parser`
 -------------
 
-.. automodule:: csgo.parser
-    :members:
-    :show-inheritance:
+csgo.parser.cleaning module
+---------------------------
+
+.. automodule:: csgo.parser.cleaning
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+csgo.parser.demoparser module
+-----------------------------
+
+.. automodule:: csgo.parser.demoparser
+   :members:
+   :undoc-members:
+   :show-inheritance:
