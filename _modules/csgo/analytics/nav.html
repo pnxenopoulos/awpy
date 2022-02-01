@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>csgo.analytics.nav &mdash; csgo 1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> csgo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../projects.html">Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">Frequently Asked Questions (FAQs)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License and Acknowledgments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../analytics.html">Analytics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parser.html">Parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../visualization.html">Visualization</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">csgo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>csgo.analytics.nav</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for csgo.analytics.nav</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">multiprocessing.sharedctypes</span> <span class="kn">import</span> <span class="n">Value</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">csgo.data</span> <span class="kn">import</span> <span class="n">NAV</span><span class="p">,</span> <span class="n">NAV_GRAPHS</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">distance</span>
+
+
+<div class="viewcode-block" id="point_in_area"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.point_in_area">[docs]</a><span class="k">def</span> <span class="nf">point_in_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_id</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns if the point is within a nav area for a map.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        area_id (int): Area ID as an integer</span>
+<span class="sd">        point (list): Point as a list [x,y,z]</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        boolean : True if area contains the point, false if not</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">area_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Area ID not found.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Point must be a list [X,Y,Z]&quot;</span><span class="p">)</span>
+    <span class="n">contains_x</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">min</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;northWestX&quot;</span><span class="p">],</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;southEastX&quot;</span><span class="p">])</span>
+        <span class="o">&lt;</span> <span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;northWestX&quot;</span><span class="p">],</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;southEastX&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">contains_y</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">min</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;northWestY&quot;</span><span class="p">],</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;southEastY&quot;</span><span class="p">])</span>
+        <span class="o">&lt;</span> <span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;northWestY&quot;</span><span class="p">],</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;southEastY&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">contains_x</span> <span class="ow">and</span> <span class="n">contains_y</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="find_closest_area"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.find_closest_area">[docs]</a><span class="k">def</span> <span class="nf">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Finds the closest area in the nav mesh. Searches through all the areas by comparing point to area centerpoint.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        point (list): Point as a list [x,y,z]</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict containing info on the closest area</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Point must be a list [X,Y,Z]&quot;</span><span class="p">)</span>
+    <span class="n">closest_area</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mapName&quot;</span><span class="p">:</span> <span class="n">map_name</span><span class="p">,</span> <span class="s2">&quot;areaId&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="mi">999999</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">avg_x</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;northWestX&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;southEastX&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">avg_y</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;northWestY&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;southEastY&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">avg_z</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;northWestZ&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;southEastZ&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">avg_x</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">avg_y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">avg_z</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]:</span>
+            <span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">area</span>
+            <span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
+    <span class="k">return</span> <span class="n">closest_area</span></div>
+
+
+<div class="viewcode-block" id="area_distance"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.area_distance">[docs]</a><span class="k">def</span> <span class="nf">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;graph&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the distance between two areas. Dist type an be graph or geodesic.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        area_a (int): Area id</span>
+<span class="sd">        area_b (int): Area id</span>
+<span class="sd">        dist_type (string): String indicating the type of distance to use (graph or geodesic)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict containing info on the path between two areas.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">area_a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="ow">or</span> <span class="p">(</span><span class="n">area_b</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Area ID not found.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">,</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dist_type can only be graph or geodesic&quot;</span><span class="p">)</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">NAV_GRAPHS</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span>
+    <span class="n">distance_obj</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;distanceType&quot;</span><span class="p">:</span> <span class="n">dist_type</span><span class="p">,</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;areas&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;graph&quot;</span><span class="p">:</span>
+        <span class="n">discovered_path</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">)</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">discovered_path</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;areas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">discovered_path</span>
+        <span class="k">return</span> <span class="n">distance_obj</span>
+    <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">dist</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">a</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">b</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">]</span>
+
+        <span class="n">geodesic_path</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">astar_path</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">heuristic</span><span class="o">=</span><span class="n">dist</span><span class="p">)</span>
+        <span class="n">geodesic_cost</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">area</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">geodesic_path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">geodesic_cost</span> <span class="o">+=</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">]</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geodesic_cost</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;areas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geodesic_path</span>
+        <span class="k">return</span> <span class="n">distance_obj</span></div>
+
+
+<div class="viewcode-block" id="point_distance"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.point_distance">[docs]</a><span class="k">def</span> <span class="nf">point_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;graph&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the distance between two points.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        point_a (list): Point as a list (x,y,z)</span>
+<span class="sd">        point_b (list): Point as a list (x,y,z)</span>
+<span class="sd">        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidena, manhattan, canberra or cosine.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict containing info on the distance between two points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">distance_obj</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;distanceType&quot;</span><span class="p">:</span> <span class="n">dist_type</span><span class="p">,</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;areas&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;graph&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;When using graph or geodesic distance, point must be X/Y/Z&quot;</span>
+            <span class="p">)</span>
+        <span class="n">area_a</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point_a</span><span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
+        <span class="n">area_b</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;When using graph or geodesic distance, point must be X/Y/Z&quot;</span>
+            <span class="p">)</span>
+        <span class="n">area_a</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point_a</span><span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
+        <span class="n">area_b</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">:</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance</span><span class="o">.</span><span class="n">euclidean</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">distance_obj</span>
+    <span class="k">elif</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;manhattan&quot;</span><span class="p">:</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance</span><span class="o">.</span><span class="n">cityblock</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">distance_obj</span>
+    <span class="k">elif</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;canberra&quot;</span><span class="p">:</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance</span><span class="o">.</span><span class="n">canberra</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">distance_obj</span>
+    <span class="k">elif</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;cosine&quot;</span><span class="p">:</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance</span><span class="o">.</span><span class="n">cosine</span><span class="p">(</span><span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">distance_obj</span></div>
+
+
+<div class="viewcode-block" id="generate_position_token"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.generate_position_token">[docs]</a><span class="k">def</span> <span class="nf">generate_position_token</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generates the position token for a game frame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        frame (dict): A game frame</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict containing the T token, CT token and combined token (T + CT concatenated)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;CT or T players has length of 0&quot;</span><span class="p">)</span>
+    <span class="c1"># Create map area list</span>
+    <span class="n">map_area_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">area_id</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;areaName&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">map_area_names</span><span class="p">:</span>
+            <span class="n">map_area_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;areaName&quot;</span><span class="p">])</span>
+    <span class="n">map_area_names</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="c1"># Create token</span>
+    <span class="n">ct_token</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
+        <span class="n">closest_area</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span>
+            <span class="n">map_name</span><span class="p">,</span> <span class="p">[</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]]</span>
+        <span class="p">)</span>
+        <span class="n">ct_token</span><span class="p">[</span>
+            <span class="n">map_area_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]][</span><span class="s2">&quot;areaName&quot;</span><span class="p">])</span>
+        <span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">t_token</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
+        <span class="n">closest_area</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span>
+            <span class="n">map_name</span><span class="p">,</span> <span class="p">[</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]]</span>
+        <span class="p">)</span>
+        <span class="n">t_token</span><span class="p">[</span>
+            <span class="n">map_area_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]][</span><span class="s2">&quot;areaName&quot;</span><span class="p">])</span>
+        <span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># Create payload</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">token</span><span class="p">[</span><span class="s2">&quot;tToken&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">t_token</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;[&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;]&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">token</span><span class="p">[</span><span class="s2">&quot;ctToken&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">ct_token</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;[&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;]&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">token</span><span class="p">[</span><span class="s2">&quot;token&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="s2">&quot;ctToken&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">token</span><span class="p">[</span><span class="s2">&quot;tToken&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">token</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Peter Xenopoulos.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -48,10 +48,7 @@
 <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="analytics.html">Analytics</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-csgo.data"><cite>csgo.data</cite></a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="parser.html">Parser</a></li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
 </ul>
@@ -82,10 +79,22 @@
              
   <section id="data">
 <h1>Data<a class="headerlink" href="#data" title="Permalink to this headline"></a></h1>
-<p>This module contains both data and functions to use that data.</p>
-<section id="module-csgo.data">
-<span id="csgo-data"></span><h2><cite>csgo.data</cite><a class="headerlink" href="#module-csgo.data" title="Permalink to this headline"></a></h2>
-</section>
+<p>This module contains both data, primarily related to maps and navigation meshes. Additionally, if you look in the repository, you can find images of popular maps, which we use for visualization.</p>
+<p><cite>NAV</cite> is a dictionary where the top-level keys are map names (strings) and the next-level keys are area ids (integers). The list of acceptable map names is <cite>[‘de_train’, ‘de_cache’, ‘de_ancient’, ‘de_overpass’, ‘de_dust2’, ‘de_cbble’, ‘de_inferno’, ‘de_nuke’, ‘de_vertigo’, ‘de_mirage’]</cite>.</p>
+<p>By running <cite>NAV[“de_dust2”][1213]</cite>, we would see</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    &#39;areaName&#39;: &#39;BombsiteA&#39;,
+    &#39;northWestX&#39;: 1050.0,
+    &#39;northWestY&#39;: 2303.518799,
+    &#39;northWestZ&#39;: 128.03125,
+    &#39;southEastX&#39;: 1125.0,
+    &#39;southEastY&#39;: 2320.481201,
+    &#39;southEastZ&#39;: 128.03125
+}
+</pre></div>
+</div>
+<p><cite>NAV_GRAPHS</cite> is a dictionary where the top-level keys are map names (strings) and the values are a <cite>networkx</cite> graph.</p>
+<p><cite>NAV_CSV</cite> contains the information that is in <cite>NAV</cite> but in a pandas DataFrame.</p>
 </section>
 
 

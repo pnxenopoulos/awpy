@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>csgo.parser.demoparser &mdash; csgo 1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> csgo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../projects.html">Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">Frequently Asked Questions (FAQs)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License and Acknowledgments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../analytics.html">Analytics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parser.html">Parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../visualization.html">Visualization</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">csgo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>csgo.parser.demoparser</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for csgo.parser.demoparser</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">csgo.utils</span> <span class="kn">import</span> <span class="n">check_go_version</span>
+
+
+<div class="viewcode-block" id="DemoParser"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser">[docs]</a><span class="k">class</span> <span class="nc">DemoParser</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;DemoParser can parse, load and clean data from a CSGO demofile. Can be instantiated without a specified demofile.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        demofile (string): A string denoting the path to the demo file, which ends in .dem</span>
+<span class="sd">        log (boolean): A boolean denoting if a log will be written. If true, log is written to &quot;csgo_parser.log&quot;</span>
+<span class="sd">        demo_id (string): A unique demo name/game id. Default is inferred from demofile name</span>
+<span class="sd">        parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.</span>
+<span class="sd">        parse_frames (bool): Flag if you want to parse frames (trajectory data) or not</span>
+<span class="sd">        trade_time (int): Length of the window for a trade (in seconds). Default is 5.</span>
+<span class="sd">        dmg_rolled (bool): Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)</span>
+<span class="sd">        buy_style (string): Buy style string, one of &quot;hltv&quot; or &quot;csgo&quot;</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: Raises a ValueError if the Golang version is lower than 1.14</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">demofile</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">outpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">demo_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parse_rate</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+        <span class="n">parse_frames</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">trade_time</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">dmg_rolled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">buy_style</span><span class="o">=</span><span class="s2">&quot;hltv&quot;</span><span class="p">,</span>
+        <span class="n">json_indentation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># Set up logger</span>
+        <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+                <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;csgo_demoparser.log&quot;</span><span class="p">,</span>
+                <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> [</span><span class="si">%(levelname)s</span><span class="s2">] </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%H:%M:%S&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;CSGODemoParser&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">fh</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="s2">&quot;csgo_demoparser.log&quot;</span><span class="p">)</span>
+            <span class="n">fh</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+                <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> [</span><span class="si">%(levelname)s</span><span class="s2">] </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;%H:%M:%S&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;CSGODemoParser&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Handle demofile and demo_id name. Finds right most &#39;/&#39; in case demofile is a specified path.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">demofile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">demofile</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initialized CSGODemoParser with demofile &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">demofile</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">demo_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">demo_id</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">demo_id</span> <span class="o">=</span> <span class="n">demofile</span><span class="p">[</span><span class="n">demofile</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">demo_id</span> <span class="o">=</span> <span class="n">demo_id</span>
+        <span class="k">if</span> <span class="n">outpath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">outpath</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting demo id to &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">demo_id</span><span class="p">)</span>
+
+        <span class="c1"># Handle parse rate. If the parse rate is less than 64, likely to be slow</span>
+        <span class="k">if</span> <span class="n">parse_rate</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">parse_rate</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Parse rate of &quot;</span>
+                <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">parse_rate</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot; not acceptable! Parse rate must be an integer greater than 0.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">parse_rate</span> <span class="o">=</span> <span class="mi">128</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parse_rate</span> <span class="o">=</span> <span class="n">parse_rate</span>
+
+        <span class="k">if</span> <span class="n">parse_rate</span> <span class="o">&lt;</span> <span class="mi">64</span> <span class="ow">and</span> <span class="n">parse_rate</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos.&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parse_rate</span> <span class="o">=</span> <span class="n">parse_rate</span>
+        <span class="k">elif</span> <span class="n">parse_rate</span> <span class="o">&gt;=</span> <span class="mi">256</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;A high parse rate means very few frames. Only use for testing purposes.&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parse_rate</span> <span class="o">=</span> <span class="n">parse_rate</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parse_rate</span> <span class="o">=</span> <span class="n">parse_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting parse rate to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_rate</span><span class="p">))</span>
+
+        <span class="c1"># Handle trade time</span>
+        <span class="k">if</span> <span class="n">trade_time</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Trade time can&#39;t be negative, setting to default value of 5 seconds.&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trade_time</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="k">elif</span> <span class="n">trade_time</span> <span class="o">&gt;</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Trade time of &quot;</span>
+                <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">trade_time</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot; is rather long. Consider a value between 4-7.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trade_time</span> <span class="o">=</span> <span class="n">trade_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting trade time to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trade_time</span><span class="p">))</span>
+
+        <span class="c1"># Handle buy style</span>
+        <span class="k">if</span> <span class="n">buy_style</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;hltv&quot;</span><span class="p">,</span> <span class="s2">&quot;csgo&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Buy style specified is not one of hltv, csgo, will be set to hltv by default&quot;</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buy_style</span> <span class="o">=</span> <span class="s2">&quot;hltv&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buy_style</span> <span class="o">=</span> <span class="n">buy_style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting buy style to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buy_style</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dmg_rolled</span> <span class="o">=</span> <span class="n">dmg_rolled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_frames</span> <span class="o">=</span> <span class="n">parse_frames</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">json_indentation</span> <span class="o">=</span> <span class="n">json_indentation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Rollup damages set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dmg_rolled</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parse frames set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_frames</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Output json indentation set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json_indentation</span><span class="p">))</span>
+
+        <span class="c1"># Set parse error to False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="DemoParser.parse_demo"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.parse_demo">[docs]</a>    <span class="k">def</span> <span class="nf">parse_demo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse a demofile using the Go script parse_demo.go -- this function needs the .demofile to be set in the class, and the file needs to exist.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Outputs a JSON file to current working directory.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: Raises a ValueError if the Golang version is lower than 1.14</span>
+<span class="sd">            FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if Golang version is compatible</span>
+        <span class="n">acceptable_go</span> <span class="o">=</span> <span class="n">check_go_version</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">acceptable_go</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Error calling Go. Check if Go is installed using &#39;go version&#39;. Need at least v1.14.0.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Error calling Go. Check if Go is installed using &#39;go version&#39;. Need at least v1.14.0.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Go version&gt;=1.14.0&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if demofile exists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demofile</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Demofile path does not exist!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;Demofile path does not exist!&quot;</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running Golang parser from &quot;</span> <span class="o">+</span> <span class="n">path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Looking for file at &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">demofile</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;go&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;run&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;parse_demo.go&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;-demo&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">demofile</span><span class="p">,</span>
+            <span class="s2">&quot;-parserate&quot;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_rate</span><span class="p">),</span>
+            <span class="s2">&quot;-tradetime&quot;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trade_time</span><span class="p">),</span>
+            <span class="s2">&quot;-buystyle&quot;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buy_style</span><span class="p">),</span>
+            <span class="s2">&quot;-demoid&quot;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demo_id</span><span class="p">),</span>
+            <span class="s2">&quot;-out&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outpath</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmg_rolled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--dmgrolled&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_frames</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--parseframes&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_indentation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--jsonindentation&quot;</span><span class="p">)</span>
+        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span><span class="p">,</span>
+            <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+            <span class="n">cwd</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">stdout</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">demo_id</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_file</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Wrote demo parse output to &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_file</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No file produced, error in calling Golang&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.read_json"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.read_json">[docs]</a>    <span class="k">def</span> <span class="nf">read_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            json_path (string): Path to JSON file</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            JSON in Python dictionary form</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: Raises a FileNotFoundError if the JSON path doesn&#39;t exist</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if JSON exists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">json_path</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;JSON path does not exist!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;JSON path does not exist!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Read in json to .json attribute</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">demo_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">json</span> <span class="o">=</span> <span class="n">demo_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;JSON data loaded, available in the `json` attribute to parser&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">demo_data</span></div>
+
+<div class="viewcode-block" id="DemoParser.parse"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.parse">[docs]</a>    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;json&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper for parse_demo() and read_json(). Use to parse a demo.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            return_type (string): Either &quot;json&quot; or &quot;df&quot;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dictionary of output (which is parsed to a JSON file in the working directory)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: Raises a ValueError if the return_type is not &quot;json&quot; or &quot;df&quot;</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_demo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_json</span><span class="p">(</span><span class="n">json_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outpath</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;JSON output found&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">&quot;json&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span>
+            <span class="k">elif</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">&quot;df&quot;</span><span class="p">:</span>
+                <span class="n">demo_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_json_to_df</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Returned dataframe output&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">demo_data</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Parse return_type must be either &#39;json&#39; or &#39;df&#39;&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;return_type must be either &#39;json&#39; or &#39;df&#39;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;JSON couldn&#39;t be returned&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;No JSON parsed! Error in producing JSON.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.parse_json_to_df"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.parse_json_to_df">[docs]</a>    <span class="k">def</span> <span class="nf">parse_json_to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns JSON into dictionary where keys correspond to data frames</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dictionary of output</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">demo_data</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;clientName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;clientName&quot;</span><span class="p">]</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;tickRate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;tickRate&quot;</span><span class="p">]</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;playbackTicks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;playbackTicks&quot;</span><span class="p">]</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;rounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_rounds</span><span class="p">()</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_kills</span><span class="p">()</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;damages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_damages</span><span class="p">()</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;grenades&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_grenades</span><span class="p">()</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;flashes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_flashes</span><span class="p">()</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;weaponFires&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_weapon_fires</span><span class="p">()</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;bombEvents&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_bomb_events</span><span class="p">()</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;frames&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_frames</span><span class="p">()</span>
+            <span class="n">demo_data</span><span class="p">[</span><span class="s2">&quot;playerFrames&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_player_frames</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Returned dataframe output&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">demo_data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_parse_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns frames as a Pandas dataframe</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A Pandas dataframe where each row is a frame (game state) in the demo, which is a discrete point of time.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">frames_dataframes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tick&quot;</span><span class="p">,</span> <span class="s2">&quot;seconds&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;frames&quot;</span><span class="p">]:</span>
+                    <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;frames&quot;</span><span class="p">]:</span>
+                        <span class="n">frame_item</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+                            <span class="n">frame_item</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;ct&quot;</span><span class="p">:</span>
+                                <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;ctTeamName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;teamName&quot;</span><span class="p">]</span>
+                                <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;ctEqVal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;teamEqVal&quot;</span><span class="p">]</span>
+                                <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;ctAlivePlayers&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span>
+                                    <span class="s2">&quot;alivePlayers&quot;</span>
+                                <span class="p">]</span>
+                                <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;ctUtility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;totalUtility&quot;</span><span class="p">]</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;tTeamName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;teamName&quot;</span><span class="p">]</span>
+                                <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;tEqVal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;teamEqVal&quot;</span><span class="p">]</span>
+                                <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;tAlivePlayers&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;alivePlayers&quot;</span><span class="p">]</span>
+                                <span class="n">frame_item</span><span class="p">[</span><span class="s2">&quot;tUtility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;totalUtility&quot;</span><span class="p">]</span>
+                        <span class="n">frames_dataframes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame_item</span><span class="p">)</span>
+            <span class="n">frames_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">frames_dataframes</span><span class="p">)</span>
+            <span class="n">frames_df</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+            <span class="n">frames_df</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">frames_dataframes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_player_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns player frames as a Pandas dataframe.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A Pandas dataframe where each row is a player&#39;s attributes at a given frame (game state).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">player_frames</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;frames&quot;</span><span class="p">]:</span>
+                    <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;frames&quot;</span><span class="p">]:</span>
+                        <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">frame</span><span class="p">[</span><span class="n">side</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+                                <span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="n">side</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span>
+                                <span class="o">&gt;</span> <span class="mi">0</span>  <span class="c1"># Used to be == 5, to ensure the sides were equal.</span>
+                            <span class="p">):</span>
+                                <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="n">side</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
+                                    <span class="n">player_item</span> <span class="o">=</span> <span class="p">{}</span>
+                                    <span class="n">player_item</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span>
+                                    <span class="n">player_item</span><span class="p">[</span><span class="s2">&quot;tick&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;tick&quot;</span><span class="p">]</span>
+                                    <span class="n">player_item</span><span class="p">[</span><span class="s2">&quot;seconds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;seconds&quot;</span><span class="p">]</span>
+                                    <span class="n">player_item</span><span class="p">[</span><span class="s2">&quot;side&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">side</span>
+                                    <span class="n">player_item</span><span class="p">[</span><span class="s2">&quot;teamName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="n">side</span><span class="p">][</span><span class="s2">&quot;teamName&quot;</span><span class="p">]</span>
+                                    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">player</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                                        <span class="k">if</span> <span class="n">col</span> <span class="o">!=</span> <span class="s2">&quot;inventory&quot;</span><span class="p">:</span>
+                                            <span class="n">player_item</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">player</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+                                    <span class="n">player_frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">player_item</span><span class="p">)</span>
+            <span class="n">player_frames_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">player_frames</span><span class="p">)</span>
+            <span class="n">player_frames_df</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+            <span class="n">player_frames_df</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">player_frames_df</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns rounds as a Pandas dataframe</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A Pandas dataframe where each row is a round</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">rounds</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;roundNum&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;startTick&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;freezeTimeEndTick&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;endTick&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;endOfficialTick&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tScore&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ctScore&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;endTScore&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;endCTScore&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tTeam&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ctTeam&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;winningSide&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;winningTeam&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;losingTeam&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;roundEndReason&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tStartEqVal&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tRoundStartEqVal&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tRoundStartMoney&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tBuyType&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tSpend&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ctStartEqVal&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ctRoundStartEqVal&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ctRoundStartMoney&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ctBuyType&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ctSpend&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="n">round_item</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span>
+                    <span class="n">round_item</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                    <span class="n">round_item</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+                    <span class="n">round_item</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+                <span class="n">rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">round_item</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rounds</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_kills</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns kills as either a Pandas dataframe</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A Pandas dataframe where each row is a kill</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">kills</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">]:</span>
+                        <span class="n">new_k</span> <span class="o">=</span> <span class="n">k</span>
+                        <span class="n">new_k</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span>
+                        <span class="n">new_k</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+                        <span class="n">new_k</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+                        <span class="n">kills</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_k</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">kills</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_weapon_fires</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns weapon fires as either a list or Pandas dataframe</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A  Pandas dataframe where each row is a weapon fire event</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">shots</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;weaponFires&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">wf</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;weaponFires&quot;</span><span class="p">]:</span>
+                        <span class="n">new_wf</span> <span class="o">=</span> <span class="n">wf</span>
+                        <span class="n">new_wf</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span>
+                        <span class="n">new_wf</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+                        <span class="n">new_wf</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+                        <span class="n">shots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_wf</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">shots</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_damages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns damages as a Pandas dataframe</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A Pandas dataframe where each row is a damage event.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">damages</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;damages&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;damages&quot;</span><span class="p">]:</span>
+                        <span class="n">new_d</span> <span class="o">=</span> <span class="n">d</span>
+                        <span class="n">new_d</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span>
+                        <span class="n">new_d</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+                        <span class="n">new_d</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+                        <span class="n">damages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_d</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">damages</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_grenades</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns grenades as a Pandas dataframe</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list or Pandas dataframe where each row is a grenade throw</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">grenades</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;grenades&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;grenades&quot;</span><span class="p">]:</span>
+                        <span class="n">new_g</span> <span class="o">=</span> <span class="n">g</span>
+                        <span class="n">new_g</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span>
+                        <span class="n">new_g</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+                        <span class="n">new_g</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+                        <span class="n">grenades</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_g</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">grenades</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_bomb_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns bomb events as a Pandas dataframe</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A Pandas dataframe where each row is a bomb event (defuse, plant, etc.)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">bomb_events</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;bombEvents&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;bombEvents&quot;</span><span class="p">]:</span>
+                        <span class="n">new_b</span> <span class="o">=</span> <span class="n">b</span>
+                        <span class="n">new_b</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span>
+                        <span class="n">new_b</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+                        <span class="n">new_b</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+                        <span class="n">bomb_events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_b</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">bomb_events</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_flashes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns flashes as a Pandas dataframe</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A Pandas dataframe where each row is a flash event.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">flashes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;flashes&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;flashes&quot;</span><span class="p">]:</span>
+                        <span class="n">new_f</span> <span class="o">=</span> <span class="n">f</span>
+                        <span class="n">new_f</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span>
+                        <span class="n">new_f</span><span class="p">[</span><span class="s2">&quot;matchId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+                        <span class="n">new_f</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+                        <span class="n">flashes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_f</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">flashes</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="DemoParser.clean_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.clean_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">clean_rounds</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">remove_no_frames</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">remove_warmups</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">remove_knifes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">remove_bad_timings</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">remove_excess_players</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">remove_excess_kills</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">remove_bad_endings</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;json&quot;</span><span class="p">,</span>
+        <span class="n">save_to_json</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cleans a parsed demofile JSON.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            remove_no_frames (bool, optional): Remove rounds where there are no frames. Default to True.</span>
+<span class="sd">            remove_warmups (bool, optional): Remove warmup rounds. Defaults to True.</span>
+<span class="sd">            remove_knifes (bool, optional): Remove knife rounds. Defaults to True.</span>
+<span class="sd">            remove_bad_timings (bool, optional): Remove bad timings. Defaults to True.</span>
+<span class="sd">            remove_excess_players (bool, optional): Remove rounds with more than 5 players. Defaults to True.</span>
+<span class="sd">            remove_excess_kills (bool, optional): Remove rounds with more than 10 kills. Defaults to True.</span>
+<span class="sd">            remove_bad_endings (bool, optional): Remove rounds with bad round end reasons. Defaults to True.</span>
+<span class="sd">            return_type (str, optional): Return JSON or DataFrame. Defaults to &quot;json&quot;.</span>
+<span class="sd">            save_to_json (bool, optional): Whether to write the JSON to a file. Defaults to True.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A dictionary of the cleaned demo.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">remove_no_frames</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_rounds_with_no_frames</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">remove_warmups</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_warmups</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">remove_knifes</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_knife_rounds</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">remove_bad_timings</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_time_rounds</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">remove_excess_players</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_excess_players</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">remove_excess_kills</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_excess_kill_rounds</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">remove_bad_endings</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_end_round</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">renumber_rounds</span><span class="p">()</span>
+            <span class="c1"># self.rescore_rounds() -- Need to edit to take into account half switches</span>
+            <span class="k">if</span> <span class="n">save_to_json</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_json</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">&quot;json&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span>
+            <span class="k">elif</span> <span class="n">return_type</span> <span class="o">==</span> <span class="s2">&quot;df&quot;</span><span class="p">:</span>
+                <span class="n">demo_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_json_to_df</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Returned cleaned dataframe output&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">demo_data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.write_json"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.write_json">[docs]</a>    <span class="k">def</span> <span class="nf">write_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rewrite the JSON file&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_indentation</span> <span class="k">else</span> <span class="kc">None</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DemoParser.renumber_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.renumber_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">renumber_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Renumbers the rounds.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute has a &quot;gameRounds&quot; key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;roundNum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.rescore_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.rescore_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">rescore_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rescore the rounds based on round end reason.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute has a &quot;gameRounds&quot; key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;tScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;ctScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;winningSide&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ct&quot;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;endCTScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;endTScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;winningSide&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;endCTScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;endTScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;tScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span>
+                        <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="p">][</span><span class="s2">&quot;endTScore&quot;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;ctScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span>
+                        <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="p">][</span><span class="s2">&quot;endCTScore&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;winningSide&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ct&quot;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;endCTScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;ctScore&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+                        <span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;endTScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span>
+                            <span class="s2">&quot;gameRounds&quot;</span>
+                        <span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;tScore&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;winningSide&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;endCTScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span>
+                            <span class="s2">&quot;gameRounds&quot;</span>
+                        <span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;ctScore&quot;</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;endTScore&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;tScore&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+                        <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.remove_rounds_with_no_frames"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_rounds_with_no_frames">[docs]</a>    <span class="k">def</span> <span class="nf">remove_rounds_with_no_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes rounds with no frames</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_frames</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;parse_frames is set to False, must be true for remove_no_frames to work. Skipping remove_no_frames.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cleaned_rounds</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;frames&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cleaned_rounds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.remove_excess_players"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_excess_players">[docs]</a>    <span class="k">def</span> <span class="nf">remove_excess_players</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes rounds where there are more than 5 players on a side.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_frames</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;parse_frames is set to False, must be true for remove_excess_players to work. Skipping remove_excess_players.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cleaned_rounds</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="c1"># Remove rounds where the number of players is too large</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;frames&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">f</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;frames&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="k">pass</span>
+                            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
+                                <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                                <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">5</span>
+                            <span class="p">):</span>
+                                <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cleaned_rounds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.remove_warmups"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_warmups">[docs]</a>    <span class="k">def</span> <span class="nf">remove_warmups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes warmup rounds.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">cleaned_rounds</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># Remove warmups where the demo may have started recording in the middle of a warmup round</span>
+            <span class="k">if</span> <span class="s2">&quot;warmupChanged&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchPhases&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchPhases&quot;</span><span class="p">][</span><span class="s2">&quot;warmupChanged&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">last_warmup_changed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;matchPhases&quot;</span><span class="p">][</span><span class="s2">&quot;warmupChanged&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;startTick&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">last_warmup_changed</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                            <span class="ow">not</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;isWarmup&quot;</span><span class="p">]</span>
+                        <span class="p">):</span>
+                            <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;startTick&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">last_warmup_changed</span><span class="p">:</span>
+                            <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;isWarmup&quot;</span><span class="p">]:</span>
+                            <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cleaned_rounds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.remove_end_round"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_end_round">[docs]</a>    <span class="k">def</span> <span class="nf">remove_end_round</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bad_endings</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Draw&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;Removes rounds with bad end reason.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bad_endings (list, optional): List of bad round end reasons. Defaults to [&quot;Draw&quot;, &quot;Unknown&quot;, &quot;&quot;].</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">cleaned_rounds</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;roundEndReason&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">bad_endings</span><span class="p">:</span>
+                    <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cleaned_rounds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.remove_knife_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_knife_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_knife_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes knife rounds.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">cleaned_rounds</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;isWarmup&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">]:</span>
+                    <span class="n">total_kills</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">])</span>
+                    <span class="n">total_knife_kills</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;weapon&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Knife&quot;</span><span class="p">:</span>
+                            <span class="n">total_knife_kills</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">total_knife_kills</span> <span class="o">!=</span> <span class="n">total_kills</span><span class="p">:</span>
+                        <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cleaned_rounds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.remove_excess_kill_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_excess_kill_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_excess_kill_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes rounds with more than 10 kills.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">cleaned_rounds</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;isWarmup&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">total_kills</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="n">total_kills</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">:</span>
+                            <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cleaned_rounds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DemoParser.remove_time_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_time_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_time_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove rounds with odd round timings.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: Raises an AttributeError if the .json attribute is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">:</span>
+            <span class="n">cleaned_rounds</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;startTick&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;endTick&quot;</span><span class="p">])</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;startTick&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;endOfficialTick&quot;</span><span class="p">])</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;startTick&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;freezeTimeEndTick&quot;</span><span class="p">])</span>
+                <span class="p">):</span>
+                    <span class="n">cleaned_rounds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cleaned_rounds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
+            <span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Peter Xenopoulos.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

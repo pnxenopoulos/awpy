@@ -49,6 +49,10 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Analytics</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#csgo-analytics"><cite>csgo.analytics</cite></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.nav">csgo.analytics.nav module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.states">csgo.analytics.states module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.stats">csgo.analytics.stats module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-csgo.analytics.wpa">csgo.analytics.wpa module</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data</a></li>
@@ -85,7 +89,797 @@
 <p>This is the analytics module. You can use it to calculate statistics on your parsed demos, such as Rating, ADR, and so on.</p>
 <section id="csgo-analytics">
 <h2><cite>csgo.analytics</cite><a class="headerlink" href="#csgo-analytics" title="Permalink to this headline"></a></h2>
-<span class="target" id="module-csgo.analytics"></span></section>
+</section>
+<section id="module-csgo.analytics.nav">
+<span id="csgo-analytics-nav-module"></span><h2>csgo.analytics.nav module<a class="headerlink" href="#module-csgo.analytics.nav" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.nav.area_distance">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.nav.</span></span><span class="sig-name descname"><span class="pre">area_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/nav.html#area_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.nav.area_distance" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the distance between two areas. Dist type an be graph or geodesic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>area_a</strong> (<em>int</em>) – Area id</p></li>
+<li><p><strong>area_b</strong> (<em>int</em>) – Area id</p></li>
+<li><p><strong>dist_type</strong> (<em>string</em>) – String indicating the type of distance to use (graph or geodesic)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict containing info on the path between two areas.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.nav.find_closest_area">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.nav.</span></span><span class="sig-name descname"><span class="pre">find_closest_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/nav.html#find_closest_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.nav.find_closest_area" title="Permalink to this definition"></a></dt>
+<dd><p>Finds the closest area in the nav mesh. Searches through all the areas by comparing point to area centerpoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>point</strong> (<em>list</em>) – Point as a list [x,y,z]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict containing info on the closest area</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.nav.generate_position_token">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.nav.</span></span><span class="sig-name descname"><span class="pre">generate_position_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/nav.html#generate_position_token"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.nav.generate_position_token" title="Permalink to this definition"></a></dt>
+<dd><p>Generates the position token for a game frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>frame</strong> (<em>dict</em>) – A game frame</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict containing the T token, CT token and combined token (T + CT concatenated)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.nav.point_distance">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.nav.</span></span><span class="sig-name descname"><span class="pre">point_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/nav.html#point_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.nav.point_distance" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the distance between two points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>point_a</strong> (<em>list</em>) – Point as a list (x,y,z)</p></li>
+<li><p><strong>point_b</strong> (<em>list</em>) – Point as a list (x,y,z)</p></li>
+<li><p><strong>dist_type</strong> (<em>string</em>) – String indicating the type of distance to use. Can be graph, geodesic, euclidena, manhattan, canberra or cosine.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict containing info on the distance between two points.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.nav.point_in_area">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.nav.</span></span><span class="sig-name descname"><span class="pre">point_in_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/nav.html#point_in_area"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.nav.point_in_area" title="Permalink to this definition"></a></dt>
+<dd><p>Returns if the point is within a nav area for a map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_name</strong> (<em>string</em>) – Map to search</p></li>
+<li><p><strong>area_id</strong> (<em>int</em>) – Area ID as an integer</p></li>
+<li><p><strong>point</strong> (<em>list</em>) – Point as a list [x,y,z]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if area contains the point, false if not</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-csgo.analytics.states">
+<span id="csgo-analytics-states-module"></span><h2>csgo.analytics.states module<a class="headerlink" href="#module-csgo.analytics.states" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.states.generate_game_state">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_game_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/states.html#generate_game_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.states.generate_game_state" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a frame into a game state form (one of vector, graph or set)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p></li>
+<li><p><strong>state_type</strong> (<em>string</em>) – One of “vector”, “graph” or “set”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict with keys “T”, “CT” and “Global” containing the state representation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.states.generate_graph_state">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_graph_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/states.html#generate_graph_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.states.generate_graph_state" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a game state as a graph</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict with keys “T”, “CT” and “Global”, where each entry is a vector. Global vector is CT + T concatenated</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.states.generate_set_state">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/states.html#generate_set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.states.generate_set_state" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a game state as a set</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict with keys “T”, “CT” and “Global”, where each entry is a vector. Global vector is CT + T concatenated</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.states.generate_team_vector_state">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_team_vector_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_side</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/states.html#generate_team_vector_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.states.generate_team_vector_state" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a team’s game state as a vector. The included features are the total players remaining, full hp players remaining, hp, armor, helmets, equipment value and defuse kits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frame_side</strong> (<em>dict</em>) – Dict output of a frame side generated from the DemoParser class</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list with numeric elements</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.states.generate_vector_state">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_vector_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/states.html#generate_vector_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.states.generate_vector_state" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a game state as a vector. The vector includes the following information:</p>
+<dl class="simple">
+<dt>For each team:</dt><dd><ul class="simple">
+<li><p>players remaining</p></li>
+<li><p>full hp players remaining</p></li>
+<li><p>total hp</p></li>
+<li><p>total armor</p></li>
+<li><p>total helmets</p></li>
+<li><p>total equipment value</p></li>
+<li><p>total defuse kits</p></li>
+</ul>
+</dd>
+<dt>For the world state:</dt><dd><ul class="simple">
+<li><p>seconds since the beginning of the game phase (bomb planted/not)</p></li>
+<li><p>bomb plant</p></li>
+<li><p>bomb site where bomb is planted</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict with keys “T”, “CT” and “Global”, where each entry is a vector. Global vector is CT + T concatenated</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.states.generate_world_vector_state">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_world_vector_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/states.html#generate_world_vector_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.states.generate_world_vector_state" title="Permalink to this definition"></a></dt>
+<dd><p>Generate’s the world state as a vector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list with numeric elements</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-csgo.analytics.stats">
+<span id="csgo-analytics-stats-module"></span><h2>csgo.analytics.stats module<a class="headerlink" href="#module-csgo.analytics.stats" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.accuracy">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#accuracy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.accuracy" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with accuracy statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damage_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>weapon_fire_data</strong> – A dataframe with weapon fire data.</p></li>
+<li><p><strong>team</strong> – A boolean specifying wheter to calculate statistics for each team
+or for each player. The default is to calculate statistics for
+each player.</p></li>
+<li><p><strong>damage_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by damage_data to filter the damage data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>weapon_fire_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by weapon_fires to filter the weapon fire data
+by and the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with the total shots, strafe shots, hits, accuracy (hits/total number of shots), headshot accuracy (head hits/total number of shots)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.adr">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">adr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#adr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.adr" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with ADR statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damage_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>round_data</strong> – A dataframe with round data.</p></li>
+<li><p><strong>team</strong> – A boolean specifying whether to calculate statistics for each team
+or for each player. The default is to calculate statistics for
+each player.</p></li>
+<li><p><strong>damage_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by damage_data to filter the damage data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>round_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by round_data to filter the round data by and
+the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with the average damage per round (ADR).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.bomb_stats">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">bomb_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bomb_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bomb_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#bomb_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.bomb_stats" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with bomb event statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bomb_data</strong> – A dataframe with bomb event data.</p></li>
+<li><p><strong>bomb_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by bomb_data to filter the bomb data by and
+the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with bomb plant summaries.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.calc_stats">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">calc_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_to_groupby</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_to_agg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#calc_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.calc_stats" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates statistics for a dataframe.</p>
+<p>Calls the function filter_df to filter a data in dataframe and then performs
+groupby and aggregation operations on the dataframe and renames the columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – A dataframe from which statistics should be calculated.</p></li>
+<li><p><strong>filters</strong> – A dictionary where the keys are the columns of the dataframe
+represented by df to filter the data by and the values are lists
+that contain the column filters.</p></li>
+<li><p><strong>col_to_groupby</strong> – Columns of the dataframe represented by df to perform
+the groupby operation on.</p></li>
+<li><p><strong>col_to_agg</strong> – Columns of the dataframe represented by df to perform
+aggregation operations on.</p></li>
+<li><p><strong>agg</strong> – The aggregation operations to be applied to the columns in the list
+represented by col_to_agg.</p></li>
+<li><p><strong>col_names</strong> – Column names for the returned dataframe.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with the specified statistics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.check_filters">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">check_filters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/stats.html#check_filters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.check_filters" title="Permalink to this definition"></a></dt>
+<dd><p>Checks if the column filters are valid.</p>
+<p>Iterates through each key-value pair in the dictionary represented by
+filters and checks if the column filters for columns of type boolean are
+of type boolean and the column filters for columns of type string are of
+type string. Calls the function extract_numeric_filters to check if the
+column filters for columns of type float and integer are valid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – A dataframe to be filtered.</p></li>
+<li><p><strong>filters</strong> – A dictionary where the keys are the columns of the dataframe
+represented by df to filter the data by and the values are lists
+that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – The value of a key corresponding to a column of type boolean
+    contains a column filter of a different type.</p></li>
+<li><p><strong>ValueError</strong> – The value of a key corresponding to a column of type string
+    contains a column filter of a different type.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.econ_stats">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">econ_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">round_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#econ_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.econ_stats" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with economy statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>round_data</strong> – A dataframe with round data.</p></li>
+<li><p><strong>round_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by round_data to filter the round data by and
+the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with round economy summaries.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.extract_num_filters">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">extract_num_filters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#extract_num_filters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.extract_num_filters" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Extracts the numeric column filters from a key-value pair in a</dt><dd><p>dictionary.</p>
+</dd>
+</dl>
+<p>Extracts logical operators and numeric values from the column filters in the
+the value of a specified key in the dictionary represented by filters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filters</strong> – A dictionary where the keys are the columns of the dataframe
+represented by df to filter the data by and the values are lists
+that contain the column filters.</p></li>
+<li><p><strong>key</strong> – The key in the dictionary represented by filters for which the
+numeric column filters should be extracted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A tuple of two lists where the first list contains all of the logical
+operators in the column filters in the value of a specified key and the
+second list contains all of the numeric values in the column filters in
+the value of a specified key. For example:
+([“&gt;”, “&lt;”], [15.0, 25.0])</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ValueError</strong> – The value of the specified key contains a column filter of
+    type boolean.</p></li>
+<li><p><strong>Exception</strong> – The column filters in the value of the specified key contain
+    an invalid logical operator.</p></li>
+<li><p><strong>Exception</strong> – The column filters in the value of the specified key contain
+    an invalid numeric value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.filter_df">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">filter_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#filter_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.filter_df" title="Permalink to this definition"></a></dt>
+<dd><p>Filters data in a dataframe.</p>
+<p>Filters a dataframe for columns of type boolean and string and calls the
+function num_filter_df to filter a dataframe for columns of type float
+and integer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – A dataframe to be filtered.</p></li>
+<li><p><strong>filters</strong> – A dictionary where the keys are the columns of the dataframe
+represented by df to filter the data by and the values are lists
+that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A filtered dataframe.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.flash_stats">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">flash_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flash_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flash_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#flash_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.flash_stats" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with flashbang statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flash_data</strong> – A dataframe with flash data.</p></li>
+<li><p><strong>grenade_data</strong> – A dataframe with grenade data.</p></li>
+<li><p><strong>kill_data</strong> – A dataframe with kill data.</p></li>
+<li><p><strong>team</strong> – A boolean specifying whether to calculate statistics for each team
+or for each player. The default is to calculate statistics for
+each player.</p></li>
+<li><p><strong>flash_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by flash_data to filter the flash data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>grenade_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by grenade_data to filter the grenade data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>kill_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the kill data by and
+the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with the effective flashes (EF), flash assists (FA), effective blind time (EBT), team flashes (TF), total flashes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.kast">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">kast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kill_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kast_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'KAST'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flash_assists</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">death_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#kast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.kast" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with KAST statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kill_data</strong> – A dataframe with kill data.</p></li>
+<li><p><strong>kast_string</strong> – A string specifying which combination of KAST statistics
+to use.</p></li>
+<li><p><strong>flash_assists</strong> – A boolean specifying if flash assists are to be
+counted as assists or not.</p></li>
+<li><p><strong>kill_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the kill data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>death_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the death data by and
+the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe containing the percentage of a player’s rounds with at least one of (K)ill, (A)ssist, (S)urvival and (T)rades.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.kill_breakdown">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">kill_breakdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kill_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#kill_breakdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.kill_breakdown" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with kills broken down by weapon type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kill_data</strong> – A dataframe with kill data.</p></li>
+<li><p><strong>team</strong> – A boolean specifying whether to calculate statistics for each team
+or for each player. The default is to calculate statistics for
+each player.</p></li>
+<li><p><strong>kill_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the kill data by and
+the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with kill type statistics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.kill_stats">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">kill_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">death_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#kill_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.kill_stats" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with kill statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damage_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>kill_data</strong> – A dataframe with kill data.</p></li>
+<li><p><strong>round_data</strong> – A dataframe with round data.</p></li>
+<li><p><strong>weapon_fire_data</strong> – A dataframe with weapon fire data.
+where each round is a dictionary.</p></li>
+<li><p><strong>team</strong> – A boolean specifying whether to calculate statistics for each team
+or for each player. The default is to calculate statistics for
+each player.</p></li>
+<li><p><strong>damage_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by damage_data to filter the damage data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>kill_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the kill data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>death_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the death data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>round_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by round_data to filter the round data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>weapon_fire_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by weapon_fires to filter the weapon fire data
+by and the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with kills, deaths, assists, flash assists, first kills/deaths, headshots, headshot kills/total kills, KAST and accuracy statistics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.num_filter_df">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">num_filter_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#num_filter_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.num_filter_df" title="Permalink to this definition"></a></dt>
+<dd><p>Filters numeric data in a dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – A dataframe to be filtered.</p></li>
+<li><p><strong>col</strong> – A column of the dataframe represented by df to filter by.</p></li>
+<li><p><strong>sign</strong> – A logical operator representing the operation to filter the
+dataframe represented by df by.</p></li>
+<li><p><strong>val</strong> – A numeric value to filter the dataframe represented by df by.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A filtered dataframe.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.player_box_score">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">player_box_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flash_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flash_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">death_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#player_box_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.player_box_score" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a player box score dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damage_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>flash_data</strong> – A dataframe with flash data.</p></li>
+<li><p><strong>grenade_data</strong> – A dataframe with grenade data.</p></li>
+<li><p><strong>kill_data</strong> – A dataframe with kill data.</p></li>
+<li><p><strong>round_data</strong> – A dataframe with round data.</p></li>
+<li><p><strong>weapon_fire_data</strong> – A dataframe with weapon fire data.</p></li>
+<li><p><strong>damage_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by damage_data to filter the damage data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>flash_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by flash_data to filter the flash data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>grenade_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by grenade_data to filter the grenade data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>kill_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the kill data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>death_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the death data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>round_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by round_data to filter the round data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>weapon_fire_filters</strong> – A dictionary where the keys are the columns of the
+dataframe to filter the weapon fire data by and the values are lists
+that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with player summaries.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.rating">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">rating</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">death_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#rating"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.rating" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with an HLTV-esque rating, found by doing:</p>
+<p>Rating = 0.0073*KAST + 0.3591*KPR + -0.5329*DPR + 0.2372*Impact + 0.0032*ADR + 0.1587
+where Impact = 2.13*KPR + 0.42*Assist per Round -0.41</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damage_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>kill_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>round_data</strong> – A dataframe with round data.</p></li>
+<li><p><strong>damage_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by damage_data to filter the damage data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>death_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the death data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>kill_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the kill data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>round_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by round_data to filter the round data by and
+the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with the impact rating and rating 2.0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.team_box_score">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">team_box_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flash_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flash_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">death_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weapon_fire_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#team_box_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.team_box_score" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a team box score dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damage_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>flash_data</strong> – A dataframe with flash data.</p></li>
+<li><p><strong>grenade_data</strong> – A dataframe with grenade data.</p></li>
+<li><p><strong>kill_data</strong> – A dataframe with kill data.</p></li>
+<li><p><strong>round_data</strong> – A dataframe with round data.</p></li>
+<li><p><strong>weapon_fire_data</strong> – A dataframe with weapon fire data.</p></li>
+<li><p><strong>damage_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by damage_data to filter the damage data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>flash_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by flash_data to filter the flash data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>grenade_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by grenade_data to filter the grenade data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>kill_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the kill data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>death_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by kill_data to filter the death data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>round_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by round_data to filter the round data by and
+the values are lists that contain the column filters.</p></li>
+<li><p><strong>weapon_fire_filters</strong> – A dictionary where the keys are the columns of the
+dataframe to filter the weapon fire data by and the values are lists
+that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with team summaries.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.util_dmg">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">util_dmg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#util_dmg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.util_dmg" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with utility damage statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damage_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>grenade_data</strong> – A dataframe with grenade data.</p></li>
+<li><p><strong>team</strong> – A boolean specifying whether to calculate statistics for each team
+or for each player. The default is to calculate statistics for
+each player.</p></li>
+<li><p><strong>damage_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by damage_data to filter the damage data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>grenade_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by grenade_data to filter the grenade data by
+and the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with nades thrown, given utility damage (UD) per nade</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.util_dmg_breakdown">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">util_dmg_breakdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damage_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">team</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">damage_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grenade_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#util_dmg_breakdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.util_dmg_breakdown" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Returns a dataframe with utility damage statistics broken down by grenade</dt><dd><p>type.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damage_data</strong> – A dataframe with damage data.</p></li>
+<li><p><strong>grenade_data</strong> – A dataframe with grenade data.</p></li>
+<li><p><strong>team</strong> – A boolean specifying whether to calculate statistics for each team
+or for each player. The default is to calculate statistics for
+each player.</p></li>
+<li><p><strong>damage_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by damage_data to filter the damage data by
+and the values are lists that contain the column filters.</p></li>
+<li><p><strong>grenade_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by grenade_data to filter the grenade data by
+and the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with utility damage summary.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.weapon_type">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">weapon_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weapon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#weapon_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.weapon_type" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the weapon type of a weapon.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>weapon</strong> – Weapon name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A string for the weapon type (Knife, Pistol, Shotgun, SMG, Assault Rifle, Machine Gun, Sniper Rifle, Utility)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.stats.win_breakdown">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.stats.</span></span><span class="sig-name descname"><span class="pre">win_breakdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">round_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">round_filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="_modules/csgo/analytics/stats.html#win_breakdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.stats.win_breakdown" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dataframe with wins broken down by round end reason.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>round_data</strong> – A dataframe with round data.</p></li>
+<li><p><strong>round_filters</strong> – A dictionary where the keys are the columns of the
+dataframe represented by round_data to filter the round data by and
+the values are lists that contain the column filters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with round wins described by reason.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-csgo.analytics.wpa">
+<span id="csgo-analytics-wpa-module"></span><h2>csgo.analytics.wpa module<a class="headerlink" href="#module-csgo.analytics.wpa" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.wpa.round_win_probability">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.wpa.</span></span><span class="sig-name descname"><span class="pre">round_win_probability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ct_score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/wpa.html#round_win_probability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.wpa.round_win_probability" title="Permalink to this definition"></a></dt>
+<dd><p>Estimates of game win probability using information from the HLTV win matrix for a given map and score.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ct_score</strong> (<em>dict</em>) – CT Score</p></li>
+<li><p><strong>t_score</strong> (<em>dict</em>) – T Score</p></li>
+<li><p><strong>map</strong> (<em>dict</em>) – Map the demo is from</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dictionary containing the CT game win, T game win and Draw probabilities</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="csgo.analytics.wpa.state_win_probability">
+<span class="sig-prename descclassname"><span class="pre">csgo.analytics.wpa.</span></span><span class="sig-name descname"><span class="pre">state_win_probability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/analytics/wpa.html#state_win_probability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.analytics.wpa.state_win_probability" title="Permalink to this definition"></a></dt>
+<dd><p>Predicts the win probability of a given frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dictionary containing the CT and T round win probabilities</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 </section>
 
 

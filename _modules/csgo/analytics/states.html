@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>csgo.analytics.states &mdash; csgo 1.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> csgo
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../projects.html">Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">Frequently Asked Questions (FAQs)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License and Acknowledgments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../analytics.html">Analytics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parser.html">Parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../visualization.html">Visualization</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">csgo</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>csgo.analytics.states</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for csgo.analytics.states</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="generate_game_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_game_state">[docs]</a><span></span><span class="k">def</span> <span class="nf">generate_game_state</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s2">&quot;vector&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a frame into a game state form (one of vector, graph or set)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        frame (dict)        : Dict output of a frame generated from the DemoParser class</span>
+<span class="sd">        state_type (string) : One of &quot;vector&quot;, &quot;graph&quot; or &quot;set&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot; containing the state representation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Frame input must be a dict from the DemoParser.parse() output&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">state_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;vector&quot;</span><span class="p">,</span> <span class="s2">&quot;graph&quot;</span><span class="p">,</span> <span class="s2">&quot;set&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Supported state types are vector, graph and set.&quot;</span><span class="p">)</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;vector&quot;</span><span class="p">:</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">generate_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;graph&quot;</span><span class="p">:</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">generate_graph_state</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s2">&quot;set&quot;</span><span class="p">:</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">generate_set_state</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">state</span></div>
+
+
+<div class="viewcode-block" id="generate_team_vector_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_team_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_team_vector_state</span><span class="p">(</span><span class="n">frame_side</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a team&#39;s game state as a vector. The included features are the total players remaining, full hp players remaining, hp, armor, helmets, equipment value and defuse kits.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        frame_side (dict) : Dict output of a frame side generated from the DemoParser class</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list with numeric elements</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">team_state</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;eqVal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;playersRemaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;fullHpPlayersRemaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;armor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;helmets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;defuseKits&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">frame_side</span><span class="p">[</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;isAlive&quot;</span><span class="p">]:</span>
+            <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;eqVal&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;equipmentValue&quot;</span><span class="p">]</span>
+            <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;playersRemaining&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span>
+            <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;armor&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;armor&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;hasHelmet&quot;</span><span class="p">]:</span>
+                <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;helmets&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;hasDefuse&quot;</span><span class="p">]:</span>
+                <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;defuseKits&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;fullHpPlayersRemaining&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">team_state</span></div>
+
+
+<div class="viewcode-block" id="generate_world_vector_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_world_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_world_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate&#39;s the world state as a vector</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list with numeric elements</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">world_state</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">world_state</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]:</span>
+        <span class="n">world_state</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">world_state</span><span class="p">[</span><span class="s2">&quot;secondsRemainingInPhase&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;seconds&quot;</span><span class="p">]</span>
+    <span class="n">world_state</span><span class="p">[</span><span class="s2">&quot;bombsite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;bombsite&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">world_state</span></div>
+
+
+<div class="viewcode-block" id="generate_vector_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a game state as a vector. The vector includes the following information:</span>
+
+<span class="sd">    For each team:</span>
+<span class="sd">        - players remaining</span>
+<span class="sd">        - full hp players remaining</span>
+<span class="sd">        - total hp</span>
+<span class="sd">        - total armor</span>
+<span class="sd">        - total helmets</span>
+<span class="sd">        - total equipment value</span>
+<span class="sd">        - total defuse kits</span>
+
+<span class="sd">    For the world state:</span>
+<span class="sd">        - seconds since the beginning of the game phase (bomb planted/not)</span>
+<span class="sd">        - bomb plant</span>
+<span class="sd">        - bomb site where bomb is planted</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;, where each entry is a vector. Global vector is CT + T concatenated</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_team_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">])</span>
+    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_team_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">])</span>
+    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;global&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_world_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">state</span></div>
+
+
+<div class="viewcode-block" id="generate_graph_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_graph_state">[docs]</a><span class="k">def</span> <span class="nf">generate_graph_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a game state as a graph</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;, where each entry is a vector. Global vector is CT + T concatenated</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ct&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;global&quot;</span><span class="p">:</span> <span class="p">[]}</span></div>
+
+
+<div class="viewcode-block" id="generate_set_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_set_state">[docs]</a><span class="k">def</span> <span class="nf">generate_set_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a game state as a set</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;, where each entry is a vector. Global vector is CT + T concatenated</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ct&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;global&quot;</span><span class="p">:</span> <span class="p">[]}</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Peter Xenopoulos.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
