@@ -258,7 +258,7 @@ Grenades
         'grenadeX': 53.96875, 
         'grenadeY': 671.5, 
         'grenadeZ': 68.09375, 
-        'UniqueID': 5031578313293207366        # Unique entity ID
+        'entityID': 5031578313293207366        # entity ID of the grenade
     }
 
 Bomb Events

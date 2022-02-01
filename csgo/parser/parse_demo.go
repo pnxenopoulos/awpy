@@ -152,7 +152,7 @@ type GrenadeAction struct {
 	GrenadeX          float64 `json:"grenadeX"`
 	GrenadeY          float64 `json:"grenadeY"`
 	GrenadeZ          float64 `json:"grenadeZ"`
-	UniqueID          int64
+	UniqueID          int64   `json:"entityId"`
 }
 
 // BombAction events
@@ -202,7 +202,7 @@ type DamageAction struct {
 	HitGroup         string   `json:"hitGroup"`
 	IsTeamDmg        bool     `json:"isFriendlyFire"`
 	Distance         float64  `json:"distance"`
-	ZoomLevel        *int64    `json:"zoomLevel"`
+	ZoomLevel        *int64   `json:"zoomLevel"`
 }
 
 // KillAction events
@@ -373,7 +373,7 @@ type PlayerInfo struct {
 	HasDefuse       bool         `json:"hasDefuse"`
 	HasBomb         bool         `json:"hasBomb"`
 	Ping            int64        `json:"ping"`
-	ZoomLevel       int64   `json:"zoomLevel"`
+	ZoomLevel       int64        `json:"zoomLevel"`
 }
 
 // WeaponInfo contains data on an inventory weapon
