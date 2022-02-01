@@ -8,5 +8,4 @@ This is the parser module. You can use it to parse and clean CSGO demos. To see 
 
 .. automodule:: csgo.parser
     :members:
-    :undoc-members:
     :show-inheritance:
