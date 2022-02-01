@@ -8,5 +8,4 @@ This is the analytics module. You can use it to calculate statistics on your par
 
 .. automodule:: csgo.analytics
     :members:
-    :undoc-members:
     :show-inheritance:
