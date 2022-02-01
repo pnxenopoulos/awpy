@@ -84,12 +84,50 @@
 <blockquote>
 <div><p>Xenopoulos, P., Doraiswamy, H., &amp; Silva, C. (2020, December). Valuing Player Actions in Counter-Strike: Global Offensive. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.</p>
 </div></blockquote>
+<p>Using this library to parse CSGO demos is as easy as below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">csgo.parser</span> <span class="kn">import</span> <span class="n">DemoParser</span>
+
+<span class="c1"># Set the parse_rate equal to the tick rate at which you would like to parse the frames of the demo.</span>
+<span class="c1"># This parameter only matters if parse_frames=True ()</span>
+<span class="c1"># For reference, MM demos are usually 64 ticks, and pro/FACEIT demos are usually 128 ticks.</span>
+<span class="n">demo_parser</span> <span class="o">=</span> <span class="n">DemoParser</span><span class="p">(</span><span class="n">demofile</span><span class="o">=</span><span class="s2">&quot;og-vs-natus-vincere-m1-dust2.dem&quot;</span><span class="p">,</span>
+                         <span class="n">demo_id</span><span class="o">=</span><span class="s2">&quot;og-vs-natus-vincere&quot;</span><span class="p">,</span>
+                         <span class="n">parse_frames</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                         <span class="n">parse_rate</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+
+
+<span class="c1"># Parse the demofile, output results to dictionary with df name as key</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">demo_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">()</span>
+
+
+<span class="c1"># There are a variety of top level keys</span>
+<span class="c1"># You can view game rounds and events in &#39;gameRounds&#39;]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;matchID&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;clientName&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;tickRate&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;playbackTicks&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;playbackFramesCount&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;parsedToFrameIdx&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;parserParameters&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;serverVars&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;matchPhases&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;matchmakingRanks&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;playerConnections&quot;</span><span class="p">]</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]</span> <span class="c1"># From this value, you can extract player events via: data[&#39;gameRounds&#39;][i][&#39;kills&#39;], etc.</span>
+
+<span class="c1"># You can also parse the data into dataframes using</span>
+<span class="n">data_df</span> <span class="o">=</span> <span class="n">demo_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;df&quot;</span><span class="p">)</span>
+
+<span class="c1"># The parser also writes a JSON file of the output named demo_id.json</span>
+</pre></div>
+</div>
 <section id="using-csgo">
 <h2>Using csgo<a class="headerlink" href="#using-csgo" title="Permalink to this headline"></a></h2>
 <dl class="simple">
 <dt><a class="reference internal" href="installation.html"><span class="doc">Installation</span></a></dt><dd><p>How to install the csgo Python library.</p>
 </dd>
-<dt><a class="reference internal" href="examples.html"><span class="doc">Example Notebooks</span></a></dt><dd><p>Examples Jupyter notebooks to help get you started.</p>
+<dt><a class="reference internal" href="examples.html"><span class="doc">Example Notebooks</span></a></dt><dd><p>Examples code and Jupyter notebooks to help get you started.</p>
 </dd>
 <dt><a class="reference internal" href="projects.html"><span class="doc">Projects</span></a></dt><dd><p>Projects that use the csgo Python library.</p>
 </dd>
