@@ -10,7 +10,16 @@ from csgo.data import MAP_DATA
 
 
 def plot_map(map_name="de_dust2", map_type="original", dark=False):
-    """Plots the map"""
+    """Plots a blank map.
+
+    Args:
+        map_name (string): Map to search
+        map_type (string): "original" or "simpleradar"
+        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+
+    Returns:
+        float
+    """
     if map_type == "original":
         map_bg = imageio.imread(
             os.path.join(os.path.dirname(__file__), "")
@@ -31,6 +40,16 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
 
 # Position function courtesy of PureSkill.gg
 def position_transform(map_name, position, axis):
+    """Transforms an X or Y coordinate.
+
+    Args:
+        map_name (string): Map to search
+        position (float): X or Y coordinate
+        axis (string): Either "x" or "y" (lowercase)
+
+    Returns:
+        float
+    """
     start = MAP_DATA[map_name][axis]
     scale = MAP_DATA[map_name]["scale"]
     if axis == "x":
@@ -54,7 +73,20 @@ def plot_positions(
     dark=False,
     apply_transformation=False,
 ):
-    """Plots positions"""
+    """Plots player positions
+
+    Args:
+        positions (list): List of lists of length 2 ([[x,y], ...])
+        colors (list): List of colors for each player
+        markers (list): List of marker types for each player
+        map_name (string): Map to search
+        map_type (string): "original" or "simpleradar"
+        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        apply_transformation (boolean): Indicates if you need to also use position_transform() for the X/Y coordinates
+
+    Returns:
+        matplotlib fig and ax
+    """
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for p, c, m in zip(positions, colors, markers):
         if apply_transformation:
@@ -74,7 +106,19 @@ def plot_positions(
 def plot_round(
     filename, frames, map_name="de_ancient", map_type="original", dark=False
 ):
-    """Creates gif from frame. Writes to filename"""
+    """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
+
+    Args:
+        filename (string): Filename to save the gif
+        frames (list): List of frames from a parsed demo
+        markers (list): List of marker types for each player
+        map_name (string): Map to search
+        map_type (string): "original" or "simpleradar"
+        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+
+    Returns:
+        matplotlib fig and ax, saves .gif
+    """
     if os.path.isdir("csgo_tmp"):
         shutil.rmtree("csgo_tmp/")
     os.mkdir("csgo_tmp")
@@ -134,7 +178,19 @@ def plot_round(
 def plot_nades(
     rounds, nades=[], side="CT", map_name="de_ancient", map_type="original", dark=False
 ):
-    """Plot grenades"""
+    """Plots grenade trajectories.
+
+    Args:
+        rounds (list): List of round objects from a parsed demo
+        nades (list): List of grenade types to plot
+        side (string): Specify side to plot grenades. Either "CT" or "T".
+        map_name (string): Map to search
+        map_type (string): "original" or "simpleradar"
+        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+
+    Returns:
+        matplotlib fig and ax
+    """
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for r in rounds:
         if r["grenades"]:

@@ -15,7 +15,7 @@ def point_in_area(map_name, area_id, point):
         point (list): Point as a list [x,y,z]
 
     Returns:
-        boolean : True if area contains the point, false if not
+        True if area contains the point, false if not
     """
     if map_name not in NAV.keys():
         raise ValueError("Map not found.")
