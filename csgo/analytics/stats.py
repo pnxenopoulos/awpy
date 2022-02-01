@@ -7,8 +7,7 @@ import pandas as pd
 def extract_num_filters(
     filters: Dict[str, Union[List[bool], List[str]]], key: str
 ) -> Tuple[List[str], List[float]]:
-    """Extracts the numeric column filters from a key-value pair in a
-       dictionary.
+    """Extracts the numeric column filters from a key-value pair in a dictionary.
 
     Extracts logical operators and numeric values from the column filters in the
     the value of a specified key in the dictionary represented by filters.
@@ -1141,8 +1140,7 @@ def util_dmg_breakdown(
     damage_filters: Dict[str, Union[List[bool], List[str]]] = {},
     grenade_filters: Dict[str, Union[List[bool], List[str]]] = {},
 ) -> pd.DataFrame:
-    """Returns a dataframe with utility damage statistics broken down by grenade
-       type.
+    """Returns a dataframe with utility damage statistics broken down by grenade type.
 
     Args:
         damage_data: A dataframe with damage data.
