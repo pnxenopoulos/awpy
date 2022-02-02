@@ -594,7 +594,7 @@ func playerInList(p *common.Player, players []PlayerInfo) bool {
 	return false
 }
 
-func parsePlayer(gs demoinfocs.GameState, p *common.Player) PlayerInfo {
+func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
