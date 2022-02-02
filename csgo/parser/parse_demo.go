@@ -661,14 +661,14 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	spottedPlayers := make([]int64, 0)
 	spottedOtherPlayer := false
 	for _, player := range gs.TeamCounterTerrorists().Members() {
-		spottedOtherPlayer = p.HasSpotted(*player)
+		spottedOtherPlayer = p.HasSpotted(player)
 		if spottedOtherPlayer {
 			spottedPlayers = append(spottedPlayers, int64(player.SteamID64))
 		}
 		spottedOtherPlayer = false
 	}
 	for _, player := range gs.TeamTerrorists().Members() {
-		spottedOtherPlayer = p.HasSpotted(*player)
+		spottedOtherPlayer = p.HasSpotted(player)
 		if spottedOtherPlayer {
 			spottedPlayers = append(spottedPlayers, int64(player.SteamID64))
 		}
