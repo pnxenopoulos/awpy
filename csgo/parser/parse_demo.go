@@ -363,6 +363,7 @@ type PlayerInfo struct {
 	IsWalking       bool         `json:"isWalking"`
 	IsUnknown       bool         `json:"isUnknown"`
 	Inventory       []WeaponInfo `json:"inventory"`
+	Spotters        []int64      `json:"spotters"`
 	EqVal           int64        `json:"equipmentValue"`
 	EqValFreeze     int64        `json:"equipmentValueFreezetimeEnd"`
 	EqValStart      int64        `json:"equipmentValueRoundStart"`
@@ -593,7 +594,7 @@ func playerInList(p *common.Player, players []PlayerInfo) bool {
 	return false
 }
 
-func parsePlayer(p *common.Player) PlayerInfo {
+func parsePlayer(gs demoinfocs.GameState, p *common.Player) PlayerInfo {
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
@@ -654,6 +655,24 @@ func parsePlayer(p *common.Player) PlayerInfo {
 	if (p.IsAlive()) && (p.ActiveWeapon() != nil) {
 		activeWeapon = p.ActiveWeapon().String()
 		currentPlayer.ZoomLevel = int64(p.ActiveWeapon().ZoomLevel())
+	}
+
+	// Determine spotted players
+	spottedPlayers := make([]int64, 0)
+	spottedOtherPlayer := false
+	for _, player := range gs.TeamCounterTerrorists().Members() {
+		spottedOtherPlayer = p.HasSpotted(*player)
+		if spottedOtherPlayer {
+			spottedPlayers = append(spottedPlayers, int64(player.SteamID64))
+		}
+		spottedOtherPlayer = false
+	}
+	for _, player := range gs.TeamTerrorists().Members() {
+		spottedOtherPlayer = p.HasSpotted(*player)
+		if spottedOtherPlayer {
+			spottedPlayers = append(spottedPlayers, int64(player.SteamID64))
+		}
+		spottedOtherPlayer = false
 	}
 
 	currentPlayer.ActiveWeapon = activeWeapon
@@ -2081,7 +2100,7 @@ func main() {
 			for _, p := range tPlayers {
 				if p != nil {
 					if playerInList(p, currentFrame.T.Players) == false {
-						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(p))
+						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(gs, p))
 					}
 				}
 			}
@@ -2101,7 +2120,7 @@ func main() {
 			for _, p := range ctPlayers {
 				if p != nil {
 					if playerInList(p, currentFrame.CT.Players) == false {
-						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(p))
+						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(gs, p))
 					}
 				}
 			}
