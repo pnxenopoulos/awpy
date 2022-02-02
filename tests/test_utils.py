@@ -1,6 +1,6 @@
 import pytest
 
-from csgo.utils import AutoVivification, check_go_version, is_in_range
+from awpy.utils import AutoVivification, check_go_version, is_in_range
 
 
 class TestUtils:

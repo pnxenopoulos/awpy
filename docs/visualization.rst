@@ -3,10 +3,10 @@ Visualization
 
 This module contains functions for visualization.
 
-csgo.visualization.plot
+awpy.visualization.plot
 ------------------------------
 
-.. automodule:: csgo.visualization.plot
+.. automodule:: awpy.visualization.plot
    :members:
    :undoc-members:
    :show-inheritance:

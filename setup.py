@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="csgo",
+    name="awpy",
     version="1.0",
     packages=find_packages(),
     # Project uses reStructuredText, so ensure that the docutils get
@@ -33,11 +33,11 @@ setup(
     author_email="xenopoulos@nyu.edu",
     description="Counter-Strike: Global Offensive data parsing, analysis and visualization functions",
     keywords="esports sports-analytics csgo counter-strike",
-    url="https://github.com/pnxenopoulos/csgo",
+    url="https://github.com/pnxenopoulos/awpy",
     project_urls={
-        "Issues": "https://github.com/pnxenopoulos/csgo/issues",
-        "Documentation": "https://github.com/pnxenopoulos/csgo/tree/main/docs",
-        "Github": "https://github.com/pnxenopoulos/csgo/",
+        "Issues": "https://github.com/pnxenopoulos/awpy/issues",
+        "Documentation": "https://awpy.readthedocs.io/en/latest/?badge=latest",
+        "GitHub": "https://github.com/pnxenopoulos/awpy/",
     },
     classifiers=["License :: OSI Approved :: MIT License"],
 )

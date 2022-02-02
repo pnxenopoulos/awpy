@@ -1,9 +1,9 @@
-.. csgo documentation master file, created by
+.. awpy documentation master file, created by
    sphinx-quickstart on Sun Jan 30 21:22:52 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-csgo Python Library
+awpy
 ===================
 |Discord| |Github| |Build| |Licence|
 
@@ -11,24 +11,24 @@ csgo Python Library
    :target: https://discord.gg/W34XjsSs2H
    
 .. |Github| image:: https://img.shields.io/badge/github-repo-yellowgreen
-   :target: https://github.com/pnxenopoulos/csgo
+   :target: https://github.com/pnxenopoulos/awpy
    
-.. |Build| image:: https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml/badge.svg
-   :target: https://github.com/pnxenopoulos/csgo/actions/workflows/build.yml
+.. |Build| image:: https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg
+   :target: https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml
    
 .. |Licence| image:: https://img.shields.io/badge/license-MIT-lightgrey
-   :target: https://github.com/pnxenopoulos/csgo/blob/main/LICENSE
+   :target: https://github.com/pnxenopoulos/awpy/blob/main/LICENSE
    
 This Python library allows a user to parse, analyze and visualize Counter-Strike: Global Offensive (CSGO) demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help with the library.
 
-.. _repository: https://github.com/pnxenopoulos/csgo
+.. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
 Using this library to parse CSGO demos is as easy as below:
 
 .. code-block:: python
 
-   from csgo.parser import DemoParser
+   from awpy.parser import DemoParser
 
    # Set the parse_rate equal to the tick rate at which you would like to parse the frames of the demo.
    # This parameter only matters if parse_frames=True ()
@@ -72,13 +72,13 @@ If you decide to use this library, please cite the following paper.
 Using csgo
 ----------
 :doc:`installation`
-   How to install the csgo Python library.
+   How to install awpy.
 
 :doc:`examples`
    Examples code and Jupyter notebooks to help get you started.
 
 :doc:`projects`
-   Projects that use the csgo Python library.
+   Projects that use awpy.
 
 :doc:`faq`
    Need help? Check the FAQs first.

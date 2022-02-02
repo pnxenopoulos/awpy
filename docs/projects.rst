@@ -1,7 +1,7 @@
 Projects
 ========
 
-The following is a list of projects that rely on the csgo Python library. Please reach out on Discord_ if you would like your project featured here.
+The following is a list of projects that rely on awpy. Please reach out on Discord_ if you would like your project featured here.
 
 .. _Discord: https://discord.gg/W34XjsSs2H
 

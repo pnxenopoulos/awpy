@@ -1,7 +1,7 @@
 Example Parser JSON
 ===================
 
-When using `csgo.DemoParser`, you create a `JSON` output file. This is generally a large file, and is described by the JSON structure contained in this documentation.
+When using `awpy.DemoParser`, you create a `JSON` output file. This is generally a large file, and is described by the JSON structure contained in this documentation.
 
 **Contents**
 

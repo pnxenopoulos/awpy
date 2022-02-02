@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from csgo.data import NAV
-from csgo.analytics.nav import (
+from awpy.data import NAV
+from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
     generate_position_token,

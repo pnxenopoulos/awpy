@@ -4,8 +4,8 @@ import requests
 import pytest
 import pandas as pd
 
-from csgo.parser import DemoParser
-from csgo.analytics.states import generate_game_state
+from awpy.parser import DemoParser
+from awpy.analytics.states import generate_game_state
 
 
 class TestStates:

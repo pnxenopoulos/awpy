@@ -1,7 +1,7 @@
 License and Acknowledgments
 ===========================
 
-This project uses an MIT License, which you can view `here <https://github.com/pnxenopoulos/csgo/blob/main/LICENSE>`_.
+This project uses an MIT License, which you can view `here <https://github.com/pnxenopoulos/awpy/blob/main/LICENSE>`_.
 
 This project, particularly the parsing functions, is made possible by the `Golang CSGO parsing library <https://github.com/markus-wa/demoinfocs-golang>`_.
 
