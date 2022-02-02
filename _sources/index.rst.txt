@@ -19,7 +19,7 @@ awpy
 .. |Licence| image:: https://img.shields.io/badge/license-MIT-lightgrey
    :target: https://github.com/pnxenopoulos/awpy/blob/main/LICENSE
    
-This Python library allows a user to parse, analyze and visualize Counter-Strike: Global Offensive (CSGO) demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help with the library.
+`awpy` allows a user to parse, analyze and visualize Counter-Strike: Global Offensive (CSGO) demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help with the library.
 
 .. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
@@ -72,13 +72,13 @@ If you decide to use this library, please cite the following paper.
 Using awpy
 ----------
 :doc:`installation`
-   How to install awpy.
+   How to install `awpy`.
 
 :doc:`examples`
    Examples code and Jupyter notebooks to help get you started.
 
 :doc:`projects`
-   Projects that use awpy.
+   Projects that use `awpy`.
 
 :doc:`faq`
    Need help? Check the FAQs first.
