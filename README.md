@@ -20,8 +20,9 @@ The `awpy` package provides data parsing, analytics and visualization capabiliti
 
 #### Installation
 To install `awpy`, you can run 
+
 ```
-pip install git+https://github.com/pnxenopoulos/awpy@main
+pip install awpy
 ```
 
 To update the library, just run the command again. For more help, you can visit the installation channel in [our Discord](https://discord.gg/W34XjsSs2H).
@@ -33,7 +34,7 @@ Do your work in Colab? No problem, the `awpy` Python library runs there, too. Ch
 Using the `awpy` package is straightforward. Just grab a demofile and have output in a JSON or Pandas DataFrame in a few seconds. Use the example below to get started.
 
 ```python
-from awpy.parser import DemoParser
+from awpy import DemoParser
 
 # Set the parse_rate equal to the tick rate at which you would like to parse the frames of the demo.
 # This parameter only matters if parse_frames=True ()
