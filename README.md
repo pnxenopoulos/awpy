@@ -103,7 +103,7 @@ When contributing code, be sure to lint your code using `black`, run the tests u
 │   └── visualization             # Code for CSGO visualization
 ├── doc                           # Contains documentation files
 ├── examples                      # Contains Jupyter Notebooks showing example code
-└── tests                         # Contains tests for the csgo package
+└── tests                         # Contains tests for the awpy package
 ```
 
 ## Acknowledgments

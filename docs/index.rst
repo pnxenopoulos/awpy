@@ -69,7 +69,7 @@ If you decide to use this library, please cite the following paper.
    Xenopoulos, P., Doraiswamy, H., & Silva, C. (2020, December). Valuing Player Actions in Counter-Strike: Global Offensive. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.
 
 
-Using csgo
+Using awpy
 ----------
 :doc:`installation`
    How to install awpy.
@@ -86,7 +86,7 @@ Using csgo
 :doc:`license`
    License and acknowledgments.
 
-csgo Modules
+awpy Modules
 ------------
 :doc:`analytics`
    Analytics module.
