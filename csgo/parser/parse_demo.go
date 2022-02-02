@@ -679,24 +679,26 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	currentPlayer.ActiveWeapon = activeWeapon
 	currentPlayer.HasBomb = false
 	for _, w := range p.Weapons() {
-		if (w.String() != "Knife") && (w.String() != "C4") {
-			// Can't drop the knife
-			currentWeapon := WeaponInfo{}
-
-			currentWeapon.WeaponName = w.String()
-			currentWeapon.WeaponClass = convertWeaponClass(w.Class())
-			currentWeapon.AmmoInMagazine = int64(w.AmmoInMagazine())
-			currentWeapon.AmmoInReserve = int64(w.AmmoReserve())
-
-			//currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
-			currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
-			if w.Class() == 6 {
-				currentPlayer.TotalUtility = currentPlayer.TotalUtility + 1
+		if w != nil {
+			if (w.String() != "Knife") && (w.String() != "C4") {
+				// Can't drop the knife
+				currentWeapon := WeaponInfo{}
+	
+				currentWeapon.WeaponName = w.String()
+				currentWeapon.WeaponClass = convertWeaponClass(w.Class())
+				currentWeapon.AmmoInMagazine = int64(w.AmmoInMagazine())
+				currentWeapon.AmmoInReserve = int64(w.AmmoReserve())
+	
+				//currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
+				currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
+				if w.Class() == 6 {
+					currentPlayer.TotalUtility = currentPlayer.TotalUtility + 1
+				}
 			}
-		}
-
-		if (w.String() == "C4") {
-			currentPlayer.HasBomb = true
+	
+			if (w.String() == "C4") {
+				currentPlayer.HasBomb = true
+			}
 		}
 	}
 	return currentPlayer
@@ -1443,7 +1445,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.WeaponFire) {
 		gs := p.GameState()
 
-		if (e.Weapon.String() != "Knife") && (e.Weapon.String() != "C4") && (e.Shooter != nil) {
+		if (e.Weapon != nil) && (e.Weapon.String() != "Knife") && (e.Weapon.String() != "C4") && (e.Shooter != nil) {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
 			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, currentRound, currentGame)
@@ -1774,7 +1776,9 @@ func main() {
 		currentKill.Tick = int64(gs.IngameTick())
 		currentKill.Second = determineSecond(currentKill.Tick, currentRound, currentGame)
 		currentKill.ClockTime = calculateClocktime(currentKill.Tick, currentRound, currentGame)
-		currentKill.Weapon = e.Weapon.String()
+		if e.Weapon != nil {
+			currentKill.Weapon = e.Weapon.String()
+		}
 		currentKill.IsWallbang = e.IsWallBang()
 		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
 		currentKill.IsHeadshot = e.IsHeadshot
@@ -1965,7 +1969,9 @@ func main() {
 		currentDamage.Tick = int64(gs.IngameTick())
 		currentDamage.Second = determineSecond(currentDamage.Tick, currentRound, currentGame)
 		currentDamage.ClockTime = calculateClocktime(currentDamage.Tick, currentRound, currentGame)
-		currentDamage.Weapon = e.Weapon.String()
+		if e.Weapon != nil {
+			currentDamage.Weapon = e.Weapon.String()
+		}
 		currentDamage.HitGroup = convertHitGroup(e.HitGroup)
 		currentDamage.HpDamage = int64(e.HealthDamage)
 		currentDamage.HpDamageTaken = int64(e.HealthDamageTaken)
@@ -2010,7 +2016,9 @@ func main() {
 			attackerStrafe := e.Attacker.IsWalking()
 			currentDamage.AttackerStrafe = &attackerStrafe
 
-			zoomLevel := int64(e.Weapon.ZoomLevel())
+			if e.Weapon != nil {
+				zoomLevel := int64(e.Weapon.ZoomLevel())
+			}
 			currentDamage.ZoomLevel = &zoomLevel
 		}
 
