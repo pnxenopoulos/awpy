@@ -674,6 +674,7 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 		}
 		spottedOtherPlayer = false
 	}
+	currentPlayer.Spotters = spottedPlayers
 
 	currentPlayer.ActiveWeapon = activeWeapon
 	currentPlayer.HasBomb = false
