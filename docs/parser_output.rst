@@ -258,7 +258,7 @@ Grenades
         'grenadeX': 53.96875, 
         'grenadeY': 671.5, 
         'grenadeZ': 68.09375, 
-        'UniqueID': 5031578313293207366        # Unique entity ID
+        'entityID': 5031578313293207366        # entity ID of the grenade
     }
 
 Bomb Events
@@ -388,6 +388,7 @@ Frames
                     'ammoInMagazine': 20, 
                     'ammoInReserve': 120
                 }], 
+                'spotters': [...]                   # SteamIDs of players that the current player has spotted
                 'equipmentValue': 200, 
                 'equipmentValueFreezetimeEnd': 200, 
                 'equipmentValueRoundStart': 200, 
