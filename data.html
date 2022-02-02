@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Data &mdash; csgo 1.0 documentation</title>
+  <title>Data &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -27,7 +27,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> csgo
+            <a href="index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -59,7 +59,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">csgo</a>
+          <a href="index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -79,7 +79,10 @@
              
   <section id="data">
 <h1>Data<a class="headerlink" href="#data" title="Permalink to this headline"></a></h1>
-<p>This module contains both data, primarily related to maps and navigation meshes. Additionally, if you look in the repository, you can find images of popular maps, which we use for visualization.</p>
+<p>This module contains both data, primarily related to maps and navigation meshes. Additionally, if you look in the repository, you can find images of popular maps, which we use for visualization. The relevant imports are</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">awpy.data</span> <span class="kn">import</span> <span class="n">NAV</span><span class="p">,</span> <span class="n">NAV_GRAPHS</span><span class="p">,</span> <span class="n">NAV_CSV</span>
+</pre></div>
+</div>
 <p><cite>NAV</cite> is a dictionary where the top-level keys are map names (strings) and the next-level keys are area ids (integers). The list of acceptable map names is <cite>[‘de_train’, ‘de_cache’, ‘de_ancient’, ‘de_overpass’, ‘de_dust2’, ‘de_cbble’, ‘de_inferno’, ‘de_nuke’, ‘de_vertigo’, ‘de_mirage’]</cite>.</p>
 <p>By running <cite>NAV[“de_dust2”][1213]</cite>, we would see</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>csgo.parser.cleaning &mdash; csgo 1.0 documentation</title>
+  <title>awpy.parser.cleaning &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -24,7 +24,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> csgo
+            <a href="../../../index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -56,7 +56,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">csgo</a>
+          <a href="../../../index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -65,7 +65,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>csgo.parser.cleaning</li>
+      <li>awpy.parser.cleaning</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -74,7 +74,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for csgo.parser.cleaning</h1><div class="highlight"><pre>
+  <h1>Source code for awpy.parser.cleaning</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot; Data cleaning functions</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -84,7 +84,7 @@
 <span class="kn">import</span> <span class="nn">textdistance</span>
 
 
-<div class="viewcode-block" id="associate_entities"><a class="viewcode-back" href="../../../parser.html#csgo.parser.cleaning.associate_entities">[docs]</a><span class="k">def</span> <span class="nf">associate_entities</span><span class="p">(</span><span class="n">game_names</span><span class="o">=</span><span class="p">[],</span> <span class="n">entity_names</span><span class="o">=</span><span class="p">[],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;lcss&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="associate_entities"><a class="viewcode-back" href="../../../parser.html#awpy.parser.cleaning.associate_entities">[docs]</a><span class="k">def</span> <span class="nf">associate_entities</span><span class="p">(</span><span class="n">game_names</span><span class="o">=</span><span class="p">[],</span> <span class="n">entity_names</span><span class="o">=</span><span class="p">[],</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;lcss&quot;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A function to return a dict of associated entities. Accepts</span>
 
 <span class="sd">    Args:</span>
@@ -137,7 +137,7 @@
     <span class="k">return</span> <span class="n">entities</span></div>
 
 
-<div class="viewcode-block" id="replace_entities"><a class="viewcode-back" href="../../../parser.html#csgo.parser.cleaning.replace_entities">[docs]</a><span class="k">def</span> <span class="nf">replace_entities</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">entity_dict</span><span class="p">):</span>
+<div class="viewcode-block" id="replace_entities"><a class="viewcode-back" href="../../../parser.html#awpy.parser.cleaning.replace_entities">[docs]</a><span class="k">def</span> <span class="nf">replace_entities</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">entity_dict</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A function to replace values in a Pandas df column given an entity dict, as created in associate_entities()</span>
 
 <span class="sd">    Args:</span>

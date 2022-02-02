@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parser &mdash; csgo 1.0 documentation</title>
+  <title>Parser &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -27,7 +27,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> csgo
+            <a href="index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -50,8 +50,8 @@
 <li class="toctree-l1"><a class="reference internal" href="analytics.html">Analytics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Parser</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-csgo.parser.cleaning">csgo.parser.cleaning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-csgo.parser.demoparser">csgo.parser.demoparser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-awpy.parser.cleaning">awpy.parser.cleaning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-awpy.parser.demoparser">awpy.parser.demoparser</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
@@ -63,7 +63,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">csgo</a>
+          <a href="index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -84,12 +84,12 @@
   <section id="parser">
 <h1>Parser<a class="headerlink" href="#parser" title="Permalink to this headline"></a></h1>
 <p>This is the parser module. You can use it to parse and clean CSGO demos. To see what parsed demo looks like, and what the JSON keys indicate, please visit <a class="reference internal" href="parser_output.html"><span class="doc">Example Parser JSON</span></a>.</p>
-<section id="module-csgo.parser.cleaning">
-<span id="csgo-parser-cleaning"></span><h2>csgo.parser.cleaning<a class="headerlink" href="#module-csgo.parser.cleaning" title="Permalink to this headline"></a></h2>
+<section id="module-awpy.parser.cleaning">
+<span id="awpy-parser-cleaning"></span><h2>awpy.parser.cleaning<a class="headerlink" href="#module-awpy.parser.cleaning" title="Permalink to this headline"></a></h2>
 <p>Data cleaning functions</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="csgo.parser.cleaning.associate_entities">
-<span class="sig-prename descclassname"><span class="pre">csgo.parser.cleaning.</span></span><span class="sig-name descname"><span class="pre">associate_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">game_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lcss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/cleaning.html#associate_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.cleaning.associate_entities" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.cleaning.associate_entities">
+<span class="sig-prename descclassname"><span class="pre">awpy.parser.cleaning.</span></span><span class="sig-name descname"><span class="pre">associate_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">game_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lcss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/cleaning.html#associate_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.cleaning.associate_entities" title="Permalink to this definition"></a></dt>
 <dd><p>A function to return a dict of associated entities. Accepts</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -106,8 +106,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="csgo.parser.cleaning.replace_entities">
-<span class="sig-prename descclassname"><span class="pre">csgo.parser.cleaning.</span></span><span class="sig-name descname"><span class="pre">replace_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/cleaning.html#replace_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.cleaning.replace_entities" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.cleaning.replace_entities">
+<span class="sig-prename descclassname"><span class="pre">awpy.parser.cleaning.</span></span><span class="sig-name descname"><span class="pre">replace_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/cleaning.html#replace_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.cleaning.replace_entities" title="Permalink to this definition"></a></dt>
 <dd><p>A function to replace values in a Pandas df column given an entity dict, as created in associate_entities()</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -124,16 +124,16 @@
 </dd></dl>
 
 </section>
-<section id="module-csgo.parser.demoparser">
-<span id="csgo-parser-demoparser"></span><h2>csgo.parser.demoparser<a class="headerlink" href="#module-csgo.parser.demoparser" title="Permalink to this headline"></a></h2>
+<section id="module-awpy.parser.demoparser">
+<span id="awpy-parser-demoparser"></span><h2>awpy.parser.demoparser<a class="headerlink" href="#module-awpy.parser.demoparser" title="Permalink to this headline"></a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">csgo.parser.demoparser.</span></span><span class="sig-name descname"><span class="pre">DemoParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">demofile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demo_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dmg_rolled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buy_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hltv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_indentation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">awpy.parser.demoparser.</span></span><span class="sig-name descname"><span class="pre">DemoParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">demofile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demo_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dmg_rolled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buy_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hltv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_indentation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>DemoParser can parse, load and clean data from a CSGO demofile. Can be instantiated without a specified demofile.</p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.demofile">
-<span class="sig-name descname"><span class="pre">demofile</span></span><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.demofile" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.demofile">
+<span class="sig-name descname"><span class="pre">demofile</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.demofile" title="Permalink to this definition"></a></dt>
 <dd><p>A string denoting the path to the demo file, which ends in .dem</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -143,8 +143,8 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.log">
-<span class="sig-name descname"><span class="pre">log</span></span><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.log" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.log">
+<span class="sig-name descname"><span class="pre">log</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.log" title="Permalink to this definition"></a></dt>
 <dd><p>A boolean denoting if a log will be written. If true, log is written to “csgo_parser.log”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -154,8 +154,8 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.demo_id">
-<span class="sig-name descname"><span class="pre">demo_id</span></span><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.demo_id" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.demo_id">
+<span class="sig-name descname"><span class="pre">demo_id</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.demo_id" title="Permalink to this definition"></a></dt>
 <dd><p>A unique demo name/game id. Default is inferred from demofile name</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -165,8 +165,8 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.parse_rate">
-<span class="sig-name descname"><span class="pre">parse_rate</span></span><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.parse_rate" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_rate">
+<span class="sig-name descname"><span class="pre">parse_rate</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_rate" title="Permalink to this definition"></a></dt>
 <dd><p>One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -176,8 +176,8 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.parse_frames">
-<span class="sig-name descname"><span class="pre">parse_frames</span></span><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.parse_frames" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_frames">
+<span class="sig-name descname"><span class="pre">parse_frames</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_frames" title="Permalink to this definition"></a></dt>
 <dd><p>Flag if you want to parse frames (trajectory data) or not</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -187,8 +187,8 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.trade_time">
-<span class="sig-name descname"><span class="pre">trade_time</span></span><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.trade_time" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.trade_time">
+<span class="sig-name descname"><span class="pre">trade_time</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.trade_time" title="Permalink to this definition"></a></dt>
 <dd><p>Length of the window for a trade (in seconds). Default is 5.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -198,8 +198,8 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.dmg_rolled">
-<span class="sig-name descname"><span class="pre">dmg_rolled</span></span><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.dmg_rolled" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.dmg_rolled">
+<span class="sig-name descname"><span class="pre">dmg_rolled</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.dmg_rolled" title="Permalink to this definition"></a></dt>
 <dd><p>Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -209,8 +209,8 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.buy_style">
-<span class="sig-name descname"><span class="pre">buy_style</span></span><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.buy_style" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.buy_style">
+<span class="sig-name descname"><span class="pre">buy_style</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.buy_style" title="Permalink to this definition"></a></dt>
 <dd><p>Buy style string, one of “hltv” or “csgo”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -225,8 +225,8 @@
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.clean_rounds">
-<span class="sig-name descname"><span class="pre">clean_rounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">remove_no_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_warmups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_knifes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_timings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_excess_players</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_excess_kills</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_endings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_to_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.clean_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.clean_rounds" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.clean_rounds">
+<span class="sig-name descname"><span class="pre">clean_rounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">remove_no_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_warmups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_knifes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_timings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_excess_players</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_excess_kills</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_endings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_to_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.clean_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.clean_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Cleans a parsed demofile JSON.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -255,8 +255,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.parse">
-<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'json'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.parse" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse">
+<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'json'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse" title="Permalink to this definition"></a></dt>
 <dd><p>Wrapper for parse_demo() and read_json(). Use to parse a demo.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -275,8 +275,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.parse_demo">
-<span class="sig-name descname"><span class="pre">parse_demo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.parse_demo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.parse_demo" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_demo">
+<span class="sig-name descname"><span class="pre">parse_demo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse_demo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_demo" title="Permalink to this definition"></a></dt>
 <dd><p>Parse a demofile using the Go script parse_demo.go – this function needs the .demofile to be set in the class, and the file needs to exist.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -292,8 +292,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.parse_json_to_df">
-<span class="sig-name descname"><span class="pre">parse_json_to_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.parse_json_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.parse_json_to_df" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_json_to_df">
+<span class="sig-name descname"><span class="pre">parse_json_to_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse_json_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_json_to_df" title="Permalink to this definition"></a></dt>
 <dd><p>Returns JSON into dictionary where keys correspond to data frames</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -306,8 +306,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.read_json">
-<span class="sig-name descname"><span class="pre">read_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.read_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.read_json" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.read_json">
+<span class="sig-name descname"><span class="pre">read_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.read_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.read_json" title="Permalink to this definition"></a></dt>
 <dd><p>Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -323,8 +323,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.remove_end_round">
-<span class="sig-name descname"><span class="pre">remove_end_round</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bad_endings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['Draw',</span> <span class="pre">'Unknown',</span> <span class="pre">'']</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.remove_end_round"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.remove_end_round" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_end_round">
+<span class="sig-name descname"><span class="pre">remove_end_round</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bad_endings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['Draw',</span> <span class="pre">'Unknown',</span> <span class="pre">'']</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_end_round"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_end_round" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds with bad end reason.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -337,8 +337,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.remove_excess_kill_rounds">
-<span class="sig-name descname"><span class="pre">remove_excess_kill_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.remove_excess_kill_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.remove_excess_kill_rounds" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_excess_kill_rounds">
+<span class="sig-name descname"><span class="pre">remove_excess_kill_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_excess_kill_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_excess_kill_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds with more than 10 kills.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -348,8 +348,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.remove_excess_players">
-<span class="sig-name descname"><span class="pre">remove_excess_players</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.remove_excess_players"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.remove_excess_players" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_excess_players">
+<span class="sig-name descname"><span class="pre">remove_excess_players</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_excess_players"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_excess_players" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds where there are more than 5 players on a side.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -359,8 +359,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.remove_knife_rounds">
-<span class="sig-name descname"><span class="pre">remove_knife_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.remove_knife_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.remove_knife_rounds" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_knife_rounds">
+<span class="sig-name descname"><span class="pre">remove_knife_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_knife_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_knife_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Removes knife rounds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -370,8 +370,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.remove_rounds_with_no_frames">
-<span class="sig-name descname"><span class="pre">remove_rounds_with_no_frames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.remove_rounds_with_no_frames"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.remove_rounds_with_no_frames" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_rounds_with_no_frames">
+<span class="sig-name descname"><span class="pre">remove_rounds_with_no_frames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_rounds_with_no_frames"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_rounds_with_no_frames" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds with no frames</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -381,8 +381,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.remove_time_rounds">
-<span class="sig-name descname"><span class="pre">remove_time_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.remove_time_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.remove_time_rounds" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_time_rounds">
+<span class="sig-name descname"><span class="pre">remove_time_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_time_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_time_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Remove rounds with odd round timings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -392,8 +392,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.remove_warmups">
-<span class="sig-name descname"><span class="pre">remove_warmups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.remove_warmups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.remove_warmups" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_warmups">
+<span class="sig-name descname"><span class="pre">remove_warmups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_warmups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_warmups" title="Permalink to this definition"></a></dt>
 <dd><p>Removes warmup rounds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -403,8 +403,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.renumber_rounds">
-<span class="sig-name descname"><span class="pre">renumber_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.renumber_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.renumber_rounds" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.renumber_rounds">
+<span class="sig-name descname"><span class="pre">renumber_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.renumber_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.renumber_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Renumbers the rounds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -414,8 +414,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.rescore_rounds">
-<span class="sig-name descname"><span class="pre">rescore_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.rescore_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.rescore_rounds" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.rescore_rounds">
+<span class="sig-name descname"><span class="pre">rescore_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.rescore_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.rescore_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Rescore the rounds based on round end reason.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -425,8 +425,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="csgo.parser.demoparser.DemoParser.write_json">
-<span class="sig-name descname"><span class="pre">write_json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/csgo/parser/demoparser.html#DemoParser.write_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#csgo.parser.demoparser.DemoParser.write_json" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.write_json">
+<span class="sig-name descname"><span class="pre">write_json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.write_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.write_json" title="Permalink to this definition"></a></dt>
 <dd><p>Rewrite the JSON file</p>
 </dd></dl>
 

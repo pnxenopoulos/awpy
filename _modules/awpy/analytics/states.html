@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>csgo.analytics.states &mdash; csgo 1.0 documentation</title>
+  <title>awpy.analytics.states &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -24,7 +24,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> csgo
+            <a href="../../../index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -56,7 +56,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">csgo</a>
+          <a href="../../../index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -65,7 +65,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>csgo.analytics.states</li>
+      <li>awpy.analytics.states</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -74,8 +74,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for csgo.analytics.states</h1><div class="highlight"><pre>
-<div class="viewcode-block" id="generate_game_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_game_state">[docs]</a><span></span><span class="k">def</span> <span class="nf">generate_game_state</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s2">&quot;vector&quot;</span><span class="p">):</span>
+  <h1>Source code for awpy.analytics.states</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="generate_game_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_game_state">[docs]</a><span></span><span class="k">def</span> <span class="nf">generate_game_state</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s2">&quot;vector&quot;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns a frame into a game state form (one of vector, graph or set)</span>
 
 <span class="sd">    Args:</span>
@@ -107,7 +107,7 @@
     <span class="k">return</span> <span class="n">state</span></div>
 
 
-<div class="viewcode-block" id="generate_team_vector_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_team_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_team_vector_state</span><span class="p">(</span><span class="n">frame_side</span><span class="p">):</span>
+<div class="viewcode-block" id="generate_team_vector_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_team_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_team_vector_state</span><span class="p">(</span><span class="n">frame_side</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns a team&#39;s game state as a vector. The included features are the total players remaining, full hp players remaining, hp, armor, helmets, equipment value and defuse kits.</span>
 
 <span class="sd">    Args:</span>
@@ -139,7 +139,7 @@
     <span class="k">return</span> <span class="n">team_state</span></div>
 
 
-<div class="viewcode-block" id="generate_world_vector_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_world_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_world_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+<div class="viewcode-block" id="generate_world_vector_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_world_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_world_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Generate&#39;s the world state as a vector</span>
 
 <span class="sd">    Args:</span>
@@ -157,7 +157,7 @@
     <span class="k">return</span> <span class="n">world_state</span></div>
 
 
-<div class="viewcode-block" id="generate_vector_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+<div class="viewcode-block" id="generate_vector_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns a game state as a vector. The vector includes the following information:</span>
 
 <span class="sd">    For each team:</span>
@@ -187,7 +187,7 @@
     <span class="k">return</span> <span class="n">state</span></div>
 
 
-<div class="viewcode-block" id="generate_graph_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_graph_state">[docs]</a><span class="k">def</span> <span class="nf">generate_graph_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+<div class="viewcode-block" id="generate_graph_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_graph_state">[docs]</a><span class="k">def</span> <span class="nf">generate_graph_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns a game state as a graph</span>
 
 <span class="sd">    Args:</span>
@@ -199,7 +199,7 @@
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ct&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;global&quot;</span><span class="p">:</span> <span class="p">[]}</span></div>
 
 
-<div class="viewcode-block" id="generate_set_state"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.states.generate_set_state">[docs]</a><span class="k">def</span> <span class="nf">generate_set_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+<div class="viewcode-block" id="generate_set_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_set_state">[docs]</a><span class="k">def</span> <span class="nf">generate_set_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns a game state as a set</span>
 
 <span class="sd">    Args:</span>

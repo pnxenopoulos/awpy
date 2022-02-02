@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>csgo.analytics.nav &mdash; csgo 1.0 documentation</title>
+  <title>awpy.analytics.nav &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -24,7 +24,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> csgo
+            <a href="../../../index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -56,7 +56,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">csgo</a>
+          <a href="../../../index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -65,7 +65,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>csgo.analytics.nav</li>
+      <li>awpy.analytics.nav</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -74,16 +74,16 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for csgo.analytics.nav</h1><div class="highlight"><pre>
+  <h1>Source code for awpy.analytics.nav</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">multiprocessing.sharedctypes</span> <span class="kn">import</span> <span class="n">Value</span>
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">csgo.data</span> <span class="kn">import</span> <span class="n">NAV</span><span class="p">,</span> <span class="n">NAV_GRAPHS</span>
+<span class="kn">from</span> <span class="nn">awpy.data</span> <span class="kn">import</span> <span class="n">NAV</span><span class="p">,</span> <span class="n">NAV_GRAPHS</span>
 <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">distance</span>
 
 
-<div class="viewcode-block" id="point_in_area"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.point_in_area">[docs]</a><span class="k">def</span> <span class="nf">point_in_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_id</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<div class="viewcode-block" id="point_in_area"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.point_in_area">[docs]</a><span class="k">def</span> <span class="nf">point_in_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_id</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns if the point is within a nav area for a map.</span>
 
 <span class="sd">    Args:</span>
@@ -120,7 +120,7 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 
 
-<div class="viewcode-block" id="find_closest_area"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.find_closest_area">[docs]</a><span class="k">def</span> <span class="nf">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+<div class="viewcode-block" id="find_closest_area"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.find_closest_area">[docs]</a><span class="k">def</span> <span class="nf">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Finds the closest area in the nav mesh. Searches through all the areas by comparing point to area centerpoint.</span>
 
 <span class="sd">    Args:</span>
@@ -154,7 +154,7 @@
     <span class="k">return</span> <span class="n">closest_area</span></div>
 
 
-<div class="viewcode-block" id="area_distance"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.area_distance">[docs]</a><span class="k">def</span> <span class="nf">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;graph&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="area_distance"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.area_distance">[docs]</a><span class="k">def</span> <span class="nf">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;graph&quot;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns the distance between two areas. Dist type an be graph or geodesic.</span>
 
 <span class="sd">    Args:</span>
@@ -194,7 +194,7 @@
         <span class="k">return</span> <span class="n">distance_obj</span></div>
 
 
-<div class="viewcode-block" id="point_distance"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.point_distance">[docs]</a><span class="k">def</span> <span class="nf">point_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;graph&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="point_distance"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.point_distance">[docs]</a><span class="k">def</span> <span class="nf">point_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point_a</span><span class="p">,</span> <span class="n">point_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;graph&quot;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns the distance between two points.</span>
 
 <span class="sd">    Args:</span>
@@ -241,7 +241,7 @@
         <span class="k">return</span> <span class="n">distance_obj</span></div>
 
 
-<div class="viewcode-block" id="generate_position_token"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.nav.generate_position_token">[docs]</a><span class="k">def</span> <span class="nf">generate_position_token</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+<div class="viewcode-block" id="generate_position_token"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.generate_position_token">[docs]</a><span class="k">def</span> <span class="nf">generate_position_token</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Generates the position token for a game frame.</span>
 
 <span class="sd">    Args:</span>

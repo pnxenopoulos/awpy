@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>csgo.analytics.stats &mdash; csgo 1.0 documentation</title>
+  <title>awpy.analytics.stats &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -24,7 +24,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> csgo
+            <a href="../../../index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -56,7 +56,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">csgo</a>
+          <a href="../../../index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -65,7 +65,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>csgo.analytics.stats</li>
+      <li>awpy.analytics.stats</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -74,14 +74,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for csgo.analytics.stats</h1><div class="highlight"><pre>
+  <h1>Source code for awpy.analytics.stats</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 
-<div class="viewcode-block" id="extract_num_filters"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.extract_num_filters">[docs]</a><span class="k">def</span> <span class="nf">extract_num_filters</span><span class="p">(</span>
+<div class="viewcode-block" id="extract_num_filters"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.extract_num_filters">[docs]</a><span class="k">def</span> <span class="nf">extract_num_filters</span><span class="p">(</span>
     <span class="n">filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
     <span class="sd">&quot;&quot;&quot;Extracts the numeric column filters from a key-value pair in a dictionary.</span>
@@ -138,7 +138,7 @@
     <span class="k">return</span> <span class="n">sign_list</span><span class="p">,</span> <span class="n">val_list</span></div>
 
 
-<div class="viewcode-block" id="check_filters"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.check_filters">[docs]</a><span class="k">def</span> <span class="nf">check_filters</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]):</span>
+<div class="viewcode-block" id="check_filters"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.check_filters">[docs]</a><span class="k">def</span> <span class="nf">check_filters</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]):</span>
     <span class="sd">&quot;&quot;&quot;Checks if the column filters are valid.</span>
 
 <span class="sd">    Iterates through each key-value pair in the dictionary represented by</span>
@@ -176,7 +176,7 @@
             <span class="n">extract_num_filters</span><span class="p">(</span><span class="n">filters</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="num_filter_df"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.num_filter_df">[docs]</a><span class="k">def</span> <span class="nf">num_filter_df</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<div class="viewcode-block" id="num_filter_df"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.num_filter_df">[docs]</a><span class="k">def</span> <span class="nf">num_filter_df</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sign</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Filters numeric data in a dataframe.</span>
 
 <span class="sd">    Args:</span>
@@ -201,7 +201,7 @@
     <span class="k">return</span> <span class="n">filtered_df</span></div>
 
 
-<div class="viewcode-block" id="filter_df"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.filter_df">[docs]</a><span class="k">def</span> <span class="nf">filter_df</span><span class="p">(</span>
+<div class="viewcode-block" id="filter_df"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.filter_df">[docs]</a><span class="k">def</span> <span class="nf">filter_df</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Filters data in a dataframe.</span>
@@ -235,7 +235,7 @@
     <span class="k">return</span> <span class="n">df_copy</span></div>
 
 
-<div class="viewcode-block" id="calc_stats"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.calc_stats">[docs]</a><span class="k">def</span> <span class="nf">calc_stats</span><span class="p">(</span>
+<div class="viewcode-block" id="calc_stats"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.calc_stats">[docs]</a><span class="k">def</span> <span class="nf">calc_stats</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span>
     <span class="n">col_to_groupby</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -272,7 +272,7 @@
     <span class="k">return</span> <span class="n">df_copy</span></div>
 
 
-<div class="viewcode-block" id="accuracy"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.accuracy">[docs]</a><span class="k">def</span> <span class="nf">accuracy</span><span class="p">(</span>
+<div class="viewcode-block" id="accuracy"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.accuracy">[docs]</a><span class="k">def</span> <span class="nf">accuracy</span><span class="p">(</span>
     <span class="n">damage_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">weapon_fire_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">team</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -347,7 +347,7 @@
     <span class="k">return</span> <span class="n">acc</span></div>
 
 
-<div class="viewcode-block" id="kast"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.kast">[docs]</a><span class="k">def</span> <span class="nf">kast</span><span class="p">(</span>
+<div class="viewcode-block" id="kast"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.kast">[docs]</a><span class="k">def</span> <span class="nf">kast</span><span class="p">(</span>
     <span class="n">kill_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">kast_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;KAST&quot;</span><span class="p">,</span>
     <span class="n">flash_assists</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -470,7 +470,7 @@
     <span class="k">return</span> <span class="n">kast</span></div>
 
 
-<div class="viewcode-block" id="kill_stats"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.kill_stats">[docs]</a><span class="k">def</span> <span class="nf">kill_stats</span><span class="p">(</span>
+<div class="viewcode-block" id="kill_stats"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.kill_stats">[docs]</a><span class="k">def</span> <span class="nf">kill_stats</span><span class="p">(</span>
     <span class="n">damage_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">kill_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">round_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
@@ -650,7 +650,7 @@
     <span class="k">return</span> <span class="n">kill_stats</span></div>
 
 
-<div class="viewcode-block" id="adr"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.adr">[docs]</a><span class="k">def</span> <span class="nf">adr</span><span class="p">(</span>
+<div class="viewcode-block" id="adr"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.adr">[docs]</a><span class="k">def</span> <span class="nf">adr</span><span class="p">(</span>
     <span class="n">damage_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">round_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">team</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -697,7 +697,7 @@
     <span class="k">return</span> <span class="n">adr</span></div>
 
 
-<div class="viewcode-block" id="rating"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.rating">[docs]</a><span class="k">def</span> <span class="nf">rating</span><span class="p">(</span>
+<div class="viewcode-block" id="rating"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.rating">[docs]</a><span class="k">def</span> <span class="nf">rating</span><span class="p">(</span>
     <span class="n">damage_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">kill_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">round_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
@@ -791,7 +791,7 @@
     <span class="k">return</span> <span class="n">kill_stats</span></div>
 
 
-<div class="viewcode-block" id="util_dmg"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.util_dmg">[docs]</a><span class="k">def</span> <span class="nf">util_dmg</span><span class="p">(</span>
+<div class="viewcode-block" id="util_dmg"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.util_dmg">[docs]</a><span class="k">def</span> <span class="nf">util_dmg</span><span class="p">(</span>
     <span class="n">damage_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">grenade_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">team</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -858,7 +858,7 @@
     <span class="k">return</span> <span class="n">util_dmg_stats</span></div>
 
 
-<div class="viewcode-block" id="flash_stats"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.flash_stats">[docs]</a><span class="k">def</span> <span class="nf">flash_stats</span><span class="p">(</span>
+<div class="viewcode-block" id="flash_stats"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.flash_stats">[docs]</a><span class="k">def</span> <span class="nf">flash_stats</span><span class="p">(</span>
     <span class="n">flash_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">grenade_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">kill_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
@@ -944,7 +944,7 @@
     <span class="k">return</span> <span class="n">flash_stats</span></div>
 
 
-<div class="viewcode-block" id="bomb_stats"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.bomb_stats">[docs]</a><span class="k">def</span> <span class="nf">bomb_stats</span><span class="p">(</span>
+<div class="viewcode-block" id="bomb_stats"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.bomb_stats">[docs]</a><span class="k">def</span> <span class="nf">bomb_stats</span><span class="p">(</span>
     <span class="n">bomb_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">bomb_filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{},</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -1032,7 +1032,7 @@
     <span class="k">return</span> <span class="n">bomb_stats</span></div>
 
 
-<div class="viewcode-block" id="econ_stats"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.econ_stats">[docs]</a><span class="k">def</span> <span class="nf">econ_stats</span><span class="p">(</span>
+<div class="viewcode-block" id="econ_stats"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.econ_stats">[docs]</a><span class="k">def</span> <span class="nf">econ_stats</span><span class="p">(</span>
     <span class="n">round_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">round_filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{},</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -1097,7 +1097,7 @@
     <span class="k">return</span> <span class="n">econ_stats</span></div>
 
 
-<div class="viewcode-block" id="weapon_type"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.weapon_type">[docs]</a><span class="k">def</span> <span class="nf">weapon_type</span><span class="p">(</span><span class="n">weapon</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="viewcode-block" id="weapon_type"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.weapon_type">[docs]</a><span class="k">def</span> <span class="nf">weapon_type</span><span class="p">(</span><span class="n">weapon</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Returns the weapon type of a weapon.</span>
 
 <span class="sd">    Args:</span>
@@ -1135,7 +1135,7 @@
         <span class="k">return</span> <span class="s2">&quot;Utility Kills&quot;</span></div>
 
 
-<div class="viewcode-block" id="kill_breakdown"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.kill_breakdown">[docs]</a><span class="k">def</span> <span class="nf">kill_breakdown</span><span class="p">(</span>
+<div class="viewcode-block" id="kill_breakdown"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.kill_breakdown">[docs]</a><span class="k">def</span> <span class="nf">kill_breakdown</span><span class="p">(</span>
     <span class="n">kill_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">team</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">kill_filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{},</span>
@@ -1210,7 +1210,7 @@
     <span class="k">return</span> <span class="n">kill_breakdown</span></div>
 
 
-<div class="viewcode-block" id="util_dmg_breakdown"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.util_dmg_breakdown">[docs]</a><span class="k">def</span> <span class="nf">util_dmg_breakdown</span><span class="p">(</span>
+<div class="viewcode-block" id="util_dmg_breakdown"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.util_dmg_breakdown">[docs]</a><span class="k">def</span> <span class="nf">util_dmg_breakdown</span><span class="p">(</span>
     <span class="n">damage_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">grenade_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">team</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1281,7 +1281,7 @@
     <span class="k">return</span> <span class="n">util_dmg_breakdown</span></div>
 
 
-<div class="viewcode-block" id="win_breakdown"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.win_breakdown">[docs]</a><span class="k">def</span> <span class="nf">win_breakdown</span><span class="p">(</span>
+<div class="viewcode-block" id="win_breakdown"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.win_breakdown">[docs]</a><span class="k">def</span> <span class="nf">win_breakdown</span><span class="p">(</span>
     <span class="n">round_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">round_filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{},</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -1336,7 +1336,7 @@
     <span class="k">return</span> <span class="n">win_breakdown</span></div>
 
 
-<div class="viewcode-block" id="player_box_score"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.player_box_score">[docs]</a><span class="k">def</span> <span class="nf">player_box_score</span><span class="p">(</span>
+<div class="viewcode-block" id="player_box_score"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.player_box_score">[docs]</a><span class="k">def</span> <span class="nf">player_box_score</span><span class="p">(</span>
     <span class="n">damage_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">flash_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">grenade_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
@@ -1429,7 +1429,7 @@
     <span class="k">return</span> <span class="n">box_score</span></div>
 
 
-<div class="viewcode-block" id="team_box_score"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.stats.team_box_score">[docs]</a><span class="k">def</span> <span class="nf">team_box_score</span><span class="p">(</span>
+<div class="viewcode-block" id="team_box_score"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.team_box_score">[docs]</a><span class="k">def</span> <span class="nf">team_box_score</span><span class="p">(</span>
     <span class="n">damage_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">flash_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">grenade_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>

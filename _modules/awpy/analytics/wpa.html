@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>csgo.analytics.wpa &mdash; csgo 1.0 documentation</title>
+  <title>awpy.analytics.wpa &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -24,7 +24,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> csgo
+            <a href="../../../index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -56,7 +56,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">csgo</a>
+          <a href="../../../index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -65,7 +65,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>csgo.analytics.wpa</li>
+      <li>awpy.analytics.wpa</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -74,12 +74,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for csgo.analytics.wpa</h1><div class="highlight"><pre>
+  <h1>Source code for awpy.analytics.wpa</h1><div class="highlight"><pre>
 <span></span><span class="n">SIMPLE_WP_MODEL</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="n">ADV_WP_MODEL</span> <span class="o">=</span> <span class="kc">None</span>
 
 
-<div class="viewcode-block" id="state_win_probability"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.wpa.state_win_probability">[docs]</a><span class="k">def</span> <span class="nf">state_win_probability</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<div class="viewcode-block" id="state_win_probability"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.wpa.state_win_probability">[docs]</a><span class="k">def</span> <span class="nf">state_win_probability</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Predicts the win probability of a given frame.</span>
 
 <span class="sd">    Args:</span>
@@ -91,7 +91,7 @@
     <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
-<div class="viewcode-block" id="round_win_probability"><a class="viewcode-back" href="../../../analytics.html#csgo.analytics.wpa.round_win_probability">[docs]</a><span class="k">def</span> <span class="nf">round_win_probability</span><span class="p">(</span><span class="n">ct_score</span><span class="p">,</span> <span class="n">t_score</span><span class="p">,</span> <span class="nb">map</span><span class="p">):</span>
+<div class="viewcode-block" id="round_win_probability"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.wpa.round_win_probability">[docs]</a><span class="k">def</span> <span class="nf">round_win_probability</span><span class="p">(</span><span class="n">ct_score</span><span class="p">,</span> <span class="n">t_score</span><span class="p">,</span> <span class="nb">map</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Estimates of game win probability using information from the HLTV win matrix for a given map and score.</span>
 
 <span class="sd">    Args:</span>

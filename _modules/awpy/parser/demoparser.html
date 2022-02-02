@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>csgo.parser.demoparser &mdash; csgo 1.0 documentation</title>
+  <title>awpy.parser.demoparser &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -24,7 +24,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> csgo
+            <a href="../../../index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -56,7 +56,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">csgo</a>
+          <a href="../../../index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -65,7 +65,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>csgo.parser.demoparser</li>
+      <li>awpy.parser.demoparser</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -74,17 +74,17 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for csgo.parser.demoparser</h1><div class="highlight"><pre>
+  <h1>Source code for awpy.parser.demoparser</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">csgo.utils</span> <span class="kn">import</span> <span class="n">check_go_version</span>
+<span class="kn">from</span> <span class="nn">awpy.utils</span> <span class="kn">import</span> <span class="n">check_go_version</span>
 
 
-<div class="viewcode-block" id="DemoParser"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser">[docs]</a><span class="k">class</span> <span class="nc">DemoParser</span><span class="p">:</span>
+<div class="viewcode-block" id="DemoParser"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser">[docs]</a><span class="k">class</span> <span class="nc">DemoParser</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;DemoParser can parse, load and clean data from a CSGO demofile. Can be instantiated without a specified demofile.</span>
 
 <span class="sd">    Attributes:</span>
@@ -208,7 +208,7 @@
         <span class="c1"># Set parse error to False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span> <span class="o">=</span> <span class="kc">False</span>
 
-<div class="viewcode-block" id="DemoParser.parse_demo"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.parse_demo">[docs]</a>    <span class="k">def</span> <span class="nf">parse_demo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.parse_demo"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.parse_demo">[docs]</a>    <span class="k">def</span> <span class="nf">parse_demo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parse a demofile using the Go script parse_demo.go -- this function needs the .demofile to be set in the class, and the file needs to exist.</span>
 
 <span class="sd">        Returns:</span>
@@ -276,7 +276,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No file produced, error in calling Golang&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.read_json"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.read_json">[docs]</a>    <span class="k">def</span> <span class="nf">read_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_path</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.read_json"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.read_json">[docs]</a>    <span class="k">def</span> <span class="nf">read_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_path</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.</span>
 
 <span class="sd">        Args:</span>
@@ -303,7 +303,7 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">demo_data</span></div>
 
-<div class="viewcode-block" id="DemoParser.parse"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.parse">[docs]</a>    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;json&quot;</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.parse"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.parse">[docs]</a>    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;json&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Wrapper for parse_demo() and read_json(). Use to parse a demo.</span>
 
 <span class="sd">        Args:</span>
@@ -333,7 +333,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;JSON couldn&#39;t be returned&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;No JSON parsed! Error in producing JSON.&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.parse_json_to_df"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.parse_json_to_df">[docs]</a>    <span class="k">def</span> <span class="nf">parse_json_to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.parse_json_to_df"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.parse_json_to_df">[docs]</a>    <span class="k">def</span> <span class="nf">parse_json_to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns JSON into dictionary where keys correspond to data frames</span>
 
 <span class="sd">        Returns:</span>
@@ -677,7 +677,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span>
 
-<div class="viewcode-block" id="DemoParser.clean_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.clean_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">clean_rounds</span><span class="p">(</span>
+<div class="viewcode-block" id="DemoParser.clean_rounds"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.clean_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">clean_rounds</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">remove_no_frames</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">remove_warmups</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -741,12 +741,12 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.write_json"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.write_json">[docs]</a>    <span class="k">def</span> <span class="nf">write_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.write_json"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.write_json">[docs]</a>    <span class="k">def</span> <span class="nf">write_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Rewrite the JSON file&quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_indentation</span> <span class="k">else</span> <span class="kc">None</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="DemoParser.renumber_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.renumber_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">renumber_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.renumber_rounds"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.renumber_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">renumber_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Renumbers the rounds.</span>
 
 <span class="sd">        Raises:</span>
@@ -763,7 +763,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.rescore_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.rescore_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">rescore_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.rescore_rounds"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.rescore_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">rescore_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Rescore the rounds based on round end reason.</span>
 
 <span class="sd">        Raises:</span>
@@ -809,7 +809,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.remove_rounds_with_no_frames"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_rounds_with_no_frames">[docs]</a>    <span class="k">def</span> <span class="nf">remove_rounds_with_no_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.remove_rounds_with_no_frames"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.remove_rounds_with_no_frames">[docs]</a>    <span class="k">def</span> <span class="nf">remove_rounds_with_no_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes rounds with no frames</span>
 
 <span class="sd">        Raises:</span>
@@ -834,7 +834,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.remove_excess_players"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_excess_players">[docs]</a>    <span class="k">def</span> <span class="nf">remove_excess_players</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.remove_excess_players"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.remove_excess_players">[docs]</a>    <span class="k">def</span> <span class="nf">remove_excess_players</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes rounds where there are more than 5 players on a side.</span>
 
 <span class="sd">        Raises:</span>
@@ -870,7 +870,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.remove_warmups"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_warmups">[docs]</a>    <span class="k">def</span> <span class="nf">remove_warmups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.remove_warmups"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.remove_warmups">[docs]</a>    <span class="k">def</span> <span class="nf">remove_warmups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes warmup rounds.</span>
 
 <span class="sd">        Raises:</span>
@@ -902,7 +902,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.remove_end_round"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_end_round">[docs]</a>    <span class="k">def</span> <span class="nf">remove_end_round</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bad_endings</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Draw&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]):</span>
+<div class="viewcode-block" id="DemoParser.remove_end_round"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.remove_end_round">[docs]</a>    <span class="k">def</span> <span class="nf">remove_end_round</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bad_endings</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Draw&quot;</span><span class="p">,</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]):</span>
         <span class="sd">&quot;&quot;&quot;Removes rounds with bad end reason.</span>
 
 <span class="sd">        Args:</span>
@@ -925,7 +925,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.remove_knife_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_knife_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_knife_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.remove_knife_rounds"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.remove_knife_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_knife_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes knife rounds.</span>
 
 <span class="sd">        Raises:</span>
@@ -951,7 +951,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.remove_excess_kill_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_excess_kill_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_excess_kill_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.remove_excess_kill_rounds"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.remove_excess_kill_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_excess_kill_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes rounds with more than 10 kills.</span>
 
 <span class="sd">        Raises:</span>
@@ -974,7 +974,7 @@
                 <span class="s2">&quot;JSON not found. Run .parse() or .read_json() if JSON already exists&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DemoParser.remove_time_rounds"><a class="viewcode-back" href="../../../parser.html#csgo.parser.demoparser.DemoParser.remove_time_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_time_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DemoParser.remove_time_rounds"><a class="viewcode-back" href="../../../parser.html#awpy.parser.demoparser.DemoParser.remove_time_rounds">[docs]</a>    <span class="k">def</span> <span class="nf">remove_time_rounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Remove rounds with odd round timings.</span>
 
 <span class="sd">        Raises:</span>

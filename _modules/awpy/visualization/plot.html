@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>csgo.visualization.plot &mdash; csgo 1.0 documentation</title>
+  <title>awpy.visualization.plot &mdash; awpy 1.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -24,7 +24,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> csgo
+            <a href="../../../index.html" class="icon icon-home"> awpy
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -56,7 +56,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">csgo</a>
+          <a href="../../../index.html">awpy</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -65,7 +65,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>csgo.visualization.plot</li>
+      <li>awpy.visualization.plot</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -74,7 +74,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for csgo.visualization.plot</h1><div class="highlight"><pre>
+  <h1>Source code for awpy.visualization.plot</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">imageio</span>
@@ -83,10 +83,10 @@
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-<span class="kn">from</span> <span class="nn">csgo.data</span> <span class="kn">import</span> <span class="n">MAP_DATA</span>
+<span class="kn">from</span> <span class="nn">awpy.data</span> <span class="kn">import</span> <span class="n">MAP_DATA</span>
 
 
-<div class="viewcode-block" id="plot_map"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.plot_map">[docs]</a><span class="k">def</span> <span class="nf">plot_map</span><span class="p">(</span><span class="n">map_name</span><span class="o">=</span><span class="s2">&quot;de_dust2&quot;</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="s2">&quot;original&quot;</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="plot_map"><a class="viewcode-back" href="../../../visualization.html#awpy.visualization.plot.plot_map">[docs]</a><span class="k">def</span> <span class="nf">plot_map</span><span class="p">(</span><span class="n">map_name</span><span class="o">=</span><span class="s2">&quot;de_dust2&quot;</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="s2">&quot;original&quot;</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Plots a blank map.</span>
 
 <span class="sd">    Args:</span>
@@ -116,7 +116,7 @@
 
 
 <span class="c1"># Position function courtesy of PureSkill.gg</span>
-<div class="viewcode-block" id="position_transform"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.position_transform">[docs]</a><span class="k">def</span> <span class="nf">position_transform</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">axis</span><span class="p">):</span>
+<div class="viewcode-block" id="position_transform"><a class="viewcode-back" href="../../../visualization.html#awpy.visualization.plot.position_transform">[docs]</a><span class="k">def</span> <span class="nf">position_transform</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">axis</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Transforms an X or Y coordinate.</span>
 
 <span class="sd">    Args:</span>
@@ -141,7 +141,7 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="plot_positions"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.plot_positions">[docs]</a><span class="k">def</span> <span class="nf">plot_positions</span><span class="p">(</span>
+<div class="viewcode-block" id="plot_positions"><a class="viewcode-back" href="../../../visualization.html#awpy.visualization.plot.plot_positions">[docs]</a><span class="k">def</span> <span class="nf">plot_positions</span><span class="p">(</span>
     <span class="n">positions</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">colors</span><span class="o">=</span><span class="p">[],</span>
     <span class="n">markers</span><span class="o">=</span><span class="p">[],</span>
@@ -180,7 +180,7 @@
     <span class="k">return</span> <span class="n">f</span><span class="p">,</span> <span class="n">a</span></div>
 
 
-<div class="viewcode-block" id="plot_round"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.plot_round">[docs]</a><span class="k">def</span> <span class="nf">plot_round</span><span class="p">(</span>
+<div class="viewcode-block" id="plot_round"><a class="viewcode-back" href="../../../visualization.html#awpy.visualization.plot.plot_round">[docs]</a><span class="k">def</span> <span class="nf">plot_round</span><span class="p">(</span>
     <span class="n">filename</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">map_name</span><span class="o">=</span><span class="s2">&quot;de_ancient&quot;</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="s2">&quot;original&quot;</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.</span>
@@ -252,7 +252,7 @@
     <span class="k">return</span> <span class="kc">True</span></div>
 
 
-<div class="viewcode-block" id="plot_nades"><a class="viewcode-back" href="../../../visualization.html#csgo.visualization.plot.plot_nades">[docs]</a><span class="k">def</span> <span class="nf">plot_nades</span><span class="p">(</span>
+<div class="viewcode-block" id="plot_nades"><a class="viewcode-back" href="../../../visualization.html#awpy.visualization.plot.plot_nades">[docs]</a><span class="k">def</span> <span class="nf">plot_nades</span><span class="p">(</span>
     <span class="n">rounds</span><span class="p">,</span> <span class="n">nades</span><span class="o">=</span><span class="p">[],</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;CT&quot;</span><span class="p">,</span> <span class="n">map_name</span><span class="o">=</span><span class="s2">&quot;de_ancient&quot;</span><span class="p">,</span> <span class="n">map_type</span><span class="o">=</span><span class="s2">&quot;original&quot;</span><span class="p">,</span> <span class="n">dark</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Plots grenade trajectories.</span>
