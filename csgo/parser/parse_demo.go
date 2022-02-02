@@ -2018,8 +2018,8 @@ func main() {
 
 			if e.Weapon != nil {
 				zoomLevel := int64(e.Weapon.ZoomLevel())
+				currentDamage.ZoomLevel = &zoomLevel
 			}
-			currentDamage.ZoomLevel = &zoomLevel
 		}
 
 		// Victim
