@@ -187,7 +187,7 @@ def generate_position_token(map_name, frame):
     # Create token
     ct_token = np.zeros(len(map_area_names), dtype=np.int8)
     for player in frame["ct"]["players"]:
-        if player["isAlive"]:
+        if player["hp"] > 0:
             closest_area = find_closest_area(
                 map_name, [player["x"], player["y"], player["z"]]
             )
@@ -196,7 +196,7 @@ def generate_position_token(map_name, frame):
             ] += 1
     t_token = np.zeros(len(map_area_names), dtype=np.int8)
     for player in frame["t"]["players"]:
-        if player["isAlive"]:
+        if player["hp"] > 0:
             closest_area = find_closest_area(
                 map_name, [player["x"], player["y"], player["z"]]
             )
