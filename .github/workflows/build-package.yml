@@ -10,8 +10,8 @@ on:
     branches:
      - 'master'
      - 'lambda-compat-dev'
-    paths:
-      - '*'
+    # paths:
+    #   - '*'
 
 jobs:
   builds:
