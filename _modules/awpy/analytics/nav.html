@@ -264,20 +264,22 @@
     <span class="c1"># Create token</span>
     <span class="n">ct_token</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
-        <span class="n">closest_area</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span>
-            <span class="n">map_name</span><span class="p">,</span> <span class="p">[</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]]</span>
-        <span class="p">)</span>
-        <span class="n">ct_token</span><span class="p">[</span>
-            <span class="n">map_area_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]][</span><span class="s2">&quot;areaName&quot;</span><span class="p">])</span>
-        <span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;isAlive&quot;</span><span class="p">]:</span>
+            <span class="n">closest_area</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span>
+                <span class="n">map_name</span><span class="p">,</span> <span class="p">[</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="n">ct_token</span><span class="p">[</span>
+                <span class="n">map_area_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]][</span><span class="s2">&quot;areaName&quot;</span><span class="p">])</span>
+            <span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
     <span class="n">t_token</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
-        <span class="n">closest_area</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span>
-            <span class="n">map_name</span><span class="p">,</span> <span class="p">[</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]]</span>
-        <span class="p">)</span>
-        <span class="n">t_token</span><span class="p">[</span>
-            <span class="n">map_area_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]][</span><span class="s2">&quot;areaName&quot;</span><span class="p">])</span>
-        <span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;isAlive&quot;</span><span class="p">]:</span>
+            <span class="n">closest_area</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span>
+                <span class="n">map_name</span><span class="p">,</span> <span class="p">[</span><span class="n">player</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="n">t_token</span><span class="p">[</span>
+                <span class="n">map_area_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">closest_area</span><span class="p">[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]][</span><span class="s2">&quot;areaName&quot;</span><span class="p">])</span>
+            <span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
     <span class="c1"># Create payload</span>
     <span class="n">token</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">token</span><span class="p">[</span><span class="s2">&quot;tToken&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
