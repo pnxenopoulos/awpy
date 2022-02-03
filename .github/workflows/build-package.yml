@@ -11,8 +11,7 @@ on:
      - 'master'
      - 'lambda-compat-dev'
     paths:
-      - 'src/**'
-      - '.github/workflows/build-package.yml'
+      - '*'
 
 jobs:
   builds:
