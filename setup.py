@@ -26,6 +26,7 @@ setup(
             "data/nav/*.csv",
             "*.mod",
             "*.sum",
+            "parser/parse_demo"
         ]
     },
     # metadata to display on PyPI
