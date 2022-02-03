@@ -162,9 +162,7 @@ class DemoParser:
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
         self.parser_cmd = [
-            "go",
-            "run",
-            "parse_demo.go",
+            "parse_demo",
             "-demo",
             self.demofile,
             "-parserate",
