@@ -9,7 +9,7 @@ on:
   push:
     branches:
      - 'master'
-     - '*'
+     - 'lambda-compat-dev'
     paths:
       - 'src/**'
       - '.github/workflows/build-package.yml'
