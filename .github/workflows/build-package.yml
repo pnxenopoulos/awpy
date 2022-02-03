@@ -31,22 +31,22 @@ jobs:
         with:
           go-version: 1.17.6
       
-      # - name: Configure AWS Credentials
-      #   uses: aws-actions/configure-aws-credentials@master
-      #   if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
-      #   with:
-      #     role-to-assume: ${{ secrets[matrix.role-to-assume] }}
-      #     role-session-name: ${{ matrix.role-session-name }}
-      #     aws-region: ${{ matrix.aws-region }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@master
+        if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        with:
+          role-to-assume: ${{ secrets[matrix.role-to-assume] }}
+          role-session-name: ${{ matrix.role-session-name }}
+          aws-region: ${{ matrix.aws-region }}
       
-      # - name: Configure CodeArtifact credentials
-      #   id: configure_codeartifact_credentials
-      #   if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
-      #   run: |
-      #     export CODEARTIFACT_USERNAME=aws
-      #     export CODEARTIFACT_TOKEN=`aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken --output text`
-      #     echo ::set-output name=codeartifact_username::$(echo $CODEARTIFACT_USERNAME)
-      #     echo ::set-output name=codeartifact_token::$(echo $CODEARTIFACT_TOKEN)
+      - name: Configure CodeArtifact credentials
+        id: configure_codeartifact_credentials
+        if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        run: |
+          export CODEARTIFACT_USERNAME=aws
+          export CODEARTIFACT_TOKEN=`aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken --output text`
+          echo ::set-output name=codeartifact_username::$(echo $CODEARTIFACT_USERNAME)
+          echo ::set-output name=codeartifact_token::$(echo $CODEARTIFACT_TOKEN)
       
       - name: Build parse_demo go binary
         run: cd csgo/parser; go build -o parse_demo
