@@ -28,6 +28,9 @@ jobs:
             role-to-assume: AWS_ROLE_TO_ASSUME_DEV
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17.6
       
       # - name: Configure AWS Credentials
       #   uses: aws-actions/configure-aws-credentials@master
@@ -47,9 +50,6 @@ jobs:
       #     echo ::set-output name=codeartifact_token::$(echo $CODEARTIFACT_TOKEN)
       
       - name: Build parse_demo go binary
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.17.6
         run: cd csgo/parser; go build -o parse_demo
       
       - name: Build package dist
