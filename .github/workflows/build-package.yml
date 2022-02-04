@@ -61,12 +61,12 @@ jobs:
           pip install setuptools wheel twine
           python setup.py sdist bdist_wheel
 
-      # - name: Publish to repo
-      #   if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
-      #   run: |
-      #     pip3 install twine
-      #     export TWINE_REPOSITORY_URL=`aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint --output text`
-      #     cd src; python -m twine upload --repository-url $TWINE_REPOSITORY_URL dist/* --verbose
-      #   env:
-      #     TWINE_USERNAME: ${{ steps.configure_codeartifact_credentials.outputs.codeartifact_username }}
-      #     TWINE_PASSWORD: ${{ steps.configure_codeartifact_credentials.outputs.codeartifact_token }}
+      - name: Publish to repo
+        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        run: |
+          pip3 install twine
+          export TWINE_REPOSITORY_URL=`aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint --output text`
+          cd src; python -m twine upload --repository-url $TWINE_REPOSITORY_URL dist/* --verbose
+        env:
+          TWINE_USERNAME: ${{ steps.configure_codeartifact_credentials.outputs.codeartifact_username }}
+          TWINE_PASSWORD: ${{ steps.configure_codeartifact_credentials.outputs.codeartifact_token }}
