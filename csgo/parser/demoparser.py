@@ -162,7 +162,7 @@ class DemoParser:
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
         self.parser_cmd = [
-            "parse_demo",
+            "./parse_demo",
             "-demo",
             self.demofile,
             "-parserate",
@@ -188,7 +188,7 @@ class DemoParser:
             cwd=path,
         )
         stdout = proc.stdout.read().splitlines()
-        self.output_file = self.demo_id + ".json"
+        self.output_file = self.outpath + '/' + self.demo_id + ".json"
         if os.path.isfile(self.output_file):
             self.logger.info("Wrote demo parse output to " + self.output_file)
             self.parse_error = False
@@ -238,7 +238,7 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         self.parse_demo()
-        self.read_json(json_path=self.outpath + "/" + self.output_file)
+        self.read_json(json_path=self.output_file)
         if self.json:
             self.logger.info("JSON output found")
             if return_type == "json":
