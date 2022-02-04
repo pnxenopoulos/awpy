@@ -191,7 +191,7 @@ class TestNav:
         assert "ctToken" in token.keys()
         assert "token" in token.keys()
         assert token["tToken"] == "000000000000000000100000000000"
-        assert token["ctToken"] == "000000000000000000100000000000"
+        assert token["ctToken"] == "000000000000000000000000000000"
         assert (
             token["token"]
             == "000000000000000000000000000000000000000000000000100000000000"
