@@ -142,16 +142,16 @@ class DemoParser:
             FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.
         """
         # Check if Golang version is compatible
-        acceptable_go = check_go_version()
-        if not acceptable_go:
-            self.logger.error(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
-            )
-            raise ValueError(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
-            )
-        else:
-            self.logger.info("Go version>=1.14.0")
+        # acceptable_go = check_go_version()
+        # if not acceptable_go:
+        #     self.logger.error(
+        #         "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+        #     )
+        #     raise ValueError(
+        #         "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+        #     )
+        # else:
+        #     self.logger.info("Go version>=1.14.0")
 
         # Check if demofile exists
         if not os.path.exists(os.path.abspath(self.demofile)):
