@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from csgo.data import NAV
-from csgo.analytics.nav import (
+from awpy.data import NAV
+from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
     generate_position_token,
@@ -166,12 +166,22 @@ class TestNav:
         frame = {
             "ct": {
                 "players": [
-                    {"x": -814.4315185546875, "y": -950.5277099609375, "z": -413.96875}
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                        "isAlive": False,
+                    }
                 ]
             },
             "t": {
                 "players": [
-                    {"x": -814.4315185546875, "y": -950.5277099609375, "z": -413.96875}
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                        "isAlive": True,
+                    }
                 ]
             },
         }
@@ -181,10 +191,10 @@ class TestNav:
         assert "ctToken" in token.keys()
         assert "token" in token.keys()
         assert token["tToken"] == "000000000000000000100000000000"
-        assert token["ctToken"] == "000000000000000000100000000000"
+        assert token["ctToken"] == "000000000000000000000000000000"
         assert (
             token["token"]
-            == "000000000000000000100000000000000000000000000000100000000000"
+            == "000000000000000000000000000000000000000000000000100000000000"
         )
         with pytest.raises(ValueError):
             generate_position_token("de_does_not_exist", frame)

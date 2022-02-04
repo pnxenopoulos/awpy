@@ -1,6 +1,6 @@
 import pytest
 
-from csgo.visualization.plot import (
+from awpy.visualization.plot import (
     position_transform,
     plot_map,
     plot_nades,

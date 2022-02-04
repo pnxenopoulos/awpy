@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 
-from csgo.data import MAP_DATA
+from awpy.data import MAP_DATA
 
 
 def plot_map(map_name="de_dust2", map_type="original", dark=False):

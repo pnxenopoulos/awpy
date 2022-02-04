@@ -22,7 +22,7 @@ import sphinx_rtd_theme
 
 # -- Project information -----------------------------------------------------
 
-project = "csgo"
+project = "awpy"
 copyright = "2022, Peter Xenopoulos"
 author = "Peter Xenopoulos"
 
@@ -112,7 +112,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "csgodoc"
+htmlhelp_basename = "awpydoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -136,7 +136,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "csgo.tex", "csgo Documentation", "Peter Xenopoulos", "manual"),
+    (master_doc, "awpy.tex", "awpy Documentation", "Peter Xenopoulos", "manual"),
 ]
 
 
@@ -144,7 +144,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "csgo", "csgo Documentation", [author], 1)]
+man_pages = [(master_doc, "awpy", "awpy Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -155,10 +155,10 @@ man_pages = [(master_doc, "csgo", "csgo Documentation", [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "csgo",
-        "csgo Documentation",
+        "awpy",
+        "awpy Documentation",
         author,
-        "csgo",
+        "awpy",
         "One line description of project.",
         "Miscellaneous",
     ),

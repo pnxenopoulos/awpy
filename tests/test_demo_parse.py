@@ -5,7 +5,7 @@ import pytest
 import requests
 
 
-from csgo.parser import DemoParser
+from awpy.parser import DemoParser
 
 
 class TestDemoParser:

@@ -2,7 +2,7 @@ import pytest
 
 import pandas as pd
 
-from csgo.parser.cleaning import associate_entities, replace_entities
+from awpy.parser.cleaning import associate_entities, replace_entities
 
 
 class TestCleaning:

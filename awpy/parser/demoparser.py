@@ -4,7 +4,7 @@ import os
 import subprocess
 import pandas as pd
 
-from csgo.utils import check_go_version
+from awpy.utils import check_go_version
 
 
 class DemoParser:

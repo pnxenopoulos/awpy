@@ -1,7 +1,11 @@
 Data
 ===========
 
-This module contains both data, primarily related to maps and navigation meshes. Additionally, if you look in the repository, you can find images of popular maps, which we use for visualization.
+This module contains both data, primarily related to maps and navigation meshes. Additionally, if you look in the repository, you can find images of popular maps, which we use for visualization. The relevant imports are
+
+.. code-block:: python
+
+    from awpy.data import NAV, NAV_GRAPHS, NAV_CSV
 
 `NAV` is a dictionary where the top-level keys are map names (strings) and the next-level keys are area ids (integers). The list of acceptable map names is `['de_train', 'de_cache', 'de_ancient', 'de_overpass', 'de_dust2', 'de_cbble', 'de_inferno', 'de_nuke', 'de_vertigo', 'de_mirage']`.
 

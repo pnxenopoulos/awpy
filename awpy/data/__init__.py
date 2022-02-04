@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
-from csgo.utils import transform_csv_to_json
+from awpy.utils import transform_csv_to_json
 from pathlib import Path
 
 path = os.path.join(os.path.dirname(__file__), "")

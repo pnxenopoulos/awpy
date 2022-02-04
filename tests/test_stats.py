@@ -3,8 +3,8 @@ import pandas as pd
 import pytest
 import requests
 
-from csgo.parser import DemoParser
-from csgo.analytics.stats import (
+from awpy.parser import DemoParser
+from awpy.analytics.stats import (
     extract_num_filters,
     check_filters,
     num_filter_df,

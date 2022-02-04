@@ -3,34 +3,34 @@ Analytics
 
 This is the analytics module. You can use it to calculate statistics on your parsed demos, such as Rating, ADR, and so on.
 
-csgo.analytics.nav
+awpy.analytics.nav
 -------------------------
 
-.. automodule:: csgo.analytics.nav
+.. automodule:: awpy.analytics.nav
    :members:
    :undoc-members:
    :show-inheritance:
 
-csgo.analytics.states
+awpy.analytics.states
 ----------------------------
 
-.. automodule:: csgo.analytics.states
+.. automodule:: awpy.analytics.states
    :members:
    :undoc-members:
    :show-inheritance:
 
-csgo.analytics.stats
+awpy.analytics.stats
 ---------------------------
 
-.. automodule:: csgo.analytics.stats
+.. automodule:: awpy.analytics.stats
    :members:
    :undoc-members:
    :show-inheritance:
 
-csgo.analytics.wpa
+awpy.analytics.wpa
 -------------------------
 
-.. automodule:: csgo.analytics.wpa
+.. automodule:: awpy.analytics.wpa
    :members:
    :undoc-members:
    :show-inheritance:

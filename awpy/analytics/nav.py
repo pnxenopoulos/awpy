@@ -2,7 +2,7 @@ from multiprocessing.sharedctypes import Value
 import networkx as nx
 import numpy as np
 
-from csgo.data import NAV, NAV_GRAPHS
+from awpy.data import NAV, NAV_GRAPHS
 from scipy.spatial import distance
 
 
@@ -187,20 +187,22 @@ def generate_position_token(map_name, frame):
     # Create token
     ct_token = np.zeros(len(map_area_names), dtype=np.int8)
     for player in frame["ct"]["players"]:
-        closest_area = find_closest_area(
-            map_name, [player["x"], player["y"], player["z"]]
-        )
-        ct_token[
-            map_area_names.index(NAV[map_name][closest_area["areaId"]]["areaName"])
-        ] += 1
+        if player["isAlive"]:
+            closest_area = find_closest_area(
+                map_name, [player["x"], player["y"], player["z"]]
+            )
+            ct_token[
+                map_area_names.index(NAV[map_name][closest_area["areaId"]]["areaName"])
+            ] += 1
     t_token = np.zeros(len(map_area_names), dtype=np.int8)
     for player in frame["t"]["players"]:
-        closest_area = find_closest_area(
-            map_name, [player["x"], player["y"], player["z"]]
-        )
-        t_token[
-            map_area_names.index(NAV[map_name][closest_area["areaId"]]["areaName"])
-        ] += 1
+        if player["isAlive"]:
+            closest_area = find_closest_area(
+                map_name, [player["x"], player["y"], player["z"]]
+            )
+            t_token[
+                map_area_names.index(NAV[map_name][closest_area["areaId"]]["areaName"])
+            ] += 1
     # Create payload
     token = {}
     token["tToken"] = (
