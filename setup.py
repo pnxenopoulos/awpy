@@ -1,5 +1,9 @@
 from setuptools import setup, find_packages
 
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 setup(
     name="awpy",
     version="1.0",
@@ -32,6 +36,8 @@ setup(
     author="Peter Xenopoulos",
     author_email="xenopoulos@nyu.edu",
     description="Counter-Strike: Global Offensive data parsing, analysis and visualization functions",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     keywords="esports sports-analytics csgo counter-strike",
     url="https://github.com/pnxenopoulos/awpy",
     project_urls={
