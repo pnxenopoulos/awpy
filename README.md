@@ -22,7 +22,7 @@ The `awpy` package provides data parsing, analytics and visualization capabiliti
 To install `awpy`, you can run 
 
 ```
-pip install git+https://github.com/pnxenopoulos/awpy@main
+pip install awpy
 ```
 
 To update the library, just run the command again. For more help, you can visit the installation channel in [our Discord](https://discord.gg/W34XjsSs2H).
