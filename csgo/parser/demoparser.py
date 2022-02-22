@@ -166,8 +166,8 @@ class DemoParser:
             './parse_demo '
             f'-demo {self.demofile} '
             f'-parserate {str(self.parse_rate)} '
-            f'-tradetime {str(self.buy_style)} '
-            f'-buystyle {str(self.demo_id)} '
+            f'-tradetime {str(self.trade_time)} '
+            f'-buystyle {str(self.buy_style)} '
             f'-demoid {str(self.demo_id)} '
             f'-out {self.outpath}'
         )
