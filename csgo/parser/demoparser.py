@@ -672,7 +672,7 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute has a "gameRounds" key.
         """
-        if self.json["gameRounds"]:
+        if "gameRounds" in self.json.keys():
             for i, r in enumerate(self.json["gameRounds"]):
                 self.json["gameRounds"][i]["roundNum"] = i + 1
         else:
