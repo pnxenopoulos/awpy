@@ -4,7 +4,7 @@ import os
 import subprocess
 import pandas as pd
 
-from csgo.utils import check_go_version
+from csgo.utils import check_go_version, call_process
 
 
 class DemoParser:
@@ -161,41 +161,40 @@ class DemoParser:
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
-        self.parser_cmd = [
-            "./parse_demo",
-            "-demo",
-            self.demofile,
-            "-parserate",
-            str(self.parse_rate),
-            "-tradetime",
-            str(self.trade_time),
-            "-buystyle",
-            str(self.buy_style),
-            "-demoid",
-            str(self.demo_id),
-            "-out",
-            self.outpath,
-        ]
-        if self.dmg_rolled:
-            self.parser_cmd.append("--dmgrolled")
-        if self.parse_frames:
-            self.parser_cmd.append("--parseframes")
-        if self.json_indentation:
-            self.parser_cmd.append("--jsonindentation")
-        proc = subprocess.Popen(
-            self.parser_cmd,
-            stdout=subprocess.PIPE,
-            cwd=path,
+
+        cmd = (
+            './parse_demo '
+            f'-demo {self.demofile} '
+            f'-parserate {str(self.parse_rate)} '
+            f'-tradetime {str(self.buy_style)} '
+            f'-buystyle {str(self.demo_id)} '
+            f'-demoid {str(self.demo_id)} '
+            f'-out {self.outpath}'
         )
-        stdout = proc.stdout.read().splitlines()
+
+        if self.dmg_rolled:
+            cmd = cmd + " --dmgrolled"
+        if self.parse_frames:
+            cmd = cmd + " --parseframes"
+        if self.json_indentation:
+            cmd = cmd + " --jsonindentation"
+
+        output = call_process(
+            cmd,
+            curdir=path,
+            printcmd=True
+        )
+
+        output = output.splitlines()
         self.output_file = self.outpath + '/' + self.demo_id + ".json"
+
         if os.path.isfile(self.output_file):
             self.logger.info("Wrote demo parse output to " + self.output_file)
             self.parse_error = False
         else:
             self.parse_error = True
             self.logger.error("No file produced, error in calling Golang")
-            self.logger.error(stdout)
+            self.logger.error(output)
 
     def read_json(self, json_path):
         """Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.
