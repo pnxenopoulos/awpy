@@ -182,7 +182,8 @@ class DemoParser:
         output = call_process(
             cmd,
             curdir=path,
-            printcmd=True
+            printcmd=True,
+            live_output=True
         )
 
         output = output.splitlines()
