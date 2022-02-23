@@ -52,7 +52,7 @@ jobs:
           echo ::set-output name=codeartifact_token::$(echo $CODEARTIFACT_TOKEN)
       
       - name: Build parse_demo go binary
-        run: cd csgo/parser; go build -o parse_demo
+        run: cd csgo/parser; go build -o libawpy_parser.so -buildmode=c-shared parse_demo.go
       
       - name: Build package dist
         # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
