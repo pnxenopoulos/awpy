@@ -5,6 +5,10 @@ import json
 import numpy as np
 import re
 import subprocess
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class AutoVivification(dict):
@@ -58,3 +62,39 @@ def transform_csv_to_json(sampleCsv):
             mapDic[curTile["areaId"]] = curDic
         finalDic[curMap] = mapDic
     return finalDic
+
+def call_process(
+    cmd,
+    live_output=False,
+    printcmd=False,
+    curdir="/",
+    valid_returncodes=[0, ],
+    inc_returncode=False
+):
+    output = ""
+
+    if printcmd:
+        logger.info(cmd)
+
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, cwd=curdir)
+
+    if live_output:
+        for line in iter(process.stdout.readline, ''):
+            if len(line) > 0:
+                logger.info(line.decode("ascii", "ignore").rstrip("\n"))
+                output = output + line.decode("ascii", "ignore")
+            else:
+                break
+
+        process.communicate()
+    else:
+        data = process.communicate()
+        output = data[0].decode("utf-8")
+
+    if process.returncode not in valid_returncodes:
+        raise subprocess.CalledProcessError(process.returncode, cmd=cmd, output=output)
+
+    if inc_returncode:
+        return (process.returncode, output)
+    else:
+        return output

@@ -19,13 +19,11 @@ setup(
     package_data={
         # If any package contains *.txt or *.rst files, include them:
         "": [
-            "*.go",
             "data/map/*.png",
             "data/map/*.json",
             "data/nav/*.txt",
             "data/nav/*.csv",
-            "*.mod",
-            "*.sum",
+            "parser/libawpy_parser.so"
         ]
     },
     # metadata to display on PyPI
