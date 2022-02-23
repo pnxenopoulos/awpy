@@ -3,8 +3,8 @@ import logging
 import os
 import subprocess
 import pandas as pd
-
-from csgo.utils import check_go_version, call_process
+from csgo.parser.parse_demo import parse_demo
+from csgo.utils import call_process
 
 
 class DemoParser:
@@ -141,18 +141,6 @@ class DemoParser:
             ValueError: Raises a ValueError if the Golang version is lower than 1.14
             FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.
         """
-        # Check if Golang version is compatible
-        # acceptable_go = check_go_version()
-        # if not acceptable_go:
-        #     self.logger.error(
-        #         "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
-        #     )
-        #     raise ValueError(
-        #         "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
-        #     )
-        # else:
-        #     self.logger.info("Go version>=1.14.0")
-
         # Check if demofile exists
         if not os.path.exists(os.path.abspath(self.demofile)):
             self.logger.error("Demofile path does not exist!")
@@ -162,32 +150,17 @@ class DemoParser:
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
 
-        cmd = (
-            './parse_demo '
-            f'-demo {self.demofile} '
-            f'-parserate {str(self.parse_rate)} '
-            f'-tradetime {str(self.trade_time)} '
-            f'-buystyle {str(self.buy_style)} '
-            f'-demoid {str(self.demo_id)} '
-            f'-out {self.outpath}'
+        parse_demo(
+            self.demofile,
+            self.parse_rate,
+            self.parse_frames,
+            self.trade_time,
+            self.buy_style,
+            self.dmg_rolled,
+            self.demo_id,
+            self.json_indentation,
+            self.outpath
         )
-
-        if self.dmg_rolled:
-            cmd = cmd + " --dmgrolled"
-        if self.parse_frames:
-            cmd = cmd + " --parseframes"
-        if self.json_indentation:
-            cmd = cmd + " --jsonindentation"
-
-        output = call_process(
-            cmd,
-            curdir=path,
-            printcmd=True,
-            live_output=True
-        )
-
-        output = output.splitlines()
-        self.output_file = self.outpath + '/' + self.demo_id + ".json"
 
         if os.path.isfile(self.output_file):
             self.logger.info("Wrote demo parse output to " + self.output_file)
@@ -195,7 +168,6 @@ class DemoParser:
         else:
             self.parse_error = True
             self.logger.error("No file produced, error in calling Golang")
-            self.logger.error(output)
 
     def read_json(self, json_path):
         """Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.

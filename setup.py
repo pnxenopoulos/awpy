@@ -24,9 +24,7 @@ setup(
             "data/map/*.json",
             "data/nav/*.txt",
             "data/nav/*.csv",
-            "*.mod",
-            "*.sum",
-            "parser/parse_demo"
+            "parser/libawpy_parser.so"
         ]
     },
     # metadata to display on PyPI
