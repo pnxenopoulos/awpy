@@ -8,10 +8,7 @@ on:
       - v*
   push:
     branches:
-     - 'master'
-     - 'lambda-compat-dev'
-    # paths:
-    #   - '*'
+     - 'main'
 
 jobs:
   builds:
