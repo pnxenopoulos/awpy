@@ -162,6 +162,8 @@ class DemoParser:
             self.outpath
         )
 
+        self.output_file = self.outpath + '/' + self.demo_id + ".json"
+
         if os.path.isfile(self.output_file):
             self.logger.info("Wrote demo parse output to " + self.output_file)
             self.parse_error = False
