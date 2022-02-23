@@ -36,7 +36,7 @@ jobs:
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@master
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         with:
           role-to-assume: ${{ secrets[matrix.role-to-assume] }}
           role-session-name: ${{ matrix.role-session-name }}
@@ -44,7 +44,7 @@ jobs:
       
       - name: Configure CodeArtifact credentials
         id: configure_codeartifact_credentials
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         run: |
           export CODEARTIFACT_USERNAME=aws
           export CODEARTIFACT_TOKEN=`aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken --output text`
@@ -55,14 +55,14 @@ jobs:
         run: cd csgo/parser; go build -o libawpy_parser.so -buildmode=c-shared parse_demo.go
       
       - name: Build package dist
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         run: |
           python -m pip install --upgrade pip
           pip install setuptools wheel twine
           python setup.py sdist bdist_wheel
 
       - name: Publish to repo
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         run: |
           pip3 install twine
           export TWINE_REPOSITORY_URL=`aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint --output text`
