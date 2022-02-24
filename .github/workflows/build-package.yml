@@ -48,8 +48,6 @@ jobs:
             echo "TWINE_PASSWORD=$(aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken)" >> $env:GITHUB_ENV
             echo "TWINE_USERNAME=aws" >> $env:GITHUB_ENV
 
-          
-
       - name: Build package dist
         # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         run: |
@@ -60,4 +58,4 @@ jobs:
       - name: Publish to repo
         # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         run: |
-          python -m twine upload --repository-url ${{ env.TWINE_REPOSITORY_URL }} dist/* --verbose -u ${{ env.TWINE_USERNAME }} -p ${{ env.TWINE_PASSWORD }}
+          python -m twine upload --repository-url ${{ env.TWINE_REPOSITORY_URL }} dist/*.whl --verbose -u ${{ env.TWINE_USERNAME }} -p ${{ env.TWINE_PASSWORD }}
