@@ -64,7 +64,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools wheel twine
+          pip install setuptools wheel twine setuptools-golang
           setuptools-golang-build-manylinux-wheels
       
       - name: Build package dist Windows, MacOS
