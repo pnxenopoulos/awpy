@@ -44,8 +44,8 @@ jobs:
         id: configure_codeartifact_credentials
         # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         run: |
-          aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken --output json` > at.json
-          aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint --output json` > ep.json
+          aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken --output json > at.json
+          aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint --output json > ep.json
           echo "CODEARTIFACT_TOKEN=$(jq '.authorizationToken' at.json)" >> $GITHUB_ENV
           echo "CODEARTIFACT_USERNAME=aws" >> $GITHUB_ENV
           echo "TWINE_REPOSITORY_URL=$(jq '.repositoryEndpoint' ep.json)" >> $GITHUB_ENV
