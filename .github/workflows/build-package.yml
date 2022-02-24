@@ -43,9 +43,10 @@ jobs:
       - name: Configure CodeArtifact credentials
         id: configure_codeartifact_credentials
         # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
-      - run: echo "TWINE_PASSWORD=$(aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken)" >> $GITHUB_ENV
-      - run: echo "TWINE_REPOSITORY_URL=$(aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint)" >> $GITHUB_ENV
-      - run: echo "TWINE_USERNAME=aws" >> $GITHUB_ENV
+        # echo "TWINE_PASSWORD=$(aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken)" >> $GITHUB_ENV
+        # echo "TWINE_USERNAME=aws" >> $GITHUB_ENV
+        run: echo "TWINE_REPOSITORY_URL=$(aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint)" >> $GITHUB_ENV
+          
 
       - name: Build package dist
         # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
