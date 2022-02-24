@@ -59,8 +59,17 @@ jobs:
             echo "TWINE_PASSWORD=$(aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken)" >> $GITHUB_ENV
             echo "TWINE_USERNAME=aws" >> $GITHUB_ENV
 
-      - name: Build package dist
+      - name: Build package dist Ubuntu
         # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+          setuptools-golang-build-manylinux-wheels
+      
+      - name: Build package dist Windows, MacOS
+        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+        if: matrix.os != 'ubuntu-latest'
         run: |
           python -m pip install --upgrade pip
           pip install setuptools wheel twine
