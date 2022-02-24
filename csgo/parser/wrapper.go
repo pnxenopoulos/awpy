@@ -1,7 +1,11 @@
 package main
 
+// #include <Python.h>
+// #include <stdbool.h>
+// int PyArg_ParseTuple_parse_demo(PyObject* args, char* dem_path, int parse_rate, bool parse_frames, int64_t trade_time, char* round_buy, bool damages_rolled, char* demo_id, bool json_indentation, char* outpath);
+import "C"
+
 import (
-	"C"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -827,37 +831,51 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-//export parseDemo
-func parseDemo(
-	demPath *C.char,
-	parseRate *int,
-	parseFrames *bool,
-	tradeTime *int64,
-	roundBuy *C.char,
-	damgesRolled *bool,
-	demoID *C.char,
-	jsonIndentation *bool,
-	outpath *C.char) {
+//export parse_demo
+func parse_demo(self *C.PyObject, args *C.PyObject) *C.PyObject {
 
-	demPathGoString := C.GoString(demPath)
-	roundBuyGoString := C.GoString(roundBuy)
-	demoIDGoString := C.GoString(demoID)
-	outpathGoString := C.GoString(outpath)
+	var demPath *C.char
+	var parseRate C.int
+	var parseFrames C.bool
+	var tradeTime C.int64_t
+	var roundBuy *C.char
+	var damgesRolled C.bool
+	var demoID *C.char
+	var jsonIndentation C.bool
+	var outpath *C.char
 
-	_parseDemo(
-		&demPathGoString,
-		parseRate,
-		parseFrames,
-		tradeTime,
-		&roundBuyGoString,
-		damgesRolled,
-		&demoIDGoString,
-		jsonIndentation,
-		&outpathGoString,
+	if C.PyArg_ParseTuple_parse_demo(
+		args, demPath, parseRate, parseFrames, tradeTime,
+		roundBuy, damgesRolled, demoID, jsonIndentation, outpath) == 0 {
+		return C.PyLong_FromLong(2)
+	}
+
+	var demPathGo string = string(*demPath)
+	var parseRateGo int = int(parseRate)
+	var parseFramesGo bool = bool(parseFrames)
+	var tradeTimeGo int64 = int64(tradeTime)
+	var roundBuyGo string = string(*roundBuy)
+	var damgesRolledGo bool = bool(damgesRolled)
+	var demoIDGo string = string(*demoID)
+	var jsonIndentationGo bool = bool(jsonIndentation)
+	var outpathGo string = string(*outpath)
+
+	_parseDemoEntry(
+		&demPathGo,
+		&parseRateGo,
+		&parseFramesGo,
+		&tradeTimeGo,
+		&roundBuyGo,
+		&damgesRolledGo,
+		&demoIDGo,
+		&jsonIndentationGo,
+		&outpathGo,
 	)
+
+	return C.PyLong_FromLong(1)
 }
 
-func _parseDemo(
+func _parseDemoEntry(
 	demPath *string,
 	parseRate *int,
 	parseFrames *bool,
@@ -2283,7 +2301,7 @@ func main() {
 
 	tradeTime64Ptr := int64(*tradeTimePtr)
 
-	_parseDemo(demoPathPtr, parseRatePtr, parseFramesPtr, &tradeTime64Ptr, roundBuyPtr, damagesRolledPtr, demoIDPtr, jsonIndentationPtr, outpathPtr)
+	_parseDemoEntry(demoPathPtr, parseRatePtr, parseFramesPtr, &tradeTime64Ptr, roundBuyPtr, damagesRolledPtr, demoIDPtr, jsonIndentationPtr, outpathPtr)
 
 }
 

@@ -2,9 +2,9 @@ from ctypes import *
 import os
 
 
-lib = cdll.LoadLibrary(f"{os.path.dirname(__file__)}/libawpy_parser.so")
+lib = PyDLL('parse_demo_go')
 
-__go_parse_demo = lib.parseDemo
+__go_parse_demo = lib.parse_demo
 __go_parse_demo.argtypes = [
     c_char_p, # char* demPath
     POINTER(c_int), # GoInt* parseRate
