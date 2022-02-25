@@ -1,8 +1,10 @@
 package main
 
+/* PT: We have to state any includes or prototypes taken from c that will be called in this go file. */
+
 // #include <Python.h>
 // #include <stdbool.h>
-// int PyArg_ParseTuple_parse_demo(PyObject* args, char* dem_path, int parse_rate, bool parse_frames, int64_t trade_time, char* round_buy, bool damages_rolled, char* demo_id, bool json_indentation, char* outpath);
+// int PyArg_ParseTuple_parse_demo(PyObject* args, char** dem_path, int* parse_rate, bool* parse_frames, int64_t* trade_time, char** round_buy, bool* damages_rolled, char** demo_id, bool* json_indentation, char** outpath);
 import "C"
 
 import (
@@ -14,6 +16,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	dem "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs"
 	common "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/common"
@@ -831,34 +834,61 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
+/* PT: export is needed inform the go compiler that this function will be used externally.
+   This is exposed via a generated c header file which can then be used by any program that
+   dynamically loads the shared object library.
+   N.B. There should be no space between // and export.  Otherwise, the function will not be exposed via
+   the c header.
+*/
 //export parse_demo
 func parse_demo(self *C.PyObject, args *C.PyObject) *C.PyObject {
-
-	var demPath *C.char
 	var parseRate C.int
 	var parseFrames C.bool
 	var tradeTime C.int64_t
-	var roundBuy *C.char
 	var damgesRolled C.bool
-	var demoID *C.char
 	var jsonIndentation C.bool
-	var outpath *C.char
+
+	/* PT: C.CString will malloc memory on the heap.
+	   It is up to use to free it when it is no longer needed.
+	   This is done via C.free() below
+	*/
+
+	demPath := C.CString("")
+	demoID := C.CString("")
+	outpath := C.CString("")
+	roundBuy := C.CString("")
+
+	defer C.free(unsafe.Pointer(demPath))
+	defer C.free(unsafe.Pointer(demoID))
+	defer C.free(unsafe.Pointer(outpath))
+	defer C.free(unsafe.Pointer(roundBuy))
 
 	if C.PyArg_ParseTuple_parse_demo(
-		args, demPath, parseRate, parseFrames, tradeTime,
-		roundBuy, damgesRolled, demoID, jsonIndentation, outpath) == 0 {
+		args, &demPath, &parseRate, &parseFrames, &tradeTime,
+		&roundBuy, &damgesRolled, &demoID, &jsonIndentation, &outpath) == 0 {
 		return C.PyLong_FromLong(2)
 	}
 
-	var demPathGo string = string(*demPath)
-	var parseRateGo int = int(parseRate)
-	var parseFramesGo bool = bool(parseFrames)
-	var tradeTimeGo int64 = int64(tradeTime)
-	var roundBuyGo string = string(*roundBuy)
-	var damgesRolledGo bool = bool(damgesRolled)
-	var demoIDGo string = string(*demoID)
-	var jsonIndentationGo bool = bool(jsonIndentation)
-	var outpathGo string = string(*outpath)
+	// Convert c types to native go types.
+	demPathGo := C.GoString(demPath)
+	parseRateGo := int(parseRate)
+	parseFramesGo := bool(parseFrames)
+	tradeTimeGo := int64(tradeTime)
+	roundBuyGo := C.GoString(roundBuy)
+	damgesRolledGo := bool(damgesRolled)
+	demoIDGo := C.GoString(demoID)
+	jsonIndentationGo := bool(jsonIndentation)
+	outpathGo := C.GoString(outpath)
+
+	// fmt.Print("demPathGo ", demPathGo, "\n")
+	// fmt.Print("parseRateGo ", parseRateGo, "\n")
+	// fmt.Print("parseFramesGo ", parseFramesGo, "\n")
+	// fmt.Print("tradeTimeGo ", tradeTimeGo, "\n")
+	// fmt.Print("roundBuyGo ", roundBuyGo, "\n")
+	// fmt.Print("damgesRolledGo ", damgesRolledGo, "\n")
+	// fmt.Print("demoIDGo ", demoIDGo, "\n")
+	// fmt.Print("jsonIndentationGo ", jsonIndentationGo, "\n")
+	// fmt.Print("outpathGo ", outpathGo, "\n")
 
 	_parseDemoEntry(
 		&demPathGo,
@@ -2301,7 +2331,16 @@ func main() {
 
 	tradeTime64Ptr := int64(*tradeTimePtr)
 
-	_parseDemoEntry(demoPathPtr, parseRatePtr, parseFramesPtr, &tradeTime64Ptr, roundBuyPtr, damagesRolledPtr, demoIDPtr, jsonIndentationPtr, outpathPtr)
+	_parseDemoEntry(
+		demoPathPtr,
+		parseRatePtr,
+		parseFramesPtr,
+		&tradeTime64Ptr,
+		roundBuyPtr,
+		damagesRolledPtr,
+		demoIDPtr,
+		jsonIndentationPtr,
+		outpathPtr)
 
 }
 

@@ -1,9 +1,8 @@
 import json
 import logging
 import os
-import subprocess
 import pandas as pd
-from csgo.parser.parse_demo import parse_demo
+from csgo.parser.wrapper import parse as wrapper_parse
 from csgo.utils import call_process
 
 
@@ -150,7 +149,7 @@ class DemoParser:
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
 
-        parse_demo(
+        wrapper_parse(
             self.demofile,
             self.parse_rate,
             self.parse_frames,
