@@ -79,4 +79,4 @@ jobs:
       - name: Publish to repo
         # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         run: |
-          python -m twine upload --repository-url ${{ env.TWINE_REPOSITORY_URL }} dist/*.whl --verbose -u ${{ env.TWINE_USERNAME }} -p ${{ env.TWINE_PASSWORD }}
+          python -m twine upload --repository-url ${{ env.TWINE_REPOSITORY_URL }} dist/*.whl --verbose
