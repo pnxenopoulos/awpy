@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -841,7 +842,7 @@ func stringInSlice(a string, list []string) bool {
    the c header.
 */
 //export parse_demo
-func parse_demo(self *C.PyObject, args *C.PyObject) *C.PyObject {
+func parse_demo(self *C.PyObject, args *C.PyObject) (ret *C.PyObject) {
 	var parseRate C.int
 	var parseFrames C.bool
 	var tradeTime C.int64_t
@@ -858,6 +859,15 @@ func parse_demo(self *C.PyObject, args *C.PyObject) *C.PyObject {
 	outpath := C.CString("")
 	roundBuy := C.CString("")
 
+	ret = C.PyLong_FromLong(0)
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Recovering from panic in parse_demo error is: %v \n", r)
+			fmt.Println("Stacktrace from panic: \n" + string(debug.Stack()))
+			ret = C.PyLong_FromLong(2)
+		}
+	}()
 	defer C.free(unsafe.Pointer(demPath))
 	defer C.free(unsafe.Pointer(demoID))
 	defer C.free(unsafe.Pointer(outpath))
@@ -866,7 +876,8 @@ func parse_demo(self *C.PyObject, args *C.PyObject) *C.PyObject {
 	if C.PyArg_ParseTuple_parse_demo(
 		args, &demPath, &parseRate, &parseFrames, &tradeTime,
 		&roundBuy, &damgesRolled, &demoID, &jsonIndentation, &outpath) == 0 {
-		return C.PyLong_FromLong(2)
+		ret = C.PyLong_FromLong(1)
+		return
 	}
 
 	// Convert c types to native go types.
@@ -902,7 +913,7 @@ func parse_demo(self *C.PyObject, args *C.PyObject) *C.PyObject {
 		&outpathGo,
 	)
 
-	return C.PyLong_FromLong(1)
+	return
 }
 
 func _parseDemoEntry(

@@ -149,7 +149,7 @@ class DemoParser:
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
 
-        wrapper_parse(
+        ret = wrapper_parse(
             self.demofile,
             self.parse_rate,
             self.parse_frames,
@@ -160,6 +160,12 @@ class DemoParser:
             self.json_indentation,
             self.outpath
         )
+
+        if ret != 0:
+            self.logger.error(f"wrapper_parse call failed with rc {ret}")
+            self.parse_error = True
+
+            return
 
         self.output_file = self.outpath + '/' + self.demo_id + ".json"
 
@@ -211,6 +217,10 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         self.parse_demo()
+        if self.parse_error is True:
+            self.logger.error("Failed to parse dem file")
+            raise RuntimeError("Failed to parse dem file")
+
         self.read_json(json_path=self.output_file)
         if self.json:
             self.logger.info("JSON output found")
