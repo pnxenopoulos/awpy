@@ -129,6 +129,7 @@ class DemoParser:
 
         # Set parse error to False
         self.parse_error = False
+        self.parse_error_string = ""
 
     def parse_demo(self):
         """Parse a demofile using the Go script parse_demo.go -- this function needs the .demofile to be set in the class, and the file needs to exist.
@@ -149,7 +150,7 @@ class DemoParser:
         self.logger.info("Running Golang parser from " + path)
         self.logger.info("Looking for file at " + self.demofile)
 
-        ret = wrapper_parse(
+        ret, error_string = wrapper_parse(
             self.demofile,
             self.parse_rate,
             self.parse_frames,
@@ -162,8 +163,9 @@ class DemoParser:
         )
 
         if ret != 0:
-            self.logger.error(f"wrapper_parse call failed with rc {ret}")
+            self.logger.error(f"wrapper_parse call failed with rc {ret}, error {error_string}")
             self.parse_error = True
+            self.parse_error_string = error_string
 
             return
 
@@ -174,7 +176,8 @@ class DemoParser:
             self.parse_error = False
         else:
             self.parse_error = True
-            self.logger.error("No file produced, error in calling Golang")
+            self.parse_error_string = "No file produced, error in calling Golang"
+            self.logger.error(self.parse_error_string)
 
     def read_json(self, json_path):
         """Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.
@@ -203,7 +206,7 @@ class DemoParser:
         )
         return demo_data
 
-    def parse(self, return_type="json"):
+    def parse(self, return_type="json", raise_excp=True):
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
@@ -219,7 +222,8 @@ class DemoParser:
         self.parse_demo()
         if self.parse_error is True:
             self.logger.error("Failed to parse dem file")
-            raise RuntimeError("Failed to parse dem file")
+            if raise_excp:
+                raise RuntimeError("Failed to parse dem file")
 
         self.read_json(json_path=self.output_file)
         if self.json:
@@ -592,6 +596,7 @@ class DemoParser:
         remove_bad_endings=True,
         return_type="json",
         save_to_json=True,
+        raise_excp=True
     ):
         """Cleans a parsed demofile JSON.
 
@@ -641,9 +646,15 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            if raise_excp:
+                raise AttributeError(
+                    "JSON not found. Run .parse() or .read_json() if JSON already exists"
+                )
+            else:
+                self.parse_error_string = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+                self.parse_error = True
+
+                return None
 
     def write_json(self):
         """Rewrite the JSON file"""

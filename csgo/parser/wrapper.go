@@ -859,13 +859,17 @@ func parse_demo(self *C.PyObject, args *C.PyObject) (ret *C.PyObject) {
 	outpath := C.CString("")
 	roundBuy := C.CString("")
 
-	ret = C.PyLong_FromLong(0)
+	ret = C.PyTuple_New(2)
+	C.PyTuple_SetItem(ret, 0, C.PyLong_FromLong(0))
+	C.PyTuple_SetItem(ret, 1, C.PyUnicode_FromString(C.CString("")))
 
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("Recovering from panic in parse_demo error is: %v \n", r)
 			fmt.Println("Stacktrace from panic: \n" + string(debug.Stack()))
-			ret = C.PyLong_FromLong(2)
+			err := fmt.Sprint(r)
+			C.PyTuple_SetItem(ret, 0, C.PyLong_FromLong(1))
+			C.PyTuple_SetItem(ret, 1, C.PyUnicode_FromString(C.CString(err)))
 		}
 	}()
 	defer C.free(unsafe.Pointer(demPath))
@@ -876,7 +880,8 @@ func parse_demo(self *C.PyObject, args *C.PyObject) (ret *C.PyObject) {
 	if C.PyArg_ParseTuple_parse_demo(
 		args, &demPath, &parseRate, &parseFrames, &tradeTime,
 		&roundBuy, &damgesRolled, &demoID, &jsonIndentation, &outpath) == 0 {
-		ret = C.PyLong_FromLong(1)
+		C.PyTuple_SetItem(ret, 0, C.PyLong_FromLong(1))
+		C.PyTuple_SetItem(ret, 1, C.PyUnicode_FromString(C.CString("Input Tuple failed to parse")))
 		return
 	}
 
