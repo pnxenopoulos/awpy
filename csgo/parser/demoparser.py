@@ -224,6 +224,8 @@ class DemoParser:
             self.logger.error("Failed to parse dem file")
             if raise_excp:
                 raise RuntimeError("Failed to parse dem file")
+            else:
+                return
 
         self.read_json(json_path=self.output_file)
         if self.json:
