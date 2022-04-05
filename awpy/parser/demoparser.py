@@ -272,15 +272,60 @@ class DemoParser:
             demo_data["mapName"] = self.json["mapName"]
             demo_data["tickRate"] = self.json["tickRate"]
             demo_data["playbackTicks"] = self.json["playbackTicks"]
+            # Rounds
             demo_data["rounds"] = self._parse_rounds()
+            # Kills
             demo_data["kills"] = self._parse_kills()
+            demo_data["kills"]["attackerSteamID"] = demo_data["kills"][
+                "attackerSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["kills"]["victimSteamID"] = demo_data["kills"][
+                "victimSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["kills"]["assisterSteamID"] = demo_data["kills"][
+                "assisterSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["kills"]["flashThrowerSteamID"] = demo_data["kills"][
+                "flashThrowerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Damages
             demo_data["damages"] = self._parse_damages()
+            demo_data["damages"]["attackerSteamID"] = demo_data["damages"][
+                "attackerSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["damages"]["victimSteamID"] = demo_data["damages"][
+                "victimSteamID"
+            ].astype(pd.Int64Dtype())
+            # Grenades
             demo_data["grenades"] = self._parse_grenades()
+            demo_data["grenades"]["throwerSteamID"] = demo_data["grenades"][
+                "throwerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Flashes
             demo_data["flashes"] = self._parse_flashes()
+            demo_data["flashes"]["attackerSteamID"] = demo_data["flashes"][
+                "attackerSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["flashes"]["playerSteamID"] = demo_data["flashes"][
+                "playerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Weapon Fires
             demo_data["weaponFires"] = self._parse_weapon_fires()
+            demo_data["weaponFires"]["playerSteamID"] = demo_data["flashes"][
+                "playerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Bomb Events
             demo_data["bombEvents"] = self._parse_bomb_events()
+            demo_data["bombEvents"]["playerSteamID"] = demo_data["bombEvents"][
+                "playerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Frames
             demo_data["frames"] = self._parse_frames()
+            # Player Frames
             demo_data["playerFrames"] = self._parse_player_frames()
+            demo_data["playerFrames"]["steamID"] = demo_data["playerFrames"][
+                "steamID"
+            ].astype(pd.Int64Dtype())
             self.logger.info("Returned dataframe output")
             return demo_data
         else:
