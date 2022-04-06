@@ -302,7 +302,10 @@ def kast(
         columns.append(stat)
     kill_data = kill_data[~kill_data["attackerName"].isna()]
     killers = calc_stats(
-        kill_data.loc[kill_data["attackerTeam"] != kill_data["victimTeam"]],
+        kill_data.loc[
+            (kill_data["attackerTeam"] != kill_data["victimTeam"])
+            & (kill_data["attackerTeam"].notnull())
+        ],
         kill_filters,
         ["roundNum"],
         ["attackerName"],
@@ -319,7 +322,8 @@ def kast(
     )
     assisters = calc_stats(
         kill_data.loc[
-            kill_data["assisterTeam"] != kill_data["victimTeam"]
+            (kill_data["assisterTeam"] != kill_data["victimTeam"])
+            & (kill_data["assisterTeam"].notnull())
         ],  # .fillna(""),
         kill_filters,
         ["roundNum"],
@@ -331,6 +335,7 @@ def kast(
         kill_data.loc[
             (kill_data["attackerTeam"] != kill_data["victimTeam"])
             & (kill_data["isTrade"] == True)
+            & (kill_data["attackerTeam"].notnull())
         ],  # .fillna(""),
         kill_filters,
         ["roundNum"],
@@ -341,7 +346,8 @@ def kast(
     if flash_assists:
         flash_assisters = calc_stats(
             kill_data.loc[
-                kill_data["flashThrowerTeam"] != kill_data["victimTeam"]
+                (kill_data["flashThrowerTeam"] != kill_data["victimTeam"])
+                & (kill_data["flashThrowerTeam"].notnull())
             ],  # .fillna(""),
             kill_filters,
             ["roundNum"],
