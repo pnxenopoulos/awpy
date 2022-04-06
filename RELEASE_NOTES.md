@@ -1,4 +1,8 @@
 
+
+# v1.2.1
+ - Fix for when BombPlanted and BombDefused have no player assigned.
+
  # v1.2
  - Pass error strings and state from go code to python code.
  
