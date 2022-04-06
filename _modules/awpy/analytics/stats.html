@@ -81,6 +81,59 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 
+<span class="k">def</span> <span class="nf">accuracy</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;_summary_</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (_type_): _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">accuracy_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;gameRounds&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;weaponFires&quot;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;weaponFires&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="s2">&quot;playerSteamID&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">accuracy_data</span><span class="p">:</span>
+                    <span class="n">accuracy_data</span><span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="s2">&quot;playerSteamID&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">accuracy_data</span><span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="s2">&quot;playerSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;playerName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="s2">&quot;playerName&quot;</span><span class="p">]</span>
+                    <span class="n">accuracy_data</span><span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="s2">&quot;playerSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;shotsFired&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="n">accuracy_data</span><span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="s2">&quot;playerSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;shotsHit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">accuracy_data</span><span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="s2">&quot;playerSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;shotsFired&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;damages&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;weaponClass&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;Grenades&quot;</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;weaponClass&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;Equipment&quot;</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;weaponClass&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="n">accuracy_data</span><span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="s2">&quot;playerSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;shotsHit&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">accuracy_data</span>
+
+
+<span class="c1"># def kast(</span>
+<span class="c1">#     data,</span>
+<span class="c1">#     flash_assists=True,</span>
+<span class="c1">#     return_type=&quot;json&quot;,</span>
+<span class="c1"># ):</span>
+<span class="c1">#     &quot;&quot;&quot;Creates KAST% for a given round/kill dataframe combination.</span>
+
+<span class="c1">#     Args:</span>
+<span class="c1">#         data (dict): Default</span>
+<span class="c1">#         flash_assists (bool, optional): _description_. Defaults to True.</span>
+<span class="c1">#         return_type (str, optional): _description_. Defaults to &quot;json&quot;.</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     kast_data = {}</span>
+<span class="c1">#     for r in data[&quot;gameRounds&quot;]:</span>
+<span class="c1">#         if r[&quot;kills&quot;]:</span>
+<span class="c1">#             for k in r[&quot;kills&quot;]:</span>
+<span class="c1">#                 if k[&quot;attackerName&quot;] is not None:</span>
+<span class="c1">#                     # Count kills</span>
+<span class="c1">#                     if k[&quot;attackerName&quot;] in kast_data:</span>
+<span class="c1">#                         kast_data[k[&quot;attackerName&quot;]][&quot;kills&quot;] += 1</span>
+<span class="c1">#                     else:</span>
+<span class="c1">#                         kast_data[k[&quot;attackerName&quot;]][&quot;kills&quot;] = 1</span>
+<span class="c1">#                     # Count assists</span>
+<span class="c1">#     pass</span>
+
+
 <div class="viewcode-block" id="extract_num_filters"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.stats.extract_num_filters">[docs]</a><span class="k">def</span> <span class="nf">extract_num_filters</span><span class="p">(</span>
     <span class="n">filters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
