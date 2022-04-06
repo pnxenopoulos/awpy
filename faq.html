@@ -83,7 +83,7 @@
 <dl class="simple">
 <dt><strong>Q:</strong> Do I need Golang to run this?</dt><dd><p>You don’t <em>need</em> Golang to install awpy or access any part of it. However, <strong>you need Golang 1.16+ to parse demofiles using awpy</strong>.</p>
 </dd>
-<dt><strong>Q:</strong> The parser returns weird rounds or data!</dt><dd><p>Please note that awpy parses <em>everything</em> in a demo. This means that you may have rounds from the warmup, rounds that may have ended in a draw, and other odd-looking rounds. Try using the <cite>DemoParser.clean_rounds()</cite> method to clean up. Note that this is not going to be 100 percent perfect. If you still have bad data, ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>.</p>
+<dt><strong>Q:</strong> The parser returns weird rounds or data!</dt><dd><p>Please note that awpy parses <em>everything</em> in a demo. This means that you may have rounds from the warmup, rounds that may have ended in a draw, and other odd-looking rounds. Try parsing with <cite>DemoParser.parse(clean=True)</cite> or by using the <cite>DemoParser.clean_rounds()</cite> method to clean up the parsed rounds. Note that this is not going to be 100 percent perfect. If you still have bad data, ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>.</p>
 </dd>
 <dt><strong>Q:</strong> Data I want is missing!</dt><dd><p>Feel free to open an <a class="reference external" href="https://github.com/pnxenopoulos/awpy/issues">issue</a> or to ask in the <a class="reference external" href="https://discord.gg/W34XjsSs2H">Discord</a>, and we can see if such a feature is possible.</p>
 </dd>
