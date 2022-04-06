@@ -4,6 +4,59 @@ from typing import Dict, List, Tuple, Union
 import pandas as pd
 
 
+def accuracy(data):
+    """_summary_
+
+    Args:
+        data (_type_): _description_
+    """
+    accuracy_data = {}
+    for r in data["gameRounds"]:
+        if r["weaponFires"]:
+            for w in r["weaponFires"]:
+                if w["playerSteamID"] not in accuracy_data:
+                    accuracy_data[w["playerSteamID"]] = {}
+                    accuracy_data[w["playerSteamID"]]["playerName"] = w["playerName"]
+                    accuracy_data[w["playerSteamID"]]["shotsFired"] = 1
+                    accuracy_data[w["playerSteamID"]]["shotsHit"] = 0
+                else:
+                    accuracy_data[w["playerSteamID"]]["shotsFired"] += 1
+            for d in r["damages"]:
+                if (
+                    (d["weaponClass"] != "Grenades")
+                    and (d["weaponClass"] != "Equipment")
+                    and (d["weaponClass"] != "Unknown")
+                ):
+                    accuracy_data[w["playerSteamID"]]["shotsHit"] += 1
+    return accuracy_data
+
+
+# def kast(
+#     data,
+#     flash_assists=True,
+#     return_type="json",
+# ):
+#     """Creates KAST% for a given round/kill dataframe combination.
+
+#     Args:
+#         data (dict): Default
+#         flash_assists (bool, optional): _description_. Defaults to True.
+#         return_type (str, optional): _description_. Defaults to "json".
+#     """
+#     kast_data = {}
+#     for r in data["gameRounds"]:
+#         if r["kills"]:
+#             for k in r["kills"]:
+#                 if k["attackerName"] is not None:
+#                     # Count kills
+#                     if k["attackerName"] in kast_data:
+#                         kast_data[k["attackerName"]]["kills"] += 1
+#                     else:
+#                         kast_data[k["attackerName"]]["kills"] = 1
+#                     # Count assists
+#     pass
+
+
 def extract_num_filters(
     filters: Dict[str, Union[List[bool], List[str]]], key: str
 ) -> Tuple[List[str], List[float]]:

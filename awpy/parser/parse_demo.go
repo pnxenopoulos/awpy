@@ -195,6 +195,7 @@ type DamageAction struct {
 	VictimViewX      *float64 `json:"victimViewX"`
 	VictimViewY      *float64 `json:"victimViewY"`
 	Weapon           string   `json:"weapon"`
+	WeaponClass      string   `json:"weaponClass"`
 	HpDamage         int64    `json:"hpDamage"`
 	HpDamageTaken    int64    `json:"hpDamageTaken"`
 	ArmorDamage      int64    `json:"armorDamage"`
@@ -252,6 +253,7 @@ type KillAction struct {
 	PlayerTradedTeam    *string  `json:"playerTradedTeam"`
 	PlayerTradedSteamID *int64   `json:"playerTradedSteamID"`
 	Weapon              string   `json:"weapon"`
+	WeaponClass         string   `json:"weaponClass"`
 }
 
 // WeaponFireAction events
@@ -270,6 +272,9 @@ type WeaponFireAction struct {
 	PlayerViewY    float64 `json:"playerViewY"`
 	PlayerStrafe   bool    `json:"playerStrafe"`
 	Weapon         string  `json:"weapon"`
+	WeaponClass    string  `json:"weaponClass"`
+	AmmoInMagazine int64   `json:"ammoInMagazine"`
+	AmmoInReserve  int64   `json:"ammoInReserve"`
 	ZoomLevel      int64   `json:"zoomLevel"`
 }
 
@@ -1477,6 +1482,9 @@ func main() {
 			currentWeaponFire.PlayerY = float64(playerPos.Y)
 			currentWeaponFire.PlayerZ = float64(playerPos.Z)
 			currentWeaponFire.Weapon = e.Weapon.String()
+			currentWeaponFire.WeaponClass = convertWeaponClass(e.Weapon.Class())
+			currentWeaponFire.AmmoInMagazine = int64(w.AmmoInMagazine())
+			currentWeaponFire.AmmoInReserve = int64(w.AmmoReserve())
 			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
 			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
 			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
@@ -1778,6 +1786,7 @@ func main() {
 		currentKill.ClockTime = calculateClocktime(currentKill.Tick, currentRound, currentGame)
 		if e.Weapon != nil {
 			currentKill.Weapon = e.Weapon.String()
+			currentKill.WeaponClass = convertWeaponClass(e.Weapon.Class())
 		}
 		currentKill.IsWallbang = e.IsWallBang()
 		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
@@ -1971,6 +1980,7 @@ func main() {
 		currentDamage.ClockTime = calculateClocktime(currentDamage.Tick, currentRound, currentGame)
 		if e.Weapon != nil {
 			currentDamage.Weapon = e.Weapon.String()
+			currentDamage.WeaponClass = convertWeaponClass(e.Weapon.Class())
 		}
 		currentDamage.HitGroup = convertHitGroup(e.HitGroup)
 		currentDamage.HpDamage = int64(e.HealthDamage)
