@@ -52,7 +52,7 @@ class TestStats:
         self.parser = DemoParser(
             demofile="astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
-            parse_frames=False,
+            parse_frames=True,
         )
         self.data = self.parser.parse(return_type="df")
         self.bomb_data = self.clean(self.data["bombEvents"])

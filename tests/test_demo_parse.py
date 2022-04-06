@@ -171,7 +171,7 @@ class TestDemoParser:
             demofile="valve_matchmaking.dem", log=False, parse_rate=256
         )
         self.valve_mm_data = self.valve_mm.parse()
-        assert len(self.valve_mm_data["gameRounds"]) == 26
+        assert len(self.valve_mm_data["gameRounds"]) == 25  # 26
 
     def test_ot_demos(self):
         """Test overtime demos"""
@@ -187,7 +187,7 @@ class TestDemoParser:
         assert self.default_data["mapName"] == "de_cache"
         assert self.default_data["tickRate"] == 128
         assert self.default_data["clientName"] == "GOTV Demo"
-        assert len(self.default_data["gameRounds"]) == 33
+        assert len(self.default_data["gameRounds"]) == 29  # 33
         assert self.default_data["parserParameters"]["damagesRolledUp"] == False
         assert self.default_data["parserParameters"]["tradeTime"] == 5
         assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
@@ -326,4 +326,4 @@ class TestDemoParser:
         )
         self.player_clean_data = self.player_clean_parser.parse()
         self.player_clean_parser.remove_excess_players()
-        assert len(self.player_clean_data["gameRounds"]) == 28
+        assert len(self.player_clean_data["gameRounds"]) == 23  # 28
