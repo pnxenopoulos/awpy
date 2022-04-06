@@ -1422,17 +1422,19 @@ func _parseDemoEntry(
 		}
 		currentBomb.BombSite = &bombSite
 
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
+		if e.BombEvent.Player != nil {
+			currentBomb.PlayerSteamID = int64(e.BombEvent.Player.SteamID64)
+			currentBomb.PlayerName = e.BombEvent.Player.Name
+			if e.Player.TeamState != nil {
+				currentBomb.PlayerTeam = e.BombEvent.Player.TeamState.ClanName()
+			}
 
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
+			// Player loc
+			playerPos := e.BombEvent.Player.LastAlivePosition
+			currentBomb.PlayerX = float64(playerPos.X)
+			currentBomb.PlayerY = float64(playerPos.Y)
+			currentBomb.PlayerZ = float64(playerPos.Z)
+		}
 
 		// add bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
@@ -1675,17 +1677,19 @@ func _parseDemoEntry(
 		}
 		currentBomb.BombSite = &bombSite
 
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
+		if e.BombEvent.Player != nil {
+			currentBomb.PlayerSteamID = int64(e.BombEvent.Player.SteamID64)
+			currentBomb.PlayerName = e.BombEvent.Player.Name
+			if e.Player.TeamState != nil {
+				currentBomb.PlayerTeam = e.BombEvent.Player.TeamState.ClanName()
+			}
 
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
+			// Player loc
+			playerPos := e.BombEvent.Player.LastAlivePosition
+			currentBomb.PlayerX = float64(playerPos.X)
+			currentBomb.PlayerY = float64(playerPos.Y)
+			currentBomb.PlayerZ = float64(playerPos.Z)
+		}
 
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
