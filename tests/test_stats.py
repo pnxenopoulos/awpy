@@ -54,7 +54,7 @@ class TestStats:
             demo_id="test",
             parse_frames=True,
         )
-        self.data = self.parser.parse(return_type="df")
+        self.data = self.parser.parse(return_type="df", clean=False)
         self.bomb_data = self.clean(self.data["bombEvents"])
         self.damage_data = self.clean(self.data["damages"])
         self.flash_data = self.clean(self.data["flashes"])
