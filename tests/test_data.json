@@ -34,5 +34,8 @@
     },
     "pov-clean": {
         "url": "https://storage.googleapis.com/csgo-tests/041.dem"
+    },
+    "anonymo-vs-ldlc-m1-nuke": {
+        "url": "https://storage.googleapis.com/csgo-tests/anonymo-vs-ldlc-m1-nuke.dem"
     }
 }

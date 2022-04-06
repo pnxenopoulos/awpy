@@ -248,6 +248,27 @@ class TestDemoParser:
                         charmees_found += 1
         assert charmees_found > 0
 
+    def test_remove_bad_scoring(self):
+        """Tests if remove bad scoring works. Issue 149 raised by kenmareirl"""
+        self.bad_scoring_parser_bad_demo = DemoParser(
+            demofile="anonymo-vs-ldlc-m1-nuke.dem", log=False, parse_frames=False
+        )
+        self.bad_scoring_parser_data = self.bad_scoring_parser_bad_demo.parse()
+        self.bad_scoring_parser_data = self.bad_scoring_parser_bad_demo.clean_rounds(
+            remove_bad_scoring=True,
+        )
+        assert len(self.bad_scoring_parser_data["gameRounds"]) == 26
+        self.bad_scoring_parser_good_demo = DemoParser(
+            demofile="valve_matchmaking.dem", log=False, parse_frames=False
+        )
+        self.bad_scoring_parser_data_good = self.bad_scoring_parser_good_demo.parse()
+        self.bad_scoring_parser_data_good = (
+            self.bad_scoring_parser_good_demo.clean_rounds(
+                remove_bad_scoring=True,
+            )
+        )
+        assert len(self.bad_scoring_parser_data["gameRounds"]) == 26
+
     def test_warmup(self):
         """Tests if warmup rounds are properly parsing."""
         self.warmup_parser = DemoParser(
