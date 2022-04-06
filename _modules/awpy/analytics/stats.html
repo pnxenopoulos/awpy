@@ -379,7 +379,10 @@
         <span class="n">columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
     <span class="n">kill_data</span> <span class="o">=</span> <span class="n">kill_data</span><span class="p">[</span><span class="o">~</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;attackerName&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()]</span>
     <span class="n">killers</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
-        <span class="n">kill_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;attackerTeam&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;victimTeam&quot;</span><span class="p">]],</span>
+        <span class="n">kill_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;attackerTeam&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;victimTeam&quot;</span><span class="p">])</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;attackerTeam&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">())</span>
+        <span class="p">],</span>
         <span class="n">kill_filters</span><span class="p">,</span>
         <span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">],</span>
         <span class="p">[</span><span class="s2">&quot;attackerName&quot;</span><span class="p">],</span>
@@ -396,7 +399,8 @@
     <span class="p">)</span>
     <span class="n">assisters</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
         <span class="n">kill_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-            <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;assisterTeam&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;victimTeam&quot;</span><span class="p">]</span>
+            <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;assisterTeam&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;victimTeam&quot;</span><span class="p">])</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;assisterTeam&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">())</span>
         <span class="p">],</span>  <span class="c1"># .fillna(&quot;&quot;),</span>
         <span class="n">kill_filters</span><span class="p">,</span>
         <span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">],</span>
@@ -408,6 +412,7 @@
         <span class="n">kill_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
             <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;attackerTeam&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;victimTeam&quot;</span><span class="p">])</span>
             <span class="o">&amp;</span> <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;isTrade&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;attackerTeam&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">())</span>
         <span class="p">],</span>  <span class="c1"># .fillna(&quot;&quot;),</span>
         <span class="n">kill_filters</span><span class="p">,</span>
         <span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">],</span>
@@ -418,7 +423,8 @@
     <span class="k">if</span> <span class="n">flash_assists</span><span class="p">:</span>
         <span class="n">flash_assisters</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
             <span class="n">kill_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;flashThrowerTeam&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;victimTeam&quot;</span><span class="p">]</span>
+                <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;flashThrowerTeam&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;victimTeam&quot;</span><span class="p">])</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">kill_data</span><span class="p">[</span><span class="s2">&quot;flashThrowerTeam&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">())</span>
             <span class="p">],</span>  <span class="c1"># .fillna(&quot;&quot;),</span>
             <span class="n">kill_filters</span><span class="p">,</span>
             <span class="p">[</span><span class="s2">&quot;roundNum&quot;</span><span class="p">],</span>
