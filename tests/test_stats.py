@@ -42,7 +42,7 @@ class TestStats:
         assert stats[76561197995889730]["kills"] == 19
         assert stats[76561197995889730]["assists"] == 1
         assert stats[76561197995889730]["flashAssists"] == 2
-        assert stats[76561197995889730]["deaths"] == 14
+        assert stats[76561197995889730]["deaths"] == 17
         assert stats[76561197995889730]["adr"] == 63.6
         assert stats[76561197995889730]["rating"] == 1.03
         assert stats[76561197995889730]["kast"] == 67.9
