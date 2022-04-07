@@ -125,6 +125,7 @@ def player_stats(game_rounds):
                 kast[k["assisterSteamID"]]["a"] = True
             if k["flashThrowerSteamID"]:
                 player_statistics[k["flashThrowerSteamID"]]["flashAssists"] += 1
+                kast[k["flashThrowerSteamID"]]["a"] = True
             if k["isTrade"] and k["attackerSteamID"]:
                 player_statistics[k["attackerSteamID"]]["tradeKills"] += 1
                 kast[r["kills"][i - 1]["victimSteamID"]]["t"] = True
@@ -251,6 +252,9 @@ def player_stats(game_rounds):
             + 0.2372 * (impact)
             + 0.0032 * (player_statistics[player]["adr"])
             + 0.1587
+        )
+        player_statistics[player]["rating"] = round(
+            player_statistics[player]["rating"], 2
         )
     return player_statistics
 

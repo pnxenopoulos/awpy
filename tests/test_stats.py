@@ -4,28 +4,7 @@ import pytest
 import requests
 
 from awpy.parser import DemoParser
-from awpy.analytics.stats import (
-    extract_num_filters,
-    check_filters,
-    num_filter_df,
-    filter_df,
-    calc_stats,
-    accuracy,
-    kast,
-    kill_stats,
-    adr,
-    util_dmg,
-    flash_stats,
-    bomb_stats,
-    econ_stats,
-    weapon_type,
-    kill_breakdown,
-    util_dmg_breakdown,
-    win_breakdown,
-    player_box_score,
-    team_box_score,
-    rating,
-)
+from awpy.analytics.stats import player_stats
 
 
 class TestStats:
@@ -55,40 +34,19 @@ class TestStats:
             parse_frames=True,
         )
         self.data = self.parser.parse(return_type="df", clean=True)
-        self.bomb_data = self.clean(self.data["bombEvents"])
-        self.damage_data = self.clean(self.data["damages"])
-        self.flash_data = self.clean(self.data["flashes"])
-        self.grenade_data = self.clean(self.data["grenades"])
-        self.kill_data = self.clean(self.data["kills"])
-        self.round_data = self.clean(self.data["rounds"])
-        self.weapon_fire_data = self.clean(self.data["weaponFires"])
-        self.invalid_numeric_filter = {"Kills": [10]}
-        self.invalid_logical_operator = {"Kills": ["=invalid=10"]}
-        self.invalid_numeric_value = {"Kills": ["==1invalid0"]}
-        self.invalid_str_filter = {"attackerName": [1]}
-        self.invalid_bool_filter = {"isHeadshot": ["True"]}
-        self.filters = {
-            "attackerTeam": ["Astralis"],
-            "roundNum": ["<16"],
-            "isHeadshot": [True],
-        }
-        self.filtered_kill_data = self.kill_data.loc[
-            (self.kill_data[("attackerTeam")] == "Astralis")
-            & (self.kill_data["roundNum"] < 16)
-            & (self.kill_data["isHeadshot"] == True)
-        ]
-        self.hs = pd.DataFrame(
-            {
-                "Astralis Player": [
-                    "Magisk",
-                    "Xyp9x",
-                    "device",
-                    "dupreeh",
-                    "gla1ve",
-                ],
-                "1st Half HS": [3, 2, 7, 5, 2],
-            }
-        )
+
+    def test_player_stats(self):
+        """Tests player stats generation"""
+        stats = player_stats(self.data["gameRounds"])
+        assert stats[76561197995889730]["kills"] == 19
+        assert stats[76561197995889730]["assists"] == 1
+        assert stats[76561197995889730]["flashAssists"] == 2
+        assert stats[76561197995889730]["deaths"] == 14
+        assert stats[76561197995889730]["adr"] == 63.6
+        assert stats[76561197995889730]["rating"] == 1.03
+        assert stats[76561197995889730]["kast"] == 67.9
+        assert stats[76561197995889730]["firstKills"] == 2
+        assert stats[76561197995889730]["firstDeaths"] == 2
 
     # def test_extract_num_filters(self):
     #     """Tests extract_num_filters function."""
