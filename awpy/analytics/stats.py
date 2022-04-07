@@ -253,8 +253,12 @@ def player_stats(game_rounds, return_type="json"):
         player_statistics[player]["rating"] = round(
             player_statistics[player]["rating"], 2
         )
-    if return_type="df":
-        return pd.DataFrame().from_dict(player_statistics, orient="index").reset_index(drop=True)
+    if return_type == "df":
+        return (
+            pd.DataFrame()
+            .from_dict(player_statistics, orient="index")
+            .reset_index(drop=True)
+        )
     else:
         return player_statistics
 
