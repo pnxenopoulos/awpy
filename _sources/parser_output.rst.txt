@@ -132,6 +132,14 @@ This object contains round information and events. The possible round end reason
         "tRoundStartMoney": 80000,
         "tBuyType": "Full Eco",
         "tSpend": 3400,
+        "ctSide": {                          # Players who were on the CT side at Freeze Time End
+            "teamName": "...",
+            "players": [{
+                "playerName": "...",
+                "steamID": 12345
+            }, ...]
+        },
+        "tSide": {...},                      # Players who were on the T side at Freeze Time End
         "kills": [...],                      # Kills
         "damages": [...],                    # Damages
         "grenades": [...],                   # Grenade throws
