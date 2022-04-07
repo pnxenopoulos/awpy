@@ -31,9 +31,10 @@ class TestStats:
         self.parser = DemoParser(
             demofile="astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
+            parse_rate=128,
             parse_frames=True,
         )
-        self.data = self.parser.parse(return_type="df", clean=True)
+        self.data = self.parser.parse(clean=True)
 
     def test_player_stats(self):
         """Tests player stats generation"""
