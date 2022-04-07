@@ -50,6 +50,8 @@ class TestStats:
         assert stats[76561197995889730]["firstDeaths"] == 2
         assert stats[76561197995889730]["teamName"] == "Team Liquid"
         assert stats[76561197995889730]["playerName"] == "nitr0"
+        stats_df = player_stats(self.data["gameRounds"], return_type="df")
+        assert type(stats_df) == pd.DataFrame
 
     # def test_extract_num_filters(self):
     #     """Tests extract_num_filters function."""
