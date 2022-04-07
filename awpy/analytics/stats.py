@@ -1,6 +1,3 @@
-import operator
-from typing import Dict, List, Tuple, Union
-
 import pandas as pd
 
 # accuracy
@@ -9,7 +6,7 @@ import pandas as pd
 # kill stats
 # flash stats
 # econ stats
-def player_stats(game_rounds):
+def player_stats(game_rounds, return_type="json"):
     player_statistics = {}
     for r in game_rounds:
         # Add players
@@ -256,7 +253,10 @@ def player_stats(game_rounds):
         player_statistics[player]["rating"] = round(
             player_statistics[player]["rating"], 2
         )
-    return player_statistics
+    if return_type="df":
+        return pd.DataFrame().from_dict(player_statistics, orient="index").reset_index(drop=True)
+    else:
+        return player_statistics
 
 
 # def accuracy(data):
