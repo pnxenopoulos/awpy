@@ -202,6 +202,7 @@
                 <span class="n">kast</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="s2">&quot;assisterSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;a&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;flashThrowerSteamID&quot;</span><span class="p">]:</span>
                 <span class="n">player_statistics</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="s2">&quot;flashThrowerSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;flashAssists&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">kast</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="s2">&quot;flashThrowerSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;a&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;isTrade&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;attackerSteamID&quot;</span><span class="p">]:</span>
                 <span class="n">player_statistics</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="s2">&quot;attackerSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;tradeKills&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">kast</span><span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">][</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="s2">&quot;victimSteamID&quot;</span><span class="p">]][</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -328,6 +329,9 @@
             <span class="o">+</span> <span class="mf">0.2372</span> <span class="o">*</span> <span class="p">(</span><span class="n">impact</span><span class="p">)</span>
             <span class="o">+</span> <span class="mf">0.0032</span> <span class="o">*</span> <span class="p">(</span><span class="n">player_statistics</span><span class="p">[</span><span class="n">player</span><span class="p">][</span><span class="s2">&quot;adr&quot;</span><span class="p">])</span>
             <span class="o">+</span> <span class="mf">0.1587</span>
+        <span class="p">)</span>
+        <span class="n">player_statistics</span><span class="p">[</span><span class="n">player</span><span class="p">][</span><span class="s2">&quot;rating&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span>
+            <span class="n">player_statistics</span><span class="p">[</span><span class="n">player</span><span class="p">][</span><span class="s2">&quot;rating&quot;</span><span class="p">],</span> <span class="mi">2</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">player_statistics</span></div>
 
