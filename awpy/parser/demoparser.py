@@ -226,11 +226,12 @@ class DemoParser:
         )
         return demo_data
 
-    def parse(self, return_type="json"):
+    def parse(self, return_type="json", clean=True):
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
             return_type (string): Either "json" or "df"
+            clean (bool, optional): True to run clean_rounds, otherwise, uncleaned data is returned. Defaults to True.
 
         Returns:
             A dictionary of output (which is parsed to a JSON file in the working directory)
@@ -241,6 +242,8 @@ class DemoParser:
         """
         self.parse_demo()
         self.read_json(json_path=self.outpath + "/" + self.output_file)
+        if clean:
+            clean_data = self.clean_rounds()
         if self.json:
             self.logger.info("JSON output found")
             if return_type == "json":
@@ -272,15 +275,60 @@ class DemoParser:
             demo_data["mapName"] = self.json["mapName"]
             demo_data["tickRate"] = self.json["tickRate"]
             demo_data["playbackTicks"] = self.json["playbackTicks"]
+            # Rounds
             demo_data["rounds"] = self._parse_rounds()
+            # Kills
             demo_data["kills"] = self._parse_kills()
+            demo_data["kills"]["attackerSteamID"] = demo_data["kills"][
+                "attackerSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["kills"]["victimSteamID"] = demo_data["kills"][
+                "victimSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["kills"]["assisterSteamID"] = demo_data["kills"][
+                "assisterSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["kills"]["flashThrowerSteamID"] = demo_data["kills"][
+                "flashThrowerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Damages
             demo_data["damages"] = self._parse_damages()
+            demo_data["damages"]["attackerSteamID"] = demo_data["damages"][
+                "attackerSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["damages"]["victimSteamID"] = demo_data["damages"][
+                "victimSteamID"
+            ].astype(pd.Int64Dtype())
+            # Grenades
             demo_data["grenades"] = self._parse_grenades()
+            demo_data["grenades"]["throwerSteamID"] = demo_data["grenades"][
+                "throwerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Flashes
             demo_data["flashes"] = self._parse_flashes()
+            demo_data["flashes"]["attackerSteamID"] = demo_data["flashes"][
+                "attackerSteamID"
+            ].astype(pd.Int64Dtype())
+            demo_data["flashes"]["playerSteamID"] = demo_data["flashes"][
+                "playerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Weapon Fires
             demo_data["weaponFires"] = self._parse_weapon_fires()
+            demo_data["weaponFires"]["playerSteamID"] = demo_data["flashes"][
+                "playerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Bomb Events
             demo_data["bombEvents"] = self._parse_bomb_events()
+            demo_data["bombEvents"]["playerSteamID"] = demo_data["bombEvents"][
+                "playerSteamID"
+            ].astype(pd.Int64Dtype())
+            # Frames
             demo_data["frames"] = self._parse_frames()
+            # Player Frames
             demo_data["playerFrames"] = self._parse_player_frames()
+            demo_data["playerFrames"]["steamID"] = demo_data["playerFrames"][
+                "steamID"
+            ].astype(pd.Int64Dtype())
             self.logger.info("Returned dataframe output")
             return demo_data
         else:
@@ -609,6 +657,7 @@ class DemoParser:
         remove_excess_players=True,
         remove_excess_kills=True,
         remove_bad_endings=True,
+        remove_bad_scoring=False,
         return_type="json",
         save_to_json=True,
     ):
@@ -622,6 +671,7 @@ class DemoParser:
             remove_excess_players (bool, optional): Remove rounds with more than 5 players. Defaults to True.
             remove_excess_kills (bool, optional): Remove rounds with more than 10 kills. Defaults to True.
             remove_bad_endings (bool, optional): Remove rounds with bad round end reasons. Defaults to True.
+            remove_bad_scoring (bool, optional): Remove rounds where the scoring is off (like scores going below the previous round's). Defaults to False.
             return_type (str, optional): Return JSON or DataFrame. Defaults to "json".
             save_to_json (bool, optional): Whether to write the JSON to a file. Defaults to True.
 
@@ -646,6 +696,8 @@ class DemoParser:
                 self.remove_excess_kill_rounds()
             if remove_bad_endings:
                 self.remove_end_round()
+            if remove_bad_scoring:
+                self.remove_bad_scoring()
             self.renumber_rounds()
             # self.rescore_rounds() -- Need to edit to take into account half switches
             if save_to_json:
@@ -724,6 +776,38 @@ class DemoParser:
                         self.json["gameRounds"][i]["endTScore"] = (
                             self.json["gameRounds"][i]["tScore"] + 1
                         )
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def remove_bad_scoring(self):
+        """Removes rounds where the scoring is bad. For example, rounds where the score drops
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute is None
+        """
+        if self.json:
+            cleaned_rounds = []
+            last_zero_score_round = None
+            final_score_round = None
+            for i, r in enumerate(self.json["gameRounds"]):
+                if r["endTScore"] >= 16 or r["endCTScore"] >= 16:
+                    final_score_round = r
+                if (r["tScore"] + r["ctScore"] == 0) and (not final_score_round):
+                    last_zero_score_round = r
+                if i > 0:
+                    if (r["endTScore"] + r["endCTScore"]) > (
+                        self.json["gameRounds"][i - 1]["endTScore"]
+                        + self.json["gameRounds"][i - 1]["endCTScore"]
+                    ):
+                        cleaned_rounds.append(r)
+            if last_zero_score_round:
+                cleaned_rounds.insert(0, last_zero_score_round)
+            self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"

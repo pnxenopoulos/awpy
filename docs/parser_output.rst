@@ -132,6 +132,14 @@ This object contains round information and events. The possible round end reason
         "tRoundStartMoney": 80000,
         "tBuyType": "Full Eco",
         "tSpend": 3400,
+        "ctSide": {                          # Players who were on the CT side at Freeze Time End
+            "teamName": "...",
+            "players": [{
+                "playerName": "...",
+                "steamID": 12345
+            }, ...]
+        },
+        "tSide": {...},                      # Players who were on the T side at Freeze Time End
         "kills": [...],                      # Kills
         "damages": [...],                    # Damages
         "grenades": [...],                   # Grenade throws
@@ -192,6 +200,7 @@ Kills
         'playerTradedTeam': None, 
         'playerTradedSteamID': None, 
         'weapon': 'Glock-18'
+        'weaponClass': 'Pistols'
     }
 
 Damages
@@ -225,6 +234,7 @@ The possible hit groups are `Generic`, `Head`, `Chest`, `Stomach`, `LeftArm`, `R
         'victimViewX': 9.2230224609375, 
         'victimViewY': 0.6097412109375, 
         'weapon': 'Knife', 
+        'weaponClass': 'Equipment',
         'hpDamage': 61,                          # Can be over 100 (e.g., AWP headshots)
         'hpDamageTaken': 61,                     # Damage actually taken by the victim
         'armorDamage': 5, 
@@ -301,7 +311,8 @@ Weapon Fires
         'playerViewX': 175.49560546875, 
         'playerViewY': 355.4901123046875, 
         'playerStrafe': False, 
-        'weapon': 'HE Grenade', 
+        'weapon': 'HE Grenade',
+        'weaponClass': 'Grenades', 
         'zoomLevel': 0
     }
 
