@@ -62,7 +62,7 @@ def player_stats(game_rounds):
                 player_statistics[p["steamID"]] = {
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
-                    "teamName": t_side["teamName"],
+                    "teamName": ct_side["teamName"],
                     "totalRounds": 0,
                     "kills": 0,
                     "deaths": 0,

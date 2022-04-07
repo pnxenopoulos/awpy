@@ -47,6 +47,8 @@ class TestStats:
         assert stats[76561197995889730]["kast"] == 67.9
         assert stats[76561197995889730]["firstKills"] == 2
         assert stats[76561197995889730]["firstDeaths"] == 2
+        assert stats[76561197995889730]["teamName"] == "Team Liquid"
+        assert stats[76561197995889730]["playerName"] == "nitr0"
 
     # def test_extract_num_filters(self):
     #     """Tests extract_num_filters function."""
