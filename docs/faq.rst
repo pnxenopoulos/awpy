@@ -12,6 +12,11 @@ This is a nonexhaustive list of frequently asked questions.
 **Q:** Data I want is missing!
     Feel free to open an `issue <https://github.com/pnxenopoulos/awpy/issues>`_ or to ask in the `Discord <https://discord.gg/W34XjsSs2H>`_, and we can see if such a feature is possible.
 
-**Q:** Where can I get documentation for the parsed data structure/keys?
+**Q:** Where can I get documentation for the parsed data contains?
     Please look at :doc:`parser_output`.
+
+**Q:** How can I calculate statistics like KAST%, Rating or ADR?
+    Look at :doc:`analytics`, and in particular, `awpy.analytics.stats`.
+
+
 
