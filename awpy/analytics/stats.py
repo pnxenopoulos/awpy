@@ -17,7 +17,7 @@ def player_stats(game_rounds, return_type="json"):
                 player_statistics[p["steamID"]] = {
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
-                    "teamName": t_side["teamName"],
+                    "teamName": ct_side["teamName"],
                     "totalRounds": 0,
                     "kills": 0,
                     "deaths": 0,
@@ -59,7 +59,7 @@ def player_stats(game_rounds, return_type="json"):
                 player_statistics[p["steamID"]] = {
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
-                    "teamName": ct_side["teamName"],
+                    "teamName": t_side["teamName"],
                     "totalRounds": 0,
                     "kills": 0,
                     "deaths": 0,
