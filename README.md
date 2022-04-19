@@ -112,4 +112,4 @@ This project is made possible by the amazing work done in the [demoinfocs-golang
 
 Big shoutout to [SimpleRadar](https://readtldr.gg/simpleradar?utm_source=github&utm_id=xenos-csgo-parser) for allowing use of their map images.
 
-Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage.
+Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage. Additional thanks to those of you in the Discord community who file bug reports and test awpy thoroughly.
