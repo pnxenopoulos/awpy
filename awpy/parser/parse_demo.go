@@ -1220,28 +1220,44 @@ func main() {
 					currentRound.CTBeginMoney += int64(p.Money())
 				}
 			}
+		}
 
-			// Parse the players
-			teamCT := PlayerTeams{}
-			teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
-			for _, player := range gs.TeamCounterTerrorists().Members() {
-				pl := Players{}
-				pl.PlayerName = player.Name
-				pl.SteamID = int64(player.SteamID64)
+		// Parse the players
+		teamCT := PlayerTeams{}
+		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
+		for _, player := range gs.TeamCounterTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamCT.players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
 				teamCT.Players = append(teamCT.Players, pl)
 			}
-			currentRound.CTSide = teamCT
+		}
+		currentRound.CTSide = teamCT
 
-			teamT := PlayerTeams{}
-			teamT.TeamName = gs.TeamTerrorists().ClanName()
-			for _, player := range gs.TeamTerrorists().Members() {
-				pl := Players{}
-				pl.PlayerName = player.Name
-				pl.SteamID = int64(player.SteamID64)
+		teamT := PlayerTeams{}
+		teamT.TeamName = gs.TeamTerrorists().ClanName()
+		for _, player := range gs.TeamTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamT.players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
 				teamT.Players = append(teamT.Players, pl)
 			}
-			currentRound.TSide = teamT
 		}
+		currentRound.TSide = teamT
 
 		roundInFreezetime = 0
 		currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
