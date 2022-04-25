@@ -99,7 +99,7 @@ When contributing code, be sure to lint your code using `black`, run the tests u
 .
 ├── awpy
 │   ├── analytics                 # Code for CSGO analytics
-│   ├── data                      # Code for dealnig with CSGO map and nav data
+│   ├── data                      # Code for dealing with CSGO map and nav data
 │   ├── parser                    # Code for CSGO demo parser
 │   └── visualization             # Code for CSGO visualization
 ├── doc                           # Contains documentation files
