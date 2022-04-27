@@ -1230,7 +1230,7 @@ func main() {
 			pl.PlayerName = player.Name
 			pl.SteamID = int64(player.SteamID64)
 			foundPlayer := false
-			for _, p := range teamCT.players {
+			for _, p := range teamCT.Players {
 				if p.SteamID == pl.SteamID {
 					foundPlayer = true
 				}
@@ -1248,7 +1248,7 @@ func main() {
 			pl.PlayerName = player.Name
 			pl.SteamID = int64(player.SteamID64)
 			foundPlayer := false
-			for _, p := range teamT.players {
+			for _, p := range teamT.Players {
 				if p.SteamID == pl.SteamID {
 					foundPlayer = true
 				}

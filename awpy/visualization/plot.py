@@ -18,7 +18,7 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
 
     Returns:
-        float
+        matplotlib fig and ax
     """
     if map_type == "original":
         map_bg = imageio.imread(
