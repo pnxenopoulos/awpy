@@ -158,7 +158,7 @@ def player_stats(game_rounds, return_type="json"):
             player_statistics[w["playerSteamID"]]["totalShots"] += 1
         for f in r["flashes"]:
             if f["attackerSteamID"]:
-                if f["attackerTeam"] == f["playerTeam"]:
+                if f["attackerSide"] == f["playerSide"]:
                     player_statistics[f["attackerSteamID"]]["teammatesFlashed"] += 1
                 else:
                     player_statistics[f["attackerSteamID"]]["enemiesFlashed"] += 1

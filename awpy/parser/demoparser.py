@@ -191,7 +191,7 @@ class DemoParser:
         )
         stdout = proc.stdout.read().splitlines()
         self.output_file = self.demo_id + ".json"
-        if os.path.isfile(self.output_file):
+        if os.path.isfile(self.outpath + "/" + self.output_file):
             self.logger.info("Wrote demo parse output to " + self.output_file)
             self.parse_error = False
         else:
@@ -212,7 +212,7 @@ class DemoParser:
             FileNotFoundError: Raises a FileNotFoundError if the JSON path doesn't exist
         """
         # Check if JSON exists
-        if not os.path.exists(os.path.abspath(json_path)):
+        if not os.path.exists(json_path):
             self.logger.error("JSON path does not exist!")
             raise FileNotFoundError("JSON path does not exist!")
 
@@ -718,7 +718,7 @@ class DemoParser:
 
     def write_json(self):
         """Rewrite the JSON file"""
-        with open(self.output_file, "w", encoding="utf8") as fp:
+        with open(self.outpath + "/" + self.output_file, "w", encoding="utf8") as fp:
             json.dump(self.json, fp, indent=(1 if self.json_indentation else None))
 
     def renumber_rounds(self):

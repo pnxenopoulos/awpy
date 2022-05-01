@@ -1,4 +1,6 @@
-[![Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Build](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml) [![Documentation Status](https://readthedocs.org/projects/awpy/badge/?version=latest)](https://awpy.readthedocs.io/en/latest/?badge=latest) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://awpy.readthedocs.io/en/latest/) ![PyPI - Downloads](https://img.shields.io/pypi/dm/awpy) [![GitHub issues](https://img.shields.io/github/issues/pnxenopoulos/awpy)](https://github.com/pnxenopoulos/awpy/issues) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/awpy/blob/main/LICENSE)
+[![Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Build](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml) [![Documentation Status](https://readthedocs.org/projects/awpy/badge/?version=latest)](https://awpy.readthedocs.io/en/latest/?badge=latest) [![Docs](https://img.shields.io/badge/docs-Documentation-informational)](https://awpy.readthedocs.io/en/latest/) [![Downloads](https://pepy.tech/badge/awpy)](https://pepy.tech/project/awpy) [![GitHub issues](https://img.shields.io/github/issues/pnxenopoulos/awpy)](https://github.com/pnxenopoulos/awpy/issues) [![MIT Licence](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/awpy/blob/main/LICENSE)
+
+[//]: # ![PyPI - Downloads](https://img.shields.io/pypi/dm/awpy)
 
 # awpy
 The `awpy` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful `awpy` information. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics. You may visit the documentation [here](https://awpy.readthedocs.io/en/latest/).
@@ -99,7 +101,7 @@ When contributing code, be sure to lint your code using `black`, run the tests u
 .
 ├── awpy
 │   ├── analytics                 # Code for CSGO analytics
-│   ├── data                      # Code for dealnig with CSGO map and nav data
+│   ├── data                      # Code for dealing with CSGO map and nav data
 │   ├── parser                    # Code for CSGO demo parser
 │   └── visualization             # Code for CSGO visualization
 ├── doc                           # Contains documentation files
@@ -112,4 +114,4 @@ This project is made possible by the amazing work done in the [demoinfocs-golang
 
 Big shoutout to [SimpleRadar](https://readtldr.gg/simpleradar?utm_source=github&utm_id=xenos-csgo-parser) for allowing use of their map images.
 
-Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage.
+Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage. Additional thanks to those of you in the Discord community who file bug reports and test awpy thoroughly.

@@ -1092,12 +1092,6 @@ func main() {
 				currentRound.CTBeginMoney += int64(p.Money())
 			}
 		}
-	})
-
-	// Parse round freezetime ends
-	p.RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
-		gs := p.GameState()
-		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded, int64(gs.IngameTick()))
 
 		// Parse the players
 		teamCT := PlayerTeams{}
@@ -1119,6 +1113,12 @@ func main() {
 			teamT.Players = append(teamT.Players, pl)
 		}
 		currentRound.TSide = teamT
+	})
+
+	// Parse round freezetime ends
+	p.RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
+		gs := p.GameState()
+		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded, int64(gs.IngameTick()))
 
 		// Reupdate the teams to make sure
 		currentRound.TScore = int64(gs.TeamTerrorists().Score())
@@ -1221,6 +1221,43 @@ func main() {
 				}
 			}
 		}
+
+		// Parse the players
+		teamCT := PlayerTeams{}
+		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
+		for _, player := range gs.TeamCounterTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamCT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamCT.Players = append(teamCT.Players, pl)
+			}
+		}
+		currentRound.CTSide = teamCT
+
+		teamT := PlayerTeams{}
+		teamT.TeamName = gs.TeamTerrorists().ClanName()
+		for _, player := range gs.TeamTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamT.Players = append(teamT.Players, pl)
+			}
+		}
+		currentRound.TSide = teamT
 
 		roundInFreezetime = 0
 		currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
@@ -1572,53 +1609,55 @@ func main() {
 
 			// Player
 			if e.Player != nil {
-				playerSteamID := int64(e.Player.SteamID64)
-				currentFlash.PlayerSteamID = &playerSteamID
-				currentFlash.PlayerName = &e.Player.Name
-				playerClanName := ""
+				if e.Player.IsAlive() {
+					playerSteamID := int64(e.Player.SteamID64)
+					currentFlash.PlayerSteamID = &playerSteamID
+					currentFlash.PlayerName = &e.Player.Name
+					playerClanName := ""
 
-				if e.Player.TeamState != nil {
-					playerClanName = e.Player.TeamState.ClanName()
-				}
+					if e.Player.TeamState != nil {
+						playerClanName = e.Player.TeamState.ClanName()
+					}
 
-				currentFlash.PlayerTeam = &playerClanName
-				playerSide := "Unknown"
-				switch e.Player.Team {
-				case common.TeamTerrorists:
-					playerSide = "T"
-				case common.TeamCounterTerrorists:
-					playerSide = "CT"
-				case common.TeamSpectators:
-					playerSide = "Spectator"
-				case common.TeamUnassigned:
-					playerSide = "Unassigned"
-				default:
-					playerSide = "Unknown"
-				}
+					currentFlash.PlayerTeam = &playerClanName
+					playerSide := "Unknown"
+					switch e.Player.Team {
+					case common.TeamTerrorists:
+						playerSide = "T"
+					case common.TeamCounterTerrorists:
+						playerSide = "CT"
+					case common.TeamSpectators:
+						playerSide = "Spectator"
+					case common.TeamUnassigned:
+						playerSide = "Unassigned"
+					default:
+						playerSide = "Unknown"
+					}
 
-				currentFlash.PlayerSide = &playerSide
+					currentFlash.PlayerSide = &playerSide
 
-				// Player loc
-				playerPos := e.Player.LastAlivePosition
-				
-				playerX := float64(playerPos.X)
-				playerY := float64(playerPos.Y)
-				playerZ := float64(playerPos.Z)
-				currentFlash.PlayerX = &playerX
-				currentFlash.PlayerY = &playerY
-				currentFlash.PlayerZ = &playerZ
-				playerViewX := float64(e.Player.ViewDirectionX())
-				playerViewY := float64(e.Player.ViewDirectionY())
-				currentFlash.PlayerViewX = &playerViewX
-				currentFlash.PlayerViewY = &playerViewY
+					// Player loc
+					playerPos := e.Player.LastAlivePosition
+					
+					playerX := float64(playerPos.X)
+					playerY := float64(playerPos.Y)
+					playerZ := float64(playerPos.Z)
+					currentFlash.PlayerX = &playerX
+					currentFlash.PlayerY = &playerY
+					currentFlash.PlayerZ = &playerZ
+					playerViewX := float64(e.Player.ViewDirectionX())
+					playerViewY := float64(e.Player.ViewDirectionY())
+					currentFlash.PlayerViewX = &playerViewX
+					currentFlash.PlayerViewY = &playerViewY
 
-				// Calculate flash duration in seconds
-				flashDuration := float64(e.Player.FlashDurationTimeRemaining())/1000000000
-				currentFlash.FlashDuration = &flashDuration
+					// Calculate flash duration in seconds
+					flashDuration := float64(e.Player.FlashDurationTimeRemaining())/1000000000
+					currentFlash.FlashDuration = &flashDuration
 
-				// Add
-				if *currentFlash.PlayerSide != "Spectator" && *currentFlash.PlayerSide != "Unassigned" && *currentFlash.PlayerSide != "Unknown" {
-					currentRound.Flashes = append(currentRound.Flashes, currentFlash)
+					// Add to list
+					if *currentFlash.PlayerSide != "Spectator" && *currentFlash.PlayerSide != "Unassigned" && *currentFlash.PlayerSide != "Unknown" {
+						currentRound.Flashes = append(currentRound.Flashes, currentFlash)
+					}
 				}
 			}
 		}
