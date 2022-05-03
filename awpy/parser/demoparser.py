@@ -657,7 +657,7 @@ class DemoParser:
         remove_excess_players=True,
         remove_excess_kills=True,
         remove_bad_endings=True,
-        remove_bad_scoring=False,
+        remove_bad_scoring=True,
         return_type="json",
         save_to_json=True,
     ):
