@@ -2170,6 +2170,27 @@ func main() {
 	p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
 
+		// Parse the players
+		teamCT := PlayerTeams{}
+		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
+		for _, player := range gs.TeamCounterTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			teamCT.Players = append(teamCT.Players, pl)
+		}
+		currentRound.CTSide = teamCT
+
+		teamT := PlayerTeams{}
+		teamT.TeamName = gs.TeamTerrorists().ClanName()
+		for _, player := range gs.TeamTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			teamT.Players = append(teamT.Players, pl)
+		}
+		currentRound.TSide = teamT
+		
 		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
 

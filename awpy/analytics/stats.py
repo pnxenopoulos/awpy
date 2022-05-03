@@ -201,7 +201,9 @@ def player_stats(game_rounds, return_type="json"):
         )
     for player in player_statistics:
         player_statistics[player]["kdr"] = round(
-            player_statistics[player]["kills"] / player_statistics[player]["deaths"],
+            player_statistics[player]["kills"] / player_statistics[player]["deaths"]
+            if player_statistics[player]["deaths"] != 0
+            else player_statistics[player]["kills"],
             2,
         )
     for player in player_statistics:
@@ -218,7 +220,10 @@ def player_stats(game_rounds, return_type="json"):
         )
     for player in player_statistics:
         player_statistics[player]["hsPercent"] = round(
-            player_statistics[player]["hs"] / player_statistics[player]["kills"], 2
+            player_statistics[player]["hs"] / player_statistics[player]["kills"]
+            if player_statistics[player]["kills"] != 0
+            else 0,
+            2,
         )
     for player in player_statistics:
         impact = (
