@@ -455,12 +455,10 @@ class DemoParser:
                 "roundEndReason",
                 "tStartEqVal",
                 "tRoundStartEqVal",
-                "tRoundStartMoney",
                 "tBuyType",
                 "tSpend",
                 "ctStartEqVal",
                 "ctRoundStartEqVal",
-                "ctRoundStartMoney",
                 "ctBuyType",
                 "ctSpend",
             ]
