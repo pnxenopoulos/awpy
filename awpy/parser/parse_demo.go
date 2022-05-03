@@ -116,12 +116,12 @@ type GameRound struct {
 	Reason            string             `json:"roundEndReason"`
 	CTStartEqVal      int64              `json:"ctStartEqVal"`
 	CTBeginEqVal      int64              `json:"ctRoundStartEqVal"`
-	CTBeginMoney      int64              `json:"ctRoundStartMoney"`
+	// CTBeginMoney      int64              `json:"ctRoundStartMoney"`
 	CTBuyType         string             `json:"ctBuyType"`
 	CTSpend           int64              `json:"ctSpend"`
 	TStartEqVal       int64              `json:"tStartEqVal"`
 	TBeginEqVal       int64              `json:"tRoundStartEqVal"`
-	TBeginMoney       int64              `json:"tRoundStartMoney"`
+	// TBeginMoney       int64              `json:"tRoundStartMoney"`
 	TBuyType          string             `json:"tBuyType"`
 	TSpend            int64              `json:"tSpend"`
 	CTSide            PlayerTeams        `json:"ctSide"`
@@ -1077,21 +1077,21 @@ func main() {
 		} 
 		
 		// Parse round money
-		tPlayers := gs.TeamTerrorists().Members()
-		currentRound.TBeginMoney = 0
-		ctPlayers := gs.TeamCounterTerrorists().Members()
-		currentRound.CTBeginMoney = 0
-		for _, p := range tPlayers {
-			if p != nil {
-				currentRound.TBeginMoney += int64(p.Money())
-			}
+		// tPlayers := gs.TeamTerrorists().Members()
+		// currentRound.TBeginMoney = 0
+		// ctPlayers := gs.TeamCounterTerrorists().Members()
+		// currentRound.CTBeginMoney = 0
+		// for _, p := range tPlayers {
+		// 	if p != nil {
+		// 		currentRound.TBeginMoney += int64(p.Money())
+		// 	}
 
-		}
-		for _, p := range ctPlayers {
-			if p != nil {
-				currentRound.CTBeginMoney += int64(p.Money())
-			}
-		}
+		// }
+		// for _, p := range ctPlayers {
+		// 	if p != nil {
+		// 		currentRound.CTBeginMoney += int64(p.Money())
+		// 	}
+		// }
 
 		// Parse the players
 		teamCT := PlayerTeams{}
@@ -1204,22 +1204,22 @@ func main() {
 				}
 			}
 
-			// Parse round money
-			tPlayers := gs.TeamTerrorists().Members()
-			currentRound.TBeginMoney = 0
-			ctPlayers := gs.TeamCounterTerrorists().Members()
-			currentRound.CTBeginMoney = 0
-			for _, p := range tPlayers {
-				if p != nil {
-					currentRound.TBeginMoney += int64(p.Money())
-				}
+			// // Parse round money
+			// tPlayers := gs.TeamTerrorists().Members()
+			// currentRound.TBeginMoney = 0
+			// ctPlayers := gs.TeamCounterTerrorists().Members()
+			// currentRound.CTBeginMoney = 0
+			// for _, p := range tPlayers {
+			// 	if p != nil {
+			// 		currentRound.TBeginMoney += int64(p.Money())
+			// 	}
 
-			}
-			for _, p := range ctPlayers {
-				if p != nil {
-					currentRound.CTBeginMoney += int64(p.Money())
-				}
-			}
+			// }
+			// for _, p := range ctPlayers {
+			// 	if p != nil {
+			// 		currentRound.CTBeginMoney += int64(p.Money())
+			// 	}
+			// }
 		}
 
 		// Parse the players
@@ -1356,8 +1356,8 @@ func main() {
 			}
 
 			// Parse round spend
-			currentRound.TBeginMoney = 800 * 5
-			currentRound.CTBeginMoney = 800 * 5
+			//currentRound.TBeginMoney = 800 * 5
+			//currentRound.CTBeginMoney = 800 * 5
 		}
 
 		roundInEndTime = 1
