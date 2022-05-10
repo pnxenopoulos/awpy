@@ -93,6 +93,7 @@
 <span class="sd">        demo_id (string): A unique demo name/game id. Default is inferred from demofile name</span>
 <span class="sd">        parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.</span>
 <span class="sd">        parse_frames (bool): Flag if you want to parse frames (trajectory data) or not</span>
+<span class="sd">        parse_kill_frames (bool): Flag if you want to parse frames on kills</span>
 <span class="sd">        trade_time (int): Length of the window for a trade (in seconds). Default is 5.</span>
 <span class="sd">        dmg_rolled (bool): Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)</span>
 <span class="sd">        buy_style (string): Buy style string, one of &quot;hltv&quot; or &quot;csgo&quot;</span>
@@ -109,6 +110,7 @@
         <span class="n">demo_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">parse_rate</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
         <span class="n">parse_frames</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">parse_kill_frames</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">trade_time</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
         <span class="n">dmg_rolled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">buy_style</span><span class="o">=</span><span class="s2">&quot;hltv&quot;</span><span class="p">,</span>
@@ -200,9 +202,11 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dmg_rolled</span> <span class="o">=</span> <span class="n">dmg_rolled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parse_frames</span> <span class="o">=</span> <span class="n">parse_frames</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_kill_frames</span> <span class="o">=</span> <span class="n">parse_kill_frames</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">json_indentation</span> <span class="o">=</span> <span class="n">json_indentation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Rollup damages set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dmg_rolled</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parse frames set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_frames</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Parse kill frames set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_kill_frames</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Output json indentation set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json_indentation</span><span class="p">))</span>
 
         <span class="c1"># Set parse error to False</span>
@@ -259,6 +263,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--dmgrolled&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_frames</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--parseframes&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_kill_frames</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--parsekillframes&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_indentation</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">parser_cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--jsonindentation&quot;</span><span class="p">)</span>
         <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>

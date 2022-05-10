@@ -103,6 +103,7 @@
     &quot;parserParameters&quot;: {                           # All the below parameters are set in DemoParser
         &quot;parseRate&quot;: 256,                           # Parse rate set in DemoParser. Represents spacing between recorded frames.
         &quot;parseFrames&quot;: false,
+        &quot;parseKillFrames&quot;: true,                    # If set to true, a frame is recorded every kill. Doesn&quot;t require parseFrames == true
         &quot;tradeTime&quot;: 5,
         &quot;roundBuyStyle&quot;: &quot;hltv&quot;,                    # HLTV represents round buys (e.g., full eco, full buy, etc.) as they do in HLTV.
         &quot;damagesRolledUp&quot;: false                    # Sometimes damages can happen in the same tick. This option means they are combined.
@@ -222,52 +223,52 @@
 <section id="kills">
 <h2>Kills<a class="headerlink" href="#kills" title="Permalink to this headline"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &#39;tick&#39;: 9582,
-    &#39;seconds&#39;: 25.71875,
-    &#39;clockTime&#39;: &#39;01:30&#39;,
-    &#39;attackerSteamID&#39;: 76561198088580941,
-    &#39;attackerName&#39;: &#39;febix&#39;,
-    &#39;attackerTeam&#39;: &#39;&#39;,
-    &#39;attackerSide&#39;: &#39;T&#39;,
-    &#39;attackerX&#39;: 509.1275939941406,
-    &#39;attackerY&#39;: 630.7955322265625,
-    &#39;attackerZ&#39;: 86.98412322998047,
-    &#39;attackerViewX&#39;: 327.601318359375,
-    &#39;attackerViewY&#39;: 1.9775390625,
-    &#39;victimSteamID&#39;: 76561198084596669,
-    &#39;victimName&#39;: &#39;Rullaan Spotil KANDALFWOZ ;)&#39;,
-    &#39;victimTeam&#39;: &#39;&#39;,
-    &#39;victimSide&#39;: &#39;CT&#39;,
-    &#39;victimX&#39;: 781.4129638671875,
-    &#39;victimY&#39;: 491.81201171875,
-    &#39;victimZ&#39;: 87.30707550048828,
-    &#39;victimViewX&#39;: 153.6328125,
-    &#39;victimViewY&#39;: 1.0711669921875,
-    &#39;assisterSteamID&#39;: None,                       # If there is an assister, this data will not be None
-    &#39;assisterName&#39;: None,
-    &#39;assisterTeam&#39;: None,
-    &#39;assisterSide&#39;: None,
-    &#39;isSuicide&#39;: False,
-    &#39;isTeamkill&#39;: False,
-    &#39;isWallbang&#39;: False,
-    &#39;penetratedObjects&#39;: 0,
-    &#39;isFirstKill&#39;: True,
-    &#39;isHeadshot&#39;: True,
-    &#39;victimBlinded&#39;: False,
-    &#39;attackerBlinded&#39;: False,
-    &#39;flashThrowerSteamID&#39;: None,
-    &#39;flashThrowerName&#39;: None,
-    &#39;flashThrowerTeam&#39;: None,
-    &#39;flashThrowerSide&#39;: None,
-    &#39;noScope&#39;: False,
-    &#39;thruSmoke&#39;: False,
-    &#39;distance&#39;: 305.7054888578491,                 # Distance between attacker and victim
-    &#39;isTrade&#39;: False,
-    &#39;playerTradedName&#39;: None,
-    &#39;playerTradedTeam&#39;: None,
-    &#39;playerTradedSteamID&#39;: None,
-    &#39;weapon&#39;: &#39;Glock-18&#39;
-    &#39;weaponClass&#39;: &#39;Pistols&#39;
+    &quot;tick&quot;: 9582,
+    &quot;seconds&quot;: 25.71875,
+    &quot;clockTime&quot;: &quot;01:30&quot;,
+    &quot;attackerSteamID&quot;: 76561198088580941,
+    &quot;attackerName&quot;: &quot;febix&quot;,
+    &quot;attackerTeam&quot;: &quot;&quot;,
+    &quot;attackerSide&quot;: &quot;T&quot;,
+    &quot;attackerX&quot;: 509.1275939941406,
+    &quot;attackerY&quot;: 630.7955322265625,
+    &quot;attackerZ&quot;: 86.98412322998047,
+    &quot;attackerViewX&quot;: 327.601318359375,
+    &quot;attackerViewY&quot;: 1.9775390625,
+    &quot;victimSteamID&quot;: 76561198084596669,
+    &quot;victimName&quot;: &quot;Rullaan Spotil KANDALFWOZ ;)&quot;,
+    &quot;victimTeam&quot;: &quot;&quot;,
+    &quot;victimSide&quot;: &quot;CT&quot;,
+    &quot;victimX&quot;: 781.4129638671875,
+    &quot;victimY&quot;: 491.81201171875,
+    &quot;victimZ&quot;: 87.30707550048828,
+    &quot;victimViewX&quot;: 153.6328125,
+    &quot;victimViewY&quot;: 1.0711669921875,
+    &quot;assisterSteamID&quot;: None,                       # If there is an assister, this data will not be None
+    &quot;assisterName&quot;: None,
+    &quot;assisterTeam&quot;: None,
+    &quot;assisterSide&quot;: None,
+    &quot;isSuicide&quot;: False,
+    &quot;isTeamkill&quot;: False,
+    &quot;isWallbang&quot;: False,
+    &quot;penetratedObjects&quot;: 0,
+    &quot;isFirstKill&quot;: True,
+    &quot;isHeadshot&quot;: True,
+    &quot;victimBlinded&quot;: False,
+    &quot;attackerBlinded&quot;: False,
+    &quot;flashThrowerSteamID&quot;: None,
+    &quot;flashThrowerName&quot;: None,
+    &quot;flashThrowerTeam&quot;: None,
+    &quot;flashThrowerSide&quot;: None,
+    &quot;noScope&quot;: False,
+    &quot;thruSmoke&quot;: False,
+    &quot;distance&quot;: 305.7054888578491,                 # Distance between attacker and victim
+    &quot;isTrade&quot;: False,
+    &quot;playerTradedName&quot;: None,
+    &quot;playerTradedTeam&quot;: None,
+    &quot;playerTradedSteamID&quot;: None,
+    &quot;weapon&quot;: &quot;Glock-18&quot;
+    &quot;weaponClass&quot;: &quot;Pistols&quot;
 }
 </pre></div>
 </div>
@@ -276,38 +277,38 @@
 <h2>Damages<a class="headerlink" href="#damages" title="Permalink to this headline"></a></h2>
 <p>The possible hit groups are <cite>Generic</cite>, <cite>Head</cite>, <cite>Chest</cite>, <cite>Stomach</cite>, <cite>LeftArm</cite>, <cite>RightArm</cite>, <cite>LeftLeg</cite>, <cite>RightLeg</cite>, <cite>Gear</cite>.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &#39;tick&#39;: 8172,
-    &#39;seconds&#39;: 3.6875,
-    &#39;clockTime&#39;: &#39;01:52&#39;,
-    &#39;attackerSteamID&#39;: 76561198035759667,
-    &#39;attackerName&#39;: &#39;alo0o0o0o0&#39;,
-    &#39;attackerTeam&#39;: &#39;&#39;,
-    &#39;attackerSide&#39;: &#39;T&#39;,
-    &#39;attackerX&#39;: -1184.6986083984375,
-    &#39;attackerY&#39;: 477.1373596191406,
-    &#39;attackerZ&#39;: -55.96875,
-    &#39;attackerViewX&#39;: 56.79931640625,
-    &#39;attackerViewY&#39;: 3.3837890625,
-    &#39;attackerStrafe&#39;: False,                 # Was the attacker moving when they shot
-    &#39;victimSteamID&#39;: 76561197960742750,
-    &#39;victimName&#39;: &#39;howl&#39;,
-    &#39;victimTeam&#39;: &#39;&#39;,
-    &#39;victimSide&#39;: &#39;T&#39;,
-    &#39;victimX&#39;: -1125.4398193359375,
-    &#39;victimY&#39;: 520.9878540039062,
-    &#39;victimZ&#39;: -51.978607177734375,
-    &#39;victimViewX&#39;: 9.2230224609375,
-    &#39;victimViewY&#39;: 0.6097412109375,
-    &#39;weapon&#39;: &#39;Knife&#39;,
-    &#39;weaponClass&#39;: &#39;Equipment&#39;,
-    &#39;hpDamage&#39;: 61,                          # Can be over 100 (e.g., AWP headshots)
-    &#39;hpDamageTaken&#39;: 61,                     # Damage actually taken by the victim
-    &#39;armorDamage&#39;: 5,
-    &#39;armorDamageTaken&#39;: 5,
-    &#39;hitGroup&#39;: &#39;Generic&#39;,
-    &#39;isFriendlyFire&#39;: True,
-    &#39;distance&#39;: 73.82676464998524,
-    &#39;zoomLevel&#39;: 0                           # 0 for no zoom, 1 for half zoom, 2 for full zoom
+    &quot;tick&quot;: 8172,
+    &quot;seconds&quot;: 3.6875,
+    &quot;clockTime&quot;: &quot;01:52&quot;,
+    &quot;attackerSteamID&quot;: 76561198035759667,
+    &quot;attackerName&quot;: &quot;alo0o0o0o0&quot;,
+    &quot;attackerTeam&quot;: &quot;&quot;,
+    &quot;attackerSide&quot;: &quot;T&quot;,
+    &quot;attackerX&quot;: -1184.6986083984375,
+    &quot;attackerY&quot;: 477.1373596191406,
+    &quot;attackerZ&quot;: -55.96875,
+    &quot;attackerViewX&quot;: 56.79931640625,
+    &quot;attackerViewY&quot;: 3.3837890625,
+    &quot;attackerStrafe&quot;: False,                 # Was the attacker moving when they shot
+    &quot;victimSteamID&quot;: 76561197960742750,
+    &quot;victimName&quot;: &quot;howl&quot;,
+    &quot;victimTeam&quot;: &quot;&quot;,
+    &quot;victimSide&quot;: &quot;T&quot;,
+    &quot;victimX&quot;: -1125.4398193359375,
+    &quot;victimY&quot;: 520.9878540039062,
+    &quot;victimZ&quot;: -51.978607177734375,
+    &quot;victimViewX&quot;: 9.2230224609375,
+    &quot;victimViewY&quot;: 0.6097412109375,
+    &quot;weapon&quot;: &quot;Knife&quot;,
+    &quot;weaponClass&quot;: &quot;Equipment&quot;,
+    &quot;hpDamage&quot;: 61,                          # Can be over 100 (e.g., AWP headshots)
+    &quot;hpDamageTaken&quot;: 61,                     # Damage actually taken by the victim
+    &quot;armorDamage&quot;: 5,
+    &quot;armorDamageTaken&quot;: 5,
+    &quot;hitGroup&quot;: &quot;Generic&quot;,
+    &quot;isFriendlyFire&quot;: True,
+    &quot;distance&quot;: 73.82676464998524,
+    &quot;zoomLevel&quot;: 0                           # 0 for no zoom, 1 for half zoom, 2 for full zoom
 }
 </pre></div>
 </div>
@@ -315,24 +316,24 @@
 <section id="grenades">
 <h2>Grenades<a class="headerlink" href="#grenades" title="Permalink to this headline"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &#39;throwTick&#39;: 8500,
-    &#39;destroyTick&#39;: 8860,                  # When was the entity destroyed
-    &#39;throwSeconds&#39;: 8.8125,
-    &#39;throwClockTime&#39;: &#39;01:47&#39;,
-    &#39;destroySeconds&#39;: 14.4375,
-    &#39;destroyClockTime&#39;: &#39;01:41&#39;,
-    &#39;throwerSteamID&#39;: 76561198098005932,
-    &#39;throwerName&#39;: &#39;aidan&#39;,
-    &#39;throwerTeam&#39;: &#39;&#39;,
-    &#39;throwerSide&#39;: &#39;CT&#39;,
-    &#39;throwerX&#39;: 1330.09375,
-    &#39;throwerY&#39;: 570.0625,
-    &#39;throwerZ&#39;: 200.96875,
-    &#39;grenadeType&#39;: &#39;HE Grenade&#39;,
-    &#39;grenadeX&#39;: 53.96875,
-    &#39;grenadeY&#39;: 671.5,
-    &#39;grenadeZ&#39;: 68.09375,
-    &#39;entityID&#39;: 5031578313293207366        # entity ID of the grenade
+    &quot;throwTick&quot;: 8500,
+    &quot;destroyTick&quot;: 8860,                  # When was the entity destroyed
+    &quot;throwSeconds&quot;: 8.8125,
+    &quot;throwClockTime&quot;: &quot;01:47&quot;,
+    &quot;destroySeconds&quot;: 14.4375,
+    &quot;destroyClockTime&quot;: &quot;01:41&quot;,
+    &quot;throwerSteamID&quot;: 76561198098005932,
+    &quot;throwerName&quot;: &quot;aidan&quot;,
+    &quot;throwerTeam&quot;: &quot;&quot;,
+    &quot;throwerSide&quot;: &quot;CT&quot;,
+    &quot;throwerX&quot;: 1330.09375,
+    &quot;throwerY&quot;: 570.0625,
+    &quot;throwerZ&quot;: 200.96875,
+    &quot;grenadeType&quot;: &quot;HE Grenade&quot;,
+    &quot;grenadeX&quot;: 53.96875,
+    &quot;grenadeY&quot;: 671.5,
+    &quot;grenadeZ&quot;: 68.09375,
+    &quot;entityID&quot;: 5031578313293207366        # entity ID of the grenade
 }
 </pre></div>
 </div>
@@ -340,147 +341,148 @@
 <section id="bomb-events">
 <h2>Bomb Events<a class="headerlink" href="#bomb-events" title="Permalink to this headline"></a></h2>
 <p>The bomb action can be <cite>defuse</cite>, <cite>defuse_start</cite>, <cite>defuse_aborted</cite>, <cite>plant</cite>, <cite>plant_start</cite>, <cite>plant_aborted</cite>.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &#39;tick&#39;: 12250,
-    &#39;seconds&#39;: 67.40625,
-    &#39;clockTime&#39;: &#39;00:48&#39;,
-    &#39;playerSteamID&#39;: 76561198043315625,
-    &#39;playerName&#39;: &#39;Beach&#39;,
-    &#39;playerTeam&#39;: &#39;&#39;,
-    &#39;playerX&#39;: 2160.965576171875,
-    &#39;playerY&#39;: 144.39041137695312,
-    &#39;playerZ&#39;: 160.03125,
-    &#39;bombAction&#39;: &#39;plant_begin&#39;,
-    &#39;bombSite&#39;: &#39;A&#39;
-}
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12250</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">67.40625</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00:48&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198043315625</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Beach&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2160.965576171875</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">144.39041137695312</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">160.03125</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;bombAction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plant_begin&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;bombSite&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A&quot;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>
 <section id="weapon-fires">
 <h2>Weapon Fires<a class="headerlink" href="#weapon-fires" title="Permalink to this headline"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &#39;tick&#39;: 8492,
-    &#39;seconds&#39;: 8.6875,
-    &#39;clockTime&#39;: &#39;01:47&#39;,
-    &#39;playerSteamID&#39;: 76561198098005932,
-    &#39;playerName&#39;: &#39;aidan&#39;,
-    &#39;playerTeam&#39;: &#39;&#39;,
-    &#39;playerSide&#39;: &#39;CT&#39;,
-    &#39;playerX&#39;: 1377.0318603515625,
-    &#39;playerY&#39;: 566.3394775390625,
-    &#39;playerZ&#39;: 131.50010681152344,
-    &#39;playerViewX&#39;: 175.49560546875,
-    &#39;playerViewY&#39;: 355.4901123046875,
-    &#39;playerStrafe&#39;: False,
-    &#39;weapon&#39;: &#39;HE Grenade&#39;,
-    &#39;weaponClass&#39;: &#39;Grenades&#39;,
-    &#39;zoomLevel&#39;: 0
+    &quot;tick&quot;: 8492,
+    &quot;seconds&quot;: 8.6875,
+    &quot;clockTime&quot;: &quot;01:47&quot;,
+    &quot;playerSteamID&quot;: 76561198098005932,
+    &quot;playerName&quot;: &quot;aidan&quot;,
+    &quot;playerTeam&quot;: &quot;&quot;,
+    &quot;playerSide&quot;: &quot;CT&quot;,
+    &quot;playerX&quot;: 1377.0318603515625,
+    &quot;playerY&quot;: 566.3394775390625,
+    &quot;playerZ&quot;: 131.50010681152344,
+    &quot;playerViewX&quot;: 175.49560546875,
+    &quot;playerViewY&quot;: 355.4901123046875,
+    &quot;playerStrafe&quot;: False,
+    &quot;weapon&quot;: &quot;HE Grenade&quot;,
+    &quot;weaponClass&quot;: &quot;Grenades&quot;,
+    &quot;zoomLevel&quot;: 0
 }
 </pre></div>
 </div>
 </section>
 <section id="flashes">
 <h2>Flashes<a class="headerlink" href="#flashes" title="Permalink to this headline"></a></h2>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &#39;tick&#39;: 9518,
-    &#39;seconds&#39;: 24.71875,
-    &#39;clockTime&#39;: &#39;01:31&#39;,
-    &#39;attackerSteamID&#39;: 76561198098005932,
-    &#39;attackerName&#39;: &#39;aidan&#39;,
-    &#39;attackerTeam&#39;: &#39;&#39;,
-    &#39;attackerSide&#39;: &#39;CT&#39;,
-    &#39;attackerX&#39;: 1434.30224609375,
-    &#39;attackerY&#39;: 2835.972412109375,
-    &#39;attackerZ&#39;: 127.61480712890625,
-    &#39;attackerViewX&#39;: 154.5062255859375,
-    &#39;attackerViewY&#39;: 317.7081298828125,
-    &#39;playerSteamID&#39;: 76561198060045535,
-    &#39;playerName&#39;: &#39;Daniel&#39;,
-    &#39;playerTeam&#39;: &#39;&#39;,
-    &#39;playerSide&#39;: &#39;CT&#39;,
-    &#39;playerX&#39;: 923.0872192382812,
-    &#39;playerY&#39;: 2777.9443359375,
-    &#39;playerZ&#39;: 128.74525451660156,
-    &#39;playerViewX&#39;: 239.095458984375,
-    &#39;playerViewY&#39;: 358.2037353515625,
-    &#39;flashDuration&#39;: 2.676444416
-}
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9518</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">24.71875</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;01:31&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198098005932</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aidan&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1434.30224609375</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2835.972412109375</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">127.61480712890625</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">154.5062255859375</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;attackerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">317.7081298828125</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198060045535</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Daniel&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">923.0872192382812</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2777.9443359375</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">128.74525451660156</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">239.095458984375</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">358.2037353515625</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;flashDuration&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.676444416</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>
 <section id="frames">
 <h2>Frames<a class="headerlink" href="#frames" title="Permalink to this headline"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &#39;tick&#39;: 8174,
-    &#39;seconds&#39;: 3.71875,
-    &#39;clockTime&#39;: &#39;01:52&#39;,
-    &#39;t&#39;: {
-        &#39;side&#39;: &#39;T&#39;,
-        &#39;teamName&#39;: &#39;&#39;,
-        &#39;teamEqVal&#39;: 3550,
-        &#39;alivePlayers&#39;: 5,
-        &#39;totalUtility&#39;: 1,
-        &#39;players&#39;: [{                            # List of player objects with the following structure
-            &#39;steamID&#39;: 76561198035759667,
-            &#39;name&#39;: &#39;alo0o0o0o0&#39;,
-            &#39;team&#39;: &#39;&#39;,
-            &#39;side&#39;: &#39;T&#39;,
-            &#39;x&#39;: -1179.1435546875,
-            &#39;y&#39;: 483.21026611328125,
-            &#39;z&#39;: -55.96875,
-            &#39;velocityX&#39;: 109.83319854736328,
-            &#39;velocityY&#39;: 91.87308502197266,
-            &#39;velocityZ&#39;: 0,
-            &#39;viewX&#39;: 56.84326171875,
-            &#39;viewY&#39;: 3.33984375,
-            &#39;hp&#39;: 100,
-            &#39;armor&#39;: 0,
-            &#39;activeWeapon&#39;: &#39;Knife&#39;,             # Weapon the player is currently holding
-            &#39;totalUtility&#39;: 0,
-            &#39;isAlive&#39;: True,
-            &#39;isBlinded&#39;: False,
-            &#39;isAirborne&#39;: False,
-            &#39;isDucking&#39;: False,
-            &#39;isDuckingInProgress&#39;: False,
-            &#39;isUnDuckingInProgress&#39;: False,
-            &#39;isDefusing&#39;: False,
-            &#39;isPlanting&#39;: False,
-            &#39;isReloading&#39;: False,
-            &#39;isInBombZone&#39;: False,
-            &#39;isInBuyZone&#39;: False,
-            &#39;isStanding&#39;: True,
-            &#39;isScoped&#39;: False,
-            &#39;isWalking&#39;: False,
-            &#39;isUnknown&#39;: False,
-            &#39;inventory&#39;: [{                     # List of weapons
-                &#39;weaponName&#39;: &#39;Glock-18&#39;,
-                &#39;weaponClass&#39;: &#39;Pistols&#39;,
-                &#39;ammoInMagazine&#39;: 20,
-                &#39;ammoInReserve&#39;: 120
+    &quot;parseKillFrame&quot;: true                       # True if the frame was parsed due to a kill
+    &quot;tick&quot;: 8174,
+    &quot;seconds&quot;: 3.71875,
+    &quot;clockTime&quot;: &quot;01:52&quot;,
+    &quot;t&quot;: {
+        &quot;side&quot;: &quot;T&quot;,
+        &quot;teamName&quot;: &quot;&quot;,
+        &quot;teamEqVal&quot;: 3550,
+        &quot;alivePlayers&quot;: 5,
+        &quot;totalUtility&quot;: 1,
+        &quot;players&quot;: [{                            # List of player objects with the following structure
+            &quot;steamID&quot;: 76561198035759667,
+            &quot;name&quot;: &quot;alo0o0o0o0&quot;,
+            &quot;team&quot;: &quot;&quot;,
+            &quot;side&quot;: &quot;T&quot;,
+            &quot;x&quot;: -1179.1435546875,
+            &quot;y&quot;: 483.21026611328125,
+            &quot;z&quot;: -55.96875,
+            &quot;velocityX&quot;: 109.83319854736328,
+            &quot;velocityY&quot;: 91.87308502197266,
+            &quot;velocityZ&quot;: 0,
+            &quot;viewX&quot;: 56.84326171875,
+            &quot;viewY&quot;: 3.33984375,
+            &quot;hp&quot;: 100,
+            &quot;armor&quot;: 0,
+            &quot;activeWeapon&quot;: &quot;Knife&quot;,             # Weapon the player is currently holding
+            &quot;totalUtility&quot;: 0,
+            &quot;isAlive&quot;: True,
+            &quot;isBlinded&quot;: False,
+            &quot;isAirborne&quot;: False,
+            &quot;isDucking&quot;: False,
+            &quot;isDuckingInProgress&quot;: False,
+            &quot;isUnDuckingInProgress&quot;: False,
+            &quot;isDefusing&quot;: False,
+            &quot;isPlanting&quot;: False,
+            &quot;isReloading&quot;: False,
+            &quot;isInBombZone&quot;: False,
+            &quot;isInBuyZone&quot;: False,
+            &quot;isStanding&quot;: True,
+            &quot;isScoped&quot;: False,
+            &quot;isWalking&quot;: False,
+            &quot;isUnknown&quot;: False,
+            &quot;inventory&quot;: [{                     # List of weapons
+                &quot;weaponName&quot;: &quot;Glock-18&quot;,
+                &quot;weaponClass&quot;: &quot;Pistols&quot;,
+                &quot;ammoInMagazine&quot;: 20,
+                &quot;ammoInReserve&quot;: 120
             }],
-            &#39;spotters&#39;: [...]                   # SteamIDs of players that the current player has spotted
-            &#39;equipmentValue&#39;: 200,
-            &#39;equipmentValueFreezetimeEnd&#39;: 200,
-            &#39;equipmentValueRoundStart&#39;: 200,
-            &#39;cash&#39;: 800,
-            &#39;cashSpendThisRound&#39;: 0,
-            &#39;cashSpendTotal&#39;: 0,                # Cash spent the entire game
-            &#39;hasHelmet&#39;: False,
-            &#39;hasDefuse&#39;: False,
-            &#39;hasBomb&#39;: False,
-            &#39;ping&#39;: 32,
-            &#39;zoomLevel&#39;: 0
+            &quot;spotters&quot;: [...]                   # SteamIDs of players that the current player has spotted
+            &quot;equipmentValue&quot;: 200,
+            &quot;equipmentValueFreezetimeEnd&quot;: 200,
+            &quot;equipmentValueRoundStart&quot;: 200,
+            &quot;cash&quot;: 800,
+            &quot;cashSpendThisRound&quot;: 0,
+            &quot;cashSpendTotal&quot;: 0,                # Cash spent the entire game
+            &quot;hasHelmet&quot;: False,
+            &quot;hasDefuse&quot;: False,
+            &quot;hasBomb&quot;: False,
+            &quot;ping&quot;: 32,
+            &quot;zoomLevel&quot;: 0
             }]
         },
-        &#39;ct&#39;: {...},                            # Same structure as &#39;t&#39;
-        &#39;world&#39;: [{                             # List of world objects, like bombs, mollies or smokes
-                &#39;objectType&#39;: &#39;bomb&#39;,
-                &#39;x&#39;: -1215.3546142578125,
-                &#39;y&#39;: 470.23406982421875,
-                &#39;z&#39;: -55.96875
+        &quot;ct&quot;: {...},                            # Same structure as &quot;t&quot;
+        &quot;world&quot;: [{                             # List of world objects, like bombs, mollies or smokes
+                &quot;objectType&quot;: &quot;bomb&quot;,
+                &quot;x&quot;: -1215.3546142578125,
+                &quot;y&quot;: 470.23406982421875,
+                &quot;z&quot;: -55.96875
         }],
-        &#39;bombPlanted&#39;: False,
-        &#39;bombsite&#39;: &#39;&#39;
+        &quot;bombPlanted&quot;: False,
+        &quot;bombsite&quot;: &quot;&quot;
 }
 </pre></div>
 </div>
