@@ -34,11 +34,12 @@ type Game struct {
 
 // ParserOpts holds the parameters passed to the parser
 type ParserOpts struct {
-	ParseRate     int          `json:"parseRate"`
-	ParseFrames   bool         `json:"parseFrames"`
-	TradeTime     int64        `json:"tradeTime"`
-	RoundBuyStyle string       `json:"roundBuyStyle"`
-	DamagesRolled bool         `json:"damagesRolledUp"`
+	ParseRate       int    `json:"parseRate"`
+	ParseFrames     bool   `json:"parseFrames"`
+	ParseKillFrames bool   `json:"parseKillFrames"`
+	TradeTime       int64  `json:"tradeTime"`
+	RoundBuyStyle   string `json:"roundBuyStyle"`
+	DamagesRolled   bool   `json:"damagesRolledUp"`
 }
 
 // MatchPhases holds lists of when match events occurred
@@ -320,6 +321,7 @@ type FlashAction struct {
 
 // GameFrame (game state at time t)
 type GameFrame struct {
+	IsKillFrame bool          `json:"isKillFrame"`
 	Tick        int64         `json:"tick"`
 	Second      float64       `json:"seconds"`
 	ClockTime   string        `json:"clockTime"`
@@ -858,6 +860,7 @@ func main() {
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 128, "Parse rate, indicates spacing between ticks")
 	parseFramesPtr := fl.Bool("parseframes", false, "Parse frames")
+	parseKillFramesPtr := fl.Bool("parsekillframes", false, "Parse kill frames")
 	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
 	roundBuyPtr := fl.String("buystyle", "hltv", "Round buy style")
 	damagesRolledPtr := fl.Bool("dmgrolled", false, "Roll up damages")
@@ -871,6 +874,7 @@ func main() {
 	demPath := *demoPathPtr
 	parseRate := *parseRatePtr
 	parseFrames := *parseFramesPtr
+	parseKillFrames := *parseKillFramesPtr
 	tradeTime := int64(*tradeTimePtr)
 	roundBuyStyle := *roundBuyPtr
 	damagesRolled := *damagesRolledPtr
@@ -1854,6 +1858,111 @@ func main() {
 	p.RegisterEventHandler(func(e events.Kill) {
 		gs := p.GameState()
 
+		if (roundInFreezetime == 0) && (parseKillFrames == true) {
+			currentFrame := GameFrame{}
+			currentFrame.IsKillFrame = true
+
+			// Create empty player lists
+			currentFrame.CT.Players = []PlayerInfo{}
+			currentFrame.T.Players = []PlayerInfo{}
+
+			currentFrame.Tick = int64(gs.IngameTick())
+			currentFrame.Second = determineSecond(currentFrame.Tick, currentRound, currentGame)
+			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, currentRound, currentGame)
+
+			// Parse T
+			currentFrame.T = TeamFrameInfo{}
+			currentFrame.T.Side = "T"
+			if (gs.TeamTerrorists() != nil) {
+				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
+			}
+			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
+			tPlayers := gs.TeamTerrorists().Members()
+
+			for _, p := range tPlayers {
+				if p != nil {
+					if playerInList(p, currentFrame.T.Players) == false {
+						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(gs, p))
+					}
+				}
+			}
+			
+			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
+			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
+
+			// Parse CT
+			currentFrame.CT = TeamFrameInfo{}
+			currentFrame.CT.Side = "CT"
+			if (gs.TeamCounterTerrorists() != nil) {
+				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
+			}
+			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
+			ctPlayers := gs.TeamCounterTerrorists().Members()
+
+			for _, p := range ctPlayers {
+				if p != nil {
+					if playerInList(p, currentFrame.CT.Players) == false {
+						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(gs, p))
+					}
+				}
+			}
+			
+			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
+			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
+			
+
+			// Parse world (grenade) objects
+			allGrenades := gs.GrenadeProjectiles()
+			for _, ele := range allGrenades {
+				currentWorldObj := WorldObject{}
+				currentWorldObj.ObjType = ele.WeaponInstance.String()
+				objPos := ele.Trajectory[len(ele.Trajectory)-1]
+
+				currentWorldObj.X = float64(objPos.X)
+				currentWorldObj.Y = float64(objPos.Y)
+				currentWorldObj.Z = float64(objPos.Z)
+				currentFrame.World = append(currentFrame.World, currentWorldObj)
+			}
+
+			// Parse bomb
+			bombObj := gs.Bomb()
+			currentWorldObj := WorldObject{}
+			currentWorldObj.ObjType = "bomb"
+			objPos := bombObj.Position()
+
+			currentWorldObj.X = float64(objPos.X)
+			currentWorldObj.Y = float64(objPos.Y)
+			currentWorldObj.Z = float64(objPos.Z)
+			currentFrame.World = append(currentFrame.World, currentWorldObj)
+			if len(currentRound.Bomb) > 0 {
+				for _, b := range currentRound.Bomb {
+					if b.BombAction == "plant" {
+						currentFrame.BombPlanted = true
+						currentFrame.BombSite = *b.BombSite
+					}
+				}	
+			} else {
+				currentFrame.BombPlanted = false
+			}
+
+			// Add frame
+			if (len(currentFrame.CT.Players) > 0) || (len(currentFrame.T.Players) > 0) {
+				if (len(currentRound.Frames) > 0) {
+					if currentRound.Frames[len(currentRound.Frames)-1].Tick < currentFrame.Tick {
+						currentRound.Frames = append(currentRound.Frames, currentFrame)
+					}
+				} else {
+					currentRound.Frames = append(currentRound.Frames, currentFrame)
+				}
+			}
+			
+			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
+				currentFrameIdx = 0
+			} else {
+				currentFrameIdx = currentFrameIdx + 1
+			}	
+		}
+
 		currentKill := KillAction{}
 		currentKill.Tick = int64(gs.IngameTick())
 		currentKill.Second = determineSecond(currentKill.Tick, currentRound, currentGame)
@@ -2193,6 +2302,7 @@ func main() {
 		
 		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
+			currentFrame.IsKillFrame = false
 
 			// Create empty player lists
 			currentFrame.CT.Players = []PlayerInfo{}

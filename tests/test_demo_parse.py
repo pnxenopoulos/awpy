@@ -142,6 +142,7 @@ class TestDemoParser:
         assert self.parser_opts.buy_style == "hltv"
         assert self.parser_opts.dmg_rolled == False
         assert self.parser_opts.parse_frames == True
+        assert self.parser_opts.parse_kill_frames == False
         self.bad_parser_opts = DemoParser(
             demofile="default.dem",
             log=False,
