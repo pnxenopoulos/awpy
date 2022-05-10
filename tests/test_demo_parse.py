@@ -202,6 +202,14 @@ class TestDemoParser:
             assert type(r["weaponFires"]) == list
             assert type(r["frames"]) == list
 
+    def test_parse_kill_frames(self):
+        """Tests parse kill frames"""
+        self.default_data = self.parser.parse(
+            parse_frames=False, parse_kill_frames=True
+        )
+        for r in self.default_data["gameRounds"]:
+            assert len(r["kills"]) == len(r["frames"])
+
     def test_default_parse_df(self):
         """Tests default parse to dataframe"""
         self.default_data_df = self.parser.parse(return_type="df")
