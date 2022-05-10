@@ -204,9 +204,10 @@ class TestDemoParser:
 
     def test_parse_kill_frames(self):
         """Tests parse kill frames"""
-        self.default_data = self.parser.parse(
-            parse_frames=False, parse_kill_frames=True
+        self.parser_kill_frames = DemoParser(
+            demofile="default.dem", log=True, parse_frames=False, parse_kill_frames=True
         )
+        self.default_data = self.parser_kill_frames.parse()
         for r in self.default_data["gameRounds"]:
             assert len(r["kills"]) == len(r["frames"])
 
