@@ -16,6 +16,7 @@ class DemoParser:
         demo_id (string): A unique demo name/game id. Default is inferred from demofile name
         parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
         parse_frames (bool): Flag if you want to parse frames (trajectory data) or not
+        parse_kill_frames (bool): Flag if you want to parse frames on kills
         trade_time (int): Length of the window for a trade (in seconds). Default is 5.
         dmg_rolled (bool): Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
         buy_style (string): Buy style string, one of "hltv" or "csgo"
@@ -32,6 +33,7 @@ class DemoParser:
         demo_id=None,
         parse_rate=128,
         parse_frames=True,
+        parse_kill_frames=False,
         trade_time=5,
         dmg_rolled=False,
         buy_style="hltv",
@@ -123,9 +125,11 @@ class DemoParser:
 
         self.dmg_rolled = dmg_rolled
         self.parse_frames = parse_frames
+        self.parse_kill_frames = parse_kill_frames
         self.json_indentation = json_indentation
         self.logger.info("Rollup damages set to " + str(self.dmg_rolled))
         self.logger.info("Parse frames set to " + str(self.parse_frames))
+        self.logger.info("Parse kill frames set to " + str(self.parse_kill_frames))
         self.logger.info("Output json indentation set to " + str(self.json_indentation))
 
         # Set parse error to False
@@ -182,6 +186,8 @@ class DemoParser:
             self.parser_cmd.append("--dmgrolled")
         if self.parse_frames:
             self.parser_cmd.append("--parseframes")
+        if self.parse_kill_frames:
+            self.parser_cmd.append("--parsekillframes")
         if self.json_indentation:
             self.parser_cmd.append("--jsonindentation")
         proc = subprocess.Popen(
@@ -455,12 +461,10 @@ class DemoParser:
                 "roundEndReason",
                 "tStartEqVal",
                 "tRoundStartEqVal",
-                "tRoundStartMoney",
                 "tBuyType",
                 "tSpend",
                 "ctStartEqVal",
                 "ctRoundStartEqVal",
-                "ctRoundStartMoney",
                 "ctBuyType",
                 "ctSpend",
             ]
@@ -657,7 +661,7 @@ class DemoParser:
         remove_excess_players=True,
         remove_excess_kills=True,
         remove_bad_endings=True,
-        remove_bad_scoring=False,
+        remove_bad_scoring=True,
         return_type="json",
         save_to_json=True,
     ):

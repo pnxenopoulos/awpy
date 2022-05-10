@@ -142,6 +142,7 @@ class TestDemoParser:
         assert self.parser_opts.buy_style == "hltv"
         assert self.parser_opts.dmg_rolled == False
         assert self.parser_opts.parse_frames == True
+        assert self.parser_opts.parse_kill_frames == False
         self.bad_parser_opts = DemoParser(
             demofile="default.dem",
             log=False,
@@ -200,6 +201,15 @@ class TestDemoParser:
             assert type(r["grenades"]) == list
             assert type(r["weaponFires"]) == list
             assert type(r["frames"]) == list
+
+    def test_parse_kill_frames(self):
+        """Tests parse kill frames"""
+        self.parser_kill_frames = DemoParser(
+            demofile="default.dem", log=True, parse_frames=False, parse_kill_frames=True
+        )
+        self.default_data = self.parser_kill_frames.parse()
+        for r in self.default_data["gameRounds"]:
+            assert len(r["kills"]) == len(r["frames"])
 
     def test_default_parse_df(self):
         """Tests default parse to dataframe"""
