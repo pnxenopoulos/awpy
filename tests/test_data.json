@@ -37,5 +37,8 @@
     },
     "anonymo-vs-ldlc-m1-nuke": {
         "url": "https://storage.googleapis.com/csgo-tests/anonymo-vs-ldlc-m1-nuke.dem"
+    },
+    "nip-vs-gambit-m2-inferno": {
+        "url": "https://storage.googleapis.com/csgo-tests/nip-vs-gambit-m2-inferno.dem"
     }
 }
