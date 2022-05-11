@@ -337,3 +337,11 @@ class TestDemoParser:
         self.player_clean_data = self.player_clean_parser.parse()
         self.player_clean_parser.remove_excess_players()
         assert len(self.player_clean_data["gameRounds"]) == 23  # 28
+
+    def test_zero_kills(self):
+        """Tests a demo that raised many errors"""
+        self.zero_kills_parser = DemoParser(
+            demofile="nip-vs-gambit-m2-inferno.dem", log=False, parse_rate=128
+        )
+        self.zero_kills_data = self.zero_kills_parser.parse()
+        assert len(self.zero_kills_data["gameRounds"]) == 22
