@@ -952,7 +952,7 @@ class DemoParser:
                         for k in r["kills"]:
                             if k["weapon"] == "Knife":
                                 total_knife_kills += 1
-                    if (total_knife_kills != total_kills) & (total_kills > 0):
+                    if (total_knife_kills != total_kills) | (total_knife_kills == 0):
                         cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
