@@ -1309,23 +1309,6 @@ func main() {
 					currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
 				}
 			}
-
-			// // Parse round money
-			// tPlayers := gs.TeamTerrorists().Members()
-			// currentRound.TBeginMoney = 0
-			// ctPlayers := gs.TeamCounterTerrorists().Members()
-			// currentRound.CTBeginMoney = 0
-			// for _, p := range tPlayers {
-			// 	if p != nil {
-			// 		currentRound.TBeginMoney += int64(p.Money())
-			// 	}
-
-			// }
-			// for _, p := range ctPlayers {
-			// 	if p != nil {
-			// 		currentRound.CTBeginMoney += int64(p.Money())
-			// 	}
-			// }
 		}
 
 		// Parse the players
@@ -1376,20 +1359,13 @@ func main() {
 		if roundInEndTime == 0 {
 			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
-			currentRound.CTRoundStartEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
-			currentRound.TRoundStartEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
-			currentRound.CTFreezeTimeEndEqVal = int64(gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue())
-			currentRound.TFreezeTimeEndEqVal = int64(gs.TeamTerrorists().FreezeTimeEndEquipmentValue())
-			currentRound.CTRoundMoneySpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
-			currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
 
 			currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
 			currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
 			// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
 			// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
 
-			// Parse who won the round
-			// Not great...but a stopgap measure
+			// Parse who won the round, not great...but a stopgap measure
 			tPlayers := gs.TeamTerrorists().Members()
 			aliveT := 0
 			ctPlayers := gs.TeamCounterTerrorists().Members()
@@ -1428,13 +1404,6 @@ func main() {
 				currentRound.WinningSide = "CT"
 			}
 		} else {
-			currentRound.CTRoundStartEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
-			currentRound.TRoundStartEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
-			currentRound.CTFreezeTimeEndEqVal = int64(gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue())
-			currentRound.TFreezeTimeEndEqVal = int64(gs.TeamTerrorists().FreezeTimeEndEquipmentValue())
-			currentRound.CTRoundMoneySpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
-			currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
-
 			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 		}
@@ -1468,10 +1437,6 @@ func main() {
 				currentRound.TTeam = &tTeam
 				currentRound.CTTeam = &ctTeam
 			}
-
-			// Parse round spend
-			//currentRound.TBeginMoney = 800 * 5
-			//currentRound.CTBeginMoney = 800 * 5
 		}
 
 		roundInEndTime = 1
@@ -1507,13 +1472,6 @@ func main() {
 				currentRound.WinningTeam = &tTeam
 			}
 		}
-
-		currentRound.CTRoundStartEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
-		currentRound.TRoundStartEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
-		currentRound.CTFreezeTimeEndEqVal = int64(gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue())
-		currentRound.TFreezeTimeEndEqVal = int64(gs.TeamTerrorists().FreezeTimeEndEquipmentValue())
-		currentRound.CTRoundMoneySpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
-		currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
 
 		currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
 		currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
@@ -2410,49 +2368,14 @@ func main() {
 	p.RegisterEventHandler(func(e events.FrameDone) {
 		gs := p.GameState()
 
-		currentRound.CTRoundStartEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
-		currentRound.TRoundStartEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
-		currentRound.CTFreezeTimeEndEqVal = int64(gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue())
-		currentRound.TFreezeTimeEndEqVal = int64(gs.TeamTerrorists().FreezeTimeEndEquipmentValue())
-		currentRound.CTRoundMoneySpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
-		currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
-
-		// // Parse the players
-		// teamCT := PlayerTeams{}
-		// teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
-		// for _, player := range gs.TeamCounterTerrorists().Members() {
-		// 	pl := Players{}
-		// 	pl.PlayerName = player.Name
-		// 	pl.SteamID = int64(player.SteamID64)
-		// 	foundPlayer := false
-		// 	for _, p := range teamCT.Players {
-		// 		if p.SteamID == pl.SteamID {
-		// 			foundPlayer = true
-		// 		}
-		// 	}
-		// 	if !foundPlayer {
-		// 		teamCT.Players = append(teamCT.Players, pl)
-		// 	}
-		// }
-		// currentRound.CTSide = teamCT
-
-		// teamT := PlayerTeams{}
-		// teamT.TeamName = gs.TeamTerrorists().ClanName()
-		// for _, player := range gs.TeamTerrorists().Members() {
-		// 	pl := Players{}
-		// 	pl.PlayerName = player.Name
-		// 	pl.SteamID = int64(player.SteamID64)
-		// 	foundPlayer := false
-		// 	for _, p := range teamT.Players {
-		// 		if p.SteamID == pl.SteamID {
-		// 			foundPlayer = true
-		// 		}
-		// 	}
-		// 	if !foundPlayer {
-		// 		teamT.Players = append(teamT.Players, pl)
-		// 	}
-		// }
-		// currentRound.TSide = teamT
+		if (roundInFreezetime == 0) && (roundInEndTime == 0) {
+			currentRound.CTRoundStartEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
+			currentRound.TRoundStartEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
+			currentRound.CTFreezeTimeEndEqVal = int64(gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue())
+			currentRound.TFreezeTimeEndEqVal = int64(gs.TeamTerrorists().FreezeTimeEndEquipmentValue())
+			currentRound.CTRoundMoneySpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
+			currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
+		}
 		
 		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
