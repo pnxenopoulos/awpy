@@ -459,14 +459,14 @@ class DemoParser:
                 "winningTeam",
                 "losingTeam",
                 "roundEndReason",
-                "tStartEqVal",
-                "tRoundStartEqVal",
-                "tBuyType",
-                "tSpend",
-                "ctStartEqVal",
+                "ctFreezeTimeEndEqVal",
                 "ctRoundStartEqVal",
+                "ctRoundSpendMoney",
                 "ctBuyType",
-                "ctSpend",
+                "tFreezeTimeEndEqVal",
+                "tRoundStartEqVal",
+                "tRoundSpendMoney",
+                "tBuyType",
             ]
             for r in self.json["gameRounds"]:
                 round_item = {}
