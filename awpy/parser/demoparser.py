@@ -22,7 +22,7 @@ class DemoParser:
         buy_style (string): Buy style string, one of "hltv" or "csgo"
 
     Raises:
-        ValueError: Raises a ValueError if the Golang version is lower than 1.14
+        ValueError: Raises a ValueError if the Golang version is lower than 1.17
     """
 
     def __init__(
@@ -142,20 +142,20 @@ class DemoParser:
             Outputs a JSON file to current working directory.
 
         Raises:
-            ValueError: Raises a ValueError if the Golang version is lower than 1.14
+            ValueError: Raises a ValueError if the Golang version is lower than 1.17
             FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.
         """
         # Check if Golang version is compatible
         acceptable_go = check_go_version()
         if not acceptable_go:
             self.logger.error(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.17.0."
             )
             raise ValueError(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.17.0."
             )
         else:
-            self.logger.info("Go version>=1.14.0")
+            self.logger.info("Go version>=1.17.0")
 
         # Check if demofile exists
         if not os.path.exists(os.path.abspath(self.demofile)):
