@@ -103,6 +103,8 @@ Rounds
 
 This object contains round information and events. The possible round end reasons are `TargetBombed`, `VIPEscaped`, `VIPKilled`, `TerroristsEscaped`, `CTStoppedEscape`, `TerroristsStopped`, `BombDefused`, `CTWin`, `TerroristsWin`, `Draw`, `HostagesRescued`, `TargetSaved`, `HostagesNotRescued`, `TerroristsNotEscaped`, `VIPNotEscaped`, `GameStart`, `TerroristsSurrender`, `CTSurrender`.
 
+Keep in mind that due to dropped guns which aren't equipped at FreezeTimeEnd, the FreezeTimeEndEqVal may not equal StartEqVal + Spend.
+
 .. code-block:: json
 
     {
@@ -125,7 +127,7 @@ This object contains round information and events. The possible round end reason
         "roundEndReason": "TerroristsWin",
         "ctFreezeTimeEndEqVal": 3650,        # Eq value at the end of freezetime
         "ctRoundStartEqVal": 1000,           # Eq value at the beginning of the round
-        "ctRoundSpendMoney": 2659,           # Money spent in the round
+        "ctRoundSpendMoney": 2650,           # Money spent in the round
         "ctBuyType": "Full Eco",             # Determined by the FreezeTimeEnd eq value
         "tFreezeTimeEndEqVal": 4400,
         "tRoundStartEqVal": 1000,
@@ -193,8 +195,8 @@ Kills
         "flashThrowerSide": None, 
         "noScope": False, 
         "thruSmoke": False, 
-        "distance": 305.7054888578491,                 # Distance between attacker and victim
-        "isTrade": False, 
+        "distance": 305.7054888578491,                 # Distance between attacker and victim in ingame units
+        "isTrade": False,                              # Trades determined through the parser parameters. Default is 5 second time window.
         "playerTradedName": None, 
         "playerTradedTeam": None, 
         "playerTradedSteamID": None, 

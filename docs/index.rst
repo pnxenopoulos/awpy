@@ -24,7 +24,7 @@ awpy
 .. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-Using this library to parse CSGO demos is as easy as the code shown below. To see what output looks like, check out :doc:`parser_output`.
+Using this library to parse CSGO demos is as easy as the few lines of code shown below. To see what output looks like, check out :doc:`parser_output`.
 
 .. code-block:: python
 
