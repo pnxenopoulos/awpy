@@ -191,24 +191,22 @@
     &quot;winningTeam&quot;: &quot;&quot;,
     &quot;losingTeam&quot;: &quot;&quot;,
     &quot;roundEndReason&quot;: &quot;TerroristsWin&quot;,
-    &quot;ctStartEqVal&quot;: 3650,
-    &quot;ctRoundStartEqVal&quot;: 1000,
-    &quot;ctRoundStartMoney&quot;: 80000,
-    &quot;ctBuyType&quot;: &quot;Full Eco&quot;,
-    &quot;ctSpend&quot;: 2650,
-    &quot;tStartEqVal&quot;: 4400,
+    &quot;ctFreezeTimeEndEqVal&quot;: 3650,        # Eq value at the end of freezetime
+    &quot;ctRoundStartEqVal&quot;: 1000,           # Eq value at the beginning of the round
+    &quot;ctRoundSpendMoney&quot;: 2659,           # Money spent in the round
+    &quot;ctBuyType&quot;: &quot;Full Eco&quot;,             # Determined by the FreezeTimeEnd eq value
+    &quot;tFreezeTimeEndEqVal&quot;: 4400,
     &quot;tRoundStartEqVal&quot;: 1000,
-    &quot;tRoundStartMoney&quot;: 80000,
+    &quot;tRoundSpendMoney&quot;: 3400,
     &quot;tBuyType&quot;: &quot;Full Eco&quot;,
-    &quot;tSpend&quot;: 3400,
-    &quot;ctSide&quot;: {                          # Players who were on the CT side at Freeze Time End
+    &quot;ctSide&quot;: {                          # Players who were on the CT side at FreezeTimeEnd
         &quot;teamName&quot;: &quot;...&quot;,
         &quot;players&quot;: [{
             &quot;playerName&quot;: &quot;...&quot;,
             &quot;steamID&quot;: 12345
         }, ...]
     },
-    &quot;tSide&quot;: {...},                      # Players who were on the T side at Freeze Time End
+    &quot;tSide&quot;: {...},                      # Players who were on the T side at FreezeTimeEnd
     &quot;kills&quot;: [...],                      # Kills
     &quot;damages&quot;: [...],                    # Damages
     &quot;grenades&quot;: [...],                   # Grenade throws
@@ -412,7 +410,7 @@
 <section id="frames">
 <h2>Frames<a class="headerlink" href="#frames" title="Permalink to this headline"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &quot;parseKillFrame&quot;: true                       # True if the frame was parsed due to a kill
+    &quot;parseKillFrame&quot;: true                         # True if the frame was parsed due to a kill
     &quot;tick&quot;: 8174,
     &quot;seconds&quot;: 3.71875,
     &quot;clockTime&quot;: &quot;01:52&quot;,
@@ -422,7 +420,7 @@
         &quot;teamEqVal&quot;: 3550,
         &quot;alivePlayers&quot;: 5,
         &quot;totalUtility&quot;: 1,
-        &quot;players&quot;: [{                            # List of player objects with the following structure
+        &quot;players&quot;: [{                              # List of player objects with the following structure
             &quot;steamID&quot;: 76561198035759667,
             &quot;name&quot;: &quot;alo0o0o0o0&quot;,
             &quot;team&quot;: &quot;&quot;,
@@ -437,7 +435,7 @@
             &quot;viewY&quot;: 3.33984375,
             &quot;hp&quot;: 100,
             &quot;armor&quot;: 0,
-            &quot;activeWeapon&quot;: &quot;Knife&quot;,             # Weapon the player is currently holding
+            &quot;activeWeapon&quot;: &quot;Knife&quot;,               # Weapon the player is currently holding
             &quot;totalUtility&quot;: 0,
             &quot;isAlive&quot;: True,
             &quot;isBlinded&quot;: False,
@@ -454,19 +452,19 @@
             &quot;isScoped&quot;: False,
             &quot;isWalking&quot;: False,
             &quot;isUnknown&quot;: False,
-            &quot;inventory&quot;: [{                     # List of weapons
+            &quot;inventory&quot;: [{                        # List of weapons
                 &quot;weaponName&quot;: &quot;Glock-18&quot;,
                 &quot;weaponClass&quot;: &quot;Pistols&quot;,
                 &quot;ammoInMagazine&quot;: 20,
                 &quot;ammoInReserve&quot;: 120
             }],
-            &quot;spotters&quot;: [...]                   # SteamIDs of players that the current player has spotted
+            &quot;spotters&quot;: [...]                      # SteamIDs of players that the current player has spotted
             &quot;equipmentValue&quot;: 200,
             &quot;equipmentValueFreezetimeEnd&quot;: 200,
             &quot;equipmentValueRoundStart&quot;: 200,
             &quot;cash&quot;: 800,
             &quot;cashSpendThisRound&quot;: 0,
-            &quot;cashSpendTotal&quot;: 0,                # Cash spent the entire game
+            &quot;cashSpendTotal&quot;: 0,                   # Cash spent the entire game
             &quot;hasHelmet&quot;: False,
             &quot;hasDefuse&quot;: False,
             &quot;hasBomb&quot;: False,
@@ -474,13 +472,13 @@
             &quot;zoomLevel&quot;: 0
             }]
         },
-        &quot;ct&quot;: {...},                            # Same structure as &quot;t&quot;
-        &quot;world&quot;: [{                             # List of world objects, like bombs, mollies or smokes
-                &quot;objectType&quot;: &quot;bomb&quot;,
-                &quot;x&quot;: -1215.3546142578125,
-                &quot;y&quot;: 470.23406982421875,
-                &quot;z&quot;: -55.96875
-        }],
+        &quot;ct&quot;: {...},                               # Same structure as &quot;t&quot;
+
+        &quot;projectiles&quot;: [{...}, ...],               # List of grenade objects
+        &quot;smokes&quot;: [{...}, ...],                    # List of current smokes
+        &quot;fires&quot;: [{...}, ...],                     # List of current fires
+        &quot;defusers&quot;: [{...}, ...],                  # List of current defusers
+        &quot;bomb&quot;: {&quot;x&quot;: 1.23, &quot;y&quot;: 4.56, &quot;z&quot;: 7.89}, # Bomb position
         &quot;bombPlanted&quot;: False,
         &quot;bombsite&quot;: &quot;&quot;
 }

@@ -123,24 +123,22 @@ This object contains round information and events. The possible round end reason
         "winningTeam": "",
         "losingTeam": "",
         "roundEndReason": "TerroristsWin",
-        "ctStartEqVal": 3650,
-        "ctRoundStartEqVal": 1000,
-        "ctRoundStartMoney": 80000,
-        "ctBuyType": "Full Eco",
-        "ctSpend": 2650,
-        "tStartEqVal": 4400,
+        "ctFreezeTimeEndEqVal": 3650,        # Eq value at the end of freezetime
+        "ctRoundStartEqVal": 1000,           # Eq value at the beginning of the round
+        "ctRoundSpendMoney": 2659,           # Money spent in the round
+        "ctBuyType": "Full Eco",             # Determined by the FreezeTimeEnd eq value
+        "tFreezeTimeEndEqVal": 4400,
         "tRoundStartEqVal": 1000,
-        "tRoundStartMoney": 80000,
+        "tRoundSpendMoney": 3400,
         "tBuyType": "Full Eco",
-        "tSpend": 3400,
-        "ctSide": {                          # Players who were on the CT side at Freeze Time End
+        "ctSide": {                          # Players who were on the CT side at FreezeTimeEnd
             "teamName": "...",
             "players": [{
                 "playerName": "...",
                 "steamID": 12345
             }, ...]
         },
-        "tSide": {...},                      # Players who were on the T side at Freeze Time End
+        "tSide": {...},                      # Players who were on the T side at FreezeTimeEnd
         "kills": [...],                      # Kills
         "damages": [...],                    # Damages
         "grenades": [...],                   # Grenade throws
@@ -353,7 +351,7 @@ Frames
 .. code-block:: json
 
     {
-        "parseKillFrame": true                       # True if the frame was parsed due to a kill
+        "parseKillFrame": true                         # True if the frame was parsed due to a kill
         "tick": 8174, 
         "seconds": 3.71875, 
         "clockTime": "01:52", 
@@ -363,7 +361,7 @@ Frames
             "teamEqVal": 3550, 
             "alivePlayers": 5, 
             "totalUtility": 1, 
-            "players": [{                            # List of player objects with the following structure
+            "players": [{                              # List of player objects with the following structure
                 "steamID": 76561198035759667, 
                 "name": "alo0o0o0o0", 
                 "team": "", 
@@ -378,7 +376,7 @@ Frames
                 "viewY": 3.33984375, 
                 "hp": 100, 
                 "armor": 0, 
-                "activeWeapon": "Knife",             # Weapon the player is currently holding
+                "activeWeapon": "Knife",               # Weapon the player is currently holding
                 "totalUtility": 0, 
                 "isAlive": True, 
                 "isBlinded": False, 
@@ -395,19 +393,19 @@ Frames
                 "isScoped": False, 
                 "isWalking": False, 
                 "isUnknown": False, 
-                "inventory": [{                     # List of weapons
+                "inventory": [{                        # List of weapons
                     "weaponName": "Glock-18", 
                     "weaponClass": "Pistols", 
                     "ammoInMagazine": 20, 
                     "ammoInReserve": 120
                 }], 
-                "spotters": [...]                   # SteamIDs of players that the current player has spotted
+                "spotters": [...]                      # SteamIDs of players that the current player has spotted
                 "equipmentValue": 200, 
                 "equipmentValueFreezetimeEnd": 200, 
                 "equipmentValueRoundStart": 200, 
                 "cash": 800, 
                 "cashSpendThisRound": 0, 
-                "cashSpendTotal": 0,                # Cash spent the entire game
+                "cashSpendTotal": 0,                   # Cash spent the entire game
                 "hasHelmet": False, 
                 "hasDefuse": False, 
                 "hasBomb": False, 
@@ -415,13 +413,13 @@ Frames
                 "zoomLevel": 0
                 }]
             }, 
-            "ct": {...},                            # Same structure as "t"               
-            "world": [{                             # List of world objects, like bombs, mollies or smokes
-                    "objectType": "bomb", 
-                    "x": -1215.3546142578125, 
-                    "y": 470.23406982421875, 
-                    "z": -55.96875
-            }], 
+            "ct": {...},                               # Same structure as "t"
+            
+            "projectiles": [{...}, ...],               # List of grenade objects
+            "smokes": [{...}, ...],                    # List of current smokes
+            "fires": [{...}, ...],                     # List of current fires
+            "defusers": [{...}, ...],                  # List of current defusers
+            "bomb": {"x": 1.23, "y": 4.56, "z": 7.89}, # Bomb position
             "bombPlanted": False, 
             "bombsite": ""
     }

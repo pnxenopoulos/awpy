@@ -99,7 +99,7 @@
 <span class="sd">        buy_style (string): Buy style string, one of &quot;hltv&quot; or &quot;csgo&quot;</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: Raises a ValueError if the Golang version is lower than 1.14</span>
+<span class="sd">        ValueError: Raises a ValueError if the Golang version is lower than 1.17</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -219,20 +219,20 @@
 <span class="sd">            Outputs a JSON file to current working directory.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            ValueError: Raises a ValueError if the Golang version is lower than 1.14</span>
+<span class="sd">            ValueError: Raises a ValueError if the Golang version is lower than 1.17</span>
 <span class="sd">            FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Check if Golang version is compatible</span>
         <span class="n">acceptable_go</span> <span class="o">=</span> <span class="n">check_go_version</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">acceptable_go</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="s2">&quot;Error calling Go. Check if Go is installed using &#39;go version&#39;. Need at least v1.14.0.&quot;</span>
+                <span class="s2">&quot;Error calling Go. Check if Go is installed using &#39;go version&#39;. Need at least v1.17.0.&quot;</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Error calling Go. Check if Go is installed using &#39;go version&#39;. Need at least v1.14.0.&quot;</span>
+                <span class="s2">&quot;Error calling Go. Check if Go is installed using &#39;go version&#39;. Need at least v1.17.0.&quot;</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Go version&gt;=1.14.0&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Go version&gt;=1.17.0&quot;</span><span class="p">)</span>
 
         <span class="c1"># Check if demofile exists</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demofile</span><span class="p">)):</span>
