@@ -1987,7 +1987,7 @@ func main() {
 			if (gs.TeamTerrorists() != nil) {
 				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
 			}
-			// currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
+			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
 			tPlayers := gs.TeamTerrorists().Members()
 
 			for _, p := range tPlayers {
@@ -2000,7 +2000,7 @@ func main() {
 			
 			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
 			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
-			currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
+			// currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
 
 			// Parse CT
 			currentFrame.CT = TeamFrameInfo{}
@@ -2008,7 +2008,7 @@ func main() {
 			if (gs.TeamCounterTerrorists() != nil) {
 				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
 			}
-			// currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
+			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 
 			for _, p := range ctPlayers {
@@ -2021,7 +2021,7 @@ func main() {
 			
 			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
 			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
-			currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
+			// currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.CT.Players)
 			
 			// Parse projectiles objects
 			allGrenades := gs.GrenadeProjectiles()
@@ -2472,7 +2472,7 @@ func main() {
 			if (gs.TeamTerrorists() != nil) {
 				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
 			}
-			// currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
+			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
 			tPlayers := gs.TeamTerrorists().Members()
 
 			for _, p := range tPlayers {
@@ -2485,7 +2485,7 @@ func main() {
 			
 			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
 			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
-			currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
+			// currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
 
 			// Parse CT
 			currentFrame.CT = TeamFrameInfo{}
@@ -2493,7 +2493,7 @@ func main() {
 			if (gs.TeamCounterTerrorists() != nil) {
 				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
 			}
-			// currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
+			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
 			ctPlayers := gs.TeamCounterTerrorists().Members()
 
 			for _, p := range ctPlayers {
@@ -2506,7 +2506,7 @@ func main() {
 			
 			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
 			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
-			currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
+			// currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.CT.Players)
 			
 			// Parse projectiles objects
 			allGrenades := gs.GrenadeProjectiles()
