@@ -173,6 +173,7 @@
 <section id="rounds">
 <h2>Rounds<a class="headerlink" href="#rounds" title="Permalink to this headline"></a></h2>
 <p>This object contains round information and events. The possible round end reasons are <cite>TargetBombed</cite>, <cite>VIPEscaped</cite>, <cite>VIPKilled</cite>, <cite>TerroristsEscaped</cite>, <cite>CTStoppedEscape</cite>, <cite>TerroristsStopped</cite>, <cite>BombDefused</cite>, <cite>CTWin</cite>, <cite>TerroristsWin</cite>, <cite>Draw</cite>, <cite>HostagesRescued</cite>, <cite>TargetSaved</cite>, <cite>HostagesNotRescued</cite>, <cite>TerroristsNotEscaped</cite>, <cite>VIPNotEscaped</cite>, <cite>GameStart</cite>, <cite>TerroristsSurrender</cite>, <cite>CTSurrender</cite>.</p>
+<p>Keep in mind that due to dropped guns which aren’t equipped at FreezeTimeEnd, the FreezeTimeEndEqVal may not equal StartEqVal + Spend.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
     &quot;roundNum&quot;: 1,
     &quot;isWarmup&quot;: false,                  # True if the round is a warmup round
@@ -193,7 +194,7 @@
     &quot;roundEndReason&quot;: &quot;TerroristsWin&quot;,
     &quot;ctFreezeTimeEndEqVal&quot;: 3650,        # Eq value at the end of freezetime
     &quot;ctRoundStartEqVal&quot;: 1000,           # Eq value at the beginning of the round
-    &quot;ctRoundSpendMoney&quot;: 2659,           # Money spent in the round
+    &quot;ctRoundSpendMoney&quot;: 2650,           # Money spent in the round
     &quot;ctBuyType&quot;: &quot;Full Eco&quot;,             # Determined by the FreezeTimeEnd eq value
     &quot;tFreezeTimeEndEqVal&quot;: 4400,
     &quot;tRoundStartEqVal&quot;: 1000,
@@ -260,8 +261,8 @@
     &quot;flashThrowerSide&quot;: None,
     &quot;noScope&quot;: False,
     &quot;thruSmoke&quot;: False,
-    &quot;distance&quot;: 305.7054888578491,                 # Distance between attacker and victim
-    &quot;isTrade&quot;: False,
+    &quot;distance&quot;: 305.7054888578491,                 # Distance between attacker and victim in ingame units
+    &quot;isTrade&quot;: False,                              # Trades determined through the parser parameters. Default is 5 second time window.
     &quot;playerTradedName&quot;: None,
     &quot;playerTradedTeam&quot;: None,
     &quot;playerTradedSteamID&quot;: None,
