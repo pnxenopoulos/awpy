@@ -84,9 +84,7 @@ Take a look at the following Jupyter notebooks provided in our `examples/` direc
 - [Basic CSGO visualization](https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
 - [Working with navigation meshes](https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb)
 
-If you use the parser in research, please cite *Valuing Actions in Counter-Strike: Global Offensive*, below. If you use the parser for any analysis on Twitter, we kindly ask you to link to this repository, so that others may know how you parsed your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it! Here is the paper citation:
-
-Xenopoulos, Peter, et al. "[Valuing Actions in Counter-Strike: Global Offensive](https://arxiv.org/pdf/2011.01324.pdf)." 2020 IEEE International Conference on Big Data (Big Data). IEEE, 2020.
+If you use the parser for any analysis on Twitter, we kindly ask you to link to this repository, so that others may know how you parsed your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it!
 
 ## Contributing
 We welcome any contributions from the community. You can visit the [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, or you can message on Discord. We will always have a need for writing tests, quality assurance and expanding functionality. We also seek contributors to produce interesting content (such as tweets, analyses, papers, etc.) -- you can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html).

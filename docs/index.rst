@@ -24,14 +24,14 @@ awpy
 .. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-Using this library to parse CSGO demos is as easy as the code shown below. To see what output looks like, check out :doc:`parser_output`.
+Using this library to parse CSGO demos is as easy as the few lines of code shown below. To see what output looks like, check out :doc:`parser_output`.
 
 .. code-block:: python
 
    from awpy.parser import DemoParser
 
    # Set the parse_rate equal to the tick rate at which you would like to parse the frames of the demo.
-   # This parameter only matters if parse_frames=True ()
+   # This parameter only matters if parse_frames=True
    # For reference, MM demos are usually 64 ticks, and pro/FACEIT demos are usually 128 ticks.
    demo_parser = DemoParser(demofile="og-vs-natus-vincere-m1-dust2.dem", 
                             demo_id="og-vs-natus-vincere", 
@@ -63,10 +63,6 @@ Using this library to parse CSGO demos is as easy as the code shown below. To se
    data_df = demo_parser.parse(return_type="df")
 
    # The parser also writes a JSON file of the output named demo_id.json
-
-If you decide to use this library, please cite the following paper.
-
-   Xenopoulos, P., Doraiswamy, H., & Silva, C. (2020, December). Valuing Player Actions in Counter-Strike: Global Offensive. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.
 
 
 Using awpy

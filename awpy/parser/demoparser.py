@@ -12,8 +12,8 @@ class DemoParser:
 
     Attributes:
         demofile (string): A string denoting the path to the demo file, which ends in .dem
-        log (boolean): A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
         demo_id (string): A unique demo name/game id. Default is inferred from demofile name
+        log (boolean): A boolean indicating if the log should print to stdout.
         parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
         parse_frames (bool): Flag if you want to parse frames (trajectory data) or not
         parse_kill_frames (bool): Flag if you want to parse frames on kills
@@ -22,15 +22,15 @@ class DemoParser:
         buy_style (string): Buy style string, one of "hltv" or "csgo"
 
     Raises:
-        ValueError: Raises a ValueError if the Golang version is lower than 1.14
+        ValueError: Raises a ValueError if the Golang version is lower than 1.17
     """
 
     def __init__(
         self,
         demofile="",
         outpath=None,
-        log=False,
         demo_id=None,
+        log=False,
         parse_rate=128,
         parse_frames=True,
         parse_kill_frames=False,
@@ -40,29 +40,17 @@ class DemoParser:
         json_indentation=False,
     ):
         # Set up logger
-        if log:
-            logging.basicConfig(
-                filename="csgo_demoparser.log",
-                level=logging.INFO,
-                format="%(asctime)s [%(levelname)s] %(message)s",
-                datefmt="%H:%M:%S",
-            )
-            self.logger = logging.getLogger("CSGODemoParser")
-            self.logger.handlers = []
-            fh = logging.FileHandler("csgo_demoparser.log")
-            fh.setLevel(logging.INFO)
-            self.logger.addHandler(fh)
-        else:
-            logging.basicConfig(
-                level=logging.INFO,
-                format="%(asctime)s [%(levelname)s] %(message)s",
-                datefmt="%H:%M:%S",
-            )
-            self.logger = logging.getLogger("CSGODemoParser")
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(message)s",
+            datefmt="%H:%M:%S",
+        )
+        self.logger = logging.getLogger("awpy")
+        self.logger.propagate = log
 
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
-        self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
+        self.logger.info("Initialized awpy DemoParser with demofile " + self.demofile)
         if (demo_id is None) | (demo_id == ""):
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
@@ -142,20 +130,20 @@ class DemoParser:
             Outputs a JSON file to current working directory.
 
         Raises:
-            ValueError: Raises a ValueError if the Golang version is lower than 1.14
+            ValueError: Raises a ValueError if the Golang version is lower than 1.17
             FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.
         """
         # Check if Golang version is compatible
         acceptable_go = check_go_version()
         if not acceptable_go:
             self.logger.error(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.17.0."
             )
             raise ValueError(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.14.0."
+                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.17.0."
             )
         else:
-            self.logger.info("Go version>=1.14.0")
+            self.logger.info("Go version>=1.17.0")
 
         # Check if demofile exists
         if not os.path.exists(os.path.abspath(self.demofile)):
@@ -459,14 +447,14 @@ class DemoParser:
                 "winningTeam",
                 "losingTeam",
                 "roundEndReason",
-                "tStartEqVal",
-                "tRoundStartEqVal",
-                "tBuyType",
-                "tSpend",
-                "ctStartEqVal",
+                "ctFreezeTimeEndEqVal",
                 "ctRoundStartEqVal",
+                "ctRoundSpendMoney",
                 "ctBuyType",
-                "ctSpend",
+                "tFreezeTimeEndEqVal",
+                "tRoundStartEqVal",
+                "tRoundSpendMoney",
+                "tBuyType",
             ]
             for r in self.json["gameRounds"]:
                 round_item = {}
@@ -789,28 +777,49 @@ class DemoParser:
             )
 
     def remove_bad_scoring(self):
-        """Removes rounds where the scoring is bad. For example, rounds where the score drops
+        """Removes rounds where the scoring is bad.
+
+        We loop through the rounds:
+        If the round ahead has equal or less score, we do not add the current round.
+        If the round ahead has +1 score, we add the current round
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             cleaned_rounds = []
-            last_zero_score_round = None
-            final_score_round = None
             for i, r in enumerate(self.json["gameRounds"]):
-                if r["endTScore"] >= 16 or r["endCTScore"] >= 16:
-                    final_score_round = r
-                if (r["tScore"] + r["ctScore"] == 0) and (not final_score_round):
-                    last_zero_score_round = r
-                if i > 0:
-                    if (r["endTScore"] + r["endCTScore"]) > (
-                        self.json["gameRounds"][i - 1]["endTScore"]
-                        + self.json["gameRounds"][i - 1]["endCTScore"]
-                    ):
+                current_round_total = (
+                    r["tScore"] + r["endTScore"] + r["ctScore"] + r["endCTScore"]
+                )
+                if i < len(self.json["gameRounds"]) - 1:
+                    lookahead_round = self.json["gameRounds"][i + 1]
+                    lookahead_round_total = (
+                        lookahead_round["tScore"]
+                        + lookahead_round["endTScore"]
+                        + lookahead_round["ctScore"]
+                        + lookahead_round["endCTScore"]
+                    )
+                    if lookahead_round_total > current_round_total:
                         cleaned_rounds.append(r)
-            if last_zero_score_round:
-                cleaned_rounds.insert(0, last_zero_score_round)
+                    elif (r["endTScore"] == 16) & (r["endCTScore"] <= 14):
+                        cleaned_rounds.append(r)
+                    elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
+                        cleaned_rounds.append(r)
+                else:
+                    lookback_round = self.json["gameRounds"][i]
+                    lookback_round_total = (
+                        lookback_round["tScore"]
+                        + lookback_round["endTScore"]
+                        + lookback_round["ctScore"]
+                        + lookback_round["endCTScore"]
+                    )
+                    if (r["endTScore"] == 16) & (r["endCTScore"] <= 14):
+                        cleaned_rounds.append(r)
+                    elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
+                        cleaned_rounds.append(r)
+                    elif current_round_total > lookback_round_total:
+                        cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
