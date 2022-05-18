@@ -1,4 +1,4 @@
-# This workflow will run the tests for the csgo Python library
+# This workflow will run the tests for the awpy Python library
 
 name: build
 
