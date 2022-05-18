@@ -12,8 +12,8 @@ class DemoParser:
 
     Attributes:
         demofile (string): A string denoting the path to the demo file, which ends in .dem
-        log (boolean): A boolean denoting if a log will be written. If true, log is written to "csgo_parser.log"
         demo_id (string): A unique demo name/game id. Default is inferred from demofile name
+        log (boolean): A boolean indicating if the log should print to stdout.
         parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
         parse_frames (bool): Flag if you want to parse frames (trajectory data) or not
         parse_kill_frames (bool): Flag if you want to parse frames on kills
@@ -29,8 +29,8 @@ class DemoParser:
         self,
         demofile="",
         outpath=None,
-        log=False,
         demo_id=None,
+        log=False,
         parse_rate=128,
         parse_frames=True,
         parse_kill_frames=False,
@@ -40,29 +40,17 @@ class DemoParser:
         json_indentation=False,
     ):
         # Set up logger
-        if log:
-            logging.basicConfig(
-                filename="csgo_demoparser.log",
-                level=logging.INFO,
-                format="%(asctime)s [%(levelname)s] %(message)s",
-                datefmt="%H:%M:%S",
-            )
-            self.logger = logging.getLogger("CSGODemoParser")
-            self.logger.handlers = []
-            fh = logging.FileHandler("csgo_demoparser.log")
-            fh.setLevel(logging.INFO)
-            self.logger.addHandler(fh)
-        else:
-            logging.basicConfig(
-                level=logging.INFO,
-                format="%(asctime)s [%(levelname)s] %(message)s",
-                datefmt="%H:%M:%S",
-            )
-            self.logger = logging.getLogger("CSGODemoParser")
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(message)s",
+            datefmt="%H:%M:%S",
+        )
+        self.logger = logging.getLogger("awpy")
+        self.logger.propagate = log
 
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
-        self.logger.info("Initialized CSGODemoParser with demofile " + self.demofile)
+        self.logger.info("Initialized awpy DemoParser with demofile " + self.demofile)
         if (demo_id is None) | (demo_id == ""):
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:

@@ -20,7 +20,7 @@ class TestDemoParser:
             self.demo_data = json.load(f)
         for file in self.demo_data:
             self._get_demofile(demo_link=self.demo_data[file]["url"], demo_name=file)
-        self.parser = DemoParser(demofile="default.dem", log=True, parse_rate=256)
+        self.parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
 
     def teardown_class(self):
         """Set parser to none, deletes all demofiles and JSON"""
@@ -126,8 +126,7 @@ class TestDemoParser:
 
     def test_logger_set(self):
         """Tests if log file is created"""
-        assert self.parser.logger.name == "CSGODemoParser"
-        assert os.path.exists("csgo_demoparser.log")
+        assert self.parser.logger.name == "awpy"
 
     def test_parse_opts(self):
         """Tests parsing options"""
@@ -205,7 +204,10 @@ class TestDemoParser:
     def test_parse_kill_frames(self):
         """Tests parse kill frames"""
         self.parser_kill_frames = DemoParser(
-            demofile="default.dem", log=True, parse_frames=False, parse_kill_frames=True
+            demofile="default.dem",
+            log=False,
+            parse_frames=False,
+            parse_kill_frames=True,
         )
         self.default_data = self.parser_kill_frames.parse()
         for r in self.default_data["gameRounds"]:
