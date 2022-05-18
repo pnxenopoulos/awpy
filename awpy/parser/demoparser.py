@@ -812,7 +812,7 @@ class DemoParser:
                         + lookahead_round["ctScore"]
                         + lookahead_round["endCTScore"]
                     )
-                    if lookahead_round_total == current_round_total:
+                    if lookahead_round_total > current_round_total:
                         cleaned_rounds.append(r)
                     elif (r["endTScore"] == 16) & (r["endCTScore"] <= 14):
                         cleaned_rounds.append(r)
@@ -832,6 +832,7 @@ class DemoParser:
                         cleaned_rounds.append(r)
                     elif current_round_total > lookback_round_total:
                         cleaned_rounds.append(r)
+            self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
