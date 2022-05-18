@@ -331,7 +331,6 @@ type GameFrame struct {
 	Projectiles []GrenadeInfo `json:"projectiles"`
 	Smokes      []Smoke       `json:"smokes"`
 	Fires       []Fire        `json:"fires"`
-	Defusers    []DefuserInfo `json:"defusers"`
 }
 
 // Bomb location
@@ -351,14 +350,6 @@ type GrenadeInfo struct {
 
 // Inferno from molly or incend. grenade
 type Fire struct {
-	UniqueID      int64   `json:"uniqueID"`
-	X             float64 `json:"x"`
-	Y             float64 `json:"y"`
-	Z             float64 `json:"z"`
-}
-
-// Defuser info
-type DefuserInfo struct {
 	UniqueID      int64   `json:"uniqueID"`
 	X             float64 `json:"x"`
 	Y             float64 `json:"y"`
@@ -434,6 +425,7 @@ type WeaponInfo struct {
 // Smoke holds current smoke info
 type Smoke struct {
 	GrenadeEntityID int64   `json:"grenadeEntityID"`
+	StartTick       int64   `json:"startTick"`
 	X               float64 `json:"x"`
 	Y               float64 `json:"y"`
 	Z               float64 `json:"z"`
@@ -1098,8 +1090,10 @@ func main() {
 
 	// Parse smokes
 	p.RegisterEventHandler(func(e events.SmokeStart) {
+		gs := p.GameState()
 		s := Smoke{}
 		s.GrenadeEntityID = e.Grenade.UniqueID() // GrenadeEntityID
+		s.StartTick = int64(gs.IngameTick())
 		s.X = float64(e.Position.X)
 		s.Y = float64(e.Position.Y)
 		s.Z = float64(e.Position.Z)
@@ -2013,22 +2007,6 @@ func main() {
 			currentFrame.Smokes = []Smoke{}
 			currentFrame.Smokes = smokes
 
-			// Parse defuser
-			allEq := gs.Weapons()
-			currentFrame.Defusers = []DefuserInfo{}
-			for _, ele := range allEq {
-				if ele.Type == 406 {
-					currentDefuser := DefuserInfo{}
-					objPos := ele.Entity.Position()
-					currentDefuser.UniqueID = ele.UniqueID()
-
-					currentDefuser.X = float64(objPos.X)
-					currentDefuser.Y = float64(objPos.Y)
-					currentDefuser.Z = float64(objPos.Z)
-					currentFrame.Defusers = append(currentFrame.Defusers, currentDefuser)
-				}
-			}
-
 			// Parse bomb
 			bombObj := gs.Bomb()
 			currentBomb := BombInfo{}
@@ -2462,22 +2440,6 @@ func main() {
 			// Parse smokes
 			currentFrame.Smokes = []Smoke{}
 			currentFrame.Smokes = smokes
-
-			// Parse defuser
-			allEq := gs.Weapons()
-			currentFrame.Defusers = []DefuserInfo{}
-			for _, ele := range allEq {
-				if ele.Type == 406 {
-					currentDefuser := DefuserInfo{}
-					objPos := ele.Entity.Position()
-					currentDefuser.UniqueID = ele.UniqueID()
-
-					currentDefuser.X = float64(objPos.X)
-					currentDefuser.Y = float64(objPos.Y)
-					currentDefuser.Z = float64(objPos.Z)
-					currentFrame.Defusers = append(currentFrame.Defusers, currentDefuser)
-				}
-			}
 
 			// Parse bomb
 			bombObj := gs.Bomb()

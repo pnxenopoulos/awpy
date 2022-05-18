@@ -420,7 +420,6 @@ Frames
             "projectiles": [{...}, ...],               # List of grenade objects
             "smokes": [{...}, ...],                    # List of current smokes
             "fires": [{...}, ...],                     # List of current fires
-            "defusers": [{...}, ...],                  # List of current defusers
             "bomb": {"x": 1.23, "y": 4.56, "z": 7.89}, # Bomb position
             "bombPlanted": False, 
             "bombsite": ""
