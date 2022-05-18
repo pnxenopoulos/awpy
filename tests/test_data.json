@@ -40,5 +40,8 @@
     },
     "nip-vs-gambit-m2-inferno": {
         "url": "https://storage.googleapis.com/csgo-tests/nip-vs-gambit-m2-inferno.dem"
+    },
+    "vitality-vs-ence-m1-mirage": {
+        "url": "https://storage.googleapis.com/csgo-tests/vitality-vs-ence-m1-mirage.dem"
     }
 }

@@ -401,7 +401,7 @@ Frames
                     "ammoInMagazine": 20, 
                     "ammoInReserve": 120
                 }], 
-                "spotters": [...]                      # SteamIDs of players that the current player has spotted
+                "spotters": [...],                     # SteamIDs of players that the current player has spotted
                 "equipmentValue": 200, 
                 "equipmentValueFreezetimeEnd": 200, 
                 "equipmentValueRoundStart": 200, 

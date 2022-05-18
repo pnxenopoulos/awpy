@@ -807,18 +807,14 @@ class DemoParser:
                     elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
                         cleaned_rounds.append(r)
                 else:
-                    lookback_round = self.json["gameRounds"][i]
+                    lookback_round = self.json["gameRounds"][i - 1]
                     lookback_round_total = (
                         lookback_round["tScore"]
                         + lookback_round["endTScore"]
                         + lookback_round["ctScore"]
                         + lookback_round["endCTScore"]
                     )
-                    if (r["endTScore"] == 16) & (r["endCTScore"] <= 14):
-                        cleaned_rounds.append(r)
-                    elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
-                        cleaned_rounds.append(r)
-                    elif current_round_total > lookback_round_total:
+                    if current_round_total > lookback_round_total:
                         cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:

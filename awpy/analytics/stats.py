@@ -111,53 +111,92 @@ def player_stats(game_rounds, return_type="json"):
             kast[p["steamID"]]["t"] = False
         # Calculate kills
         for i, k in enumerate(r["kills"]):
-            if k["attackerSteamID"]:
+            if (
+                k["attackerSteamID"]
+                and k["attackerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[k["attackerSteamID"]]["kills"] += 1
                 kast[k["attackerSteamID"]]["k"] = True
-            if k["victimSteamID"]:
+            if k["victimSteamID"] and k["victimSteamID"] in player_statistics.keys():
                 player_statistics[k["victimSteamID"]]["deaths"] += 1
                 kast[k["victimSteamID"]]["s"] = False
-            if k["assisterSteamID"]:
+            if (
+                k["assisterSteamID"]
+                and k["assisterSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[k["assisterSteamID"]]["assists"] += 1
                 kast[k["assisterSteamID"]]["a"] = True
-            if k["flashThrowerSteamID"]:
+            if (
+                k["flashThrowerSteamID"]
+                and k["flashThrowerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[k["flashThrowerSteamID"]]["flashAssists"] += 1
                 kast[k["flashThrowerSteamID"]]["a"] = True
-            if k["isTrade"] and k["attackerSteamID"]:
+            if (
+                k["isTrade"]
+                and k["attackerSteamID"]
+                and k["attackerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[k["attackerSteamID"]]["tradeKills"] += 1
                 kast[r["kills"][i - 1]["victimSteamID"]]["t"] = True
-            if k["isFirstKill"] and k["attackerSteamID"]:
+            if (
+                k["isFirstKill"]
+                and k["attackerSteamID"]
+                and k["attackerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[k["attackerSteamID"]]["firstKills"] += 1
                 player_statistics[k["victimSteamID"]]["firstDeaths"] += 1
-            if k["isTeamkill"] and k["attackerSteamID"]:
+            if (
+                k["isTeamkill"]
+                and k["attackerSteamID"]
+                and k["attackerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[k["attackerSteamID"]]["teamKills"] += 1
-            if k["isHeadshot"] and k["attackerSteamID"]:
+            if (
+                k["isHeadshot"]
+                and k["attackerSteamID"]
+                and k["attackerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[k["attackerSteamID"]]["hs"] += 1
-            if k["isSuicide"]:
+            if k["isSuicide"] and k["victimSteamID"] in player_statistics.keys():
                 player_statistics[k["victimSteamID"]]["suicides"] += 1
         for d in r["damages"]:
-            if d["attackerSteamID"] and not d["isFriendlyFire"]:
+            if (
+                d["attackerSteamID"]
+                and not d["isFriendlyFire"]
+                and d["attackerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[d["attackerSteamID"]]["totalDamageGiven"] += d[
                     "hpDamageTaken"
                 ]
-            if d["victimSteamID"]:
+            if d["victimSteamID"] and d["victimSteamID"] in player_statistics.keys():
                 player_statistics[d["victimSteamID"]]["totalDamageTaken"] += d[
                     "hpDamageTaken"
                 ]
-            if d["isFriendlyFire"]:
+            if d["isFriendlyFire"] and d["attackerSteamID"] in player_statistics.keys():
                 player_statistics[d["attackerSteamID"]]["totalTeamDamageGiven"] += d[
                     "hpDamageTaken"
                 ]
-            if d["weaponClass"] not in ["Unknown", "Grenade", "Equipment"]:
+            if (
+                d["weaponClass"] not in ["Unknown", "Grenade", "Equipment"]
+                and d["attackerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[d["attackerSteamID"]]["shotsHit"] += 1
-            if d["weaponClass"] == "Grenade":
+            if (
+                d["weaponClass"] == "Grenade"
+                and d["attackerSteamID"] in player_statistics.keys()
+            ):
                 player_statistics[d["attackerSteamID"]]["utilityDamage"] += d[
                     "hpDamageTaken"
                 ]
         for w in r["weaponFires"]:
-            player_statistics[w["playerSteamID"]]["totalShots"] += 1
+            if w["playerSteamID"] in player_statistics.keys():
+                player_statistics[w["playerSteamID"]]["totalShots"] += 1
         for f in r["flashes"]:
-            if f["attackerSteamID"]:
+            if (
+                f["attackerSteamID"]
+                and f["attackerSteamID"] in player_statistics.keys()
+            ):
                 if f["attackerSide"] == f["playerSide"]:
                     player_statistics[f["attackerSteamID"]]["teammatesFlashed"] += 1
                 else:
@@ -166,7 +205,7 @@ def player_stats(game_rounds, return_type="json"):
                         "flashDuration"
                     ]
         for g in r["grenades"]:
-            if g["throwerSteamID"]:
+            if g["throwerSteamID"] and g["throwerSteamID"] in player_statistics.keys():
                 if g["grenadeType"] == "Smoke Grenade":
                     player_statistics[g["throwerSteamID"]]["smokesThrown"] += 1
                 if g["grenadeType"] == "Flashbang":
@@ -176,7 +215,7 @@ def player_stats(game_rounds, return_type="json"):
                 if g["grenadeType"] in ["Incendiary Grenade", "Molotov"]:
                     player_statistics[g["throwerSteamID"]]["fireThrown"] += 1
         for b in r["bombEvents"]:
-            if b["playerSteamID"]:
+            if b["playerSteamID"] and b["playerSteamID"] in player_statistics.keys():
                 if b["bombAction"] == "plant":
                     player_statistics[b["playerSteamID"]]["plants"] += 1
                 if b["bombAction"] == "defuse":

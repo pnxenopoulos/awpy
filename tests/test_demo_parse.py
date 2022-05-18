@@ -347,3 +347,11 @@ class TestDemoParser:
         )
         self.zero_kills_data = self.zero_kills_parser.parse()
         assert len(self.zero_kills_data["gameRounds"]) == 22
+
+    def test_end_round_cleanup(self):
+        """Tests cleaning the last round"""
+        self.end_round_parser = DemoParser(
+            demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=128
+        )
+        self.end_round_data = self.end_round_parser.parse()
+        assert len(self.end_round_data["gameRounds"]) == 30
