@@ -789,29 +789,49 @@ class DemoParser:
             )
 
     def remove_bad_scoring(self):
-        """Removes rounds where the scoring is bad. For example, rounds where the score drops
+        """Removes rounds where the scoring is bad.
+
+        We loop through the rounds:
+        If the round ahead has equal or less score, we do not add the current round.
+        If the round ahead has +1 score, we add the current round
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
             cleaned_rounds = []
-            last_zero_score_round = None
-            final_score_round = None
             for i, r in enumerate(self.json["gameRounds"]):
-                if r["endTScore"] >= 16 or r["endCTScore"] >= 16:
-                    final_score_round = r
-                if (r["tScore"] + r["ctScore"] == 0) and (not final_score_round):
-                    last_zero_score_round = r
-                if i > 0:
-                    if (r["endTScore"] + r["endCTScore"]) > (
-                        self.json["gameRounds"][i - 1]["endTScore"]
-                        + self.json["gameRounds"][i - 1]["endCTScore"]
-                    ):
+                current_round_total = (
+                    r["tScore"] + r["endTScore"] + r["ctScore"] + r["endCTScore"]
+                )
+                if i < len(self.json["gameRounds"]) - 1:
+                    lookahead_round = self.json["gameRounds"][i + 1]
+                    lookahead_round_total = (
+                        lookahead_round["tScore"]
+                        + lookahead_round["endTScore"]
+                        + lookahead_round["ctScore"]
+                        + lookahead_round["endCTScore"]
+                    )
+                    if lookahead_round_total == current_round_total:
                         cleaned_rounds.append(r)
-            if last_zero_score_round:
-                cleaned_rounds.insert(0, last_zero_score_round)
-            self.json["gameRounds"] = cleaned_rounds
+                    elif (r["endTScore"] == 16) & (r["endCTScore"] <= 14):
+                        cleaned_rounds.append(r)
+                    elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
+                        cleaned_rounds.append(r)
+                else:
+                    lookback_round = self.json["gameRounds"][i]
+                    lookback_round_total = (
+                        lookback_round["tScore"]
+                        + lookback_round["endTScore"]
+                        + lookback_round["ctScore"]
+                        + lookback_round["endCTScore"]
+                    )
+                    if (r["endTScore"] == 16) & (r["endCTScore"] <= 14):
+                        cleaned_rounds.append(r)
+                    elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
+                        cleaned_rounds.append(r)
+                    elif current_round_total > lookback_round_total:
+                        cleaned_rounds.append(r)
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
