@@ -340,7 +340,10 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_bad_scoring">
 <span class="sig-name descname"><span class="pre">remove_bad_scoring</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_bad_scoring"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_bad_scoring" title="Permalink to this definition"></a></dt>
-<dd><p>Removes rounds where the scoring is bad. For example, rounds where the score drops</p>
+<dd><p>Removes rounds where the scoring is bad.</p>
+<p>We loop through the rounds:
+If the round ahead has equal or less score, we do not add the current round.
+If the round ahead has +1 score, we add the current round</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
 <dd class="field-odd"><p><strong>AttributeError</strong> – Raises an AttributeError if the .json attribute is None</p>
