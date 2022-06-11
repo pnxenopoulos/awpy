@@ -129,17 +129,16 @@ def plot_round(
         markers = []
         # Plot bomb
         # Thanks to https://github.com/pablonieto0981 for adding this code!
-        for object_type in f["world"]:
-            if object_type["objectType"] == "bomb":
-                colors.append("orange")
-                markers.append("8")
-                pos = (
-                    position_transform(map_name, object_type["x"], "x"),
-                    position_transform(map_name, object_type["y"], "y"),
-                )
-                positions.append(pos)
-            else:
-                pass
+        if f["bomb"]:
+            colors.append("orange")
+            markers.append("8")
+            pos = (
+                position_transform(map_name, f["bomb"]["x"], "x"),
+                position_transform(map_name, f["bomb"]["y"], "y"),
+            )
+            positions.append(pos)
+        else:
+            pass
         # Plot players
         for side in ["ct", "t"]:
             for p in f[side]["players"]:

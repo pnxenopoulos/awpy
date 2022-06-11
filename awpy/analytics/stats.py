@@ -113,6 +113,8 @@ def player_stats(game_rounds, return_type="json"):
         for i, k in enumerate(r["kills"]):
             if (
                 k["attackerSteamID"]
+                and not k["isSuicide"]
+                and not k["isTeamkill"]
                 and k["attackerSteamID"] in player_statistics.keys()
             ):
                 player_statistics[k["attackerSteamID"]]["kills"] += 1
@@ -122,12 +124,14 @@ def player_stats(game_rounds, return_type="json"):
                 kast[k["victimSteamID"]]["s"] = False
             if (
                 k["assisterSteamID"]
+                and k["assisterTeam"] != k["victimTeam"]
                 and k["assisterSteamID"] in player_statistics.keys()
             ):
                 player_statistics[k["assisterSteamID"]]["assists"] += 1
                 kast[k["assisterSteamID"]]["a"] = True
             if (
                 k["flashThrowerSteamID"]
+                and k["flashThrowerTeam"] != k["victimTeam"]
                 and k["flashThrowerSteamID"] in player_statistics.keys()
             ):
                 player_statistics[k["flashThrowerSteamID"]]["flashAssists"] += 1
