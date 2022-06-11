@@ -108,84 +108,70 @@
     <span class="k">return</span> <span class="n">state</span></div>
 
 
-<div class="viewcode-block" id="generate_team_vector_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_team_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_team_vector_state</span><span class="p">(</span><span class="n">frame_side</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns a team&#39;s game state as a vector. The included features are the total players remaining, full hp players remaining, hp, armor, helmets, equipment value and defuse kits.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        frame_side (dict) : Dict output of a frame side generated from the DemoParser class</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        A list with numeric elements</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">team_state</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;eqVal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;playersRemaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;fullHpPlayersRemaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;armor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;helmets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;defuseKits&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">frame_side</span><span class="p">[</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;isAlive&quot;</span><span class="p">]:</span>
-            <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;eqVal&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;equipmentValue&quot;</span><span class="p">]</span>
-            <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;playersRemaining&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span>
-            <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;armor&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;armor&quot;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;hasHelmet&quot;</span><span class="p">]:</span>
-                <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;helmets&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;hasDefuse&quot;</span><span class="p">]:</span>
-                <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;defuseKits&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">100</span><span class="p">:</span>
-                <span class="n">team_state</span><span class="p">[</span><span class="s2">&quot;fullHpPlayersRemaining&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">return</span> <span class="n">team_state</span></div>
-
-
-<div class="viewcode-block" id="generate_world_vector_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_world_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_world_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Generate&#39;s the world state as a vector</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        A list with numeric elements</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">world_state</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">world_state</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">if</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]:</span>
-        <span class="n">world_state</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="n">world_state</span><span class="p">[</span><span class="s2">&quot;secondsRemainingInPhase&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;seconds&quot;</span><span class="p">]</span>
-    <span class="n">world_state</span><span class="p">[</span><span class="s2">&quot;bombsite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;bombsite&quot;</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">world_state</span></div>
-
-
 <div class="viewcode-block" id="generate_vector_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns a game state as a vector. The vector includes the following information:</span>
-
-<span class="sd">    For each team:</span>
-<span class="sd">        - players remaining</span>
-<span class="sd">        - full hp players remaining</span>
-<span class="sd">        - total hp</span>
-<span class="sd">        - total armor</span>
-<span class="sd">        - total helmets</span>
-<span class="sd">        - total equipment value</span>
-<span class="sd">        - total defuse kits</span>
-
-<span class="sd">    For the world state:</span>
-<span class="sd">        - seconds since the beginning of the game phase (bomb planted/not)</span>
-<span class="sd">        - bomb plant</span>
-<span class="sd">        - bomb site where bomb is planted</span>
+    <span class="sd">&quot;&quot;&quot;Returns a game state in a dictionary format.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;, where each entry is a vector. Global vector is CT + T concatenated</span>
+<span class="sd">        A dict with keys for each feature.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">state</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_team_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">])</span>
-    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_team_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">])</span>
-    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;global&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_world_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">state</span></div>
+    <span class="n">game_state</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;secondsSincePhaseStart&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;seconds&quot;</span><span class="p">]</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;bombsite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;bombsite&quot;</span><span class="p">]</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;totalSmokes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;smokes&quot;</span><span class="p">])</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;totalFires&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;fires&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Team specific info (CT)</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctAlive&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctHp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctArmor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctHelmet&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctEq&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctUtility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctEqValStart&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctBombZone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;defusers&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
+        <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctEqValStart&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;equipmentValueFreezetimeEnd&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;isAlive&quot;</span><span class="p">]:</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctAlive&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctHp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctArmor&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;armor&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctHelmet&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hasHelmet&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctEq&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;equipmentValue&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctUtility&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;totalUtility&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;defusers&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hasDefuse&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;isInBombZone&quot;</span><span class="p">]:</span>
+                <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctBombZone&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Team specific info (T)</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tAlive&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tHp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tArmor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tHelmet&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tEq&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tUtility&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tEqValStart&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tHoldingBomb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tBombZone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
+        <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tEqValStart&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;equipmentValueFreezetimeEnd&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;isAlive&quot;</span><span class="p">]:</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tAlive&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tHp&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hp&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tArmor&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;armor&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tHelmet&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hasHelmet&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tEq&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;equipmentValue&quot;</span><span class="p">]</span>
+            <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tUtility&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;totalUtility&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;isInBombZone&quot;</span><span class="p">]:</span>
+                <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tBombZone&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hasBomb&quot;</span><span class="p">]:</span>
+                <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tHoldingBomb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">game_state</span></div>
 
 
 <div class="viewcode-block" id="generate_graph_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_graph_state">[docs]</a><span class="k">def</span> <span class="nf">generate_graph_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>

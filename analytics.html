@@ -228,61 +228,15 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="awpy.analytics.states.generate_team_vector_state">
-<span class="sig-prename descclassname"><span class="pre">awpy.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_team_vector_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_side</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/analytics/states.html#generate_team_vector_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.analytics.states.generate_team_vector_state" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a team’s game state as a vector. The included features are the total players remaining, full hp players remaining, hp, armor, helmets, equipment value and defuse kits.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>frame_side</strong> (<em>dict</em>) – Dict output of a frame side generated from the DemoParser class</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A list with numeric elements</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="awpy.analytics.states.generate_vector_state">
 <span class="sig-prename descclassname"><span class="pre">awpy.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_vector_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/analytics/states.html#generate_vector_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.analytics.states.generate_vector_state" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a game state as a vector. The vector includes the following information:</p>
-<dl class="simple">
-<dt>For each team:</dt><dd><ul class="simple">
-<li><p>players remaining</p></li>
-<li><p>full hp players remaining</p></li>
-<li><p>total hp</p></li>
-<li><p>total armor</p></li>
-<li><p>total helmets</p></li>
-<li><p>total equipment value</p></li>
-<li><p>total defuse kits</p></li>
-</ul>
-</dd>
-<dt>For the world state:</dt><dd><ul class="simple">
-<li><p>seconds since the beginning of the game phase (bomb planted/not)</p></li>
-<li><p>bomb plant</p></li>
-<li><p>bomb site where bomb is planted</p></li>
-</ul>
-</dd>
-</dl>
+<dd><p>Returns a game state in a dictionary format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A dict with keys “T”, “CT” and “Global”, where each entry is a vector. Global vector is CT + T concatenated</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="awpy.analytics.states.generate_world_vector_state">
-<span class="sig-prename descclassname"><span class="pre">awpy.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_world_vector_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/analytics/states.html#generate_world_vector_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.analytics.states.generate_world_vector_state" title="Permalink to this definition"></a></dt>
-<dd><p>Generate’s the world state as a vector</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A list with numeric elements</p>
+<dd class="field-even"><p>A dict with keys for each feature.</p>
 </dd>
 </dl>
 </dd></dl>
