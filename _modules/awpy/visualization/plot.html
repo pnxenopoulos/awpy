@@ -13,6 +13,7 @@
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -206,17 +207,16 @@
         <span class="n">markers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Plot bomb</span>
         <span class="c1"># Thanks to https://github.com/pablonieto0981 for adding this code!</span>
-        <span class="k">for</span> <span class="n">object_type</span> <span class="ow">in</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;world&quot;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">object_type</span><span class="p">[</span><span class="s2">&quot;objectType&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;bomb&quot;</span><span class="p">:</span>
-                <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;orange&quot;</span><span class="p">)</span>
-                <span class="n">markers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;8&quot;</span><span class="p">)</span>
-                <span class="n">pos</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">position_transform</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">object_type</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">),</span>
-                    <span class="n">position_transform</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">object_type</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span>
-                <span class="p">)</span>
-                <span class="n">positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">pass</span>
+        <span class="k">if</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;bomb&quot;</span><span class="p">]:</span>
+            <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;orange&quot;</span><span class="p">)</span>
+            <span class="n">markers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;8&quot;</span><span class="p">)</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">position_transform</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;bomb&quot;</span><span class="p">][</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="s2">&quot;x&quot;</span><span class="p">),</span>
+                <span class="n">position_transform</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;bomb&quot;</span><span class="p">][</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
         <span class="c1"># Plot players</span>
         <span class="k">for</span> <span class="n">side</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">]:</span>
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">f</span><span class="p">[</span><span class="n">side</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>

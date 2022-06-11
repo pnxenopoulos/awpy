@@ -14,6 +14,7 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -76,7 +77,7 @@
            <div itemprop="articleBody">
              
   <section id="example-parser-json">
-<h1>Example Parser JSON<a class="headerlink" href="#example-parser-json" title="Permalink to this headline"></a></h1>
+<h1>Example Parser JSON<a class="headerlink" href="#example-parser-json" title="Permalink to this heading"></a></h1>
 <p>When using <cite>awpy.DemoParser</cite>, you create a <cite>JSON</cite> output file. This is generally a large file, and is described by the JSON structure contained in this documentation.</p>
 <p><strong>Contents</strong></p>
 <ul class="simple">
@@ -91,7 +92,7 @@
 <li><p><a class="reference internal" href="#frames"><span class="std std-ref">Frames</span></a></p></li>
 </ul>
 <section id="top-level-keys">
-<h2>Top level keys<a class="headerlink" href="#top-level-keys" title="Permalink to this headline"></a></h2>
+<h2>Top level keys<a class="headerlink" href="#top-level-keys" title="Permalink to this heading"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
     &quot;matchID&quot;: &quot;003486831536689381471_0732641554&quot;,  # Set to be the name of the demo file
     &quot;clientName&quot;: &quot;GOTV Demo&quot;,                      # Client which recorded the demo
@@ -171,7 +172,7 @@
 </div>
 </section>
 <section id="rounds">
-<h2>Rounds<a class="headerlink" href="#rounds" title="Permalink to this headline"></a></h2>
+<h2>Rounds<a class="headerlink" href="#rounds" title="Permalink to this heading"></a></h2>
 <p>This object contains round information and events. The possible round end reasons are <cite>TargetBombed</cite>, <cite>VIPEscaped</cite>, <cite>VIPKilled</cite>, <cite>TerroristsEscaped</cite>, <cite>CTStoppedEscape</cite>, <cite>TerroristsStopped</cite>, <cite>BombDefused</cite>, <cite>CTWin</cite>, <cite>TerroristsWin</cite>, <cite>Draw</cite>, <cite>HostagesRescued</cite>, <cite>TargetSaved</cite>, <cite>HostagesNotRescued</cite>, <cite>TerroristsNotEscaped</cite>, <cite>VIPNotEscaped</cite>, <cite>GameStart</cite>, <cite>TerroristsSurrender</cite>, <cite>CTSurrender</cite>.</p>
 <p>Keep in mind that due to dropped guns which aren’t equipped at FreezeTimeEnd, the FreezeTimeEndEqVal may not equal StartEqVal + Spend.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
@@ -220,7 +221,7 @@
 </div>
 </section>
 <section id="kills">
-<h2>Kills<a class="headerlink" href="#kills" title="Permalink to this headline"></a></h2>
+<h2>Kills<a class="headerlink" href="#kills" title="Permalink to this heading"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
     &quot;tick&quot;: 9582,
     &quot;seconds&quot;: 25.71875,
@@ -273,7 +274,7 @@
 </div>
 </section>
 <section id="damages">
-<h2>Damages<a class="headerlink" href="#damages" title="Permalink to this headline"></a></h2>
+<h2>Damages<a class="headerlink" href="#damages" title="Permalink to this heading"></a></h2>
 <p>The possible hit groups are <cite>Generic</cite>, <cite>Head</cite>, <cite>Chest</cite>, <cite>Stomach</cite>, <cite>LeftArm</cite>, <cite>RightArm</cite>, <cite>LeftLeg</cite>, <cite>RightLeg</cite>, <cite>Gear</cite>.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
     &quot;tick&quot;: 8172,
@@ -313,7 +314,7 @@
 </div>
 </section>
 <section id="grenades">
-<h2>Grenades<a class="headerlink" href="#grenades" title="Permalink to this headline"></a></h2>
+<h2>Grenades<a class="headerlink" href="#grenades" title="Permalink to this heading"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
     &quot;throwTick&quot;: 8500,
     &quot;destroyTick&quot;: 8860,                  # When was the entity destroyed
@@ -338,7 +339,7 @@
 </div>
 </section>
 <section id="bomb-events">
-<h2>Bomb Events<a class="headerlink" href="#bomb-events" title="Permalink to this headline"></a></h2>
+<h2>Bomb Events<a class="headerlink" href="#bomb-events" title="Permalink to this heading"></a></h2>
 <p>The bomb action can be <cite>defuse</cite>, <cite>defuse_start</cite>, <cite>defuse_aborted</cite>, <cite>plant</cite>, <cite>plant_start</cite>, <cite>plant_aborted</cite>.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12250</span><span class="p">,</span><span class="w"></span>
@@ -357,7 +358,7 @@
 </div>
 </section>
 <section id="weapon-fires">
-<h2>Weapon Fires<a class="headerlink" href="#weapon-fires" title="Permalink to this headline"></a></h2>
+<h2>Weapon Fires<a class="headerlink" href="#weapon-fires" title="Permalink to this heading"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
     &quot;tick&quot;: 8492,
     &quot;seconds&quot;: 8.6875,
@@ -380,7 +381,7 @@
 </div>
 </section>
 <section id="flashes">
-<h2>Flashes<a class="headerlink" href="#flashes" title="Permalink to this headline"></a></h2>
+<h2>Flashes<a class="headerlink" href="#flashes" title="Permalink to this heading"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
 <span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9518</span><span class="p">,</span><span class="w"></span>
 <span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">24.71875</span><span class="p">,</span><span class="w"></span>
@@ -409,7 +410,7 @@
 </div>
 </section>
 <section id="frames">
-<h2>Frames<a class="headerlink" href="#frames" title="Permalink to this headline"></a></h2>
+<h2>Frames<a class="headerlink" href="#frames" title="Permalink to this heading"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
     &quot;parseKillFrame&quot;: true                         # True if the frame was parsed due to a kill
     &quot;tick&quot;: 8174,
