@@ -183,23 +183,6 @@
 <section id="module-awpy.analytics.states">
 <span id="awpy-analytics-states"></span><h2>awpy.analytics.states<a class="headerlink" href="#module-awpy.analytics.states" title="Permalink to this heading"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="awpy.analytics.states.generate_game_state">
-<span class="sig-prename descclassname"><span class="pre">awpy.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_game_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/analytics/states.html#generate_game_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.analytics.states.generate_game_state" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a frame into a game state form (one of vector, graph or set)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p></li>
-<li><p><strong>state_type</strong> (<em>string</em>) – One of “vector”, “graph” or “set”</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A dict with keys “T”, “CT” and “Global” containing the state representation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="awpy.analytics.states.generate_graph_state">
 <span class="sig-prename descclassname"><span class="pre">awpy.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_graph_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/analytics/states.html#generate_graph_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.analytics.states.generate_graph_state" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a game state as a graph</p>
