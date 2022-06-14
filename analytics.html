@@ -229,11 +229,14 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="awpy.analytics.states.generate_vector_state">
-<span class="sig-prename descclassname"><span class="pre">awpy.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_vector_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/analytics/states.html#generate_vector_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.analytics.states.generate_vector_state" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">awpy.analytics.states.</span></span><span class="sig-name descname"><span class="pre">generate_vector_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/analytics/states.html#generate_vector_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.analytics.states.generate_vector_state" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a game state in a dictionary format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>frame</strong> (<em>dict</em>) – Dict output of a frame generated from the DemoParser class</p></li>
+<li><p><strong>map_name</strong> (<em>string</em>) – String indicating the map name</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>A dict with keys for each feature.</p>
