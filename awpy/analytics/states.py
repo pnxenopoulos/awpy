@@ -30,16 +30,18 @@ def generate_game_state(frame, state_type="vector"):
     return state
 
 
-def generate_vector_state(frame):
+def generate_vector_state(frame, map_name):
     """Returns a game state in a dictionary format.
 
     Args:
         frame (dict) : Dict output of a frame generated from the DemoParser class
+        map_name (string): String indicating the map name
 
     Returns:
         A dict with keys for each feature.
     """
     game_state = {}
+    game_state["mapName"] = map_name
     game_state["secondsSincePhaseStart"] = frame["seconds"]
     game_state["bombPlanted"] = frame["bombPlanted"]
     game_state["bombsite"] = frame["bombsite"]
