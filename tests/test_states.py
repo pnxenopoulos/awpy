@@ -64,6 +64,8 @@ class TestStates:
 
     def test_output(self):
         """Tests that output is a dict with 3 keys"""
-        game_state = generate_game_state(self.data["gameRounds"][7]["frames"][0])
+        game_state = generate_game_state(
+            self.data["gameRounds"][7]["frames"][0], self.data["mapName"]
+        )
         assert type(game_state) == dict
         assert "ctAlive" in game_state.keys()
