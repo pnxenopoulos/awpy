@@ -1,35 +1,3 @@
-def generate_game_state(frame, state_type="vector"):
-    """Returns a frame into a game state form (one of vector, graph or set)
-
-    Args:
-        frame (dict)        : Dict output of a frame generated from the DemoParser class
-        state_type (string) : One of "vector", "graph" or "set"
-
-    Returns:
-        A dict with keys "T", "CT" and "Global" containing the state representation
-    """
-    if type(frame) is not dict:
-        raise ValueError(
-            "Frame input must be a dict from the DemoParser.parse() output"
-        )
-
-    if state_type not in ["vector", "graph", "set"]:
-        raise ValueError("Supported state types are vector, graph and set.")
-
-    state = None
-
-    if state_type == "vector":
-        state = generate_vector_state(frame)
-
-    if state_type == "graph":
-        state = generate_graph_state(frame)
-
-    if state_type == "set":
-        state = generate_set_state(frame)
-
-    return state
-
-
 def generate_vector_state(frame, map_name):
     """Returns a game state in a dictionary format.
 
