@@ -124,7 +124,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         map_name (string): Map to search
         point_a (list): Point as a list (x,y,z)
         point_b (list): Point as a list (x,y,z)
-        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidena, manhattan, canberra or cosine.
+        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
 
     Returns:
         A dict containing info on the distance between two points.

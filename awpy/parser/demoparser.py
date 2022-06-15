@@ -308,7 +308,7 @@ class DemoParser:
             ].astype(pd.Int64Dtype())
             # Weapon Fires
             demo_data["weaponFires"] = self._parse_weapon_fires()
-            demo_data["weaponFires"]["playerSteamID"] = demo_data["flashes"][
+            demo_data["weaponFires"]["playerSteamID"] = demo_data["weaponFires"][
                 "playerSteamID"
             ].astype(pd.Int64Dtype())
             # Bomb Events
@@ -793,6 +793,7 @@ class DemoParser:
                     r["tScore"] + r["endTScore"] + r["ctScore"] + r["endCTScore"]
                 )
                 if i < len(self.json["gameRounds"]) - 1:
+                    # Non-OT rounds
                     lookahead_round = self.json["gameRounds"][i + 1]
                     lookahead_round_total = (
                         lookahead_round["tScore"]
@@ -806,6 +807,13 @@ class DemoParser:
                         cleaned_rounds.append(r)
                     elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
                         cleaned_rounds.append(r)
+                    else:
+                        OT_Scores = [19, 23, 27, 31, 35, 39, 43, 47]
+                        for s in OT_Scores:
+                            if (r["endCTScore"] == s) & (r["endTScore"] < s - 1):
+                                cleaned_rounds.append(r)
+                            elif (r["endTScore"] == s) & (r["endCTScore"] < s - 1):
+                                cleaned_rounds.append(r)
                 else:
                     lookback_round = self.json["gameRounds"][i - 1]
                     lookback_round_total = (

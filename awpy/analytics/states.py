@@ -1,113 +1,69 @@
-def generate_game_state(frame, state_type="vector"):
-    """Returns a frame into a game state form (one of vector, graph or set)
-
-    Args:
-        frame (dict)        : Dict output of a frame generated from the DemoParser class
-        state_type (string) : One of "vector", "graph" or "set"
-
-    Returns:
-        A dict with keys "T", "CT" and "Global" containing the state representation
-    """
-    if type(frame) is not dict:
-        raise ValueError(
-            "Frame input must be a dict from the DemoParser.parse() output"
-        )
-
-    if state_type not in ["vector", "graph", "set"]:
-        raise ValueError("Supported state types are vector, graph and set.")
-
-    state = None
-
-    if state_type == "vector":
-        state = generate_vector_state(frame)
-
-    if state_type == "graph":
-        state = generate_graph_state(frame)
-
-    if state_type == "set":
-        state = generate_set_state(frame)
-
-    return state
-
-
-def generate_team_vector_state(frame_side):
-    """Returns a team's game state as a vector. The included features are the total players remaining, full hp players remaining, hp, armor, helmets, equipment value and defuse kits.
-
-    Args:
-        frame_side (dict) : Dict output of a frame side generated from the DemoParser class
-
-    Returns:
-        A list with numeric elements
-    """
-    team_state = {}
-    team_state["eqVal"] = 0
-    team_state["playersRemaining"] = 0
-    team_state["fullHpPlayersRemaining"] = 0
-    team_state["hp"] = 0
-    team_state["armor"] = 0
-    team_state["helmets"] = 0
-    team_state["defuseKits"] = 0
-    for player in frame_side["players"]:
-        if player["isAlive"]:
-            team_state["eqVal"] += player["equipmentValue"]
-            team_state["playersRemaining"] += 1
-            team_state["hp"] += player["hp"]
-            team_state["armor"] += player["armor"]
-            if player["hasHelmet"]:
-                team_state["helmets"] += 1
-            if player["hasDefuse"]:
-                team_state["defuseKits"] += 1
-            if player["hp"] == 100:
-                team_state["fullHpPlayersRemaining"] += 1
-    return team_state
-
-
-def generate_world_vector_state(frame):
-    """Generate's the world state as a vector
+def generate_vector_state(frame, map_name):
+    """Returns a game state in a dictionary format.
 
     Args:
         frame (dict) : Dict output of a frame generated from the DemoParser class
+        map_name (string): String indicating the map name
 
     Returns:
-        A list with numeric elements
+        A dict with keys for each feature.
     """
-    world_state = {}
-    world_state["bombPlanted"] = 0
-    if frame["bombPlanted"]:
-        world_state["bombPlanted"] = 1
-    world_state["secondsRemainingInPhase"] = frame["seconds"]
-    world_state["bombsite"] = frame["bombsite"]
-    return world_state
+    game_state = {}
+    game_state["mapName"] = map_name
+    game_state["secondsSincePhaseStart"] = frame["seconds"]
+    game_state["bombPlanted"] = frame["bombPlanted"]
+    game_state["bombsite"] = frame["bombsite"]
+    game_state["totalSmokes"] = len(frame["smokes"])
+    game_state["totalFires"] = len(frame["fires"])
 
+    # Team specific info (CT)
+    game_state["ctAlive"] = 0
+    game_state["ctHp"] = 0
+    game_state["ctArmor"] = 0
+    game_state["ctHelmet"] = 0
+    game_state["ctEq"] = 0
+    game_state["ctUtility"] = 0
+    game_state["ctEqValStart"] = 0
+    game_state["ctBombZone"] = 0
+    game_state["defusers"] = 0
+    for p in frame["ct"]["players"]:
+        game_state["ctEqValStart"] += p["equipmentValueFreezetimeEnd"]
+        if p["isAlive"]:
+            game_state["ctAlive"] += 1
+            game_state["ctHp"] += p["hp"]
+            game_state["ctArmor"] += p["armor"]
+            game_state["ctHelmet"] += p["hasHelmet"]
+            game_state["ctEq"] += p["equipmentValue"]
+            game_state["ctUtility"] += p["totalUtility"]
+            game_state["defusers"] += p["hasDefuse"]
+            if p["isInBombZone"]:
+                game_state["ctBombZone"] += 1
 
-def generate_vector_state(frame):
-    """Returns a game state as a vector. The vector includes the following information:
+    # Team specific info (T)
+    game_state["tAlive"] = 0
+    game_state["tHp"] = 0
+    game_state["tArmor"] = 0
+    game_state["tHelmet"] = 0
+    game_state["tEq"] = 0
+    game_state["tUtility"] = 0
+    game_state["tEqValStart"] = 0
+    game_state["tHoldingBomb"] = 0
+    game_state["tBombZone"] = 0
+    for p in frame["t"]["players"]:
+        game_state["tEqValStart"] += p["equipmentValueFreezetimeEnd"]
+        if p["isAlive"]:
+            game_state["tAlive"] += 1
+            game_state["tHp"] += p["hp"]
+            game_state["tArmor"] += p["armor"]
+            game_state["tHelmet"] += p["hasHelmet"]
+            game_state["tEq"] += p["equipmentValue"]
+            game_state["tUtility"] += p["totalUtility"]
+            if p["isInBombZone"]:
+                game_state["tBombZone"] += 1
+            if p["hasBomb"]:
+                game_state["tHoldingBomb"] = 1
 
-    For each team:
-        - players remaining
-        - full hp players remaining
-        - total hp
-        - total armor
-        - total helmets
-        - total equipment value
-        - total defuse kits
-
-    For the world state:
-        - seconds since the beginning of the game phase (bomb planted/not)
-        - bomb plant
-        - bomb site where bomb is planted
-
-    Args:
-        frame (dict) : Dict output of a frame generated from the DemoParser class
-
-    Returns:
-        A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
-    """
-    state = {}
-    state["ct"] = generate_team_vector_state(frame["ct"])
-    state["t"] = generate_team_vector_state(frame["t"])
-    state["global"] = generate_world_vector_state(frame)
-    return state
+    return game_state
 
 
 def generate_graph_state(frame):

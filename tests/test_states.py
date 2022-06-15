@@ -2,10 +2,9 @@ import json
 import os
 import requests
 import pytest
-import pandas as pd
 
 from awpy.parser import DemoParser
-from awpy.analytics.states import generate_game_state
+from awpy.analytics.states import generate_vector_state
 
 
 class TestStates:
@@ -49,26 +48,10 @@ class TestStates:
         print("Removing " + demo_name)
         os.remove(demo_name + ".dem")
 
-    def test_wrong_frame_input(self):
-        """Tests that wrong frame type raises error"""
-        frame = "not a dict"
-        with pytest.raises(ValueError):
-            generate_game_state(frame)
-
-    def test_wrong_state_type(self):
-        """Tests that wrong state type raises error"""
-        with pytest.raises(ValueError):
-            generate_game_state(
-                self.data["gameRounds"][0]["frames"][0], state_type="test"
-            )
-
     def test_output(self):
         """Tests that output is a dict with 3 keys"""
-        game_state = generate_game_state(self.data["gameRounds"][7]["frames"][0])
+        game_state = generate_vector_state(
+            self.data["gameRounds"][7]["frames"][0], self.data["mapName"]
+        )
         assert type(game_state) == dict
-        assert "ct" in game_state.keys()
-        assert "t" in game_state.keys()
-        assert "global" in game_state.keys()
-        assert type(game_state["ct"]) == dict
-        assert type(game_state["t"]) == dict
-        assert type(game_state["global"]) == dict
+        assert "ctAlive" in game_state.keys()

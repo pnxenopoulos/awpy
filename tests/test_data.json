@@ -43,5 +43,8 @@
     },
     "vitality-vs-ence-m1-mirage": {
         "url": "https://storage.googleapis.com/csgo-tests/vitality-vs-ence-m1-mirage.dem"
+    },
+    "esea_match_16902209": {
+        "url": "https://storage.googleapis.com/csgo-tests/esea_match_16902209.dem"
     }
 }

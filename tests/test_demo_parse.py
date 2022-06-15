@@ -343,7 +343,7 @@ class TestDemoParser:
     def test_zero_kills(self):
         """Tests a demo that raised many errors"""
         self.zero_kills_parser = DemoParser(
-            demofile="nip-vs-gambit-m2-inferno.dem", log=False, parse_rate=128
+            demofile="nip-vs-gambit-m2-inferno.dem", log=False, parse_rate=256
         )
         self.zero_kills_data = self.zero_kills_parser.parse()
         assert len(self.zero_kills_data["gameRounds"]) == 22
@@ -351,7 +351,15 @@ class TestDemoParser:
     def test_end_round_cleanup(self):
         """Tests cleaning the last round"""
         self.end_round_parser = DemoParser(
-            demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=128
+            demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
         )
         self.end_round_data = self.end_round_parser.parse()
         assert len(self.end_round_data["gameRounds"]) == 30
+
+    def test_esea_ot_demo(self):
+        """Tests an ESEA demo with OT rounds"""
+        self.esea_ot_parser = DemoParser(
+            demofile="esea_match_16902209.dem", log=False, parse_rate=256
+        )
+        self.esea_ot_data = self.esea_ot_parser.parse()
+        assert len(self.esea_ot_data["gameRounds"]) == 35

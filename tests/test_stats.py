@@ -12,16 +12,6 @@ class TestStats:
     Uses https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
     """
 
-    def clean(df: pd.DataFrame) -> pd.DataFrame:
-        """This code was made before .clean_rounds() existed. 4-31 are the clean rounds."""
-        df_copy = df.copy()
-        df_copy = df_copy.loc[
-            (df_copy["roundNum"] > 3) & (df_copy["roundNum"] < 32)
-        ].copy()
-        df_copy.reset_index(inplace=True, drop=True)
-        df_copy["roundNum"] = df_copy["roundNum"] - 3
-        return df_copy
-
     def setup_class(self):
         """Sets up class by defining the parser, filters, and dataframes."""
         with open("tests/test_data.json") as f:
@@ -41,7 +31,7 @@ class TestStats:
         stats = player_stats(self.data["gameRounds"])
         assert stats[76561197995889730]["kills"] == 19
         assert stats[76561197995889730]["assists"] == 1
-        assert stats[76561197995889730]["flashAssists"] == 2
+        assert stats[76561197995889730]["flashAssists"] == 0
         assert stats[76561197995889730]["deaths"] == 17
         assert stats[76561197995889730]["adr"] == 63.6
         assert stats[76561197995889730]["rating"] == 1.03
