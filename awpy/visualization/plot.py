@@ -5,7 +5,7 @@ import imageio
 
 import collections
 from tqdm import tqdm
-import logging
+import itertools
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
@@ -71,8 +71,8 @@ def plot_positions(
     positions=[],
     colors=[],
     markers=[],
-    alphas=[],
-    sizes=[],
+    alphas=None,
+    sizes=None,
     map_name="de_ancient",
     map_type="original",
     dark=False,
@@ -84,6 +84,8 @@ def plot_positions(
         positions (list): List of lists of length 2 ([[x,y], ...])
         colors (list): List of colors for each player
         markers (list): List of marker types for each player
+        alphas (list): List of alpha values for each player
+        sizes (list): List of marker sizes for each player
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
@@ -92,6 +94,10 @@ def plot_positions(
     Returns:
         matplotlib fig and ax
     """
+    if alphas is None:
+        alphas = [1] * len(positions)
+    if sizes is None:
+        sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for p, c, m, al, s in zip(positions, colors, markers, alphas, sizes):
         if apply_transformation:
@@ -118,7 +124,6 @@ def plot_round(
     Args:
         filename (string): Filename to save the gif
         frames (list): List of frames from a parsed demo
-        markers (list): List of marker types for each player
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
@@ -181,198 +186,6 @@ def plot_round(
     return True
 
 
-def get_player_id(player):
-    """Extracts a players steamID from their player dictionary in a given frame.
-
-    Each player has a unique steamID by which they can be identified.
-    Bots, however, do not naturally have a steamID and are instead all assigned 0.
-    To avoid overlap bots are instead identified by their name which is unique in any given game.
-
-    Args:
-        player: Dictionary about a players position and status in a given frame
-
-    Returns:
-        An integer corresponding to their steamID if they are a player or a string corresponding to the bots name if not.
-    """
-    if player["steamID"] == 0:
-        return player["name"]
-    else:
-        return str(player["steamID"])
-
-
-def get_closest_leader(leaders, assigned, pos):
-    """Get closest leader"""
-    logging.info("Number of existing leaders: %s", len(leaders))
-    logging.info("Already assigned leaders: %s", assigned)
-    logging.info("my pos: %s", pos)
-    closest_leader = None
-    smallest_dist = float("inf")
-    for leader in leaders:
-        if leader in assigned:
-            continue
-        dist = (pos[0] - leaders[leader]["pos"][0]) ** 2 + (
-            pos[1] - leaders[leader]["pos"][1]
-        ) ** 2
-        if dist < smallest_dist:
-            smallest_dist = dist
-            closest_leader = leader
-    return closest_leader
-
-
-def tree():
-    """Build tree structure"""
-
-    def the_tree():
-        return collections.defaultdict(the_tree)
-
-    return the_tree()
-
-
-def plot_rounds_different_players(
-    filename, frames_list, map_name="de_ancient", map_type="original", dark=False
-):
-    """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
-
-    Args:
-        filename (string): Filename to save the gif
-        frames_list (list): List of frames lists from parsed demos
-        markers (list): List of marker types for each player
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
-
-    Returns:
-        matplotlib fig and ax, saves .gif
-    """
-    if os.path.isdir("csgo_tmp"):
-        shutil.rmtree("csgo_tmp/")
-    os.mkdir("csgo_tmp")
-    image_files = []
-    dict_initialized = {"t": False, "ct": False}
-    frame_positions = collections.defaultdict(list)
-    frame_colors = collections.defaultdict(list)
-    frame_markers = collections.defaultdict(list)
-    frame_alphas = collections.defaultdict(list)
-    frame_sizes = collections.defaultdict(list)
-    colors_list = ["cyan", "red", "green", "blue", "orange"]
-    # logging.info(type(frames_list))
-    # logging.info([frames[0]["tick"] for frames in frames_list])
-    max_frames = max(len(frames) for frames in frames_list)
-    leaders = tree()
-    sides = ["ct"]
-    # logging.info(max_frames)
-    for i in tqdm(range(max_frames)):
-        # logging.info(leaders)
-        # for i in range(max_frames):
-        positions = []
-        colors = []
-        markers = []
-        alphas = []
-        sizes = []
-        checked_in = set()
-        for frame_index, frames in enumerate(frames_list):
-            # logging.info(type(frames))
-            # logging.info(frame_index, frames[0])
-            assigned = set()
-            frame_positions[frame_index] = []
-            frame_colors[frame_index] = []
-            frame_markers[frame_index] = []
-            frame_alphas[frame_index] = []
-            frame_sizes[frame_index] = []
-            if i in range(len(frames)):
-                # Plot players
-                for side in sides:
-                    for player_index, p in enumerate(frames[i][side]["players"]):
-                        player_id = get_player_id(p) + "_" + str(frame_index)
-                        pos = (
-                            position_transform(map_name, p["x"], "x"),
-                            position_transform(map_name, p["y"], "y"),
-                        )
-
-                        is_dead = False
-                        if p["hp"] == 0:
-                            is_dead = True
-                            frame_markers[frame_index].append("x")
-                        else:
-                            frame_markers[frame_index].append(".")
-
-                        if dict_initialized[side] is False:
-                            leaders[side][player_id]["index"] = player_index
-                            leaders[side][player_id]["pos"] = pos
-
-                        if player_id in leaders[side] and player_id not in checked_in:
-                            if is_dead:
-                                leaders[side][player_id]["is_dead"] = True
-                            player_index = leaders[side][player_id]["index"]
-                            leaders[side][player_id]["pos"] = pos
-
-                        else:
-                            closest_leader = get_closest_leader(
-                                leaders[side], assigned, pos
-                            )
-                            if (
-                                leaders[side][closest_leader]["is_dead"]
-                                or closest_leader not in checked_in
-                            ) and not is_dead:
-                                old_index = leaders[side][closest_leader]["index"]
-                                del leaders[side][closest_leader]
-                                leaders[side][player_id]["index"] = old_index
-                                leaders[side][player_id]["pos"] = pos
-                                leaders[side][player_id]["is_dead"] = False
-                                player_index = leaders[side][player_id]["index"]
-                                assigned.add(player_id)
-                            else:
-                                player_index = leaders[side][closest_leader]["index"]
-                                if not is_dead:
-                                    assigned.add(closest_leader)
-                        frame_colors[frame_index].append(colors_list[player_index])
-                        frame_positions[frame_index].append(pos)
-                        if (
-                            player_id in leaders[side]
-                            and not leaders[side][player_id]["is_dead"]
-                            and not player_id in checked_in
-                        ):
-                            frame_alphas[frame_index].append(1)
-                            frame_sizes[frame_index].append(
-                                mpl.rcParams["lines.markersize"] ** 2
-                            )
-                        else:
-                            frame_alphas[frame_index].append(0.2)
-                            frame_sizes[frame_index].append(
-                                0.25 * mpl.rcParams["lines.markersize"] ** 2
-                            )
-                        if player_id in leaders[side]:
-                            checked_in.add(player_id)
-                    dict_initialized[side] = True
-            positions.extend(frame_positions[frame_index])
-            colors.extend(frame_colors[frame_index])
-            markers.extend(frame_markers[frame_index])
-            alphas.extend(frame_alphas[frame_index])
-            sizes.extend(frame_sizes[frame_index])
-        # logging.info(alpha)
-        # logging.info(positions)
-        # logging.info(markers)
-        f, a = plot_positions(
-            positions=positions,
-            colors=colors,
-            markers=markers,
-            alphas=alphas,
-            sizes=sizes,
-            map_name=map_name,
-            map_type=map_type,
-            dark=dark,
-        )
-        image_files.append("csgo_tmp/{}.png".format(i))
-        f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
-        plt.close()
-    images = []
-    for file in image_files:
-        images.append(imageio.imread(file))
-    imageio.mimsave(filename, images)
-    # shutil.rmtree("csgo_tmp/")
-    return True
-
-
 def plot_nades(
     rounds, nades=[], side="CT", map_name="de_ancient", map_type="original", dark=False
 ):
@@ -419,15 +232,88 @@ def plot_nades(
     return f, a
 
 
-def plot_rounds_same_players(
-    filename, frames_list, map_name="de_ancient", map_type="original", dark=False
+def get_player_id(player):
+    """Extracts a players steamID from their player dictionary in a given frame.
+
+    Each player has a unique steamID by which they can be identified.
+    Bots, however, do not naturally have a steamID and are instead all assigned 0.
+    To avoid overlap bots are instead identified by their name which is unique in any given game.
+
+    Args:
+        player (dictionary): Dictionary about a players position and status in a given frame
+
+    Returns:
+        string
+    """
+    if player["steamID"] == 0:
+        return player["name"]
+    else:
+        return str(player["steamID"])
+
+
+def get_shortest_distances_mapping(leaders, current_positions):
+    """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
+
+    Args:
+        leaders (dictionary): Dictionary of leaders position, alive status and color index in the current frame
+        current_positions (list): List of tuples of players x, y coordinates in the current round and frame
+
+    Returns:
+        A list mapping the the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
+        (Requires python 3.6 because it relies on the order of elements in the dict)"""
+    smallest_distance = float("inf")
+    best_mapping = [0, 1, 2, 3, 4]
+    for mapping in itertools.permutations(range(len(leaders)), len(current_positions)):
+        dist = 0
+        for current_pos, leader_pos in enumerate(mapping):
+            # Remove dead players from consideration
+            if current_positions[current_pos] is None:
+                continue
+            dist += (
+                current_positions[current_pos][0]
+                - leaders[list(leaders)[leader_pos]]["pos"][0]
+            ) ** 2 + (
+                current_positions[current_pos][1]
+                - leaders[list(leaders)[leader_pos]]["pos"][1]
+            ) ** 2
+        if dist < smallest_distance:
+            smallest_distance = dist
+            best_mapping = mapping
+    best_mapping = list(best_mapping)
+    for i, leader_pos in enumerate(best_mapping):
+        best_mapping[i] = list(leaders)[leader_pos]
+    return best_mapping
+
+
+def tree():
+    """Builds tree data structure from nested defaultdicts
+
+    Args:
+        None
+
+    Returns:
+        An empty tree"""
+
+    def the_tree():
+        return collections.defaultdict(the_tree)
+
+    return the_tree()
+
+
+def plot_rounds_different_players(
+    filename,
+    frames_list,
+    map_name="de_ancient",
+    map_type="original",
+    dark=False,
+    sides=None,
 ):
-    """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
+    """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
+     Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif
         frames_list (list): List of frames lists from parsed demos
-        markers (list): List of marker types for each player
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
@@ -439,39 +325,278 @@ def plot_rounds_same_players(
         shutil.rmtree("csgo_tmp/")
     os.mkdir("csgo_tmp")
     image_files = []
+    # Needed to check if leaders have been fully initialized
     dict_initialized = {"t": False, "ct": False}
-    id_number_dict = {"t": {}, "ct": {}}
+    # Used to store values for each round separately. Needed when a round ends.
     frame_positions = collections.defaultdict(list)
     frame_colors = collections.defaultdict(list)
     frame_markers = collections.defaultdict(list)
     frame_alphas = collections.defaultdict(list)
     frame_sizes = collections.defaultdict(list)
-    colors_list = ["cyan", "red", "green", "blue", "orange"]
+    colors_list = {
+        "t": ["cyan", "yellow", "fuchsia", "lime", "orange"],
+        "ct": ["red", "green", "black", "white", "gold"],
+    }
+    # Dict to store the colors (via index) of players that have died so that they dont switch color posthumously
+    dead_colors = {}
+    # Determine how many frames are there in total
     max_frames = max(len(frames) for frames in frames_list)
+    # Build tree data structure for leaders
+    # Currently leaders={"t":{},"ct":{}} would probably do as well
+    # For each side the keys are a players steamd id + "_" + frame_number in case the same steamid occurs in multiple rounds
+    leaders = tree()
+    # Want to avoid unsafe defaults
+    if sides is None:
+        sides = ["ct"]
     for i in tqdm(range(max_frames)):
+        # Initialize lists used to store things from all rounds to plot for each frame
         positions = []
         colors = []
         markers = []
         alphas = []
         sizes = []
-        first_alive = [-1] * 5
+        # Is used to determine if a specific leader has already been seen. Needed when a leader drops out because their round has already ended
+        checked_in = set()
+        # Loop over all the rounds and update the position and status of all leaders
         for frame_index, frames in enumerate(frames_list):
+            # Check if the current frame has already ended
+            if i in range(len(frames)):
+                for side in sides:
+                    # Do not do this if leaders has not been fully initialized
+                    if dict_initialized[side] is True:
+                        for player_index, p in enumerate(frames[i][side]["players"]):
+                            player_id = get_player_id(p) + "_" + str(frame_index)
+                            if (
+                                player_id not in leaders[side]
+                                or player_id in checked_in
+                            ):
+                                continue
+                            pos = (
+                                position_transform(map_name, p["x"], "x"),
+                                position_transform(map_name, p["y"], "y"),
+                            )
+                            if p["hp"] == 0:
+                                leaders[side][player_id]["is_dead"] = True
+                            leaders[side][player_id]["pos"] = pos
+        # Now do another loop to add all players in all frames with their appropriate colors.
+        for frame_index, frames in enumerate(frames_list):
+            # Initialize lists used to store values for this round for this frame
             frame_positions[frame_index] = []
             frame_colors[frame_index] = []
             frame_markers[frame_index] = []
             frame_alphas[frame_index] = []
             frame_sizes[frame_index] = []
             if i in range(len(frames)):
-                # Plot players
-                for side in ["ct"]:
+                for side in sides:
+                    # If we have already initialized leaders
+                    if dict_initialized[side] is True:
+                        # Get the positions of all players in the current frame and round
+                        current_positions = []
+                        for player_index, p in enumerate(frames[i][side]["players"]):
+                            pos = (
+                                position_transform(map_name, p["x"], "x"),
+                                position_transform(map_name, p["y"], "y"),
+                            )
+                            # Remove dead players from consideration
+                            if p["hp"] == 0:
+                                current_positions.append(None)
+                            else:
+                                current_positions.append(pos)
+                        # Find the best mapping between current players and leaders
+                        mapping = get_shortest_distances_mapping(
+                            leaders[side], current_positions
+                        )
+                    # Now do the actual plotting
+                    for player_index, p in enumerate(frames[i][side]["players"]):
+                        player_id = get_player_id(p) + "_" + str(frame_index)
+                        pos = (
+                            position_transform(map_name, p["x"], "x"),
+                            position_transform(map_name, p["y"], "y"),
+                        )
+
+                        is_dead = False
+                        if p["hp"] == 0:
+                            is_dead = True
+                            frame_markers[frame_index].append("x")
+                        else:
+                            frame_markers[frame_index].append(".")
+
+                        # If the leaders have not been initialized yet, do so
+                        if dict_initialized[side] is False:
+                            leaders[side][player_id]["index"] = player_index
+                            leaders[side][player_id]["pos"] = pos
+                            leaders[side][player_id]["is_dead"] = is_dead
+
+                        # This is relevant for all subsequent frames
+                        # If we are a leader we update our values
+                        # Should be able to be dropped as we already updated leaders in the earlier loop
+                        if player_id in leaders[side]:
+                            # Update the is_dead status
+                            if is_dead:
+                                leaders[side][player_id]["is_dead"] = True
+                            # Grabour current player_index from what it was the previous round to achieve color consistency
+                            player_index = leaders[side][player_id]["index"]
+                            # Update our position
+                            leaders[side][player_id]["pos"] = pos
+                        # If not a leader
+                        else:
+                            # Grab the id of the leader assigned to this player
+                            assigned_leader = mapping[player_index]
+                            # If the assigned leader is now dead or has not been assigned (happens when his round is already over)
+                            # Then we take over that position if we are not also dead
+                            if (
+                                leaders[side][assigned_leader]["is_dead"]
+                                or assigned_leader not in checked_in
+                            ) and not is_dead:
+                                # Remove the previous leaders entry from the dict
+                                old_index = leaders[side][assigned_leader]["index"]
+                                del leaders[side][assigned_leader]
+                                # Fill with our own values but use their prior index to keep color consistency when switching leaders
+                                leaders[side][player_id]["index"] = old_index
+                                leaders[side][player_id]["pos"] = pos
+                                leaders[side][player_id]["is_dead"] = False
+                                player_index = leaders[side][player_id]["index"]
+                            # If the leader is alive and present or if we are also dead
+                            else:
+                                # We just grab our color
+                                player_index = leaders[side][assigned_leader]["index"]
+                        # If we just died this frame store our current color in a dict for later reuse
+                        if is_dead and player_id not in dead_colors:
+                            dead_colors[player_id] = colors_list[side][player_index]
+                        # If we are dead use our stored color instead of the one we were assigned
+                        if is_dead:
+                            frame_colors[frame_index].append(dead_colors[player_id])
+                        # Otherwise use the assigned color
+                        else:
+                            frame_colors[frame_index].append(
+                                colors_list[side][player_index]
+                            )
+                        frame_positions[frame_index].append(pos)
+                        # If we are an alive leader we get opaque and big markers
+                        if (
+                            player_id in leaders[side]
+                            and not leaders[side][player_id]["is_dead"]
+                            and not player_id in checked_in
+                        ):
+                            frame_alphas[frame_index].append(1)
+                            frame_sizes[frame_index].append(
+                                mpl.rcParams["lines.markersize"] ** 2
+                            )
+                        # If not we get partially transparent and small ones
+                        else:
+                            frame_alphas[frame_index].append(0.5)
+                            frame_sizes[frame_index].append(
+                                0.3 * mpl.rcParams["lines.markersize"] ** 2
+                            )
+                        # If we are a leader we are now checked in so everyone knows our round has not ended yet
+                        if player_id in leaders[side]:
+                            checked_in.add(player_id)
+                    # Once we have done our first loop over a side we are initialized
+                    dict_initialized[side] = True
+            # Ádd the values for the current round to the lists for the whole frame
+            positions.extend(frame_positions[frame_index])
+            colors.extend(frame_colors[frame_index])
+            markers.extend(frame_markers[frame_index])
+            alphas.extend(frame_alphas[frame_index])
+            sizes.extend(frame_sizes[frame_index])
+        f, a = plot_positions(
+            positions=positions,
+            colors=colors,
+            markers=markers,
+            alphas=alphas,
+            sizes=sizes,
+            map_name=map_name,
+            map_type=map_type,
+            dark=dark,
+        )
+        image_files.append("csgo_tmp/{}.png".format(i))
+        f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
+        plt.close()
+    images = []
+    for file in image_files:
+        images.append(imageio.imread(file))
+    imageio.mimsave(filename, images)
+    # shutil.rmtree("csgo_tmp/")
+    return True
+
+
+def plot_rounds_same_players(
+    filename,
+    frames_list,
+    map_name="de_ancient",
+    map_type="original",
+    dark=False,
+    sides=None,
+):
+    """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by steam id.
+     Only use untransformed coordinates.
+
+    Args:
+        filename (string): Filename to save the gif
+        frames_list (list): List of frames lists from parsed demos
+        map_name (string): Map to search
+        map_type (string): "original" or "simpleradar"
+        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+
+    Returns:
+        matplotlib fig and ax, saves .gif
+    """
+    if os.path.isdir("csgo_tmp"):
+        shutil.rmtree("csgo_tmp/")
+    os.mkdir("csgo_tmp")
+    image_files = []
+    # Needed to check if leaders have been fully initialized
+    dict_initialized = {"t": False, "ct": False}
+    # Dictionary used to map each players steam id to a given index (color)
+    id_number_dict = {"t": {}, "ct": {}}
+    # Used to store values for each round separately. Needed when a round ends.
+    frame_positions = collections.defaultdict(list)
+    frame_colors = collections.defaultdict(list)
+    frame_markers = collections.defaultdict(list)
+    frame_alphas = collections.defaultdict(list)
+    frame_sizes = collections.defaultdict(list)
+    colors_list = {
+        "t": ["cyan", "yellow", "fuchsia", "lime", "orange"],
+        "ct": ["red", "green", "black", "white", "gold"],
+    }
+    # Determine how many frames are there in total
+    max_frames = max(len(frames) for frames in frames_list)
+    # Want to avoid unsafe defaults
+    if sides is None:
+        sides = ["ct"]
+    for i in tqdm(range(max_frames)):
+        # Initialize lists used to store things from all rounds to plot for each frame
+        positions = []
+        colors = []
+        markers = []
+        alphas = []
+        sizes = []
+        # The first instance of a given player being alive is taken note if so that they can be marked bigger
+        first_alive = [-1] * 5
+        for frame_index, frames in enumerate(frames_list):
+            # Initialize lists used to store values for this round for this frame
+            frame_positions[frame_index] = []
+            frame_colors[frame_index] = []
+            frame_markers[frame_index] = []
+            frame_alphas[frame_index] = []
+            frame_sizes[frame_index] = []
+            if i in range(len(frames)):
+                for side in sides:
                     for player_index, p in enumerate(frames[i][side]["players"]):
                         player_id = get_player_id(p)
+
+                        # Assign steam ids to their index only the first time
                         if dict_initialized[side] is False:
                             id_number_dict[side][player_id] = player_index
                         player_index = id_number_dict[side][player_id]
+
+                        # If a player hasnt been assigned they are not plotted this round (player joins or leaves mid round)
                         if player_id not in id_number_dict[side]:
                             continue
-                        frame_colors[frame_index].append(colors_list[player_index])
+                        # Color gets assigned according to matched steam id index
+                        frame_colors[frame_index].append(
+                            colors_list[side][player_index]
+                        )
                         if p["hp"] == 0:
                             frame_markers[frame_index].append("x")
                         else:
@@ -485,13 +610,15 @@ def plot_rounds_same_players(
                             position_transform(map_name, p["y"], "y"),
                         )
                         frame_positions[frame_index].append(pos)
+                        # First alive player gets plotted big and opaque
                         frame_alphas[frame_index].append(
-                            1 if frame_index == first_alive[player_index] else 0.2
+                            1 if frame_index == first_alive[player_index] else 0.5
                         )
+                        # All others small and partially transparent
                         frame_sizes[frame_index].append(
                             mpl.rcParams["lines.markersize"] ** 2
                             if frame_index == first_alive[player_index]
-                            else 0.25 * mpl.rcParams["lines.markersize"] ** 2
+                            else 0.3 * mpl.rcParams["lines.markersize"] ** 2
                         )
                     dict_initialized[side] = True
             positions.extend(frame_positions[frame_index])
