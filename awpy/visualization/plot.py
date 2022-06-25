@@ -28,13 +28,19 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
             + """../data/map/{0}.png""".format(map_name)
         )
     else:
-        col = "light"
-        if dark:
-            col = "dark"
-        map_bg = imageio.imread(
-            os.path.join(os.path.dirname(__file__), "")
-            + """../data/map/{0}_{1}.png""".format(map_name, col)
-        )
+        try:
+            col = "light"
+            if dark:
+                col = "dark"
+            map_bg = imageio.imread(
+                os.path.join(os.path.dirname(__file__), "")
+                + """../data/map/{0}_{1}.png""".format(map_name, col)
+            )
+        except FileNotFoundError:
+            map_bg = imageio.imread(
+                os.path.join(os.path.dirname(__file__), "")
+                + """../data/map/{0}.png""".format(map_name)
+            )
     fig, ax = plt.subplots()
     ax.imshow(map_bg, zorder=0)
     return fig, ax
