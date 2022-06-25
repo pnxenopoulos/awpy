@@ -1,11 +1,10 @@
-from email.policy import default
 import os
 import shutil
-import imageio
-
-import collections
-from tqdm import tqdm
 import itertools
+import collections
+
+import imageio
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
