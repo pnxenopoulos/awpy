@@ -1,3 +1,12 @@
+"""Functions for plotting player positions and nades.
+
+    Typical usage example:
+
+    from awpy.visualization.plot import plot_round
+    plot_round("best_round_ever.gif", d["gameRounds"][7]["frames"], map_name=d["mapName"], map_type="simpleradar", dark=False)
+
+    https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb
+"""
 import os
 import shutil
 import itertools
