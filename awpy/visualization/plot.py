@@ -135,7 +135,7 @@ def plot_round(
         fps (integer): Number of frames per second in the gif
 
     Returns:
-        matplotlib fig and ax, saves .gif
+        True, saves .gif
     """
     if os.path.isdir("csgo_tmp"):
         shutil.rmtree("csgo_tmp/")
@@ -253,8 +253,7 @@ def get_player_id(player):
     """
     if player["steamID"] == 0:
         return player["name"]
-    else:
-        return str(player["steamID"])
+    return str(player["steamID"])
 
 
 def get_shortest_distances_mapping(leaders, current_positions):
@@ -327,7 +326,7 @@ def plot_rounds_different_players(
         fps (integer): Number of frames per second in the gif
 
     Returns:
-        matplotlib fig and ax, saves .gif
+        True, saves .gif
     """
     if os.path.isdir("csgo_tmp"):
         shutil.rmtree("csgo_tmp/")
@@ -549,7 +548,7 @@ def plot_rounds_same_players(
         fps (integer): Number of frames per second in the gif
 
     Returns:
-        matplotlib fig and ax, saves .gif
+       True, saves .gif
     """
     if os.path.isdir("csgo_tmp"):
         shutil.rmtree("csgo_tmp/")
