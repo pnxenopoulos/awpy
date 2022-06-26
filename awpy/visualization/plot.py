@@ -524,7 +524,7 @@ def plot_rounds_different_players(
     for file in image_files:
         images.append(imageio.imread(file))
     imageio.mimsave(filename, images, fps=fps)
-    # shutil.rmtree("csgo_tmp/")
+    shutil.rmtree("csgo_tmp/")
     return True
 
 
