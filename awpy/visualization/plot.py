@@ -25,7 +25,7 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
     if map_type == "original":
         map_bg = imageio.imread(
             os.path.join(os.path.dirname(__file__), "")
-            + """../data/map/{0}.png""".format(map_name)
+            + f"""../data/map/{map_name}.png"""
         )
     else:
         try:
@@ -34,12 +34,12 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
                 col = "dark"
             map_bg = imageio.imread(
                 os.path.join(os.path.dirname(__file__), "")
-                + """../data/map/{0}_{1}.png""".format(map_name, col)
+                + f"""../data/map/{map_name}_{col}.png"""
             )
         except FileNotFoundError:
             map_bg = imageio.imread(
                 os.path.join(os.path.dirname(__file__), "")
-                + """../data/map/{0}.png""".format(map_name)
+                + f"""../data/map/{map_name}.png"""
             )
     fig, ax = plt.subplots()
     ax.imshow(map_bg, zorder=0)
@@ -104,25 +104,25 @@ def plot_positions(
     if sizes is None:
         sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    for p, c, m, al, s in zip(positions, colors, markers, alphas, sizes):
+    for p, c, m, alpha, s in zip(positions, colors, markers, alphas, sizes):
         if apply_transformation:
             a.scatter(
                 x=position_transform(map_name, p[0], "x"),
                 y=position_transform(map_name, p[1], "y"),
                 c=c,
                 marker=m,
-                alpha=al,
+                alpha=alpha,
                 s=s,
             )
         else:
-            a.scatter(x=p[0], y=p[1], c=c, marker=m, alpha=al, s=s)
+            a.scatter(x=p[0], y=p[1], c=c, marker=m, alpha=alpha, s=s)
     a.get_xaxis().set_visible(False)
     a.get_yaxis().set_visible(False)
     return f, a
 
 
 def plot_round(
-    filename, frames, map_name="de_ancient", map_type="original", dark=False
+    filename, frames, map_name="de_ancient", map_type="original", dark=False, fps=10
 ):
     """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
 
@@ -132,6 +132,7 @@ def plot_round(
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        fps (integer): Number of frames per second in the gif
 
     Returns:
         matplotlib fig and ax, saves .gif
@@ -172,7 +173,7 @@ def plot_round(
                     position_transform(map_name, p["y"], "y"),
                 )
                 positions.append(pos)
-        f, a = plot_positions(
+        f, _ = plot_positions(
             positions=positions,
             colors=colors,
             markers=markers,
@@ -180,13 +181,13 @@ def plot_round(
             map_type=map_type,
             dark=dark,
         )
-        image_files.append("csgo_tmp/{}.png".format(i))
+        image_files.append(f"csgo_tmp/{i}.png")
         f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = []
     for file in image_files:
         images.append(imageio.imread(file))
-    imageio.mimsave(filename, images)
+    imageio.mimsave(filename, images, fps=fps)
     shutil.rmtree("csgo_tmp/")
     return True
 
@@ -312,6 +313,7 @@ def plot_rounds_different_players(
     map_type="original",
     dark=False,
     sides=None,
+    fps=10,
 ):
     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
      Only use untransformed coordinates.
@@ -322,6 +324,7 @@ def plot_rounds_different_players(
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        fps (integer): Number of frames per second in the gif
 
     Returns:
         matplotlib fig and ax, saves .gif
@@ -504,7 +507,7 @@ def plot_rounds_different_players(
             markers.extend(frame_markers[frame_index])
             alphas.extend(frame_alphas[frame_index])
             sizes.extend(frame_sizes[frame_index])
-        f, a = plot_positions(
+        f, _ = plot_positions(
             positions=positions,
             colors=colors,
             markers=markers,
@@ -514,13 +517,13 @@ def plot_rounds_different_players(
             map_type=map_type,
             dark=dark,
         )
-        image_files.append("csgo_tmp/{}.png".format(i))
+        image_files.append(f"csgo_tmp/{i}.png")
         f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = []
     for file in image_files:
         images.append(imageio.imread(file))
-    imageio.mimsave(filename, images)
+    imageio.mimsave(filename, images, fps=fps)
     # shutil.rmtree("csgo_tmp/")
     return True
 
@@ -532,6 +535,7 @@ def plot_rounds_same_players(
     map_type="original",
     dark=False,
     sides=None,
+    fps=10,
 ):
     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by steam id.
      Only use untransformed coordinates.
@@ -542,6 +546,7 @@ def plot_rounds_same_players(
         map_name (string): Map to search
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        fps (integer): Number of frames per second in the gif
 
     Returns:
         matplotlib fig and ax, saves .gif
@@ -605,9 +610,7 @@ def plot_rounds_same_players(
                         if p["hp"] == 0:
                             frame_markers[frame_index].append("x")
                         else:
-                            frame_markers[frame_index].append(
-                                r"$ {} $".format(frame_index)
-                            )
+                            frame_markers[frame_index].append(rf"$ {frame_index} $")
                             if first_alive[player_index] == -1:
                                 first_alive[player_index] = frame_index
                         pos = (
@@ -631,7 +634,7 @@ def plot_rounds_same_players(
             markers.extend(frame_markers[frame_index])
             alphas.extend(frame_alphas[frame_index])
             sizes.extend(frame_sizes[frame_index])
-        f, a = plot_positions(
+        f, _ = plot_positions(
             positions=positions,
             colors=colors,
             markers=markers,
@@ -641,12 +644,12 @@ def plot_rounds_same_players(
             map_type=map_type,
             dark=dark,
         )
-        image_files.append("csgo_tmp/{}.png".format(i))
+        image_files.append(f"csgo_tmp/{i}.png")
         f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = []
     for file in image_files:
         images.append(imageio.imread(file))
-    imageio.mimsave(filename, images)
+    imageio.mimsave(filename, images, fps=fps)
     shutil.rmtree("csgo_tmp/")
     return True
