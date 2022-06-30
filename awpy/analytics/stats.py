@@ -153,7 +153,8 @@ def player_stats(game_rounds, return_type="json"):
                 and k["attackerSteamID"] in player_statistics.keys()
             ):
                 player_statistics[k["attackerSteamID"]]["firstKills"] += 1
-                player_statistics[k["victimSteamID"]]["firstDeaths"] += 1
+                if k["victimSteamID"] in player_statistics.keys():
+                    player_statistics[k["victimSteamID"]]["firstDeaths"] += 1
             if (
                 k["isTeamkill"]
                 and k["attackerSteamID"]
