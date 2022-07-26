@@ -360,7 +360,9 @@
     <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">player_statistics</span><span class="p">:</span>
         <span class="n">player_statistics</span><span class="p">[</span><span class="n">player</span><span class="p">][</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span>
             <span class="n">player_statistics</span><span class="p">[</span><span class="n">player</span><span class="p">][</span><span class="s2">&quot;shotsHit&quot;</span><span class="p">]</span>
-            <span class="o">/</span> <span class="n">player_statistics</span><span class="p">[</span><span class="n">player</span><span class="p">][</span><span class="s2">&quot;totalShots&quot;</span><span class="p">],</span>
+            <span class="o">/</span> <span class="n">player_statistics</span><span class="p">[</span><span class="n">player</span><span class="p">][</span><span class="s2">&quot;totalShots&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">player_statistics</span><span class="p">[</span><span class="n">player</span><span class="p">][</span><span class="s2">&quot;totalShots&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span>
+            <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
             <span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="n">player_statistics</span><span class="p">:</span>
