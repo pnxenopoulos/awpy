@@ -177,7 +177,7 @@
 <p>Keep in mind that due to dropped guns which aren’t equipped at FreezeTimeEnd, the FreezeTimeEndEqVal may not equal StartEqVal + Spend.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
     &quot;roundNum&quot;: 1,
-    &quot;isWarmup&quot;: false,                  # True if the round is a warmup round
+    &quot;isWarmup&quot;: false,                  # true if the round is a warmup round
     &quot;startTick&quot;: 6980,
     &quot;freezeTimeEndTick&quot;: 7936,
     &quot;endTick&quot;: 14512,                   # Tick when end condition is reached, but round is not officialy over
@@ -248,22 +248,22 @@
     &quot;assisterName&quot;: None,
     &quot;assisterTeam&quot;: None,
     &quot;assisterSide&quot;: None,
-    &quot;isSuicide&quot;: False,
-    &quot;isTeamkill&quot;: False,
-    &quot;isWallbang&quot;: False,
+    &quot;isSuicide&quot;: false,
+    &quot;isTeamkill&quot;: false,
+    &quot;isWallbang&quot;: false,
     &quot;penetratedObjects&quot;: 0,
-    &quot;isFirstKill&quot;: True,
-    &quot;isHeadshot&quot;: True,
-    &quot;victimBlinded&quot;: False,
-    &quot;attackerBlinded&quot;: False,
+    &quot;isFirstKill&quot;: true,
+    &quot;isHeadshot&quot;: true,
+    &quot;victimBlinded&quot;: false,
+    &quot;attackerBlinded&quot;: false,
     &quot;flashThrowerSteamID&quot;: None,
     &quot;flashThrowerName&quot;: None,
     &quot;flashThrowerTeam&quot;: None,
     &quot;flashThrowerSide&quot;: None,
-    &quot;noScope&quot;: False,
-    &quot;thruSmoke&quot;: False,
+    &quot;noScope&quot;: false,
+    &quot;thruSmoke&quot;: false,
     &quot;distance&quot;: 305.7054888578491,                 # Distance between attacker and victim in ingame units
-    &quot;isTrade&quot;: False,                              # Trades determined through the parser parameters. Default is 5 second time window.
+    &quot;isTrade&quot;: false,                              # Trades determined through the parser parameters. Default is 5 second time window.
     &quot;playerTradedName&quot;: None,
     &quot;playerTradedTeam&quot;: None,
     &quot;playerTradedSteamID&quot;: None,
@@ -289,7 +289,7 @@
     &quot;attackerZ&quot;: -55.96875,
     &quot;attackerViewX&quot;: 56.79931640625,
     &quot;attackerViewY&quot;: 3.3837890625,
-    &quot;attackerStrafe&quot;: False,                 # Was the attacker moving when they shot
+    &quot;attackerStrafe&quot;: false,                 # Was the attacker moving when they shot
     &quot;victimSteamID&quot;: 76561197960742750,
     &quot;victimName&quot;: &quot;howl&quot;,
     &quot;victimTeam&quot;: &quot;&quot;,
@@ -306,7 +306,7 @@
     &quot;armorDamage&quot;: 5,
     &quot;armorDamageTaken&quot;: 5,
     &quot;hitGroup&quot;: &quot;Generic&quot;,
-    &quot;isFriendlyFire&quot;: True,
+    &quot;isFriendlyFire&quot;: true,
     &quot;distance&quot;: 73.82676464998524,
     &quot;zoomLevel&quot;: 0                           # 0 for no zoom, 1 for half zoom, 2 for full zoom
 }
@@ -359,24 +359,24 @@
 </section>
 <section id="weapon-fires">
 <h2>Weapon Fires<a class="headerlink" href="#weapon-fires" title="Permalink to this heading"></a></h2>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &quot;tick&quot;: 8492,
-    &quot;seconds&quot;: 8.6875,
-    &quot;clockTime&quot;: &quot;01:47&quot;,
-    &quot;playerSteamID&quot;: 76561198098005932,
-    &quot;playerName&quot;: &quot;aidan&quot;,
-    &quot;playerTeam&quot;: &quot;&quot;,
-    &quot;playerSide&quot;: &quot;CT&quot;,
-    &quot;playerX&quot;: 1377.0318603515625,
-    &quot;playerY&quot;: 566.3394775390625,
-    &quot;playerZ&quot;: 131.50010681152344,
-    &quot;playerViewX&quot;: 175.49560546875,
-    &quot;playerViewY&quot;: 355.4901123046875,
-    &quot;playerStrafe&quot;: False,
-    &quot;weapon&quot;: &quot;HE Grenade&quot;,
-    &quot;weaponClass&quot;: &quot;Grenades&quot;,
-    &quot;zoomLevel&quot;: 0
-}
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8492</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.6875</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;01:47&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198098005932</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aidan&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1377.0318603515625</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">566.3394775390625</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">131.50010681152344</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">175.49560546875</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">355.4901123046875</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;playerStrafe&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;weapon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HE Grenade&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;weaponClass&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Grenades&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;zoomLevel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </section>
@@ -412,7 +412,7 @@
 <section id="frames">
 <h2>Frames<a class="headerlink" href="#frames" title="Permalink to this heading"></a></h2>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
-    &quot;parseKillFrame&quot;: true                         # True if the frame was parsed due to a kill
+    &quot;parseKillFrame&quot;: true                         # true if the frame was parsed due to a kill
     &quot;tick&quot;: 8174,
     &quot;seconds&quot;: 3.71875,
     &quot;clockTime&quot;: &quot;01:52&quot;,
@@ -439,21 +439,21 @@
             &quot;armor&quot;: 0,
             &quot;activeWeapon&quot;: &quot;Knife&quot;,               # Weapon the player is currently holding
             &quot;totalUtility&quot;: 0,
-            &quot;isAlive&quot;: True,
-            &quot;isBlinded&quot;: False,
-            &quot;isAirborne&quot;: False,
-            &quot;isDucking&quot;: False,
-            &quot;isDuckingInProgress&quot;: False,
-            &quot;isUnDuckingInProgress&quot;: False,
-            &quot;isDefusing&quot;: False,
-            &quot;isPlanting&quot;: False,
-            &quot;isReloading&quot;: False,
-            &quot;isInBombZone&quot;: False,
-            &quot;isInBuyZone&quot;: False,
-            &quot;isStanding&quot;: True,
-            &quot;isScoped&quot;: False,
-            &quot;isWalking&quot;: False,
-            &quot;isUnknown&quot;: False,
+            &quot;isAlive&quot;: true,
+            &quot;isBlinded&quot;: false,
+            &quot;isAirborne&quot;: false,
+            &quot;isDucking&quot;: false,
+            &quot;isDuckingInProgress&quot;: false,
+            &quot;isUnDuckingInProgress&quot;: false,
+            &quot;isDefusing&quot;: false,
+            &quot;isPlanting&quot;: false,
+            &quot;isReloading&quot;: false,
+            &quot;isInBombZone&quot;: false,
+            &quot;isInBuyZone&quot;: false,
+            &quot;isStanding&quot;: true,
+            &quot;isScoped&quot;: false,
+            &quot;isWalking&quot;: false,
+            &quot;isUnknown&quot;: false,
             &quot;inventory&quot;: [{                        # List of weapons
                 &quot;weaponName&quot;: &quot;Glock-18&quot;,
                 &quot;weaponClass&quot;: &quot;Pistols&quot;,
@@ -467,9 +467,9 @@
             &quot;cash&quot;: 800,
             &quot;cashSpendThisRound&quot;: 0,
             &quot;cashSpendTotal&quot;: 0,                   # Cash spent the entire game
-            &quot;hasHelmet&quot;: False,
-            &quot;hasDefuse&quot;: False,
-            &quot;hasBomb&quot;: False,
+            &quot;hasHelmet&quot;: false,
+            &quot;hasDefuse&quot;: false,
+            &quot;hasBomb&quot;: false,
             &quot;ping&quot;: 32,
             &quot;zoomLevel&quot;: 0
             }]
@@ -480,7 +480,7 @@
         &quot;smokes&quot;: [{...}, ...],                    # List of current smokes
         &quot;fires&quot;: [{...}, ...],                     # List of current fires
         &quot;bomb&quot;: {&quot;x&quot;: 1.23, &quot;y&quot;: 4.56, &quot;z&quot;: 7.89}, # Bomb position
-        &quot;bombPlanted&quot;: False,
+        &quot;bombPlanted&quot;: false,
         &quot;bombsite&quot;: &quot;&quot;
 }
 </pre></div>
