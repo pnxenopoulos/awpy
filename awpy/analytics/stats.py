@@ -18,7 +18,7 @@ def player_stats(game_rounds, return_type="json"):
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
                     "teamName": ct_side["teamName"],
-                    "isBot": 1 if p["steamID"] == 0 else 0,
+                    "isBot": True if p["steamID"] == 0 else False,
                     "totalRounds": 0,
                     "kills": 0,
                     "deaths": 0,
