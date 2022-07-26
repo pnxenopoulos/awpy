@@ -29,17 +29,17 @@ class TestStats:
     def test_player_stats(self):
         """Tests player stats generation"""
         stats = player_stats(self.data["gameRounds"])
-        assert stats[76561197995889730]["kills"] == 19
-        assert stats[76561197995889730]["assists"] == 1
-        assert stats[76561197995889730]["flashAssists"] == 0
-        assert stats[76561197995889730]["deaths"] == 17
-        assert stats[76561197995889730]["adr"] == 63.6
-        assert stats[76561197995889730]["rating"] == 1.03
-        assert stats[76561197995889730]["kast"] == 67.9
-        assert stats[76561197995889730]["firstKills"] == 2
-        assert stats[76561197995889730]["firstDeaths"] == 2
-        assert stats[76561197995889730]["teamName"] == "Team Liquid"
-        assert stats[76561197995889730]["playerName"] == "nitr0"
+        assert stats["76561197995889730 - nitr0"]["kills"] == 19
+        assert stats["76561197995889730 - nitr0"]["assists"] == 1
+        assert stats["76561197995889730 - nitr0"]["flashAssists"] == 0
+        assert stats["76561197995889730 - nitr0"]["deaths"] == 17
+        assert stats["76561197995889730 - nitr0"]["adr"] == 63.6
+        assert stats["76561197995889730 - nitr0"]["rating"] == 1.03
+        assert stats["76561197995889730 - nitr0"]["kast"] == 67.9
+        assert stats["76561197995889730 - nitr0"]["firstKills"] == 2
+        assert stats["76561197995889730 - nitr0"]["firstDeaths"] == 2
+        assert stats["76561197995889730 - nitr0"]["teamName"] == "Team Liquid"
+        assert stats["76561197995889730 - nitr0"]["playerName"] == "nitr0"
         stats_df = player_stats(self.data["gameRounds"], return_type="df")
         assert type(stats_df) == pd.DataFrame
 
