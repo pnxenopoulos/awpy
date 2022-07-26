@@ -241,7 +241,7 @@ def player_stats(game_rounds, return_type="json"):
                 if g["grenadeType"] in ["Incendiary Grenade", "Molotov"]:
                     player_statistics[thrower_key]["fireThrown"] += 1
         for b in r["bombEvents"]:
-            player_key = str(db["playerSteamID"]) + " - " + b["playerName"]
+            player_key = str(b["playerSteamID"]) + " - " + b["playerName"]
             if b["playerSteamID"] and player_key in player_statistics.keys():
                 if b["bombAction"] == "plant":
                     player_statistics[player_key]["plants"] += 1
