@@ -97,26 +97,26 @@ def player_stats(game_rounds, return_type="json"):
                     "plants": 0,
                     "defuses": 0,
                 }
-                player_statistics[p["steamID"] + " - " + p["playerName"]][
+                player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
                     "totalRounds"
                 ] += 1
             else:
-                player_statistics[p["steamID"] + " - " + p["playerName"]][
+                player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
                     "totalRounds"
                 ] += 1
         kast = {}
         for p in t_side["players"]:
-            kast[p["steamID"] + " - " + p["playerName"]] = {}
-            kast[p["steamID"] + " - " + p["playerName"]]["k"] = False
-            kast[p["steamID"] + " - " + p["playerName"]]["a"] = False
-            kast[p["steamID"] + " - " + p["playerName"]]["s"] = True
-            kast[p["steamID"] + " - " + p["playerName"]]["t"] = False
+            kast[str(p["steamID"]) + " - " + p["playerName"]] = {}
+            kast[str(p["steamID"]) + " - " + p["playerName"]]["k"] = False
+            kast[str(p["steamID"]) + " - " + p["playerName"]]["a"] = False
+            kast[str(p["steamID"]) + " - " + p["playerName"]]["s"] = True
+            kast[str(p["steamID"]) + " - " + p["playerName"]]["t"] = False
         for p in ct_side["players"]:
-            kast[p["steamID"] + " - " + p["playerName"]] = {}
-            kast[p["steamID"] + " - " + p["playerName"]]["k"] = False
-            kast[p["steamID"] + " - " + p["playerName"]]["a"] = False
-            kast[p["steamID"] + " - " + p["playerName"]]["s"] = True
-            kast[p["steamID"] + " - " + p["playerName"]]["t"] = False
+            kast[str(p["steamID"]) + " - " + p["playerName"]] = {}
+            kast[str(p["steamID"]) + " - " + p["playerName"]]["k"] = False
+            kast[str(p["steamID"]) + " - " + p["playerName"]]["a"] = False
+            kast[str(p["steamID"]) + " - " + p["playerName"]]["s"] = True
+            kast[str(p["steamID"]) + " - " + p["playerName"]]["t"] = False
         # Calculate kills
         for i, k in enumerate(r["kills"]):
             killer_key = str(k["attackerSteamID"]) + " - " + k["attackerName"]
