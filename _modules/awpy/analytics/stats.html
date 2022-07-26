@@ -236,7 +236,7 @@
             <span class="p">):</span>
                 <span class="n">player_statistics</span><span class="p">[</span><span class="n">killer_key</span><span class="p">][</span><span class="s2">&quot;tradeKills&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">kast</span><span class="p">[</span>
-                    <span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">][</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="s2">&quot;victimSteamID&quot;</span><span class="p">]</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">][</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="s2">&quot;victimSteamID&quot;</span><span class="p">])</span>
                     <span class="o">+</span> <span class="s2">&quot; - &quot;</span>
                     <span class="o">+</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;kills&quot;</span><span class="p">][</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="s2">&quot;victimName&quot;</span><span class="p">]</span>
                 <span class="p">][</span><span class="s2">&quot;t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
