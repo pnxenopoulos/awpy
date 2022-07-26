@@ -158,7 +158,7 @@ def player_stats(game_rounds, return_type="json"):
             ):
                 player_statistics[killer_key]["tradeKills"] += 1
                 kast[
-                    r["kills"][i - 1]["victimSteamID"]
+                    str(r["kills"][i - 1]["victimSteamID"])
                     + " - "
                     + r["kills"][i - 1]["victimName"]
                 ]["t"] = True
