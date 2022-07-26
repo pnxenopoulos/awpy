@@ -221,8 +221,8 @@ def player_stats(game_rounds, return_type="json"):
                     "totalShots"
                 ] += 1
         for f in r["flashes"]:
-            flasher_key = str(d["attackerSteamID"]) + " - " + d["attackerName"]
-            player_key = str(d["playerSteamID"]) + " - " + d["playerName"]
+            flasher_key = str(f["attackerSteamID"]) + " - " + f["attackerName"]
+            player_key = str(f["playerSteamID"]) + " - " + f["playerName"]
             if f["attackerSteamID"] and flasher_key in player_statistics.keys():
                 if f["attackerSide"] == f["playerSide"]:
                     player_statistics[flasher_key]["teammatesFlashed"] += 1
@@ -230,7 +230,7 @@ def player_stats(game_rounds, return_type="json"):
                     player_statistics[flasher_key]["enemiesFlashed"] += 1
                     player_statistics[flasher_key]["blindTime"] += f["flashDuration"]
         for g in r["grenades"]:
-            thrower_key = str(d["throwerSteamID"]) + " - " + d["throwerName"]
+            thrower_key = str(g["throwerSteamID"]) + " - " + g["throwerName"]
             if g["throwerSteamID"] and thrower_key in player_statistics.keys():
                 if g["grenadeType"] == "Smoke Grenade":
                     player_statistics[thrower_key]["smokesThrown"] += 1
@@ -241,7 +241,7 @@ def player_stats(game_rounds, return_type="json"):
                 if g["grenadeType"] in ["Incendiary Grenade", "Molotov"]:
                     player_statistics[thrower_key]["fireThrown"] += 1
         for b in r["bombEvents"]:
-            player_key = str(d["playerSteamID"]) + " - " + d["playerName"]
+            player_key = str(db["playerSteamID"]) + " - " + b["playerName"]
             if b["playerSteamID"] and player_key in player_statistics.keys():
                 if b["bombAction"] == "plant":
                     player_statistics[player_key]["plants"] += 1
