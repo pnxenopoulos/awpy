@@ -51,11 +51,11 @@ def player_stats(game_rounds, return_type="json"):
                     "plants": 0,
                     "defuses": 0,
                 }
-                player_statistics[p["steamID"] + " - " + p["playerName"]][
+                player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
                     "totalRounds"
                 ] += 1
             else:
-                player_statistics[p["steamID"] + " - " + p["playerName"]][
+                player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
                     "totalRounds"
                 ] += 1
         for p in t_side["players"]:
