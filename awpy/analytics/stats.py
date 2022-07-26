@@ -213,8 +213,11 @@ def player_stats(game_rounds, return_type="json"):
             ):
                 player_statistics[attacker_key]["utilityDamage"] += d["hpDamageTaken"]
         for w in r["weaponFires"]:
-            if w["playerSteamID"] + " - " + w["playerName"] in player_statistics.keys():
-                player_statistics[w["playerSteamID"] + " - " + w["playerName"]][
+            if (
+                str(w["playerSteamID"]) + " - " + w["playerName"]
+                in player_statistics.keys()
+            ):
+                player_statistics[str(w["playerSteamID"]) + " - " + w["playerName"]][
                     "totalShots"
                 ] += 1
         for f in r["flashes"]:
