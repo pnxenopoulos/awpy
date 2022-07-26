@@ -953,7 +953,7 @@ func main() {
 	if p.TickRate() == 0 {
 		currentGame.TickRate = 128
 	} else {
-		currentGame.TickRate = int64(p.TickRate())
+		currentGame.TickRate = int64(math.Round(p.TickRate())) // Rounds to 127 instead
 	}
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
 	currentGame.PlaybackFrames = int64(header.PlaybackFrames)

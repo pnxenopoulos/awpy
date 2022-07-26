@@ -109,7 +109,7 @@ Keep in mind that due to dropped guns which aren't equipped at FreezeTimeEnd, th
 
     {
         "roundNum": 1,                         
-        "isWarmup": false,                  # True if the round is a warmup round
+        "isWarmup": false,                  # true if the round is a warmup round
         "startTick": 6980,
         "freezeTimeEndTick": 7936,          
         "endTick": 14512,                   # Tick when end condition is reached, but round is not officialy over
@@ -181,22 +181,22 @@ Kills
         "assisterName": None, 
         "assisterTeam": None, 
         "assisterSide": None, 
-        "isSuicide": False, 
-        "isTeamkill": False, 
-        "isWallbang": False, 
+        "isSuicide": false, 
+        "isTeamkill": false, 
+        "isWallbang": false, 
         "penetratedObjects": 0, 
-        "isFirstKill": True, 
-        "isHeadshot": True, 
-        "victimBlinded": False, 
-        "attackerBlinded": False, 
+        "isFirstKill": true, 
+        "isHeadshot": true, 
+        "victimBlinded": false, 
+        "attackerBlinded": false, 
         "flashThrowerSteamID": None, 
         "flashThrowerName": None, 
         "flashThrowerTeam": None, 
         "flashThrowerSide": None, 
-        "noScope": False, 
-        "thruSmoke": False, 
+        "noScope": false, 
+        "thruSmoke": false, 
         "distance": 305.7054888578491,                 # Distance between attacker and victim in ingame units
-        "isTrade": False,                              # Trades determined through the parser parameters. Default is 5 second time window.
+        "isTrade": false,                              # Trades determined through the parser parameters. Default is 5 second time window.
         "playerTradedName": None, 
         "playerTradedTeam": None, 
         "playerTradedSteamID": None, 
@@ -224,7 +224,7 @@ The possible hit groups are `Generic`, `Head`, `Chest`, `Stomach`, `LeftArm`, `R
         "attackerZ": -55.96875, 
         "attackerViewX": 56.79931640625, 
         "attackerViewY": 3.3837890625, 
-        "attackerStrafe": False,                 # Was the attacker moving when they shot
+        "attackerStrafe": false,                 # Was the attacker moving when they shot
         "victimSteamID": 76561197960742750, 
         "victimName": "howl", 
         "victimTeam": "", 
@@ -241,7 +241,7 @@ The possible hit groups are `Generic`, `Head`, `Chest`, `Stomach`, `LeftArm`, `R
         "armorDamage": 5, 
         "armorDamageTaken": 5, 
         "hitGroup": "Generic", 
-        "isFriendlyFire": True, 
+        "isFriendlyFire": true, 
         "distance": 73.82676464998524, 
         "zoomLevel": 0                           # 0 for no zoom, 1 for half zoom, 2 for full zoom
     }
@@ -311,7 +311,7 @@ Weapon Fires
         "playerZ": 131.50010681152344, 
         "playerViewX": 175.49560546875, 
         "playerViewY": 355.4901123046875, 
-        "playerStrafe": False, 
+        "playerStrafe": false, 
         "weapon": "HE Grenade",
         "weaponClass": "Grenades", 
         "zoomLevel": 0
@@ -353,7 +353,7 @@ Frames
 .. code-block:: json
 
     {
-        "parseKillFrame": true                         # True if the frame was parsed due to a kill
+        "parseKillFrame": true                         # true if the frame was parsed due to a kill
         "tick": 8174, 
         "seconds": 3.71875, 
         "clockTime": "01:52", 
@@ -380,21 +380,21 @@ Frames
                 "armor": 0, 
                 "activeWeapon": "Knife",               # Weapon the player is currently holding
                 "totalUtility": 0, 
-                "isAlive": True, 
-                "isBlinded": False, 
-                "isAirborne": False, 
-                "isDucking": False, 
-                "isDuckingInProgress": False, 
-                "isUnDuckingInProgress": False, 
-                "isDefusing": False, 
-                "isPlanting": False, 
-                "isReloading": False, 
-                "isInBombZone": False, 
-                "isInBuyZone": False, 
-                "isStanding": True, 
-                "isScoped": False, 
-                "isWalking": False, 
-                "isUnknown": False, 
+                "isAlive": true, 
+                "isBlinded": false, 
+                "isAirborne": false, 
+                "isDucking": false, 
+                "isDuckingInProgress": false, 
+                "isUnDuckingInProgress": false, 
+                "isDefusing": false, 
+                "isPlanting": false, 
+                "isReloading": false, 
+                "isInBombZone": false, 
+                "isInBuyZone": false, 
+                "isStanding": true, 
+                "isScoped": false, 
+                "isWalking": false, 
+                "isUnknown": false, 
                 "inventory": [{                        # List of weapons
                     "weaponName": "Glock-18", 
                     "weaponClass": "Pistols", 
@@ -408,9 +408,9 @@ Frames
                 "cash": 800, 
                 "cashSpendThisRound": 0, 
                 "cashSpendTotal": 0,                   # Cash spent the entire game
-                "hasHelmet": False, 
-                "hasDefuse": False, 
-                "hasBomb": False, 
+                "hasHelmet": false, 
+                "hasDefuse": false, 
+                "hasBomb": false, 
                 "ping": 32, 
                 "zoomLevel": 0
                 }]
@@ -421,6 +421,6 @@ Frames
             "smokes": [{...}, ...],                    # List of current smokes
             "fires": [{...}, ...],                     # List of current fires
             "bomb": {"x": 1.23, "y": 4.56, "z": 7.89}, # Bomb position
-            "bombPlanted": False, 
+            "bombPlanted": false, 
             "bombsite": ""
     }
