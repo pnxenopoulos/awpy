@@ -282,7 +282,9 @@ def player_stats(game_rounds, return_type="json"):
     for player in player_statistics:
         player_statistics[player]["accuracy"] = round(
             player_statistics[player]["shotsHit"]
-            / player_statistics[player]["totalShots"],
+            / player_statistics[player]["totalShots"]
+            if player_statistics[player]["totalShots"] != 0
+            else 0,
             2,
         )
     for player in player_statistics:
