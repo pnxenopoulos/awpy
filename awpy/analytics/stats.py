@@ -119,11 +119,11 @@ def player_stats(game_rounds, return_type="json"):
             kast[str(p["steamID"]) + " - " + p["playerName"]]["t"] = False
         # Calculate kills
         for i, k in enumerate(r["kills"]):
-            killer_key = str(k["attackerSteamID"]) + " - " + k["attackerName"]
-            victim_key = str(k["victimSteamID"]) + " - " + k["victimName"]
-            assister_key = str(k["assisterSteamID"]) + " - " + k["assisterName"]
+            killer_key = str(k["attackerSteamID"]) + " - " + str(k["attackerName"])
+            victim_key = str(k["victimSteamID"]) + " - " + str(k["victimName"])
+            assister_key = str(k["assisterSteamID"]) + " - " + str(k["assisterName"])
             flashthrower_key = (
-                str(k["flashThrowerSteamID"]) + " - " + k["flashThrowerName"]
+                str(k["flashThrowerSteamID"]) + " - " + str(k["flashThrowerName"])
             )
             if (
                 k["attackerSteamID"]
