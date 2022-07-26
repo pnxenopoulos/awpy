@@ -13,8 +13,8 @@ def player_stats(game_rounds, return_type="json"):
         ct_side = r["ctSide"]
         t_side = r["tSide"]
         for p in ct_side["players"]:
-            if p["steamID"] + " - " + p["playerName"] not in player_statistics:
-                player_statistics[p["steamID"] + " - " + p["playerName"]] = {
+            if str(p["steamID"]) + " - " + p["playerName"] not in player_statistics:
+                player_statistics[str(p["steamID"]) + " - " + p["playerName"]] = {
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
                     "teamName": ct_side["teamName"],
@@ -59,8 +59,8 @@ def player_stats(game_rounds, return_type="json"):
                     "totalRounds"
                 ] += 1
         for p in t_side["players"]:
-            if p["steamID"] + " - " + p["playerName"] not in player_statistics:
-                player_statistics[p["steamID"] + " - " + p["playerName"]] = {
+            if str(p["steamID"]) + " - " + p["playerName"] not in player_statistics:
+                player_statistics[str(p["steamID"]) + " - " + p["playerName"]] = {
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
                     "teamName": t_side["teamName"],
