@@ -185,8 +185,8 @@ def player_stats(game_rounds, return_type="json"):
             if k["isSuicide"] and victim_key in player_statistics.keys():
                 player_statistics[victim_key]["suicides"] += 1
         for d in r["damages"]:
-            attacker_key = str(d["attackerSteamID"]) + " - " + d["attackerName"]
-            victim_key = str(d["victimSteamID"]) + " - " + d["victimName"]
+            attacker_key = str(d["attackerSteamID"]) + " - " + str(d["attackerName"])
+            victim_key = str(d["victimSteamID"]) + " - " + str(d["victimName"])
 
             if (
                 d["attackerSteamID"]
