@@ -758,7 +758,7 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 						currentPlayer.FireGrenade += 1
 					}
 					if w.Type == 504 {
-						currentPlayer.FlashGrenade += 1
+						currentPlayer.FlashGrenade += w.AmmoInMagazine() + w.AmmoReserve()
 					}
 					if w.Type == 505 {
 						currentPlayer.SmokeGrenade += 1
