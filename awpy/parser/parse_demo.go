@@ -375,9 +375,9 @@ type PlayerInfo struct {
 	X               float64      `json:"x"`
 	Y               float64      `json:"y"`
 	Z               float64      `json:"z"`
-	EyeX            float64      `json:"x"`
-	EyeY            float64      `json:"y"`
-	EyeZ            float64      `json:"z"`
+	EyeX            float64      `json:"eyeX"`
+	EyeY            float64      `json:"eyeY"`
+	EyeZ            float64      `json:"eyeZ"`
 	VelX            float64      `json:"velocityX"`
 	VelY            float64      `json:"velocityY"`
 	VelZ            float64      `json:"velocityZ"`
