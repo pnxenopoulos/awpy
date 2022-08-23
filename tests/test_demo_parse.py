@@ -180,6 +180,7 @@ class TestDemoParser:
         )
         self.faceit_ot_data = self.faceit_ot.parse()
         assert len(self.faceit_ot_data["gameRounds"]) > 30
+        assert self.faceit_ot_data["tickRate"] == 128
 
     def test_default_parse(self):
         """Tests default parse"""

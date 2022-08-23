@@ -375,6 +375,9 @@ type PlayerInfo struct {
 	X               float64      `json:"x"`
 	Y               float64      `json:"y"`
 	Z               float64      `json:"z"`
+	EyeX            float64      `json:"eyeX"`
+	EyeY            float64      `json:"eyeY"`
+	EyeZ            float64      `json:"eyeZ"`
 	VelX            float64      `json:"velocityX"`
 	VelY            float64      `json:"velocityY"`
 	VelZ            float64      `json:"velocityZ"`
@@ -383,8 +386,14 @@ type PlayerInfo struct {
 	Hp              int64        `json:"hp"`
 	Armor           int64        `json:"armor"`
 	ActiveWeapon    string       `json:"activeWeapon"`
+	FlashGrenade    int64        `json:"flashGrenades"`
+	SmokeGrenade    int64        `json:"smokeGrenades"`
+	HEGrenade       int64        `json:"heGrenades"`
+	FireGrenade     int64        `json:"fireGrenades"`
 	TotalUtility    int64        `json:"totalUtility"`
+	LastPlaceName   string       `json:"lastPlaceName"`
 	IsAlive         bool         `json:"isAlive"`
+	IsBot           bool         `json:"isBot"`
 	IsBlinded       bool         `json:"isBlinded"`
 	IsAirborne      bool         `json:"isAirborne"`
 	IsDucking       bool         `json:"isDucking"`
@@ -658,20 +667,26 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	}
 
 	playerPos := p.LastAlivePosition
+	playerEyePos := p.PositionEyes()
 	playerVel := p.Velocity()
 
 	// Calc other metrics
 	currentPlayer.X = float64(playerPos.X)
 	currentPlayer.Y = float64(playerPos.Y)
 	currentPlayer.Z = float64(playerPos.Z)
+	currentPlayer.EyeX = float64(playerEyePos.X)
+	currentPlayer.EyeY = float64(playerEyePos.Y)
+	currentPlayer.EyeZ = float64(playerEyePos.Z)
 	currentPlayer.VelX = float64(playerVel.X)
 	currentPlayer.VelY = float64(playerVel.Y)
 	currentPlayer.VelZ = float64(playerVel.Z)
 	currentPlayer.ViewX = float64(p.ViewDirectionX())
 	currentPlayer.ViewY = float64(p.ViewDirectionY())
+	currentPlayer.LastPlaceName = p.LastPlaceName()
 	currentPlayer.Hp = int64(p.Health())
 	currentPlayer.Armor = int64(p.Armor())
 	currentPlayer.IsAlive = p.IsAlive()
+	currentPlayer.IsBot = p.IsBot
 	currentPlayer.IsBlinded = p.IsBlinded()
 	currentPlayer.IsAirborne = p.IsAirborne()
 	currentPlayer.IsDefusing = p.IsDefusing
@@ -739,6 +754,18 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 				currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
 				if w.Class() == 6 {
 					currentPlayer.TotalUtility = currentPlayer.TotalUtility + 1
+					if w.Type == 502 || w.Type == 503 {
+						currentPlayer.FireGrenade += 1
+					}
+					if w.Type == 504 {
+						currentPlayer.FlashGrenade += int64(w.AmmoInMagazine()) + int64(w.AmmoReserve())
+					}
+					if w.Type == 505 {
+						currentPlayer.SmokeGrenade += 1
+					}
+					if w.Type == 506 {
+						currentPlayer.HEGrenade += 1
+					}
 				}
 			}
 	
@@ -953,7 +980,7 @@ func main() {
 	if p.TickRate() == 0 {
 		currentGame.TickRate = 128
 	} else {
-		currentGame.TickRate = int64(p.TickRate())
+		currentGame.TickRate = int64(math.Round(p.TickRate())) // Rounds to 127 instead
 	}
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
 	currentGame.PlaybackFrames = int64(header.PlaybackFrames)
