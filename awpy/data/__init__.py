@@ -59,3 +59,13 @@ for m in NAV:
 # Open map data
 with open(Path(path + "map/map_data.json"), encoding="utf8") as f:
     MAP_DATA = json.load(f)
+
+
+with open(Path(path + "nav/area_dist_matrix.json"), encoding="utf8") as f:
+    AREA_DIST_MATRIX = json.load(f)
+
+if os.path.exists(Path(path + "nav/tile_dist_matrix.json")):
+    with open(Path(path + "nav/tile_dist_matrix.json"), encoding="utf8") as f:
+        TILE_DIST_MATRIX = json.load(f)
+else:
+    TILE_DIST_MATRIX = None
