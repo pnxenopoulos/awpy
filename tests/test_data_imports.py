@@ -19,7 +19,7 @@ class TestDataImports:
 
     def test_nav_graphs(self):
         assert type(NAV_GRAPHS) == dict
-        assert type(NAV_GRAPHS["de_dust2"]) == networkx.Graph
+        assert type(NAV_GRAPHS["de_dust2"]) == networkx.DiGraph
 
     def test_map_data(self):
         """Tests the nav data"""

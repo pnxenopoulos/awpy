@@ -17,7 +17,7 @@ def point_in_area(map_name, area_id, point):
     Returns:
         True if area contains the point, false if not
     """
-    if map_name not in NAV.keys():
+    if map_name not in NAV:
         raise ValueError("Map not found.")
     if area_id not in NAV[map_name].keys():
         raise ValueError("Area ID not found.")
@@ -53,7 +53,7 @@ def find_closest_area(map_name, point):
     Returns:
         A dict containing info on the closest area
     """
-    if map_name not in NAV.keys():
+    if map_name not in NAV:
         raise ValueError("Map not found.")
     if len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
@@ -78,42 +78,80 @@ def find_closest_area(map_name, point):
 
 
 def area_distance(map_name, area_a, area_b, dist_type="graph"):
-    """Returns the distance between two areas. Dist type an be graph or geodesic.
+    """Returns the distance between two areas. Dist type can be graph or geodesic.
 
     Args:
         map_name (string): Map to search
         area_a (int): Area id
         area_b (int): Area id
-        dist_type (string): String indicating the type of distance to use (graph or geodesic)
+        dist_type (string): String indicating the type of distance to use (graph, geodesic or euclidean)
 
     Returns:
         A dict containing info on the path between two areas.
     """
-    if map_name not in NAV.keys():
+    if map_name not in NAV:
         raise ValueError("Map not found.")
     if (area_a not in NAV[map_name].keys()) or (area_b not in NAV[map_name].keys()):
         raise ValueError("Area ID not found.")
-    if dist_type not in ["graph", "geodesic"]:
-        raise ValueError("dist_type can only be graph or geodesic")
+    if dist_type not in ["graph", "geodesic", "euclidean"]:
+        raise ValueError("dist_type can only be graph, geodesic or euclidean")
     G = NAV_GRAPHS[map_name]
     distance_obj = {"distanceType": dist_type, "distance": None, "areas": []}
     if dist_type == "graph":
-        discovered_path = nx.shortest_path(G, area_a, area_b)
-        distance_obj["distance"] = len(discovered_path) - 1
-        distance_obj["areas"] = discovered_path
+        try:
+            discovered_path = nx.shortest_path(G, area_a, area_b)
+            distance_obj["distance"] = len(discovered_path) - 1
+            distance_obj["areas"] = discovered_path
+        except nx.NetworkXNoPath:
+            distance_obj["distance"] = float("inf")
+            distance_obj["areas"] = []
         return distance_obj
     if dist_type == "geodesic":
 
         def dist(a, b):
             return G.nodes()[a]["size"] + G.nodes()[b]["size"]
 
-        geodesic_path = nx.astar_path(G, area_a, area_b, heuristic=dist)
-        geodesic_cost = 0
-        for i, area in enumerate(geodesic_path):
-            if i > 0:
-                geodesic_cost += G.nodes()[area]["size"]
-        distance_obj["distance"] = geodesic_cost
-        distance_obj["areas"] = geodesic_path
+        def dist_weight(a, b, _):
+            return G.nodes()[a]["size"] + G.nodes()[b]["size"]
+
+        try:
+            geodesic_path = nx.astar_path(
+                G, area_a, area_b, heuristic=dist, weight=dist_weight
+            )
+            geodesic_cost = 0
+            for i, area in enumerate(geodesic_path):
+                if i > 0:
+                    geodesic_cost += G.nodes()[area]["size"]
+            distance_obj["distance"] = geodesic_cost
+            distance_obj["areas"] = geodesic_path
+        except nx.NetworkXNoPath:
+            distance_obj["distance"] = float("inf")
+            distance_obj["areas"] = []
+        return distance_obj
+    if dist_type == "euclidean":
+        area_a_x = (
+            NAV[map_name][area_a]["southEastX"] + NAV[map_name][area_a]["northWestX"]
+        ) / 2
+        area_a_y = (
+            NAV[map_name][area_a]["southEastY"] + NAV[map_name][area_a]["northWestY"]
+        ) / 2
+        area_a_z = (
+            NAV[map_name][area_a]["southEastZ"] + NAV[map_name][area_a]["northWestZ"]
+        ) / 2
+        area_b_x = (
+            NAV[map_name][area_b]["southEastX"] + NAV[map_name][area_b]["northWestX"]
+        ) / 2
+        area_b_y = (
+            NAV[map_name][area_b]["southEastY"] + NAV[map_name][area_b]["northWestY"]
+        ) / 2
+        area_b_z = (
+            NAV[map_name][area_b]["southEastZ"] + NAV[map_name][area_b]["northWestZ"]
+        ) / 2
+        distance_obj["distance"] = math.sqrt(
+            (area_a_x - area_b_x) ** 2
+            + (area_a_y - area_b_y) ** 2
+            + (area_a_z - area_b_z) ** 2
+        )
         return distance_obj
 
 
@@ -131,7 +169,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
     """
     distance_obj = {"distanceType": dist_type, "distance": None, "areas": []}
     if dist_type == "graph":
-        if map_name not in NAV.keys():
+        if map_name not in NAV:
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
             raise ValueError(
@@ -141,7 +179,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "geodesic":
-        if map_name not in NAV.keys():
+        if map_name not in NAV:
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
             raise ValueError(
@@ -174,7 +212,7 @@ def generate_position_token(map_name, frame):
     Returns:
         A dict containing the T token, CT token and combined token (T + CT concatenated)
     """
-    if map_name not in NAV.keys():
+    if map_name not in NAV:
         raise ValueError("Map not found.")
     if (len(frame["ct"]["players"]) == 0) or (len(frame["t"]["players"]) == 0):
         raise ValueError("CT or T players has length of 0")

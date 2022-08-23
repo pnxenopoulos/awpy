@@ -22,8 +22,8 @@ NAV = transform_csv_to_json(NAV_CSV)
 
 # Create nav graphs
 NAV_GRAPHS = {}
-for m in NAV.keys():
-    G = nx.Graph()
+for m in NAV:
+    G = nx.DiGraph()
     for a in NAV[m].keys():
         r = NAV[m][a]
         G.add_nodes_from(
@@ -49,7 +49,7 @@ for m in NAV.keys():
                 ),
             ]
         )
-    edge_list = open(path + "nav/" + m + ".txt", "r")
+    edge_list = open(path + "nav/" + m + ".txt", "r", encoding="utf8")
     edge_list_lines = edge_list.readlines()
     for line in edge_list_lines:
         areas = line.strip().split(",")
@@ -57,5 +57,5 @@ for m in NAV.keys():
     NAV_GRAPHS[m] = G
 
 # Open map data
-with open(Path(path + "map/map_data.json")) as f:
+with open(Path(path + "map/map_data.json"), encoding="utf8") as f:
     MAP_DATA = json.load(f)
