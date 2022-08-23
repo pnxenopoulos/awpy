@@ -273,7 +273,7 @@ def get_shortest_distances_mapping(leaders, current_positions):
         current_positions (list): List of tuples of players x, y coordinates in the current round and frame
 
     Returns:
-        A list mapping the the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
+        A list mapping the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
         (Requires python 3.6 because it relies on the order of elements in the dict)"""
     smallest_distance = float("inf")
     best_mapping = [0, 1, 2, 3, 4]
@@ -450,7 +450,7 @@ def plot_rounds_different_players(
                             # Update the is_dead status
                             if is_dead:
                                 leaders[side][player_id]["is_dead"] = True
-                            # Grabour current player_index from what it was the previous round to achieve color consistency
+                            # Grab our current player_index from what it was the previous round to achieve color consistency
                             player_index = leaders[side][player_id]["index"]
                             # Update our position
                             leaders[side][player_id]["pos"] = pos
