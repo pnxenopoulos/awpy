@@ -1,3 +1,26 @@
+"""Functions for finding distances between points, areas or states.
+
+    Typical usage example:
+
+    from awpy.analytics.nav import area_distance
+
+    geodesic_dist = area_distance(map_name="de_dust2", area_a=152, area_b=8970, dist_type="geodesic")
+    f, ax = plot_map(map_name = "de_dust2", map_type = 'simpleradar', dark = True)
+
+    for a in NAV["de_dust2"]:
+        area = NAV["de_dust2"][a]
+        color = "None"
+        if a in geodesic_dist["areas"]:
+            color = "red"
+        width = (area["southEastX"] - area["northWestX"])
+        height = (area["northWestY"] - area["southEastY"])
+        southwest_x = area["northWestX"]
+        southwest_y = area["southEastY"]
+        rect = patches.Rectangle((southwest_x,southwest_y), width, height, linewidth=1, edgecolor="yellow", facecolor=color)
+        ax.add_patch(rect)
+
+    https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb
+"""
 import sys
 import itertools
 from collections import defaultdict
@@ -6,12 +29,9 @@ import math
 from sympy.utilities.iterables import multiset_permutations
 import networkx as nx
 import numpy as np
-
-
 from awpy.data import NAV, NAV_GRAPHS, TILE_DIST_MATRIX, AREA_DIST_MATRIX
 from awpy.visualization.plot import tree
 from scipy.spatial import distance
-
 from shapely.geometry import Polygon
 
 
