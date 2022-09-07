@@ -5,7 +5,7 @@ name: build-package
 on:
   push:
     branches:
-     - develop
+     - main
   release:
     tags:
       - v*
