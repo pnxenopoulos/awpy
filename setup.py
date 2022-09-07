@@ -19,37 +19,23 @@ if sys.platform != 'win32' and platform.python_implementation() == 'CPython':
 else:
     cmdclass = {}
 
-def generate_version():
-    ci = os.environ.get("CI", False)
-    ref_type = os.environ.get("GITHUB_REF_TYPE", None)
-    ref_name = os.environ.get("GITHUB_REF_NAME", None)
-    version = ""
 
-    if ci:
-        # We are running within gitlab ci
-        if ref_type == 'tag':
-            # print("CI Tag based release")
-            # We are running within a tag, format should be "^eg-common/v\\d+(?:\\.\\d+)+"
-            target, version = ref_name.split("v")
-        else:
-            # This is a development release.
-            # If it is the develop branch, we mark it as x.x.xdev
-            # If it is a feature branch, we append the feature branch name
-            # to the version, e.g. 0.0.0.dev0feature.branch
+def get_version():
+    root_dir = os.path.dirname(os.path.abspath(__file__))
 
-            version = f"0.0.0.dev0+{ref_name}"
+    version_file_name = os.path.join(root_dir, "VERSION")
 
-            # print(f"CI Development release {version}")
+    if os.path.exists(version_file_name):
+        with open(version_file_name, "r") as version_file:
+            version = version_file.read()
     else:
-        # print("Local Development release")
-        version = "0.0.0.dev0+local"
+        raise Exception("VERSION file not found")
 
     return version
 
-
 setup(
     name="csgo",
-    version=generate_version(),
+    version=get_version(),
     packages=find_packages(),
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine

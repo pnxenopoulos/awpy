@@ -3,29 +3,58 @@ name: build-package
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
+  push:
+    branches:
+     - develop
   release:
     tags:
       - v*
-  push:
-    branches:
-     - 'main'
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: string
+        default: DEV
+        required: true
+        description: Default DEV environment for manual feature branch invocations.
 
 jobs:
-  builds:
+  Lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    env:
+      python-version: 3.8
+    steps:
+      - uses: actions/checkout@v2
+      - name: Black Lint
+        uses: psf/black@stable
+
+  FeatureBranch:
+    name: Feature Branch -> Develop
+    if: ${{ startsWith(github.ref, 'refs/heads/ENG-') == true && github.event.inputs.environment == 'DEV' }}
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        python-version: ['3.8']
-        include:
-          - environment: "dev"
-            aws-account: "813914655382"
-            aws-region: "us-west-2"
-            role-session-name: EgCommonPackageDevSession
-            role-to-assume: AWS_ROLE_TO_ASSUME_DEV
     runs-on: ${{ matrix.os }}
+    environment:
+      name: Develop
+    env:
+      python-version: 3.8
+      environment: "dev"
+      aws-account: "834354940696"
+      aws-region: "us-west-2"
+      role-session-name: CsgoDevSession
+      role-to-assume: AWS_ROLE_TO_ASSUME_NEW_DEV
+      pypi-aws-account: "597319750692"
+      pypi-role-to-assume: arn:aws:iam::597319750692:role/GithubPipelineRole
+      pypi-aws-region: "us-west-2"
+      pypi-domain-name: "eg"
+      pypi-repo-name: "prod"
     permissions:
       id-token: write
       contents: write
+    
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
@@ -33,53 +62,109 @@ jobs:
           go-version: 1.17.6
       - uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.python-version }}
       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@master
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         with:
-          role-to-assume: ${{ secrets[matrix.role-to-assume] }}
-          role-session-name: ${{ matrix.role-session-name }}
-          aws-region: ${{ matrix.aws-region }}
+          role-to-assume: ${{ secrets[env.role-to-assume] }}
+          role-session-name: ${{ env.role-session-name }}
+          aws-region: ${{ env.aws-region }}
       
-      - name: Configure CodeArtifact credentials for Windows
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
-        if: matrix.os == 'windows-latest'
-        run: |
-            echo "TWINE_REPOSITORY_URL=$(aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint)" >> $env:GITHUB_ENV
-            echo "TWINE_PASSWORD=$(aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken)" >> $env:GITHUB_ENV
-            echo "TWINE_USERNAME=aws" >> $env:GITHUB_ENV
-
-      - name: Configure CodeArtifact credentials for Ubuntu, MacOS
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
-        if: matrix.os != 'windows-latest'
-        run: |
-            echo "TWINE_REPOSITORY_URL=$(aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint)" >> $GITHUB_ENV
-            echo "TWINE_PASSWORD=$(aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken)" >> $GITHUB_ENV
-            echo "TWINE_USERNAME=aws" >> $GITHUB_ENV
-
       - name: Build package dist Ubuntu
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         if: matrix.os == 'ubuntu-latest'
         run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine setuptools-golang
-          # setuptools-golang-build-manylinux-wheels
+          aws codeartifact login --tool twine --domain eg --domain-owner ${{ env.aws-account }} --repository prod
+          pip install --upgrade pip setuptools
+          pip install wheel twine setuptools-golang
+          echo "0.0.0.dev0+${{ github.ref_name }}" > VERSION
+          echo `python3 setup.py --version` > VERSION
           python setup.py bdist_wheel
+          aws codeartifact delete-package-versions --domain eg --domain-owner ${{ env.aws-account }} --repository prod --format pypi --package eg-common --versions $PACKAGE_VERSION
+          python -m twine upload --repository codeartifact dist/* --verbose
       
       - name: Build package dist Windows, MacOS
-        # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
         if: matrix.os != 'ubuntu-latest'
         run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine
+          aws codeartifact login --tool twine --domain eg --domain-owner ${{ env.aws-account }} --repository prod
+          pip install --upgrade pip setuptools
+          pip install  wheel twine
+          echo "0.0.0.dev0+${{ github.ref_name }}" > VERSION
+          echo `python3 setup.py --version` > VERSION
           python setup.py bdist_wheel
+          aws codeartifact delete-package-versions --domain eg --domain-owner ${{ env.aws-account }} --repository prod --format pypi --package eg-common --versions $PACKAGE_VERSION
+          python -m twine upload --repository codeartifact dist/* --verbose
+    
 
-      - name: Publish to repo
-        if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
-        run: |
-          python -m twine upload --repository-url ${{ env.TWINE_REPOSITORY_URL }} dist/*.whl --verbose -u ${{ env.TWINE_USERNAME }} -p ${{ env.TWINE_PASSWORD }}
-        env:
-          TWINE_USERNAME: ${{ env.TWINE_USERNAME }}
-          TWINE_PASSWORD: ${{ env.TWINE_PASSWORD }}
+  # builds:
+  #   strategy:
+  #     matrix:
+  #       os: [windows-latest, ubuntu-latest, macos-latest]
+  #       python-version: ['3.8']
+  #       include:
+  #         - environment: "dev"
+  #           aws-account: "813914655382"
+  #           aws-region: "us-west-2"
+  #           role-session-name: EgCommonPackageDevSession
+  #           role-to-assume: AWS_ROLE_TO_ASSUME_DEV
+  #   runs-on: ${{ matrix.os }}
+  #   permissions:
+  #     id-token: write
+  #     contents: write
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-go@v2
+  #       with:
+  #         go-version: 1.17.6
+  #     - uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+      
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@master
+  #       # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+  #       with:
+  #         role-to-assume: ${{ secrets[matrix.role-to-assume] }}
+  #         role-session-name: ${{ matrix.role-session-name }}
+  #         aws-region: ${{ matrix.aws-region }}
+      
+  #     - name: Configure CodeArtifact credentials for Windows
+  #       # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+  #       if: matrix.os == 'windows-latest'
+  #       run: |
+  #           echo "TWINE_REPOSITORY_URL=$(aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint)" >> $env:GITHUB_ENV
+  #           echo "TWINE_PASSWORD=$(aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken)" >> $env:GITHUB_ENV
+  #           echo "TWINE_USERNAME=aws" >> $env:GITHUB_ENV
+
+  #     - name: Configure CodeArtifact credentials for Ubuntu, MacOS
+  #       # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+  #       if: matrix.os != 'windows-latest'
+  #       run: |
+  #           echo "TWINE_REPOSITORY_URL=$(aws codeartifact get-repository-endpoint --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --repository eg-pypi --format pypi --query repositoryEndpoint)" >> $GITHUB_ENV
+  #           echo "TWINE_PASSWORD=$(aws codeartifact get-authorization-token --domain eg-pypi --domain-owner ${{ matrix.aws-account }} --query authorizationToken)" >> $GITHUB_ENV
+  #           echo "TWINE_USERNAME=aws" >> $GITHUB_ENV
+
+  #     - name: Build package dist Ubuntu
+  #       # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+  #       if: matrix.os == 'ubuntu-latest'
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install setuptools wheel twine setuptools-golang
+  #         # setuptools-golang-build-manylinux-wheels
+  #         python setup.py bdist_wheel
+      
+  #     - name: Build package dist Windows, MacOS
+  #       # if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+  #       if: matrix.os != 'ubuntu-latest'
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install setuptools wheel twine
+  #         python setup.py bdist_wheel
+
+  #     - name: Publish to repo
+  #       if: github.event_name == 'release' && github.event.action == 'created' && startsWith(github.ref, 'refs/tags')
+  #       run: |
+  #         python -m twine upload --repository-url ${{ env.TWINE_REPOSITORY_URL }} dist/*.whl --verbose -u ${{ env.TWINE_USERNAME }} -p ${{ env.TWINE_PASSWORD }}
+  #       env:
+  #         TWINE_USERNAME: ${{ env.TWINE_USERNAME }}
+  #         TWINE_PASSWORD: ${{ env.TWINE_PASSWORD }}
