@@ -29,7 +29,8 @@ import math
 from sympy.utilities.iterables import multiset_permutations
 import networkx as nx
 import numpy as np
-from awpy.data import NAV, NAV_GRAPHS, TILE_DIST_MATRIX, AREA_DIST_MATRIX
+import json
+from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
 from awpy.visualization.plot import tree
 from scipy.spatial import distance
 from shapely.geometry import Polygon
@@ -137,15 +138,12 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         return distance_obj
     if dist_type == "geodesic":
 
-        def dist(a, b):
-            return G.nodes()[a]["size"] + G.nodes()[b]["size"]
-
-        def dist_weight(a, b, _):
-            return G.nodes()[a]["size"] + G.nodes()[b]["size"]
+        def dist_heuristic(a, b):
+            return distance.euclidean(G.nodes()[a]["center"], G.nodes()[b]["center"])
 
         try:
             geodesic_path = nx.astar_path(
-                G, area_a, area_b, heuristic=dist, weight=dist_weight
+                G, area_a, area_b, heuristic=dist_heuristic, weight="weight"
             )
             geodesic_cost = 0
             for i, area in enumerate(geodesic_path):
@@ -286,153 +284,158 @@ def generate_position_token(map_name, frame):
     return token
 
 
-def generate_tile_distance_matrix():
-    """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all tiles
-    Structures is [dist_type(euclidean,graph,geodesic)][map_name][area1id][area2id]
+def generate_area_distance_matrix(map_name, save=False):
+    """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all area
+    Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)]
 
     Args:
-        None
+        map_name (string): Map to generate the place matrix for
+        save (boolean): Whether to save the matrix to file
 
     Returns:
-        Tree structure containing distances for all tile pairs on all maps
+        Tree structure containing distances for all area pairs on all maps
     """
     # Initialize the dict structure
-    tile_distance_matrix = {
-        "euclidean": tree(),
-        "graph": tree(),
-        "geodesic": tree(),
-    }
-    # Loop over each map
-    for map_name, tiles in NAV.items():
-        # And there over each tile
-        for area1 in tiles:
-            # Precompute the tile center
-            area1 = int(area1)
-            area1_x = (
-                NAV[map_name][area1]["southEastX"] + NAV[map_name][area1]["northWestX"]
+    area_distance_matrix = tree()
+    if map_name not in NAV:
+        raise ValueError("Map not found.")
+    areas = NAV[map_name]
+    # And there over each area
+    for area1 in areas:
+        # Precompute the tile center
+        area1 = int(area1)
+        area1_x = (
+            NAV[map_name][area1]["southEastX"] + NAV[map_name][area1]["northWestX"]
+        ) / 2
+        area1_y = (
+            NAV[map_name][area1]["southEastY"] + NAV[map_name][area1]["northWestY"]
+        ) / 2
+        area1_z = (
+            NAV[map_name][area1]["southEastZ"] + NAV[map_name][area1]["northWestZ"]
+        ) / 2
+        # Loop over every pair of areas
+        for area2 in areas:
+            area2 = int(area2)
+            # # Compute center of second area
+            area2_x = (
+                NAV[map_name][area2]["southEastX"] + NAV[map_name][area2]["northWestX"]
             ) / 2
-            area1_y = (
-                NAV[map_name][area1]["southEastY"] + NAV[map_name][area1]["northWestY"]
+            area2_y = (
+                NAV[map_name][area2]["southEastY"] + NAV[map_name][area2]["northWestY"]
             ) / 2
-            area1_z = (
-                NAV[map_name][area1]["southEastZ"] + NAV[map_name][area1]["northWestZ"]
+            area2_z = (
+                NAV[map_name][area2]["southEastZ"] + NAV[map_name][area2]["northWestZ"]
             ) / 2
-            # Loop over every pair of tiles
-            for area2 in tiles:
-                area2 = int(area2)
-                # Compute center of second tile
-                area2_x = (
-                    NAV[map_name][area2]["southEastX"]
-                    + NAV[map_name][area2]["northWestX"]
-                ) / 2
-                area2_y = (
-                    NAV[map_name][area2]["southEastY"]
-                    + NAV[map_name][area2]["northWestY"]
-                ) / 2
-                area2_z = (
-                    NAV[map_name][area2]["southEastZ"]
-                    + NAV[map_name][area2]["northWestZ"]
-                ) / 2
-                # Calculate basic euclidean distance
-                tile_distance_matrix["euclidean"][map_name][area1][area2] = math.sqrt(
-                    (area1_x - area2_x) ** 2
-                    + (area1_y - area2_y) ** 2
-                    + (area1_z - area2_z) ** 2
-                )
-                # Also get graph distance
-                graph = area_distance(map_name, area1, area2, dist_type="graph")
-                tile_distance_matrix["graph"][map_name][area1][area2] = graph[
-                    "distance"
-                ]
-                # And geodesic like distance
-                geodesic = area_distance(map_name, area1, area2, dist_type="geodesic")
-                tile_distance_matrix["geodesic"][map_name][area1][area2] = geodesic[
-                    "distance"
-                ]
-    return tile_distance_matrix
+            # Calculate basic euclidean distance
+            area_distance_matrix[area1][area2]["euclidean"] = math.sqrt(
+                (area1_x - area2_x) ** 2
+                + (area1_y - area2_y) ** 2
+                + (area1_z - area2_z) ** 2
+            )
+            # Also get graph distance
+            graph = area_distance(map_name, area1, area2, dist_type="graph")
+            area_distance_matrix[area1][area2]["graph"] = graph["distance"]
+            # And geodesic like distance
+            geodesic = area_distance(map_name, area1, area2, dist_type="geodesic")
+            area_distance_matrix[area1][area2]["geodesic"] = geodesic["distance"]
+    if save:
+        with open(
+            PATH + f"nav/area_distance_matrix_{map_name}.json", "w", encoding="utf8"
+        ) as json_file:
+            json.dump(area_distance_matrix, json_file)
+    return area_distance_matrix
 
 
-def get_area_distance_matrix():
+def generate_place_distance_matrix(map_name, save=False):
     """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all regions
-    Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point,median)]
+    Structures is [map_name][placeid][place2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point,median)]
 
     Args:
-        None
+        map_name (string): Map to generate the place matrix for
+        save (boolean): Whether to save the matrix to file
 
     Returns:
-        Tree structure containing distances for all tile pairs on all maps
+        Tree structure containing distances for all place pairs on all maps
     """
-    area_distance_matrix = tree()
+    if map_name not in NAV:
+        raise ValueError("Map not found.")
+    areas = NAV[map_name]
+    place_distance_matrix = tree()
     # Loop over all three considered distance types
     for dist_type in ["geodesic", "graph", "euclidean"]:
-        # And each map
-        for map_name, tiles in NAV.items():
-            # Get the mapping "areaName": [tiles that have this area name]
-            area_mapping = defaultdict(list)
-            for area in tiles:
-                area_mapping[tiles[area]["areaName"]].append(area)
-            # Get the centroids and representative points for each named area on the map
-            centroids, reps = generate_centroids(map_name)
-            # Loop over all pairs of named areas
-            for area1, centroid1 in centroids.items():
-                for area2, centroid2 in centroids.items():
-                    # If precomputed values do not exist calculate them
-                    if TILE_DIST_MATRIX is None:
-                        # Distances between the centroids for each named area
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "centroid"
-                        ] = area_distance(
-                            map_name, centroid1, centroid2, dist_type=dist_type
-                        )[
-                            "distance"
-                        ]
-                        # Distances between the representative points for each named area
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "representative_point"
-                        ] = area_distance(
-                            map_name, reps[area1], reps[area2], dist_type=dist_type
-                        )[
-                            "distance"
-                        ]
-                        # Median of all the distance pairs for tileA in area1 to tileB in area2
-                        connections = []
-                        for sub_area1 in area_mapping[area1]:
-                            for sub_area2 in area_mapping[area2]:
-                                connections.append(
-                                    area_distance(
-                                        map_name,
-                                        sub_area1,
-                                        sub_area2,
-                                        dist_type=dist_type,
-                                    )["distance"]
-                                )
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "median_dist"
-                        ] = median(connections)
-                    # If precomputed values exist just grab those
-                    else:
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "centroid"
-                        ] = TILE_DIST_MATRIX[dist_type][map_name][str(centroid1)][
-                            str(centroid2)
-                        ]
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "representative_point"
-                        ] = TILE_DIST_MATRIX[dist_type][map_name][str(reps[area1])][
-                            str(reps[area2])
-                        ]
-                        connections = []
-                        for sub_area1 in area_mapping[area1]:
-                            for sub_area2 in area_mapping[area2]:
-                                connections.append(
-                                    TILE_DIST_MATRIX[dist_type][map_name][
-                                        str(sub_area1)
-                                    ][str(sub_area2)]
-                                )
-                        area_distance_matrix[map_name][area1][area2][dist_type][
-                            "median_dist"
-                        ] = median(connections)
-    return area_distance_matrix
+        # Get the mapping "areaName": [areas that have this area name]
+        area_mapping = defaultdict(list)
+        for area in areas:
+            area_mapping[areas[area]["areaName"]].append(area)
+        # Get the centroids and representative points for each named place on the map
+        centroids, reps = generate_centroids(map_name)
+        # Loop over all pairs of named places
+        for place1, centroid1 in centroids.items():
+            for place2, centroid2 in centroids.items():
+                # If precomputed values do not exist calculate them
+                if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
+                    # Distances between the centroids for each named place
+                    place_distance_matrix[place1][place2][dist_type][
+                        "centroid"
+                    ] = area_distance(
+                        map_name, centroid1, centroid2, dist_type=dist_type
+                    )[
+                        "distance"
+                    ]
+                    # Distances between the representative points for each named place
+                    place_distance_matrix[place1][place2][dist_type][
+                        "representative_point"
+                    ] = area_distance(
+                        map_name, reps[place1], reps[place2], dist_type=dist_type
+                    )[
+                        "distance"
+                    ]
+                    # Median of all the distance pairs for areaA in place1 to areaB in place2
+                    connections = []
+                    for sub_area1 in area_mapping[place1]:
+                        for sub_area2 in area_mapping[place2]:
+                            connections.append(
+                                area_distance(
+                                    map_name,
+                                    sub_area1,
+                                    sub_area2,
+                                    dist_type=dist_type,
+                                )["distance"]
+                            )
+                    place_distance_matrix[place1][place2][dist_type][
+                        "median_dist"
+                    ] = median(connections)
+                # If precomputed values exist just grab those
+                else:
+                    place_distance_matrix[place1][place2][dist_type][
+                        "centroid"
+                    ] = AREA_DIST_MATRIX[map_name][str(centroid1)][str(centroid2)][
+                        dist_type
+                    ]
+                    place_distance_matrix[place1][place2][dist_type][
+                        "representative_point"
+                    ] = AREA_DIST_MATRIX[map_name][str(reps[place1])][
+                        str(reps[place2])
+                    ][
+                        dist_type
+                    ]
+                    connections = []
+                    for sub_area1 in area_mapping[place1]:
+                        for sub_area2 in area_mapping[place2]:
+                            connections.append(
+                                AREA_DIST_MATRIX[map_name][str(sub_area1)][
+                                    str(sub_area2)
+                                ][dist_type]
+                            )
+                    place_distance_matrix[place1][place2][dist_type][
+                        "median_dist"
+                    ] = median(connections)
+    if save:
+        with open(
+            PATH + f"nav/place_distance_matrix_{map_name}.json", "w", encoding="utf8"
+        ) as json_file:
+            json.dump(place_distance_matrix, json_file)
+    return place_distance_matrix
 
 
 def generate_centroids(map_name):
@@ -650,7 +653,7 @@ def position_state_distance(
                 elif distance_type in ["geodesic", "graph"]:
                     # The underlying graph is directed (There is a short path to drop down a ledge but a long one is needed to get back up)
                     # So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative
-                    if TILE_DIST_MATRIX is None:
+                    if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
                         this_dist = min(
                             area_distance(
                                 map_name,
@@ -667,21 +670,21 @@ def position_state_distance(
                         )
                     else:
                         this_dist = min(
-                            TILE_DIST_MATRIX[distance_type][map_name][
-                                str(areas[1][team][player1])
-                            ][str(areas[2][team][player2])],
-                            TILE_DIST_MATRIX[distance_type][map_name][
+                            AREA_DIST_MATRIX[map_name][str(areas[1][team][player1])][
                                 str(areas[2][team][player2])
-                            ][str(areas[1][team][player1])],
+                            ][distance_type],
+                            AREA_DIST_MATRIX[map_name][str(areas[2][team][player2])][
+                                str(areas[1][team][player1])
+                            ][distance_type],
                         )
                     if this_dist == float("inf"):
                         this_dist = sys.maxsize / 6
                 # Build up the overall distance for the current mapping of the current side
-                cur_dist += this_dist
+                cur_dist += this_dist / len(mapping)
             # Only keep the smallest distance from all the mappings
             side_distance = min(side_distance, cur_dist)
         # Build the total distance as the sum of the individual side's distances
-        pos_distance += side_distance
+        pos_distance += side_distance / position_array_1.shape[0]
     return pos_distance
 
 
@@ -739,7 +742,7 @@ def token_state_distance(
     # More complicated distances based on actual area locations
     elif distance_type in ["geodesic", "graph", "euclidean"]:
         # If we do not have the precomputed matrix we need to first build the centroids to get them ourselves later
-        if AREA_DIST_MATRIX is None:
+        if PLACE_DIST_MATRIX is None or map_name not in PLACE_DIST_MATRIX:
             ref_points = {}
             (
                 ref_points["centroid"],
@@ -785,7 +788,7 @@ def token_state_distance(
                 # Iterate of the mapping. Eg: [(0,2),(1,3)] and get their total distance
                 # For the example this would be dist(0,2)+dist(1,3)
                 for area1, area2 in mapping:
-                    if AREA_DIST_MATRIX is None:
+                    if PLACE_DIST_MATRIX is None or map_name not in PLACE_DIST_MATRIX:
                         this_dist += min(
                             area_distance(
                                 map_name,
@@ -802,15 +805,15 @@ def token_state_distance(
                         )
                     else:
                         this_dist += min(
-                            AREA_DIST_MATRIX[map_name][map_area_names[area1]][
+                            PLACE_DIST_MATRIX[map_name][map_area_names[area1]][
                                 map_area_names[area2]
                             ][distance_type][reference_point],
-                            AREA_DIST_MATRIX[map_name][map_area_names[area2]][
+                            PLACE_DIST_MATRIX[map_name][map_area_names[area2]][
                                 map_area_names[area1]
                             ][distance_type][reference_point],
                         )
                 side_distance = min(side_distance, this_dist)
-            token_dist += side_distance
+            token_dist += side_distance / (len(token_array_1) // len(map_area_names))
     return token_dist
 
 
