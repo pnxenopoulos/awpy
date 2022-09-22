@@ -329,15 +329,15 @@ class TestNav:
         dist = position_state_distance(
             "de_ancient", pos_state1, pos_state2, distance_type="euclidean"
         )
-        assert round(dist, 2) == 8.66
+        assert round(dist, 2) == 4.33
 
         pos_state1 = np.array([[[-500, -850, 100], [-445, -105, 135]]])
         pos_state2 = np.array([[[-550, -100, 130], [-500, -850, 100]]])
         dist = position_state_distance(
             "de_ancient", pos_state1, pos_state2, distance_type="graph"
         )
-        assert type(dist) == int
-        assert dist == 2
+        assert type(dist) == float
+        assert dist == 1
 
     def test_token_state_distance(self):
         """Tests token state distance"""
@@ -580,18 +580,18 @@ class TestNav:
         dist = token_state_distance(
             "de_ancient", token_array1, token_array2, distance_type="graph"
         )
-        assert type(dist) == int
-        assert dist == 71
+        assert isinstance(dist, float)
+        assert round(dist, 2) == 7.10
         dist = token_state_distance(
             "de_ancient", token_array1, token_array2, distance_type="euclidean"
         )
-        assert type(dist) == float
-        assert round(dist, 2) == 6431.16
+        assert isinstance(dist, float)
+        assert round(dist, 2) == 643.12
         dist = token_state_distance(
             "de_ancient", token_array1, token_array2, distance_type="geodesic"
         )
-        assert type(dist) == float
-        assert round(dist, 2) == 10763.42
+        assert isinstance(dist, float)
+        assert round(dist, 2) == 1149.17
 
         token_array1 = np.array(
             [
@@ -668,7 +668,7 @@ class TestNav:
             distance_type="graph",
             reference_point="representative_point",
         )
-        assert type(dist) == int
+        assert isinstance(dist, float)
         assert dist == 6
         dist = token_state_distance(
             "de_dust2",
@@ -677,7 +677,7 @@ class TestNav:
             distance_type="euclidean",
             reference_point="representative_point",
         )
-        assert type(dist) == float
+        assert isinstance(dist, float)
         assert round(dist, 2) == 336.60
         dist = token_state_distance(
             "de_dust2",
@@ -686,7 +686,7 @@ class TestNav:
             distance_type="geodesic",
             reference_point="representative_point",
         )
-        assert type(dist) == float
+        assert isinstance(dist, float)
         assert round(dist, 2) == 928.88
 
         token_array1 = np.array(
@@ -766,16 +766,16 @@ class TestNav:
         dist = token_state_distance(
             "de_nuke", token_array1, token_array2, distance_type="graph"
         )
-        assert type(dist) == int
+        assert isinstance(dist, float)
         assert dist == 27
         dist = token_state_distance(
             "de_nuke", token_array1, token_array2, distance_type="euclidean"
         )
-        assert type(dist) == float
+        assert isinstance(dist, float)
         assert round(dist, 2) == 2272.12
         dist = token_state_distance("de_nuke", token_array1, token_array2)
-        assert type(dist) == float
-        assert round(dist, 2) == 5091.28
+        assert isinstance(dist, float)
+        assert round(dist, 2) == 5180.97
 
     def test_frame_distance(self):
         """Tests frame distance"""

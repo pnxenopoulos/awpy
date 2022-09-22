@@ -2,7 +2,7 @@ import os
 import pytest
 import networkx
 
-from awpy.data import MAP_DATA, NAV, NAV_CSV, NAV_GRAPHS, AREA_DIST_MATRIX
+from awpy.data import MAP_DATA, NAV, NAV_CSV, NAV_GRAPHS, PLACE_DIST_MATRIX
 
 
 class TestDataImports:
@@ -25,35 +25,36 @@ class TestDataImports:
         """Tests the nav data"""
         assert MAP_DATA["de_overpass"]["scale"] == 5.2
 
-    def test_area_dist_matrix(self):
+    def test_place_dist_matrix(self):
         """Tests the nav data"""
-        assert AREA_DIST_MATRIX["de_nuke"]["TSpawn"]["Silo"] == {
-            "euclidean": {
-                "centroid": 2272.1231010307897,
-                "representative_point": 2135.6869302332207,
-                "median_dist": 2196.9121452155255,
-            },
-            "graph": {
-                "centroid": float("inf"),
-                "representative_point": float("inf"),
-                "median_dist": float("inf"),
-            },
-            "geodesic": {
-                "centroid": float("inf"),
-                "representative_point": float("inf"),
-                "median_dist": float("inf"),
-            },
+        assert PLACE_DIST_MATRIX["de_nuke"]["TSpawn"]["Silo"]["geodesic"] == {
+            "centroid": float("inf"),
+            "representative_point": float("inf"),
+            "median_dist": float("inf"),
         }
-        assert AREA_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"] == {
-            "euclidean": {
-                "centroid": 2272.1231010307897,
-                "representative_point": 2135.6869302332207,
-                "median_dist": 2196.9121452155255,
-            },
-            "graph": {"centroid": 27, "representative_point": 28, "median_dist": 28.0},
-            "geodesic": {
-                "centroid": 5091.284326380451,
-                "representative_point": 5096.652899691901,
-                "median_dist": 5208.618501688254,
-            },
+        assert PLACE_DIST_MATRIX["de_nuke"]["TSpawn"]["Silo"]["graph"] == {
+            "centroid": float("inf"),
+            "representative_point": float("inf"),
+            "median_dist": float("inf"),
+        }
+        assert PLACE_DIST_MATRIX["de_nuke"]["TSpawn"]["Silo"]["euclidean"] == {
+            "centroid": 2272.1231010307897,
+            "representative_point": 2135.6869302332207,
+            "median_dist": 2196.9121452155255,
+        }
+
+        assert PLACE_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"]["geodesic"] == {
+            "centroid": 5180.969456007872,
+            "representative_point": 5295.756547438593,
+            "median_dist": 5347.983529722538,
+        }
+        assert PLACE_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"]["graph"] == {
+            "centroid": 27,
+            "representative_point": 28,
+            "median_dist": 28.0,
+        }
+        assert PLACE_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"]["euclidean"] == {
+            "centroid": 2272.1231010307897,
+            "representative_point": 2135.6869302332207,
+            "median_dist": 2196.9121452155255,
         }
