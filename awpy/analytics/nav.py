@@ -738,6 +738,7 @@ def token_state_distance(
         # How many edits of one value by 1 (up or down) are needed to go from one array to the other
         # Eg: [3,0,0] to [0,1,0] needs 4 edits. Three to get the first index from 3 to 0 and then one to get the second from 0 to 1
         token_dist = sum(map(abs, np.subtract(token_array_1, token_array_2)))
+        token_dist /= len(token_array_1) // len(map_area_names)
 
     # More complicated distances based on actual area locations
     elif distance_type in ["geodesic", "graph", "euclidean"]:
@@ -767,6 +768,7 @@ def token_state_distance(
             # Make sure array1 is the larger one
             if sum(array1) < sum(array2):
                 array1, array2 = array2, array1
+            size = sum(array2)
             # Get the indices where array1 and array2 have larger values than the other.
             # Use each index as often as it is larger
             diff_array = np.subtract(array1, array2)
@@ -812,6 +814,7 @@ def token_state_distance(
                                 map_area_names[area1]
                             ][distance_type][reference_point],
                         )
+                this_dist /= size
                 side_distance = min(side_distance, this_dist)
             token_dist += side_distance / (len(token_array_1) // len(map_area_names))
     return token_dist
@@ -834,17 +837,45 @@ def frame_distance(
     Returns:
         A float representing the distance between these two game states
     """
-    pos_array1 = np.zeros((2, 5, 3))
-    pos_array2 = np.zeros((2, 5, 3))
-    for team_index, team in enumerate(["t", "ct"]):
+    pos_array1 = np.zeros(
+        (
+            2
+            if len(frame1["ct"]["players"]) > 0 and len(frame1["t"]["players"]) > 0
+            else 1,
+            max(len(frame1["ct"]["players"]), len(frame1["t"]["players"])),
+            3,
+        )
+    )
+    pos_array2 = np.zeros(
+        (
+            2
+            if len(frame2["ct"]["players"]) > 0 and len(frame2["t"]["players"]) > 0
+            else 1,
+            max(len(frame2["ct"]["players"]), len(frame2["t"]["players"])),
+            3,
+        )
+    )
+    team_to_index = {"t": 0, "ct": 1}
+    for team in frame1:
+        index = (
+            team_to_index[team]
+            if (len(frame1["ct"]["players"]) > 0 and len(frame1["t"]["players"]) > 0)
+            else 0
+        )
         for player_index, player in enumerate(frame1[team]["players"]):
-            pos_array1[team_index][player_index][0] = player["x"]
-            pos_array1[team_index][player_index][1] = player["y"]
-            pos_array1[team_index][player_index][2] = player["z"]
+            pos_array1[index][player_index][0] = player["x"]
+            pos_array1[index][player_index][1] = player["y"]
+            pos_array1[index][player_index][2] = player["z"]
+    for team in frame2:
+        index = (
+            team_to_index[team]
+            if (len(frame2["ct"]["players"]) > 0 and len(frame2["t"]["players"]) > 0)
+            else 0
+        )
         for player_index, player in enumerate(frame2[team]["players"]):
-            pos_array2[team_index][player_index][0] = player["x"]
-            pos_array2[team_index][player_index][1] = player["y"]
-            pos_array2[team_index][player_index][2] = player["z"]
+            pos_array2[index][player_index][0] = player["x"]
+            pos_array2[index][player_index][1] = player["y"]
+            pos_array2[index][player_index][2] = player["z"]
     return position_state_distance(map_name, pos_array1, pos_array2, distance_type)
 
 
