@@ -12,6 +12,7 @@ import shutil
 import itertools
 import collections
 
+import numpy as np
 import imageio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -36,6 +37,12 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
             os.path.join(os.path.dirname(__file__), "")
             + f"""../data/map/{map_name}.png"""
         )
+        if "z_cutoff" in MAP_DATA[map_name]:
+            map_bg_lower = imageio.imread(
+                os.path.join(os.path.dirname(__file__), "")
+                + f"""../data/map/{map_name}_lower.png"""
+            )
+            map_bg = np.concatenate([map_bg, map_bg_lower])
     else:
         try:
             col = "light"
@@ -45,13 +52,26 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
                 os.path.join(os.path.dirname(__file__), "")
                 + f"""../data/map/{map_name}_{col}.png"""
             )
+            if "z_cutoff" in MAP_DATA[map_name]:
+                map_bg_lower = imageio.imread(
+                    os.path.join(os.path.dirname(__file__), "")
+                    + f"""../data/map/{map_name}_lower_{col}.png"""
+                )
+                map_bg = np.concatenate([map_bg, map_bg_lower])
         except FileNotFoundError:
             map_bg = imageio.imread(
                 os.path.join(os.path.dirname(__file__), "")
                 + f"""../data/map/{map_name}.png"""
             )
+            if "z_cutoff" in MAP_DATA[map_name]:
+                map_bg_lower = imageio.imread(
+                    os.path.join(os.path.dirname(__file__), "")
+                    + f"""../data/map/{map_name}_lower.png"""
+                )
+                map_bg = np.concatenate([map_bg, map_bg_lower])
     fig, ax = plt.subplots()
     ax.imshow(map_bg, zorder=0)
+    # ax.imshow(map_bg, zorder=0)
     return fig, ax
 
 
@@ -79,6 +99,29 @@ def position_transform(map_name, position, axis):
         return pos
     else:
         return None
+
+
+def position_transform_all(map_name, position):
+    """Transforms an X or Y coordinate.
+
+    Args:
+        map_name (string): Map to search
+        position (tuple): (X,Y,Z) coordinates
+
+    Returns:
+        tuple
+    """
+    start_x = MAP_DATA[map_name]["x"]
+    start_y = MAP_DATA[map_name]["y"]
+    scale = MAP_DATA[map_name]["scale"]
+    x = position[0] - start_x
+    x /= scale
+    y = start_y - position[1]
+    y /= scale
+    z = position[2]
+    if z < MAP_DATA[map_name]["z_cutoff"]:
+        y += 1024
+    return (x, y, z)
 
 
 def plot_positions(
