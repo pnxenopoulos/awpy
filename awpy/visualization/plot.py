@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from awpy.data import MAP_DATA
+from awpy.analytics.nav import point_distance, tree, find_closest_area, area_distance
 
 
 def plot_map(map_name="de_dust2", map_type="original", dark=False):
@@ -308,31 +309,66 @@ def get_player_id(player):
     return str(player["steamID"])
 
 
-def get_shortest_distances_mapping(leaders, current_positions):
+def get_shortest_distances_mapping(
+    map_name, leaders, current_positions, dist_type="geodesic"
+):
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
 
     Args:
         leaders (dictionary): Dictionary of leaders position, alive status and color index in the current frame
-        current_positions (list): List of tuples of players x, y coordinates in the current round and frame
+        current_positions (list): List of tuples of players x, y, z coordinates in the current round and frame
+        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
 
     Returns:
         A list mapping the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
         (Requires python 3.6 because it relies on the order of elements in the dict)"""
     smallest_distance = float("inf")
     best_mapping = [0, 1, 2, 3, 4]
+    if dist_type in ["geodesic", "graph"]:
+        areas = {
+            "leaders": collections.defaultdict(int),
+            "current": collections.defaultdict(int),
+        }
+        for leader in leaders:
+            areas["leaders"][leader] = find_closest_area(
+                map_name, leaders[leader]["pos"]
+            )["areaId"]
+        for player, position in enumerate(current_positions):
+            if position is None:
+                continue
+            areas["current"][player] = find_closest_area(map_name, position)["areaId"]
     for mapping in itertools.permutations(range(len(leaders)), len(current_positions)):
         dist = 0
         for current_pos, leader_pos in enumerate(mapping):
             # Remove dead players from consideration
             if current_positions[current_pos] is None:
                 continue
-            dist += (
-                current_positions[current_pos][0]
-                - leaders[list(leaders)[leader_pos]]["pos"][0]
-            ) ** 2 + (
-                current_positions[current_pos][1]
-                - leaders[list(leaders)[leader_pos]]["pos"][1]
-            ) ** 2
+            if dist_type in ["geodesic", "graph"]:
+                this_dist = min(
+                    area_distance(
+                        map_name,
+                        areas["leaders"][list(leaders)[leader_pos]],
+                        areas["current"][current_pos],
+                        dist_type=dist_type,
+                        fast=True,
+                    )["distance"],
+                    area_distance(
+                        map_name,
+                        areas["current"][current_pos],
+                        areas["leaders"][list(leaders)[leader_pos]],
+                        dist_type=dist_type,
+                        fast=True,
+                    )["distance"],
+                )
+            else:
+                this_dist = point_distance(
+                    map_name,
+                    current_positions[current_pos],
+                    leaders[list(leaders)[leader_pos]]["pos"],
+                    dist_type,
+                    fast=True,
+                )["distance"]
+            dist += this_dist
         if dist < smallest_distance:
             smallest_distance = dist
             best_mapping = mapping
@@ -340,21 +376,6 @@ def get_shortest_distances_mapping(leaders, current_positions):
     for i, leader_pos in enumerate(best_mapping):
         best_mapping[i] = list(leaders)[leader_pos]
     return best_mapping
-
-
-def tree():
-    """Builds tree data structure from nested defaultdicts
-
-    Args:
-        None
-
-    Returns:
-        An empty tree"""
-
-    def the_tree():
-        return collections.defaultdict(the_tree)
-
-    return the_tree()
 
 
 def plot_rounds_different_players(
@@ -366,6 +387,7 @@ def plot_rounds_different_players(
     sides=None,
     fps=10,
     n_frames=9000,
+    dist_type="geodesic",
 ):
     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
      Only use untransformed coordinates.
@@ -379,6 +401,7 @@ def plot_rounds_different_players(
         sides (list): List of which sides to plots. Possible entries at "t" and "ct"
         fps (integer): Number of frames per second in the gif
         n_frames (integer): The first how many frames should be plotted
+        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
 
     Returns:
         True, saves .gif
@@ -436,8 +459,9 @@ def plot_rounds_different_players(
                             ):
                                 continue
                             pos = (
-                                position_transform(map_name, p["x"], "x"),
-                                position_transform(map_name, p["y"], "y"),
+                                p["x"],
+                                p["y"],
+                                p["z"],
                             )
                             if p["hp"] == 0:
                                 leaders[side][player_id]["is_dead"] = True
@@ -458,8 +482,9 @@ def plot_rounds_different_players(
                         current_positions = []
                         for player_index, p in enumerate(frames[i][side]["players"]):
                             pos = (
-                                position_transform(map_name, p["x"], "x"),
-                                position_transform(map_name, p["y"], "y"),
+                                p["x"],
+                                p["y"],
+                                p["z"],
                             )
                             # Remove dead players from consideration
                             if p["hp"] == 0:
@@ -468,7 +493,10 @@ def plot_rounds_different_players(
                                 current_positions.append(pos)
                         # Find the best mapping between current players and leaders
                         mapping = get_shortest_distances_mapping(
-                            leaders[side], current_positions
+                            map_name,
+                            leaders[side],
+                            current_positions,
+                            dist_type=dist_type,
                         )
                     # Now do the actual plotting
                     for player_index, p in enumerate(frames[i][side]["players"]):
@@ -476,8 +504,9 @@ def plot_rounds_different_players(
                             get_player_id(p) + "_" + str(frame_index) + "_" + side
                         )
                         pos = (
-                            position_transform(map_name, p["x"], "x"),
-                            position_transform(map_name, p["y"], "y"),
+                            p["x"],
+                            p["y"],
+                            p["z"],
                         )
 
                         is_dead = False
@@ -574,6 +603,7 @@ def plot_rounds_different_players(
             map_name=map_name,
             map_type=map_type,
             dark=dark,
+            apply_transformation=True,
         )
         image_files.append(f"csgo_tmp/{i}.png")
         f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
@@ -582,7 +612,7 @@ def plot_rounds_different_players(
     for file in image_files:
         images.append(imageio.imread(file))
     imageio.mimsave(filename, images, fps=fps)
-    shutil.rmtree("csgo_tmp/")
+    # shutil.rmtree("csgo_tmp/")
     return True
 
 
@@ -594,6 +624,7 @@ def plot_rounds_different_players_image(
     dark=False,
     sides=None,
     n_frames=9000,
+    dist_type="geodesic",
 ):
     """Plots a list of rounds and saves as a .gif. Each player in the first round is assigned a separate color. Players in the other rounds are matched by proximity.
      Only use untransformed coordinates.
@@ -606,6 +637,7 @@ def plot_rounds_different_players_image(
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
         sides (list): List of which sides to plots. Possible entries at "t" and "ct"
         n_frames (integer): The first how many frames should be plotted
+        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
 
     Returns:
         True, saves .gif
@@ -650,8 +682,9 @@ def plot_rounds_different_players_image(
                             ):
                                 continue
                             pos = (
-                                position_transform(map_name, p["x"], "x"),
-                                position_transform(map_name, p["y"], "y"),
+                                p["x"],
+                                p["y"],
+                                p["z"],
                             )
                             if p["hp"] == 0:
                                 leaders[side][player_id]["is_dead"] = True
@@ -667,8 +700,9 @@ def plot_rounds_different_players_image(
                         current_positions = []
                         for player_index, p in enumerate(frames[i][side]["players"]):
                             pos = (
-                                position_transform(map_name, p["x"], "x"),
-                                position_transform(map_name, p["y"], "y"),
+                                p["x"],
+                                p["y"],
+                                p["z"],
                             )
                             # Remove dead players from consideration
                             if p["hp"] == 0:
@@ -677,14 +711,18 @@ def plot_rounds_different_players_image(
                                 current_positions.append(pos)
                         # Find the best mapping between current players and leaders
                         mapping = get_shortest_distances_mapping(
-                            leaders[side], current_positions
+                            map_name,
+                            leaders[side],
+                            current_positions,
+                            dist_type=dist_type,
                         )
                     # Now do the actual plotting
                     for player_index, p in enumerate(frames[i][side]["players"]):
                         player_id = get_player_id(p) + "_" + str(frame_index)
                         pos = (
-                            position_transform(map_name, p["x"], "x"),
-                            position_transform(map_name, p["y"], "y"),
+                            p["x"],
+                            p["y"],
+                            p["z"],
                         )
 
                         is_dead = False
@@ -746,8 +784,14 @@ def plot_rounds_different_players_image(
         for side in frame_positions[frame]:
             for player in frame_positions[frame][side]:
                 a.plot(
-                    [x[0] for x in frame_positions[frame][side][player]],
-                    [x[1] for x in frame_positions[frame][side][player]],
+                    [
+                        position_transform(map_name, x[0], "x")
+                        for x in frame_positions[frame][side][player]
+                    ],
+                    [
+                        position_transform(map_name, x[1], "y")
+                        for x in frame_positions[frame][side][player]
+                    ],
                     c=frame_colors[frame][side][player][0],
                     linestyle="-",
                     linewidth=0.5,

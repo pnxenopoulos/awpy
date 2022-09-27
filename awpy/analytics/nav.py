@@ -31,7 +31,6 @@ import networkx as nx
 import numpy as np
 import json
 from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
-from awpy.visualization.plot import tree
 from scipy.spatial import distance
 from shapely.geometry import Polygon
 
@@ -107,7 +106,7 @@ def find_closest_area(map_name, point):
     return closest_area
 
 
-def area_distance(map_name, area_a, area_b, dist_type="graph"):
+def area_distance(map_name, area_a, area_b, dist_type="graph", fast=False):
     """Returns the distance between two areas. Dist type can be graph or geodesic.
 
     Args:
@@ -115,6 +114,7 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         area_a (int): Area id
         area_b (int): Area id
         dist_type (string): String indicating the type of distance to use (graph, geodesic or euclidean)
+        fast (boolean): Boolean indicating whether the distance should be tried to be grabbed from precomputed matrices. In that case the traversed areas are not available.
 
     Returns:
         A dict containing info on the path between two areas.
@@ -128,6 +128,11 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
     G = NAV_GRAPHS[map_name]
     distance_obj = {"distanceType": dist_type, "distance": None, "areas": []}
     if dist_type == "graph":
+        if fast and AREA_DIST_MATRIX is not None and map_name in AREA_DIST_MATRIX:
+            distance_obj["distance"] = AREA_DIST_MATRIX[map_name][str(area_a)][
+                str(area_b)
+            ][dist_type]
+            return distance_obj
         try:
             discovered_path = nx.shortest_path(G, area_a, area_b)
             distance_obj["distance"] = len(discovered_path) - 1
@@ -137,6 +142,11 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
             distance_obj["areas"] = []
         return distance_obj
     if dist_type == "geodesic":
+        if fast and AREA_DIST_MATRIX is not None and map_name in AREA_DIST_MATRIX:
+            distance_obj["distance"] = AREA_DIST_MATRIX[map_name][str(area_a)][
+                str(area_b)
+            ][dist_type]
+            return distance_obj
 
         def dist_heuristic(a, b):
             return distance.euclidean(G.nodes()[a]["center"], G.nodes()[b]["center"])
@@ -182,7 +192,7 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         return distance_obj
 
 
-def point_distance(map_name, point_a, point_b, dist_type="graph"):
+def point_distance(map_name, point_a, point_b, dist_type="graph", fast=False):
     """Returns the distance between two points.
 
     Args:
@@ -190,6 +200,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         point_a (list): Point as a list (x,y,z)
         point_b (list): Point as a list (x,y,z)
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
+        fast (boolean): Boolean indicating whether the distance should be tried to be grabbed from precomputed matrices. In that case the traversed areas are not available.
 
     Returns:
         A dict containing info on the distance between two points.
@@ -204,7 +215,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
             )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
-        return area_distance(map_name, area_a, area_b, dist_type=dist_type)
+        return area_distance(map_name, area_a, area_b, dist_type=dist_type, fast=fast)
     elif dist_type == "geodesic":
         if map_name not in NAV:
             raise ValueError("Map not found.")
@@ -214,7 +225,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
             )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
-        return area_distance(map_name, area_a, area_b, dist_type=dist_type)
+        return area_distance(map_name, area_a, area_b, dist_type=dist_type, fast=fast)
     elif dist_type == "euclidean":
         distance_obj["distance"] = distance.euclidean(point_a, point_b)
         return distance_obj
@@ -282,6 +293,21 @@ def generate_position_token(map_name, frame):
     )
     token["token"] = token["ctToken"] + token["tToken"]
     return token
+
+
+def tree():
+    """Builds tree data structure from nested defaultdicts
+
+    Args:
+        None
+
+    Returns:
+        An empty tree"""
+
+    def the_tree():
+        return defaultdict(the_tree)
+
+    return the_tree()
 
 
 def generate_area_distance_matrix(map_name, save=False):
