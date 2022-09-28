@@ -19,7 +19,13 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from awpy.data import MAP_DATA
-from awpy.analytics.nav import point_distance, tree, find_closest_area, area_distance
+from awpy.analytics.nav import (
+    point_distance,
+    tree,
+    find_closest_area,
+    area_distance,
+    trajectory_distance,
+)
 
 
 def plot_map(map_name="de_dust2", map_type="original", dark=False):
@@ -310,7 +316,7 @@ def get_player_id(player):
 
 
 def get_shortest_distances_mapping(
-    map_name, leaders, current_positions, dist_type="geodesic"
+    map_name, leaders, current_positions, dist_type="geodesic", trajectory=False
 ):
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
 
@@ -318,13 +324,15 @@ def get_shortest_distances_mapping(
         leaders (dictionary): Dictionary of leaders position, alive status and color index in the current frame
         current_positions (list): List of tuples of players x, y, z coordinates in the current round and frame
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
+        trajectory (boolean): Boolean indicating whether the input contains full trajectories
+
 
     Returns:
         A list mapping the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
         (Requires python 3.6 because it relies on the order of elements in the dict)"""
     smallest_distance = float("inf")
     best_mapping = [0, 1, 2, 3, 4]
-    if dist_type in ["geodesic", "graph"]:
+    if dist_type in ["geodesic", "graph"] and not trajectory:
         areas = {
             "leaders": collections.defaultdict(int),
             "current": collections.defaultdict(int),
@@ -337,41 +345,59 @@ def get_shortest_distances_mapping(
             if position is None:
                 continue
             areas["current"][player] = find_closest_area(map_name, position)["areaId"]
+    # Get all distance pairs
+    distance_pairs = collections.defaultdict(lambda: collections.defaultdict(float))
+    for leader_i in range(len(leaders)):
+        for current_i in range(len(current_positions)):
+            if current_positions[current_i] is None:
+                continue
+            if trajectory:
+                this_dist = trajectory_distance(
+                    map_name,
+                    current_positions[current_i],
+                    leaders[leader_i],
+                    distance_type=dist_type,
+                )
+            else:
+                if dist_type in ["geodesic", "graph"]:
+                    this_dist = min(
+                        area_distance(
+                            map_name,
+                            areas["leaders"][list(leaders)[leader_i]],
+                            areas["current"][current_i],
+                            dist_type=dist_type,
+                            fast=True,
+                        )["distance"],
+                        area_distance(
+                            map_name,
+                            areas["current"][current_i],
+                            areas["leaders"][list(leaders)[leader_i]],
+                            dist_type=dist_type,
+                            fast=True,
+                        )["distance"],
+                    )
+                else:
+                    this_dist = point_distance(
+                        map_name,
+                        current_positions[current_i],
+                        leaders[list(leaders)[leader_i]]["pos"],
+                        dist_type,
+                        fast=True,
+                    )["distance"]
+            distance_pairs[leader_i][current_i] = this_dist
     for mapping in itertools.permutations(range(len(leaders)), len(current_positions)):
         dist = 0
         for current_pos, leader_pos in enumerate(mapping):
             # Remove dead players from consideration
             if current_positions[current_pos] is None:
                 continue
-            if dist_type in ["geodesic", "graph"]:
-                this_dist = min(
-                    area_distance(
-                        map_name,
-                        areas["leaders"][list(leaders)[leader_pos]],
-                        areas["current"][current_pos],
-                        dist_type=dist_type,
-                        fast=True,
-                    )["distance"],
-                    area_distance(
-                        map_name,
-                        areas["current"][current_pos],
-                        areas["leaders"][list(leaders)[leader_pos]],
-                        dist_type=dist_type,
-                        fast=True,
-                    )["distance"],
-                )
-            else:
-                this_dist = point_distance(
-                    map_name,
-                    current_positions[current_pos],
-                    leaders[list(leaders)[leader_pos]]["pos"],
-                    dist_type,
-                    fast=True,
-                )["distance"]
+            this_dist = distance_pairs[leader_pos][current_pos]
             dist += this_dist
         if dist < smallest_distance:
             smallest_distance = dist
             best_mapping = mapping
+    if trajectory:
+        return best_mapping
     best_mapping = list(best_mapping)
     for i, leader_pos in enumerate(best_mapping):
         best_mapping[i] = list(leaders)[leader_pos]

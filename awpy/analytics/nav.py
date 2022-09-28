@@ -26,10 +26,11 @@ import itertools
 from collections import defaultdict
 from statistics import mean, median
 import math
+import json
 from sympy.utilities.iterables import multiset_permutations
 import networkx as nx
 import numpy as np
-import json
+from tqdm import tqdm
 from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
 from scipy.spatial import distance
 from shapely.geometry import Polygon
@@ -931,3 +932,52 @@ def token_distance(
         distance_type,
         reference_point,
     )
+
+
+def trajectory_distance(
+    map_name,
+    trajectory_array_1,
+    trajectory_array_2,
+    distance_type="geodesic",
+):
+    """Calculates a distance distance between two trajectories
+
+    Args:
+        trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+        distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
+    Returns:
+        A float representing the distance between these two trajectories
+    """
+    dist = 0
+    length = max(len(trajectory_array_1), len(trajectory_array_2))
+    for time in range(length):
+        if len(trajectory_array_1.shape) > 2.5:
+            dist += (
+                position_state_distance(
+                    map_name=map_name,
+                    position_array_1=trajectory_array_1[time]
+                    if time in range(len(trajectory_array_1))
+                    else trajectory_array_1[-1],
+                    position_array_2=trajectory_array_2[time]
+                    if time in range(len(trajectory_array_2))
+                    else trajectory_array_2[-1],
+                    distance_type=distance_type,
+                )
+                / length
+            )
+        else:
+            dist += (
+                token_state_distance(
+                    map_name=map_name,
+                    token_array_1=trajectory_array_1[time]
+                    if time in range(len(trajectory_array_1))
+                    else trajectory_array_1[-1],
+                    token_array_2=trajectory_array_2[time]
+                    if time in range(len(trajectory_array_2))
+                    else trajectory_array_2[-1],
+                    distance_type=distance_type,
+                )
+                / length
+            )
+    return dist
