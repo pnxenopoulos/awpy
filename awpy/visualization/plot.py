@@ -316,7 +316,12 @@ def get_player_id(player):
 
 
 def get_shortest_distances_mapping(
-    map_name, leaders, current_positions, dist_type="geodesic", trajectory=False
+    map_name,
+    leaders,
+    current_positions,
+    dist_type="geodesic",
+    trajectory=False,
+    precomputed_areas=False,
 ):
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
 
@@ -325,7 +330,7 @@ def get_shortest_distances_mapping(
         current_positions (list): List of tuples of players x, y, z coordinates in the current round and frame
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
         trajectory (boolean): Boolean indicating whether the input contains full trajectories
-
+        precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
 
     Returns:
         A list mapping the player at index i in the current round to the leader at position list[i] in the leaders dictionary.
@@ -357,6 +362,7 @@ def get_shortest_distances_mapping(
                     current_positions[current_i],
                     leaders[leader_i],
                     distance_type=dist_type,
+                    precomputed_areas=precomputed_areas,
                 )
             else:
                 if dist_type in ["geodesic", "graph"]:

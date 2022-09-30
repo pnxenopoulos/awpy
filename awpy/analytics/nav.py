@@ -156,10 +156,9 @@ def area_distance(map_name, area_a, area_b, dist_type="graph", fast=False):
             geodesic_path = nx.astar_path(
                 G, area_a, area_b, heuristic=dist_heuristic, weight="weight"
             )
-            geodesic_cost = 0
-            for i, area in enumerate(geodesic_path):
-                if i > 0:
-                    geodesic_cost += G.nodes()[area]["size"]
+            geodesic_cost = sum(
+                G[u][v]["weight"] for u, v in zip(geodesic_path[:-1], geodesic_path[1:])
+            )
             distance_obj["distance"] = geodesic_cost
             distance_obj["areas"] = geodesic_path
         except nx.NetworkXNoPath:
@@ -606,6 +605,7 @@ def position_state_distance(
     position_array_1,
     position_array_2,
     distance_type="geodesic",
+    precomputed_areas=False,
 ):
     """Calculates a distance between two game states based on player positions
 
@@ -614,6 +614,7 @@ def position_state_distance(
         position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
+        precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
 
     Returns:
         A float representing the distance between these two game states
@@ -626,8 +627,11 @@ def position_state_distance(
     if (
         position_array_1.shape[0] != position_array_2.shape[0]
         or position_array_1.shape[2] != position_array_2.shape[2]
-        or position_array_1.shape[2] != 3
     ):
+        raise ValueError(
+            "Game state shapes do not match! Both states have to have the same number of teams(1 or 2) and same number of coordinates (3)."
+        )
+    if distance_type not in ["geodesic", "graph"] and position_array_1.shape[2] != 3:
         raise ValueError(
             "Game state shapes do not match! Both states have to have the same number of teams(1 or 2) and same number of coordinates (3)."
         )
@@ -635,17 +639,18 @@ def position_state_distance(
     if position_array_1.shape[1] < position_array_2.shape[1]:
         position_array_1, position_array_2 = position_array_2, position_array_1
     # Pre compute the area names for each player's position
-    areas = {1: defaultdict(dict), 2: defaultdict(dict)}
-    for team in range(position_array_1.shape[0]):
-        for player in range(position_array_1.shape[1]):
-            areas[1][team][player] = find_closest_area(
-                map_name, position_array_1[team][player]
-            )["areaId"]
-    for team in range(position_array_2.shape[0]):
-        for player in range(position_array_2.shape[1]):
-            areas[2][team][player] = find_closest_area(
-                map_name, position_array_2[team][player]
-            )["areaId"]
+    if distance_type in ["geodesic", "graph"] and not precomputed_areas:
+        areas = {1: defaultdict(dict), 2: defaultdict(dict)}
+        for team in range(position_array_1.shape[0]):
+            for player in range(position_array_1.shape[1]):
+                areas[1][team][player] = find_closest_area(
+                    map_name, position_array_1[team][player]
+                )["areaId"]
+        for team in range(position_array_2.shape[0]):
+            for player in range(position_array_2.shape[1]):
+                areas[2][team][player] = find_closest_area(
+                    map_name, position_array_2[team][player]
+                )["areaId"]
     # Get the minimum mapping distance for each side separately
     for team in range(position_array_1.shape[0]):
         side_distance = float("inf")
@@ -680,29 +685,39 @@ def position_state_distance(
                 elif distance_type in ["geodesic", "graph"]:
                     # The underlying graph is directed (There is a short path to drop down a ledge but a long one is needed to get back up)
                     # So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative
+                    area1 = (
+                        int(position_array_1[team][player1][0])
+                        if precomputed_areas
+                        else areas[1][team][player1]
+                    )
+                    area2 = (
+                        int(position_array_2[team][player2][0])
+                        if precomputed_areas
+                        else areas[2][team][player2]
+                    )
                     if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
                         this_dist = min(
                             area_distance(
                                 map_name,
-                                areas[1][team][player1],
-                                areas[2][team][player2],
+                                area1,
+                                area2,
                                 dist_type=distance_type,
                             )["distance"],
                             area_distance(
                                 map_name,
-                                areas[2][team][player2],
-                                areas[1][team][player1],
+                                area2,
+                                area1,
                                 dist_type=distance_type,
                             )["distance"],
                         )
                     else:
                         this_dist = min(
-                            AREA_DIST_MATRIX[map_name][str(areas[1][team][player1])][
-                                str(areas[2][team][player2])
-                            ][distance_type],
-                            AREA_DIST_MATRIX[map_name][str(areas[2][team][player2])][
-                                str(areas[1][team][player1])
-                            ][distance_type],
+                            AREA_DIST_MATRIX[map_name][str(area1)][str(area2)][
+                                distance_type
+                            ],
+                            AREA_DIST_MATRIX[map_name][str(area2)][str(area1)][
+                                distance_type
+                            ],
                         )
                     if this_dist == float("inf"):
                         this_dist = sys.maxsize / 6
@@ -939,6 +954,7 @@ def trajectory_distance(
     trajectory_array_1,
     trajectory_array_2,
     distance_type="geodesic",
+    precomputed_areas=False,
 ):
     """Calculates a distance distance between two trajectories
 
@@ -946,14 +962,16 @@ def trajectory_distance(
         trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
+        precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
+
     Returns:
         A float representing the distance between these two trajectories
     """
-    dist = 0
+    distance = 0
     length = max(len(trajectory_array_1), len(trajectory_array_2))
-    for time in range(length):
-        if len(trajectory_array_1.shape) > 2.5:
-            dist += (
+    if len(trajectory_array_1.shape) > 2.5:
+        for time in range(length):
+            distance += (
                 position_state_distance(
                     map_name=map_name,
                     position_array_1=trajectory_array_1[time]
@@ -963,11 +981,13 @@ def trajectory_distance(
                     if time in range(len(trajectory_array_2))
                     else trajectory_array_2[-1],
                     distance_type=distance_type,
+                    precomputed_areas=precomputed_areas,
                 )
                 / length
             )
-        else:
-            dist += (
+    else:
+        for time in range(length):
+            distance += (
                 token_state_distance(
                     map_name=map_name,
                     token_array_1=trajectory_array_1[time]
@@ -980,4 +1000,4 @@ def trajectory_distance(
                 )
                 / length
             )
-    return dist
+    return distance
