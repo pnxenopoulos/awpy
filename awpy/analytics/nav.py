@@ -605,7 +605,6 @@ def position_state_distance(
     position_array_1,
     position_array_2,
     distance_type="geodesic",
-    precomputed_areas=False,
 ):
     """Calculates a distance between two game states based on player positions
 
@@ -614,7 +613,6 @@ def position_state_distance(
         position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
         distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
-        precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
 
     Returns:
         A float representing the distance between these two game states
@@ -639,7 +637,7 @@ def position_state_distance(
     if position_array_1.shape[1] < position_array_2.shape[1]:
         position_array_1, position_array_2 = position_array_2, position_array_1
     # Pre compute the area names for each player's position
-    if distance_type in ["geodesic", "graph"] and not precomputed_areas:
+    if distance_type in ["geodesic", "graph"] and position_array_1.shape[-1] == 3:
         areas = {1: defaultdict(dict), 2: defaultdict(dict)}
         for team in range(position_array_1.shape[0]):
             for player in range(position_array_1.shape[1]):
@@ -687,12 +685,12 @@ def position_state_distance(
                     # So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative
                     area1 = (
                         int(position_array_1[team][player1][0])
-                        if precomputed_areas
+                        if position_array_1.shape[-1] == 1
                         else areas[1][team][player1]
                     )
                     area2 = (
                         int(position_array_2[team][player2][0])
-                        if precomputed_areas
+                        if position_array_2.shape[-1] == 1
                         else areas[2][team][player2]
                     )
                     if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
