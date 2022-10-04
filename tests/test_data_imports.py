@@ -44,9 +44,9 @@ class TestDataImports:
         }
 
         assert PLACE_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"]["geodesic"] == {
-            "centroid": 5180.969456007872,
-            "representative_point": 5295.756547438593,
-            "median_dist": 5347.983529722538,
+            "centroid": 4252.041279324491,
+            "representative_point": 4235.10392500164,
+            "median_dist": 4325.087557744252,
         }
         assert PLACE_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"]["graph"] == {
             "centroid": 27,

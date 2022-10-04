@@ -30,7 +30,6 @@ import json
 from sympy.utilities.iterables import multiset_permutations
 import networkx as nx
 import numpy as np
-from tqdm import tqdm
 from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
 from scipy.spatial import distance
 from shapely.geometry import Polygon
@@ -107,7 +106,7 @@ def find_closest_area(map_name, point):
     return closest_area
 
 
-def area_distance(map_name, area_a, area_b, dist_type="graph", fast=False):
+def area_distance(map_name, area_a, area_b, dist_type="graph"):
     """Returns the distance between two areas. Dist type can be graph or geodesic.
 
     Args:
@@ -115,7 +114,6 @@ def area_distance(map_name, area_a, area_b, dist_type="graph", fast=False):
         area_a (int): Area id
         area_b (int): Area id
         dist_type (string): String indicating the type of distance to use (graph, geodesic or euclidean)
-        fast (boolean): Boolean indicating whether the distance should be tried to be grabbed from precomputed matrices. In that case the traversed areas are not available.
 
     Returns:
         A dict containing info on the path between two areas.
@@ -129,11 +127,6 @@ def area_distance(map_name, area_a, area_b, dist_type="graph", fast=False):
     G = NAV_GRAPHS[map_name]
     distance_obj = {"distanceType": dist_type, "distance": None, "areas": []}
     if dist_type == "graph":
-        if fast and AREA_DIST_MATRIX is not None and map_name in AREA_DIST_MATRIX:
-            distance_obj["distance"] = AREA_DIST_MATRIX[map_name][str(area_a)][
-                str(area_b)
-            ][dist_type]
-            return distance_obj
         try:
             discovered_path = nx.shortest_path(G, area_a, area_b)
             distance_obj["distance"] = len(discovered_path) - 1
@@ -143,11 +136,6 @@ def area_distance(map_name, area_a, area_b, dist_type="graph", fast=False):
             distance_obj["areas"] = []
         return distance_obj
     if dist_type == "geodesic":
-        if fast and AREA_DIST_MATRIX is not None and map_name in AREA_DIST_MATRIX:
-            distance_obj["distance"] = AREA_DIST_MATRIX[map_name][str(area_a)][
-                str(area_b)
-            ][dist_type]
-            return distance_obj
 
         def dist_heuristic(a, b):
             return distance.euclidean(G.nodes()[a]["center"], G.nodes()[b]["center"])
@@ -192,7 +180,7 @@ def area_distance(map_name, area_a, area_b, dist_type="graph", fast=False):
         return distance_obj
 
 
-def point_distance(map_name, point_a, point_b, dist_type="graph", fast=False):
+def point_distance(map_name, point_a, point_b, dist_type="graph"):
     """Returns the distance between two points.
 
     Args:
@@ -200,7 +188,6 @@ def point_distance(map_name, point_a, point_b, dist_type="graph", fast=False):
         point_a (list): Point as a list (x,y,z)
         point_b (list): Point as a list (x,y,z)
         dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
-        fast (boolean): Boolean indicating whether the distance should be tried to be grabbed from precomputed matrices. In that case the traversed areas are not available.
 
     Returns:
         A dict containing info on the distance between two points.
@@ -215,7 +202,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph", fast=False):
             )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
-        return area_distance(map_name, area_a, area_b, dist_type=dist_type, fast=fast)
+        return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "geodesic":
         if map_name not in NAV:
             raise ValueError("Map not found.")
@@ -225,7 +212,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph", fast=False):
             )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
-        return area_distance(map_name, area_a, area_b, dist_type=dist_type, fast=fast)
+        return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     elif dist_type == "euclidean":
         distance_obj["distance"] = distance.euclidean(point_a, point_b)
         return distance_obj
@@ -684,14 +671,14 @@ def position_state_distance(
                     # The underlying graph is directed (There is a short path to drop down a ledge but a long one is needed to get back up)
                     # So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative
                     area1 = (
-                        int(position_array_1[team][player1][0])
-                        if position_array_1.shape[-1] == 1
-                        else areas[1][team][player1]
+                        areas[1][team][player1]
+                        if position_array_1.shape[-1] == 3
+                        else int(position_array_1[team][player1][0])
                     )
                     area2 = (
-                        int(position_array_2[team][player2][0])
-                        if position_array_2.shape[-1] == 1
-                        else areas[2][team][player2]
+                        areas[2][team][player2]
+                        if position_array_2.shape[-1] == 3
+                        else int(position_array_2[team][player2][0])
                     )
                     if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
                         this_dist = min(
@@ -945,57 +932,3 @@ def token_distance(
         distance_type,
         reference_point,
     )
-
-
-def trajectory_distance(
-    map_name,
-    trajectory_array_1,
-    trajectory_array_2,
-    distance_type="geodesic",
-    precomputed_areas=False,
-):
-    """Calculates a distance distance between two trajectories
-
-    Args:
-        trajectory_array_1: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
-        trajectory_array_2: Numpy array with shape (n_Time,2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
-        distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
-        precomputed_areas (boolean): Indicates whether the position arrays already contain the precomputed areas in the x coordinate of the position
-
-    Returns:
-        A float representing the distance between these two trajectories
-    """
-    distance = 0
-    length = max(len(trajectory_array_1), len(trajectory_array_2))
-    if len(trajectory_array_1.shape) > 2.5:
-        for time in range(length):
-            distance += (
-                position_state_distance(
-                    map_name=map_name,
-                    position_array_1=trajectory_array_1[time]
-                    if time in range(len(trajectory_array_1))
-                    else trajectory_array_1[-1],
-                    position_array_2=trajectory_array_2[time]
-                    if time in range(len(trajectory_array_2))
-                    else trajectory_array_2[-1],
-                    distance_type=distance_type,
-                    precomputed_areas=precomputed_areas,
-                )
-                / length
-            )
-    else:
-        for time in range(length):
-            distance += (
-                token_state_distance(
-                    map_name=map_name,
-                    token_array_1=trajectory_array_1[time]
-                    if time in range(len(trajectory_array_1))
-                    else trajectory_array_1[-1],
-                    token_array_2=trajectory_array_2[time]
-                    if time in range(len(trajectory_array_2))
-                    else trajectory_array_2[-1],
-                    distance_type=distance_type,
-                )
-                / length
-            )
-    return distance
