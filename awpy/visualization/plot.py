@@ -321,7 +321,6 @@ def get_shortest_distances_mapping(
     current_positions,
     dist_type="geodesic",
     trajectory=False,
-    precomputed_areas=False,
 ):
     """Gets the mapping between players in the current round and lead players that has the shortest total distance between mapped players.
 
@@ -337,19 +336,6 @@ def get_shortest_distances_mapping(
         (Requires python 3.6 because it relies on the order of elements in the dict)"""
     smallest_distance = float("inf")
     best_mapping = [0, 1, 2, 3, 4]
-    if dist_type in ["geodesic", "graph"] and not trajectory:
-        areas = {
-            "leaders": collections.defaultdict(int),
-            "current": collections.defaultdict(int),
-        }
-        for leader in leaders:
-            areas["leaders"][leader] = find_closest_area(
-                map_name, leaders[leader]["pos"]
-            )["areaId"]
-        for player, position in enumerate(current_positions):
-            if position is None:
-                continue
-            areas["current"][player] = find_closest_area(map_name, position)["areaId"]
     # Get all distance pairs
     distance_pairs = collections.defaultdict(lambda: collections.defaultdict(float))
     for leader_i in range(len(leaders)):
@@ -362,22 +348,21 @@ def get_shortest_distances_mapping(
                     current_positions[current_i],
                     leaders[leader_i],
                     distance_type=dist_type,
-                    precomputed_areas=precomputed_areas,
                 )
             else:
                 if dist_type in ["geodesic", "graph"]:
                     this_dist = min(
                         area_distance(
                             map_name,
-                            areas["leaders"][list(leaders)[leader_i]],
-                            areas["current"][current_i],
+                            leaders[list(leaders)[leader_i]]["pos"][3],
+                            current_positions[current_i][3],
                             dist_type=dist_type,
                             fast=True,
                         )["distance"],
                         area_distance(
                             map_name,
-                            areas["current"][current_i],
-                            areas["leaders"][list(leaders)[leader_i]],
+                            current_positions[current_i][3],
+                            leaders[list(leaders)[leader_i]]["pos"][3],
                             dist_type=dist_type,
                             fast=True,
                         )["distance"],
@@ -385,8 +370,8 @@ def get_shortest_distances_mapping(
                 else:
                     this_dist = point_distance(
                         map_name,
-                        current_positions[current_i],
-                        leaders[list(leaders)[leader_i]]["pos"],
+                        current_positions[current_i][0:3],
+                        leaders[list(leaders)[leader_i]]["pos"][0:3],
                         dist_type,
                         fast=True,
                     )["distance"]
