@@ -20,7 +20,7 @@ The `awpy` package provides data parsing, analytics and visualization capabiliti
 `awpy` requires [Python](https://www.python.org/downloads/) >= 3.8 and [Golang](https://golang.org/dl/) >= 1.17. Python acts as a wrapper for the Go code which parses demofiles.
 
 #### Installation
-To install `awpy`, you can run 
+To install `awpy`, you can run
 
 ```
 pip install awpy
@@ -111,4 +111,8 @@ This project is made possible by the amazing work done in the [demoinfocs-golang
 
 Big shoutout to [SimpleRadar](https://readtldr.gg/simpleradar?utm_source=github&utm_id=xenos-csgo-parser) for allowing use of their map images.
 
-Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage. Additional thanks to those of you in the Discord community who file bug reports and test awpy thoroughly.
+Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the stats module and expanding test coverage.
+
+Thanks to [Jan-Eric](https://github.com/JanEricNitschke) for his contributions extending the navigation functionality.
+
+Additional thanks to those of you in the Discord community who file bug reports and test awpy thoroughly.
