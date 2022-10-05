@@ -8,3 +8,6 @@ requests>=2.25.1
 imageio>=2.9.0
 tqdm>=4.55.2
 sphinx-rtd-theme>=1.0.0
+scipy>=1.7.3
+Shapely>=1.8.2
+sympy>=1.10.1
