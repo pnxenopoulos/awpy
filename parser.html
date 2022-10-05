@@ -16,6 +16,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -51,8 +52,42 @@
 <li class="toctree-l1"><a class="reference internal" href="analytics.html">Analytics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Parser</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-awpy.parser.cleaning">awpy.parser.cleaning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-awpy.parser.demoparser">awpy.parser.demoparser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-awpy.parser.cleaning">awpy.parser.cleaning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#awpy.parser.cleaning.associate_entities"><code class="docutils literal notranslate"><span class="pre">associate_entities()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#awpy.parser.cleaning.replace_entities"><code class="docutils literal notranslate"><span class="pre">replace_entities()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-awpy.parser.demoparser">awpy.parser.demoparser</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser"><code class="docutils literal notranslate"><span class="pre">DemoParser</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.demofile"><code class="docutils literal notranslate"><span class="pre">DemoParser.demofile</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.demo_id"><code class="docutils literal notranslate"><span class="pre">DemoParser.demo_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.log"><code class="docutils literal notranslate"><span class="pre">DemoParser.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse_rate"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse_frames"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse_frames</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse_kill_frames"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse_kill_frames</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.trade_time"><code class="docutils literal notranslate"><span class="pre">DemoParser.trade_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.dmg_rolled"><code class="docutils literal notranslate"><span class="pre">DemoParser.dmg_rolled</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.buy_style"><code class="docutils literal notranslate"><span class="pre">DemoParser.buy_style</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.clean_rounds"><code class="docutils literal notranslate"><span class="pre">DemoParser.clean_rounds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse_demo"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse_demo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse_json_to_df"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse_json_to_df()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.read_json"><code class="docutils literal notranslate"><span class="pre">DemoParser.read_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.remove_bad_scoring"><code class="docutils literal notranslate"><span class="pre">DemoParser.remove_bad_scoring()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.remove_end_round"><code class="docutils literal notranslate"><span class="pre">DemoParser.remove_end_round()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.remove_excess_kill_rounds"><code class="docutils literal notranslate"><span class="pre">DemoParser.remove_excess_kill_rounds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.remove_excess_players"><code class="docutils literal notranslate"><span class="pre">DemoParser.remove_excess_players()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.remove_knife_rounds"><code class="docutils literal notranslate"><span class="pre">DemoParser.remove_knife_rounds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.remove_rounds_with_no_frames"><code class="docutils literal notranslate"><span class="pre">DemoParser.remove_rounds_with_no_frames()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.remove_time_rounds"><code class="docutils literal notranslate"><span class="pre">DemoParser.remove_time_rounds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.remove_warmups"><code class="docutils literal notranslate"><span class="pre">DemoParser.remove_warmups()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.renumber_rounds"><code class="docutils literal notranslate"><span class="pre">DemoParser.renumber_rounds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.rescore_rounds"><code class="docutils literal notranslate"><span class="pre">DemoParser.rescore_rounds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.write_json"><code class="docutils literal notranslate"><span class="pre">DemoParser.write_json()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>

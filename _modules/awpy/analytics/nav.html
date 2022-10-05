@@ -15,6 +15,7 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -76,12 +77,41 @@
            <div itemprop="articleBody">
              
   <h1>Source code for awpy.analytics.nav</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">multiprocessing.sharedctypes</span> <span class="kn">import</span> <span class="n">Value</span>
+<span></span><span class="sd">&quot;&quot;&quot;Functions for finding distances between points, areas or states.</span>
+
+<span class="sd">    Typical usage example:</span>
+
+<span class="sd">    from awpy.analytics.nav import area_distance</span>
+
+<span class="sd">    geodesic_dist = area_distance(map_name=&quot;de_dust2&quot;, area_a=152, area_b=8970, dist_type=&quot;geodesic&quot;)</span>
+<span class="sd">    f, ax = plot_map(map_name = &quot;de_dust2&quot;, map_type = &#39;simpleradar&#39;, dark = True)</span>
+
+<span class="sd">    for a in NAV[&quot;de_dust2&quot;]:</span>
+<span class="sd">        area = NAV[&quot;de_dust2&quot;][a]</span>
+<span class="sd">        color = &quot;None&quot;</span>
+<span class="sd">        if a in geodesic_dist[&quot;areas&quot;]:</span>
+<span class="sd">            color = &quot;red&quot;</span>
+<span class="sd">        width = (area[&quot;southEastX&quot;] - area[&quot;northWestX&quot;])</span>
+<span class="sd">        height = (area[&quot;northWestY&quot;] - area[&quot;southEastY&quot;])</span>
+<span class="sd">        southwest_x = area[&quot;northWestX&quot;]</span>
+<span class="sd">        southwest_y = area[&quot;southEastY&quot;]</span>
+<span class="sd">        rect = patches.Rectangle((southwest_x,southwest_y), width, height, linewidth=1, edgecolor=&quot;yellow&quot;, facecolor=color)</span>
+<span class="sd">        ax.add_patch(rect)</span>
+
+<span class="sd">    https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">statistics</span> <span class="kn">import</span> <span class="n">mean</span><span class="p">,</span> <span class="n">median</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">sympy.utilities.iterables</span> <span class="kn">import</span> <span class="n">multiset_permutations</span>
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="kn">from</span> <span class="nn">awpy.data</span> <span class="kn">import</span> <span class="n">NAV</span><span class="p">,</span> <span class="n">NAV_GRAPHS</span>
+<span class="kn">from</span> <span class="nn">awpy.data</span> <span class="kn">import</span> <span class="n">NAV</span><span class="p">,</span> <span class="n">NAV_GRAPHS</span><span class="p">,</span> <span class="n">AREA_DIST_MATRIX</span><span class="p">,</span> <span class="n">PLACE_DIST_MATRIX</span><span class="p">,</span> <span class="n">PATH</span>
 <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">distance</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
 
 
 <div class="viewcode-block" id="point_in_area"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.point_in_area">[docs]</a><span class="k">def</span> <span class="nf">point_in_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_id</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
@@ -95,7 +125,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        True if area contains the point, false if not</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">area_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Area ID not found.&quot;</span><span class="p">)</span>
@@ -131,7 +161,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        A dict containing info on the closest area</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Point must be a list [X,Y,Z]&quot;</span><span class="p">)</span>
@@ -156,42 +186,76 @@
 
 
 <div class="viewcode-block" id="area_distance"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.area_distance">[docs]</a><span class="k">def</span> <span class="nf">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;graph&quot;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns the distance between two areas. Dist type an be graph or geodesic.</span>
+    <span class="sd">&quot;&quot;&quot;Returns the distance between two areas. Dist type can be graph or geodesic.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        map_name (string): Map to search</span>
 <span class="sd">        area_a (int): Area id</span>
 <span class="sd">        area_b (int): Area id</span>
-<span class="sd">        dist_type (string): String indicating the type of distance to use (graph or geodesic)</span>
+<span class="sd">        dist_type (string): String indicating the type of distance to use (graph, geodesic or euclidean)</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A dict containing info on the path between two areas.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">area_a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="ow">or</span> <span class="p">(</span><span class="n">area_b</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Area ID not found.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">,</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dist_type can only be graph or geodesic&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dist_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">,</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dist_type can only be graph, geodesic or euclidean&quot;</span><span class="p">)</span>
     <span class="n">G</span> <span class="o">=</span> <span class="n">NAV_GRAPHS</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span>
     <span class="n">distance_obj</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;distanceType&quot;</span><span class="p">:</span> <span class="n">dist_type</span><span class="p">,</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;areas&quot;</span><span class="p">:</span> <span class="p">[]}</span>
     <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;graph&quot;</span><span class="p">:</span>
-        <span class="n">discovered_path</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">)</span>
-        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">discovered_path</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;areas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">discovered_path</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">discovered_path</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">)</span>
+            <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">discovered_path</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;areas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">discovered_path</span>
+        <span class="k">except</span> <span class="n">nx</span><span class="o">.</span><span class="n">NetworkXNoPath</span><span class="p">:</span>
+            <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+            <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;areas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">return</span> <span class="n">distance_obj</span>
     <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">:</span>
 
-        <span class="k">def</span> <span class="nf">dist</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">a</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">b</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">]</span>
+        <span class="k">def</span> <span class="nf">dist_heuristic</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">distance</span><span class="o">.</span><span class="n">euclidean</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">a</span><span class="p">][</span><span class="s2">&quot;center&quot;</span><span class="p">],</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">b</span><span class="p">][</span><span class="s2">&quot;center&quot;</span><span class="p">])</span>
 
-        <span class="n">geodesic_path</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">astar_path</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">heuristic</span><span class="o">=</span><span class="n">dist</span><span class="p">)</span>
-        <span class="n">geodesic_cost</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">area</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">geodesic_path</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">geodesic_cost</span> <span class="o">+=</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">]</span>
-        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geodesic_cost</span>
-        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;areas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geodesic_path</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">geodesic_path</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">astar_path</span><span class="p">(</span>
+                <span class="n">G</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">heuristic</span><span class="o">=</span><span class="n">dist_heuristic</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span>
+            <span class="p">)</span>
+            <span class="n">geodesic_cost</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="n">G</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">geodesic_path</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">geodesic_path</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="p">)</span>
+            <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geodesic_cost</span>
+            <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;areas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geodesic_path</span>
+        <span class="k">except</span> <span class="n">nx</span><span class="o">.</span><span class="n">NetworkXNoPath</span><span class="p">:</span>
+            <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+            <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;areas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="n">distance_obj</span>
+    <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">:</span>
+        <span class="n">area_a_x</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_a</span><span class="p">][</span><span class="s2">&quot;southEastX&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_a</span><span class="p">][</span><span class="s2">&quot;northWestX&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">area_a_y</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_a</span><span class="p">][</span><span class="s2">&quot;southEastY&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_a</span><span class="p">][</span><span class="s2">&quot;northWestY&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">area_a_z</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_a</span><span class="p">][</span><span class="s2">&quot;southEastZ&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_a</span><span class="p">][</span><span class="s2">&quot;northWestZ&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">area_b_x</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_b</span><span class="p">][</span><span class="s2">&quot;southEastX&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_b</span><span class="p">][</span><span class="s2">&quot;northWestX&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">area_b_y</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_b</span><span class="p">][</span><span class="s2">&quot;southEastY&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_b</span><span class="p">][</span><span class="s2">&quot;northWestY&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">area_b_z</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_b</span><span class="p">][</span><span class="s2">&quot;southEastZ&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_b</span><span class="p">][</span><span class="s2">&quot;northWestZ&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">distance_obj</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">area_a_x</span> <span class="o">-</span> <span class="n">area_b_x</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">area_a_y</span> <span class="o">-</span> <span class="n">area_b_y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">area_a_z</span> <span class="o">-</span> <span class="n">area_b_z</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">distance_obj</span></div>
 
 
@@ -209,7 +273,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">distance_obj</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;distanceType&quot;</span><span class="p">:</span> <span class="n">dist_type</span><span class="p">,</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;areas&quot;</span><span class="p">:</span> <span class="p">[]}</span>
     <span class="k">if</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;graph&quot;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -219,7 +283,7 @@
         <span class="n">area_b</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">point_b</span><span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area_a</span><span class="p">,</span> <span class="n">area_b</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">dist_type</span> <span class="o">==</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_a</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_b</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -252,7 +316,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        A dict containing the T token, CT token and combined token (T + CT concatenated)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;CT or T players has length of 0&quot;</span><span class="p">)</span>
@@ -295,6 +359,658 @@
     <span class="p">)</span>
     <span class="n">token</span><span class="p">[</span><span class="s2">&quot;token&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="s2">&quot;ctToken&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">token</span><span class="p">[</span><span class="s2">&quot;tToken&quot;</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">token</span></div>
+
+
+<div class="viewcode-block" id="tree"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.tree">[docs]</a><span class="k">def</span> <span class="nf">tree</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Builds tree data structure from nested defaultdicts</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        None</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        An empty tree&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">the_tree</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">the_tree</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">the_tree</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="generate_area_distance_matrix"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.generate_area_distance_matrix">[docs]</a><span class="k">def</span> <span class="nf">generate_area_distance_matrix</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all area</span>
+<span class="sd">    Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to generate the place matrix for</span>
+<span class="sd">        save (boolean): Whether to save the matrix to file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tree structure containing distances for all area pairs on all maps</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize the dict structure</span>
+    <span class="n">area_distance_matrix</span> <span class="o">=</span> <span class="n">tree</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="n">areas</span> <span class="o">=</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span>
+    <span class="c1"># And there over each area</span>
+    <span class="k">for</span> <span class="n">area1</span> <span class="ow">in</span> <span class="n">areas</span><span class="p">:</span>
+        <span class="c1"># Precompute the tile center</span>
+        <span class="n">area1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">area1</span><span class="p">)</span>
+        <span class="n">area1_x</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area1</span><span class="p">][</span><span class="s2">&quot;southEastX&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area1</span><span class="p">][</span><span class="s2">&quot;northWestX&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">area1_y</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area1</span><span class="p">][</span><span class="s2">&quot;southEastY&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area1</span><span class="p">][</span><span class="s2">&quot;northWestY&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">area1_z</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area1</span><span class="p">][</span><span class="s2">&quot;southEastZ&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area1</span><span class="p">][</span><span class="s2">&quot;northWestZ&quot;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="c1"># Loop over every pair of areas</span>
+        <span class="k">for</span> <span class="n">area2</span> <span class="ow">in</span> <span class="n">areas</span><span class="p">:</span>
+            <span class="n">area2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">area2</span><span class="p">)</span>
+            <span class="c1"># # Compute center of second area</span>
+            <span class="n">area2_x</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;southEastX&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;northWestX&quot;</span><span class="p">]</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">area2_y</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;southEastY&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;northWestY&quot;</span><span class="p">]</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">area2_z</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;southEastZ&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;northWestZ&quot;</span><span class="p">]</span>
+            <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="c1"># Calculate basic euclidean distance</span>
+            <span class="n">area_distance_matrix</span><span class="p">[</span><span class="n">area1</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;euclidean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">area1_x</span> <span class="o">-</span> <span class="n">area2_x</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="o">+</span> <span class="p">(</span><span class="n">area1_y</span> <span class="o">-</span> <span class="n">area2_y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="o">+</span> <span class="p">(</span><span class="n">area1_z</span> <span class="o">-</span> <span class="n">area2_z</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="p">)</span>
+            <span class="c1"># Also get graph distance</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="n">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area1</span><span class="p">,</span> <span class="n">area2</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;graph&quot;</span><span class="p">)</span>
+            <span class="n">area_distance_matrix</span><span class="p">[</span><span class="n">area1</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;graph&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span>
+            <span class="c1"># And geodesic like distance</span>
+            <span class="n">geodesic</span> <span class="o">=</span> <span class="n">area_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">area1</span><span class="p">,</span> <span class="n">area2</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="s2">&quot;geodesic&quot;</span><span class="p">)</span>
+            <span class="n">area_distance_matrix</span><span class="p">[</span><span class="n">area1</span><span class="p">][</span><span class="n">area2</span><span class="p">][</span><span class="s2">&quot;geodesic&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">geodesic</span><span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span>
+            <span class="n">PATH</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;nav/area_distance_matrix_</span><span class="si">{</span><span class="n">map_name</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span>
+        <span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">area_distance_matrix</span><span class="p">,</span> <span class="n">json_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">area_distance_matrix</span></div>
+
+
+<div class="viewcode-block" id="generate_place_distance_matrix"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.generate_place_distance_matrix">[docs]</a><span class="k">def</span> <span class="nf">generate_place_distance_matrix</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all regions</span>
+<span class="sd">    Structures is [map_name][placeid][place2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point,median)]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to generate the place matrix for</span>
+<span class="sd">        save (boolean): Whether to save the matrix to file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tree structure containing distances for all place pairs on all maps</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="n">areas</span> <span class="o">=</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span>
+    <span class="n">place_distance_matrix</span> <span class="o">=</span> <span class="n">tree</span><span class="p">()</span>
+    <span class="c1"># Loop over all three considered distance types</span>
+    <span class="k">for</span> <span class="n">dist_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span> <span class="s2">&quot;graph&quot;</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">]:</span>
+        <span class="c1"># Get the mapping &quot;areaName&quot;: [areas that have this area name]</span>
+        <span class="n">area_mapping</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="n">areas</span><span class="p">:</span>
+            <span class="n">area_mapping</span><span class="p">[</span><span class="n">areas</span><span class="p">[</span><span class="n">area</span><span class="p">][</span><span class="s2">&quot;areaName&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">)</span>
+        <span class="c1"># Get the centroids and representative points for each named place on the map</span>
+        <span class="n">centroids</span><span class="p">,</span> <span class="n">reps</span> <span class="o">=</span> <span class="n">generate_centroids</span><span class="p">(</span><span class="n">map_name</span><span class="p">)</span>
+        <span class="c1"># Loop over all pairs of named places</span>
+        <span class="k">for</span> <span class="n">place1</span><span class="p">,</span> <span class="n">centroid1</span> <span class="ow">in</span> <span class="n">centroids</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">place2</span><span class="p">,</span> <span class="n">centroid2</span> <span class="ow">in</span> <span class="n">centroids</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># If precomputed values do not exist calculate them</span>
+                <span class="k">if</span> <span class="n">AREA_DIST_MATRIX</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AREA_DIST_MATRIX</span><span class="p">:</span>
+                    <span class="c1"># Distances between the centroids for each named place</span>
+                    <span class="n">place_distance_matrix</span><span class="p">[</span><span class="n">place1</span><span class="p">][</span><span class="n">place2</span><span class="p">][</span><span class="n">dist_type</span><span class="p">][</span>
+                        <span class="s2">&quot;centroid&quot;</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="n">area_distance</span><span class="p">(</span>
+                        <span class="n">map_name</span><span class="p">,</span> <span class="n">centroid1</span><span class="p">,</span> <span class="n">centroid2</span><span class="p">,</span> <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type</span>
+                    <span class="p">)[</span>
+                        <span class="s2">&quot;distance&quot;</span>
+                    <span class="p">]</span>
+                    <span class="c1"># Distances between the representative points for each named place</span>
+                    <span class="n">place_distance_matrix</span><span class="p">[</span><span class="n">place1</span><span class="p">][</span><span class="n">place2</span><span class="p">][</span><span class="n">dist_type</span><span class="p">][</span>
+                        <span class="s2">&quot;representative_point&quot;</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="n">area_distance</span><span class="p">(</span>
+                        <span class="n">map_name</span><span class="p">,</span> <span class="n">reps</span><span class="p">[</span><span class="n">place1</span><span class="p">],</span> <span class="n">reps</span><span class="p">[</span><span class="n">place2</span><span class="p">],</span> <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type</span>
+                    <span class="p">)[</span>
+                        <span class="s2">&quot;distance&quot;</span>
+                    <span class="p">]</span>
+                    <span class="c1"># Median of all the distance pairs for areaA in place1 to areaB in place2</span>
+                    <span class="n">connections</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">sub_area1</span> <span class="ow">in</span> <span class="n">area_mapping</span><span class="p">[</span><span class="n">place1</span><span class="p">]:</span>
+                        <span class="k">for</span> <span class="n">sub_area2</span> <span class="ow">in</span> <span class="n">area_mapping</span><span class="p">[</span><span class="n">place2</span><span class="p">]:</span>
+                            <span class="n">connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                <span class="n">area_distance</span><span class="p">(</span>
+                                    <span class="n">map_name</span><span class="p">,</span>
+                                    <span class="n">sub_area1</span><span class="p">,</span>
+                                    <span class="n">sub_area2</span><span class="p">,</span>
+                                    <span class="n">dist_type</span><span class="o">=</span><span class="n">dist_type</span><span class="p">,</span>
+                                <span class="p">)[</span><span class="s2">&quot;distance&quot;</span><span class="p">]</span>
+                            <span class="p">)</span>
+                    <span class="n">place_distance_matrix</span><span class="p">[</span><span class="n">place1</span><span class="p">][</span><span class="n">place2</span><span class="p">][</span><span class="n">dist_type</span><span class="p">][</span>
+                        <span class="s2">&quot;median_dist&quot;</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="n">median</span><span class="p">(</span><span class="n">connections</span><span class="p">)</span>
+                <span class="c1"># If precomputed values exist just grab those</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">place_distance_matrix</span><span class="p">[</span><span class="n">place1</span><span class="p">][</span><span class="n">place2</span><span class="p">][</span><span class="n">dist_type</span><span class="p">][</span>
+                        <span class="s2">&quot;centroid&quot;</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="n">AREA_DIST_MATRIX</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">centroid1</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">centroid2</span><span class="p">)][</span>
+                        <span class="n">dist_type</span>
+                    <span class="p">]</span>
+                    <span class="n">place_distance_matrix</span><span class="p">[</span><span class="n">place1</span><span class="p">][</span><span class="n">place2</span><span class="p">][</span><span class="n">dist_type</span><span class="p">][</span>
+                        <span class="s2">&quot;representative_point&quot;</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="n">AREA_DIST_MATRIX</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">reps</span><span class="p">[</span><span class="n">place1</span><span class="p">])][</span>
+                        <span class="nb">str</span><span class="p">(</span><span class="n">reps</span><span class="p">[</span><span class="n">place2</span><span class="p">])</span>
+                    <span class="p">][</span>
+                        <span class="n">dist_type</span>
+                    <span class="p">]</span>
+                    <span class="n">connections</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">sub_area1</span> <span class="ow">in</span> <span class="n">area_mapping</span><span class="p">[</span><span class="n">place1</span><span class="p">]:</span>
+                        <span class="k">for</span> <span class="n">sub_area2</span> <span class="ow">in</span> <span class="n">area_mapping</span><span class="p">[</span><span class="n">place2</span><span class="p">]:</span>
+                            <span class="n">connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                <span class="n">AREA_DIST_MATRIX</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">sub_area1</span><span class="p">)][</span>
+                                    <span class="nb">str</span><span class="p">(</span><span class="n">sub_area2</span><span class="p">)</span>
+                                <span class="p">][</span><span class="n">dist_type</span><span class="p">]</span>
+                            <span class="p">)</span>
+                    <span class="n">place_distance_matrix</span><span class="p">[</span><span class="n">place1</span><span class="p">][</span><span class="n">place2</span><span class="p">][</span><span class="n">dist_type</span><span class="p">][</span>
+                        <span class="s2">&quot;median_dist&quot;</span>
+                    <span class="p">]</span> <span class="o">=</span> <span class="n">median</span><span class="p">(</span><span class="n">connections</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span>
+            <span class="n">PATH</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;nav/place_distance_matrix_</span><span class="si">{</span><span class="n">map_name</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span>
+        <span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">place_distance_matrix</span><span class="p">,</span> <span class="n">json_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">place_distance_matrix</span></div>
+
+
+<div class="viewcode-block" id="generate_centroids"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.generate_centroids">[docs]</a><span class="k">def</span> <span class="nf">generate_centroids</span><span class="p">(</span><span class="n">map_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;For each region in the given map calculates the centroid and a representative point and finds the closest tile for each</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Name of the map for which to calculate the centroids</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of dictionaries containing the centroid and representative tiles for each region of the map</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="n">area_points</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">z_s</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">area_ids_cent</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">area_ids_rep</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]:</span>
+        <span class="n">area</span> <span class="o">=</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">cur_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cur_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cur_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;southEastX&quot;</span><span class="p">])</span>
+        <span class="n">cur_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;northWestX&quot;</span><span class="p">])</span>
+        <span class="n">cur_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;southEastY&quot;</span><span class="p">])</span>
+        <span class="n">cur_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;northWestY&quot;</span><span class="p">])</span>
+        <span class="c1"># Get the z coordinates for each tile of a named area</span>
+        <span class="n">z_s</span><span class="p">[</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;areaName&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;northWestZ&quot;</span><span class="p">])</span>
+        <span class="n">z_s</span><span class="p">[</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;areaName&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;southEastZ&quot;</span><span class="p">])</span>
+        <span class="c1"># Get all the (x,y) points that make up each tile of a named area</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">cur_x</span><span class="p">,</span> <span class="n">cur_y</span><span class="p">):</span>
+            <span class="n">area_points</span><span class="p">[</span><span class="n">area</span><span class="p">[</span><span class="s2">&quot;areaName&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+    <span class="c1"># For each named area</span>
+    <span class="k">for</span> <span class="n">area</span> <span class="ow">in</span> <span class="n">area_points</span><span class="p">:</span>
+        <span class="c1"># Get the (approximate) orthogonal convex hull</span>
+        <span class="n">hull</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stepped_hull</span><span class="p">(</span><span class="n">area_points</span><span class="p">[</span><span class="n">area</span><span class="p">]))</span>
+        <span class="c1"># Get the centroids and rep. point of the hull</span>
+        <span class="n">my_centroid</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Polygon</span><span class="p">(</span><span class="n">hull</span><span class="p">)</span><span class="o">.</span><span class="n">centroid</span><span class="o">.</span><span class="n">coords</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="n">mean</span><span class="p">(</span><span class="n">z_s</span><span class="p">[</span><span class="n">area</span><span class="p">])</span>
+        <span class="p">]</span>
+        <span class="n">rep_point</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Polygon</span><span class="p">(</span><span class="n">hull</span><span class="p">)</span><span class="o">.</span><span class="n">representative_point</span><span class="p">()</span><span class="o">.</span><span class="n">coords</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="n">mean</span><span class="p">(</span><span class="n">z_s</span><span class="p">[</span><span class="n">area</span><span class="p">])</span>
+        <span class="p">]</span>
+        <span class="c1"># Find the closest tile for these points</span>
+        <span class="n">area_ids_cent</span><span class="p">[</span><span class="n">area</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">my_centroid</span><span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
+        <span class="n">area_ids_rep</span><span class="p">[</span><span class="n">area</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">rep_point</span><span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">area_ids_cent</span><span class="p">,</span> <span class="n">area_ids_rep</span></div>
+
+
+<div class="viewcode-block" id="stepped_hull"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.stepped_hull">[docs]</a><span class="k">def</span> <span class="nf">stepped_hull</span><span class="p">(</span><span class="n">points</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Takes a set of points and produces an approximation of their orthogonal convex hull</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        points (list): A list of points given as tuples (x, y)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of points making up the hull or four lists of points making up the four quadrants of the hull&quot;&quot;&quot;</span>
+    <span class="c1"># May be equivalent to the orthogonal convex hull</span>
+
+    <span class="n">points</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">points</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">points</span>
+
+    <span class="c1"># Get extreme y points</span>
+    <span class="n">min_y</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">max_y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># Create upper section</span>
+    <span class="n">upper_left</span> <span class="o">=</span> <span class="n">build_stepped_upper</span><span class="p">(</span>
+        <span class="nb">sorted</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">tup</span><span class="p">:</span> <span class="p">(</span><span class="n">tup</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tup</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="n">max_y</span>
+    <span class="p">)</span>
+    <span class="n">upper_right</span> <span class="o">=</span> <span class="n">build_stepped_upper</span><span class="p">(</span>
+        <span class="nb">sorted</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">tup</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">tup</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tup</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="n">max_y</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Create lower section</span>
+    <span class="n">lower_left</span> <span class="o">=</span> <span class="n">build_stepped_lower</span><span class="p">(</span>
+        <span class="nb">sorted</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">tup</span><span class="p">:</span> <span class="p">(</span><span class="n">tup</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">tup</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="n">min_y</span>
+    <span class="p">)</span>
+    <span class="n">lower_right</span> <span class="o">=</span> <span class="n">build_stepped_lower</span><span class="p">(</span>
+        <span class="nb">sorted</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">tup</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">tup</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">tup</span><span class="p">[</span><span class="mi">1</span><span class="p">])),</span> <span class="n">min_y</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Correct the ordering</span>
+    <span class="n">lower_right</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+    <span class="n">upper_left</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+    <span class="c1"># Remove duplicate points</span>
+    <span class="n">hull</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">lower_left</span> <span class="o">+</span> <span class="n">lower_right</span> <span class="o">+</span> <span class="n">upper_right</span> <span class="o">+</span> <span class="n">upper_left</span><span class="p">))</span>
+    <span class="n">hull</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hull</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">hull</span></div>
+
+
+<div class="viewcode-block" id="build_stepped_upper"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.build_stepped_upper">[docs]</a><span class="k">def</span> <span class="nf">build_stepped_upper</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">max_y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Builds builds towards the upper part of the hull based on starting point and maximum y value.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        points (list): A list of points to build the upper left hull section from</span>
+<span class="sd">        max_y (float): The point with the highest y</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of points making up the upper part of the hull&quot;&quot;&quot;</span>
+    <span class="c1"># Steps towards the highest y point</span>
+
+    <span class="n">section</span> <span class="o">=</span> <span class="p">[</span><span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">max_y</span> <span class="o">!=</span> <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">section</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">section</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">max_y</span> <span class="o">==</span> <span class="n">point</span><span class="p">:</span>
+                <span class="k">break</span>
+    <span class="k">return</span> <span class="n">section</span></div>
+
+
+<div class="viewcode-block" id="build_stepped_lower"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.build_stepped_lower">[docs]</a><span class="k">def</span> <span class="nf">build_stepped_lower</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">min_y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Builds builds towards the lower part of the hull based on starting point and maximum y value.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        points (list): A list of points to build the upper left hull section from</span>
+<span class="sd">        min_y (float): The point with the lowest y</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of points making up the lower part of the hull&quot;&quot;&quot;</span>
+    <span class="c1"># Steps towards the lowest y point</span>
+
+    <span class="n">section</span> <span class="o">=</span> <span class="p">[</span><span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">min_y</span> <span class="o">!=</span> <span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">section</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">section</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">min_y</span> <span class="o">==</span> <span class="n">point</span><span class="p">:</span>
+                <span class="k">break</span>
+    <span class="k">return</span> <span class="n">section</span></div>
+
+
+<div class="viewcode-block" id="position_state_distance"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.position_state_distance">[docs]</a><span class="k">def</span> <span class="nf">position_state_distance</span><span class="p">(</span>
+    <span class="n">map_name</span><span class="p">,</span>
+    <span class="n">position_array_1</span><span class="p">,</span>
+    <span class="n">position_array_2</span><span class="p">,</span>
+    <span class="n">distance_type</span><span class="o">=</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates a distance between two game states based on player positions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate</span>
+<span class="sd">        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate</span>
+<span class="sd">        distance_type (string): String indicating how the distance between two player positions should be calculated. Options are &quot;geodesic&quot;, &quot;graph&quot; and &quot;euclidean&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A float representing the distance between these two game states</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">distance_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">,</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;distance_type can only be graph, geodesic or euclidean&quot;</span><span class="p">)</span>
+    <span class="n">pos_distance</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">position_array_2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="ow">or</span> <span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">position_array_2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Game state shapes do not match! Both states have to have the same number of teams(1 or 2) and same number of coordinates (3).&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">distance_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span> <span class="s2">&quot;graph&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Game state shapes do not match! Both states have to have the same number of teams(1 or 2) and same number of coordinates (3).&quot;</span>
+        <span class="p">)</span>
+    <span class="c1"># Make sure array1 is the one with more players alive</span>
+    <span class="k">if</span> <span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">position_array_2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">position_array_1</span><span class="p">,</span> <span class="n">position_array_2</span> <span class="o">=</span> <span class="n">position_array_2</span><span class="p">,</span> <span class="n">position_array_1</span>
+    <span class="c1"># Pre compute the area names for each player&#39;s position</span>
+    <span class="k">if</span> <span class="n">distance_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span> <span class="s2">&quot;graph&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">areas</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">),</span> <span class="mi">2</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)}</span>
+        <span class="k">for</span> <span class="n">team</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">areas</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">team</span><span class="p">][</span><span class="n">player</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span>
+                    <span class="n">map_name</span><span class="p">,</span> <span class="n">position_array_1</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player</span><span class="p">]</span>
+                <span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">team</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">position_array_2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">player</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">position_array_2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">areas</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">team</span><span class="p">][</span><span class="n">player</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_closest_area</span><span class="p">(</span>
+                    <span class="n">map_name</span><span class="p">,</span> <span class="n">position_array_2</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player</span><span class="p">]</span>
+                <span class="p">)[</span><span class="s2">&quot;areaId&quot;</span><span class="p">]</span>
+    <span class="c1"># Get the minimum mapping distance for each side separately</span>
+    <span class="k">for</span> <span class="n">team</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">side_distance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="c1"># Generate all possible mappings between players from array1 and array2. (Map player1 from array1 to player1 from array2 and player2&#39;s to each other or match player1&#39;s with player2&#39;s and so on)</span>
+        <span class="k">for</span> <span class="n">mapping</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span>
+            <span class="nb">range</span><span class="p">(</span><span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">position_array_2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="c1"># Distance team distance for the current mapping</span>
+            <span class="n">cur_dist</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># Calculate the distance between each pair of players in the current mapping</span>
+            <span class="k">for</span> <span class="n">player2</span><span class="p">,</span> <span class="n">player1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mapping</span><span class="p">):</span>
+                <span class="c1"># Just take euclidian distance between the two players. Fast but ignores walls</span>
+                <span class="k">if</span> <span class="n">distance_type</span> <span class="o">==</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">:</span>
+                    <span class="n">this_dist</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+                        <span class="p">(</span>
+                            <span class="n">position_array_1</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="o">-</span> <span class="n">position_array_2</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="o">**</span> <span class="mi">2</span>
+                        <span class="o">+</span> <span class="p">(</span>
+                            <span class="n">position_array_1</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="o">-</span> <span class="n">position_array_2</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="o">**</span> <span class="mi">2</span>
+                        <span class="o">+</span> <span class="p">(</span>
+                            <span class="n">position_array_1</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+                            <span class="o">-</span> <span class="n">position_array_2</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="o">**</span> <span class="mi">2</span>
+                    <span class="p">)</span>
+                <span class="c1"># Use a more accurate graph based distance that takes into account the actual map</span>
+                <span class="k">elif</span> <span class="n">distance_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span> <span class="s2">&quot;graph&quot;</span><span class="p">]:</span>
+                    <span class="c1"># The underlying graph is directed (There is a short path to drop down a ledge but a long one is needed to get back up)</span>
+                    <span class="c1"># So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative</span>
+                    <span class="n">area1</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">areas</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">team</span><span class="p">][</span><span class="n">player1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+                        <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">position_array_1</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="p">)</span>
+                    <span class="n">area2</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">areas</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">team</span><span class="p">][</span><span class="n">player2</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">position_array_2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+                        <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">position_array_2</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="n">player2</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">AREA_DIST_MATRIX</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AREA_DIST_MATRIX</span><span class="p">:</span>
+                        <span class="n">this_dist</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                            <span class="n">area_distance</span><span class="p">(</span>
+                                <span class="n">map_name</span><span class="p">,</span>
+                                <span class="n">area1</span><span class="p">,</span>
+                                <span class="n">area2</span><span class="p">,</span>
+                                <span class="n">dist_type</span><span class="o">=</span><span class="n">distance_type</span><span class="p">,</span>
+                            <span class="p">)[</span><span class="s2">&quot;distance&quot;</span><span class="p">],</span>
+                            <span class="n">area_distance</span><span class="p">(</span>
+                                <span class="n">map_name</span><span class="p">,</span>
+                                <span class="n">area2</span><span class="p">,</span>
+                                <span class="n">area1</span><span class="p">,</span>
+                                <span class="n">dist_type</span><span class="o">=</span><span class="n">distance_type</span><span class="p">,</span>
+                            <span class="p">)[</span><span class="s2">&quot;distance&quot;</span><span class="p">],</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">this_dist</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                            <span class="n">AREA_DIST_MATRIX</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">area1</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">area2</span><span class="p">)][</span>
+                                <span class="n">distance_type</span>
+                            <span class="p">],</span>
+                            <span class="n">AREA_DIST_MATRIX</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">area2</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">area1</span><span class="p">)][</span>
+                                <span class="n">distance_type</span>
+                            <span class="p">],</span>
+                        <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">this_dist</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">):</span>
+                        <span class="n">this_dist</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">/</span> <span class="mi">6</span>
+                <span class="c1"># Build up the overall distance for the current mapping of the current side</span>
+                <span class="n">cur_dist</span> <span class="o">+=</span> <span class="n">this_dist</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
+            <span class="c1"># Only keep the smallest distance from all the mappings</span>
+            <span class="n">side_distance</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">side_distance</span><span class="p">,</span> <span class="n">cur_dist</span><span class="p">)</span>
+        <span class="c1"># Build the total distance as the sum of the individual side&#39;s distances</span>
+        <span class="n">pos_distance</span> <span class="o">+=</span> <span class="n">side_distance</span> <span class="o">/</span> <span class="n">position_array_1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">pos_distance</span></div>
+
+
+<div class="viewcode-block" id="token_state_distance"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.token_state_distance">[docs]</a><span class="k">def</span> <span class="nf">token_state_distance</span><span class="p">(</span>
+    <span class="n">map_name</span><span class="p">,</span>
+    <span class="n">token_array_1</span><span class="p">,</span>
+    <span class="n">token_array_2</span><span class="p">,</span>
+    <span class="n">distance_type</span><span class="o">=</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span>
+    <span class="n">reference_point</span><span class="o">=</span><span class="s2">&quot;centroid&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates a distance between two game states based on player positions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        token_array_1 (numpy array): 1-D numpy array of a position token</span>
+<span class="sd">        token_array_2 (numpy array): 1-D numpy array of a position token</span>
+<span class="sd">        distance_type (string): String indicating how the distance between two player positions should be calculated. Options are &quot;geodesic&quot;, &quot;graph&quot;, &quot;euclidean&quot; and &quot;edit_distance&quot;</span>
+<span class="sd">        reference_point (string): String indicating which reference point to use to determine area distance. Options are &quot;centroid&quot; and &quot;representative_point&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A float representing the distance between these two game states</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Map not found.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">distance_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;graph&quot;</span><span class="p">,</span> <span class="s2">&quot;geodesic&quot;</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">,</span> <span class="s2">&quot;edit_distance&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;distance_type can only be graph, geodesic, euclidean or edit_distance&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">reference_point</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">,</span> <span class="s2">&quot;representative_point&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reference_point can only be centroid or representative_point&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_array_1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_array_2</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Token arrays have to have the same length!&quot;</span><span class="p">)</span>
+    <span class="c1"># Get the list of named areas. Needed to translate back from token position to area name</span>
+    <span class="n">map_area_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">area_id</span> <span class="ow">in</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;areaName&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">map_area_names</span><span class="p">:</span>
+            <span class="n">map_area_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">NAV</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">area_id</span><span class="p">][</span><span class="s2">&quot;areaName&quot;</span><span class="p">])</span>
+    <span class="n">map_area_names</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">token_array_1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_array_1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Token arrays do not have the correct length. There has to be one entry per named area per team considered!&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">token_dist</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">distance_type</span> <span class="o">==</span> <span class="s2">&quot;edit_distance&quot;</span><span class="p">:</span>
+        <span class="c1"># How many edits of one value by 1 (up or down) are needed to go from one array to the other</span>
+        <span class="c1"># Eg: [3,0,0] to [0,1,0] needs 4 edits. Three to get the first index from 3 to 0 and then one to get the second from 0 to 1</span>
+        <span class="n">token_dist</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">abs</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">token_array_1</span><span class="p">,</span> <span class="n">token_array_2</span><span class="p">)))</span>
+        <span class="n">token_dist</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_array_1</span><span class="p">)</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">)</span>
+
+    <span class="c1"># More complicated distances based on actual area locations</span>
+    <span class="k">elif</span> <span class="n">distance_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span> <span class="s2">&quot;graph&quot;</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">]:</span>
+        <span class="c1"># If we do not have the precomputed matrix we need to first build the centroids to get them ourselves later</span>
+        <span class="k">if</span> <span class="n">PLACE_DIST_MATRIX</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PLACE_DIST_MATRIX</span><span class="p">:</span>
+            <span class="n">ref_points</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="p">(</span>
+                <span class="n">ref_points</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">],</span>
+                <span class="n">ref_points</span><span class="p">[</span><span class="s2">&quot;representative_point&quot;</span><span class="p">],</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">generate_centroids</span><span class="p">(</span><span class="n">map_name</span><span class="p">)</span>
+        <span class="c1"># Loop over each team</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">token_array_1</span><span class="p">)</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">)):</span>
+            <span class="n">side_distance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+            <span class="c1"># Get the sub arrays for this team from the total array</span>
+            <span class="n">array1</span><span class="p">,</span> <span class="n">array2</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">token_array_1</span><span class="p">[</span>
+                    <span class="mi">0</span>
+                    <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">)</span> <span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">),</span>
+                <span class="p">],</span>
+                <span class="n">token_array_2</span><span class="p">[</span>
+                    <span class="mi">0</span>
+                    <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">)</span> <span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">),</span>
+                <span class="p">],</span>
+            <span class="p">)</span>
+            <span class="c1"># Make sure array1 is the larger one</span>
+            <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">array1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">sum</span><span class="p">(</span><span class="n">array2</span><span class="p">):</span>
+                <span class="n">array1</span><span class="p">,</span> <span class="n">array2</span> <span class="o">=</span> <span class="n">array2</span><span class="p">,</span> <span class="n">array1</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">array2</span><span class="p">)</span>
+            <span class="c1"># Get the indices where array1 and array2 have larger values than the other.</span>
+            <span class="c1"># Use each index as often as it is larger</span>
+            <span class="n">diff_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">array1</span><span class="p">,</span> <span class="n">array2</span><span class="p">)</span>
+            <span class="n">pos_indices</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">neg_indices</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">difference</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">diff_array</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">difference</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">pos_indices</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">difference</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">difference</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">neg_indices</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="nb">int</span><span class="p">((</span><span class="nb">abs</span><span class="p">(</span><span class="n">difference</span><span class="p">))))</span>
+            <span class="c1"># Get all possible mappings between the differences</span>
+            <span class="c1"># Eg: diff array is [1,1,-1,-1] then pos_indices is [0,1] and neg_indices is [2,3]</span>
+            <span class="c1"># The possible mappings are then [(0,2),(1,3)] and [(0,3),(1,2)]</span>
+            <span class="k">for</span> <span class="n">mapping</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">neg_indices</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">multiset_permutations</span><span class="p">(</span><span class="n">pos_indices</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg_indices</span><span class="p">))</span>
+            <span class="p">):</span>
+                <span class="n">this_dist</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="c1"># Iterate of the mapping. Eg: [(0,2),(1,3)] and get their total distance</span>
+                <span class="c1"># For the example this would be dist(0,2)+dist(1,3)</span>
+                <span class="k">for</span> <span class="n">area1</span><span class="p">,</span> <span class="n">area2</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">PLACE_DIST_MATRIX</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">map_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PLACE_DIST_MATRIX</span><span class="p">:</span>
+                        <span class="n">this_dist</span> <span class="o">+=</span> <span class="nb">min</span><span class="p">(</span>
+                            <span class="n">area_distance</span><span class="p">(</span>
+                                <span class="n">map_name</span><span class="p">,</span>
+                                <span class="n">ref_points</span><span class="p">[</span><span class="n">reference_point</span><span class="p">][</span><span class="n">map_area_names</span><span class="p">[</span><span class="n">area1</span><span class="p">]],</span>
+                                <span class="n">ref_points</span><span class="p">[</span><span class="n">reference_point</span><span class="p">][</span><span class="n">map_area_names</span><span class="p">[</span><span class="n">area2</span><span class="p">]],</span>
+                                <span class="n">dist_type</span><span class="o">=</span><span class="n">distance_type</span><span class="p">,</span>
+                            <span class="p">)[</span><span class="s2">&quot;distance&quot;</span><span class="p">],</span>
+                            <span class="n">area_distance</span><span class="p">(</span>
+                                <span class="n">map_name</span><span class="p">,</span>
+                                <span class="n">ref_points</span><span class="p">[</span><span class="n">reference_point</span><span class="p">][</span><span class="n">map_area_names</span><span class="p">[</span><span class="n">area2</span><span class="p">]],</span>
+                                <span class="n">ref_points</span><span class="p">[</span><span class="n">reference_point</span><span class="p">][</span><span class="n">map_area_names</span><span class="p">[</span><span class="n">area1</span><span class="p">]],</span>
+                                <span class="n">dist_type</span><span class="o">=</span><span class="n">distance_type</span><span class="p">,</span>
+                            <span class="p">)[</span><span class="s2">&quot;distance&quot;</span><span class="p">],</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">this_dist</span> <span class="o">+=</span> <span class="nb">min</span><span class="p">(</span>
+                            <span class="n">PLACE_DIST_MATRIX</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">map_area_names</span><span class="p">[</span><span class="n">area1</span><span class="p">]][</span>
+                                <span class="n">map_area_names</span><span class="p">[</span><span class="n">area2</span><span class="p">]</span>
+                            <span class="p">][</span><span class="n">distance_type</span><span class="p">][</span><span class="n">reference_point</span><span class="p">],</span>
+                            <span class="n">PLACE_DIST_MATRIX</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="n">map_area_names</span><span class="p">[</span><span class="n">area2</span><span class="p">]][</span>
+                                <span class="n">map_area_names</span><span class="p">[</span><span class="n">area1</span><span class="p">]</span>
+                            <span class="p">][</span><span class="n">distance_type</span><span class="p">][</span><span class="n">reference_point</span><span class="p">],</span>
+                        <span class="p">)</span>
+                <span class="n">this_dist</span> <span class="o">/=</span> <span class="n">size</span>
+                <span class="n">side_distance</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">side_distance</span><span class="p">,</span> <span class="n">this_dist</span><span class="p">)</span>
+            <span class="n">token_dist</span> <span class="o">+=</span> <span class="n">side_distance</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">token_array_1</span><span class="p">)</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">map_area_names</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">token_dist</span></div>
+
+
+<div class="viewcode-block" id="frame_distance"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.frame_distance">[docs]</a><span class="k">def</span> <span class="nf">frame_distance</span><span class="p">(</span>
+    <span class="n">map_name</span><span class="p">,</span>
+    <span class="n">frame1</span><span class="p">,</span>
+    <span class="n">frame2</span><span class="p">,</span>
+    <span class="n">distance_type</span><span class="o">=</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates a distance between two frames based on player positions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        frame1 (dict): A game frame</span>
+<span class="sd">        frame2 (dict): A game frame</span>
+<span class="sd">        distance_type: String indicating how the distance between two player positions should be calculated. Options are &quot;geodesic&quot;, &quot;graph&quot; and &quot;euclidean&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A float representing the distance between these two game states</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pos_array1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="mi">2</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame1</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame1</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frame1</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame1</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])),</span>
+            <span class="mi">3</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">pos_array2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="mi">2</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame2</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame2</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frame2</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame2</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])),</span>
+            <span class="mi">3</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">team_to_index</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;ct&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">team</span> <span class="ow">in</span> <span class="n">frame1</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">team_to_index</span><span class="p">[</span><span class="n">team</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frame1</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame1</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">player_index</span><span class="p">,</span> <span class="n">player</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">frame1</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]):</span>
+            <span class="n">pos_array1</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="n">player_index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+            <span class="n">pos_array1</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="n">player_index</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span>
+            <span class="n">pos_array1</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="n">player_index</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">team</span> <span class="ow">in</span> <span class="n">frame2</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">team_to_index</span><span class="p">[</span><span class="n">team</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frame2</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame2</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">player_index</span><span class="p">,</span> <span class="n">player</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">frame2</span><span class="p">[</span><span class="n">team</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]):</span>
+            <span class="n">pos_array2</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="n">player_index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+            <span class="n">pos_array2</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="n">player_index</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span>
+            <span class="n">pos_array2</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="n">player_index</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">player</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">position_state_distance</span><span class="p">(</span><span class="n">map_name</span><span class="p">,</span> <span class="n">pos_array1</span><span class="p">,</span> <span class="n">pos_array2</span><span class="p">,</span> <span class="n">distance_type</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="token_distance"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.nav.token_distance">[docs]</a><span class="k">def</span> <span class="nf">token_distance</span><span class="p">(</span>
+    <span class="n">map_name</span><span class="p">,</span>
+    <span class="n">token1</span><span class="p">,</span>
+    <span class="n">token2</span><span class="p">,</span>
+    <span class="n">distance_type</span><span class="o">=</span><span class="s2">&quot;geodesic&quot;</span><span class="p">,</span>
+    <span class="n">reference_point</span><span class="o">=</span><span class="s2">&quot;centroid&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates a distance between two game states based on position tokens</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        map_name (string): Map to search</span>
+<span class="sd">        token1 (string): A team position token</span>
+<span class="sd">        token2 (string): A team position token</span>
+<span class="sd">        distance_type: String indicating how the distance between two player positions should be calculated. Options are &quot;geodesic&quot;, &quot;graph&quot;, &quot;euclidean&quot; and &quot;edit_distance&quot;</span>
+<span class="sd">        reference_point: String indicating which reference point to use to determine area distance. Options are &quot;centroid&quot; and &quot;representative_point&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A float representing the distance between these two game states</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">token_state_distance</span><span class="p">(</span>
+        <span class="n">map_name</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">token1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">token2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span>
+        <span class="n">distance_type</span><span class="p">,</span>
+        <span class="n">reference_point</span><span class="p">,</span>
+    <span class="p">)</span></div>
 </pre></div>
 
            </div>
