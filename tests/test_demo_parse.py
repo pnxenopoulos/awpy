@@ -16,7 +16,7 @@ class TestDemoParser:
 
     def setup_class(self):
         """Setup class by defining loading dictionary of test demo files"""
-        with open("tests/test_data.json") as f:
+        with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
         for file in self.demo_data:
             self._get_demofile(demo_link=self.demo_data[file]["url"], demo_name=file)
@@ -139,9 +139,9 @@ class TestDemoParser:
         )
         assert self.parser_opts.trade_time == 7
         assert self.parser_opts.buy_style == "hltv"
-        assert self.parser_opts.dmg_rolled == False
-        assert self.parser_opts.parse_frames == True
-        assert self.parser_opts.parse_kill_frames == False
+        assert self.parser_opts.dmg_rolled is False
+        assert self.parser_opts.parse_frames is True
+        assert self.parser_opts.parse_kill_frames is False
         self.bad_parser_opts = DemoParser(
             demofile="default.dem",
             log=False,
@@ -161,7 +161,7 @@ class TestDemoParser:
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
-        assert type(output_json) is dict
+        assert isinstance(output_json, dict)
         assert os.path.exists("default.json")
         assert self.parser.output_file == "default.json"
 
@@ -189,18 +189,18 @@ class TestDemoParser:
         assert self.default_data["tickRate"] == 128
         assert self.default_data["clientName"] == "GOTV Demo"
         assert len(self.default_data["gameRounds"]) == 29  # 33
-        assert self.default_data["parserParameters"]["damagesRolledUp"] == False
+        assert self.default_data["parserParameters"]["damagesRolledUp"] is False
         assert self.default_data["parserParameters"]["tradeTime"] == 5
         assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
         assert self.default_data["parserParameters"]["parseRate"] == 256
         for r in self.default_data["gameRounds"]:
-            assert type(r["bombEvents"]) == list
-            assert type(r["damages"]) == list
-            assert type(r["kills"]) == list
-            assert type(r["flashes"]) == list
-            assert type(r["grenades"]) == list
-            assert type(r["weaponFires"]) == list
-            assert type(r["frames"]) == list
+            assert isinstance(r["bombEvents"], list)
+            assert isinstance(r["damages"], list)
+            assert isinstance(r["kills"], list)
+            assert isinstance(r["flashes"], list)
+            assert isinstance(r["grenades"], list)
+            assert isinstance(r["weaponFires"], list)
+            assert isinstance(r["frames"], list)
 
     def test_parse_kill_frames(self):
         """Tests parse kill frames"""
@@ -217,15 +217,18 @@ class TestDemoParser:
     def test_default_parse_df(self):
         """Tests default parse to dataframe"""
         self.default_data_df = self.parser.parse(return_type="df")
-        assert type(self.default_data_df["rounds"]) == pd.DataFrame
-        assert type(self.default_data_df["kills"]) == pd.DataFrame
-        assert type(self.default_data_df["damages"]) == pd.DataFrame
-        assert type(self.default_data_df["grenades"]) == pd.DataFrame
-        assert type(self.default_data_df["flashes"]) == pd.DataFrame
-        assert type(self.default_data_df["weaponFires"]) == pd.DataFrame
-        assert type(self.default_data_df["bombEvents"]) == pd.DataFrame
-        assert type(self.default_data_df["frames"]) == pd.DataFrame
-        assert type(self.default_data_df["playerFrames"]) == pd.DataFrame
+        assert isinstance(self.default_data_df["rounds"], pd.DataFrame)
+        assert isinstance(self.default_data_df["kills"], pd.DataFrame)
+        assert isinstance(self.default_data_df["damages"], pd.DataFrame)
+        assert isinstance(self.default_data_df["grenades"], pd.DataFrame)
+        assert isinstance(self.default_data_df["flashes"], pd.DataFrame)
+        assert isinstance(self.default_data_df["weaponFires"], pd.DataFrame)
+        assert isinstance(self.default_data_df["bombEvents"], pd.DataFrame)
+        assert isinstance(self.default_data_df["frames"], pd.DataFrame)
+        assert isinstance(self.default_data_df["playerFrames"], pd.DataFrame)
+        self.parser.json = None
+        with pytest.raises(AttributeError):
+            self.parser.parse_json_to_df()
 
     def test_wrong_return_type(self):
         """Tests if wrong return type errors out"""
@@ -237,12 +240,19 @@ class TestDemoParser:
         self.parser_new = DemoParser(demofile="default.dem", log=False, parse_rate=256)
         with pytest.raises(AttributeError):
             d = self.parser_new._parse_bomb_events()
+        with pytest.raises(AttributeError):
             d = self.parser_new._parse_flashes()
+        with pytest.raises(AttributeError):
             d = self.parser_new._parse_damages()
+        with pytest.raises(AttributeError):
             d = self.parser_new._parse_grenades()
+        with pytest.raises(AttributeError):
             d = self.parser_new._parse_kills()
+        with pytest.raises(AttributeError):
             d = self.parser_new._parse_frames()
+        with pytest.raises(AttributeError):
             d = self.parser_new._parse_player_frames()
+        with pytest.raises(AttributeError):
             d = self.parser_new._parse_weapon_fires()
 
     def test_bot_name(self):
@@ -321,7 +331,7 @@ class TestDemoParser:
         )
         self.phase_data = self.phase_parser.parse()
         for phase in self.phase_data["matchPhases"].keys():
-            assert type(self.phase_data["matchPhases"][phase]) == list
+            assert isinstance(self.phase_data["matchPhases"][phase], list)
 
     def test_round_clean(self):
         """Tests that remove time rounds is working."""
@@ -356,6 +366,14 @@ class TestDemoParser:
         )
         self.end_round_data = self.end_round_parser.parse()
         assert len(self.end_round_data["gameRounds"]) == 30
+
+    def test_clean_no_json(self):
+        """Tests cleaning the last round"""
+        self.end_round_parser = DemoParser(
+            demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
+        )
+        with pytest.raises(AttributeError):
+            self.end_round_parser.clean_rounds()
 
     def test_esea_ot_demo(self):
         """Tests an ESEA demo with OT rounds"""

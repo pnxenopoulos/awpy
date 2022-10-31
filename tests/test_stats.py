@@ -1,6 +1,6 @@
+import os
 import json
 import pandas as pd
-import pytest
 import requests
 
 from awpy.parser import DemoParser
@@ -14,7 +14,7 @@ class TestStats:
 
     def setup_class(self):
         """Sets up class by defining the parser, filters, and dataframes."""
-        with open("tests/test_data.json") as f:
+        with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
         r = requests.get(self.demo_data["astralis-vs-liquid-m2-nuke"]["url"])
         open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
@@ -25,6 +25,20 @@ class TestStats:
             parse_frames=True,
         )
         self.data = self.parser.parse(clean=True)
+
+    def teardown_class(self):
+        """Set parser to none"""
+        self.parser = None
+        self.data = None
+        files_in_directory = os.listdir()
+        filtered_files = [
+            file
+            for file in files_in_directory
+            if file.endswith(".dem") or file.endswith(".json")
+        ]
+        if len(filtered_files) > 0:
+            for f in filtered_files:
+                os.remove(f)
 
     def test_player_stats(self):
         """Tests player stats generation"""
@@ -41,4 +55,4 @@ class TestStats:
         assert stats["76561197995889730 - nitr0"]["teamName"] == "Team Liquid"
         assert stats["76561197995889730 - nitr0"]["playerName"] == "nitr0"
         stats_df = player_stats(self.data["gameRounds"], return_type="df")
-        assert type(stats_df) == pd.DataFrame
+        assert isinstance(stats_df, pd.DataFrame)

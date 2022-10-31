@@ -33,7 +33,7 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
             os.path.join(os.path.dirname(__file__), "")
             + f"""../data/map/{map_name}.png"""
         )
-        if "z_cutoff" in MAP_DATA[map_name]:
+        if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
             map_bg_lower = imageio.imread(
                 os.path.join(os.path.dirname(__file__), "")
                 + f"""../data/map/{map_name}_lower.png"""
@@ -48,7 +48,7 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
                 os.path.join(os.path.dirname(__file__), "")
                 + f"""../data/map/{map_name}_{col}.png"""
             )
-            if "z_cutoff" in MAP_DATA[map_name]:
+            if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
                 map_bg_lower = imageio.imread(
                     os.path.join(os.path.dirname(__file__), "")
                     + f"""../data/map/{map_name}_lower_{col}.png"""
@@ -59,7 +59,7 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
                 os.path.join(os.path.dirname(__file__), "")
                 + f"""../data/map/{map_name}.png"""
             )
-            if "z_cutoff" in MAP_DATA[map_name]:
+            if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
                 map_bg_lower = imageio.imread(
                     os.path.join(os.path.dirname(__file__), "")
                     + f"""../data/map/{map_name}_lower.png"""

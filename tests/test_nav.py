@@ -1,3 +1,4 @@
+import sys
 import pytest
 import numpy as np
 
@@ -6,6 +7,7 @@ from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
     generate_position_token,
+    tree,
     point_distance,
     point_in_area,
     generate_centroids,
@@ -23,11 +25,11 @@ class TestNav:
     def test_point_in_area(self):
         """Tests point in area"""
         with pytest.raises(ValueError):
-            point_in_area(map_name="test", area_id=0, point=[0, 0, 0])
+            point_in_area(map_name="test", area_id=3814, point=[0, 0, 0])
         with pytest.raises(ValueError):
             point_in_area(map_name="de_dust2", area_id=0, point=[0, 0, 0])
         with pytest.raises(ValueError):
-            point_in_area(map_name="test", area_id=0, point=[0])
+            point_in_area(map_name="de_dust2", area_id=3814, point=[0])
         avg_x = (
             NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"]
         ) / 2
@@ -39,6 +41,9 @@ class TestNav:
         ) / 2
         assert point_in_area(
             map_name="de_dust2", area_id=152, point=[avg_x, avg_y, avg_z]
+        )
+        assert not point_in_area(
+            map_name="de_dust2", area_id=3814, point=[avg_x, avg_y, avg_z]
         )
 
     def test_find_area(self):
@@ -57,7 +62,7 @@ class TestNav:
             NAV["de_dust2"][152]["northWestZ"] + NAV["de_dust2"][152]["southEastZ"]
         ) / 2
         area_found = find_closest_area(map_name="de_dust2", point=[avg_x, avg_y, avg_z])
-        assert type(area_found) == dict
+        assert isinstance(area_found, dict)
         assert area_found["areaId"] == 152
 
     def test_area_distance(self):
@@ -74,12 +79,27 @@ class TestNav:
         geo_dist = area_distance(
             map_name="de_dust2", area_a=152, area_b=152, dist_type="geodesic"
         )
-        assert type(graph_dist) == dict
+        assert isinstance(graph_dist, dict)
         assert graph_dist["distanceType"] == "graph"
         assert graph_dist["distance"] == 0
-        assert type(geo_dist) == dict
+        assert isinstance(geo_dist, dict)
         assert geo_dist["distanceType"] == "geodesic"
         assert geo_dist["distance"] == 0
+        graph_dist = area_distance(
+            map_name="de_dust2", area_a=8251, area_b=8773, dist_type="graph"
+        )
+        geo_dist = area_distance(
+            map_name="de_dust2", area_a=8251, area_b=8773, dist_type="geodesic"
+        )
+        assert graph_dist["distance"] == float("inf")
+        assert geo_dist["distance"] == float("inf")
+        assert len(graph_dist["areas"]) == 0
+        assert len(geo_dist["areas"]) == 0
+        euc_dist = area_distance(
+            map_name="de_dust2", area_a=8251, area_b=8773, dist_type="euclidean"
+        )
+        assert isinstance(euc_dist, dict)
+        assert len(euc_dist["areas"]) == 0
 
     def test_point_distance(self):
         """Tests point distance"""
@@ -165,6 +185,16 @@ class TestNav:
             )["distance"]
             == 0
         )
+        assert point_distance(
+            map_name="de_dust2",
+            point_a=[0, 0],
+            point_b=[1, 1],
+            dist_type="distance_type_does_not_exist",
+        ) == {
+            "distanceType": "distance_type_does_not_exist",
+            "distance": None,
+            "areas": [],
+        }
 
     def test_position_token(self):
         """Tests that position token returns correct values"""
@@ -192,25 +222,80 @@ class TestNav:
             },
         }
         token = generate_position_token(map_name, frame)
-        assert type(token) == dict
-        assert "tToken" in token.keys()
-        assert "ctToken" in token.keys()
-        assert "token" in token.keys()
+        assert isinstance(token, dict)
+        assert "tToken" in token
+        assert "ctToken" in token
+        assert "token" in token
         assert token["tToken"] == "000000000000000000100000000000"
         assert token["ctToken"] == "000000000000000000000000000000"
         assert (
             token["token"]
             == "000000000000000000000000000000000000000000000000100000000000"
         )
+        frame = {
+            "ct": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                        "isAlive": True,
+                    }
+                ]
+            },
+            "t": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                        "isAlive": False,
+                    }
+                ]
+            },
+        }
+        token = generate_position_token(map_name, frame)
+        assert isinstance(token, dict)
+        assert "tToken" in token
+        assert "ctToken" in token
+        assert "token" in token
+        assert token["tToken"] == "000000000000000000000000000000"
+        assert token["ctToken"] == "000000000000000000100000000000"
+        assert (
+            token["token"]
+            == "000000000000000000100000000000000000000000000000000000000000"
+        )
+
         with pytest.raises(ValueError):
             generate_position_token("de_does_not_exist", frame)
+
+        frame = {
+            "ct": {"players": []},
+            "t": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                        "isAlive": True,
+                    }
+                ]
+            },
+        }
+        with pytest.raises(ValueError):
+            generate_position_token("map_name", frame)
+
+    def test_tree(self):
+        """Tests tree"""
+        my_tree = tree()
+        my_tree["1"]["A"][666][("test", 42)] = "Should work"
 
     def test_generate_centroids(self):
         """Tests generate centroids"""
         with pytest.raises(ValueError):
             generate_centroids(map_name="test")
         centroids, reps = generate_centroids("de_inferno")
-        assert type(centroids) == dict
+        assert isinstance(centroids, dict)
         assert "Quad" in centroids
         assert centroids == {
             "CTSpawn": 2831,
@@ -239,7 +324,7 @@ class TestNav:
             "Deck": 74,
             "Kitchen": 257,
         }
-        assert type(reps) == dict
+        assert isinstance(reps, dict)
         assert "" in reps
         assert reps == {
             "CTSpawn": 2832,
@@ -281,7 +366,7 @@ class TestNav:
                 (0.2, 0.2),
             ]
         )
-        assert type(hull) == list
+        assert isinstance(hull, list)
         assert hull == [(0, 1), (0, 0), (1, 0), (1, 1), (0, 1)]
         assert stepped_hull([(1, 1)]) == [(1, 1)]
         assert stepped_hull([]) == []
@@ -321,7 +406,7 @@ class TestNav:
         dist = position_state_distance(
             "de_ancient", pos_state1, pos_state2, distance_type="euclidean"
         )
-        assert type(dist) == float
+        assert isinstance(dist, float)
         assert round(dist, 2) == 752.26
 
         pos_state1 = np.array([[[-500, -850, 100], [-555, -105, 135]]])
@@ -336,8 +421,24 @@ class TestNav:
         dist = position_state_distance(
             "de_ancient", pos_state1, pos_state2, distance_type="graph"
         )
-        assert type(dist) == float
+        assert isinstance(dist, float)
         assert dist == 1
+
+        pos_state1 = np.array([[[-500, -850, 100]]])
+        pos_state2 = np.array([[[-550, -100, 130], [-500, -850, 100]]])
+        dist = position_state_distance(
+            "de_ancient", pos_state1, pos_state2, distance_type="graph"
+        )
+        assert isinstance(dist, float)
+        assert dist == 0.0
+
+        pos_state1 = np.array([[[-2497, -224, 200]]])
+        pos_state2 = np.array([[[-1900, -1200, 100]]])
+        dist = position_state_distance(
+            "de_dust2", pos_state1, pos_state2, distance_type="graph"
+        )
+        assert isinstance(dist, float)
+        assert sys.maxsize / 7 < dist < sys.maxsize / 5
 
     def test_token_state_distance(self):
         """Tests token state distance"""
@@ -763,6 +864,13 @@ class TestNav:
             "de_nuke", token_array1, token_array2, distance_type="edit_distance"
         )
         assert dist == 2
+        dist1 = token_state_distance(
+            "de_nuke", token_array1, token_array2, distance_type="geodesic"
+        )
+        dist2 = token_state_distance(
+            "de_nuke", token_array2, token_array1, distance_type="geodesic"
+        )
+        assert dist1 == dist2
         dist = token_state_distance(
             "de_nuke", token_array1, token_array2, distance_type="graph"
         )

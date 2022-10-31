@@ -1,7 +1,6 @@
 import json
 import os
 import requests
-import pytest
 
 from awpy.parser import DemoParser
 from awpy.analytics.states import generate_vector_state
@@ -15,7 +14,7 @@ class TestStates:
 
     def setup_class(self):
         """Setup class by instantiating parser"""
-        with open("tests/test_data.json") as f:
+        with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
         self._get_demofile(
             demo_link=self.demo_data["default"]["url"], demo_name="default"
@@ -53,5 +52,11 @@ class TestStates:
         game_state = generate_vector_state(
             self.data["gameRounds"][7]["frames"][0], self.data["mapName"]
         )
-        assert type(game_state) == dict
-        assert "ctAlive" in game_state.keys()
+        assert isinstance(game_state, dict)
+        assert "ctAlive" in game_state
+        assert game_state["ctAlive"] == 5
+        game_state = generate_vector_state(
+            self.data["gameRounds"][7]["frames"][6], self.data["mapName"]
+        )
+        assert game_state["ctAlive"] == 2
+        assert game_state["tAlive"] == 4
