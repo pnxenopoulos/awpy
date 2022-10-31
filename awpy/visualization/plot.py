@@ -266,22 +266,15 @@ def plot_nades(
                     start_y = position_transform(map_name, g["throwerY"], "y")
                     end_x = position_transform(map_name, g["grenadeX"], "x")
                     end_y = position_transform(map_name, g["grenadeY"], "y")
-                    if g["grenadeType"] in nades:
-                        if (
-                            g["grenadeType"] == "Incendiary Grenade"
-                            or g["grenadeType"] == "Molotov"
-                        ):
-                            a.plot([start_x, end_x], [start_y, end_y], color="red")
-                            a.scatter(end_x, end_y, color="red")
-                        if g["grenadeType"] == "Smoke Grenade":
-                            a.plot([start_x, end_x], [start_y, end_y], color="gray")
-                            a.scatter(end_x, end_y, color="gray")
-                        if g["grenadeType"] == "HE Grenade":
-                            a.plot([start_x, end_x], [start_y, end_y], color="green")
-                            a.scatter(end_x, end_y, color="green")
-                        if g["grenadeType"] == "Flashbang":
-                            a.plot([start_x, end_x], [start_y, end_y], color="gold")
-                            a.scatter(end_x, end_y, color="gold")
+                    g_Type = g["grenadeType"]            
+                    if g_Type in nades:
+                        g_Color = {'Incendiary Grenade' : 'red',\
+                                   'Molotov' : 'red',\
+                                   'Smoke Grenade' : 'gray',\
+                                   'HE Grenade' : 'green',\
+                                   'Flashbang' : 'gold'}[g_Type]
+                        a.plot([start_x, end_x], [start_y, end_y], color=g_Color)
+                        a.scatter(end_x, end_y, color=g_Color)
     a.get_xaxis().set_visible(False)
     a.get_yaxis().set_visible(False)
     return f, a
