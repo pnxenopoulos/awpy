@@ -9,7 +9,6 @@
 """
 import os
 import shutil
-import collections
 import numpy as np
 import imageio
 from tqdm import tqdm
@@ -122,9 +121,9 @@ def position_transform_all(map_name, position):
 
 
 def plot_positions(
-    positions=[],
-    colors=[],
-    markers=[],
+    positions=None,
+    colors=None,
+    markers=None,
     alphas=None,
     sizes=None,
     map_name="de_ancient",
@@ -148,6 +147,12 @@ def plot_positions(
     Returns:
         matplotlib fig and ax
     """
+    if positions is None:
+        positions = []
+    if colors is None:
+        colors = []
+    if markers is None:
+        markers = []
     if alphas is None:
         alphas = [1] * len(positions)
     if sizes is None:
@@ -242,7 +247,12 @@ def plot_round(
 
 
 def plot_nades(
-    rounds, nades=[], side="CT", map_name="de_ancient", map_type="original", dark=False
+    rounds,
+    nades=None,
+    side="CT",
+    map_name="de_ancient",
+    map_type="original",
+    dark=False,
 ):
     """Plots grenade trajectories.
 
@@ -257,6 +267,8 @@ def plot_nades(
     Returns:
         matplotlib fig and ax
     """
+    if nades is None:
+        nades = []
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for r in rounds:
         if r["grenades"]:

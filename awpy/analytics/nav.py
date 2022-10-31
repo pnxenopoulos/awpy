@@ -48,7 +48,7 @@ def point_in_area(map_name, area_id, point):
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
-    if area_id not in NAV[map_name].keys():
+    if area_id not in NAV[map_name]:
         raise ValueError("Area ID not found.")
     if len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
@@ -68,8 +68,7 @@ def point_in_area(map_name, area_id, point):
     )
     if contains_x and contains_y:
         return True
-    else:
-        return False
+    return False
 
 
 def find_closest_area(map_name, point):
@@ -178,6 +177,7 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
             + (area_a_z - area_b_z) ** 2
         )
         return distance_obj
+    return distance_obj
 
 
 def point_distance(map_name, point_a, point_b, dist_type="graph"):
@@ -203,7 +203,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
-    elif dist_type == "geodesic":
+    if dist_type == "geodesic":
         if map_name not in NAV:
             raise ValueError("Map not found.")
         if len(point_a) != 3 or len(point_b) != 3:
@@ -213,18 +213,19 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
-    elif dist_type == "euclidean":
+    if dist_type == "euclidean":
         distance_obj["distance"] = distance.euclidean(point_a, point_b)
         return distance_obj
-    elif dist_type == "manhattan":
+    if dist_type == "manhattan":
         distance_obj["distance"] = distance.cityblock(point_a, point_b)
         return distance_obj
-    elif dist_type == "canberra":
+    if dist_type == "canberra":
         distance_obj["distance"] = distance.canberra(point_a, point_b)
         return distance_obj
-    elif dist_type == "cosine":
+    if dist_type == "cosine":
         distance_obj["distance"] = distance.cosine(point_a, point_b)
         return distance_obj
+    return distance_obj
 
 
 def generate_position_token(map_name, frame):

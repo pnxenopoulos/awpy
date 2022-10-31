@@ -1,12 +1,13 @@
 import json
 import os
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from scipy.spatial import distance
 import networkx as nx
 
 from awpy.utils import transform_csv_to_json
-from pathlib import Path
+
 
 PATH = os.path.join(os.path.dirname(__file__), "")
 

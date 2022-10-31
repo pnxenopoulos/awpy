@@ -3,11 +3,10 @@
 
 import difflib
 import numpy as np
-import pandas as pd
 import textdistance
 
 
-def associate_entities(game_names=[], entity_names=[], metric="lcss"):
+def associate_entities(game_names=None, entity_names=None, metric="lcss"):
     """A function to return a dict of associated entities. Accepts
 
     Args:
@@ -18,6 +17,10 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
     Returns:
         A dictionary where the keys are entries in game_names, values are the matched entity names.
     """
+    if game_names is None:
+        game_names = []
+    if entity_names is None:
+        entity_names = []
     if metric.lower() == "lcss":
         dist_metric = textdistance.lcsseq.distance
     elif metric.lower() == "hamming":

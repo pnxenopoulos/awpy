@@ -50,7 +50,7 @@ class DemoParser:
 
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
-        self.logger.info("Initialized awpy DemoParser with demofile " + self.demofile)
+        self.logger.info("Initialized awpy DemoParser with demofile %s", self.demofile)
         if (demo_id is None) | (demo_id == ""):
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
@@ -59,14 +59,13 @@ class DemoParser:
             self.outpath = os.path.abspath(os.getcwd())
         else:
             self.outpath = os.path.abspath(outpath)
-        self.logger.info("Setting demo id to " + self.demo_id)
+        self.logger.info("Setting demo id to %s", self.demo_id)
 
         # Handle parse rate. If the parse rate is less than 64, likely to be slow
-        if parse_rate < 1 or type(parse_rate) is not int:
+        if parse_rate < 1 or not isinstance(parse_rate, int):
             self.logger.warning(
-                "Parse rate of "
-                + str(parse_rate)
-                + " not acceptable! Parse rate must be an integer greater than 0."
+                "Parse rate of %s not acceptable! Parse rate must be an integer greater than 0.",
+                str(parse_rate),
             )
             parse_rate = 128
             self.parse_rate = parse_rate
@@ -83,7 +82,7 @@ class DemoParser:
             self.parse_rate = parse_rate
         else:
             self.parse_rate = parse_rate
-        self.logger.info("Setting parse rate to " + str(self.parse_rate))
+        self.logger.info("Setting parse rate to %s", str(self.parse_rate))
 
         # Handle trade time
         if trade_time <= 0:
@@ -93,13 +92,12 @@ class DemoParser:
             self.trade_time = 5
         elif trade_time > 7:
             self.logger.warning(
-                "Trade time of "
-                + str(trade_time)
-                + " is rather long. Consider a value between 4-7."
+                "Trade time of %s is rather long. Consider a value between 4-7.",
+                str(trade_time),
             )
         else:
             self.trade_time = trade_time
-        self.logger.info("Setting trade time to " + str(self.trade_time))
+        self.logger.info("Setting trade time to %s", str(self.trade_time))
 
         # Handle buy style
         if buy_style not in ["hltv", "csgo"]:
@@ -109,16 +107,18 @@ class DemoParser:
             self.buy_style = "hltv"
         else:
             self.buy_style = buy_style
-        self.logger.info("Setting buy style to " + str(self.buy_style))
+        self.logger.info("Setting buy style to %s", str(self.buy_style))
 
         self.dmg_rolled = dmg_rolled
         self.parse_frames = parse_frames
         self.parse_kill_frames = parse_kill_frames
         self.json_indentation = json_indentation
-        self.logger.info("Rollup damages set to " + str(self.dmg_rolled))
-        self.logger.info("Parse frames set to " + str(self.parse_frames))
-        self.logger.info("Parse kill frames set to " + str(self.parse_kill_frames))
-        self.logger.info("Output json indentation set to " + str(self.json_indentation))
+        self.logger.info("Rollup damages set to %s", str(self.dmg_rolled))
+        self.logger.info("Parse frames set to %s", str(self.parse_frames))
+        self.logger.info("Parse kill frames set to %s", str(self.parse_kill_frames))
+        self.logger.info(
+            "Output json indentation set to %s", str(self.json_indentation)
+        )
 
         # Set parse error to False
         self.parse_error = False
@@ -151,8 +151,8 @@ class DemoParser:
             raise FileNotFoundError("Demofile path does not exist!")
 
         path = os.path.join(os.path.dirname(__file__), "")
-        self.logger.info("Running Golang parser from " + path)
-        self.logger.info("Looking for file at " + self.demofile)
+        self.logger.info("Running Golang parser from %s", path)
+        self.logger.info("Looking for file at %s", self.demofile)
         self.parser_cmd = [
             "go",
             "run",
@@ -186,7 +186,7 @@ class DemoParser:
         stdout = proc.stdout.read().splitlines()
         self.output_file = self.demo_id + ".json"
         if os.path.isfile(self.outpath + "/" + self.output_file):
-            self.logger.info("Wrote demo parse output to " + self.output_file)
+            self.logger.info("Wrote demo parse output to %s", self.output_file)
             self.parse_error = False
         else:
             self.parse_error = True
@@ -875,13 +875,13 @@ class DemoParser:
                 for r in self.json["gameRounds"]:
                     if len(r["frames"]) > 0:
                         f = r["frames"][0]
-                        if f["ct"]["players"] == None:
-                            if f["t"]["players"] == None:
+                        if f["ct"]["players"] is None:
+                            if f["t"]["players"] is None:
                                 pass
                             elif len(f["t"]["players"]) <= 5:
                                 cleaned_rounds.append(r)
                         elif len(f["ct"]["players"]) <= 5:
-                            if (f["t"]["players"] == None) or (
+                            if (f["t"]["players"] is None) or (
                                 len(f["t"]["players"]) <= 5
                             ):
                                 cleaned_rounds.append(r)
@@ -926,7 +926,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_end_round(self, bad_endings=["Draw", "Unknown", ""]):
+    def remove_end_round(self, bad_endings=None):
         """Removes rounds with bad end reason.
 
         Args:
@@ -935,6 +935,8 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
+        if bad_endings is None:
+            bad_endings = ["Draw", "Unknown", ""]
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"]:
