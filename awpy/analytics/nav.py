@@ -33,7 +33,8 @@ import numpy as np
 from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
 from scipy.spatial import distance
 from shapely.geometry import Polygon
-
+from numpy import array
+from numpy.linalg import norm
 
 def point_in_area(map_name, area_id, point):
     """Returns if the point is within a nav area for a map.
@@ -154,29 +155,16 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
             distance_obj["areas"] = []
         return distance_obj
     if dist_type == "euclidean":
-        area_a_x = (
-            NAV[map_name][area_a]["southEastX"] + NAV[map_name][area_a]["northWestX"]
-        ) / 2
-        area_a_y = (
-            NAV[map_name][area_a]["southEastY"] + NAV[map_name][area_a]["northWestY"]
-        ) / 2
-        area_a_z = (
-            NAV[map_name][area_a]["southEastZ"] + NAV[map_name][area_a]["northWestZ"]
-        ) / 2
-        area_b_x = (
-            NAV[map_name][area_b]["southEastX"] + NAV[map_name][area_b]["northWestX"]
-        ) / 2
-        area_b_y = (
-            NAV[map_name][area_b]["southEastY"] + NAV[map_name][area_b]["northWestY"]
-        ) / 2
-        area_b_z = (
-            NAV[map_name][area_b]["southEastZ"] + NAV[map_name][area_b]["northWestZ"]
-        ) / 2
-        distance_obj["distance"] = math.sqrt(
-            (area_a_x - area_b_x) ** 2
-            + (area_a_y - area_b_y) ** 2
-            + (area_a_z - area_b_z) ** 2
-        )
+        c = NAV[map_name][area_a]
+        d = lambda a, b : (c[a] + c[b]) / 2
+        e = (("southEastX", "northWestX"),\
+             ("southEastY", "northWestY"),\
+             ("southEastZ", "northWestZ"))
+        f = lambda c : array(tuple(d(a, b) for a, b in e)) 
+        area_a = f(c)     
+        c = NAV[map_name][area_b]
+        area_b = f(c)                    
+        distance_obj["distance"] = norm(area_a - area_b)        
         return distance_obj
 
 
