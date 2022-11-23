@@ -103,7 +103,7 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
     return contains_x and contains_y
 
 
-def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
+def find_closest_area(map_name: str, point: list[float], flat:bool=False) -> ClosestArea:
     """Finds the closest area in the nav mesh.
 
     Searches through all the areas by comparing point to area centerpoint.
@@ -111,6 +111,7 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     Args:
         map_name (string): Map to search
         point (list): Point as a list [x,y,z]
+        flat (Boolean): Whether z should be ignored.
 
     Returns:
         A dict containing info on the closest area
@@ -126,6 +127,11 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     if len(point) != 3:  # noqa: PLR2004
         msg = "Point must be a list [X,Y,Z]"
         raise ValueError(msg)
+    if flat:
+        if len(point)!=2:
+            raise ValueError("Point must be a list [X,Y] when flat is True
+    elif len(point) != 3:
+        raise ValueError("Point must be a list [X,Y,Z]")
     closest_area: ClosestArea = {
         "mapName": map_name,
         # I do not think there is anyway this can actually be None
@@ -135,9 +141,18 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     }
     for area in NAV[map_name]:
         avg_x, avg_y, avg_z = _get_area_center(map_name, area)
-        dist = np.sqrt(
+
+        if flat:
+            dist = np.sqrt(
+            (point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2
+            )
+        else:
+            avg_z = (
+                NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"]
+            ) / 2
+            dist = np.sqrt(
             (point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2 + (point[2] - avg_z) ** 2
-        )
+            )
         if dist < closest_area["distance"]:
             closest_area["areaId"] = area
             closest_area["distance"] = dist
