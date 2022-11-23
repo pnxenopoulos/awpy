@@ -129,7 +129,7 @@ def find_closest_area(map_name: str, point: list[float], flat:bool=False) -> Clo
         raise ValueError(msg)
     if flat:
         if len(point)!=2:
-            raise ValueError("Point must be a list [X,Y] when flat is True
+            raise ValueError("Point must be a list [X,Y] when flat is True")
     elif len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
     closest_area: ClosestArea = {
