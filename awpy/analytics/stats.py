@@ -1,3 +1,24 @@
+"""Functions to calculate statistics for a player or team from a demofile.
+
+    Typical usage example:
+
+    from awpy.parser import DemoParser
+    from awpy.analytics.stats import player_stats
+
+    # Create the parser object.
+    parser = DemoParser(
+        demofile = "astralis-vs-liquid-m2-nuke.dem",
+        demo_id = "AST-TL-BLAST2019-nuke",
+        parse_frames=False,
+    )
+
+    # Parse the demofile, output results to a dictionary of dataframes.
+    data = parser.parse()
+    player_stats_json = player_stats(data["gameRounds"])
+    player_stats_json[76561197999004010]
+
+    https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
+"""
 import pandas as pd
 
 # accuracy
@@ -13,8 +34,14 @@ def player_stats(game_rounds, return_type="json"):
         ct_side = r["ctSide"]
         t_side = r["tSide"]
         for p in ct_side["players"]:
-            if str(p["steamID"]) + " - " + p["playerName"] not in player_statistics:
-                player_statistics[str(p["steamID"]) + " - " + p["playerName"]] = {
+            if (
+                p["playerName"]
+                if p["steamID"] == 0
+                else str(p["steamID"]) not in player_statistics
+            ):
+                player_statistics[
+                    p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
+                ] = {
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
                     "teamName": ct_side["teamName"],
@@ -52,16 +79,22 @@ def player_stats(game_rounds, return_type="json"):
                     "plants": 0,
                     "defuses": 0,
                 }
-                player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
-                    "totalRounds"
-                ] += 1
+                player_statistics[
+                    p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
+                ]["totalRounds"] += 1
             else:
-                player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
-                    "totalRounds"
-                ] += 1
+                player_statistics[
+                    p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
+                ]["totalRounds"] += 1
         for p in t_side["players"]:
-            if str(p["steamID"]) + " - " + p["playerName"] not in player_statistics:
-                player_statistics[str(p["steamID"]) + " - " + p["playerName"]] = {
+            if (
+                p["playerName"]
+                if p["steamID"] == 0
+                else str(p["steamID"]) not in player_statistics
+            ):
+                player_statistics[
+                    p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
+                ] = {
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
                     "teamName": t_side["teamName"],
@@ -98,33 +131,63 @@ def player_stats(game_rounds, return_type="json"):
                     "plants": 0,
                     "defuses": 0,
                 }
-                player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
-                    "totalRounds"
-                ] += 1
+                player_statistics[
+                    p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
+                ]["totalRounds"] += 1
             else:
-                player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
-                    "totalRounds"
-                ] += 1
+                player_statistics[
+                    p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
+                ]["totalRounds"] += 1
         kast = {}
         for p in t_side["players"]:
-            kast[str(p["steamID"]) + " - " + p["playerName"]] = {}
-            kast[str(p["steamID"]) + " - " + p["playerName"]]["k"] = False
-            kast[str(p["steamID"]) + " - " + p["playerName"]]["a"] = False
-            kast[str(p["steamID"]) + " - " + p["playerName"]]["s"] = True
-            kast[str(p["steamID"]) + " - " + p["playerName"]]["t"] = False
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])] = {}
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
+                "k"
+            ] = False
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
+                "a"
+            ] = False
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
+                "s"
+            ] = True
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
+                "t"
+            ] = False
         for p in ct_side["players"]:
-            kast[str(p["steamID"]) + " - " + p["playerName"]] = {}
-            kast[str(p["steamID"]) + " - " + p["playerName"]]["k"] = False
-            kast[str(p["steamID"]) + " - " + p["playerName"]]["a"] = False
-            kast[str(p["steamID"]) + " - " + p["playerName"]]["s"] = True
-            kast[str(p["steamID"]) + " - " + p["playerName"]]["t"] = False
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])] = {}
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
+                "k"
+            ] = False
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
+                "a"
+            ] = False
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
+                "s"
+            ] = True
+            kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
+                "t"
+            ] = False
         # Calculate kills
         for i, k in enumerate(r["kills"]):
-            killer_key = str(k["attackerSteamID"]) + " - " + str(k["attackerName"])
-            victim_key = str(k["victimSteamID"]) + " - " + str(k["victimName"])
-            assister_key = str(k["assisterSteamID"]) + " - " + str(k["assisterName"])
+            killer_key = (
+                str(k["attackerName"])
+                if str(k["attackerSteamID"]) == 0
+                else str(k["attackerSteamID"])
+            )
+            victim_key = (
+                str(k["victimName"])
+                if str(k["victimSteamID"]) == 0
+                else str(k["victimSteamID"])
+            )
+            assister_key = (
+                str(k["assisterName"])
+                if str(k["assisterSteamID"]) == 0
+                else str(k["assisterSteamID"])
+            )
             flashthrower_key = (
-                str(k["flashThrowerSteamID"]) + " - " + str(k["flashThrowerName"])
+                str(k["flashThrowerName"])
+                if str(k["flashThrowerSteamID"]) == 0
+                else str(k["flashThrowerSteamID"])
             )
             if (
                 k["attackerSteamID"]
@@ -159,9 +222,9 @@ def player_stats(game_rounds, return_type="json"):
             ):
                 player_statistics[killer_key]["tradeKills"] += 1
                 kast[
-                    str(r["kills"][i - 1]["victimSteamID"])
-                    + " - "
-                    + r["kills"][i - 1]["victimName"]
+                    str(r["kills"][i - 1]["victimName"])
+                    if str(r["kills"][i - 1]["victimSteamID"]) == 0
+                    else str(r["kills"][i - 1]["victimSteamID"])
                 ]["t"] = True
             if (
                 k["isFirstKill"]
@@ -186,8 +249,16 @@ def player_stats(game_rounds, return_type="json"):
             if k["isSuicide"] and victim_key in player_statistics.keys():
                 player_statistics[victim_key]["suicides"] += 1
         for d in r["damages"]:
-            attacker_key = str(d["attackerSteamID"]) + " - " + str(d["attackerName"])
-            victim_key = str(d["victimSteamID"]) + " - " + str(d["victimName"])
+            attacker_key = (
+                str(d["attackerName"])
+                if str(d["attackerSteamID"]) == 0
+                else str(d["attackerSteamID"])
+            )
+            victim_key = (
+                str(d["victimName"])
+                if str(d["victimSteamID"]) == 0
+                else str(d["victimSteamID"])
+            )
 
             if (
                 d["attackerSteamID"]
@@ -215,15 +286,26 @@ def player_stats(game_rounds, return_type="json"):
                 player_statistics[attacker_key]["utilityDamage"] += d["hpDamageTaken"]
         for w in r["weaponFires"]:
             if (
-                str(w["playerSteamID"]) + " - " + w["playerName"]
-                in player_statistics.keys()
+                w["playerName"]
+                if w["playerSteamID"] == 0
+                else str(w["playerSteamID"]) in player_statistics.keys()
             ):
-                player_statistics[str(w["playerSteamID"]) + " - " + w["playerName"]][
-                    "totalShots"
-                ] += 1
+                player_statistics[
+                    w["playerName"]
+                    if w["playerSteamID"] == 0
+                    else str(w["playerSteamID"])
+                ]["totalShots"] += 1
         for f in r["flashes"]:
-            flasher_key = str(f["attackerSteamID"]) + " - " + f["attackerName"]
-            player_key = str(f["playerSteamID"]) + " - " + f["playerName"]
+            flasher_key = (
+                str(f["attackerName"])
+                if str(f["attackerSteamID"]) == 0
+                else str(f["attackerSteamID"])
+            )
+            player_key = (
+                str(f["playerName"])
+                if str(f["playerSteamID"]) == 0
+                else str(f["playerSteamID"])
+            )
             if f["attackerSteamID"] and flasher_key in player_statistics.keys():
                 if f["attackerSide"] == f["playerSide"]:
                     player_statistics[flasher_key]["teammatesFlashed"] += 1
@@ -231,7 +313,11 @@ def player_stats(game_rounds, return_type="json"):
                     player_statistics[flasher_key]["enemiesFlashed"] += 1
                     player_statistics[flasher_key]["blindTime"] += f["flashDuration"]
         for g in r["grenades"]:
-            thrower_key = str(g["throwerSteamID"]) + " - " + g["throwerName"]
+            thrower_key = (
+                g["throwerName"]
+                if g["throwerSteamID"] == 0
+                else str(g["throwerSteamID"])
+            )
             if g["throwerSteamID"] and thrower_key in player_statistics.keys():
                 if g["grenadeType"] == "Smoke Grenade":
                     player_statistics[thrower_key]["smokesThrown"] += 1
@@ -242,7 +328,9 @@ def player_stats(game_rounds, return_type="json"):
                 if g["grenadeType"] in ["Incendiary Grenade", "Molotov"]:
                     player_statistics[thrower_key]["fireThrown"] += 1
         for b in r["bombEvents"]:
-            player_key = str(b["playerSteamID"]) + " - " + b["playerName"]
+            player_key = (
+                b["playerName"] if b["playerSteamID"] == 0 else str(b["playerSteamID"])
+            )
             if b["playerSteamID"] and player_key in player_statistics.keys():
                 if b["bombAction"] == "plant":
                     player_statistics[player_key]["plants"] += 1
