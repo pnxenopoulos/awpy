@@ -115,7 +115,7 @@ def position_transform_all(map_name, position):
     y = start_y - position[1]
     y /= scale
     z = position[2]
-    if z < MAP_DATA[map_name]["z_cutoff"]:
+    if "z_cutoff" in MAP_DATA[map_name] and z < MAP_DATA[map_name]["z_cutoff"]:
         y += 1024
     return (x, y, z)
 
