@@ -52,7 +52,9 @@ class DemoParser:
         self.demofile = os.path.abspath(demofile)
         self.logger.info("Initialized awpy DemoParser with demofile " + self.demofile)
         if (demo_id is None) | (demo_id == ""):
-            self.demo_id = os.path.splitext(os.path.basename(demofile))[0]
+            self.demo_id = os.path.splitext(
+                os.path.basename(demofile.replace("\\", "/"))
+            )[0]
         else:
             self.demo_id = demo_id
         if outpath is None:
