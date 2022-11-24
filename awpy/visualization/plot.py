@@ -171,7 +171,16 @@ def plot_positions(
 
 
 def plot_round(
-    filename, frames, map_name="de_ancient", map_type="original", dark=False, fps=10
+    filename,
+    frames,
+    map_name="de_ancient",
+    map_type="original",
+    dark=False,
+    fps=10,
+    custom_marker_color_function=None,
+    custom_args=None,
+    annotation_function=None,
+    annotation_args=None,
 ):
     """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
 
@@ -182,6 +191,12 @@ def plot_round(
         map_type (string): "original" or "simpleradar"
         dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
         fps (integer): Number of frames per second in the gif
+        custom_marker_position_function (function): Function to add custom markers and colors to players.
+                Takes as arguments: map_name, frames, i, side, p, positions, colors, markers, custom_args
+        custom_args (any): Additional arguments for custom_marker_position_function
+        annotation_function (function): Function to add custom annotations to gif
+                Takes as arguments:   a, map_name, frames,  i, annotation_args
+        annotation_args (any): Additional arguments for annotation_function
 
     Returns:
         True, saves .gif
@@ -196,6 +211,36 @@ def plot_round(
         markers = []
         # Plot bomb
         # Thanks to https://github.com/pablonieto0981 for adding this code!
+        # Plot players
+        for side in ["ct", "t"]:
+            for p in f[side]["players"]:
+                pos = (
+                    position_transform(map_name, p["x"], "x"),
+                    position_transform(map_name, p["y"], "y"),
+                )
+                if custom_marker_color_function is None:
+                    if side == "ct":
+                        colors.append("cyan")
+                    else:
+                        colors.append("red")
+                    if p["hp"] == 0:
+                        markers.append("x")
+                    else:
+                        markers.append(".")
+                    positions.append(pos)
+                else:
+                    custom_marker_color_function(
+                        map_name,
+                        frames,
+                        i,
+                        side,
+                        p,
+                        positions,
+                        colors,
+                        markers,
+                        custom_args,
+                    )
+
         if f["bomb"]:
             colors.append("orange")
             markers.append("8")
@@ -206,23 +251,7 @@ def plot_round(
             positions.append(pos)
         else:
             pass
-        # Plot players
-        for side in ["ct", "t"]:
-            for p in f[side]["players"]:
-                if side == "ct":
-                    colors.append("cyan")
-                else:
-                    colors.append("red")
-                if p["hp"] == 0:
-                    markers.append("x")
-                else:
-                    markers.append(".")
-                pos = (
-                    position_transform(map_name, p["x"], "x"),
-                    position_transform(map_name, p["y"], "y"),
-                )
-                positions.append(pos)
-        f, _ = plot_positions(
+        f, a = plot_positions(
             positions=positions,
             colors=colors,
             markers=markers,
@@ -230,6 +259,16 @@ def plot_round(
             map_type=map_type,
             dark=dark,
         )
+
+        if annotation_function is not None:
+            a = annotation_function(
+                a,
+                map_name,
+                frames,
+                i,
+                annotation_args,
+            )
+
         image_files.append(f"csgo_tmp/{i}.png")
         f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
