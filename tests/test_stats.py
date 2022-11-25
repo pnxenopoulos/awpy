@@ -40,5 +40,18 @@ class TestStats:
         assert stats["76561197995889730"]["firstDeaths"] == 2
         assert stats["76561197995889730"]["teamName"] == "Team Liquid"
         assert stats["76561197995889730"]["playerName"] == "nitr0"
+
+        assert stats["76561197990682262"]["playerName"] == "Xyp9x"
+        assert stats["76561197990682262"]["1v5attempts"] == 5
+        assert stats["76561197990682262"]["1v5success"] == 0
+        assert stats["76561197990682262"]["1v1attempts"] == 2
+        assert stats["76561197990682262"]["1v1success"] == 2
+        assert stats["76561197990682262"]["5kills"] == 0
+
+        assert stats["76561197987713664"]["playerName"] == "device"
+        assert stats["76561197987713664"]["5kills"] == 1
+        assert stats["76561197987713664"]["tradeKills"] == 5
+        assert stats["76561197987713664"]["tradedDeaths"] == 3
+
         stats_df = player_stats(self.data["gameRounds"], return_type="df")
         assert type(stats_df) == pd.DataFrame

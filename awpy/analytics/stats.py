@@ -27,29 +27,40 @@ import pandas as pd
 # kill stats
 # flash stats
 # econ stats
+def otherSide(side):
+    """Takes a csgo side as input and returns the opposite side in the same formatting
+
+    Args:
+        side (string): A csgo team side (t or ct all upper or all lower case)
+
+    Returns:
+        A string of the opposite team side in the same formatting as the input"""
+    other_side_dict = {"CT": "T", "ct": "t", "T": "CT", "t": "ct"}
+    return other_side_dict[side]
+
+
 def player_stats(game_rounds, return_type="json"):
     player_statistics = {}
     for r in game_rounds:
         # Add players
         kast = {}
+        round_kills = {}
         for side in ["ctSide", "tSide"]:
             for p in r[side]["players"]:
-                if (
-                    p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
-                ) not in player_statistics:
-                    player_statistics[
-                        p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
-                    ] = {
+                player_key = p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
+                if player_key not in player_statistics:
+                    player_statistics[player_key] = {
                         "steamID": p["steamID"],
                         "playerName": p["playerName"],
                         "teamName": r[side]["teamName"],
-                        "isBot": True if p["steamID"] == 0 else False,
+                        "isBot": p["steamID"] == 0,
                         "totalRounds": 0,
                         "kills": 0,
                         "deaths": 0,
                         "kdr": 0,
                         "assists": 0,
                         "tradeKills": 0,
+                        "tradedDeaths": 0,
                         "teamKills": 0,
                         "suicides": 0,
                         "flashAssists": 0,
@@ -76,24 +87,33 @@ def player_stats(game_rounds, return_type="json"):
                         "blindTime": 0,
                         "plants": 0,
                         "defuses": 0,
+                        "0kills": 0,
+                        "1kills": 0,
+                        "2kills": 0,
+                        "3kills": 0,
+                        "4kills": 0,
+                        "5kills": 0,
+                        "1v1attempts": 0,
+                        "1v1success": 0,
+                        "1v2attempts": 0,
+                        "1v2success": 0,
+                        "1v3attempts": 0,
+                        "1v3success": 0,
+                        "1v4attempts": 0,
+                        "1v4success": 0,
+                        "1v5attempts": 0,
+                        "1v5success": 0,
                     }
-                player_statistics[
-                    p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
-                ]["totalRounds"] += 1
-                kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])] = {}
-                kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
-                    "k"
-                ] = False
-                kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
-                    "a"
-                ] = False
-                kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
-                    "s"
-                ] = True
-                kast[p["playerName"] if p["steamID"] == 0 else str(p["steamID"])][
-                    "t"
-                ] = False
+                player_statistics[player_key]["totalRounds"] += 1
+                kast[player_key] = {}
+                kast[player_key]["k"] = False
+                kast[player_key]["a"] = False
+                kast[player_key]["s"] = True
+                kast[player_key]["t"] = False
+                round_kills[player_key] = 0
         # Calculate kills
+        players_killed = {"T": set(), "CT": set()}
+        is_clutching = set()
         for i, k in enumerate(r["kills"]):
             killer_key = (
                 str(k["attackerName"])
@@ -115,6 +135,35 @@ def player_stats(game_rounds, return_type="json"):
                 if str(k["flashThrowerSteamID"]) == 0
                 else str(k["flashThrowerSteamID"])
             )
+            players_killed[k["victimSide"]].add(victim_key)
+            if (
+                len(r[k["victimSide"].lower() + "Side"]["players"])
+                - len(players_killed[k["victimSide"]])
+                == 1
+            ):
+                for player in r[k["victimSide"].lower() + "Side"]["players"]:
+                    clutcher_key = (
+                        str(player["playermName"])
+                        if str(player["steamID"]) == 0
+                        else str(player["steamID"])
+                    )
+                    if (
+                        clutcher_key not in players_killed[k["victimSide"]]
+                        and clutcher_key not in is_clutching
+                    ):
+                        is_clutching.add(clutcher_key)
+                        enemies_alive = len(
+                            r[otherSide(k["victimSide"].lower()) + "Side"]["players"]
+                        ) - len(players_killed[otherSide(k["victimSide"])])
+                        if enemies_alive > 0:
+                            player_statistics[clutcher_key][
+                                f"1v{enemies_alive}attempts"
+                            ] += 1
+                            if r["winningSide"] == k["victimSide"]:
+                                player_statistics[clutcher_key][
+                                    f"1v{enemies_alive}success"
+                                ] += 1
+
             if (
                 k["attackerSteamID"]
                 and not k["isSuicide"]
@@ -122,6 +171,7 @@ def player_stats(game_rounds, return_type="json"):
                 and killer_key in player_statistics.keys()
             ):
                 player_statistics[killer_key]["kills"] += 1
+                round_kills[killer_key] += 1
                 kast[killer_key]["k"] = True
             if victim_key in player_statistics.keys():
                 player_statistics[victim_key]["deaths"] += 1
@@ -147,11 +197,13 @@ def player_stats(game_rounds, return_type="json"):
                 and victim_key in player_statistics.keys()
             ):
                 player_statistics[killer_key]["tradeKills"] += 1
-                kast[
+                traded_key = (
                     str(r["kills"][i - 1]["victimName"])
                     if str(r["kills"][i - 1]["victimSteamID"]) == 0
                     else str(r["kills"][i - 1]["victimSteamID"])
-                ]["t"] = True
+                )
+                kast[traded_key]["t"] = True
+                player_statistics[traded_key]["tradedDeaths"] += 1
             if (
                 k["isFirstKill"]
                 and k["attackerSteamID"]
@@ -262,13 +314,16 @@ def player_stats(game_rounds, return_type="json"):
                     player_statistics[player_key]["plants"] += 1
                 if b["bombAction"] == "defuse":
                     player_statistics[player_key]["defuses"] += 1
-        for player in kast:
-            all_true = False
-            for component in kast[player]:
-                if kast[player][component]:
-                    all_true = True
-            if all_true:
+        for player, components in kast.items():
+            any_true = False
+            for value in components.values():
+                if value:
+                    any_true = True
+            if any_true:
                 player_statistics[player]["kast"] += 1
+        for player, n_kills in round_kills.items():
+            player_statistics[player][f"{n_kills}kills"] += 1
+
     for player in kast:
         player_statistics[player]["kast"] = round(
             100
@@ -276,71 +331,43 @@ def player_stats(game_rounds, return_type="json"):
             / player_statistics[player]["totalRounds"],
             1,
         )
-    for player in player_statistics:
-        player_statistics[player]["blindTime"] = round(
-            player_statistics[player]["blindTime"], 2
-        )
-    for player in player_statistics:
-        player_statistics[player]["kdr"] = round(
-            player_statistics[player]["kills"] / player_statistics[player]["deaths"]
-            if player_statistics[player]["deaths"] != 0
-            else player_statistics[player]["kills"],
+    for player in player_statistics.values():
+        player["blindTime"] = round(player["blindTime"], 2)
+        player["kdr"] = round(
+            player["kills"] / player["deaths"]
+            if player["deaths"] != 0
+            else player["kills"],
             2,
         )
-    for player in player_statistics:
-        player_statistics[player]["adr"] = round(
-            player_statistics[player]["totalDamageGiven"]
-            / player_statistics[player]["totalRounds"],
+        player["adr"] = round(
+            player["totalDamageGiven"] / player["totalRounds"],
             1,
         )
-    for player in player_statistics:
-        player_statistics[player]["accuracy"] = round(
-            player_statistics[player]["shotsHit"]
-            / player_statistics[player]["totalShots"]
-            if player_statistics[player]["totalShots"] != 0
+        player["accuracy"] = round(
+            player["shotsHit"] / player["totalShots"]
+            if player["totalShots"] != 0
             else 0,
             2,
         )
-    for player in player_statistics:
-        player_statistics[player]["hsPercent"] = round(
-            player_statistics[player]["hs"] / player_statistics[player]["kills"]
-            if player_statistics[player]["kills"] != 0
-            else 0,
+        player["hsPercent"] = round(
+            player["hs"] / player["kills"] if player["kills"] != 0 else 0,
             2,
         )
-    for player in player_statistics:
         impact = (
-            2.13
-            * (
-                player_statistics[player]["kills"]
-                / player_statistics[player]["totalRounds"]
-            )
-            + 0.42
-            * (
-                player_statistics[player]["assists"]
-                / player_statistics[player]["totalRounds"]
-            )
+            2.13 * (player["kills"] / player["totalRounds"])
+            + 0.42 * (player["assists"] / player["totalRounds"])
             - 0.41
         )
-        player_statistics[player]["rating"] = (
-            0.0073 * player_statistics[player]["kast"]
-            + 0.3591
-            * (
-                player_statistics[player]["kills"]
-                / player_statistics[player]["totalRounds"]
-            )
-            - 0.5329
-            * (
-                player_statistics[player]["deaths"]
-                / player_statistics[player]["totalRounds"]
-            )
+        player["rating"] = (
+            0.0073 * player["kast"]
+            + 0.3591 * (player["kills"] / player["totalRounds"])
+            - 0.5329 * (player["deaths"] / player["totalRounds"])
             + 0.2372 * (impact)
-            + 0.0032 * (player_statistics[player]["adr"])
+            + 0.0032 * (player["adr"])
             + 0.1587
         )
-        player_statistics[player]["rating"] = round(
-            player_statistics[player]["rating"], 2
-        )
+        player["rating"] = round(player["rating"], 2)
+
     if return_type == "df":
         return (
             pd.DataFrame()
