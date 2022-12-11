@@ -7,11 +7,11 @@ The files that contain the `x`, `y`, and `scale` values for each map will be in 
 
 ## Updating the Map Background Images
 
+SimpleRadar backgrounds can be found [here](https://readtldr.gg/simpleradar).
+
 ### Option 1
 
-Map files created from instructions found in [@zoidbergwill/csgo-overviews](https://github.com/zoidbergwill/csgo-overviews).
-
-SimpleRadar files used with permission. Get SimpleRadar [here](https://readtldr.gg/simpleradar).
+Create the map files using instructions found in [@zoidbergwill/csgo-overviews](https://github.com/zoidbergwill/csgo-overviews). This is how the backgrounds were initially created.
 
 ### Option 2
 
@@ -20,4 +20,8 @@ Load the `.dds` file that can be found in the `C:\Program Files (x86)\Steam\stea
 ### Option 3
 
 Use an online converter on the `.dds` file that can be found in the `C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\csgo\resource\overviews\...` folder like [https://convertio.co/dds-png/](https://convertio.co/dds-png/).
+
+# Disclaimer
+
+SimpleRadar files used with permission. Get SimpleRadar [here](https://readtldr.gg/simpleradar).
 
