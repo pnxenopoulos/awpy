@@ -2,7 +2,7 @@ SIMPLE_WP_MODEL = None
 ADV_WP_MODEL = None
 
 
-def state_win_probability(frame, model):
+def state_win_probability(frame: dict, model) -> dict:
     """Predicts the win probability of a given frame.
 
     Args:
@@ -14,7 +14,7 @@ def state_win_probability(frame, model):
     raise NotImplementedError
 
 
-def round_win_probability(ct_score, t_score, map):
+def round_win_probability(ct_score: dict, t_score: dict, map) -> dict:
     """Estimates of game win probability using information from the HLTV win matrix for a given map and score.
 
     Args:

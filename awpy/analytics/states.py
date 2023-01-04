@@ -1,4 +1,4 @@
-def generate_vector_state(frame, map_name):
+def generate_vector_state(frame: dict, map_name: str) -> dict:
     """Returns a game state in a dictionary format.
 
     Args:
@@ -66,7 +66,7 @@ def generate_vector_state(frame, map_name):
     return game_state
 
 
-def generate_graph_state(frame):
+def generate_graph_state(frame: dict) -> dict:
     """Returns a game state as a graph
 
     Args:
@@ -78,7 +78,7 @@ def generate_graph_state(frame):
     return {"ct": [], "t": [], "global": []}
 
 
-def generate_set_state(frame):
+def generate_set_state(frame: dict) -> dict:
     """Returns a game state as a set
 
     Args:

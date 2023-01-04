@@ -35,7 +35,7 @@ from scipy.spatial import distance
 from shapely.geometry import Polygon
 
 
-def point_in_area(map_name, area_id, point):
+def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
     """Returns if the point is within a nav area for a map.
 
     Args:
@@ -72,7 +72,7 @@ def point_in_area(map_name, area_id, point):
         return False
 
 
-def find_closest_area(map_name, point):
+def find_closest_area(map_name: str, point: list[float]) -> dict:
     """Finds the closest area in the nav mesh. Searches through all the areas by comparing point to area centerpoint.
 
     Args:
@@ -106,7 +106,9 @@ def find_closest_area(map_name, point):
     return closest_area
 
 
-def area_distance(map_name, area_a, area_b, dist_type="graph"):
+def area_distance(
+    map_name: str, area_a: int, area_b: int, dist_type: str = "graph"
+) -> dict:
     """Returns the distance between two areas. Dist type can be graph or geodesic.
 
     Args:
@@ -180,7 +182,9 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
         return distance_obj
 
 
-def point_distance(map_name, point_a, point_b, dist_type="graph"):
+def point_distance(
+    map_name: str, point_a: int, point_b: int, dist_type: str = "graph"
+) -> dict:
     """Returns the distance between two points.
 
     Args:
@@ -227,7 +231,7 @@ def point_distance(map_name, point_a, point_b, dist_type="graph"):
         return distance_obj
 
 
-def generate_position_token(map_name, frame):
+def generate_position_token(map_name: str, frame: dict) -> dict[str, str]:
     """Generates the position token for a game frame.
 
     Args:
@@ -282,7 +286,7 @@ def generate_position_token(map_name, frame):
     return token
 
 
-def tree():
+def tree() -> dict:
     """Builds tree data structure from nested defaultdicts
 
     Args:
@@ -297,7 +301,7 @@ def tree():
     return the_tree()
 
 
-def generate_area_distance_matrix(map_name, save=False):
+def generate_area_distance_matrix(map_name: str, save: bool = False) -> dict:
     """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all area
     Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)]
 
@@ -359,7 +363,7 @@ def generate_area_distance_matrix(map_name, save=False):
     return area_distance_matrix
 
 
-def generate_place_distance_matrix(map_name, save=False):
+def generate_place_distance_matrix(map_name: str, save: bool = False) -> dict:
     """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all regions
     Structures is [map_name][placeid][place2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point,median)]
 
@@ -451,7 +455,7 @@ def generate_place_distance_matrix(map_name, save=False):
     return place_distance_matrix
 
 
-def generate_centroids(map_name):
+def generate_centroids(map_name: str) -> tuple[dict, dict]:
     """For each region in the given map calculates the centroid and a representative point and finds the closest tile for each
 
     Args:
@@ -497,7 +501,7 @@ def generate_centroids(map_name):
     return area_ids_cent, area_ids_rep
 
 
-def stepped_hull(points):
+def stepped_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Takes a set of points and produces an approximation of their orthogonal convex hull
 
     Args:
@@ -542,7 +546,9 @@ def stepped_hull(points):
     return hull
 
 
-def build_stepped_upper(points, max_y):
+def build_stepped_upper(
+    points: list[tuple[float, float]], max_y: float
+) -> list[tuple[float, float]]:
     """Builds builds towards the upper part of the hull based on starting point and maximum y value.
 
     Args:
@@ -564,7 +570,9 @@ def build_stepped_upper(points, max_y):
     return section
 
 
-def build_stepped_lower(points, min_y):
+def build_stepped_lower(
+    points: list[tuple[float, float]], min_y: float
+) -> list[tuple[float, float]]:
     """Builds builds towards the lower part of the hull based on starting point and maximum y value.
 
     Args:
@@ -588,11 +596,11 @@ def build_stepped_lower(points, min_y):
 
 
 def position_state_distance(
-    map_name,
-    position_array_1,
-    position_array_2,
-    distance_type="geodesic",
-):
+    map_name: str,
+    position_array_1: np.ndarray,
+    position_array_2: np.ndarray,
+    distance_type: str = "geodesic",
+) -> float:
     """Calculates a distance between two game states based on player positions
 
     Args:
@@ -716,12 +724,12 @@ def position_state_distance(
 
 
 def token_state_distance(
-    map_name,
-    token_array_1,
-    token_array_2,
-    distance_type="geodesic",
-    reference_point="centroid",
-):
+    map_name: str,
+    token_array_1: np.ndarray,
+    token_array_2: np.ndarray,
+    distance_type: str = "geodesic",
+    reference_point: str = "centroid",
+) -> float:
     """Calculates a distance between two game states based on player positions
 
     Args:
@@ -848,11 +856,11 @@ def token_state_distance(
 
 
 def frame_distance(
-    map_name,
-    frame1,
-    frame2,
-    distance_type="geodesic",
-):
+    map_name: str,
+    frame1: dict,
+    frame2: dict,
+    distance_type: str = "geodesic",
+) -> float:
     """Calculates a distance between two frames based on player positions
 
     Args:
@@ -907,12 +915,12 @@ def frame_distance(
 
 
 def token_distance(
-    map_name,
-    token1,
-    token2,
-    distance_type="geodesic",
-    reference_point="centroid",
-):
+    map_name: str,
+    token1: str,
+    token2: str,
+    distance_type: str = "geodesic",
+    reference_point: str = "centroid",
+) -> float:
     """Calculates a distance between two game states based on position tokens
 
     Args:

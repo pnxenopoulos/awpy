@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 import logging
 import os
 import subprocess
@@ -27,17 +28,17 @@ class DemoParser:
 
     def __init__(
         self,
-        demofile="",
-        outpath=None,
-        demo_id=None,
-        log=False,
-        parse_rate=128,
-        parse_frames=True,
-        parse_kill_frames=False,
-        trade_time=5,
-        dmg_rolled=False,
-        buy_style="hltv",
-        json_indentation=False,
+        demofile: str = "",
+        outpath: Optional[str] = None,
+        demo_id: Optional[str] = None,
+        log: bool = False,
+        parse_rate: int = 128,
+        parse_frames: bool = True,
+        parse_kill_frames: bool = False,
+        trade_time: int = 5,
+        dmg_rolled: bool = False,
+        buy_style: str = "hltv",
+        json_indentation: bool = False,
     ):
         # Set up logger
         logging.basicConfig(
@@ -193,7 +194,7 @@ class DemoParser:
             self.logger.error("No file produced, error in calling Golang")
             self.logger.error(stdout)
 
-    def read_json(self, json_path):
+    def read_json(self, json_path: str):
         """Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.
 
         Args:
@@ -220,7 +221,7 @@ class DemoParser:
         )
         return demo_data
 
-    def parse(self, return_type="json", clean=True):
+    def parse(self, return_type: str = "json", clean: bool = True):
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
@@ -642,17 +643,17 @@ class DemoParser:
 
     def clean_rounds(
         self,
-        remove_no_frames=True,
-        remove_warmups=True,
-        remove_knifes=True,
-        remove_bad_timings=True,
-        remove_excess_players=True,
-        remove_excess_kills=True,
-        remove_bad_endings=True,
-        remove_bad_scoring=True,
-        return_type="json",
-        save_to_json=True,
-    ):
+        remove_no_frames: bool = True,
+        remove_warmups: bool = True,
+        remove_knifes: bool = True,
+        remove_bad_timings: bool = True,
+        remove_excess_players: bool = True,
+        remove_excess_kills: bool = True,
+        remove_bad_endings: bool = True,
+        remove_bad_scoring: bool = True,
+        return_type: str = "json",
+        save_to_json: bool = True,
+    ) -> dict:
         """Cleans a parsed demofile JSON.
 
         Args:

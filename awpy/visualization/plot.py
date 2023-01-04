@@ -9,6 +9,7 @@
 """
 import os
 import shutil
+from typing import Optional, Literal
 import collections
 import numpy as np
 import imageio
@@ -18,7 +19,9 @@ import matplotlib as mpl
 from awpy.data import MAP_DATA
 
 
-def plot_map(map_name="de_dust2", map_type="original", dark=False):
+def plot_map(
+    map_name: str = "de_dust2", map_type: str = "original", dark: bool = False
+) -> tuple:
     """Plots a blank map.
 
     Args:
@@ -73,7 +76,7 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
 
 
 # Position function courtesy of PureSkill.gg
-def position_transform(map_name, position, axis):
+def position_transform(map_name: str, position: float, axis: str) -> Optional[float]:
     """Transforms an X or Y coordinate.
 
     Args:
@@ -98,7 +101,9 @@ def position_transform(map_name, position, axis):
         return None
 
 
-def position_transform_all(map_name, position):
+def position_transform_all(
+    map_name: str, position: tuple[float, float, float]
+) -> tuple[float, float, float]:
     """Transforms an X or Y coordinate.
 
     Args:
@@ -122,15 +127,15 @@ def position_transform_all(map_name, position):
 
 
 def plot_positions(
-    positions=[],
-    colors=[],
-    markers=[],
-    alphas=None,
-    sizes=None,
-    map_name="de_ancient",
-    map_type="original",
-    dark=False,
-    apply_transformation=False,
+    positions: list[list[float]] = [],
+    colors: list[str] = [],
+    markers: list[str] = [],
+    alphas: Optional[list[float]] = None,
+    sizes: Optional[list[float]] = None,
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    apply_transformation: bool = False,
 ):
     """Plots player positions
 
@@ -171,8 +176,13 @@ def plot_positions(
 
 
 def plot_round(
-    filename, frames, map_name="de_ancient", map_type="original", dark=False, fps=10
-):
+    filename: str,
+    frames: list[dict],
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    fps: int = 10,
+) -> Literal[True]:
     """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
 
     Args:
@@ -242,7 +252,12 @@ def plot_round(
 
 
 def plot_nades(
-    rounds, nades=[], side="CT", map_name="de_ancient", map_type="original", dark=False
+    rounds: list[dict],
+    nades: list[str] = [],
+    side: str = "CT",
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
 ):
     """Plots grenade trajectories.
 

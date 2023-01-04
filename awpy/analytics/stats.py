@@ -6,7 +6,7 @@ import pandas as pd
 # kill stats
 # flash stats
 # econ stats
-def player_stats(game_rounds, return_type="json"):
+def player_stats(game_rounds: list[dict], return_type: str = "json") -> dict:
     player_statistics = {}
     for r in game_rounds:
         # Add players

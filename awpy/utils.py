@@ -18,7 +18,7 @@ class AutoVivification(dict):
             return value
 
 
-def check_go_version():
+def check_go_version() -> None:
     """Function to check the Golang version of the current machine, returns True if greater than 1.14.0"""
     try:
         proc = subprocess.Popen(["go", "version"], stdout=subprocess.PIPE)
@@ -37,7 +37,7 @@ def check_go_version():
         return False
 
 
-def is_in_range(value, min, max):
+def is_in_range(value, min, max) -> bool:
     if value >= min and value <= max:
         return True
     else:

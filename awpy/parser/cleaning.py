@@ -7,7 +7,9 @@ import pandas as pd
 import textdistance
 
 
-def associate_entities(game_names=[], entity_names=[], metric="lcss"):
+def associate_entities(
+    game_names: list[str] = [], entity_names: list[str] = [], metric: str = "lcss"
+) -> dict:
     """A function to return a dict of associated entities. Accepts
 
     Args:
@@ -60,7 +62,9 @@ def associate_entities(game_names=[], entity_names=[], metric="lcss"):
     return entities
 
 
-def replace_entities(df, col_name, entity_dict):
+def replace_entities(
+    df: pd.DataFrame, col_name: str, entity_dict: dict
+) -> pd.DataFrame:
     """A function to replace values in a Pandas df column given an entity dict, as created in associate_entities()
 
     Args:
