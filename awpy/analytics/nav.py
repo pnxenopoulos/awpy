@@ -599,7 +599,9 @@ def position_state_distance(
     Args:
         map_name (string): Map to search
         position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+                                        Alternatively the array can have shape (2|1, 5, 1) where the last value gives the area_id. Used only with geodesic and graph distance
         position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
+                                        Alternatively the array can have shape (2|1, 5, 1) where the last value gives the area_id. Used only with geodesic and graph distance
         distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
 
     Returns:
@@ -625,6 +627,7 @@ def position_state_distance(
     if position_array_1.shape[1] < position_array_2.shape[1]:
         position_array_1, position_array_2 = position_array_2, position_array_1
     # Pre compute the area names for each player's position
+    # If the x,y and z coordinate are given
     if distance_type in ["geodesic", "graph"] and position_array_1.shape[-1] == 3:
         areas = {1: defaultdict(dict), 2: defaultdict(dict)}
         for team in range(position_array_1.shape[0]):
@@ -672,8 +675,10 @@ def position_state_distance(
                     # The underlying graph is directed (There is a short path to drop down a ledge but a long one is needed to get back up)
                     # So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative
                     area1 = (
+                        # either take values precomputed here
                         areas[1][team][player1]
                         if position_array_1.shape[-1] == 3
+                        # or if only one position value is given that should be the area id already
                         else int(position_array_1[team][player1][0])
                     )
                     area2 = (
