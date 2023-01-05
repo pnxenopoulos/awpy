@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Optional
 import pandas as pd
 import numpy as np
 from scipy.spatial import distance
@@ -11,7 +12,7 @@ from pathlib import Path
 PATH = os.path.join(os.path.dirname(__file__), "")
 
 # Create nav tile info
-nav_dfs = []
+nav_dfs: list[pd.DataFrame] = []
 for file in os.listdir(PATH + "nav/"):
     if file.endswith(".csv"):
         df = pd.read_csv(PATH + "nav/" + file)
@@ -70,8 +71,10 @@ for m in NAV:
 
 # Open map data
 with open(Path(PATH + "map/map_data.json"), encoding="utf8") as f:
-    MAP_DATA = json.load(f)
+    MAP_DATA: dict = json.load(f)
 
+PLACE_DIST_MATRIX: Optional[dict]
+AREA_DIST_MATRIX: Optional[dict]
 PLACE_DIST_MATRIX = {}
 AREA_DIST_MATRIX = {}
 for file in os.listdir(PATH + "nav/"):

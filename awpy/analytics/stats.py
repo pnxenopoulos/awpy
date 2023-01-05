@@ -105,7 +105,7 @@ def player_stats(game_rounds: list[dict], return_type: str = "json") -> dict:
                 player_statistics[str(p["steamID"]) + " - " + p["playerName"]][
                     "totalRounds"
                 ] += 1
-        kast = {}
+        kast: dict[str, dict[str, bool]] = {}
         for p in t_side["players"]:
             kast[str(p["steamID"]) + " - " + p["playerName"]] = {}
             kast[str(p["steamID"]) + " - " + p["playerName"]]["k"] = False

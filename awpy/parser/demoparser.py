@@ -52,7 +52,7 @@ class DemoParser:
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
         self.logger.info("Initialized awpy DemoParser with demofile " + self.demofile)
-        if (demo_id is None) | (demo_id == ""):
+        if not demo_id:
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
             self.demo_id = demo_id
@@ -124,7 +124,7 @@ class DemoParser:
         # Set parse error to False
         self.parse_error = False
 
-    def parse_demo(self):
+    def parse_demo(self) -> None:
         """Parse a demofile using the Go script parse_demo.go -- this function needs the .demofile to be set in the class, and the file needs to exist.
 
         Returns:
@@ -184,7 +184,7 @@ class DemoParser:
             stdout=subprocess.PIPE,
             cwd=path,
         )
-        stdout = proc.stdout.read().splitlines()
+        stdout = proc.stdout.read().splitlines() if proc.stdout is not None else None
         self.output_file = self.demo_id + ".json"
         if os.path.isfile(self.outpath + "/" + self.output_file):
             self.logger.info("Wrote demo parse output to " + self.output_file)
@@ -221,7 +221,7 @@ class DemoParser:
         )
         return demo_data
 
-    def parse(self, return_type: str = "json", clean: bool = True):
+    def parse(self, return_type: str = "json", clean: bool = True) -> dict:
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
@@ -254,7 +254,7 @@ class DemoParser:
             self.logger.error("JSON couldn't be returned")
             raise AttributeError("No JSON parsed! Error in producing JSON.")
 
-    def parse_json_to_df(self):
+    def parse_json_to_df(self) -> dict:
         """Returns JSON into dictionary where keys correspond to data frames
 
         Returns:
@@ -334,7 +334,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_frames(self):
+    def _parse_frames(self) -> pd.DataFrame:
         """Returns frames as a Pandas dataframe
 
         Returns:
@@ -379,7 +379,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_player_frames(self):
+    def _parse_player_frames(self) -> pd.DataFrame:
         """Returns player frames as a Pandas dataframe.
 
         Returns:
@@ -421,7 +421,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_rounds(self):
+    def _parse_rounds(self) -> pd.DataFrame:
         """Returns rounds as a Pandas dataframe
 
         Returns:
@@ -473,7 +473,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_kills(self):
+    def _parse_kills(self) -> pd.DataFrame:
         """Returns kills as either a Pandas dataframe
 
         Returns:
@@ -501,7 +501,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_weapon_fires(self):
+    def _parse_weapon_fires(self) -> pd.DataFrame:
         """Returns weapon fires as either a list or Pandas dataframe
 
         Returns:
@@ -529,7 +529,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_damages(self):
+    def _parse_damages(self) -> pd.DataFrame:
         """Returns damages as a Pandas dataframe
 
         Returns:
@@ -557,7 +557,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_grenades(self):
+    def _parse_grenades(self) -> pd.DataFrame:
         """Returns grenades as a Pandas dataframe
 
         Returns:
@@ -585,7 +585,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_bomb_events(self):
+    def _parse_bomb_events(self) -> pd.DataFrame:
         """Returns bomb events as a Pandas dataframe
 
         Returns:
@@ -613,7 +613,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def _parse_flashes(self):
+    def _parse_flashes(self) -> pd.DataFrame:
         """Returns flashes as a Pandas dataframe
 
         Returns:
@@ -670,6 +670,7 @@ class DemoParser:
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
+            ValueError: Raises a ValueError if the return type is neither 'json' nor 'df'
 
         Returns:
             dict: A dictionary of the cleaned demo.
@@ -701,6 +702,9 @@ class DemoParser:
                 demo_data = self.parse_json_to_df()
                 self.logger.info("Returned cleaned dataframe output")
                 return demo_data
+            raise ValueError(
+                f"Invalid return_type of {return_type}. Use 'json' or 'df' instead!"
+            )
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
@@ -709,12 +713,12 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def write_json(self):
+    def write_json(self) -> None:
         """Rewrite the JSON file"""
         with open(self.outpath + "/" + self.output_file, "w", encoding="utf8") as fp:
             json.dump(self.json, fp, indent=(1 if self.json_indentation else None))
 
-    def renumber_rounds(self):
+    def renumber_rounds(self) -> None:
         """Renumbers the rounds.
 
         Raises:
@@ -731,7 +735,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def rescore_rounds(self):
+    def rescore_rounds(self) -> None:
         """Rescore the rounds based on round end reason.
 
         Raises:
@@ -777,7 +781,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_bad_scoring(self):
+    def remove_bad_scoring(self) -> None:
         """Removes rounds where the scoring is bad.
 
         We loop through the rounds:
@@ -834,7 +838,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_rounds_with_no_frames(self):
+    def remove_rounds_with_no_frames(self) -> None:
         """Removes rounds with no frames
 
         Raises:
@@ -859,7 +863,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_excess_players(self):
+    def remove_excess_players(self) -> None:
         """Removes rounds where there are more than 5 players on a side.
 
         Raises:
@@ -895,7 +899,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_warmups(self):
+    def remove_warmups(self) -> None:
         """Removes warmup rounds.
 
         Raises:
@@ -950,7 +954,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_knife_rounds(self):
+    def remove_knife_rounds(self) -> None:
         """Removes knife rounds.
 
         Raises:
@@ -977,7 +981,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_excess_kill_rounds(self):
+    def remove_excess_kill_rounds(self) -> None:
         """Removes rounds with more than 10 kills.
 
         Raises:
@@ -998,7 +1002,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_time_rounds(self):
+    def remove_time_rounds(self) -> None:
         """Remove rounds with odd round timings.
 
         Raises:

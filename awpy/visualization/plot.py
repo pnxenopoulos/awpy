@@ -21,7 +21,7 @@ from awpy.data import MAP_DATA
 
 def plot_map(
     map_name: str = "de_dust2", map_type: str = "original", dark: bool = False
-) -> tuple:
+) -> tuple[plt.figure, plt.axes]:
     """Plots a blank map.
 
     Args:
@@ -76,7 +76,7 @@ def plot_map(
 
 
 # Position function courtesy of PureSkill.gg
-def position_transform(map_name: str, position: float, axis: str) -> Optional[float]:
+def position_transform(map_name: str, position: float, axis: str) -> float:
     """Transforms an X or Y coordinate.
 
     Args:
@@ -86,6 +86,9 @@ def position_transform(map_name: str, position: float, axis: str) -> Optional[fl
 
     Returns:
         float
+
+    Raises:
+        ValueError: Raises a ValueError if axis not 'x' or 'y'
     """
     start = MAP_DATA[map_name][axis]
     scale = MAP_DATA[map_name]["scale"]
@@ -97,8 +100,7 @@ def position_transform(map_name: str, position: float, axis: str) -> Optional[fl
         pos = start - position
         pos /= scale
         return pos
-    else:
-        return None
+    raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
 
 
 def position_transform_all(
@@ -127,7 +129,7 @@ def position_transform_all(
 
 
 def plot_positions(
-    positions: list[list[float]] = [],
+    positions: list[tuple[float, float]] = [],
     colors: list[str] = [],
     markers: list[str] = [],
     alphas: Optional[list[float]] = None,
@@ -136,7 +138,7 @@ def plot_positions(
     map_type: str = "original",
     dark: bool = False,
     apply_transformation: bool = False,
-):
+) -> tuple[plt.figure, plt.axes]:
     """Plots player positions
 
     Args:
@@ -232,7 +234,7 @@ def plot_round(
                     position_transform(map_name, p["y"], "y"),
                 )
                 positions.append(pos)
-        f, _ = plot_positions(
+        fig, _ = plot_positions(
             positions=positions,
             colors=colors,
             markers=markers,
@@ -241,7 +243,7 @@ def plot_round(
             dark=dark,
         )
         image_files.append(f"csgo_tmp/{i}.png")
-        f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
+        fig.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = []
     for file in image_files:
@@ -258,7 +260,7 @@ def plot_nades(
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
-):
+) -> tuple[plt.figure, plt.axes]:
     """Plots grenade trajectories.
 
     Args:

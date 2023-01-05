@@ -18,12 +18,17 @@ class AutoVivification(dict):
             return value
 
 
-def check_go_version() -> None:
-    """Function to check the Golang version of the current machine, returns True if greater than 1.14.0"""
+def check_go_version() -> bool:
+    """Function to check the Golang version of the current machine, returns True if greater than 1.14.0
+
+    Returns:
+        bool whether the found go version is recent enough"""
     try:
         proc = subprocess.Popen(["go", "version"], stdout=subprocess.PIPE)
-        parsed_resp = proc.stdout.read().splitlines()
-        if len(parsed_resp) != 1:
+        parsed_resp = (
+            proc.stdout.read().splitlines() if proc.stdout is not None else None
+        )
+        if parsed_resp is None or len(parsed_resp) != 1:
             raise ValueError("Error finding Go version")
         else:
             go_version_text = parsed_resp[0].decode("utf-8")

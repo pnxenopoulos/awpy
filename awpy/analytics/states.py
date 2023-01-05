@@ -8,7 +8,7 @@ def generate_vector_state(frame: dict, map_name: str) -> dict:
     Returns:
         A dict with keys for each feature.
     """
-    game_state = {}
+    game_state: dict = {}
     game_state["mapName"] = map_name
     game_state["secondsSincePhaseStart"] = frame["seconds"]
     game_state["bombPlanted"] = frame["bombPlanted"]

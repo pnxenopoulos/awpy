@@ -1,6 +1,7 @@
 """ Data cleaning functions
 """
 
+from typing import Optional, Any
 import difflib
 import numpy as np
 import pandas as pd
@@ -8,7 +9,9 @@ import textdistance
 
 
 def associate_entities(
-    game_names: list[str] = [], entity_names: list[str] = [], metric: str = "lcss"
+    game_names: list[str] = [],
+    entity_names: list = [],
+    metric: str = "lcss",
 ) -> dict:
     """A function to return a dict of associated entities. Accepts
 
@@ -29,7 +32,7 @@ def associate_entities(
     elif metric.lower() == "jaro":
         dist_metric = textdistance.jaro.distance
     elif metric.lower() == "difflib":
-        entities = {}
+        entities: dict[Optional[str], Any] = {}
         for gn in game_names:
             if gn is not None and gn is not np.nan:
                 closest_name = difflib.get_close_matches(
