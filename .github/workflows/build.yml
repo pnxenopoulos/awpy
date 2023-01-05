@@ -4,7 +4,7 @@ name: build
 
 on:
   push:
-    branches: [type-hinting]
+    branches: [main]
   pull_request:
     branches: [main]
 
