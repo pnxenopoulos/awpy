@@ -168,7 +168,7 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
                     player_statistics[killer_key]["teamKills"] += 1
                 if k["isHeadshot"]:
                     player_statistics[killer_key]["hs"] += 1
-            # Purely victim relatedstats:
+            # Purely victim related stats:
             if (
                 victim_key in player_statistics.keys()
                 and k["victimSide"] in active_sides

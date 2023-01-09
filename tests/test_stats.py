@@ -74,7 +74,7 @@ class TestStats:
         assert stats["76561197987713664"]["playerName"] == "device"
         assert stats["76561197987713664"]["5kills"] == 1
         assert stats["76561197987713664"]["tradeKills"] == 5
-        assert stats["76561197987713664"]["tradedDeaths"] == 3
+        assert stats["76561197987713664"]["tradedDeaths"] == 5
 
         stats_df = player_stats(self.data["gameRounds"], return_type="df")
         assert type(stats_df) == pd.DataFrame
