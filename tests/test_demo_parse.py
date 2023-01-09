@@ -1,9 +1,10 @@
 import json
 import os
+import logging
+from unittest.mock import patch
 import pandas as pd
 import pytest
 import requests
-
 
 from awpy.parser import DemoParser
 
@@ -128,29 +129,42 @@ class TestDemoParser:
         """Tests if log file is created"""
         assert self.parser.logger.name == "awpy"
 
-    def test_parse_opts(self):
+    def test_parse_opts(self, caplog):
         """Tests parsing options"""
+        caplog.set_level(logging.WARNING)
         self.parser_opts = DemoParser(
             demofile="default.dem",
-            log=False,
+            log=True,
             demo_id="test",
-            trade_time=7,
+            trade_time=8,
             buy_style="hltv",
+            dmg_rolled=True,
+            json_indentation=True,
         )
-        assert self.parser_opts.trade_time == 7
+        assert self.parser_opts.trade_time == 8
         assert self.parser_opts.buy_style == "hltv"
-        assert self.parser_opts.dmg_rolled is False
         assert self.parser_opts.parse_frames is True
+        assert self.parser_opts.dmg_rolled is True
+        assert self.parser_opts.json_indentation is True
         assert self.parser_opts.parse_kill_frames is False
+        assert (
+            "Trade time of 8 is rather long. Consider a value between 4-7."
+            in caplog.text
+        )
         self.bad_parser_opts = DemoParser(
             demofile="default.dem",
-            log=False,
+            log=True,
             demo_id="test",
             trade_time=-2,
             buy_style="test",
         )
         assert self.bad_parser_opts.trade_time == 5
+
         assert self.bad_parser_opts.buy_style == "hltv"
+        assert (
+            "Trade time can't be negative, setting to default value of 5 seconds."
+            in caplog.text
+        )
 
     def test_read_json_bad_path(self):
         """Tests if the read_json fails on bad path"""
@@ -158,17 +172,48 @@ class TestDemoParser:
         with pytest.raises(FileNotFoundError):
             p.read_json("bad_json.json")
 
+    @patch("os.path.isfile")
+    def test_parse_demo_error(self, isfile_mock):
+        """Tests if parser sets parse_error correctly
+        if not outputfile can be found"""
+        isfile_mock.return_value = False
+        self.parser.parse_demo()
+        assert self.parser.parse_error is True
+
+    @patch.object(DemoParser, "read_json")
+    @patch.object(DemoParser, "parse_demo")
+    def test_parse_error(self, parse_mock, read_mock):
+        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        parse_mock.side_effects = [None]
+        read_mock.side_effects = [None]
+        error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
+        error_parser.json = None
+        with pytest.raises(AttributeError):
+            _ = error_parser.parse(clean=False)
+
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
         assert isinstance(output_json, dict)
         assert os.path.exists("default.json")
         assert self.parser.output_file == "default.json"
+        assert self.parser.parse_error is False
+
+    @patch("awpy.parser.demoparser.check_go_version")
+    def test_bad_go_version(self, go_version_mock):
+        """Tests parse_demo fails on bad go version"""
+        go_version_mock.return_value = False
+        with pytest.raises(ValueError):
+            self.parser.parse_demo()
 
     def test_parse_valve_matchmaking(self):
         """Tests if demos parse correctly"""
         self.valve_mm = DemoParser(
-            demofile="valve_matchmaking.dem", log=False, parse_rate=256
+            demofile="valve_matchmaking.dem",
+            log=False,
+            parse_rate=256,
+            dmg_rolled=True,
+            json_indentation=True,
         )
         self.valve_mm_data = self.valve_mm.parse()
         assert len(self.valve_mm_data["gameRounds"]) == 25  # 26
@@ -342,6 +387,25 @@ class TestDemoParser:
         self.round_clean_parser.remove_time_rounds()
         assert len(self.round_clean_data["gameRounds"]) == 24
 
+    def test_clean_return_type(self):
+        """Tests clean_rounds has correct return type."""
+        self.clean_return_parser = DemoParser(
+            demofile="default.dem", log=False, parse_rate=256
+        )
+        _ = self.clean_return_parser.parse()
+        df_return = self.clean_return_parser.clean_rounds(return_type="df")
+        assert isinstance(df_return["rounds"], pd.DataFrame)
+        assert isinstance(df_return["kills"], pd.DataFrame)
+        assert isinstance(df_return["damages"], pd.DataFrame)
+        assert isinstance(df_return["grenades"], pd.DataFrame)
+        assert isinstance(df_return["flashes"], pd.DataFrame)
+        assert isinstance(df_return["weaponFires"], pd.DataFrame)
+        assert isinstance(df_return["bombEvents"], pd.DataFrame)
+        assert isinstance(df_return["frames"], pd.DataFrame)
+        assert isinstance(df_return["playerFrames"], pd.DataFrame)
+        dict_return = self.clean_return_parser.clean_rounds(return_type="json")
+        assert isinstance(dict_return, dict)
+
     def test_player_clean(self):
         """Tests that remove excess players is working."""
         self.player_clean_parser = DemoParser(
@@ -369,11 +433,14 @@ class TestDemoParser:
 
     def test_clean_no_json(self):
         """Tests cleaning the last round"""
-        self.end_round_parser = DemoParser(
+        self.no_json_parser = DemoParser(
             demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
         )
         with pytest.raises(AttributeError):
-            self.end_round_parser.clean_rounds()
+            self.no_json_parser.clean_rounds()
+        self.no_json_parser.json = None
+        with pytest.raises(AttributeError):
+            self.no_json_parser.clean_rounds()
 
     def test_esea_ot_demo(self):
         """Tests an ESEA demo with OT rounds"""

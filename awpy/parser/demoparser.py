@@ -85,6 +85,7 @@ class DemoParser:
         self.logger.info("Setting parse rate to %s", str(self.parse_rate))
 
         # Handle trade time
+        self.trade_time = trade_time
         if trade_time <= 0:
             self.logger.warning(
                 "Trade time can't be negative, setting to default value of 5 seconds."
@@ -95,8 +96,7 @@ class DemoParser:
                 "Trade time of %s is rather long. Consider a value between 4-7.",
                 str(trade_time),
             )
-        else:
-            self.trade_time = trade_time
+
         self.logger.info("Setting trade time to %s", str(self.trade_time))
 
         # Handle buy style

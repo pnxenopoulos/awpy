@@ -25,4 +25,4 @@ def round_win_probability(ct_score, t_score, map):
     Returns:
         A dictionary containing the CT game win, T game win and Draw probabilities
     """
-    return NotImplementedError
+    raise NotImplementedError

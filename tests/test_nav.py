@@ -16,6 +16,8 @@ from awpy.analytics.nav import (
     token_state_distance,
     frame_distance,
     token_distance,
+    generate_area_distance_matrix,
+    generate_place_distance_matrix,
 )
 
 
@@ -283,12 +285,24 @@ class TestNav:
             },
         }
         with pytest.raises(ValueError):
-            generate_position_token("map_name", frame)
+            generate_position_token(map_name, frame)
 
     def test_tree(self):
         """Tests tree"""
         my_tree = tree()
         my_tree["1"]["A"][666][("test", 42)] = "Should work"
+
+    def test_generate_area_distance_matrix(self):
+        """Tests generate_area_distance_matrix"""
+        # Need to mock awpy.data.NAV to properly test this
+        with pytest.raises(ValueError):
+            _ = generate_area_distance_matrix("de_does_not_exist")
+
+    def test_generate_place_distance_matrix(self):
+        """Tests generate_place_distance_matrix"""
+        # Need to mock awpy.data.NAV to properly test this
+        with pytest.raises(ValueError):
+            _ = generate_place_distance_matrix("de_does_not_exist")
 
     def test_generate_centroids(self):
         """Tests generate centroids"""
@@ -668,7 +682,7 @@ class TestNav:
                 "de_ancient",
                 token_array1,
                 token_array2,
-                distance_type="distance_tpye_does_not_exist",
+                distance_type="distance_type_does_not_exist",
             )
         with pytest.raises(ValueError):
             token_state_distance(
@@ -884,6 +898,82 @@ class TestNav:
         dist = token_state_distance("de_nuke", token_array1, token_array2)
         assert isinstance(dist, float)
         assert round(dist, 2) == 4252.04
+
+        token_array1 = np.array(
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                2.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ],
+            dtype=int,
+        )
+        token_array2 = np.array(
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ],
+            dtype=int,
+        )
+        assert token_state_distance(
+            "de_nuke", token_array1, token_array2, distance_type="euclidean"
+        ) == token_state_distance(
+            "de_nuke", token_array2, token_array1, distance_type="euclidean"
+        )
 
     def test_frame_distance(self):
         """Tests frame distance"""

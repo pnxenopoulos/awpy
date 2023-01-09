@@ -308,6 +308,9 @@ def generate_area_distance_matrix(map_name, save=False):
 
     Returns:
         Tree structure containing distances for all area pairs on all maps
+
+    Raises:
+        ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
     # Initialize the dict structure
     area_distance_matrix = tree()
@@ -370,6 +373,9 @@ def generate_place_distance_matrix(map_name, save=False):
 
     Returns:
         Tree structure containing distances for all place pairs on all maps
+
+    Raises:
+        ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")

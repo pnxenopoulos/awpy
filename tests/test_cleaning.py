@@ -57,6 +57,34 @@ class TestCleaning:
         with pytest.raises(ValueError):
             associate_entities(a, b, metric="bad_metric")
 
+    def test_empty_input(self):
+        """Tests empty input"""
+        a = None
+        b = None
+        c = associate_entities(a, b, "difflib")
+        assert len(c) == 1
+        assert c[None] is None
+        a = [None]
+        b = [None]
+        c = associate_entities(a, b, "difflib")
+        assert len(c) == 1
+        assert c[None] is None
+        a = ["Test"]
+        b = []
+        c = associate_entities(a, b, "difflib")
+        assert len(c) == 2
+        assert c["Test"] is None
+        a = [None]
+        b = [None]
+        c = associate_entities(a, b, "hamming")
+        assert len(c) == 1
+        assert c[None] is None
+        a = [""]
+        b = [""]
+        c = associate_entities(a, b, "hamming")
+        assert len(c) == 2
+        assert c[""] is None
+
     def test_entity_replace(self):
         """Tests if entity replacement works for a dataframe."""
         df = pd.DataFrame(

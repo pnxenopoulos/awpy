@@ -1,3 +1,7 @@
+"""Functions to to generate game stats based on snapshots from a demofile.
+"""
+
+
 def generate_vector_state(frame, map_name):
     """Returns a game state in a dictionary format.
 
@@ -36,6 +40,7 @@ def generate_vector_state(frame, map_name):
             game_state["ctEq"] += p["equipmentValue"]
             game_state["ctUtility"] += p["totalUtility"]
             game_state["defusers"] += p["hasDefuse"]
+            # This does not seem to work correctly
             if p["isInBombZone"]:
                 game_state["ctBombZone"] += 1
 
@@ -58,6 +63,7 @@ def generate_vector_state(frame, map_name):
             game_state["tHelmet"] += p["hasHelmet"]
             game_state["tEq"] += p["equipmentValue"]
             game_state["tUtility"] += p["totalUtility"]
+            # This does not seem to work correctly
             if p["isInBombZone"]:
                 game_state["tBombZone"] += 1
             if p["hasBomb"]:
