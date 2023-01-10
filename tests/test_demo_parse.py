@@ -172,25 +172,6 @@ class TestDemoParser:
         with pytest.raises(FileNotFoundError):
             p.read_json("bad_json.json")
 
-    @patch("os.path.isfile")
-    def test_parse_demo_error(self, isfile_mock):
-        """Tests if parser sets parse_error correctly
-        if not outputfile can be found"""
-        isfile_mock.return_value = False
-        self.parser.parse_demo()
-        assert self.parser.parse_error is True
-
-    @patch.object(DemoParser, "read_json")
-    @patch.object(DemoParser, "parse_demo")
-    def test_parse_error(self, parse_mock, read_mock):
-        """Tests if parser raises an AttributeError if the json attribute does not get set"""
-        parse_mock.side_effects = [None]
-        read_mock.side_effects = [None]
-        error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
-        error_parser.json = None
-        with pytest.raises(AttributeError):
-            _ = error_parser.parse(clean=False)
-
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
@@ -199,21 +180,12 @@ class TestDemoParser:
         assert self.parser.output_file == "default.json"
         assert self.parser.parse_error is False
 
-    @patch("awpy.parser.demoparser.check_go_version")
-    def test_bad_go_version(self, go_version_mock):
-        """Tests parse_demo fails on bad go version"""
-        go_version_mock.return_value = False
-        with pytest.raises(ValueError):
-            self.parser.parse_demo()
-
     def test_parse_valve_matchmaking(self):
         """Tests if demos parse correctly"""
         self.valve_mm = DemoParser(
             demofile="valve_matchmaking.dem",
             log=False,
             parse_rate=256,
-            dmg_rolled=True,
-            json_indentation=True,
         )
         self.valve_mm_data = self.valve_mm.parse()
         assert len(self.valve_mm_data["gameRounds"]) == 25  # 26
@@ -390,7 +362,11 @@ class TestDemoParser:
     def test_clean_return_type(self):
         """Tests clean_rounds has correct return type."""
         self.clean_return_parser = DemoParser(
-            demofile="default.dem", log=False, parse_rate=256
+            demofile="default.dem",
+            log=False,
+            parse_rate=256,
+            dmg_rolled=True,
+            json_indentation=True,
         )
         _ = self.clean_return_parser.parse()
         df_return = self.clean_return_parser.clean_rounds(return_type="df")
@@ -432,7 +408,7 @@ class TestDemoParser:
         assert len(self.end_round_data["gameRounds"]) == 30
 
     def test_clean_no_json(self):
-        """Tests cleaning the last round"""
+        """Tests cleaning when parser.json is not set or None"""
         self.no_json_parser = DemoParser(
             demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
         )
@@ -449,3 +425,29 @@ class TestDemoParser:
         )
         self.esea_ot_data = self.esea_ot_parser.parse()
         assert len(self.esea_ot_data["gameRounds"]) == 35
+
+    @patch("os.path.isfile")
+    def test_parse_demo_error(self, isfile_mock):
+        """Tests if parser sets parse_error correctly
+        if not outputfile can be found"""
+        isfile_mock.return_value = False
+        self.parser.parse_demo()
+        assert self.parser.parse_error is True
+
+    @patch.object(DemoParser, "read_json")
+    @patch.object(DemoParser, "parse_demo")
+    def test_parse_error(self, parse_mock, read_mock):
+        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        parse_mock.side_effects = [None]
+        read_mock.side_effects = [None]
+        error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
+        error_parser.json = None
+        with pytest.raises(AttributeError):
+            _ = error_parser.parse(clean=False)
+
+    @patch("awpy.parser.demoparser.check_go_version")
+    def test_bad_go_version(self, go_version_mock):
+        """Tests parse_demo fails on bad go version"""
+        go_version_mock.return_value = False
+        with pytest.raises(ValueError):
+            self.parser.parse_demo()
