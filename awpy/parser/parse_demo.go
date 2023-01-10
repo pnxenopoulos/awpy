@@ -265,6 +265,7 @@ type KillAction struct {
 	PlayerTradedName    *string  `json:"playerTradedName"`
 	PlayerTradedTeam    *string  `json:"playerTradedTeam"`
 	PlayerTradedSteamID *int64   `json:"playerTradedSteamID"`
+	PlayerTradedSide    *string  `json:"playerTradedSide"`
 	Weapon              string   `json:"weapon"`
 	WeaponClass         string   `json:"weaponClass"`
 }
@@ -2221,6 +2222,7 @@ func main() {
 					currentKill.PlayerTradedName = currentRound.Kills[i].VictimName
 					currentKill.PlayerTradedSteamID = currentRound.Kills[i].VictimSteamID
 					currentKill.PlayerTradedTeam = currentRound.Kills[i].VictimTeam
+					currentKill.PlayerTradedSide = currentRound.Kills[i].VictimSide
 				}
 			}
 		}

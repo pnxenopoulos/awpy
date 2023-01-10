@@ -150,20 +150,6 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
                     player_statistics[killer_key]["kills"] += 1
                     round_kills[killer_key] += 1
                     kast[killer_key]["k"] = True
-
-                if k["isTrade"]:
-                    player_statistics[killer_key]["tradeKills"] += 1
-                    # The general trade logic here and in parse_demo.go
-                    # is not ideal. Trades are not counted if there is any
-                    # unrelated kill between the death and trade
-                    traded_key = (
-                        k["playerTradedName"]
-                        if str(k["playerTradedSteamID"]) == 0
-                        else str(k["playerTradedSteamID"])
-                    )
-                    kast[traded_key]["t"] = True
-                    player_statistics[traded_key]["tradedDeaths"] += 1
-
                 if k["isTeamkill"]:
                     player_statistics[killer_key]["teamKills"] += 1
                 if k["isHeadshot"]:
@@ -206,6 +192,40 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
                                 player_statistics[clutcher_key][
                                     f"1v{enemies_alive}success"
                                 ] += 1
+            if k["isTrade"]:
+                # A trade is always onto an enemy
+                # If your teammate kills someone and then you kill them
+                # -> that is not a trade kill for you
+                # If you kill someone and then yourself
+                # -> that is not a trade kill for you
+                if (
+                    k["attackerSide"] != k["victimSide"]
+                    and k["attackerSide"] in active_sides
+                    and killer_key in player_statistics.keys()
+                    and k["attackerSteamID"]
+                ):
+                    player_statistics[killer_key]["tradeKills"] += 1
+                # Enemies CAN trade your own death
+                # If you force an enemy to teamkill their mate after your death
+                # -> thats a traded death for you
+                # If you force your killer to kill themselves (in their own molo/nade/fall)
+                # -> that is a traded death for you
+                traded_key = (
+                    k["playerTradedName"]
+                    if str(k["playerTradedSteamID"]) == 0
+                    else str(k["playerTradedSteamID"])
+                )
+                # In most cases the traded player is on the same team as the trader
+                # However in the above scenarios the opposite can be the case
+                # So it is not enough to know that the trading player and
+                # their side is initialized
+                if (
+                    k["playerTradedSide"] in active_sides
+                    and traded_key in player_statistics.keys()
+                    and k["playerTradedSteamID"]
+                ):
+                    kast[traded_key]["t"] = True
+                    player_statistics[traded_key]["tradedDeaths"] += 1
             if (
                 k["assisterSteamID"]
                 and k["assisterTeam"] != k["victimTeam"]
