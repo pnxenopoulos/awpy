@@ -28,46 +28,28 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
     Returns:
         matplotlib fig and ax
     """
+    base_path = os.path.join(os.path.dirname(__file__), f"""../data/map/{map_name}""")
     if map_type == "original":
-        map_bg = imageio.imread(
-            os.path.join(os.path.dirname(__file__), "")
-            + f"""../data/map/{map_name}.png"""
-        )
+        map_bg = imageio.imread(base_path + ".png")
         if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
-            map_bg_lower = imageio.imread(
-                os.path.join(os.path.dirname(__file__), "")
-                + f"""../data/map/{map_name}_lower.png"""
-            )
+            map_bg_lower = imageio.imread(base_path + "_lower.png")
             map_bg = np.concatenate([map_bg, map_bg_lower])
     else:
         try:
             col = "light"
             if dark:
                 col = "dark"
-            map_bg = imageio.imread(
-                os.path.join(os.path.dirname(__file__), "")
-                + f"""../data/map/{map_name}_{col}.png"""
-            )
+            map_bg = imageio.imread(base_path + f"_{col}.png")
             if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
-                map_bg_lower = imageio.imread(
-                    os.path.join(os.path.dirname(__file__), "")
-                    + f"""../data/map/{map_name}_lower_{col}.png"""
-                )
+                map_bg_lower = imageio.imread(base_path + f"_lower_{col}.png")
                 map_bg = np.concatenate([map_bg, map_bg_lower])
         except FileNotFoundError:
-            map_bg = imageio.imread(
-                os.path.join(os.path.dirname(__file__), "")
-                + f"""../data/map/{map_name}.png"""
-            )
+            map_bg = imageio.imread(base_path + ".png")
             if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
-                map_bg_lower = imageio.imread(
-                    os.path.join(os.path.dirname(__file__), "")
-                    + f"""../data/map/{map_name}_lower.png"""
-                )
+                map_bg_lower = imageio.imread(base_path + "_lower.png")
                 map_bg = np.concatenate([map_bg, map_bg_lower])
     fig, ax = plt.subplots()
     ax.imshow(map_bg, zorder=0)
-    # ax.imshow(map_bg, zorder=0)
     return fig, ax
 
 

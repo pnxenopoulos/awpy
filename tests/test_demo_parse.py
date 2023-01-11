@@ -252,26 +252,6 @@ class TestDemoParser:
         with pytest.raises(ValueError):
             d = self.parser.parse(return_type="i_am_wrong")
 
-    def test_no_json(self):
-        """Tests parsing with no json"""
-        self.parser_new = DemoParser(demofile="default.dem", log=False, parse_rate=256)
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_bomb_events()
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_flashes()
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_damages()
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_grenades()
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_kills()
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_frames()
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_player_frames()
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_weapon_fires()
-
     def test_bot_name(self):
         """Tests if bot naming is correct (brought up by Charmees).
         Original error had "Troy" (bot) showing up instead of "Charmees" (player)
@@ -390,6 +370,64 @@ class TestDemoParser:
         self.player_clean_data = self.player_clean_parser.parse()
         self.player_clean_parser.remove_excess_players()
         assert len(self.player_clean_data["gameRounds"]) == 23  # 28
+        test_json = {
+            "gameRounds": [
+                # Both players None -> remove
+                {"frames": [{"ct": {"players": None}, "t": {"players": None}}]},
+                # One None the other valid -> keep
+                {"frames": [{"ct": {"players": None}, "t": {"players": [1, 2, 3]}}]},
+                # One none the other invalid -> remove
+                {
+                    "frames": [
+                        {"ct": {"players": None}, "t": {"players": [1, 2, 3, 4, 5, 6]}}
+                    ]
+                },
+                # One None the other valid -> keep
+                {"frames": [{"ct": {"players": [1, 2, 3]}, "t": {"players": None}}]},
+                # Both valid -> keep
+                {
+                    "frames": [
+                        {"ct": {"players": [1, 2, 3]}, "t": {"players": [1, 2, 3]}}
+                    ]
+                },
+                # First valid second invalid -> remove
+                {
+                    "frames": [
+                        {
+                            "ct": {"players": [1, 2, 3]},
+                            "t": {"players": [1, 2, 3, 4, 5, 6]},
+                        }
+                    ]
+                },
+                # One none the other invalid -> remove
+                {
+                    "frames": [
+                        {"ct": {"players": [1, 2, 3, 4, 5, 6]}, "t": {"players": None}}
+                    ]
+                },
+                # First valid second invalid -> remove
+                {
+                    "frames": [
+                        {
+                            "ct": {"players": [1, 2, 3, 4, 5, 6]},
+                            "t": {"players": [1, 2, 3]},
+                        }
+                    ]
+                },
+                # Both invalid -> remove
+                {
+                    "frames": [
+                        {
+                            "ct": {"players": [1, 2, 3, 4, 5, 6]},
+                            "t": {"players": [1, 2, 3, 4, 5, 6]},
+                        }
+                    ]
+                },
+            ],
+        }
+        self.player_clean_parser.json = test_json
+        self.player_clean_parser.remove_excess_players()
+        assert len(self.player_clean_parser.json["gameRounds"]) == 3
 
     def test_zero_kills(self):
         """Tests a demo that raised many errors"""
@@ -434,20 +472,63 @@ class TestDemoParser:
         self.parser.parse_demo()
         assert self.parser.parse_error is True
 
-    @patch.object(DemoParser, "read_json")
-    @patch.object(DemoParser, "parse_demo")
-    def test_parse_error(self, parse_mock, read_mock):
-        """Tests if parser raises an AttributeError if the json attribute does not get set"""
-        parse_mock.side_effects = [None]
-        read_mock.side_effects = [None]
-        error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
-        error_parser.json = None
-        with pytest.raises(AttributeError):
-            _ = error_parser.parse(clean=False)
-
     @patch("awpy.parser.demoparser.check_go_version")
     def test_bad_go_version(self, go_version_mock):
         """Tests parse_demo fails on bad go version"""
         go_version_mock.return_value = False
         with pytest.raises(ValueError):
             self.parser.parse_demo()
+
+    def test_parse_error(self):
+        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
+        error_parser.json = None
+        with patch.object(error_parser, "read_json") as read_mock:
+            with patch.object(error_parser, "parse_demo") as parse_mock:
+                with pytest.raises(AttributeError):
+                    error_parser.parse(clean=False)
+                assert parse_mock.call_count == 1
+                assert read_mock.call_count == 1
+
+    def test_no_json(self):
+        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        no_json_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
+        # Json ist set but falsy
+        no_json_parser.json = None
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_frames()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_player_frames()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_rounds()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_weapon_fires()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_kills()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_damages()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_grenades()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_bomb_events()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_flashes()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_bad_scoring()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_rounds_with_no_frames()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_excess_players()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_end_round()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_warmups()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_knife_rounds()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_excess_kill_rounds()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_time_rounds()
+        no_json_parser.json = {"gameRounds": None}
+        with pytest.raises(AttributeError):
+            no_json_parser.renumber_rounds()

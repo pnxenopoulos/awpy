@@ -41,6 +41,7 @@ def generate_vector_state(frame, map_name):
             game_state["ctUtility"] += p["totalUtility"]
             game_state["defusers"] += p["hasDefuse"]
             # This does not seem to work correctly
+            # It is never filled in parse_demo.go
             if p["isInBombZone"]:
                 game_state["ctBombZone"] += 1
 
@@ -64,6 +65,7 @@ def generate_vector_state(frame, map_name):
             game_state["tEq"] += p["equipmentValue"]
             game_state["tUtility"] += p["totalUtility"]
             # This does not seem to work correctly
+            # It is never filled in parse_demo.go
             if p["isInBombZone"]:
                 game_state["tBombZone"] += 1
             if p["hasBomb"]:

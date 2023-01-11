@@ -79,8 +79,8 @@ class TestCleaning:
         c = associate_entities(a, b, "hamming")
         assert len(c) == 1
         assert c[None] is None
-        a = [""]
-        b = [""]
+        a = ["", "Test"]
+        b = []
         c = associate_entities(a, b, "hamming")
         assert len(c) == 2
         assert c[""] is None

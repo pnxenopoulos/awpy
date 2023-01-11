@@ -13,6 +13,8 @@ class DemoParser:
     Attributes:
         demofile (string): A string denoting the path to the demo file, which ends in .dem
         demo_id (string): A unique demo name/game id. Default is inferred from demofile name
+        output_file (str): The output file name. Set to 'demoid'+".json"
+        outpath (str): The path where the json file will be saved to
         log (boolean): A boolean indicating if the log should print to stdout.
         parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
         parse_frames (bool): Flag if you want to parse frames (trajectory data) or not
@@ -20,6 +22,8 @@ class DemoParser:
         trade_time (int): Length of the window for a trade (in seconds). Default is 5.
         dmg_rolled (bool): Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
         buy_style (string): Buy style string, one of "hltv" or "csgo"
+        json_indentation (bool): Whether the json file should be pretty printed with indentation (larger, more readable) or not (smaller, less human readable)
+        json (Optional[dict]): Dictionary containing the parsed json file
 
     Raises:
         ValueError: Raises a ValueError if the Golang version is lower than 1.17
@@ -50,16 +54,21 @@ class DemoParser:
 
         # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
         self.demofile = os.path.abspath(demofile)
+
         self.logger.info("Initialized awpy DemoParser with demofile %s", self.demofile)
         if (demo_id is None) | (demo_id == ""):
             self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
         else:
             self.demo_id = demo_id
+
+        self.logger.info("Setting demo id to %s", self.demo_id)
+
+        self.output_file = self.demo_id + ".json"
+
         if outpath is None:
             self.outpath = os.path.abspath(os.getcwd())
         else:
             self.outpath = os.path.abspath(outpath)
-        self.logger.info("Setting demo id to %s", self.demo_id)
 
         # Handle parse rate. If the parse rate is less than 64, likely to be slow
         if parse_rate < 1 or not isinstance(parse_rate, int):
@@ -123,6 +132,9 @@ class DemoParser:
         # Set parse error to False
         self.parse_error = False
 
+        # Initialize json attribute as None
+        self.json = None
+
     def parse_demo(self):
         """Parse a demofile using the Go script parse_demo.go -- this function needs the .demofile to be set in the class, and the file needs to exist.
 
@@ -184,7 +196,6 @@ class DemoParser:
             cwd=path,
         )
         stdout = proc.stdout.read().splitlines()
-        self.output_file = self.demo_id + ".json"
         if os.path.isfile(self.outpath + "/" + self.output_file):
             self.logger.info("Wrote demo parse output to %s", self.output_file)
             self.parse_error = False
@@ -808,12 +819,24 @@ class DemoParser:
                     elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
                         cleaned_rounds.append(r)
                     else:
-                        OT_Scores = [19, 23, 27, 31, 35, 39, 43, 47]
-                        for s in OT_Scores:
-                            if (r["endCTScore"] == s) & (r["endTScore"] < s - 1):
-                                cleaned_rounds.append(r)
-                            elif (r["endTScore"] == s) & (r["endCTScore"] < s - 1):
-                                cleaned_rounds.append(r)
+                        # OT win scores are of the type:
+                        # 15 + (4xN) with N a natural numbers (1, 2, 3, ...)
+                        # So 19, 23, 27, ...
+                        # So if you substract 15 from an OT winning round the number is divisible by 4
+                        # OT_Scores = [19, 23, 27, 31, 35, 39, 43, 47]
+                        if (
+                            (r["endCTScore"] - 15) % 4 == 0
+                            and r["endTScore"] < r["endCTScore"]
+                        ) or (
+                            (r["endTScore"] - 15) % 4 == 0
+                            and r["endCTScore"] < r["endTScore"]
+                        ):
+                            cleaned_rounds.append(r)
+                        # for s in OT_Scores:
+                        #     if (r["endCTScore"] == s) & (r["endTScore"] < s - 1):
+                        #         cleaned_rounds.append(r)
+                        #     elif (r["endTScore"] == s) & (r["endCTScore"] < s - 1):
+                        #         cleaned_rounds.append(r)
                 else:
                     lookback_round = self.json["gameRounds"][i - 1]
                     lookback_round_total = (
