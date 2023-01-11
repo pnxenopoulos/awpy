@@ -1,8 +1,13 @@
 import sys
+import os
+import math
+from collections import defaultdict
+from unittest.mock import patch
 import pytest
 import numpy as np
 
-from awpy.data import NAV
+
+from awpy.data import NAV, create_nav_graphs
 from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
@@ -23,6 +28,268 @@ from awpy.analytics.nav import (
 
 class TestNav:
     """Class to test the nav-related functions."""
+
+    def setup_class(self):
+        """Setup class by defining custom NAV and NAV_GRAPHS"""
+        # Create mock NAV mesh like this:
+        # Each area is described in the format areadId(x,y)
+        # Arrows indicate (directed) edges
+        # 1(2,0) -> 2(3,0)
+        #  ^
+        #  |
+        #  v
+        # 3(2,-2)
+        self.fake_nav = {
+            "de_mock": {
+                1: {
+                    "areaName": "Place1",
+                    "northWestX": 2,
+                    "northWestY": 0,
+                    "northWestZ": 0,
+                    "southEastX": 2,
+                    "southEastY": 0,
+                    "southEastZ": 0,
+                },
+                2: {
+                    "areaName": "Place2",
+                    "northWestX": 3,
+                    "northWestY": 0,
+                    "northWestZ": 0,
+                    "southEastX": 3,
+                    "southEastY": 0,
+                    "southEastZ": 0,
+                },
+                3: {
+                    "areaName": "Place3",
+                    "northWestX": 2,
+                    "northWestY": -2,
+                    "northWestZ": 0,
+                    "southEastX": 2,
+                    "southEastY": -2,
+                    "southEastZ": 0,
+                },
+            }
+        }
+
+        self.dir = os.path.join(os.getcwd(), "nav")
+        if not os.path.exists(self.dir):
+            os.makedirs(self.dir)
+        else:
+            raise AssertionError(
+                "This test needs to be executed in a directory where it can savely create and delte a 'nav' subdir!"
+            )
+        self.map_name = "de_mock"
+        self.file_name = f"{self.map_name}.txt"
+        with open(os.path.join(self.dir, self.file_name), "w", encoding="utf8") as f:
+            f.write("1,2\n")
+            f.write("1,3\n")
+            f.write("3,1\n")
+
+        self.fake_graph = create_nav_graphs(
+            self.fake_nav, os.path.join(os.getcwd(), "")
+        )
+
+        self.expected_area_matrix = {
+            "1": {
+                "1": {"euclidean": 0, "graph": 0, "geodesic": 0},
+                "2": {"euclidean": 1.0, "graph": 1.0, "geodesic": 1.0},
+                "3": {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
+            },
+            "2": {
+                "1": {
+                    "euclidean": 1.0,
+                    "graph": float("inf"),
+                    "geodesic": float("inf"),
+                },
+                "2": {"euclidean": 0, "graph": 0, "geodesic": 0},
+                "3": {
+                    "euclidean": math.sqrt(5),
+                    "graph": float("inf"),
+                    "geodesic": float("inf"),
+                },
+            },
+            "3": {
+                "1": {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
+                "2": {"euclidean": math.sqrt(5), "graph": 2.0, "geodesic": 3.0},
+                "3": {"euclidean": 0, "graph": 0, "geodesic": 0},
+            },
+        }
+        self.expected_place_matrix = {
+            "Place1": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 1.0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 1.0,
+                    },
+                    "geodesic": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 1.0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 2.0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 1.0,
+                    },
+                    "geodesic": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 2.0,
+                    },
+                },
+            },
+            "Place2": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 1.0,
+                    },
+                    "graph": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": float("inf"),
+                    },
+                    "geodesic": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": float("inf"),
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": math.sqrt(5),
+                        "representative_point": math.sqrt(5),
+                        "median_dist": math.sqrt(5),
+                    },
+                    "graph": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": float("inf"),
+                    },
+                    "geodesic": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": float("inf"),
+                    },
+                },
+            },
+            "Place3": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 2.0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 1.0,
+                    },
+                    "geodesic": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 2.0,
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": math.sqrt(5),
+                        "representative_point": math.sqrt(5),
+                        "median_dist": math.sqrt(5),
+                    },
+                    "graph": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 2.0,
+                    },
+                    "geodesic": {
+                        "centroid": 3.0,
+                        "representative_point": 3.0,
+                        "median_dist": 3.0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+            },
+        }
+
+    def teardown_class(self):
+        """Clean up by delete created file and directory"""
+        self.fake_nav = None
+        self.fake_graph = None
+        self.expected_area_matrix = None
+        self.expected_place_matrix = None
+        for file in os.listdir(self.dir):
+            if (
+                file == self.file_name
+                or file == f"area_distance_matrix_{self.map_name}.json"
+                or file == f"place_distance_matrix_{self.map_name}.json"
+            ):
+                os.remove(os.path.join(self.dir, file))
+        os.rmdir(self.dir)
 
     def test_point_in_area(self):
         """Tests point in area"""
@@ -295,12 +562,54 @@ class TestNav:
     def test_generate_area_distance_matrix(self):
         """Tests generate_area_distance_matrix"""
         # Need to mock awpy.data.NAV to properly test this
+        def default_to_regular(d):
+            if isinstance(d, defaultdict):
+                d = {k: default_to_regular(v) for k, v in d.items()}
+            return d
+
+        with patch("awpy.analytics.nav.NAV", self.fake_nav):
+            with patch("awpy.analytics.nav.NAV_GRAPHS", self.fake_graph):
+                with patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
+                    result_matrix = generate_area_distance_matrix(
+                        map_name="de_mock", save=True
+                    )
+
+        assert isinstance(result_matrix, dict)
+        assert os.path.exists(
+            os.path.join(self.dir, "area_distance_matrix_de_mock.json")
+        )
+
+        assert self.expected_area_matrix == result_matrix
         with pytest.raises(ValueError):
             _ = generate_area_distance_matrix("de_does_not_exist")
 
     def test_generate_place_distance_matrix(self):
         """Tests generate_place_distance_matrix"""
         # Need to mock awpy.data.NAV to properly test this
+        with patch("awpy.analytics.nav.NAV", self.fake_nav):
+            with patch("awpy.analytics.nav.NAV_GRAPHS", self.fake_graph):
+                with patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
+                    with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
+                        result_matrix_1 = generate_place_distance_matrix(
+                            map_name="de_mock", save=True
+                        )
+                    with patch(
+                        "awpy.analytics.nav.AREA_DIST_MATRIX",
+                        {self.map_name: self.expected_area_matrix},
+                    ):
+                        result_matrix_2 = generate_place_distance_matrix(
+                            map_name="de_mock", save=False
+                        )
+
+        assert isinstance(result_matrix_1, dict)
+        assert os.path.exists(
+            os.path.join(self.dir, f"place_distance_matrix_{self.map_name}.json")
+        )
+
+        assert isinstance(result_matrix_2, dict)
+
+        assert self.expected_place_matrix == result_matrix_1
+        assert self.expected_place_matrix == result_matrix_2
         with pytest.raises(ValueError):
             _ = generate_place_distance_matrix("de_does_not_exist")
 
@@ -437,6 +746,11 @@ class TestNav:
         )
         assert isinstance(dist, float)
         assert dist == 1
+        with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
+            new_dist = position_state_distance(
+                "de_ancient", pos_state1, pos_state2, distance_type="graph"
+            )
+            assert new_dist == dist
 
         pos_state1 = np.array([[[-500, -850, 100]]])
         pos_state2 = np.array([[[-550, -100, 130], [-500, -850, 100]]])
@@ -706,7 +1020,7 @@ class TestNav:
             "de_ancient", token_array1, token_array2, distance_type="geodesic"
         )
         assert isinstance(dist, float)
-        assert round(dist, 2) == 903.71
+        assert round(dist, 2) == 817.53
 
         token_array1 = np.array(
             [
@@ -794,6 +1108,15 @@ class TestNav:
         )
         assert isinstance(dist, float)
         assert round(dist, 2) == 336.60
+        with patch("awpy.analytics.nav.PLACE_DIST_MATRIX", {}):
+            new_dist = token_state_distance(
+                "de_dust2",
+                token_array1,
+                token_array2,
+                distance_type="euclidean",
+                reference_point="representative_point",
+            )
+            assert new_dist == dist
         dist = token_state_distance(
             "de_dust2",
             token_array1,
@@ -802,7 +1125,7 @@ class TestNav:
             reference_point="representative_point",
         )
         assert isinstance(dist, float)
-        assert round(dist, 2) == 782.12
+        assert round(dist, 2) == 838.02
 
         token_array1 = np.array(
             [
@@ -897,7 +1220,7 @@ class TestNav:
         assert round(dist, 2) == 2272.12
         dist = token_state_distance("de_nuke", token_array1, token_array2)
         assert isinstance(dist, float)
-        assert round(dist, 2) == 4252.04
+        assert round(dist, 2) == 4031.26
 
         token_array1 = np.array(
             [

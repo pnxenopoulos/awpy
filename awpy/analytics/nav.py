@@ -22,6 +22,7 @@
     https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb
 """
 import sys
+import os
 import itertools
 from collections import defaultdict
 from statistics import mean, median
@@ -30,9 +31,10 @@ import json
 from sympy.utilities.iterables import multiset_permutations
 import networkx as nx
 import numpy as np
-from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
 from scipy.spatial import distance
 from shapely.geometry import Polygon
+
+from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
 
 
 def point_in_area(map_name, area_id, point):
@@ -106,7 +108,7 @@ def find_closest_area(map_name, point):
 
 
 def area_distance(map_name, area_a, area_b, dist_type="graph"):
-    """Returns the distance between two areas. Dist type can be graph or geodesic.
+    """Returns the distance between two areas. Dist type can be graph, geodesic or euclidean.
 
     Args:
         map_name (string): Map to search
@@ -152,31 +154,32 @@ def area_distance(map_name, area_a, area_b, dist_type="graph"):
             distance_obj["distance"] = float("inf")
             distance_obj["areas"] = []
         return distance_obj
-    if dist_type == "euclidean":
-        area_a_x = (
-            NAV[map_name][area_a]["southEastX"] + NAV[map_name][area_a]["northWestX"]
-        ) / 2
-        area_a_y = (
-            NAV[map_name][area_a]["southEastY"] + NAV[map_name][area_a]["northWestY"]
-        ) / 2
-        area_a_z = (
-            NAV[map_name][area_a]["southEastZ"] + NAV[map_name][area_a]["northWestZ"]
-        ) / 2
-        area_b_x = (
-            NAV[map_name][area_b]["southEastX"] + NAV[map_name][area_b]["northWestX"]
-        ) / 2
-        area_b_y = (
-            NAV[map_name][area_b]["southEastY"] + NAV[map_name][area_b]["northWestY"]
-        ) / 2
-        area_b_z = (
-            NAV[map_name][area_b]["southEastZ"] + NAV[map_name][area_b]["northWestZ"]
-        ) / 2
-        distance_obj["distance"] = math.sqrt(
-            (area_a_x - area_b_x) ** 2
-            + (area_a_y - area_b_y) ** 2
-            + (area_a_z - area_b_z) ** 2
-        )
-        return distance_obj
+    # redundant due to asserting that only ["graph", "geodesic", "euclidean"] are valid
+    # and if checks that it is neither 'graph' nor 'geodesic'
+    # if dist_type == "euclidean":
+    area_a_x = (
+        NAV[map_name][area_a]["southEastX"] + NAV[map_name][area_a]["northWestX"]
+    ) / 2
+    area_a_y = (
+        NAV[map_name][area_a]["southEastY"] + NAV[map_name][area_a]["northWestY"]
+    ) / 2
+    area_a_z = (
+        NAV[map_name][area_a]["southEastZ"] + NAV[map_name][area_a]["northWestZ"]
+    ) / 2
+    area_b_x = (
+        NAV[map_name][area_b]["southEastX"] + NAV[map_name][area_b]["northWestX"]
+    ) / 2
+    area_b_y = (
+        NAV[map_name][area_b]["southEastY"] + NAV[map_name][area_b]["northWestY"]
+    ) / 2
+    area_b_z = (
+        NAV[map_name][area_b]["southEastZ"] + NAV[map_name][area_b]["northWestZ"]
+    ) / 2
+    distance_obj["distance"] = math.sqrt(
+        (area_a_x - area_b_x) ** 2
+        + (area_a_y - area_b_y) ** 2
+        + (area_a_z - area_b_z) ** 2
+    )
     return distance_obj
 
 
@@ -320,7 +323,6 @@ def generate_area_distance_matrix(map_name, save=False):
     # And there over each area
     for area1 in areas:
         # Precompute the tile center
-        area1 = int(area1)
         area1_x = (
             NAV[map_name][area1]["southEastX"] + NAV[map_name][area1]["northWestX"]
         ) / 2
@@ -332,7 +334,6 @@ def generate_area_distance_matrix(map_name, save=False):
         ) / 2
         # Loop over every pair of areas
         for area2 in areas:
-            area2 = int(area2)
             # # Compute center of second area
             area2_x = (
                 NAV[map_name][area2]["southEastX"] + NAV[map_name][area2]["northWestX"]
@@ -344,20 +345,24 @@ def generate_area_distance_matrix(map_name, save=False):
                 NAV[map_name][area2]["southEastZ"] + NAV[map_name][area2]["northWestZ"]
             ) / 2
             # Calculate basic euclidean distance
-            area_distance_matrix[area1][area2]["euclidean"] = math.sqrt(
+            area_distance_matrix[str(area1)][str(area2)]["euclidean"] = math.sqrt(
                 (area1_x - area2_x) ** 2
                 + (area1_y - area2_y) ** 2
                 + (area1_z - area2_z) ** 2
             )
             # Also get graph distance
             graph = area_distance(map_name, area1, area2, dist_type="graph")
-            area_distance_matrix[area1][area2]["graph"] = graph["distance"]
+            area_distance_matrix[str(area1)][str(area2)]["graph"] = graph["distance"]
             # And geodesic like distance
             geodesic = area_distance(map_name, area1, area2, dist_type="geodesic")
-            area_distance_matrix[area1][area2]["geodesic"] = geodesic["distance"]
+            area_distance_matrix[str(area1)][str(area2)]["geodesic"] = geodesic[
+                "distance"
+            ]
     if save:
         with open(
-            PATH + f"nav/area_distance_matrix_{map_name}.json", "w", encoding="utf8"
+            os.path.join(PATH, f"nav/area_distance_matrix_{map_name}.json"),
+            "w",
+            encoding="utf8",
         ) as json_file:
             json.dump(area_distance_matrix, json_file)
     return area_distance_matrix
@@ -393,7 +398,7 @@ def generate_place_distance_matrix(map_name, save=False):
         for place1, centroid1 in centroids.items():
             for place2, centroid2 in centroids.items():
                 # If precomputed values do not exist calculate them
-                if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
+                if map_name not in AREA_DIST_MATRIX:
                     # Distances between the centroids for each named place
                     place_distance_matrix[place1][place2][dist_type][
                         "centroid"
@@ -452,7 +457,9 @@ def generate_place_distance_matrix(map_name, save=False):
                     ] = median(connections)
     if save:
         with open(
-            PATH + f"nav/place_distance_matrix_{map_name}.json", "w", encoding="utf8"
+            os.path.join(PATH, f"nav/place_distance_matrix_{map_name}.json"),
+            "w",
+            encoding="utf8",
         ) as json_file:
             json.dump(place_distance_matrix, json_file)
     return place_distance_matrix
@@ -492,12 +499,22 @@ def generate_centroids(map_name):
         # Get the (approximate) orthogonal convex hull
         hull = np.array(stepped_hull(area_points[area]))
         # Get the centroids and rep. point of the hull
-        my_centroid = list(np.array(Polygon(hull).centroid.coords)[0]) + [
-            mean(z_s[area])
-        ]
-        rep_point = list(np.array(Polygon(hull).representative_point().coords)[0]) + [
-            mean(z_s[area])
-        ]
+        try:
+            my_polygon = Polygon(hull)
+            my_centroid = list(np.array(my_polygon.centroid.coords)[0]) + [
+                mean(z_s[area])
+            ]
+            rep_point = list(np.array(my_polygon.representative_point().coords)[0]) + [
+                mean(z_s[area])
+            ]
+        except ValueError:  # A LinearRing must have at least 3 coordinate tuples
+            my_centroid = [
+                mean([x for (x, y) in hull]),
+                mean([y for (x, y) in hull]),
+                mean(z_s[area]),
+            ]
+            rep_point = my_centroid
+
         # Find the closest tile for these points
         area_ids_cent[area] = find_closest_area(map_name, my_centroid)["areaId"]
         area_ids_rep[area] = find_closest_area(map_name, rep_point)["areaId"]
@@ -692,7 +709,7 @@ def position_state_distance(
                         if position_array_2.shape[-1] == 3
                         else int(position_array_2[team][player2][0])
                     )
-                    if AREA_DIST_MATRIX is None or map_name not in AREA_DIST_MATRIX:
+                    if map_name not in AREA_DIST_MATRIX:
                         this_dist = min(
                             area_distance(
                                 map_name,
