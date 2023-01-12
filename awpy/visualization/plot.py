@@ -9,14 +9,14 @@
 """
 import os
 import shutil
-from typing import Optional, Literal
-import collections
+from typing import Optional, Literal, cast
 import numpy as np
 import imageio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from awpy.data import MAP_DATA
+from awpy.types import GameFrame, GameRound
 
 
 def plot_map(
@@ -71,7 +71,6 @@ def plot_map(
                 map_bg = np.concatenate([map_bg, map_bg_lower])
     fig, ax = plt.subplots()
     ax.imshow(map_bg, zorder=0)
-    # ax.imshow(map_bg, zorder=0)
     return fig, ax
 
 
@@ -179,7 +178,7 @@ def plot_positions(
 
 def plot_round(
     filename: str,
-    frames: list[dict],
+    frames: list[GameFrame],
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
@@ -220,6 +219,7 @@ def plot_round(
             pass
         # Plot players
         for side in ["ct", "t"]:
+            side = cast(Literal["ct", "t"], side)
             for p in f[side]["players"]:
                 if side == "ct":
                     colors.append("cyan")
@@ -254,7 +254,7 @@ def plot_round(
 
 
 def plot_nades(
-    rounds: list[dict],
+    rounds: list[GameRound],
     nades: list[str] = [],
     side: str = "CT",
     map_name: str = "de_ancient",

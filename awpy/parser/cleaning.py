@@ -9,8 +9,8 @@ import textdistance
 
 
 def associate_entities(
-    game_names: list[str] = [],
-    entity_names: list = [],
+    game_names: list[Optional[str]] = [],
+    entity_names: list[str] = [],
     metric: str = "lcss",
 ) -> dict:
     """A function to return a dict of associated entities. Accepts

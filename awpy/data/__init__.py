@@ -1,12 +1,13 @@
 import json
 import os
-from typing import Optional
+from typing import Optional, TypedDict
 import pandas as pd
 import numpy as np
 from scipy.spatial import distance
 import networkx as nx
 
 from awpy.utils import transform_csv_to_json
+from awpy.types import AreaMatrix, PlaceMatrix
 from pathlib import Path
 
 PATH = os.path.join(os.path.dirname(__file__), "")
@@ -20,10 +21,24 @@ for file in os.listdir(PATH + "nav/"):
 
 NAV_CSV = pd.concat(nav_dfs, ignore_index=True)
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
-NAV = transform_csv_to_json(NAV_CSV)
+
+
+class Area(TypedDict):
+    """TypedDict for area entries in NAV"""
+
+    areaName: str
+    northWestX: float
+    northWestY: float
+    northWestZ: float
+    southEastX: float
+    southEastY: float
+    southEastZ: float
+
+
+NAV: dict[str, dict[int, Area]] = transform_csv_to_json(NAV_CSV)
 
 # Create nav graphs
-NAV_GRAPHS = {}
+NAV_GRAPHS: dict[str, nx.DiGraph] = {}
 for m in NAV:
     G = nx.DiGraph()
     for a in NAV[m].keys():
@@ -73,8 +88,8 @@ for m in NAV:
 with open(Path(PATH + "map/map_data.json"), encoding="utf8") as f:
     MAP_DATA: dict = json.load(f)
 
-PLACE_DIST_MATRIX: Optional[dict]
-AREA_DIST_MATRIX: Optional[dict]
+PLACE_DIST_MATRIX: Optional[dict[str, PlaceMatrix]]
+AREA_DIST_MATRIX: Optional[dict[str, AreaMatrix]]
 PLACE_DIST_MATRIX = {}
 AREA_DIST_MATRIX = {}
 for file in os.listdir(PATH + "nav/"):

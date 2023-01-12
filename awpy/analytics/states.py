@@ -1,4 +1,7 @@
-def generate_vector_state(frame: dict, map_name: str) -> dict:
+from awpy.types import GameFrame
+
+
+def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
     """Returns a game state in a dictionary format.
 
     Args:
@@ -66,7 +69,7 @@ def generate_vector_state(frame: dict, map_name: str) -> dict:
     return game_state
 
 
-def generate_graph_state(frame: dict) -> dict:
+def generate_graph_state(frame: GameFrame) -> dict:
     """Returns a game state as a graph
 
     Args:
@@ -78,7 +81,7 @@ def generate_graph_state(frame: dict) -> dict:
     return {"ct": [], "t": [], "global": []}
 
 
-def generate_set_state(frame: dict) -> dict:
+def generate_set_state(frame: GameFrame) -> dict:
     """Returns a game state as a set
 
     Args:

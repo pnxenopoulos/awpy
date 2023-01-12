@@ -1,4 +1,5 @@
 import pandas as pd
+from awpy.types import GameRound, PlayerStatistics
 
 # accuracy
 # kast
@@ -6,8 +7,10 @@ import pandas as pd
 # kill stats
 # flash stats
 # econ stats
-def player_stats(game_rounds: list[dict], return_type: str = "json") -> dict:
-    player_statistics = {}
+def player_stats(
+    game_rounds: list[GameRound], return_type: str = "json"
+) -> dict[str, PlayerStatistics]:
+    player_statistics: dict[str, PlayerStatistics] = {}
     for r in game_rounds:
         # Add players
         ct_side = r["ctSide"]
@@ -65,6 +68,7 @@ def player_stats(game_rounds: list[dict], return_type: str = "json") -> dict:
                     "steamID": p["steamID"],
                     "playerName": p["playerName"],
                     "teamName": t_side["teamName"],
+                    "isBot": True if p["steamID"] == 0 else False,
                     "totalRounds": 0,
                     "kills": 0,
                     "deaths": 0,
@@ -159,9 +163,13 @@ def player_stats(game_rounds: list[dict], return_type: str = "json") -> dict:
             ):
                 player_statistics[killer_key]["tradeKills"] += 1
                 kast[
-                    str(r["kills"][i - 1]["victimSteamID"])
+                    # victimName and victimSteamID could be None?
+                    # This would give an error here due to the +
+                    # This will go away with the stats update
+                    # https://github.com/pnxenopoulos/awpy/pull/203
+                    str(r["kills"][i - 1]["victimSteamID"])  # type: ignore[operator]
                     + " - "
-                    + r["kills"][i - 1]["victimName"]
+                    + r["kills"][i - 1]["victimName"]  # type: ignore[operator]
                 ]["t"] = True
             if (
                 k["isFirstKill"]
@@ -188,7 +196,6 @@ def player_stats(game_rounds: list[dict], return_type: str = "json") -> dict:
         for d in r["damages"]:
             attacker_key = str(d["attackerSteamID"]) + " - " + str(d["attackerName"])
             victim_key = str(d["victimSteamID"]) + " - " + str(d["victimName"])
-
             if (
                 d["attackerSteamID"]
                 and not d["isFriendlyFire"]
@@ -223,13 +230,14 @@ def player_stats(game_rounds: list[dict], return_type: str = "json") -> dict:
                 ] += 1
         for f in r["flashes"]:
             flasher_key = str(f["attackerSteamID"]) + " - " + f["attackerName"]
-            player_key = str(f["playerSteamID"]) + " - " + f["playerName"]
             if f["attackerSteamID"] and flasher_key in player_statistics.keys():
                 if f["attackerSide"] == f["playerSide"]:
                     player_statistics[flasher_key]["teammatesFlashed"] += 1
                 else:
                     player_statistics[flasher_key]["enemiesFlashed"] += 1
-                    player_statistics[flasher_key]["blindTime"] += f["flashDuration"]
+                    player_statistics[flasher_key]["blindTime"] += (
+                        0 if f["flashDuration"] is None else f["flashDuration"]
+                    )
         for g in r["grenades"]:
             thrower_key = str(g["throwerSteamID"]) + " - " + g["throwerName"]
             if g["throwerSteamID"] and thrower_key in player_statistics.keys():

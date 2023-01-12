@@ -1,11 +1,33 @@
+"""This module defines the DemoParser class that handles the core functionality of parsing and cleaning a csgo demo file
+
+    Typical usage example:
+    from awpy.parser import DemoParser
+
+    # Create parser object
+    # Set log=True above if you want to produce a logfile for the parser
+    demo_parser = DemoParser(
+        demofile = "og-vs-natus-vincere-m1-dust2.dem",
+        demo_id = "OG-NaVi-BLAST2020",
+        parse_rate=128,
+        trade_time=5,
+        buy_style="hltv"
+    )
+
+
+    # Parse the demofile, output results to dictionary
+    data = demo_parser.parse()
+    https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb
+"""
+
 import json
-from typing import Optional
+from typing import Optional, Union, Any, Literal, cast, get_args
 import logging
 import os
 import subprocess
 import pandas as pd
 
 from awpy.utils import check_go_version
+from awpy.types import Game
 
 
 class DemoParser:
@@ -213,15 +235,17 @@ class DemoParser:
 
         # Read in json to .json attribute
         with open(json_path, encoding="utf8") as f:
-            demo_data = json.load(f)
+            demo_data: Game = json.load(f)
 
-        self.json = demo_data
+        self.json: Game = demo_data
         self.logger.info(
             "JSON data loaded, available in the `json` attribute to parser"
         )
         return demo_data
 
-    def parse(self, return_type: str = "json", clean: bool = True) -> dict:
+    def parse(
+        self, return_type: str = "json", clean: bool = True
+    ) -> Union[Game, dict[str, Any]]:
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
@@ -254,7 +278,7 @@ class DemoParser:
             self.logger.error("JSON couldn't be returned")
             raise AttributeError("No JSON parsed! Error in producing JSON.")
 
-    def parse_json_to_df(self) -> dict:
+    def parse_json_to_df(self) -> dict[str, Any]:
         """Returns JSON into dictionary where keys correspond to data frames
 
         Returns:
@@ -264,7 +288,7 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
-            demo_data = {}
+            demo_data: dict[str, Any] = {}
             demo_data["matchID"] = self.json["matchID"]
             demo_data["clientName"] = self.json["clientName"]
             demo_data["mapName"] = self.json["mapName"]
@@ -345,27 +369,24 @@ class DemoParser:
         """
         if self.json:
             frames_dataframes = []
-            keys = ["tick", "seconds"]
             for r in self.json["gameRounds"]:
                 if r["frames"]:
                     for frame in r["frames"]:
-                        frame_item = {}
+                        frame_item: dict[str, Any] = {}
                         frame_item["roundNum"] = r["roundNum"]
-                        for k in keys:
+                        for k in ("tick", "seconds"):
+                            # Currently there is no better way:
+                            # https://github.com/python/mypy/issues/9230
+                            k = cast(Literal["tick", "seconds"], k)
                             frame_item[k] = frame[k]
-                        for side in ["ct", "t"]:
-                            if side == "ct":
-                                frame_item["ctTeamName"] = frame["ct"]["teamName"]
-                                frame_item["ctEqVal"] = frame["ct"]["teamEqVal"]
-                                frame_item["ctAlivePlayers"] = frame["ct"][
-                                    "alivePlayers"
-                                ]
-                                frame_item["ctUtility"] = frame["ct"]["totalUtility"]
-                            else:
-                                frame_item["tTeamName"] = frame["t"]["teamName"]
-                                frame_item["tEqVal"] = frame["t"]["teamEqVal"]
-                                frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
-                                frame_item["tUtility"] = frame["t"]["totalUtility"]
+                        frame_item["ctTeamName"] = frame["ct"]["teamName"]
+                        frame_item["ctEqVal"] = frame["ct"]["teamEqVal"]
+                        frame_item["ctAlivePlayers"] = frame["ct"]["alivePlayers"]
+                        frame_item["ctUtility"] = frame["ct"]["totalUtility"]
+                        frame_item["tTeamName"] = frame["t"]["teamName"]
+                        frame_item["tEqVal"] = frame["t"]["teamEqVal"]
+                        frame_item["tAlivePlayers"] = frame["t"]["alivePlayers"]
+                        frame_item["tUtility"] = frame["t"]["totalUtility"]
                         frames_dataframes.append(frame_item)
             frames_df = pd.DataFrame(frames_dataframes)
             frames_df["matchID"] = self.json["matchID"]
@@ -394,20 +415,23 @@ class DemoParser:
                 if r["frames"]:
                     for frame in r["frames"]:
                         for side in ["ct", "t"]:
+                            # Currently there is no better way:
+                            # https://github.com/python/mypy/issues/9230
+                            side = cast(Literal["ct", "t"], side)
                             if frame[side]["players"] is not None and (
                                 len(frame[side]["players"])
                                 > 0  # Used to be == 5, to ensure the sides were equal.
                             ):
                                 for player in frame[side]["players"]:
-                                    player_item = {}
+                                    player_item: dict[str, Any] = {}
                                     player_item["roundNum"] = r["roundNum"]
                                     player_item["tick"] = frame["tick"]
                                     player_item["seconds"] = frame["seconds"]
                                     player_item["side"] = side
                                     player_item["teamName"] = frame[side]["teamName"]
-                                    for col in player.keys():
+                                    for col, val in player.items():
                                         if col != "inventory":
-                                            player_item[col] = player[col]
+                                            player_item[col] = val
                                     player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
             player_frames_df["matchID"] = self.json["matchID"]
@@ -432,7 +456,10 @@ class DemoParser:
         """
         if self.json:
             rounds = []
-            cols = [
+            # There is currently no better way than this monstrosity...
+            # https://github.com/python/mypy/issues/9230
+            # https://stackoverflow.com/a/64522240/7895542
+            cols_type = Literal[
                 "roundNum",
                 "startTick",
                 "freezeTimeEndTick",
@@ -457,8 +484,9 @@ class DemoParser:
                 "tRoundSpendMoney",
                 "tBuyType",
             ]
+            cols: list[cols_type] = list(get_args(cols_type))
             for r in self.json["gameRounds"]:
-                round_item = {}
+                round_item: dict[str, Any] = {}
                 for k in cols:
                     round_item[k] = r[k]
                     round_item["matchID"] = self.json["matchID"]
@@ -487,7 +515,7 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if r["kills"] is not None:
                     for k in r["kills"]:
-                        new_k = k
+                        new_k: dict[str, Any] = dict(k)
                         new_k["roundNum"] = r["roundNum"]
                         new_k["matchID"] = self.json["matchID"]
                         new_k["mapName"] = self.json["mapName"]
@@ -515,7 +543,7 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if r["weaponFires"] is not None:
                     for wf in r["weaponFires"]:
-                        new_wf = wf
+                        new_wf: dict[str, Any] = dict(wf)
                         new_wf["roundNum"] = r["roundNum"]
                         new_wf["matchID"] = self.json["matchID"]
                         new_wf["mapName"] = self.json["mapName"]
@@ -543,7 +571,7 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if r["damages"] is not None:
                     for d in r["damages"]:
-                        new_d = d
+                        new_d: dict[str, Any] = dict(d)
                         new_d["roundNum"] = r["roundNum"]
                         new_d["matchID"] = self.json["matchID"]
                         new_d["mapName"] = self.json["mapName"]
@@ -571,7 +599,7 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if r["grenades"] is not None:
                     for g in r["grenades"]:
-                        new_g = g
+                        new_g: dict[str, Any] = dict(g)
                         new_g["roundNum"] = r["roundNum"]
                         new_g["matchID"] = self.json["matchID"]
                         new_g["mapName"] = self.json["mapName"]
@@ -599,7 +627,7 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if r["bombEvents"] is not None:
                     for b in r["bombEvents"]:
-                        new_b = b
+                        new_b: dict[str, Any] = dict(b)
                         new_b["roundNum"] = r["roundNum"]
                         new_b["matchID"] = self.json["matchID"]
                         new_b["mapName"] = self.json["mapName"]
@@ -627,7 +655,7 @@ class DemoParser:
             for r in self.json["gameRounds"]:
                 if r["flashes"] is not None:
                     for f in r["flashes"]:
-                        new_f = f
+                        new_f: dict[str, Any] = dict(f)
                         new_f["roundNum"] = r["roundNum"]
                         new_f["matchId"] = self.json["matchID"]
                         new_f["mapName"] = self.json["mapName"]
@@ -653,7 +681,7 @@ class DemoParser:
         remove_bad_scoring: bool = True,
         return_type: str = "json",
         save_to_json: bool = True,
-    ) -> dict:
+    ) -> Union[Game, dict[str, Any]]:
         """Cleans a parsed demofile JSON.
 
         Args:
@@ -931,7 +959,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_end_round(self, bad_endings=["Draw", "Unknown", ""]):
+    def remove_end_round(self, bad_endings=["Draw", "Unknown", ""]) -> None:
         """Removes rounds with bad end reason.
 
         Args:

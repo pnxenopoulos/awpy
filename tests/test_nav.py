@@ -791,6 +791,7 @@ class TestNav:
                 ]
             },
             "t": {"players": []},
+            "isKillFrame": False,
         }
         frame2 = {
             "ct": {
@@ -803,9 +804,98 @@ class TestNav:
                 ]
             },
             "t": {"players": []},
+            "isKillFrame": True,
         }
         array1 = np.array([[[-814.4315185546875, -950.5277099609375, -413.96875]]])
         array2 = np.array([[[-614.4315185546875, -550.5277099609375, -213.96875]]])
+        assert frame_distance(map_name, frame1, frame2) == position_state_distance(
+            map_name, array1, array2
+        )
+        frame1 = {
+            "t": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                    }
+                ]
+            },
+            "ct": {"players": []},
+            "isKillFrame": False,
+        }
+        frame2 = {
+            "t": {
+                "players": [
+                    {
+                        "x": -614.4315185546875,
+                        "y": -550.5277099609375,
+                        "z": -213.96875,
+                    }
+                ]
+            },
+            "ct": {"players": []},
+            "isKillFrame": True,
+        }
+        array1 = np.array([[[-814.4315185546875, -950.5277099609375, -413.96875]]])
+        array2 = np.array([[[-614.4315185546875, -550.5277099609375, -213.96875]]])
+        assert frame_distance(map_name, frame1, frame2) == position_state_distance(
+            map_name, array1, array2
+        )
+        frame1 = {
+            "ct": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                    }
+                ]
+            },
+            "t": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                    }
+                ]
+            },
+            "isKillFrame": False,
+        }
+        frame2 = {
+            "ct": {
+                "players": [
+                    {
+                        "x": -614.4315185546875,
+                        "y": -550.5277099609375,
+                        "z": -213.96875,
+                    }
+                ]
+            },
+            "t": {
+                "players": [
+                    {
+                        "x": -614.4315185546875,
+                        "y": -550.5277099609375,
+                        "z": -213.96875,
+                    }
+                ]
+            },
+            "isKillFrame": True,
+        }
+        array1 = np.array(
+            [
+                [[-814.4315185546875, -950.5277099609375, -413.96875]],
+                [[-814.4315185546875, -950.5277099609375, -413.96875]],
+            ]
+        )
+        array2 = np.array(
+            [
+                [[-614.4315185546875, -550.5277099609375, -213.96875]],
+                [[-614.4315185546875, -550.5277099609375, -213.96875]],
+            ]
+        )
         assert frame_distance(map_name, frame1, frame2) == position_state_distance(
             map_name, array1, array2
         )
