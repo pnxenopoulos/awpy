@@ -52,12 +52,14 @@ class DemoParser:
         self.logger = logging.getLogger("awpy")
         self.logger.propagate = log
 
-        # Handle demofile and demo_id name. Finds right most '/' in case demofile is a specified path.
+        # Handle demofile and demo_id name. Only take the file name and remove the last extension.
         self.demofile = os.path.abspath(demofile)
 
         self.logger.info("Initialized awpy DemoParser with demofile %s", self.demofile)
         if (demo_id is None) | (demo_id == ""):
-            self.demo_id = demofile[demofile.rfind("/") + 1 : -4]
+            self.demo_id = os.path.splitext(
+                os.path.basename(demofile.replace("\\", "/"))
+            )[0]
         else:
             self.demo_id = demo_id
 

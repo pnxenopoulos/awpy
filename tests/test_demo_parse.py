@@ -69,6 +69,10 @@ class TestDemoParser:
             log=False,
         )
         assert self.parser_inferred.demo_id == "default"
+        self.parser_inferred = DemoParser(demofile=r"D:/CSGO/Demos/800.dem", log=False)
+        assert self.parser_inferred.demo_id == "800"
+        self.parser_inferred = DemoParser(demofile=r"D:\CSGO\Demos\900.dem", log=False)
+        assert self.parser_inferred.demo_id == "900"
 
     def test_outpath(self):
         """Tests if the outpath is correctly recorded"""
