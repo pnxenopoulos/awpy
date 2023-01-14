@@ -3,6 +3,7 @@
 
 import re
 import subprocess
+import pandas as pd
 from awpy.types import Area
 
 
@@ -53,8 +54,14 @@ def is_in_range(value, min, max) -> bool:
     return False
 
 
-def transform_csv_to_json(sample_csv) -> dict[str, dict[int, Area]]:
-    """From Adi. Used to transform a nav file CSV to JSON."""
+def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[int, Area]]:
+    """From Adi. Used to transform a nav file CSV to JSON.
+
+    Args:
+        sample_csv (pd.DataFrame): Dataframe containing information about areas of each map
+
+    Returns:
+        dict[str, dict[int, Area]] containing information about each area of each map"""
     final_dic: dict[str, dict[int, Area]] = {}
     for cur_map in sample_csv["mapName"].unique():
         map_dic: dict[int, Area] = {}

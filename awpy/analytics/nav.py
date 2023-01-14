@@ -154,7 +154,8 @@ def area_distance(
         map_name (string): Map to search
         area_a (int): Area id
         area_b (int): Area id
-        dist_type (string): String indicating the type of distance to use (graph, geodesic or euclidean)
+        dist_type (string, optional): String indicating the type of distance to use (graph,
+            geodesic or euclidean). Defaults to 'graph'
 
     Returns:
         A dict containing info on the path between two areas.
@@ -247,7 +248,9 @@ def point_distance(
         map_name (string): Map to search
         point_a (list): Point as a list (x,y,z)
         point_b (list): Point as a list (x,y,z)
-        dist_type (string): String indicating the type of distance to use. Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
+        dist_type (string, optional): String indicating the type of distance to use.
+            Can be graph, geodesic, euclidean, manhattan, canberra or cosine.
+            Defaults to 'graph'
 
     Returns:
         A dict containing info on the distance between two points.
@@ -294,6 +297,8 @@ def point_distance(
     if dist_type == "canberra":
         distance_obj["distance"] = distance.canberra(point_a, point_b)
         return distance_obj
+    # redundant due to asserting that only ["graph", "geodesic", "euclidean", manhattan,
+    # canberra, cosine] are valid and if checks that it is neither none of the others
     # if dist_type == "cosine":
     distance_obj["distance"] = distance.cosine(point_a, point_b)
     return distance_obj
@@ -392,7 +397,7 @@ def generate_area_distance_matrix(map_name: str, save: bool = False) -> AreaMatr
 
     Args:
         map_name (string): Map to generate the place matrix for
-        save (boolean): Whether to save the matrix to file
+        save (bool, optional): Whether to save the matrix to file Defaults to 'False'
 
     Returns:
         Tree structure containing distances for all area pairs on all maps
@@ -459,7 +464,7 @@ def generate_place_distance_matrix(map_name: str, save: bool = False) -> PlaceMa
 
     Args:
         map_name (string): Map to generate the place matrix for
-        save (boolean): Whether to save the matrix to file
+        save (bool, optional): Whether to save the matrix to file. Defaults to 'False'
 
     Returns:
         Tree structure containing distances for all place pairs on all maps
@@ -716,11 +721,14 @@ def position_state_distance(
 
     Args:
         map_name (string): Map to search
-        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
-                                        Alternatively the array can have shape (2|1, 5, 1) where the last value gives the area_id. Used only with geodesic and graph distance
-        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team, the second the player and the third the coordinate
-                                        Alternatively the array can have shape (2|1, 5, 1) where the last value gives the area_id. Used only with geodesic and graph distance
-        distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
+        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team,
+            the second the player and the third the coordinate. Alternatively the array can have shape (2|1, 5, 1)
+            where the last value gives the area_id. Used only with geodesic and graph distance
+        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team,
+            the second the player and the third the coordinate. Alternatively the array can have shape (2|1, 5, 1)
+            where the last value gives the area_id. Used only with geodesic and graph distance
+        distance_type (string, optional): String indicating how the distance between two player positions should be calculated.
+            Options are "geodesic", "graph" and "euclidean". Defaults to 'geodesic'
 
     Returns:
         A float representing the distance between these two game states
@@ -860,8 +868,12 @@ def token_state_distance(
         map_name (string): Map to search
         token_array_1 (numpy array): 1-D numpy array of a position token
         token_array_2 (numpy array): 1-D numpy array of a position token
-        distance_type (string): String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
-        reference_point (string): String indicating which reference point to use to determine area distance. Options are "centroid" and "representative_point"
+        distance_type (string, optional): String indicating how the distance between two player positions
+            should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance".
+            Defaults to 'geodesic'
+        reference_point (string, optional): String indicating which reference point to use
+            to determine area distance. Options are "centroid" and "representative_point".
+            Defaults to 'centroid'
 
     Returns:
         A float representing the distance between these two game states
@@ -1022,7 +1034,9 @@ def frame_distance(
         map_name (string): Map to search
         frame1 (GameFrame): A game frame
         frame2 (GameFrame): A game frame
-        distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
+        distance_type (string, optional): String indicating how the distance between two player
+            positions should be calculated. Options are "geodesic", "graph" and "euclidean"
+            Defaults to 'geodesic'
 
     Returns:
         A float representing the distance between these two game states
@@ -1074,8 +1088,12 @@ def token_distance(
         map_name (string): Map to search
         token1 (string): A team position token
         token2 (string): A team position token
-        distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance"
-        reference_point: String indicating which reference point to use to determine area distance. Options are "centroid" and "representative_point"
+        distance_type (string, optional): String indicating how the distance between two player positions
+            should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance".
+            Defaults to 'geodesic'
+        reference_point (string, optional): String indicating which reference point to use
+            to determine area distance. Options are "centroid" and "representative_point".
+            Defaults to 'centroid'
 
     Returns:
         A float representing the distance between these two game states

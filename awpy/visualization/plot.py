@@ -25,9 +25,11 @@ def plot_map(
     """Plots a blank map.
 
     Args:
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        map_name (string, optional): Map to search. Defaults to "de_dust2"
+        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        dark (bool, optional): Only for use with map_type="simpleradar".
+            Indicates if you want to use the SimpleRadar dark map type
+            Defaults to False
 
     Returns:
         matplotlib fig and ax
@@ -126,15 +128,23 @@ def plot_positions(
     """Plots player positions
 
     Args:
-        positions (list): List of lists of length 2 ([[x,y], ...])
-        colors (list): List of colors for each player
-        markers (list): List of marker types for each player
-        alphas (list): List of alpha values for each player
-        sizes (list): List of marker sizes for each player
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
-        apply_transformation (boolean): Indicates if you need to also use position_transform() for the X/Y coordinates
+        positions (list, optional): List of lists of length 2 ([[x,y], ...])
+            Defaults to []
+        colors (list, optional): List of colors for each player
+            Defaults to []
+        markers (list, optional): List of marker types for each player
+            Defaults to []
+        alphas (list, optional): List of alpha values for each player
+            Defaults to [1.0] * len(positions)
+        sizes (list, optional): List of marker sizes for each player
+            Defaults to [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
+        map_name (string, optional): Map to search. Defaults to "de_ancient"
+        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        dark (bool, optional): Only for use with map_type="simpleradar".
+            Indicates if you want to use the SimpleRadar dark map type
+            Defaults to False
+        apply_transformation (bool, optional): Indicates if you need to also use position_transform() for the X/Y coordinates
+            Defaults to False
 
     Returns:
         matplotlib fig and ax
@@ -180,10 +190,13 @@ def plot_round(
     Args:
         filename (string): Filename to save the gif
         frames (list): List of frames from a parsed demo
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
-        fps (integer): Number of frames per second in the gif
+        map_name (string, optional): Map to search. Defaults to "de_ancient"
+        map_type (string, optional): "original" or "simpleradar". Defaults to "original
+        dark (bool, optional): Only for use with map_type="simpleradar".
+            Indicates if you want to use the SimpleRadar dark map type
+            Defaults to False
+        fps (int, optional): Number of frames per second in the gif
+            Defaults to 10
 
     Returns:
         True, saves .gif
@@ -256,11 +269,15 @@ def plot_nades(
 
     Args:
         rounds (list): List of round objects from a parsed demo
-        nades (list): List of grenade types to plot
-        side (string): Specify side to plot grenades. Either "CT" or "T".
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        nades (list, optional): List of grenade types to plot
+            Defaults to []
+        side (string, optional): Specify side to plot grenades. Either "CT" or "T".
+            Defaults to "CT"
+        map_name (string, optional): Map to search. Defaults to "de_ancient"
+        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        dark (bool, optional): Only for use with map_type="simpleradar".
+            Indicates if you want to use the SimpleRadar dark map type.
+            Defaults to False
 
     Returns:
         matplotlib fig and ax

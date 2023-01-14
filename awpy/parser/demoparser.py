@@ -35,18 +35,25 @@ class DemoParser:
 
     Attributes:
         demofile (string): A string denoting the path to the demo file, which ends in .dem
+            Defaults to ''
+        outpath (string): Path where to save the outputfile to. Default is current directory
         demo_id (string): A unique demo name/game id. Default is inferred from demofile name
-        output_file (str): The output file name. Set to 'demoid'+".json"
-        outpath (str): The path where the json file will be saved to
-        log (boolean): A boolean indicating if the log should print to stdout.
-        parse_rate (int): One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
-        parse_frames (bool): Flag if you want to parse frames (trajectory data) or not
-        parse_kill_frames (bool): Flag if you want to parse frames on kills
-        trade_time (int): Length of the window for a trade (in seconds). Default is 5.
-        dmg_rolled (bool): Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)
+        output_file (str): The output file name. Default is 'demoid'+".json"
+        log (bool): A boolean indicating if the log should print to stdout. Default is False
+        parse_rate (int, optional): One of 128, 64, 32, 16, 8, 4, 2, or 1.
+            The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
+        parse_frames (bool): Flag if you want to parse frames (trajectory data) or not. Default is True
+        parse_kill_frames (bool): Flag if you want to parse frames on kills. Default is False
+        trade_time (int, optional): Length of the window for a trade (in seconds). Default is 5.
+        dmg_rolled (bool): Boolean if you want damages rolled up
+            (since multiple damages for a player can happen in 1 tick from the same weapon.)
+            Default is False
         buy_style (string): Buy style string, one of "hltv" or "csgo"
-        json_indentation (bool): Whether the json file should be pretty printed with indentation (larger, more readable) or not (smaller, less human readable)
-        json (Optional[dict]): Dictionary containing the parsed json file
+            Default is "hltv"
+        json_indentation (bool): Whether the json file should be pretty printed
+            with indentation (larger, more readable) or not (smaller, less human readable)
+            Default is False
+        json (dict): Dictionary containing the parsed json file
 
     Raises:
         ValueError: Raises a ValueError if the Golang version is lower than 1.17
@@ -263,7 +270,7 @@ class DemoParser:
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
-            return_type (string): Either "json" or "df"
+            return_type (string, optional): Either "json" or "df". Default is "json"
             clean (bool, optional): True to run clean_rounds, otherwise, uncleaned data is returned. Defaults to True.
 
         Returns:

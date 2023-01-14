@@ -51,12 +51,15 @@ def player_stats(
     game_rounds: list[GameRound], return_type: str = "json", selected_side: str = "all"
 ) -> Union[dict[str, PlayerStatistics], pd.DataFrame]:
     """Generates a stats summary for a list of game rounds as produced by the DemoParser
+
     Args:
         game_rounds (list[GameRound]): List of game rounds as produced by the DemoParser
         return_type (str, optional): Return format ("json" or "df"). Defaults to "json".
-        selected_side (str, optional): Which side(s) to consider. Defaults to "all". Other options are "CT" and "T"
+        selected_side (str, optional): Which side(s) to consider. Defaults to "all".
+            Other options are "CT" and "T"
+
     Returns:
-        Union[dict,pd.Dataframe]: Dictionary or Dataframe containing player information
+        Union[dict[str, PlayerStatistics],pd.Dataframe]: Dictionary or Dataframe containing player information
     """
     player_statistics: dict[str, PlayerStatistics] = {}
     player_statistics = {}
