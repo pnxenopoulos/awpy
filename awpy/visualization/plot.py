@@ -211,7 +211,7 @@ def plot_round(
         # Plot players
         for side in ["ct", "t"]:
             side = cast(Literal["ct", "t"], side)
-            for p in f[side]["players"]:
+            for p in f[side]["players"] or []:
                 if side == "ct":
                     colors.append("cyan")
                 else:

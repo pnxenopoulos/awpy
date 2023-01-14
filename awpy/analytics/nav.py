@@ -324,7 +324,9 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
-    if (len(frame["ct"]["players"]) == 0) or (len(frame["t"]["players"]) == 0):
+    if (len(frame["ct"]["players"] or []) == 0) or (
+        len(frame["t"]["players"] or []) == 0
+    ):
         raise ValueError("CT or T players has length of 0")
     # Create map area list
     map_area_names = []
@@ -334,7 +336,9 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     map_area_names.sort()
     # Create token
     ct_token = np.zeros(len(map_area_names), dtype=np.int8)
-    for player in frame["ct"]["players"]:
+    # We know this is not None because otherwise we would have already
+    # thrown a ValueError
+    for player in frame["ct"]["players"]:  # type: ignore[union-attr]
         if player["isAlive"]:
             closest_area = find_closest_area(
                 map_name, [player["x"], player["y"], player["z"]]
@@ -343,7 +347,8 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
                 map_area_names.index(NAV[map_name][closest_area["areaId"]]["areaName"])
             ] += 1
     t_token = np.zeros(len(map_area_names), dtype=np.int8)
-    for player in frame["t"]["players"]:
+    # Same here
+    for player in frame["t"]["players"]:  # type: ignore[union-attr]
         if player["isAlive"]:
             closest_area = find_closest_area(
                 map_name, [player["x"], player["y"], player["z"]]
@@ -904,7 +909,7 @@ def token_state_distance(
     # More complicated distances based on actual area locations
     elif distance_type in ["geodesic", "graph", "euclidean"]:
         # If we do not have the precomputed matrix we need to first build the centroids to get them ourselves later
-        if PLACE_DIST_MATRIX is None or map_name not in PLACE_DIST_MATRIX:
+        if map_name not in PLACE_DIST_MATRIX:
             ref_points = {}
             (
                 ref_points["centroid"],
@@ -931,7 +936,7 @@ def token_state_distance(
                 array1, array2 = array2, array1
             size = sum(array2)
             # Get the indices where array1 and array2 have larger values than the other.
-            # Use each index as often as it is larger
+            # Use each index as often as it if larger
             diff_array = np.subtract(array1, array2)
             pos_indices = []
             neg_indices = []
@@ -951,7 +956,7 @@ def token_state_distance(
                 # Iterate of the mapping. Eg: [(0,2),(1,3)] and get their total distance
                 # For the example this would be dist(0,2)+dist(1,3)
                 for area1, area2 in mapping:
-                    if PLACE_DIST_MATRIX is None or map_name not in PLACE_DIST_MATRIX:
+                    if map_name not in PLACE_DIST_MATRIX:
                         this_dist += min(
                             area_distance(
                                 map_name,
@@ -981,6 +986,30 @@ def token_state_distance(
     return token_dist
 
 
+def get_array_for_frame(frame: GameFrame):
+    """Generates a numpy array with the correct dimensions and content for a gameframe
+
+    Args:
+        frame (GameFrame): A game frame
+
+    Returns:
+        numpy array for that frame"""
+    pos_array = np.zeros(
+        (
+            2,
+            max(len(frame["ct"]["players"] or []), len(frame["t"]["players"] or [])),
+            3,
+        )
+    )
+    team_to_index: dict[Literal["t", "ct"], Literal[0, 1]] = {"t": 0, "ct": 1}
+    for team_name, team_index in team_to_index.items():
+        for player_index, player in enumerate(frame[team_name]["players"] or []):
+            pos_array[team_index][player_index][0] = player["x"]
+            pos_array[team_index][player_index][1] = player["y"]
+            pos_array[team_index][player_index][2] = player["z"]
+    return pos_array
+
+
 def frame_distance(
     map_name: str,
     frame1: GameFrame,
@@ -991,45 +1020,38 @@ def frame_distance(
 
     Args:
         map_name (string): Map to search
-        frame1 (dict): A game frame
-        frame2 (dict): A game frame
+        frame1 (GameFrame): A game frame
+        frame2 (GameFrame): A game frame
         distance_type: String indicating how the distance between two player positions should be calculated. Options are "geodesic", "graph" and "euclidean"
 
     Returns:
         A float representing the distance between these two game states
-    """
-    pos_array1 = np.zeros(
-        (
-            2,
-            max(len(frame1["ct"]["players"]), len(frame1["t"]["players"])),
-            3,
-        )
-    )
-    pos_array2 = np.zeros(
-        (
-            2,
-            max(len(frame2["ct"]["players"]), len(frame2["t"]["players"])),
-            3,
-        )
-    )
-    team_to_index: dict[Literal["t", "ct"], Literal[0, 1]] = {"t": 0, "ct": 1}
-    for team_name, team_index in team_to_index.items():
-        for player_index, player in enumerate(frame1[team_name]["players"]):
-            pos_array1[team_index][player_index][0] = player["x"]
-            pos_array1[team_index][player_index][1] = player["y"]
-            pos_array1[team_index][player_index][2] = player["z"]
-        for player_index, player in enumerate(frame2[team_name]["players"]):
-            pos_array2[team_index][player_index][0] = player["x"]
-            pos_array2[team_index][player_index][1] = player["y"]
-            pos_array2[team_index][player_index][2] = player["z"]
 
+    Raises:
+        ValueError: Raises a ValueError if there is a discrepancy between the frames regarding which sides are filled.
+                    If the ct side of frame1 contains players while that of frame2 is empty or None the error will be raised.
+                    The same happens for the t sides.
+    """
+    if (
+        (len(frame1["ct"]["players"] or []) > 0)
+        != (len(frame2["ct"]["players"] or []) > 0)
+    ) or (
+        (len(frame1["t"]["players"] or []) > 0)
+        != (len(frame2["t"]["players"] or []) > 0)
+    ):
+        raise ValueError("The active sides between the two frames have to match.")
+    pos_array1 = get_array_for_frame(frame1)
+    pos_array2 = get_array_for_frame(frame2)
     # position_state distance averages the result over the teams
     # However here we are always passing it the values for both team
     # This means if one side is empty and we only want to consider the other one the result is halfed
     # So in that case we multiply the result back with 2
+    # Only need to look at one frame here because `position_state_distance` will throw an error
+    # anyway if the number of teams does not match between the frames
     team_number_multipler = (
         1
-        if (len(frame2["ct"]["players"]) > 0) and (len(frame2["t"]["players"]) > 0)
+        if (len(frame2["ct"]["players"] or []) > 0)
+        and (len(frame2["t"]["players"] or []) > 0)
         else 2
     )
 

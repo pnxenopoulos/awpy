@@ -19,8 +19,8 @@ def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
     game_state["secondsSincePhaseStart"] = frame["seconds"]
     game_state["bombPlanted"] = frame["bombPlanted"]
     game_state["bombsite"] = frame["bombsite"]
-    game_state["totalSmokes"] = len(frame["smokes"])
-    game_state["totalFires"] = len(frame["fires"])
+    game_state["totalSmokes"] = len(frame["smokes"] or [])
+    game_state["totalFires"] = len(frame["fires"] or [])
 
     # Team specific info (CT)
     game_state["ctAlive"] = 0
@@ -32,7 +32,7 @@ def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
     game_state["ctEqValStart"] = 0
     game_state["ctBombZone"] = 0
     game_state["defusers"] = 0
-    for p in frame["ct"]["players"]:
+    for p in frame["ct"]["players"] or []:
         game_state["ctEqValStart"] += p["equipmentValueFreezetimeEnd"]
         if p["isAlive"]:
             game_state["ctAlive"] += 1
@@ -57,7 +57,7 @@ def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
     game_state["tEqValStart"] = 0
     game_state["tHoldingBomb"] = 0
     game_state["tBombZone"] = 0
-    for p in frame["t"]["players"]:
+    for p in frame["t"]["players"] or []:
         game_state["tEqValStart"] += p["equipmentValueFreezetimeEnd"]
         if p["isAlive"]:
             game_state["tAlive"] += 1

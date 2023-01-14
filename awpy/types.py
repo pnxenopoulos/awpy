@@ -32,18 +32,18 @@ PlaceMatrix = dict[
 class MatchPhases(TypedDict):
     """MatchPhases holds lists of when match events occurred"""
 
-    announcementLastRoundHalf: list[int]
-    announcementFinalRound: list[int]
-    announcementMatchStarted: list[int]
-    roundStarted: list[int]
-    roundEnded: list[int]
-    roundFreezetimeEnded: list[int]
-    roundEndedOfficial: list[int]
-    gameHalfEnded: list[int]
-    matchStart: list[int]
-    matchStartedChanged: list[int]
-    warmupChanged: list[int]
-    teamSwitch: list[int]
+    announcementLastRoundHalf: Optional[list[int]]
+    announcementFinalRound: Optional[list[int]]
+    announcementMatchStarted: Optional[list[int]]
+    roundStarted: Optional[list[int]]
+    roundEnded: Optional[list[int]]
+    roundFreezetimeEnded: Optional[list[int]]
+    roundEndedOfficial: Optional[list[int]]
+    gameHalfEnded: Optional[list[int]]
+    matchStart: Optional[list[int]]
+    matchStartedChanged: Optional[list[int]]
+    warmupChanged: Optional[list[int]]
+    teamSwitch: Optional[list[int]]
 
 
 class ServerConVar(TypedDict):
@@ -109,7 +109,7 @@ class PlayerTeams(TypedDict):
     """PlayerTeam"""
 
     teamName: str
-    players: list[Players]
+    players: Optional[list[Players]]
 
 
 class GrenadeAction(TypedDict):
@@ -368,8 +368,8 @@ class PlayerInfo(TypedDict):
     isScoped: bool
     isWalk: bool
     isUnknown: bool
-    inventory: list[WeaponInfo]
-    spotters: list[int]
+    inventory: Optional[list[WeaponInfo]]
+    spotters: Optional[list[int]]
     equipmentValue: int
     equipmentValueFreezetimeEnd: int
     equipmentValueRoundStart: int
@@ -391,7 +391,7 @@ class TeamFrameInfo(TypedDict):
     teamEqVal: int
     alivePlayers: int
     totalUtility: int
-    players: list[PlayerInfo]
+    players: Optional[list[PlayerInfo]]
 
 
 class Smoke(TypedDict):
@@ -416,9 +416,9 @@ class GameFrame(TypedDict):
     bombPlanted: bool
     bombsite: str
     bomb: BombInfo
-    projectiles: list[GrenadeInfo]
-    smokes: list[Smoke]
-    fires: list[Fire]
+    projectiles: Optional[list[GrenadeInfo]]
+    smokes: Optional[list[Smoke]]
+    fires: Optional[list[Fire]]
 
 
 class GameRound(TypedDict):
@@ -451,13 +451,13 @@ class GameRound(TypedDict):
     tBuyType: str
     ctSide: PlayerTeams
     tSide: PlayerTeams
-    kills: list[KillAction]
-    damages: list[DamageAction]
-    grenades: list[GrenadeAction]
-    bombEvents: list[BombAction]
-    weaponFires: list[WeaponFireAction]
-    flashes: list[FlashAction]
-    frames: list[GameFrame]
+    kills: Optional[list[KillAction]]
+    damages: Optional[list[DamageAction]]
+    grenades: Optional[list[GrenadeAction]]
+    bombEvents: Optional[list[BombAction]]
+    weaponFires: Optional[list[WeaponFireAction]]
+    flashes: Optional[list[FlashAction]]
+    frames: Optional[list[GameFrame]]
 
 
 class Game(TypedDict):
@@ -473,9 +473,9 @@ class Game(TypedDict):
     parserParameters: ParserOpts
     serverVars: ServerConVar
     matchPhases: MatchPhases
-    matchmakingRanks: list[MMRank]
-    playerConnections: list[ConnectAction]
-    gameRounds: list[GameRound]
+    matchmakingRanks: Optional[list[MMRank]]
+    playerConnections: Optional[list[ConnectAction]]
+    gameRounds: Optional[list[GameRound]]
 
 
 class PlayerStatistics(TypedDict):

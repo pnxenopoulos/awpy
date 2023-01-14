@@ -19,6 +19,7 @@ from awpy.analytics.nav import (
     stepped_hull,
     position_state_distance,
     token_state_distance,
+    get_array_for_frame,
     frame_distance,
     token_distance,
     generate_area_distance_matrix,
@@ -1296,6 +1297,139 @@ class TestNav:
             "de_nuke", token_array2, token_array1, distance_type="euclidean"
         )
 
+    def test_get_array_for_frame(self):
+        """Tests get_array_for_frame"""
+        frame1 = {
+            "ct": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                    }
+                ]
+            },
+            "t": {"players": []},
+            "isKillFrame": False,
+        }
+        frame2 = {
+            "ct": {
+                "players": [
+                    {
+                        "x": -614.4315185546875,
+                        "y": -550.5277099609375,
+                        "z": -213.96875,
+                    }
+                ]
+            },
+            "t": {"players": []},
+            "isKillFrame": True,
+        }
+        array1_expected = np.array(
+            [[[0, 0, 0]], [[-814.4315185546875, -950.5277099609375, -413.96875]]]
+        )
+        array2_expected = np.array(
+            [
+                [[0, 0, 0]],
+                [[-614.4315185546875, -550.5277099609375, -213.96875]],
+            ]
+        )
+        array1_result = get_array_for_frame(frame1)
+        array2_result = get_array_for_frame(frame2)
+        assert np.array_equal(array1_expected, array1_result)
+        assert np.array_equal(array2_expected, array2_result)
+
+        frame1 = {
+            "t": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                    }
+                ]
+            },
+            "ct": {"players": []},
+            "isKillFrame": False,
+        }
+        frame2 = {
+            "t": {
+                "players": [
+                    {
+                        "x": -614.4315185546875,
+                        "y": -550.5277099609375,
+                        "z": -213.96875,
+                    }
+                ]
+            },
+            "ct": {"players": []},
+            "isKillFrame": True,
+        }
+        array1 = np.array(
+            [[[-814.4315185546875, -950.5277099609375, -413.96875]], [[0, 0, 0]]]
+        )
+        array2 = np.array(
+            [[[-614.4315185546875, -550.5277099609375, -213.96875]], [[0, 0, 0]]]
+        )
+        assert np.array_equal(array1, get_array_for_frame(frame1))
+        assert np.array_equal(array2, get_array_for_frame(frame2))
+        frame1 = {
+            "ct": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                    }
+                ]
+            },
+            "t": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                    }
+                ]
+            },
+            "isKillFrame": False,
+        }
+        frame2 = {
+            "ct": {
+                "players": [
+                    {
+                        "x": -614.4315185546875,
+                        "y": -550.5277099609375,
+                        "z": -213.96875,
+                    }
+                ]
+            },
+            "t": {
+                "players": [
+                    {
+                        "x": -614.4315185546875,
+                        "y": -550.5277099609375,
+                        "z": -213.96875,
+                    }
+                ]
+            },
+            "isKillFrame": True,
+        }
+        array1 = np.array(
+            [
+                [[-814.4315185546875, -950.5277099609375, -413.96875]],
+                [[-814.4315185546875, -950.5277099609375, -413.96875]],
+            ]
+        )
+        array2 = np.array(
+            [
+                [[-614.4315185546875, -550.5277099609375, -213.96875]],
+                [[-614.4315185546875, -550.5277099609375, -213.96875]],
+            ]
+        )
+        assert np.array_equal(array1, get_array_for_frame(frame1))
+        assert np.array_equal(array2, get_array_for_frame(frame2))
+
     def test_frame_distance(self):
         """Tests frame distance"""
         map_name = "de_nuke"
@@ -1418,6 +1552,35 @@ class TestNav:
         assert frame_distance(map_name, frame1, frame2) == position_state_distance(
             map_name, array1, array2
         )
+
+        frame1 = {
+            "t": {
+                "players": [
+                    {
+                        "x": -814.4315185546875,
+                        "y": -950.5277099609375,
+                        "z": -413.96875,
+                    }
+                ]
+            },
+            "ct": {"players": []},
+            "isKillFrame": False,
+        }
+        frame2 = {
+            "ct": {
+                "players": [
+                    {
+                        "x": -614.4315185546875,
+                        "y": -550.5277099609375,
+                        "z": -213.96875,
+                    }
+                ]
+            },
+            "t": {"players": []},
+            "isKillFrame": True,
+        }
+        with pytest.raises(ValueError):
+            frame_distance(map_name, frame1, frame2)
 
     def test_token_distance(self):
         """Tests token distance"""

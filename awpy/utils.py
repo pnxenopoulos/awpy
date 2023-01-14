@@ -3,7 +3,6 @@
 
 import re
 import subprocess
-from typing import cast, Literal
 from awpy.types import Area
 
 

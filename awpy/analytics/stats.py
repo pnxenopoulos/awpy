@@ -72,7 +72,7 @@ def player_stats(
         round_kills = {}
         for side in [team.lower() + "Side" for team in active_sides]:
             side = cast(Literal["ctSide", "tSide"], side)
-            for p in r[side]["players"]:
+            for p in r[side]["players"] or []:
                 player_key = p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
                 if player_key not in player_statistics:
                     player_statistics[player_key] = {
@@ -143,7 +143,7 @@ def player_stats(
             "CT": set(),
         }
         is_clutching: set[Optional[str]] = set()
-        for k in r["kills"]:
+        for k in r["kills"] or []:
             killer_key = (
                 str(k["attackerName"])
                 if str(k["attackerSteamID"]) == 0
@@ -279,7 +279,7 @@ def player_stats(
                 if k["victimSide"] in active_sides and victim_key in player_statistics:
                     player_statistics[victim_key]["firstDeaths"] += 1
 
-        for d in r["damages"]:
+        for d in r["damages"] or []:
             attacker_key = (
                 str(d["attackerName"])
                 if str(d["attackerSteamID"]) == 0
@@ -317,13 +317,13 @@ def player_stats(
             ):
                 player_statistics[victim_key]["totalDamageTaken"] += d["hpDamageTaken"]
 
-        for w in r["weaponFires"]:
+        for w in r["weaponFires"] or []:
             fire_key = (
                 w["playerName"] if w["playerSteamID"] == 0 else str(w["playerSteamID"])
             )
             if fire_key in player_statistics and w["playerSide"] in active_sides:
                 player_statistics[fire_key]["totalShots"] += 1
-        for f in r["flashes"]:
+        for f in r["flashes"] or []:
             flasher_key = (
                 str(f["attackerName"])
                 if str(f["attackerSteamID"]) == 0
@@ -346,7 +346,7 @@ def player_stats(
                     player_statistics[flasher_key]["blindTime"] += (
                         0 if f["flashDuration"] is None else f["flashDuration"]
                     )
-        for g in r["grenades"]:
+        for g in r["grenades"] or []:
             thrower_key = (
                 g["throwerName"]
                 if g["throwerSteamID"] == 0
@@ -365,7 +365,7 @@ def player_stats(
                     player_statistics[thrower_key]["heThrown"] += 1
                 if g["grenadeType"] in ["Incendiary Grenade", "Molotov"]:
                     player_statistics[thrower_key]["fireThrown"] += 1
-        for b in r["bombEvents"]:
+        for b in r["bombEvents"] or []:
             player_key = (
                 b["playerName"] if b["playerSteamID"] == 0 else str(b["playerSteamID"])
             )

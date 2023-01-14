@@ -26,7 +26,9 @@ NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
 NAV: dict[str, dict[int, Area]] = transform_csv_to_json(NAV_CSV)
 
 # Create nav graphs
-def create_nav_graphs(nav: dict, data_path: str) -> dict[str, nx.DiGraph]:
+def create_nav_graphs(
+    nav: dict[str, dict[int, Area]], data_path: str
+) -> dict[str, nx.DiGraph]:
     """Function to create a dict of DiGraphs from dict of areas and edge_list file
 
     Args:
