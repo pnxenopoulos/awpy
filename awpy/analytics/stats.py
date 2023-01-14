@@ -1,3 +1,4 @@
+from typing import Union
 import pandas as pd
 from awpy.types import GameRound, PlayerStatistics
 
@@ -9,7 +10,7 @@ from awpy.types import GameRound, PlayerStatistics
 # econ stats
 def player_stats(
     game_rounds: list[GameRound], return_type: str = "json"
-) -> dict[str, PlayerStatistics]:
+) -> Union[dict[str, PlayerStatistics], pd.DataFrame]:
     player_statistics: dict[str, PlayerStatistics] = {}
     for r in game_rounds:
         # Add players

@@ -36,24 +36,24 @@ class MatchPhases(TypedDict):
 class ServerConVar(TypedDict):
     """ServerConVar holds server convars, like round timers and timeouts, etc. Not always accurate."""
 
-    cashBombDefused: int  #  cash_player_bomb_defused
-    cashBombPlanted: int  #  cash_player_bomb_planted
-    cashTeamTWinBomb: int  #  cash_team_terrorist_win_bomb
-    cashWinDefuse: int  #   cash_team_win_by_defusing_bomb
-    cashWinTimeRunOut: int  #   cash_team_win_by_time_running_out_bomb
-    cashWinElimination: int  #   cash_team_elimination_bomb_map
-    cashPlayerKilledDefault: int  #   cash_player_killed_enemy_default
-    cashTeamLoserBonus: int  #   cash_team_loser_bonus
-    cashTeamLoserBonusConsecutive: int  #   cash_team_loser_bonus_consecutive_rounds
-    roundTime: int  #   mp_roundtime
-    roundTimeDefuse: int  #   mp_roundtime_defuse
-    roundRestartDelay: int  #   mp_round_restart_delay
-    freezeTime: int  #   mp_freezetime
-    buyTime: int  #   mp_buytime
-    bombTimer: int  #   mp_c4timer
-    maxRounds: int  #   mp_maxrounds
-    timeoutsAllowed: int  #   mp_team_timeout_max
-    coachingAllowed: int  #   sv_coaching_enabled
+    cashBombDefused: int  # cash_player_bomb_defused
+    cashBombPlanted: int  # cash_player_bomb_planted
+    cashTeamTWinBomb: int  # cash_team_terrorist_win_bomb
+    cashWinDefuse: int  # cash_team_win_by_defusing_bomb
+    cashWinTimeRunOut: int  # cash_team_win_by_time_running_out_bomb
+    cashWinElimination: int  # cash_team_elimination_bomb_map
+    cashPlayerKilledDefault: int  # cash_player_killed_enemy_default
+    cashTeamLoserBonus: int  # cash_team_loser_bonus
+    cashTeamLoserBonusConsecutive: int  # cash_team_loser_bonus_consecutive_rounds
+    roundTime: int  # mp_roundtime
+    roundTimeDefuse: int  # mp_roundtime_defuse
+    roundRestartDelay: int  # mp_round_restart_delay
+    freezeTime: int  # mp_freezetime
+    buyTime: int  # mp_buytime
+    bombTimer: int  # mp_c4timer
+    maxRounds: int  # mp_maxrounds
+    timeoutsAllowed: int  # mp_team_timeout_max
+    coachingAllowed: int  # sv_coaching_enabled
 
 
 class ParserOpts(TypedDict):

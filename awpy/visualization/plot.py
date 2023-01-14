@@ -155,7 +155,7 @@ def plot_positions(
         matplotlib fig and ax
     """
     if alphas is None:
-        alphas = [1] * len(positions)
+        alphas = [1.0] * len(positions)
     if sizes is None:
         sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)

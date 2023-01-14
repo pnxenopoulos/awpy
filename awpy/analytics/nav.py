@@ -137,7 +137,7 @@ class DistanceObject(TypedDict):
 
     distanceType: str
     distance: float
-    areas: list
+    areas: list[int]
 
 
 def area_distance(
