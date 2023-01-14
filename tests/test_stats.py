@@ -1,4 +1,5 @@
 import os
+import pytest
 import json
 import numbers
 from math import isclose
@@ -56,9 +57,13 @@ class TestStats:
     def test_other_side(self):
         """Tests other side"""
         assert other_side("T") == "CT"
-        assert other_side("t") == "ct"
         assert other_side("CT") == "T"
-        assert other_side("ct") == "t"
+        with pytest.raises(ValueError):
+            other_side("t")
+        with pytest.raises(ValueError):
+            other_side("ct")
+        with pytest.raises(ValueError):
+            other_side("apple")
 
     def test_player_stats(self):
         """Tests player stats generation"""
@@ -79,14 +84,14 @@ class TestStats:
         assert stats["76561197995889730"]["playerName"] == "nitr0"
 
         assert stats["76561197990682262"]["playerName"] == "Xyp9x"
-        assert stats["76561197990682262"]["1v5attempts"] == 5
-        assert stats["76561197990682262"]["1v5success"] == 0
-        assert stats["76561197990682262"]["1v1attempts"] == 2
-        assert stats["76561197990682262"]["1v1success"] == 2
-        assert stats["76561197990682262"]["5kills"] == 0
+        assert stats["76561197990682262"]["attempts1v5"] == 5
+        assert stats["76561197990682262"]["success1v5"] == 0
+        assert stats["76561197990682262"]["attempts1v1"] == 2
+        assert stats["76561197990682262"]["success1v1"] == 2
+        assert stats["76561197990682262"]["kills5"] == 0
 
         assert stats["76561197987713664"]["playerName"] == "device"
-        assert stats["76561197987713664"]["5kills"] == 1
+        assert stats["76561197987713664"]["kills5"] == 1
         assert stats["76561197987713664"]["tradeKills"] == 5
         assert stats["76561197987713664"]["tradedDeaths"] == 5
 

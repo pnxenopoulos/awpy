@@ -7,12 +7,13 @@ from scipy.spatial import distance
 import networkx as nx
 
 from awpy.utils import transform_csv_to_json
+from awpy.types import AreaMatrix, PlaceMatrix, Area
 
 
 PATH = os.path.join(os.path.dirname(__file__), "")
 
 # Create nav tile info
-nav_dfs = []
+nav_dfs: list[pd.DataFrame] = []
 for file in os.listdir(PATH + "nav/"):
     if file.endswith(".csv"):
         df = pd.read_csv(PATH + "nav/" + file)
@@ -20,7 +21,9 @@ for file in os.listdir(PATH + "nav/"):
 
 NAV_CSV = pd.concat(nav_dfs, ignore_index=True)
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
-NAV = transform_csv_to_json(NAV_CSV)
+
+
+NAV: dict[str, dict[int, Area]] = transform_csv_to_json(NAV_CSV)
 
 # Create nav graphs
 def create_nav_graphs(nav: dict, data_path: str) -> dict[str, nx.DiGraph]:
@@ -32,7 +35,7 @@ def create_nav_graphs(nav: dict, data_path: str) -> dict[str, nx.DiGraph]:
 
     Returns:
         A dictionary mapping each map (str) to an nx.DiGraph of its traversible areas"""
-    nav_graphs = {}
+    nav_graphs: dict[str, nx.DiGraph] = {}
     for m in nav:
         G = nx.DiGraph()
         for a in nav[m].keys():
@@ -85,8 +88,10 @@ NAV_GRAPHS = create_nav_graphs(NAV, PATH)
 
 # Open map data
 with open(Path(PATH + "map/map_data.json"), encoding="utf8") as f:
-    MAP_DATA = json.load(f)
+    MAP_DATA: dict = json.load(f)
 
+PLACE_DIST_MATRIX: dict[str, PlaceMatrix]
+AREA_DIST_MATRIX: dict[str, AreaMatrix]
 PLACE_DIST_MATRIX = {}
 AREA_DIST_MATRIX = {}
 for file in os.listdir(PATH + "nav/"):

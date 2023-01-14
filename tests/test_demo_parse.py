@@ -365,6 +365,8 @@ class TestDemoParser:
         assert isinstance(df_return["playerFrames"], pd.DataFrame)
         dict_return = self.clean_return_parser.clean_rounds(return_type="json")
         assert isinstance(dict_return, dict)
+        with pytest.raises(ValueError):
+            self.clean_return_parser.clean_rounds(return_type="return_type_does_not_exist")
 
     def test_player_clean(self):
         """Tests that remove excess players is working."""

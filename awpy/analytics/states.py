@@ -1,8 +1,10 @@
 """Functions to to generate game stats based on snapshots from a demofile.
 """
 
+from awpy.types import GameFrame
 
-def generate_vector_state(frame, map_name):
+
+def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
     """Returns a game state in a dictionary format.
 
     Args:
@@ -12,7 +14,7 @@ def generate_vector_state(frame, map_name):
     Returns:
         A dict with keys for each feature.
     """
-    game_state = {}
+    game_state: dict = {}
     game_state["mapName"] = map_name
     game_state["secondsSincePhaseStart"] = frame["seconds"]
     game_state["bombPlanted"] = frame["bombPlanted"]
@@ -74,7 +76,7 @@ def generate_vector_state(frame, map_name):
     return game_state
 
 
-def generate_graph_state(frame):
+def generate_graph_state(frame: GameFrame) -> dict:
     """Returns a game state as a graph
 
     Args:
@@ -86,7 +88,7 @@ def generate_graph_state(frame):
     return {"ct": [], "t": [], "global": []}
 
 
-def generate_set_state(frame):
+def generate_set_state(frame: GameFrame) -> dict:
     """Returns a game state as a set
 
     Args:

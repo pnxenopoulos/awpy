@@ -19,7 +19,9 @@
 
     https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
 """
+from typing import Union, cast, Literal, Optional
 import pandas as pd
+from awpy.types import GameRound, PlayerStatistics
 
 # accuracy
 # kast
@@ -27,29 +29,49 @@ import pandas as pd
 # kill stats
 # flash stats
 # econ stats
-def other_side(side):
+def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
     """Takes a csgo side as input and returns the opposite side in the same formatting
 
     Args:
         side (string): A csgo team side (t or ct all upper or all lower case)
 
     Returns:
-        A string of the opposite team side in the same formatting as the input"""
-    other_side_dict = {"CT": "T", "ct": "t", "T": "CT", "t": "ct"}
-    return other_side_dict[side]
+        A string of the opposite team side in the same formatting as the input
+
+    Raises:
+        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'"""
+    if side == "CT":
+        return "T"
+    elif side == "T":
+        return "CT"
+    raise ValueError("side has to be either 'CT' or 'T'")
 
 
-def player_stats(game_rounds, return_type="json", selected_side="all"):
+def player_stats(
+    game_rounds: list[GameRound], return_type: str = "json", selected_side: str = "all"
+) -> Union[dict[str, PlayerStatistics], pd.DataFrame]:
+    """Generates a stats summary for a list of game rounds as produced by the DemoParser
+    Args:
+        game_rounds (list[GameRound]): List of game rounds as produced by the DemoParser
+        return_type (str, optional): Return format ("json" or "df"). Defaults to "json".
+        selected_side (str, optional): Which side(s) to consider. Defaults to "all". Other options are "CT" and "T"
+    Returns:
+        Union[dict,pd.Dataframe]: Dictionary or Dataframe containing player information
+    """
+    player_statistics: dict[str, PlayerStatistics] = {}
     player_statistics = {}
-    if selected_side.upper() in {"CT", "T"}:
-        active_sides = {selected_side.upper()}
+    selected_side = selected_side.upper()
+    if selected_side in {"CT", "T"}:
+        selected_side = cast(Literal["CT", "T"], selected_side)
+        active_sides: set[Literal["CT", "T"]] = {selected_side}
     else:
         active_sides = {"CT", "T"}
     for r in game_rounds:
         # Add players
-        kast = {}
+        kast: dict[str, dict[str, bool]] = {}
         round_kills = {}
         for side in [team.lower() + "Side" for team in active_sides]:
+            side = cast(Literal["ctSide", "tSide"], side)
             for p in r[side]["players"]:
                 player_key = p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
                 if player_key not in player_statistics:
@@ -91,22 +113,22 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
                         "blindTime": 0,
                         "plants": 0,
                         "defuses": 0,
-                        "0kills": 0,
-                        "1kills": 0,
-                        "2kills": 0,
-                        "3kills": 0,
-                        "4kills": 0,
-                        "5kills": 0,
-                        "1v1attempts": 0,
-                        "1v1success": 0,
-                        "1v2attempts": 0,
-                        "1v2success": 0,
-                        "1v3attempts": 0,
-                        "1v3success": 0,
-                        "1v4attempts": 0,
-                        "1v4success": 0,
-                        "1v5attempts": 0,
-                        "1v5success": 0,
+                        "kills0": 0,
+                        "kills1": 0,
+                        "kills2": 0,
+                        "kills3": 0,
+                        "kills4": 0,
+                        "kills5": 0,
+                        "attempts1v1": 0,
+                        "success1v1": 0,
+                        "attempts1v2": 0,
+                        "success1v2": 0,
+                        "attempts1v3": 0,
+                        "success1v3": 0,
+                        "attempts1v4": 0,
+                        "success1v4": 0,
+                        "attempts1v5": 0,
+                        "success1v5": 0,
                     }
                 player_statistics[player_key]["totalRounds"] += 1
                 kast[player_key] = {}
@@ -116,8 +138,11 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
                 kast[player_key]["t"] = False
                 round_kills[player_key] = 0
         # Calculate kills
-        players_killed = {"T": set(), "CT": set()}
-        is_clutching = set()
+        players_killed: dict[Literal["CT", "T"], set[str]] = {
+            "T": set(),
+            "CT": set(),
+        }
+        is_clutching: set[Optional[str]] = set()
         for k in r["kills"]:
             killer_key = (
                 str(k["attackerName"])
@@ -139,7 +164,8 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
                 if str(k["flashThrowerSteamID"]) == 0
                 else str(k["flashThrowerSteamID"])
             )
-            players_killed[k["victimSide"]].add(victim_key)
+            if k["victimSide"] in players_killed:
+                players_killed[k["victimSide"]].add(victim_key)  # type: ignore[index]
             # Purely attacker related stats
             if (
                 k["attackerSide"] in active_sides
@@ -161,33 +187,37 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
                 if k["isSuicide"]:
                     player_statistics[victim_key]["suicides"] += 1
             if (
-                len(r[k["victimSide"].lower() + "Side"]["players"])
-                - len(players_killed[k["victimSide"]])
+                k["victimSide"] in active_sides
+                # mypy does not understand that after the first part k["victimSide"] is Literal["CT", "T"]
+                # and that `k["victimSide"].lower() + "Side"` leads to a Literal["ctSide", "tSide"]
+                and len(r[k["victimSide"].lower() + "Side"]["players"])  # type: ignore[literal-required]
+                - len(players_killed[k["victimSide"]])  # type: ignore[literal-required, index]
                 == 1
-                and k["victimSide"] in active_sides
             ):
-                for player in r[k["victimSide"].lower() + "Side"]["players"]:
+                for player in r[k["victimSide"].lower() + "Side"]["players"]:  # type: ignore[literal-required]
                     clutcher_key = (
                         str(player["playermName"])
                         if str(player["steamID"]) == 0
                         else str(player["steamID"])
                     )
                     if (
-                        clutcher_key not in players_killed[k["victimSide"]]
+                        clutcher_key not in players_killed[k["victimSide"]]  # type: ignore[literal-required, index]
                         and clutcher_key not in is_clutching
                         and clutcher_key in player_statistics
                     ):
                         is_clutching.add(clutcher_key)
                         enemies_alive = len(
-                            r[other_side(k["victimSide"].lower()) + "Side"]["players"]
-                        ) - len(players_killed[other_side(k["victimSide"])])
+                            r[other_side(k["victimSide"]).lower() + "Side"]["players"]  # type: ignore
+                        ) - len(
+                            players_killed[other_side(k["victimSide"])]  # type: ignore
+                        )
                         if enemies_alive > 0:
                             player_statistics[clutcher_key][
-                                f"1v{enemies_alive}attempts"
+                                f"attempts1v{enemies_alive}"  # type: ignore[literal-required]
                             ] += 1
                             if r["winningSide"] == k["victimSide"]:
                                 player_statistics[clutcher_key][
-                                    f"1v{enemies_alive}success"
+                                    f"success1v{enemies_alive}"  # type: ignore[literal-required]
                                 ] += 1
             if k["isTrade"]:
                 # A trade is always onto an enemy
@@ -313,7 +343,9 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
                     player_statistics[flasher_key]["teammatesFlashed"] += 1
                 else:
                     player_statistics[flasher_key]["enemiesFlashed"] += 1
-                    player_statistics[flasher_key]["blindTime"] += f["flashDuration"]
+                    player_statistics[flasher_key]["blindTime"] += (
+                        0 if f["flashDuration"] is None else f["flashDuration"]
+                    )
         for g in r["grenades"]:
             thrower_key = (
                 g["throwerName"]
@@ -346,7 +378,8 @@ def player_stats(game_rounds, return_type="json", selected_side="all"):
             if any(components.values()):
                 player_statistics[player]["kast"] += 1
         for player, n_kills in round_kills.items():
-            player_statistics[player][f"{n_kills}kills"] += 1
+            if n_kills in range(6):  # 0, 1, 2, 3, 4, 5
+                player_statistics[player][f"kills{n_kills}"] += 1  # type: ignore[literal-required]
 
     for player in player_statistics.values():
         player["kast"] = round(

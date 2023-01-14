@@ -1,5 +1,6 @@
 import os
 from unittest.mock import patch
+import pytest
 import matplotlib
 from awpy.visualization.plot import (
     position_transform,
@@ -18,7 +19,8 @@ class TestVis:
         """Test position transforms"""
         assert isinstance(position_transform("de_ancient", 0, "x"), float)
         assert isinstance(position_transform("de_ancient", 0, "y"), float)
-        assert position_transform("de_ancient", 0, "scale") is None
+        with pytest.raises(ValueError):
+            position_transform("de_ancient", 0, "scale")
 
     def test_position_transform_all(self):
         """Test position_transform_all"""

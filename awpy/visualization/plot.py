@@ -9,15 +9,19 @@
 """
 import os
 import shutil
+from typing import Optional, Literal, cast
 import numpy as np
 import imageio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from awpy.data import MAP_DATA
+from awpy.types import GameFrame, GameRound
 
 
-def plot_map(map_name="de_dust2", map_type="original", dark=False):
+def plot_map(
+    map_name: str = "de_dust2", map_type: str = "original", dark: bool = False
+) -> tuple[plt.Figure, plt.Axes]:
     """Plots a blank map.
 
     Args:
@@ -54,7 +58,9 @@ def plot_map(map_name="de_dust2", map_type="original", dark=False):
 
 
 # Position function courtesy of PureSkill.gg
-def position_transform(map_name, position, axis):
+def position_transform(
+    map_name: str, position: float, axis: Literal["x", "y"]
+) -> float:
     """Transforms an X or Y coordinate.
 
     Args:
@@ -64,6 +70,9 @@ def position_transform(map_name, position, axis):
 
     Returns:
         float
+
+    Raises:
+        ValueError: Raises a ValueError if axis not 'x' or 'y'
     """
     start = MAP_DATA[map_name][axis]
     scale = MAP_DATA[map_name]["scale"]
@@ -75,11 +84,12 @@ def position_transform(map_name, position, axis):
         pos = start - position
         pos /= scale
         return pos
-    else:
-        return None
+    raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
 
 
-def position_transform_all(map_name, position):
+def position_transform_all(
+    map_name: str, position: tuple[float, float, float]
+) -> tuple[float, float, float]:
     """Transforms an X or Y coordinate.
 
     Args:
@@ -103,16 +113,16 @@ def position_transform_all(map_name, position):
 
 
 def plot_positions(
-    positions=None,
-    colors=None,
-    markers=None,
-    alphas=None,
-    sizes=None,
-    map_name="de_ancient",
-    map_type="original",
-    dark=False,
-    apply_transformation=False,
-):
+    positions: Optional[list[tuple[float, float]]] = None,
+    colors: Optional[list[str]] = None,
+    markers: Optional[list[str]] = None,
+    alphas: Optional[list[float]] = None,
+    sizes: Optional[list[float]] = None,
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    apply_transformation: bool = False,
+) -> tuple[plt.Figure, plt.Axes]:
     """Plots player positions
 
     Args:
@@ -136,7 +146,7 @@ def plot_positions(
     if markers is None:
         markers = []
     if alphas is None:
-        alphas = [1] * len(positions)
+        alphas = [1.0] * len(positions)
     if sizes is None:
         sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
@@ -158,8 +168,13 @@ def plot_positions(
 
 
 def plot_round(
-    filename, frames, map_name="de_ancient", map_type="original", dark=False, fps=10
-):
+    filename: str,
+    frames: list[GameFrame],
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    fps: int = 10,
+) -> Literal[True]:
     """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
 
     Args:
@@ -195,6 +210,7 @@ def plot_round(
             pass
         # Plot players
         for side in ["ct", "t"]:
+            side = cast(Literal["ct", "t"], side)
             for p in f[side]["players"]:
                 if side == "ct":
                     colors.append("cyan")
@@ -209,7 +225,7 @@ def plot_round(
                     position_transform(map_name, p["y"], "y"),
                 )
                 positions.append(pos)
-        f, _ = plot_positions(
+        fig, _ = plot_positions(
             positions=positions,
             colors=colors,
             markers=markers,
@@ -218,7 +234,7 @@ def plot_round(
             dark=dark,
         )
         image_files.append(f"csgo_tmp/{i}.png")
-        f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
+        fig.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = []
     for file in image_files:
@@ -229,13 +245,13 @@ def plot_round(
 
 
 def plot_nades(
-    rounds,
-    nades=None,
-    side="CT",
-    map_name="de_ancient",
-    map_type="original",
-    dark=False,
-):
+    rounds: list[GameRound],
+    nades: Optional[list[str]] = None,
+    side: str = "CT",
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+) -> tuple[plt.Figure, plt.Axes]:
     """Plots grenade trajectories.
 
     Args:

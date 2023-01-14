@@ -1,12 +1,18 @@
 """ Data cleaning functions
 """
 
+from typing import Optional, Any
 import difflib
 import numpy as np
+import pandas as pd
 import textdistance
 
 
-def associate_entities(game_names=None, entity_names=None, metric="lcss"):
+def associate_entities(
+    game_names: Optional[list[Optional[str]]] = None,
+    entity_names: Optional[list[str]] = None,
+    metric="lcss",
+) -> dict:
     """A function to return a dict of associated entities. Accepts
 
     Args:
@@ -30,7 +36,7 @@ def associate_entities(game_names=None, entity_names=None, metric="lcss"):
     elif metric.lower() == "jaro":
         dist_metric = textdistance.jaro.distance
     elif metric.lower() == "difflib":
-        entities = {}
+        entities: dict[Optional[str], Any] = {}
         for gn in game_names:
             if gn is not None and gn is not np.nan:
                 closest_name = difflib.get_close_matches(
@@ -63,7 +69,9 @@ def associate_entities(game_names=None, entity_names=None, metric="lcss"):
     return entities
 
 
-def replace_entities(df, col_name, entity_dict):
+def replace_entities(
+    df: pd.DataFrame, col_name: str, entity_dict: dict
+) -> pd.DataFrame:
     """A function to replace values in a Pandas df column given an entity dict, as created in associate_entities()
 
     Args:
