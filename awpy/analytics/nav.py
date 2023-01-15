@@ -386,6 +386,10 @@ def generate_area_distance_matrix(map_name: str, save: bool = False) -> AreaMatr
     """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all area
     Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)]
 
+    Note that this can take 20min to 5h to run depending on the map and produces
+    an output file of 50-300mb. If you run this offline and want to store the result for
+    later reuse make sure to set 'save=True'!
+
     Args:
         map_name (string): Map to generate the place matrix for
         save (bool, optional): Whether to save the matrix to file Defaults to 'False'
@@ -396,6 +400,10 @@ def generate_area_distance_matrix(map_name: str, save: bool = False) -> AreaMatr
     Raises:
         ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
+    print(
+        """Note that this can take 20min to 5h to run depending on the map and produces an output file of 50-300mb.
+    If you run this offline and want to store the result for later reuse make sure to set 'save=True'!"""
+    )
     # Initialize the dict structure
     area_distance_matrix: AreaMatrix = tree()
     if map_name not in NAV:
