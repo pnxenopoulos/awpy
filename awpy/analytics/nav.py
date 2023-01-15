@@ -36,7 +36,7 @@ from scipy.spatial import distance
 from shapely.geometry import Polygon
 
 from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
-from awpy.types import GameFrame, AreaMatrix, PlaceMatrix, DistanceType
+from awpy.types import GameFrame, AreaMatrix, PlaceMatrix, DistanceType, Token
 
 
 def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
@@ -302,15 +302,6 @@ def point_distance(
     # if dist_type == "cosine":
     distance_obj["distance"] = distance.cosine(point_a, point_b)
     return distance_obj
-
-
-class Token(TypedDict):
-    """TypedDict for token object collection information about player positions
-    into tokenized strings."""
-
-    tToken: str
-    ctToken: str
-    token: str
 
 
 def generate_position_token(map_name: str, frame: GameFrame) -> Token:

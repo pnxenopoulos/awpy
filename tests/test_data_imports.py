@@ -1,5 +1,3 @@
-import os
-import pytest
 import networkx
 
 from awpy.data import MAP_DATA, NAV, NAV_CSV, NAV_GRAPHS, PLACE_DIST_MATRIX

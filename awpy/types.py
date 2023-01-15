@@ -3,6 +3,15 @@
 from typing import Optional, TypedDict, Literal
 
 
+class Token(TypedDict):
+    """TypedDict for token object collection information about player positions
+    into tokenized strings."""
+
+    tToken: str
+    ctToken: str
+    token: str
+
+
 class Area(TypedDict):
     """TypedDict for area entries in NAV"""
 
