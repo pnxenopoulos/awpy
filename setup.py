@@ -20,7 +20,8 @@ setup(
         "textdistance>=4.2.0",
         "imageio>=2.9.0",
         "tqdm>=4.55.2",
-    ],
+        "Shapely>=1.8.2",
+        "sympy>=1.10.1",    ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
         "": [

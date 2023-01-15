@@ -258,7 +258,7 @@ def player_stats(
                     player_statistics[traded_key]["tradedDeaths"] += 1
             if (
                 k["assisterSteamID"]
-                and k["assisterTeam"] != k["victimTeam"]
+                and k["assisterSide"] != k["victimSide"]
                 and assister_key in player_statistics
                 and k["assisterSide"] in active_sides
             ):
@@ -266,7 +266,7 @@ def player_stats(
                 kast[assister_key]["a"] = True
             if (
                 k["flashThrowerSteamID"]
-                and k["flashThrowerTeam"] != k["victimTeam"]
+                and k["flashThrowerSide"] != k["victimSide"]
                 and flashthrower_key in player_statistics
                 and k["flashThrowerSide"] in active_sides
             ):
