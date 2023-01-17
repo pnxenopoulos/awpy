@@ -65,9 +65,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>awpy.analytics.states</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">awpy.analytics.states</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -77,23 +77,29 @@
            <div itemprop="articleBody">
              
   <h1>Source code for awpy.analytics.states</h1><div class="highlight"><pre>
-<div class="viewcode-block" id="generate_vector_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_vector_state">[docs]</a><span></span><span class="k">def</span> <span class="nf">generate_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">map_name</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns a game state in a dictionary format.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Functions to to generate game stats based on snapshots from a demofile.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">awpy.types</span> <span class="kn">import</span> <span class="n">GameFrame</span>
+
+
+<div class="viewcode-block" id="generate_vector_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_vector_state">[docs]</a><span class="k">def</span> <span class="nf">generate_vector_state</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">GameFrame</span><span class="p">,</span> <span class="n">map_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a game state in a dictionary format.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
+<span class="sd">        frame (GameFrame) : Dict output of a frame generated from the DemoParser class</span>
 <span class="sd">        map_name (string): String indicating the map name</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A dict with keys for each feature.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">game_state</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">game_state</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;mapName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">map_name</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;secondsSincePhaseStart&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;seconds&quot;</span><span class="p">]</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;bombPlanted&quot;</span><span class="p">]</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;bombsite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;bombsite&quot;</span><span class="p">]</span>
-    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;totalSmokes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;smokes&quot;</span><span class="p">])</span>
-    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;totalFires&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;fires&quot;</span><span class="p">])</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;totalSmokes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;smokes&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;totalFires&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="s2">&quot;fires&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">[])</span>
 
     <span class="c1"># Team specific info (CT)</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctAlive&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
@@ -105,7 +111,7 @@
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctEqValStart&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctBombZone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;defusers&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">[]:</span>
         <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctEqValStart&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;equipmentValueFreezetimeEnd&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;isAlive&quot;</span><span class="p">]:</span>
             <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctAlive&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -115,6 +121,8 @@
             <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctEq&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;equipmentValue&quot;</span><span class="p">]</span>
             <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctUtility&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;totalUtility&quot;</span><span class="p">]</span>
             <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;defusers&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hasDefuse&quot;</span><span class="p">]</span>
+            <span class="c1"># This does not seem to work correctly</span>
+            <span class="c1"># It is never filled in parse_demo.go</span>
             <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;isInBombZone&quot;</span><span class="p">]:</span>
                 <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;ctBombZone&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -128,7 +136,7 @@
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tEqValStart&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tHoldingBomb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tBombZone&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">frame</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">][</span><span class="s2">&quot;players&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">[]:</span>
         <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tEqValStart&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;equipmentValueFreezetimeEnd&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;isAlive&quot;</span><span class="p">]:</span>
             <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tAlive&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -137,6 +145,8 @@
             <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tHelmet&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hasHelmet&quot;</span><span class="p">]</span>
             <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tEq&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;equipmentValue&quot;</span><span class="p">]</span>
             <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tUtility&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;totalUtility&quot;</span><span class="p">]</span>
+            <span class="c1"># This does not seem to work correctly</span>
+            <span class="c1"># It is never filled in parse_demo.go</span>
             <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;isInBombZone&quot;</span><span class="p">]:</span>
                 <span class="n">game_state</span><span class="p">[</span><span class="s2">&quot;tBombZone&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;hasBomb&quot;</span><span class="p">]:</span>
@@ -145,11 +155,11 @@
     <span class="k">return</span> <span class="n">game_state</span></div>
 
 
-<div class="viewcode-block" id="generate_graph_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_graph_state">[docs]</a><span class="k">def</span> <span class="nf">generate_graph_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns a game state as a graph</span>
+<div class="viewcode-block" id="generate_graph_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_graph_state">[docs]</a><span class="k">def</span> <span class="nf">generate_graph_state</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">GameFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a game state as a graph</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
+<span class="sd">        frame (GameFrame) : Dict output of a frame generated from the DemoParser class</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;, where each entry is a vector. Global vector is CT + T concatenated</span>
@@ -157,11 +167,11 @@
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ct&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;global&quot;</span><span class="p">:</span> <span class="p">[]}</span></div>
 
 
-<div class="viewcode-block" id="generate_set_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_set_state">[docs]</a><span class="k">def</span> <span class="nf">generate_set_state</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns a game state as a set</span>
+<div class="viewcode-block" id="generate_set_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_set_state">[docs]</a><span class="k">def</span> <span class="nf">generate_set_state</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">GameFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a game state as a set</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        frame (dict) : Dict output of a frame generated from the DemoParser class</span>
+<span class="sd">        frame (GameFrame) : Dict output of a frame generated from the DemoParser class</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;, where each entry is a vector. Global vector is CT + T concatenated</span>

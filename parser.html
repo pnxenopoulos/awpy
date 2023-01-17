@@ -60,7 +60,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-awpy.parser.demoparser">awpy.parser.demoparser</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser"><code class="docutils literal notranslate"><span class="pre">DemoParser</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.demofile"><code class="docutils literal notranslate"><span class="pre">DemoParser.demofile</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.outpath"><code class="docutils literal notranslate"><span class="pre">DemoParser.outpath</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.demo_id"><code class="docutils literal notranslate"><span class="pre">DemoParser.demo_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.output_file"><code class="docutils literal notranslate"><span class="pre">DemoParser.output_file</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.log"><code class="docutils literal notranslate"><span class="pre">DemoParser.log</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse_rate"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse_rate</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse_frames"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse_frames</span></code></a></li>
@@ -68,6 +70,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.trade_time"><code class="docutils literal notranslate"><span class="pre">DemoParser.trade_time</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.dmg_rolled"><code class="docutils literal notranslate"><span class="pre">DemoParser.dmg_rolled</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.buy_style"><code class="docutils literal notranslate"><span class="pre">DemoParser.buy_style</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.json_indentation"><code class="docutils literal notranslate"><span class="pre">DemoParser.json_indentation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.json"><code class="docutils literal notranslate"><span class="pre">DemoParser.json</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.clean_rounds"><code class="docutils literal notranslate"><span class="pre">DemoParser.clean_rounds()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#awpy.parser.demoparser.DemoParser.parse_demo"><code class="docutils literal notranslate"><span class="pre">DemoParser.parse_demo()</span></code></a></li>
@@ -106,8 +110,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Parser</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Parser</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/parser.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -125,14 +129,17 @@
 <p>Data cleaning functions</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="awpy.parser.cleaning.associate_entities">
-<span class="sig-prename descclassname"><span class="pre">awpy.parser.cleaning.</span></span><span class="sig-name descname"><span class="pre">associate_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">game_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lcss'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/cleaning.html#associate_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.cleaning.associate_entities" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">awpy.parser.cleaning.</span></span><span class="sig-name descname"><span class="pre">associate_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">game_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lcss'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/awpy/parser/cleaning.html#associate_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.cleaning.associate_entities" title="Permalink to this definition"></a></dt>
 <dd><p>A function to return a dict of associated entities. Accepts</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>game_names</strong> (<em>list</em>) – A list of names generated by the demofile</p></li>
-<li><p><strong>entity_names</strong> (<em>list</em>) – A list of names</p></li>
-<li><p><strong>metric</strong> (<em>string</em>) – A string indicating distance metric, one of lcss, hamming, levenshtein, jaro, difflib</p></li>
+<li><p><strong>game_names</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of names generated by the demofile.
+Defaults to []</p></li>
+<li><p><strong>entity_names</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of names: Defaults to []</p></li>
+<li><p><strong>metric</strong> (<em>string</em><em>, </em><em>optional</em>) – A string indicating distance metric,
+one of lcss, hamming, levenshtein, jaro, difflib.
+Defaults to ‘lcss’</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -143,7 +150,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="awpy.parser.cleaning.replace_entities">
-<span class="sig-prename descclassname"><span class="pre">awpy.parser.cleaning.</span></span><span class="sig-name descname"><span class="pre">replace_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/cleaning.html#replace_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.cleaning.replace_entities" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">awpy.parser.cleaning.</span></span><span class="sig-name descname"><span class="pre">replace_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/awpy/parser/cleaning.html#replace_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.cleaning.replace_entities" title="Permalink to this definition"></a></dt>
 <dd><p>A function to replace values in a Pandas df column given an entity dict, as created in associate_entities()</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -162,15 +169,44 @@
 </section>
 <section id="module-awpy.parser.demoparser">
 <span id="awpy-parser-demoparser"></span><h2>awpy.parser.demoparser<a class="headerlink" href="#module-awpy.parser.demoparser" title="Permalink to this heading"></a></h2>
+<p>This module defines the DemoParser class that handles the core functionality of parsing and cleaning a csgo demo file</p>
+<p>Typical usage example:
+from awpy.parser import DemoParser</p>
+<p># Create parser object
+# Set log=True above if you want to produce a logfile for the parser
+demo_parser = DemoParser(</p>
+<blockquote>
+<div><p>demofile = “og-vs-natus-vincere-m1-dust2.dem”,
+demo_id = “OG-NaVi-BLAST2020”,
+parse_rate=128,
+trade_time=5,
+buy_style=”hltv”</p>
+</div></blockquote>
+<p>)</p>
+<p># Parse the demofile, output results to dictionary
+data = demo_parser.parse()
+<a class="reference external" href="https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb">https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb</a></p>
 <dl class="py class">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">awpy.parser.demoparser.</span></span><span class="sig-name descname"><span class="pre">DemoParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">demofile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demo_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_kill_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dmg_rolled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buy_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hltv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_indentation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">awpy.parser.demoparser.</span></span><span class="sig-name descname"><span class="pre">DemoParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">demofile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demo_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_frames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_kill_frames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dmg_rolled</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buy_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'hltv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_indentation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>DemoParser can parse, load and clean data from a CSGO demofile. Can be instantiated without a specified demofile.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.demofile">
 <span class="sig-name descname"><span class="pre">demofile</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.demofile" title="Permalink to this definition"></a></dt>
-<dd><p>A string denoting the path to the demo file, which ends in .dem</p>
+<dd><p>A string denoting the path to the demo file, which ends in .dem
+Defaults to ‘’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.outpath">
+<span class="sig-name descname"><span class="pre">outpath</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.outpath" title="Permalink to this definition"></a></dt>
+<dd><p>Path where to save the outputfile to. Default is current directory</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>string</p>
@@ -190,12 +226,23 @@
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.log">
-<span class="sig-name descname"><span class="pre">log</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.log" title="Permalink to this definition"></a></dt>
-<dd><p>A boolean indicating if the log should print to stdout.</p>
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.output_file">
+<span class="sig-name descname"><span class="pre">output_file</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.output_file" title="Permalink to this definition"></a></dt>
+<dd><p>The output file name. Default is ‘demoid’+”.json”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>boolean</p>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.log">
+<span class="sig-name descname"><span class="pre">log</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.log" title="Permalink to this definition"></a></dt>
+<dd><p>A boolean indicating if the log should print to stdout. Default is False</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -203,10 +250,11 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_rate">
 <span class="sig-name descname"><span class="pre">parse_rate</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_rate" title="Permalink to this definition"></a></dt>
-<dd><p>One of 128, 64, 32, 16, 8, 4, 2, or 1. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.</p>
+<dd><p>One of 128, 64, 32, 16, 8, 4, 2, or 1.
+The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>int</p>
+<dd class="field-odd"><p>int, optional</p>
 </dd>
 </dl>
 </dd></dl>
@@ -214,7 +262,7 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_frames">
 <span class="sig-name descname"><span class="pre">parse_frames</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_frames" title="Permalink to this definition"></a></dt>
-<dd><p>Flag if you want to parse frames (trajectory data) or not</p>
+<dd><p>Flag if you want to parse frames (trajectory data) or not. Default is True</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>bool</p>
@@ -225,7 +273,7 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_kill_frames">
 <span class="sig-name descname"><span class="pre">parse_kill_frames</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_kill_frames" title="Permalink to this definition"></a></dt>
-<dd><p>Flag if you want to parse frames on kills</p>
+<dd><p>Flag if you want to parse frames on kills. Default is False</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>bool</p>
@@ -239,7 +287,7 @@
 <dd><p>Length of the window for a trade (in seconds). Default is 5.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>int</p>
+<dd class="field-odd"><p>int, optional</p>
 </dd>
 </dl>
 </dd></dl>
@@ -247,7 +295,9 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.dmg_rolled">
 <span class="sig-name descname"><span class="pre">dmg_rolled</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.dmg_rolled" title="Permalink to this definition"></a></dt>
-<dd><p>Boolean if you want damages rolled up (since multiple damages for a player can happen in 1 tick from the same weapon.)</p>
+<dd><p>Boolean if you want damages rolled up
+(since multiple damages for a player can happen in 1 tick from the same weapon.)
+Default is False</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>bool</p>
@@ -258,10 +308,35 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.buy_style">
 <span class="sig-name descname"><span class="pre">buy_style</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.buy_style" title="Permalink to this definition"></a></dt>
-<dd><p>Buy style string, one of “hltv” or “csgo”</p>
+<dd><p>Buy style string, one of “hltv” or “csgo”
+Default is “hltv”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.json_indentation">
+<span class="sig-name descname"><span class="pre">json_indentation</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.json_indentation" title="Permalink to this definition"></a></dt>
+<dd><p>Whether the json file should be pretty printed
+with indentation (larger, more readable) or not (smaller, less human readable)
+Default is False</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.json">
+<span class="sig-name descname"><span class="pre">json</span></span><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.json" title="Permalink to this definition"></a></dt>
+<dd><p>Dictionary containing the parsed json file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -273,7 +348,7 @@
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.clean_rounds">
-<span class="sig-name descname"><span class="pre">clean_rounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">remove_no_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_warmups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_knifes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_timings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_excess_players</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_excess_kills</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_endings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_scoring</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_to_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.clean_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.clean_rounds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">clean_rounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">remove_no_frames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_warmups</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_knifes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_timings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_excess_players</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_excess_kills</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_endings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_bad_scoring</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_to_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Game</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.clean_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.clean_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Cleans a parsed demofile JSON.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -291,7 +366,10 @@
 </ul>
 </dd>
 <dt class="field-even">Raises</dt>
-<dd class="field-even"><p><strong>AttributeError</strong> – Raises an AttributeError if the .json attribute is None</p>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>AttributeError</strong> – Raises an AttributeError if the .json attribute is None</p></li>
+<li><p><strong>ValueError</strong> – Raises a ValueError if the return type is neither ‘json’ nor ‘df’</p></li>
+</ul>
 </dd>
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>A dictionary of the cleaned demo.</p>
@@ -304,12 +382,12 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse">
-<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'json'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Game</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse" title="Permalink to this definition"></a></dt>
 <dd><p>Wrapper for parse_demo() and read_json(). Use to parse a demo.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>return_type</strong> (<em>string</em>) – Either “json” or “df”</p></li>
+<li><p><strong>return_type</strong> (<em>string</em><em>, </em><em>optional</em>) – Either “json” or “df”. Default is “json”</p></li>
 <li><p><strong>clean</strong> (<em>bool</em><em>, </em><em>optional</em>) – True to run clean_rounds, otherwise, uncleaned data is returned. Defaults to True.</p></li>
 </ul>
 </dd>
@@ -327,7 +405,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_demo">
-<span class="sig-name descname"><span class="pre">parse_demo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse_demo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_demo" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">parse_demo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse_demo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_demo" title="Permalink to this definition"></a></dt>
 <dd><p>Parse a demofile using the Go script parse_demo.go – this function needs the .demofile to be set in the class, and the file needs to exist.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -344,7 +422,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.parse_json_to_df">
-<span class="sig-name descname"><span class="pre">parse_json_to_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse_json_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_json_to_df" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">parse_json_to_df</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.parse_json_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.parse_json_to_df" title="Permalink to this definition"></a></dt>
 <dd><p>Returns JSON into dictionary where keys correspond to data frames</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -358,7 +436,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.read_json">
-<span class="sig-name descname"><span class="pre">read_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.read_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.read_json" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.read_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.read_json" title="Permalink to this definition"></a></dt>
 <dd><p>Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -375,7 +453,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_bad_scoring">
-<span class="sig-name descname"><span class="pre">remove_bad_scoring</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_bad_scoring"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_bad_scoring" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_bad_scoring</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_bad_scoring"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_bad_scoring" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds where the scoring is bad.</p>
 <p>We loop through the rounds:
 If the round ahead has equal or less score, we do not add the current round.
@@ -389,7 +467,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_end_round">
-<span class="sig-name descname"><span class="pre">remove_end_round</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bad_endings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['Draw',</span> <span class="pre">'Unknown',</span> <span class="pre">'']</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_end_round"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_end_round" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_end_round</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bad_endings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_end_round"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_end_round" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds with bad end reason.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -403,7 +481,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_excess_kill_rounds">
-<span class="sig-name descname"><span class="pre">remove_excess_kill_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_excess_kill_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_excess_kill_rounds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_excess_kill_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_excess_kill_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_excess_kill_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds with more than 10 kills.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -414,7 +492,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_excess_players">
-<span class="sig-name descname"><span class="pre">remove_excess_players</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_excess_players"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_excess_players" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_excess_players</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_excess_players"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_excess_players" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds where there are more than 5 players on a side.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -425,7 +503,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_knife_rounds">
-<span class="sig-name descname"><span class="pre">remove_knife_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_knife_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_knife_rounds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_knife_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_knife_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_knife_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Removes knife rounds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -436,7 +514,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_rounds_with_no_frames">
-<span class="sig-name descname"><span class="pre">remove_rounds_with_no_frames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_rounds_with_no_frames"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_rounds_with_no_frames" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_rounds_with_no_frames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_rounds_with_no_frames"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_rounds_with_no_frames" title="Permalink to this definition"></a></dt>
 <dd><p>Removes rounds with no frames</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -447,7 +525,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_time_rounds">
-<span class="sig-name descname"><span class="pre">remove_time_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_time_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_time_rounds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_time_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_time_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_time_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Remove rounds with odd round timings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -458,7 +536,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.remove_warmups">
-<span class="sig-name descname"><span class="pre">remove_warmups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_warmups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_warmups" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">remove_warmups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.remove_warmups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.remove_warmups" title="Permalink to this definition"></a></dt>
 <dd><p>Removes warmup rounds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -469,7 +547,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.renumber_rounds">
-<span class="sig-name descname"><span class="pre">renumber_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.renumber_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.renumber_rounds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">renumber_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.renumber_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.renumber_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Renumbers the rounds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -480,7 +558,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.rescore_rounds">
-<span class="sig-name descname"><span class="pre">rescore_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.rescore_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.rescore_rounds" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">rescore_rounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.rescore_rounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.rescore_rounds" title="Permalink to this definition"></a></dt>
 <dd><p>Rescore the rounds based on round end reason.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises</dt>
@@ -491,7 +569,7 @@ If the round ahead has +1 score, we add the current round</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="awpy.parser.demoparser.DemoParser.write_json">
-<span class="sig-name descname"><span class="pre">write_json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.write_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.write_json" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">write_json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/awpy/parser/demoparser.html#DemoParser.write_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#awpy.parser.demoparser.DemoParser.write_json" title="Permalink to this definition"></a></dt>
 <dd><p>Rewrite the JSON file</p>
 </dd></dl>
 

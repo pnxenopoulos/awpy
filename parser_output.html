@@ -66,8 +66,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Example Parser JSON</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Example Parser JSON</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/parser_output.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -342,71 +342,71 @@
 <section id="bomb-events">
 <h2>Bomb Events<a class="headerlink" href="#bomb-events" title="Permalink to this heading"></a></h2>
 <p>The bomb action can be <cite>defuse</cite>, <cite>defuse_start</cite>, <cite>defuse_aborted</cite>, <cite>plant</cite>, <cite>plant_start</cite>, <cite>plant_aborted</cite>.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12250</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">67.40625</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00:48&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198043315625</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Beach&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2160.965576171875</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">144.39041137695312</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">160.03125</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;bombAction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plant_begin&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;bombSite&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A&quot;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12250</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">67.40625</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00:48&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198043315625</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Beach&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2160.965576171875</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">144.39041137695312</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">160.03125</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;bombAction&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plant_begin&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;bombSite&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A&quot;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </section>
 <section id="weapon-fires">
 <h2>Weapon Fires<a class="headerlink" href="#weapon-fires" title="Permalink to this heading"></a></h2>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8492</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.6875</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;01:47&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198098005932</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aidan&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1377.0318603515625</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">566.3394775390625</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">131.50010681152344</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">175.49560546875</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">355.4901123046875</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerStrafe&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;weapon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HE Grenade&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;weaponClass&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Grenades&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;zoomLevel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8492</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">8.6875</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;01:47&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198098005932</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aidan&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1377.0318603515625</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">566.3394775390625</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">131.50010681152344</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">175.49560546875</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">355.4901123046875</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerStrafe&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;weapon&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;HE Grenade&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;weaponClass&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Grenades&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;zoomLevel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </section>
 <section id="flashes">
 <h2>Flashes<a class="headerlink" href="#flashes" title="Permalink to this heading"></a></h2>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9518</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">24.71875</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;01:31&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198098005932</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aidan&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1434.30224609375</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2835.972412109375</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">127.61480712890625</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">154.5062255859375</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;attackerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">317.7081298828125</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198060045535</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Daniel&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">923.0872192382812</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2777.9443359375</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">128.74525451660156</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">239.095458984375</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;playerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">358.2037353515625</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nt">&quot;flashDuration&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.676444416</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;tick&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9518</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;seconds&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">24.71875</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;clockTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;01:31&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198098005932</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aidan&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1434.30224609375</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2835.972412109375</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">127.61480712890625</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">154.5062255859375</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attackerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">317.7081298828125</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerSteamID&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">76561198060045535</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Daniel&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerTeam&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerSide&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CT&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">923.0872192382812</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2777.9443359375</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerZ&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">128.74525451660156</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerViewX&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">239.095458984375</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;playerViewY&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">358.2037353515625</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;flashDuration&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.676444416</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </section>
