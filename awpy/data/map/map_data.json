@@ -272,7 +272,8 @@
     "de_nuke": {
         "pos_x": -3453.0,
         "pos_y": 2887.0,
-        "scale": 7.0
+        "scale": 7.0,
+        "z_cutoff": -495
     },
     "cs_agency": {
         "pos_x": -2947.0,
@@ -312,7 +313,8 @@
     "de_vertigo": {
         "pos_x": -3168.0,
         "pos_y": 1762.0,
-        "scale": 4.0
+        "scale": 4.0,
+        "z_cutoff": 11700
     },
     "de_aztec": {
         "pos_x": -3200.0,
