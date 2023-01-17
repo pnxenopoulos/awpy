@@ -11,7 +11,7 @@ import os
 import shutil
 from typing import Optional, Literal, cast
 import numpy as np
-import imageio.v2 as imageio
+import imageio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
