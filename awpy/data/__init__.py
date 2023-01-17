@@ -13,13 +13,14 @@ from awpy.types import AreaMatrix, PlaceMatrix, Area
 PATH = os.path.join(os.path.dirname(__file__), "")
 
 # Create nav tile info
-nav_dfs: list[pd.DataFrame] = []
-for file in os.listdir(PATH + "nav/"):
-    if file.endswith(".csv"):
-        df = pd.read_csv(PATH + "nav/" + file)
-        nav_dfs.append(df)
+# nav_dfs: list[pd.DataFrame] = []
+# for file in os.listdir(PATH + "nav/"):
+#     if file.endswith(".csv"):
+#         df = pd.read_csv(PATH + "nav/" + file)
+#         nav_dfs.append(df)
 
-NAV_CSV = pd.concat(nav_dfs, ignore_index=True)
+# NAV_CSV = pd.concat(nav_dfs, ignore_index=True)
+NAV_CSV = pd.read_csv(PATH + "nav/nav_info.csv")
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
 
 
