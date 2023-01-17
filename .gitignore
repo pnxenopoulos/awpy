@@ -136,3 +136,10 @@ dmypy.json
 
 # csgo demofiles
 .dem
+
+# vscode
+*code-workspace
+.vscode/
+
+# AREA_DIST_MATRICES (too large)
+awpy/data/nav/area_distance_matrix*.json

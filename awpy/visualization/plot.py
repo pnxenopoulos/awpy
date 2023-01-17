@@ -9,71 +9,60 @@
 """
 import os
 import shutil
-import collections
+from typing import Optional, Literal, cast
 import numpy as np
 import imageio
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from awpy.data import MAP_DATA
+from awpy.types import GameFrame, GameRound
 
 
-def plot_map(map_name="de_dust2", map_type="original", dark=False):
+def plot_map(
+    map_name: str = "de_dust2", map_type: str = "original", dark: bool = False
+) -> tuple[plt.Figure, plt.Axes]:
     """Plots a blank map.
 
     Args:
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        map_name (string, optional): Map to search. Defaults to "de_dust2"
+        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        dark (bool, optional): Only for use with map_type="simpleradar".
+            Indicates if you want to use the SimpleRadar dark map type
+            Defaults to False
 
     Returns:
         matplotlib fig and ax
     """
+    base_path = os.path.join(os.path.dirname(__file__), f"""../data/map/{map_name}""")
     if map_type == "original":
-        map_bg = imageio.imread(
-            os.path.join(os.path.dirname(__file__), "")
-            + f"""../data/map/{map_name}.png"""
-        )
-        if "z_cutoff" in MAP_DATA[map_name]:
-            map_bg_lower = imageio.imread(
-                os.path.join(os.path.dirname(__file__), "")
-                + f"""../data/map/{map_name}_lower.png"""
-            )
+        map_bg = imageio.imread(base_path + ".png")
+        if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
+            map_bg_lower = imageio.imread(base_path + "_lower.png")
             map_bg = np.concatenate([map_bg, map_bg_lower])
     else:
         try:
             col = "light"
             if dark:
                 col = "dark"
-            map_bg = imageio.imread(
-                os.path.join(os.path.dirname(__file__), "")
-                + f"""../data/map/{map_name}_{col}.png"""
-            )
-            if "z_cutoff" in MAP_DATA[map_name]:
-                map_bg_lower = imageio.imread(
-                    os.path.join(os.path.dirname(__file__), "")
-                    + f"""../data/map/{map_name}_lower_{col}.png"""
-                )
+            map_bg = imageio.imread(base_path + f"_{col}.png")
+            if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
+                map_bg_lower = imageio.imread(base_path + f"_lower_{col}.png")
                 map_bg = np.concatenate([map_bg, map_bg_lower])
         except FileNotFoundError:
-            map_bg = imageio.imread(
-                os.path.join(os.path.dirname(__file__), "")
-                + f"""../data/map/{map_name}.png"""
-            )
-            if "z_cutoff" in MAP_DATA[map_name]:
-                map_bg_lower = imageio.imread(
-                    os.path.join(os.path.dirname(__file__), "")
-                    + f"""../data/map/{map_name}_lower.png"""
-                )
+            map_bg = imageio.imread(base_path + ".png")
+            if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
+                map_bg_lower = imageio.imread(base_path + "_lower.png")
                 map_bg = np.concatenate([map_bg, map_bg_lower])
     fig, ax = plt.subplots()
     ax.imshow(map_bg, zorder=0)
-    # ax.imshow(map_bg, zorder=0)
     return fig, ax
 
 
 # Position function courtesy of PureSkill.gg
-def position_transform(map_name, position, axis):
+def position_transform(
+    map_name: str, position: float, axis: Literal["x", "y"]
+) -> float:
     """Transforms an X or Y coordinate.
 
     Args:
@@ -83,6 +72,9 @@ def position_transform(map_name, position, axis):
 
     Returns:
         float
+
+    Raises:
+        ValueError: Raises a ValueError if axis not 'x' or 'y'
     """
     start = MAP_DATA[map_name][axis]
     scale = MAP_DATA[map_name]["scale"]
@@ -94,11 +86,12 @@ def position_transform(map_name, position, axis):
         pos = start - position
         pos /= scale
         return pos
-    else:
-        return None
+    raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
 
 
-def position_transform_all(map_name, position):
+def position_transform_all(
+    map_name: str, position: tuple[float, float, float]
+) -> tuple[float, float, float]:
     """Transforms an X or Y coordinate.
 
     Args:
@@ -116,40 +109,54 @@ def position_transform_all(map_name, position):
     y = start_y - position[1]
     y /= scale
     z = position[2]
-    if z < MAP_DATA[map_name]["z_cutoff"]:
+    if "z_cutoff" in MAP_DATA[map_name] and z < MAP_DATA[map_name]["z_cutoff"]:
         y += 1024
     return (x, y, z)
 
 
 def plot_positions(
-    positions=[],
-    colors=[],
-    markers=[],
-    alphas=None,
-    sizes=None,
-    map_name="de_ancient",
-    map_type="original",
-    dark=False,
-    apply_transformation=False,
-):
+    positions: Optional[list[tuple[float, float]]] = None,
+    colors: Optional[list[str]] = None,
+    markers: Optional[list[str]] = None,
+    alphas: Optional[list[float]] = None,
+    sizes: Optional[list[float]] = None,
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    apply_transformation: bool = False,
+) -> tuple[plt.Figure, plt.Axes]:
     """Plots player positions
 
     Args:
-        positions (list): List of lists of length 2 ([[x,y], ...])
-        colors (list): List of colors for each player
-        markers (list): List of marker types for each player
-        alphas (list): List of alpha values for each player
-        sizes (list): List of marker sizes for each player
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
-        apply_transformation (boolean): Indicates if you need to also use position_transform() for the X/Y coordinates
+        positions (list, optional): List of lists of length 2 ([[x,y], ...])
+            Defaults to []
+        colors (list, optional): List of colors for each player
+            Defaults to []
+        markers (list, optional): List of marker types for each player
+            Defaults to []
+        alphas (list, optional): List of alpha values for each player
+            Defaults to [1.0] * len(positions)
+        sizes (list, optional): List of marker sizes for each player
+            Defaults to [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
+        map_name (string, optional): Map to search. Defaults to "de_ancient"
+        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        dark (bool, optional): Only for use with map_type="simpleradar".
+            Indicates if you want to use the SimpleRadar dark map type
+            Defaults to False
+        apply_transformation (bool, optional): Indicates if you need to also use position_transform() for the X/Y coordinates
+            Defaults to False
 
     Returns:
         matplotlib fig and ax
     """
+    if positions is None:
+        positions = []
+    if colors is None:
+        colors = []
+    if markers is None:
+        markers = []
     if alphas is None:
-        alphas = [1] * len(positions)
+        alphas = [1.0] * len(positions)
     if sizes is None:
         sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
@@ -171,17 +178,25 @@ def plot_positions(
 
 
 def plot_round(
-    filename, frames, map_name="de_ancient", map_type="original", dark=False, fps=10
-):
+    filename: str,
+    frames: list[GameFrame],
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+    fps: int = 10,
+) -> Literal[True]:
     """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif
         frames (list): List of frames from a parsed demo
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
-        fps (integer): Number of frames per second in the gif
+        map_name (string, optional): Map to search. Defaults to "de_ancient"
+        map_type (string, optional): "original" or "simpleradar". Defaults to "original
+        dark (bool, optional): Only for use with map_type="simpleradar".
+            Indicates if you want to use the SimpleRadar dark map type
+            Defaults to False
+        fps (int, optional): Number of frames per second in the gif
+            Defaults to 10
 
     Returns:
         True, saves .gif
@@ -208,7 +223,8 @@ def plot_round(
             pass
         # Plot players
         for side in ["ct", "t"]:
-            for p in f[side]["players"]:
+            side = cast(Literal["ct", "t"], side)
+            for p in f[side]["players"] or []:
                 if side == "ct":
                     colors.append("cyan")
                 else:
@@ -222,7 +238,7 @@ def plot_round(
                     position_transform(map_name, p["y"], "y"),
                 )
                 positions.append(pos)
-        f, _ = plot_positions(
+        fig, _ = plot_positions(
             positions=positions,
             colors=colors,
             markers=markers,
@@ -231,7 +247,7 @@ def plot_round(
             dark=dark,
         )
         image_files.append(f"csgo_tmp/{i}.png")
-        f.savefig(image_files[-1], dpi=300, bbox_inches="tight")
+        fig.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = []
     for file in image_files:
@@ -242,21 +258,32 @@ def plot_round(
 
 
 def plot_nades(
-    rounds, nades=[], side="CT", map_name="de_ancient", map_type="original", dark=False
-):
+    rounds: list[GameRound],
+    nades: Optional[list[str]] = None,
+    side: str = "CT",
+    map_name: str = "de_ancient",
+    map_type: str = "original",
+    dark: bool = False,
+) -> tuple[plt.Figure, plt.Axes]:
     """Plots grenade trajectories.
 
     Args:
         rounds (list): List of round objects from a parsed demo
-        nades (list): List of grenade types to plot
-        side (string): Specify side to plot grenades. Either "CT" or "T".
-        map_name (string): Map to search
-        map_type (string): "original" or "simpleradar"
-        dark (boolean): Only for use with map_type="simpleradar". Indicates if you want to use the SimpleRadar dark map type
+        nades (list, optional): List of grenade types to plot
+            Defaults to []
+        side (string, optional): Specify side to plot grenades. Either "CT" or "T".
+            Defaults to "CT"
+        map_name (string, optional): Map to search. Defaults to "de_ancient"
+        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        dark (bool, optional): Only for use with map_type="simpleradar".
+            Indicates if you want to use the SimpleRadar dark map type.
+            Defaults to False
 
     Returns:
         matplotlib fig and ax
     """
+    if nades is None:
+        nades = []
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for r in rounds:
         if r["grenades"]:

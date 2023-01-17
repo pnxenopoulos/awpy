@@ -1,10 +1,10 @@
 """ Util functions for csgo package
 """
 
-import json
-import numpy as np
 import re
 import subprocess
+import pandas as pd
+from awpy.types import Area
 
 
 class AutoVivification(dict):
@@ -18,12 +18,17 @@ class AutoVivification(dict):
             return value
 
 
-def check_go_version():
-    """Function to check the Golang version of the current machine, returns True if greater than 1.14.0"""
+def check_go_version() -> bool:
+    """Function to check the Golang version of the current machine, returns True if greater than 1.14.0
+
+    Returns:
+        bool whether the found go version is recent enough"""
     try:
         proc = subprocess.Popen(["go", "version"], stdout=subprocess.PIPE)
-        parsed_resp = proc.stdout.read().splitlines()
-        if len(parsed_resp) != 1:
+        parsed_resp = (
+            proc.stdout.read().splitlines() if proc.stdout is not None else None
+        )
+        if parsed_resp is None or len(parsed_resp) != 1:
             raise ValueError("Error finding Go version")
         else:
             go_version_text = parsed_resp[0].decode("utf-8")
@@ -37,24 +42,38 @@ def check_go_version():
         return False
 
 
-def is_in_range(value, min, max):
+def is_in_range(value, min, max) -> bool:
+    """Checks if a value is in the range of two others inclusive
+
+    Args:
+        value (Any): Value to check whether it is in range
+        min (Any): Lower inclusive bound of the range check
+        max (Any): Upper inclusive bound of the range check"""
     if value >= min and value <= max:
         return True
-    else:
-        return False
+    return False
 
 
-def transform_csv_to_json(sampleCsv):
-    """From Adi. Used to transform a nav file CSV to JSON."""
-    finalDic = {}
-    for curMap in sampleCsv["mapName"].unique():
-        mapDic = {}
-        for i in sampleCsv[sampleCsv["mapName"] == curMap].index:
-            curTile = sampleCsv.iloc[i]
-            curDic = {}
-            for curFeature in sampleCsv.columns:
-                if curFeature not in ["mapName", "areaId"]:
-                    curDic[curFeature] = curTile[curFeature]
-            mapDic[curTile["areaId"]] = curDic
-        finalDic[curMap] = mapDic
-    return finalDic
+def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[int, Area]]:
+    """From Adi. Used to transform a nav file CSV to JSON.
+
+    Args:
+        sample_csv (pd.DataFrame): Dataframe containing information about areas of each map
+
+    Returns:
+        dict[str, dict[int, Area]] containing information about each area of each map"""
+    final_dic: dict[str, dict[int, Area]] = {}
+    for cur_map in sample_csv["mapName"].unique():
+        map_dic: dict[int, Area] = {}
+        for i in sample_csv[sample_csv["mapName"] == cur_map].index:
+            cur_tile = sample_csv.iloc[i]
+            # Would rather initiate this as an empty 'Area' typeddict
+            cur_dic = {}
+            # And cast cur_feature to Literal["mapName","areaId","areaName","northWestX",...]
+            # However casting from Any to Literal does not work in mypy
+            for cur_feature in sample_csv.columns:
+                if cur_feature not in ["mapName", "areaId"]:
+                    cur_dic[cur_feature] = cur_tile[cur_feature]
+            map_dic[cur_tile["areaId"]] = cur_dic  # type: ignore[assignment]
+        final_dic[cur_map] = map_dic
+    return final_dic

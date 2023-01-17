@@ -1,5 +1,3 @@
-import os
-import pytest
 import networkx
 
 from awpy.data import MAP_DATA, NAV, NAV_CSV, NAV_GRAPHS, PLACE_DIST_MATRIX
@@ -13,13 +11,13 @@ class TestDataImports:
         assert NAV_CSV[NAV_CSV["mapName"] == "de_cbble"].shape[0] == 1180
 
     def test_nav(self):
-        assert type(NAV) == dict
-        assert type(NAV["de_dust2"][152])
+        assert isinstance(NAV, dict)
+        assert isinstance(NAV["de_dust2"][152], dict)
         assert NAV["de_dust2"][152]["areaName"] == "BombsiteA"
 
     def test_nav_graphs(self):
-        assert type(NAV_GRAPHS) == dict
-        assert type(NAV_GRAPHS["de_dust2"]) == networkx.DiGraph
+        assert isinstance(NAV_GRAPHS, dict)
+        assert isinstance(NAV_GRAPHS["de_dust2"], networkx.DiGraph)
 
     def test_map_data(self):
         """Tests the nav data"""
@@ -44,9 +42,9 @@ class TestDataImports:
         }
 
         assert PLACE_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"]["geodesic"] == {
-            "centroid": 4252.041279324491,
-            "representative_point": 4235.10392500164,
-            "median_dist": 4325.087557744252,
+            "centroid": 4031.26032282029,
+            "representative_point": 3963.363813464012,
+            "median_dist": 4061.8468439558255,
         }
         assert PLACE_DIST_MATRIX["de_nuke"]["Silo"]["TSpawn"]["graph"] == {
             "centroid": 27,

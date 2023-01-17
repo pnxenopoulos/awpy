@@ -1,9 +1,10 @@
 import json
 import os
+import logging
+from unittest.mock import patch
 import pandas as pd
 import pytest
 import requests
-
 
 from awpy.parser import DemoParser
 
@@ -16,7 +17,7 @@ class TestDemoParser:
 
     def setup_class(self):
         """Setup class by defining loading dictionary of test demo files"""
-        with open("tests/test_data.json") as f:
+        with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
         for file in self.demo_data:
             self._get_demofile(demo_link=self.demo_data[file]["url"], demo_name=file)
@@ -68,6 +69,10 @@ class TestDemoParser:
             log=False,
         )
         assert self.parser_inferred.demo_id == "default"
+        self.parser_inferred = DemoParser(demofile=r"D:/CSGO/Demos/800.dem", log=False)
+        assert self.parser_inferred.demo_id == "800"
+        self.parser_inferred = DemoParser(demofile=r"D:\CSGO\Demos\900.dem", log=False)
+        assert self.parser_inferred.demo_id == "900"
 
     def test_outpath(self):
         """Tests if the outpath is correctly recorded"""
@@ -128,29 +133,42 @@ class TestDemoParser:
         """Tests if log file is created"""
         assert self.parser.logger.name == "awpy"
 
-    def test_parse_opts(self):
+    def test_parse_opts(self, caplog):
         """Tests parsing options"""
+        caplog.set_level(logging.WARNING)
         self.parser_opts = DemoParser(
             demofile="default.dem",
-            log=False,
+            log=True,
             demo_id="test",
-            trade_time=7,
+            trade_time=8,
             buy_style="hltv",
+            dmg_rolled=True,
+            json_indentation=True,
         )
-        assert self.parser_opts.trade_time == 7
+        assert self.parser_opts.trade_time == 8
         assert self.parser_opts.buy_style == "hltv"
-        assert self.parser_opts.dmg_rolled == False
-        assert self.parser_opts.parse_frames == True
-        assert self.parser_opts.parse_kill_frames == False
+        assert self.parser_opts.parse_frames is True
+        assert self.parser_opts.dmg_rolled is True
+        assert self.parser_opts.json_indentation is True
+        assert self.parser_opts.parse_kill_frames is False
+        assert (
+            "Trade time of 8 is rather long. Consider a value between 4-7."
+            in caplog.text
+        )
         self.bad_parser_opts = DemoParser(
             demofile="default.dem",
-            log=False,
+            log=True,
             demo_id="test",
             trade_time=-2,
             buy_style="test",
         )
         assert self.bad_parser_opts.trade_time == 5
+
         assert self.bad_parser_opts.buy_style == "hltv"
+        assert (
+            "Trade time can't be negative, setting to default value of 5 seconds."
+            in caplog.text
+        )
 
     def test_read_json_bad_path(self):
         """Tests if the read_json fails on bad path"""
@@ -161,14 +179,17 @@ class TestDemoParser:
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict"""
         output_json = self.parser.parse()
-        assert type(output_json) is dict
+        assert isinstance(output_json, dict)
         assert os.path.exists("default.json")
         assert self.parser.output_file == "default.json"
+        assert self.parser.parse_error is False
 
     def test_parse_valve_matchmaking(self):
         """Tests if demos parse correctly"""
         self.valve_mm = DemoParser(
-            demofile="valve_matchmaking.dem", log=False, parse_rate=256
+            demofile="valve_matchmaking.dem",
+            log=False,
+            parse_rate=256,
         )
         self.valve_mm_data = self.valve_mm.parse()
         assert len(self.valve_mm_data["gameRounds"]) == 25  # 26
@@ -189,18 +210,18 @@ class TestDemoParser:
         assert self.default_data["tickRate"] == 128
         assert self.default_data["clientName"] == "GOTV Demo"
         assert len(self.default_data["gameRounds"]) == 29  # 33
-        assert self.default_data["parserParameters"]["damagesRolledUp"] == False
+        assert self.default_data["parserParameters"]["damagesRolledUp"] is False
         assert self.default_data["parserParameters"]["tradeTime"] == 5
         assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
         assert self.default_data["parserParameters"]["parseRate"] == 256
         for r in self.default_data["gameRounds"]:
-            assert type(r["bombEvents"]) == list
-            assert type(r["damages"]) == list
-            assert type(r["kills"]) == list
-            assert type(r["flashes"]) == list
-            assert type(r["grenades"]) == list
-            assert type(r["weaponFires"]) == list
-            assert type(r["frames"]) == list
+            assert isinstance(r["bombEvents"], list)
+            assert isinstance(r["damages"], list)
+            assert isinstance(r["kills"], list)
+            assert isinstance(r["flashes"], list)
+            assert isinstance(r["grenades"], list)
+            assert isinstance(r["weaponFires"], list)
+            assert isinstance(r["frames"], list)
 
     def test_parse_kill_frames(self):
         """Tests parse kill frames"""
@@ -217,33 +238,23 @@ class TestDemoParser:
     def test_default_parse_df(self):
         """Tests default parse to dataframe"""
         self.default_data_df = self.parser.parse(return_type="df")
-        assert type(self.default_data_df["rounds"]) == pd.DataFrame
-        assert type(self.default_data_df["kills"]) == pd.DataFrame
-        assert type(self.default_data_df["damages"]) == pd.DataFrame
-        assert type(self.default_data_df["grenades"]) == pd.DataFrame
-        assert type(self.default_data_df["flashes"]) == pd.DataFrame
-        assert type(self.default_data_df["weaponFires"]) == pd.DataFrame
-        assert type(self.default_data_df["bombEvents"]) == pd.DataFrame
-        assert type(self.default_data_df["frames"]) == pd.DataFrame
-        assert type(self.default_data_df["playerFrames"]) == pd.DataFrame
+        assert isinstance(self.default_data_df["rounds"], pd.DataFrame)
+        assert isinstance(self.default_data_df["kills"], pd.DataFrame)
+        assert isinstance(self.default_data_df["damages"], pd.DataFrame)
+        assert isinstance(self.default_data_df["grenades"], pd.DataFrame)
+        assert isinstance(self.default_data_df["flashes"], pd.DataFrame)
+        assert isinstance(self.default_data_df["weaponFires"], pd.DataFrame)
+        assert isinstance(self.default_data_df["bombEvents"], pd.DataFrame)
+        assert isinstance(self.default_data_df["frames"], pd.DataFrame)
+        assert isinstance(self.default_data_df["playerFrames"], pd.DataFrame)
+        self.parser.json = None
+        with pytest.raises(AttributeError):
+            self.parser.parse_json_to_df()
 
     def test_wrong_return_type(self):
         """Tests if wrong return type errors out"""
         with pytest.raises(ValueError):
             d = self.parser.parse(return_type="i_am_wrong")
-
-    def test_no_json(self):
-        """Tests parsing with no json"""
-        self.parser_new = DemoParser(demofile="default.dem", log=False, parse_rate=256)
-        with pytest.raises(AttributeError):
-            d = self.parser_new._parse_bomb_events()
-            d = self.parser_new._parse_flashes()
-            d = self.parser_new._parse_damages()
-            d = self.parser_new._parse_grenades()
-            d = self.parser_new._parse_kills()
-            d = self.parser_new._parse_frames()
-            d = self.parser_new._parse_player_frames()
-            d = self.parser_new._parse_weapon_fires()
 
     def test_bot_name(self):
         """Tests if bot naming is correct (brought up by Charmees).
@@ -321,7 +332,7 @@ class TestDemoParser:
         )
         self.phase_data = self.phase_parser.parse()
         for phase in self.phase_data["matchPhases"].keys():
-            assert type(self.phase_data["matchPhases"][phase]) == list
+            assert isinstance(self.phase_data["matchPhases"][phase], list)
 
     def test_round_clean(self):
         """Tests that remove time rounds is working."""
@@ -332,6 +343,31 @@ class TestDemoParser:
         self.round_clean_parser.remove_time_rounds()
         assert len(self.round_clean_data["gameRounds"]) == 24
 
+    def test_clean_return_type(self):
+        """Tests clean_rounds has correct return type."""
+        self.clean_return_parser = DemoParser(
+            demofile="default.dem",
+            log=False,
+            parse_rate=256,
+            dmg_rolled=True,
+            json_indentation=True,
+        )
+        _ = self.clean_return_parser.parse()
+        df_return = self.clean_return_parser.clean_rounds(return_type="df")
+        assert isinstance(df_return["rounds"], pd.DataFrame)
+        assert isinstance(df_return["kills"], pd.DataFrame)
+        assert isinstance(df_return["damages"], pd.DataFrame)
+        assert isinstance(df_return["grenades"], pd.DataFrame)
+        assert isinstance(df_return["flashes"], pd.DataFrame)
+        assert isinstance(df_return["weaponFires"], pd.DataFrame)
+        assert isinstance(df_return["bombEvents"], pd.DataFrame)
+        assert isinstance(df_return["frames"], pd.DataFrame)
+        assert isinstance(df_return["playerFrames"], pd.DataFrame)
+        dict_return = self.clean_return_parser.clean_rounds(return_type="json")
+        assert isinstance(dict_return, dict)
+        with pytest.raises(ValueError):
+            self.clean_return_parser.clean_rounds(return_type="return_type_does_not_exist")
+
     def test_player_clean(self):
         """Tests that remove excess players is working."""
         self.player_clean_parser = DemoParser(
@@ -340,6 +376,64 @@ class TestDemoParser:
         self.player_clean_data = self.player_clean_parser.parse()
         self.player_clean_parser.remove_excess_players()
         assert len(self.player_clean_data["gameRounds"]) == 23  # 28
+        test_json = {
+            "gameRounds": [
+                # Both players None -> remove
+                {"frames": [{"ct": {"players": None}, "t": {"players": None}}]},
+                # One None the other valid -> keep
+                {"frames": [{"ct": {"players": None}, "t": {"players": [1, 2, 3]}}]},
+                # One none the other invalid -> remove
+                {
+                    "frames": [
+                        {"ct": {"players": None}, "t": {"players": [1, 2, 3, 4, 5, 6]}}
+                    ]
+                },
+                # One None the other valid -> keep
+                {"frames": [{"ct": {"players": [1, 2, 3]}, "t": {"players": None}}]},
+                # Both valid -> keep
+                {
+                    "frames": [
+                        {"ct": {"players": [1, 2, 3]}, "t": {"players": [1, 2, 3]}}
+                    ]
+                },
+                # First valid second invalid -> remove
+                {
+                    "frames": [
+                        {
+                            "ct": {"players": [1, 2, 3]},
+                            "t": {"players": [1, 2, 3, 4, 5, 6]},
+                        }
+                    ]
+                },
+                # One none the other invalid -> remove
+                {
+                    "frames": [
+                        {"ct": {"players": [1, 2, 3, 4, 5, 6]}, "t": {"players": None}}
+                    ]
+                },
+                # First valid second invalid -> remove
+                {
+                    "frames": [
+                        {
+                            "ct": {"players": [1, 2, 3, 4, 5, 6]},
+                            "t": {"players": [1, 2, 3]},
+                        }
+                    ]
+                },
+                # Both invalid -> remove
+                {
+                    "frames": [
+                        {
+                            "ct": {"players": [1, 2, 3, 4, 5, 6]},
+                            "t": {"players": [1, 2, 3, 4, 5, 6]},
+                        }
+                    ]
+                },
+            ],
+        }
+        self.player_clean_parser.json = test_json
+        self.player_clean_parser.remove_excess_players()
+        assert len(self.player_clean_parser.json["gameRounds"]) == 3
 
     def test_zero_kills(self):
         """Tests a demo that raised many errors"""
@@ -357,6 +451,17 @@ class TestDemoParser:
         self.end_round_data = self.end_round_parser.parse()
         assert len(self.end_round_data["gameRounds"]) == 30
 
+    def test_clean_no_json(self):
+        """Tests cleaning when parser.json is not set or None"""
+        self.no_json_parser = DemoParser(
+            demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
+        )
+        with pytest.raises(AttributeError):
+            self.no_json_parser.clean_rounds()
+        self.no_json_parser.json = None
+        with pytest.raises(AttributeError):
+            self.no_json_parser.clean_rounds()
+
     def test_esea_ot_demo(self):
         """Tests an ESEA demo with OT rounds"""
         self.esea_ot_parser = DemoParser(
@@ -364,3 +469,72 @@ class TestDemoParser:
         )
         self.esea_ot_data = self.esea_ot_parser.parse()
         assert len(self.esea_ot_data["gameRounds"]) == 35
+
+    @patch("os.path.isfile")
+    def test_parse_demo_error(self, isfile_mock):
+        """Tests if parser sets parse_error correctly
+        if not outputfile can be found"""
+        isfile_mock.return_value = False
+        self.parser.parse_demo()
+        assert self.parser.parse_error is True
+
+    @patch("awpy.parser.demoparser.check_go_version")
+    def test_bad_go_version(self, go_version_mock):
+        """Tests parse_demo fails on bad go version"""
+        go_version_mock.return_value = False
+        with pytest.raises(ValueError):
+            self.parser.parse_demo()
+
+    def test_parse_error(self):
+        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
+        error_parser.json = None
+        with patch.object(error_parser, "read_json") as read_mock:
+            with patch.object(error_parser, "parse_demo") as parse_mock:
+                with pytest.raises(AttributeError):
+                    error_parser.parse(clean=False)
+                assert parse_mock.call_count == 1
+                assert read_mock.call_count == 1
+
+    def test_no_json(self):
+        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        no_json_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
+        # Json ist set but falsy
+        no_json_parser.json = None
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_frames()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_player_frames()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_rounds()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_weapon_fires()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_kills()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_damages()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_grenades()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_bomb_events()
+        with pytest.raises(AttributeError):
+            no_json_parser._parse_flashes()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_bad_scoring()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_rounds_with_no_frames()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_excess_players()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_end_round()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_warmups()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_knife_rounds()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_excess_kill_rounds()
+        with pytest.raises(AttributeError):
+            no_json_parser.remove_time_rounds()
+        no_json_parser.json = {"gameRounds": None}
+        with pytest.raises(AttributeError):
+            no_json_parser.renumber_rounds()

@@ -265,6 +265,7 @@ type KillAction struct {
 	PlayerTradedName    *string  `json:"playerTradedName"`
 	PlayerTradedTeam    *string  `json:"playerTradedTeam"`
 	PlayerTradedSteamID *int64   `json:"playerTradedSteamID"`
+	PlayerTradedSide    *string  `json:"playerTradedSide"`
 	Weapon              string   `json:"weapon"`
 	WeaponClass         string   `json:"weaponClass"`
 }
@@ -549,7 +550,7 @@ func convertHitGroup(hg events.HitGroup) string {
 	case 7:
 		return "RightLeg"
     case 8:
-		return "Neck"   
+		return "Neck"
 	case 10:
 		return "Gear"
 	default:
@@ -576,7 +577,7 @@ func convertWeaponClass(wc common.EquipmentClass) string {
 	default:
 		return "Unknown"
 	}
-}	
+}
 
 func determineSecond(tick int64, currentRound GameRound, currentGame Game) float64 {
 	roundTime := currentGame.ServerVars.RoundTime
@@ -628,7 +629,7 @@ func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) st
 	}
 	minutes := int64(math.Floor((seconds_remaining/60)))
 	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
-	
+
 	if (minutes < 0) || (seconds < 0) {
 		return "00:00"
 	}
@@ -744,12 +745,12 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 			if (w.String() != "Knife") && (w.String() != "C4") {
 				// Can't drop the knife
 				currentWeapon := WeaponInfo{}
-	
+
 				currentWeapon.WeaponName = w.String()
 				currentWeapon.WeaponClass = convertWeaponClass(w.Class())
 				currentWeapon.AmmoInMagazine = int64(w.AmmoInMagazine())
 				currentWeapon.AmmoInReserve = int64(w.AmmoReserve())
-	
+
 				//currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
 				currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
 				if w.Class() == 6 {
@@ -768,7 +769,7 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 					}
 				}
 			}
-	
+
 			if (w.String() == "C4") {
 				currentPlayer.HasBomb = true
 			}
@@ -840,15 +841,17 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 		// If the the previous killer is not the person killed, it is not a trade
 		if killB.VictimSteamID != nil {
 			if *killB.VictimSteamID == *killA.AttackerSteamID {
-				if (killB.Tick - killA.Tick) <= tradeTime*tickRate {
-					return true
-				}
-				return false
+				return inTradeWindow(killA, killB, tickRate, tradeTime)
 			}
 		}
 		return false
 	}
 }
+
+func inTradeWindow(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
+	return (killB.Tick - killA.Tick) <= tradeTime*tickRate
+}
+
 
 func countAlivePlayers(players []PlayerInfo) int64 {
 	var alivePlayers int64
@@ -1043,7 +1046,7 @@ func main() {
 		if e.Player != nil {
 			gs := p.GameState()
 			playerConnected := ConnectAction{}
-			
+
 			playerConnected.Tick = int64(gs.IngameTick())
 			playerConnected.ConnectType = "connect"
 			playerConnected.SteamID = e.Player.SteamID64
@@ -1057,7 +1060,7 @@ func main() {
 		if e.Player != nil {
 			gs := p.GameState()
 			playerConnected := ConnectAction{}
-			
+
 			playerConnected.Tick = int64(gs.IngameTick())
 			playerConnected.ConnectType = "disconnect"
 			playerConnected.SteamID = e.Player.SteamID64
@@ -1182,8 +1185,8 @@ func main() {
 			ctTeam := gs.TeamCounterTerrorists().ClanName()
 			currentRound.TTeam = &tTeam
 			currentRound.CTTeam = &ctTeam
-		} 
-		
+		}
+
 		// Parse round money
 		// tPlayers := gs.TeamTerrorists().Members()
 		// currentRound.TBeginMoney = 0
@@ -1433,7 +1436,7 @@ func main() {
 	// Parse round ends
 	p.RegisterEventHandler(func(e events.RoundEnd) {
 		gs := p.GameState()
-		
+
 		if roundStarted == 1 {
 			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 				tTeam := gs.TeamTerrorists().ClanName()
@@ -1442,7 +1445,7 @@ func main() {
 				currentRound.CTTeam = &ctTeam
 			}
 		}
-		
+
 		currentGame.MatchPhases.RoundEnded = append(currentGame.MatchPhases.RoundEnded, int64(gs.IngameTick()))
 
 		if roundStarted == 0 {
@@ -1553,7 +1556,7 @@ func main() {
 				bombPlantFound = true
 			}
 		}
-		currentBomb.BombSite = &bombSite	
+		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
@@ -1643,7 +1646,7 @@ func main() {
 
 			// Player loc
 			playerPos := e.Shooter.LastAlivePosition
-			
+
 			currentWeaponFire.PlayerX = float64(playerPos.X)
 			currentWeaponFire.PlayerY = float64(playerPos.Y)
 			currentWeaponFire.PlayerZ = float64(playerPos.Z)
@@ -1694,7 +1697,7 @@ func main() {
 
 			// Attacker loc
 			attackerPos := e.Attacker.LastAlivePosition
-			
+
 			currentFlash.AttackerX = float64(attackerPos.X)
 			currentFlash.AttackerY = float64(attackerPos.Y)
 			currentFlash.AttackerZ = float64(attackerPos.Z)
@@ -1732,7 +1735,7 @@ func main() {
 
 					// Player loc
 					playerPos := e.Player.LastAlivePosition
-					
+
 					playerX := float64(playerPos.X)
 					playerY := float64(playerPos.Y)
 					playerZ := float64(playerPos.Z)
@@ -1889,7 +1892,7 @@ func main() {
 				tTeam = gs.TeamTerrorists().ClanName()
 				ctTeam = gs.TeamCounterTerrorists().ClanName()
 			}
-			
+
 			switch e.Projectile.Thrower.Team {
 			case common.TeamTerrorists:
 				playerSide = "T"
@@ -1976,7 +1979,7 @@ func main() {
 					}
 				}
 			}
-			
+
 			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
 			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
 			// currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
@@ -1997,11 +2000,11 @@ func main() {
 					}
 				}
 			}
-			
+
 			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
 			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
 			// currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.CT.Players)
-			
+
 			// Parse projectiles objects
 			allGrenades := gs.GrenadeProjectiles()
 			currentFrame.Projectiles = []GrenadeInfo{}
@@ -2049,7 +2052,7 @@ func main() {
 						currentFrame.BombPlanted = true
 						currentFrame.BombSite = *b.BombSite
 					}
-				}	
+				}
 			} else {
 				currentFrame.BombPlanted = false
 			}
@@ -2157,7 +2160,7 @@ func main() {
 			// Parse teamkill
 			currentKill.IsTeamkill = false
 			currentKill.IsSuicide = false
-			
+
 			if e.Killer != nil {
 				// Parse TKs
 				if *currentKill.AttackerSide == *currentKill.VictimSide {
@@ -2176,7 +2179,7 @@ func main() {
 				currentKill.IsTeamkill = true
 				currentKill.IsSuicide = true
 			}
-			
+
 		}
 
 		// Assister
@@ -2210,11 +2213,14 @@ func main() {
 			currentKill.IsFirstKill = true
 		} else {
 			currentKill.IsFirstKill = false
-			currentKill.IsTrade = isTrade(currentRound.Kills[len(currentRound.Kills)-1], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
-			if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true {
-				currentKill.PlayerTradedName = currentRound.Kills[len(currentRound.Kills)-1].VictimName
-				currentKill.PlayerTradedSteamID = currentRound.Kills[len(currentRound.Kills)-1].VictimSteamID
-				currentKill.PlayerTradedTeam = currentRound.Kills[len(currentRound.Kills)-1].VictimTeam
+			for i := len(currentRound.Kills)-1; (i >= 0 && inTradeWindow(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime) && !currentKill.IsTrade); i-- {
+				currentKill.IsTrade = isTrade(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
+				if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true  {
+					currentKill.PlayerTradedName = currentRound.Kills[i].VictimName
+					currentKill.PlayerTradedSteamID = currentRound.Kills[i].VictimSteamID
+					currentKill.PlayerTradedTeam = currentRound.Kills[i].VictimTeam
+					currentKill.PlayerTradedSide = currentRound.Kills[i].VictimSide
+				}
 			}
 		}
 
@@ -2222,7 +2228,7 @@ func main() {
 		if e.Victim != nil {
 			currentKill.VictimBlinded = e.Victim.IsBlinded()
 			if e.Victim.IsBlinded() {
-				
+
 				// This will only be true if in the killfeed the assister is the flasher
 				if e.AssistedFlash {
 					currentKill.AssisterSteamID = nil
@@ -2242,7 +2248,7 @@ func main() {
 				}
 			}
 		}
-		
+
 		// Add Kill
 		currentRound.Kills = append(currentRound.Kills, currentKill)
 	})
@@ -2319,7 +2325,7 @@ func main() {
 				victimTeamName := e.Player.TeamState.ClanName()
 				currentDamage.VictimTeam = &victimTeamName
 			}
-			
+
 			victimSide := "Unknown"
 			switch e.Player.Team {
 			case common.TeamTerrorists:
@@ -2381,7 +2387,7 @@ func main() {
 			currentRound.CTRoundMoneySpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
 			currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
 		}
-		
+
 		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
 			currentFrame := GameFrame{}
 			currentFrame.IsKillFrame = false
@@ -2410,7 +2416,7 @@ func main() {
 					}
 				}
 			}
-			
+
 			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
 			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
 			// currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
@@ -2431,11 +2437,11 @@ func main() {
 					}
 				}
 			}
-			
+
 			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
 			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
 			// currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.CT.Players)
-			
+
 			// Parse projectiles objects
 			allGrenades := gs.GrenadeProjectiles()
 			currentFrame.Projectiles = []GrenadeInfo{}
@@ -2483,7 +2489,7 @@ func main() {
 						currentFrame.BombPlanted = true
 						currentFrame.BombSite = *b.BombSite
 					}
-				}	
+				}
 			} else {
 				currentFrame.BombPlanted = false
 			}
@@ -2498,13 +2504,13 @@ func main() {
 					currentRound.Frames = append(currentRound.Frames, currentFrame)
 				}
 			}
-			
+
 			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
 				currentFrameIdx = 0
 			} else {
 				currentFrameIdx = currentFrameIdx + 1
 			}
-			
+
 		} else {
 			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
 				currentFrameIdx = 0
@@ -2548,7 +2554,7 @@ func main() {
 				currentGame.Rounds[i].Damages = tempDamages
 			}
 		}
-		
+
 		// Write the JSON
 		var file []byte
 		if jsonIndentation {
