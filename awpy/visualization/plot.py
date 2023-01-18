@@ -76,7 +76,9 @@ def position_transform(
     Raises:
         ValueError: Raises a ValueError if axis not 'x' or 'y'
     """
-    start = MAP_DATA[map_name][axis]
+    if axis not in ["x", "y"]:
+        raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
+    start = MAP_DATA[map_name]["pos_" + axis]
     scale = MAP_DATA[map_name]["scale"]
     if axis == "x":
         pos = position - start
@@ -101,8 +103,8 @@ def position_transform_all(
     Returns:
         tuple
     """
-    start_x = MAP_DATA[map_name]["x"]
-    start_y = MAP_DATA[map_name]["y"]
+    start_x = MAP_DATA[map_name]["pos_x"]
+    start_y = MAP_DATA[map_name]["pos_y"]
     scale = MAP_DATA[map_name]["scale"]
     x = position[0] - start_x
     x /= scale
