@@ -26,8 +26,3 @@ dependencies = [
     "tqdm"
 ]
 dynamic = ["version"]
-
-[project.urls]
-homepage = "https://pypi.org/project/awpy/"
-documentation = "https://awpy.readthedocs.io/"
-repository = "hhttps://github.com/pnxenopoulos/awpy"
