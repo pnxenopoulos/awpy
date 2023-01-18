@@ -7,11 +7,13 @@ The following is a list of projects that rely on `awpy`. Please reach out on Dis
 
 Papers
 ######
-    Xenopoulos, P., Doraiswamy, H., & Silva, C. (2020, December). `Valuing Player Actions in Counter-Strike: Global Offensive <https://arxiv.org/pdf/2011.01324>`_. In 2020 IEEE International Conference on Big Data (Big Data) (pp. 1283-1292). IEEE.
+    Xenopoulos, P., FreeMan, B., & Silva, C. (2022) `Analyzing the Differences between Professional and Amateur Esports through Win Probability <https://www.peterxeno.com/papers/WWW_Professional_Amateur_Differences_CSGO.pdf>`_ In 2022 ACM Web Conference (WWW).
+    
+    Xenopoulos, P., Doraiswamy, H., & Silva, C. (2020). `Valuing Player Actions in Counter-Strike: Global Offensive <https://arxiv.org/pdf/2011.01324>`_. In 2020 IEEE International Conference on Big Data (Big Data).
 
-    Xenopoulos, P., & Silva, C. (2021, December). `Graph Neural Networks to Predict Sports Outcomes <https://ieeexplore.ieee.org/abstract/document/9671833>`_. In 2021 IEEE International Conference on Big Data (Big Data) (pp. 1757-1763). IEEE.
+    Xenopoulos, P., & Silva, C. (2021). `Graph Neural Networks to Predict Sports Outcomes <https://ieeexplore.ieee.org/abstract/document/9671833>`_. In 2021 IEEE International Conference on Big Data (Big Data).
 
-    Xenopoulos, P., Rulff, J., & Silva, C. (2021). `ggViz: Accelerating Large-Scale Esports Game Analysis <https://arxiv.org/pdf/2107.06495.pdf?ref=https://githubhelp.com>`_. arXiv preprint arXiv:2107.06495.
+    Xenopoulos, P., Rulff, J., & Silva, C. (2022). `ggViz: Accelerating Large-Scale Esports Game Analysis <https://arxiv.org/pdf/2107.06495.pdf`_. In ACM Proceedings on Human-Computer Interaction (CHI PLAY, Volume 6).
 
     Xenopoulos, P., Coelho, B., & Silva, C. (2021). `Optimal Team Economic Decisions in Counter-Strike <https://arxiv.org/pdf/2109.12990>`_. 2021 AISA Workshop (IJCAI).
 
