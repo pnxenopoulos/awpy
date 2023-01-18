@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "awpy"
+authors = [
+    {name = "Peter Xenopoulos", email = "xenopoulos@nyu.edu"},
+]
+description = "Counter-Strike: Global Offensive data parsing, analysis and visualization functions"
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["esports", "sports-analytics", "csgo", "counter-strike"]
+license = {text = "MIT License"}
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "pandas",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "networkx",
+    "textdistance",
+    "imageio",
+    "tqdm"
+]
+dynamic = ["version"]
+
+[project.urls]
+homepage = "https://pypi.org/project/awpy/"
+documentation = "https://awpy.readthedocs.io/"
+repository = "hhttps://github.com/pnxenopoulos/awpy"
