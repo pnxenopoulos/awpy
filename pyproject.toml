@@ -23,6 +23,8 @@ dependencies = [
     "networkx",
     "textdistance",
     "imageio",
-    "tqdm"
+    "tqdm",
+    "Shapely",
+    "sympy"
 ]
 dynamic = ["version"]
