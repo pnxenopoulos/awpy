@@ -155,6 +155,8 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: Raises a ValueError if axis not &#39;x&#39; or &#39;y&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;axis&#39; has to be &#39;x&#39; or &#39;y&#39; not </span><span class="si">{</span><span class="n">axis</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">start</span> <span class="o">=</span> <span class="n">MAP_DATA</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="s2">&quot;pos_&quot;</span> <span class="o">+</span> <span class="n">axis</span><span class="p">]</span>
     <span class="n">scale</span> <span class="o">=</span> <span class="n">MAP_DATA</span><span class="p">[</span><span class="n">map_name</span><span class="p">][</span><span class="s2">&quot;scale&quot;</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
