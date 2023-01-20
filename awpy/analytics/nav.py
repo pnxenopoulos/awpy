@@ -402,8 +402,8 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
 
     Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)]
 
-    Note that this can take 20min to 5h to run depending on the map and produces
-    an output file of 50-300mb. If you run this offline and want to store the result for
+    Note that this can take 20min to 13h to run depending on the map and produces
+    an output file of 50-600mb. If you run this offline and want to store the result for
     later reuse make sure to set 'save=True'!
 
     Args:
@@ -417,8 +417,8 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
         ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
     print(
-        "Note that this can take 20min to 5h to run depending on the"
-        " map and produces an output file of 50-300mb."
+        "Note that this can take 20min to 13h to run depending on the"
+        " map and produces an output file of 50-600mb."
         "If you run this offline and want to store the result "
         "for later reuse make sure to set 'save=True'!"
     )
@@ -429,6 +429,7 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
     areas = NAV[map_name]
     # And there over each area
     for area1 in areas:
+        print(f"Calculating distances from area {area1}")
         # Precompute the tile center
         area1_x = (
             NAV[map_name][area1]["southEastX"] + NAV[map_name][area1]["northWestX"]
@@ -507,6 +508,7 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
         centroids, reps = generate_centroids(map_name)
         # Loop over all pairs of named places
         for place1, centroid1 in centroids.items():
+            print(f"Calculating distances from place {place1}")
             for place2, centroid2 in centroids.items():
                 # If precomputed values do not exist calculate them
                 if map_name not in AREA_DIST_MATRIX:
