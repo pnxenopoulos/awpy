@@ -1,6 +1,6 @@
 """Functions for plotting player positions and nades.
 
-    Typical usage example:
+Example::
 
     from awpy.visualization.plot import plot_round
 
@@ -12,7 +12,7 @@
         dark=False,
     )
 
-    https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb
+https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb
 """
 import os
 import shutil

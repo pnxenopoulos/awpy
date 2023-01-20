@@ -1,6 +1,6 @@
 """Functions to calculate statistics for a player or team from a demofile.
 
-    Typical usage example:
+Example::
 
     from awpy.parser import DemoParser
     from awpy.analytics.stats import player_stats
@@ -17,7 +17,7 @@
     player_stats_json = player_stats(data["gameRounds"])
     player_stats_json[76561197999004010]
 
-    https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
+https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
 """
 from typing import Literal, TypeGuard, cast, overload
 

@@ -2,7 +2,7 @@
 
     Core functionality is parsing and cleaning a csgo demo file.
 
-    Typical usage example:
+Example::
     from awpy.parser import DemoParser
 
     # Create parser object
@@ -18,7 +18,8 @@
 
     # Parse the demofile, output results to dictionary
     data = demo_parser.parse()
-    https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb
+
+https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb
 """
 
 import json

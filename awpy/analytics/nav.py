@@ -1,6 +1,6 @@
 """Functions for finding distances between points, areas or states.
 
-    Typical usage example:
+Example::
 
     from awpy.analytics.nav import area_distance
 
@@ -28,7 +28,7 @@
         )
         ax.add_patch(rect)
 
-    https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb
+https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb
 """
 import itertools
 import json
