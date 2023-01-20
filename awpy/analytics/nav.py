@@ -493,6 +493,11 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
     Raises:
         ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
+    if map_name not in AREA_DIST_MATRIX:
+        print(
+            """Skipping calculation of median distances between places.
+If you want to have those included run `generate_area_distance_matrix` first!"""
+        )
     if map_name not in NAV:
         raise ValueError("Map not found.")
     areas = NAV[map_name]
@@ -528,22 +533,26 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
                     )[
                         "distance"
                     ]
-                    # Median of all the distance pairs for areaA in place1
-                    # to areaB in place2
-                    connections = []
-                    for sub_area1 in area_mapping[place1]:
-                        for sub_area2 in area_mapping[place2]:
-                            connections.append(
-                                area_distance(
-                                    map_name,
-                                    sub_area1,
-                                    sub_area2,
-                                    dist_type=dist_type,
-                                )["distance"]
-                            )
+                    # Median of all the distance pairs for areaA in place1 to areaB in place2
                     place_distance_matrix[place1][place2][dist_type][
                         "median_dist"
-                    ] = median(connections)
+                    ] = 0.0
+                    # Without having the AREA_DISTANCE_MATRIX precalculated
+                    # this step could take up to 13 hours
+                    # connections = []
+                    # for sub_area1 in area_mapping[place1]:
+                    #     for sub_area2 in area_mapping[place2]:
+                    #         connections.append(
+                    #             area_distance(
+                    #                 map_name,
+                    #                 sub_area1,
+                    #                 sub_area2,
+                    #                 dist_type=dist_type,
+                    #             )["distance"]
+                    #         )
+                    # place_distance_matrix[place1][place2][dist_type][
+                    #     "median_dist"
+                    # ] = median(connections)
                 # If precomputed values exist just grab those
                 else:
                     place_distance_matrix[place1][place2][dist_type][
