@@ -117,7 +117,168 @@ class TestNav:
                 "3": {"euclidean": 0, "graph": 0, "geodesic": 0},
             },
         }
-        self.expected_place_matrix = {
+        self.expected_place_matrix_1 = {
+            "Place1": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                    "geodesic": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0.0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                    "geodesic": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0.0,
+                    },
+                },
+            },
+            "Place2": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                    "graph": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": 0,
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": math.sqrt(5),
+                        "representative_point": math.sqrt(5),
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": 0,
+                    },
+                },
+            },
+            "Place3": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": math.sqrt(5),
+                        "representative_point": math.sqrt(5),
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 3.0,
+                        "representative_point": 3.0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+            },
+        }
+        self.expected_place_matrix_2 = {
             "Place1": {
                 "Place1": {
                     "euclidean": {
@@ -601,8 +762,8 @@ class TestNav:
 
         assert isinstance(result_matrix_2, dict)
 
-        assert self.expected_place_matrix == result_matrix_1
-        assert self.expected_place_matrix == result_matrix_2
+        assert self.expected_place_matrix_1 == result_matrix_1
+        assert self.expected_place_matrix_2 == result_matrix_2
         with pytest.raises(ValueError, match="Map not found."):
             _ = generate_place_distance_matrix("de_does_not_exist")
 
