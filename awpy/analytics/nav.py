@@ -493,28 +493,28 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
     Raises:
         ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
+    if map_name not in NAV:
+        raise ValueError("Map not found.")
     if map_name not in AREA_DIST_MATRIX:
         print(
             """Skipping calculation of median distances between places.
 If you want to have those included run `generate_area_distance_matrix` first!"""
         )
-    if map_name not in NAV:
-        raise ValueError("Map not found.")
     areas = NAV[map_name]
     place_distance_matrix: PlaceMatrix = tree()
-    # Loop over all three considered distance types
-    for dist_type in ["geodesic", "graph", "euclidean"]:
-        dist_type = cast(DistanceType, dist_type)
-        # Get the mapping "areaName": [areas that have this area name]
-        area_mapping = defaultdict(list)
-        for area in areas:
-            area_mapping[areas[area]["areaName"]].append(area)
-        # Get the centroids and representative points for each named place on the map
-        centroids, reps = generate_centroids(map_name)
-        # Loop over all pairs of named places
-        for place1, centroid1 in centroids.items():
-            print(f"Calculating distances from place {place1}")
-            for place2, centroid2 in centroids.items():
+    area_mapping = defaultdict(list)
+    # Get the mapping "areaName": [areas that have this area name]
+    for area in areas:
+        area_mapping[areas[area]["areaName"]].append(area)
+    # Get the centroids and representative points for each named place on the map
+    centroids, reps = generate_centroids(map_name)
+    # Loop over all pairs of named places
+    for place1, centroid1 in centroids.items():
+        print(f"Calculating distances from place {place1}")
+        for place2, centroid2 in centroids.items():
+            # Loop over all three considered distance types
+            for dist_type in ["geodesic", "graph", "euclidean"]:
+                dist_type = cast(DistanceType, dist_type)
                 # If precomputed values do not exist calculate them
                 if map_name not in AREA_DIST_MATRIX:
                     # Distances between the centroids for each named place

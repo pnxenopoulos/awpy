@@ -8,6 +8,11 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
+<<<<<<< HEAD
+=======
+
+from awpy.data import NAV, create_nav_graphs, PLACE_DIST_MATRIX
+>>>>>>> 2613e59 (Adding test for dist. matrix structure and content)
 from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
@@ -729,6 +734,17 @@ class TestNav:
             result_matrix = generate_area_distance_matrix(map_name="de_mock", save=True)
 
         assert isinstance(result_matrix, dict)
+        for area1_id in result_matrix:
+            assert isinstance(area1_id, str)
+            assert str(int(area1_id)) == area1_id
+            for area2_id in result_matrix[area1_id]:
+                assert isinstance(area2_id, str)
+                assert str(int(area2_id)) == area2_id
+                for dist_type in result_matrix[area1_id][area2_id]:
+                    assert dist_type in {"geodesic", "euclidean", "graph"}
+                    assert isinstance(
+                        result_matrix[area1_id][area2_id][dist_type], (float, int)
+                    )
         assert os.path.exists(
             os.path.join(self.dir, "area_distance_matrix_de_mock.json")
         )
@@ -745,17 +761,37 @@ class TestNav:
         ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
             with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
                 result_matrix_1 = generate_place_distance_matrix(
-                    map_name="de_mock", save=True
+                    map_name=self.map_name, save=True
                 )
             with patch(
                 "awpy.analytics.nav.AREA_DIST_MATRIX",
                 {self.map_name: self.expected_area_matrix},
             ):
                 result_matrix_2 = generate_place_distance_matrix(
-                    map_name="de_mock", save=False
+                    map_name=self.map_name, save=False
                 )
 
         assert isinstance(result_matrix_1, dict)
+        for place1_name in result_matrix_1:
+            assert isinstance(place1_name, str)
+            for place2_name in result_matrix_1[place1_name]:
+                assert isinstance(place2_name, str)
+                for dist_type in result_matrix_1[place1_name][place2_name]:
+                    assert dist_type in {"geodesic", "euclidean", "graph"}
+                    for ref_point in result_matrix_1[place1_name][place2_name][
+                        dist_type
+                    ]:
+                        assert ref_point in {
+                            "centroid",
+                            "representative_point",
+                            "median_dist",
+                        }
+                        assert isinstance(
+                            result_matrix_1[place1_name][place2_name][dist_type][
+                                ref_point
+                            ],
+                            (float, int),
+                        )
         assert os.path.exists(
             os.path.join(self.dir, f"place_distance_matrix_{self.map_name}.json")
         )
@@ -766,6 +802,26 @@ class TestNav:
         assert self.expected_place_matrix_2 == result_matrix_2
         with pytest.raises(ValueError, match="Map not found."):
             _ = generate_place_distance_matrix("de_does_not_exist")
+
+        with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
+            for map_name in PLACE_DIST_MATRIX:
+                result_matrix = generate_place_distance_matrix(
+                    map_name=map_name, save=False
+                )
+                for place1_name in PLACE_DIST_MATRIX[map_name]:
+                    for place2_name in PLACE_DIST_MATRIX[map_name][place1_name]:
+                        for dist_type in PLACE_DIST_MATRIX[map_name][place1_name][
+                            place2_name
+                        ]:
+                            for ref_point in ["centroid", "representative_point"]:
+                                assert (
+                                    PLACE_DIST_MATRIX[map_name][place1_name][
+                                        place2_name
+                                    ][dist_type][ref_point]
+                                    == result_matrix[place1_name][place2_name][
+                                        dist_type
+                                    ][ref_point]
+                                ), f"{map_name}, {place1_name}, {place2_name}, {dist_type}, {ref_point}"
 
     def test_generate_centroids(self):
         """Tests generate centroids."""
