@@ -144,6 +144,7 @@ class TestDemoParser:
             buy_style="hltv",
             dmg_rolled=True,
             json_indentation=True,
+            parse_chat=True,
         )
         assert self.parser_opts.trade_time == 8
         assert self.parser_opts.buy_style == "hltv"
@@ -151,10 +152,22 @@ class TestDemoParser:
         assert self.parser_opts.dmg_rolled is True
         assert self.parser_opts.json_indentation is True
         assert self.parser_opts.parse_kill_frames is False
+        assert self.parser_opts.parse_chat is True
         assert (
             "Trade time of 8 is rather long. Consider a value between 4-7."
             in caplog.text
         )
+        self.parser_opts.parse()
+        assert "parserParameters" in self.parser_opts.json
+        parser_parameters = self.parser_opts.json["parserParameters"]
+        assert isinstance(parser_parameters, dict)
+        assert parser_parameters["parseRate"] == 128
+        assert parser_parameters["parseFrames"] is True
+        assert parser_parameters["parseKillFrames"] is False
+        assert parser_parameters["tradeTime"] == 8
+        assert parser_parameters["roundBuyStyle"] == "hltv"
+        assert parser_parameters["damagesRolledUp"] is True
+        assert parser_parameters["parseChat"] is True
         self.bad_parser_opts = DemoParser(
             demofile="default.dem",
             log=True,
@@ -169,6 +182,21 @@ class TestDemoParser:
             "Trade time can't be negative, setting to default value of 5 seconds."
             in caplog.text
         )
+
+    def test_parse_chat(self):
+        """Tests whether parse chat works"""
+        self.test_chat = DemoParser(
+            demofile="default.dem",
+            parse_chat=True,
+        )
+        self.test_chat.parse()
+        assert "chatMessages" in self.test_chat.json
+        assert isinstance(self.test_chat.json["chatMessages"], list)
+        assert len(self.test_chat.json["chatMessages"]) > 0
+        assert isinstance(self.test_chat.json["chatMessages"][0], dict)
+        self.test_chat.parse_chat = False
+        self.test_chat.parse()
+        assert len(self.test_chat.json["chatMessages"]) == 0
 
     def test_read_json_bad_path(self):
         """Tests if the read_json fails on bad path"""
@@ -366,7 +394,9 @@ class TestDemoParser:
         dict_return = self.clean_return_parser.clean_rounds(return_type="json")
         assert isinstance(dict_return, dict)
         with pytest.raises(ValueError):
-            self.clean_return_parser.clean_rounds(return_type="return_type_does_not_exist")
+            self.clean_return_parser.clean_rounds(
+                return_type="return_type_does_not_exist"
+            )
 
     def test_player_clean(self):
         """Tests that remove excess players is working."""

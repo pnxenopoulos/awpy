@@ -41,6 +41,7 @@ type ParserOpts struct {
 	TradeTime       int64  `json:"tradeTime"`
 	RoundBuyStyle   string `json:"roundBuyStyle"`
 	DamagesRolled   bool   `json:"damagesRolledUp"`
+	ParseChat       bool   `json:"parseChat"`
 }
 
 // MatchPhases holds lists of when match events occurred
@@ -90,15 +91,17 @@ type MMRank struct {
 	WinCount   int     `json:"winCount"`
 }
 
-// Chat holds the matchmaking ranks. Only for MM demos.
+// Chat player and server chat messages
 type Chat struct {
-	SteamID   uint64   `json:"steamID"`
-	Text      string   `json:"text"`
-	Tick      int64    `json:"tick"`
-	Params    []string `json:"params"`    // params for SayText2
-	IsChat    bool     `json:"isChat"`    // false = team chat
-	IsChatAll bool     `json:"isChatAll"` // false = team chat
-	Type      string   `json:"type"`
+	SteamID *int64   `json:"steamID"`
+	Text    string   `json:"text"`
+	Tick    int64    `json:"tick"`
+	Params  []string `json:"params"` // params for SayText2
+	IsChat  bool     `json:"isChat"` // true for Chat and variable for SayText
+	// Unclear: Seems true for ChatMessages to allchat
+	// but false for SayText admin commands to all chat
+	IsChatAll bool   `json:"isChatAll"`
+	Type      string `json:"type"`
 }
 
 // ConnectAction is the act of connecting or disconnecting to the server
@@ -948,6 +951,7 @@ func main() {
 	damagesRolledPtr := fl.Bool("dmgrolled", false, "Roll up damages")
 	demoIDPtr := fl.String("demoid", "", "Demo string ID")
 	jsonIndentationPtr := fl.Bool("jsonindentation", false, "Indent JSON file")
+	parseChatPtr := fl.Bool("parsechat", false, "Parse chat messages")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
@@ -961,6 +965,7 @@ func main() {
 	roundBuyStyle := *roundBuyPtr
 	damagesRolled := *damagesRolledPtr
 	jsonIndentation := *jsonIndentationPtr
+	parseChat := *parseChatPtr
 	outpath := *outpathPtr
 
 	// Read in demofile
@@ -1006,9 +1011,12 @@ func main() {
 	// Set parsing options
 	parsingOpts := ParserOpts{}
 	parsingOpts.ParseRate = int(parseRate)
+	parsingOpts.ParseFrames = parseFrames
+	parsingOpts.ParseKillFrames = parseKillFrames
 	parsingOpts.TradeTime = tradeTime
 	parsingOpts.RoundBuyStyle = roundBuyStyle
 	parsingOpts.DamagesRolled = damagesRolled
+	parsingOpts.ParseChat = parseChat
 	currentGame.ParsingOpts = parsingOpts
 
 	currentRound := GameRound{}
@@ -1053,44 +1061,51 @@ func main() {
 		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
 	})
 
-	// Register handler for chat messages (ChatMessage)
-	p.RegisterEventHandler(func(e events.ChatMessage) {
+	if parseChat {
+		// Register handler for chat messages (ChatMessage)
+		p.RegisterEventHandler(func(e events.ChatMessage) {
+			if e.Sender != nil {
+				gs := p.GameState()
+				chatMessage := Chat{}
+				senderSteamID := int64(e.Sender.SteamID64)
+				chatMessage.SteamID = &senderSteamID
+				chatMessage.Text = e.Text
+				chatMessage.Tick = int64(gs.IngameTick())
+				chatMessage.IsChat = true
+				chatMessage.IsChatAll = e.IsChatAll
+				chatMessage.Type = "ChatMessage"
 
-		chatMessage := Chat{}
-		chatMessage.SteamID = e.Sender.SteamID64
-		chatMessage.Text = e.Text
-		chatMessage.Tick = int64(p.CurrentFrame())
-		chatMessage.IsChatAll = e.IsChatAll
-		chatMessage.Type = "ChatMessage"
+				currentGame.Chat = append(currentGame.Chat, chatMessage)
+			}
+		})
 
-		currentGame.Chat = append(currentGame.Chat, chatMessage)
-	})
+		// Register handler for chat messages (SayText)
+		p.RegisterEventHandler(func(e events.SayText) {
+			gs := p.GameState()
+			chatMessage := Chat{}
+			chatMessage.Text = e.Text
+			chatMessage.Tick = int64(gs.IngameTick())
+			chatMessage.IsChat = e.IsChat
+			chatMessage.IsChatAll = e.IsChatAll
+			chatMessage.Type = "SayText"
 
-	// Register handler for chat messages (SayText)
-	p.RegisterEventHandler(func(e events.SayText) {
-		chatMessage := Chat{}
-		chatMessage.Text = e.Text
-		chatMessage.Tick = int64(p.CurrentFrame())
-		chatMessage.IsChat = e.IsChat
-		chatMessage.IsChatAll = e.IsChatAll
-		chatMessage.Type = "SayText"
+			currentGame.Chat = append(currentGame.Chat, chatMessage)
+		})
 
-		currentGame.Chat = append(currentGame.Chat, chatMessage)
-	})
+		// Register handler for chat messages (SayText2)
+		p.RegisterEventHandler(func(e events.SayText2) {
+			gs := p.GameState()
+			chatMessage := Chat{}
+			chatMessage.Text = e.Params[1]
+			chatMessage.Params = e.Params
+			chatMessage.Tick = int64(gs.IngameTick())
+			chatMessage.IsChat = e.IsChat
+			chatMessage.IsChatAll = e.IsChatAll
+			chatMessage.Type = "SayText2"
 
-	// Register handler for chat messages (SayText2)
-	p.RegisterEventHandler(func(e events.SayText2) {
-		chatMessage := Chat{}
-		chatMessage.Text = e.Params[1]
-		chatMessage.Params = e.Params
-		chatMessage.Tick = int64(p.CurrentFrame())
-		chatMessage.IsChat = e.IsChat
-		chatMessage.IsChatAll = e.IsChatAll
-		chatMessage.Type = "SayText2"
-
-		currentGame.Chat = append(currentGame.Chat, chatMessage)
-	})
-
+			currentGame.Chat = append(currentGame.Chat, chatMessage)
+		})
+	}
 	// Parse player connects
 	p.RegisterEventHandler(func(e events.PlayerConnect) {
 		if e.Player != nil {
