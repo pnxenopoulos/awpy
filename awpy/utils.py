@@ -19,7 +19,7 @@ class AutoVivification(dict):
 
 
 def check_go_version() -> bool:
-    """Function to check the Golang version of the current machine, returns True if greater than 1.14.0
+    """Function to check the Golang version of the current machine, returns True if greater than 1.17.0
 
     Returns:
         bool whether the found go version is recent enough"""
@@ -33,10 +33,9 @@ def check_go_version() -> bool:
         else:
             go_version_text = parsed_resp[0].decode("utf-8")
             go_version = re.findall(r"\d\.\d+", go_version_text)
-            if int(go_version[0].replace(".", "")) >= 117:
+            if [int(x) for x in go_version[0].split(".")] >= [1, 17]:
                 return True
-            else:
-                return False
+            return False
     except Exception as e:
         print(e)
         return False

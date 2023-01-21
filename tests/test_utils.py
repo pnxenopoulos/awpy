@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 import tempfile
 
@@ -14,11 +13,12 @@ class TestUtils:
 
         inputs = [
             b"go version go1.19.4 windows/amd64",
-            b"go version go1.07.4 windows/amd64",
+            b"go version go1.7.4 windows/amd64",
             b"",
             b"a \n b",
+            b"go version go2.1.4 windows/amd64",
         ]
-        outputs = [True, False, False, False]
+        outputs = [True, False, False, False, True]
         for my_input, my_output in zip(inputs, outputs):
             with tempfile.TemporaryFile() as fp:
                 mock_subproc.Popen.return_value.stdout = fp

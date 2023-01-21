@@ -54,11 +54,11 @@ class TestDemoParser:
                 assert r["tScore"] == 0
                 assert r["ctScore"] == 0
             if i > 0 and i != len(rounds):
-                winningSide = rounds[i - 1]["winningSide"]
-                if winningSide == "ct":
+                winning_side = rounds[i - 1]["winningSide"]
+                if winning_side == "ct":
                     assert r["ctScore"] > rounds[i - 1]["ctScore"]
                     assert r["tScore"] == rounds[i - 1]["tScore"]
-                if winningSide == "t":
+                if winning_side == "t":
                     assert r["ctScore"] == rounds[i - 1]["ctScore"]
                     assert r["tScore"] > rounds[i - 1]["tScore"]
 
