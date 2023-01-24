@@ -30,6 +30,10 @@ Example::
 
 https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb
 """
+import sys
+import os
+import logging
+from typing import TypedDict, Literal, cast, get_args
 import itertools
 import json
 import math
@@ -416,11 +420,14 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
     Raises:
         ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
-    print(
-        "Note that this can take 20min to 13h to run depending on the"
-        " map and produces an output file of 50-600mb."
-        "If you run this offline and want to store the result "
-        "for later reuse make sure to set 'save=True'!"
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%H:%M:%S",
+    )
+    logging.warning(
+        """Note that this can take 20min to 13h to run depending on the map and produces an output file of 50-600mb.
+If you run this offline and want to store the result for later reuse make sure to set 'save=True'!"""
     )
     # Initialize the dict structure
     area_distance_matrix: AreaMatrix = tree()
@@ -429,7 +436,7 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
     areas = NAV[map_name]
     # And there over each area
     for area1 in areas:
-        print(f"Calculating distances from area {area1}")
+        logging.info("Calculating distances from area %s", area1)
         # Precompute the tile center
         area1_x = (
             NAV[map_name][area1]["southEastX"] + NAV[map_name][area1]["northWestX"]
@@ -493,10 +500,15 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
     Raises:
         ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%H:%M:%S",
+    )
     if map_name not in NAV:
         raise ValueError("Map not found.")
     if map_name not in AREA_DIST_MATRIX:
-        print(
+        logging.warning(
             """Skipping calculation of median distances between places.
 If you want to have those included run `generate_area_distance_matrix` first!"""
         )
@@ -510,7 +522,7 @@ If you want to have those included run `generate_area_distance_matrix` first!"""
     centroids, reps = generate_centroids(map_name)
     # Loop over all pairs of named places
     for place1, centroid1 in centroids.items():
-        print(f"Calculating distances from place {place1}")
+        logging.info("Calculating distances from place %s", place1)
         for place2, centroid2 in centroids.items():
             # Loop over all three considered distance types
             for dist_type in ["geodesic", "graph", "euclidean"]:
