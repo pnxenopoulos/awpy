@@ -103,7 +103,9 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
     return contains_x and contains_y
 
 
-def find_closest_area(map_name: str, point: list[float], flat:bool=False) -> ClosestArea:
+def find_closest_area(
+    map_name: str, point: list[float], flat: bool = False
+) -> ClosestArea:
     """Finds the closest area in the nav mesh.
 
     Searches through all the areas by comparing point to area centerpoint.
@@ -128,7 +130,7 @@ def find_closest_area(map_name: str, point: list[float], flat:bool=False) -> Clo
         msg = "Point must be a list [X,Y,Z]"
         raise ValueError(msg)
     if flat:
-        if len(point)!=2:
+        if len(point) != 2:
             raise ValueError("Point must be a list [X,Y] when flat is True")
     elif len(point) != 3:
         raise ValueError("Point must be a list [X,Y,Z]")
@@ -143,15 +145,12 @@ def find_closest_area(map_name: str, point: list[float], flat:bool=False) -> Clo
         avg_x, avg_y, avg_z = _get_area_center(map_name, area)
 
         if flat:
-            dist = np.sqrt(
-            (point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2
-            )
+            dist = np.sqrt((point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2)
         else:
-            avg_z = (
-                NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"]
-            ) / 2
             dist = np.sqrt(
-            (point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2 + (point[2] - avg_z) ** 2
+                (point[0] - avg_x) ** 2
+                + (point[1] - avg_y) ** 2
+                + (point[2] - avg_z) ** 2
             )
         if dist < closest_area["distance"]:
             closest_area["areaId"] = area

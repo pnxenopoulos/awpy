@@ -486,18 +486,28 @@ class TestNav:
             find_closest_area(map_name="test", point=[0, 0, 0])
         with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
             find_closest_area(map_name="de_dust2", point=[0, 0])
-        avg_x = (
-            NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"]
-        ) / 2
-        avg_y = (
-            NAV["de_dust2"][152]["northWestY"] + NAV["de_dust2"][152]["southEastY"]
-        ) / 2
-        avg_z = (
-            NAV["de_dust2"][152]["northWestZ"] + NAV["de_dust2"][152]["southEastZ"]
-        ) / 2
+        with pytest.raises(ValueError):
+            find_closest_area(map_name="de_dust2", point=[0, 0, 0], flat=True)
+        example_area = NAV["de_dust2"][152]
+        avg_x = (example_area["northWestX"] + example_area["southEastX"]) / 2
+        avg_y = (example_area["northWestY"] + example_area["southEastY"]) / 2
+        avg_z = (example_area["northWestZ"] + example_area["southEastZ"]) / 2
         area_found = find_closest_area(map_name="de_dust2", point=[avg_x, avg_y, avg_z])
         assert isinstance(area_found, dict)
         assert area_found["areaId"] == 152
+        lower_tunns_area = NAV["de_dust2"][1290]
+        avg_x = (lower_tunns_area["northWestX"] + lower_tunns_area["southEastX"]) / 2
+        avg_y = (lower_tunns_area["northWestY"] + lower_tunns_area["southEastY"]) / 2
+        avg_z = (lower_tunns_area["northWestZ"] + lower_tunns_area["southEastZ"]) / 2
+        area_found_flat = find_closest_area(
+            map_name="de_dust2", point=[avg_x, avg_y], flat=True
+        )
+        # find_closest_area(map_name="de_dust2", point=[avg_x, avg_y, 100])
+        # gives areaId of 8303. So if you are picking from a flat map
+        # any constant z value could lead to wrong results somewhere
+        # even on a 1 layer map if it still has elevation changes
+        assert isinstance(area_found_flat, dict)
+        assert area_found_flat["areaId"] == 1290
 
     def test_area_distance(self):  # sourcery skip: extract-duplicate-method
         """Tests area distance."""
