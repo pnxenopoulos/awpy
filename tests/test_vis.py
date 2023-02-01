@@ -122,7 +122,7 @@ class TestVis:
             "Molotov",
             "Incendiary Grenade",
         ]
-        gameRounds = [
+        game_rounds = [
             {
                 "grenades": [
                     {
@@ -181,10 +181,10 @@ class TestVis:
         fig, axis = plot_nades([])
         assert isinstance(fig, matplotlib.figure.Figure)
         assert isinstance(axis, matplotlib.axes.SubplotBase)
-        fig, axis = plot_nades(gameRounds, side="CT", nades=nades_to_plot)
+        fig, axis = plot_nades(game_rounds, side="CT", nades=nades_to_plot)
         with patch("awpy.visualization.plot.mpl.axes.Axes.scatter") as scatter_mock:
             with patch("awpy.visualization.plot.mpl.axes.Axes.plot") as plot_mock:
-                fig, axis = plot_nades(gameRounds, side="CT", nades=nades_to_plot)
+                fig, axis = plot_nades(game_rounds, side="CT", nades=nades_to_plot)
                 # Only call it for valid grenades (not decay) from the correct side
                 assert scatter_mock.call_count == 4
                 assert plot_mock.call_count == 4

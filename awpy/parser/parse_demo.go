@@ -28,6 +28,7 @@ type Game struct {
 	ServerVars     ServerConVar    `json:"serverVars"`
 	MatchPhases    MatchPhases     `json:"matchPhases"`
 	MMRanks        []MMRank        `json:"matchmakingRanks"`
+	Chat           []Chat          `json:"chatMessages"`
 	Connections    []ConnectAction `json:"playerConnections"`
 	Rounds         []GameRound     `json:"gameRounds"`
 }
@@ -40,22 +41,23 @@ type ParserOpts struct {
 	TradeTime       int64  `json:"tradeTime"`
 	RoundBuyStyle   string `json:"roundBuyStyle"`
 	DamagesRolled   bool   `json:"damagesRolledUp"`
+	ParseChat       bool   `json:"parseChat"`
 }
 
 // MatchPhases holds lists of when match events occurred
 type MatchPhases struct {
-	AnnLastRoundHalf      []int64 `json:"announcementLastRoundHalf"`
-	AnnFinalRound         []int64 `json:"announcementFinalRound"`
-	AnnMatchStarted       []int64 `json:"announcementMatchStarted"`
-	RoundStarted          []int64 `json:"roundStarted"`
-	RoundEnded            []int64 `json:"roundEnded"`
-	RoundFreezeEnded      []int64 `json:"roundFreezetimeEnded"`
-	RoundEndedOfficial    []int64 `json:"roundEndedOfficial"`
-	GameHalfEnded         []int64 `json:"gameHalfEnded"`
-	MatchStart            []int64 `json:"matchStart"`
-	MatchStartedChanged   []int64 `json:"matchStartedChanged"`
-	WarmupChanged         []int64 `json:"warmupChanged"`
-	TeamSwitch            []int64 `json:"teamSwitch"`
+	AnnLastRoundHalf    []int64 `json:"announcementLastRoundHalf"`
+	AnnFinalRound       []int64 `json:"announcementFinalRound"`
+	AnnMatchStarted     []int64 `json:"announcementMatchStarted"`
+	RoundStarted        []int64 `json:"roundStarted"`
+	RoundEnded          []int64 `json:"roundEnded"`
+	RoundFreezeEnded    []int64 `json:"roundFreezetimeEnded"`
+	RoundEndedOfficial  []int64 `json:"roundEndedOfficial"`
+	GameHalfEnded       []int64 `json:"gameHalfEnded"`
+	MatchStart          []int64 `json:"matchStart"`
+	MatchStartedChanged []int64 `json:"matchStartedChanged"`
+	WarmupChanged       []int64 `json:"warmupChanged"`
+	TeamSwitch          []int64 `json:"teamSwitch"`
 }
 
 // ServerConVar holds server convars, like round timers and timeouts, etc. Not always accurate.
@@ -87,6 +89,19 @@ type MMRank struct {
 	RankOld    string  `json:"rankOld"`
 	RankNew    string  `json:"rankNew"`
 	WinCount   int     `json:"winCount"`
+}
+
+// Chat player and server chat messages
+type Chat struct {
+	SteamID *int64   `json:"steamID"`
+	Text    string   `json:"text"`
+	Tick    int64    `json:"tick"`
+	Params  []string `json:"params"` // params for SayText2
+	IsChat  bool     `json:"isChat"` // true for Chat and variable for SayText
+	// Unclear: Seems true for ChatMessages to allchat
+	// but false for SayText admin commands to all chat
+	IsChatAll bool   `json:"isChatAll"`
+	Type      string `json:"type"`
 }
 
 // ConnectAction is the act of connecting or disconnecting to the server
@@ -136,8 +151,8 @@ type GameRound struct {
 
 // PlayerTeam
 type PlayerTeams struct {
-	TeamName string     `json:"teamName"`
-	Players  []Players  `json:"players"`
+	TeamName string    `json:"teamName"`
+	Players  []Players `json:"players"`
 }
 
 // Players
@@ -148,24 +163,24 @@ type Players struct {
 
 // GrenadeAction events
 type GrenadeAction struct {
-	ThrowTick         int64   `json:"throwTick"`
-	DestroyTick       int64   `json:"destroyTick"`
-	ThrowSecond       float64 `json:"throwSeconds"`
-	ThrowClockTime    string  `json:"throwClockTime"`
-	DestroySecond     float64 `json:"destroySeconds"`
-	DestroyClockTime  string  `json:"destroyClockTime"`
-	ThrowerSteamID    int64   `json:"throwerSteamID"`
-	ThrowerName       string  `json:"throwerName"`
-	ThrowerTeam       string  `json:"throwerTeam"`
-	ThrowerSide       string  `json:"throwerSide"`
-	ThrowerX          float64 `json:"throwerX"`
-	ThrowerY          float64 `json:"throwerY"`
-	ThrowerZ          float64 `json:"throwerZ"`
-	Grenade           string  `json:"grenadeType"`
-	GrenadeX          float64 `json:"grenadeX"`
-	GrenadeY          float64 `json:"grenadeY"`
-	GrenadeZ          float64 `json:"grenadeZ"`
-	UniqueID          int64   `json:"entityId"`
+	ThrowTick        int64   `json:"throwTick"`
+	DestroyTick      int64   `json:"destroyTick"`
+	ThrowSecond      float64 `json:"throwSeconds"`
+	ThrowClockTime   string  `json:"throwClockTime"`
+	DestroySecond    float64 `json:"destroySeconds"`
+	DestroyClockTime string  `json:"destroyClockTime"`
+	ThrowerSteamID   int64   `json:"throwerSteamID"`
+	ThrowerName      string  `json:"throwerName"`
+	ThrowerTeam      string  `json:"throwerTeam"`
+	ThrowerSide      string  `json:"throwerSide"`
+	ThrowerX         float64 `json:"throwerX"`
+	ThrowerY         float64 `json:"throwerY"`
+	ThrowerZ         float64 `json:"throwerZ"`
+	Grenade          string  `json:"grenadeType"`
+	GrenadeX         float64 `json:"grenadeX"`
+	GrenadeY         float64 `json:"grenadeY"`
+	GrenadeZ         float64 `json:"grenadeZ"`
+	UniqueID         int64   `json:"entityId"`
 }
 
 // BombAction events
@@ -294,28 +309,28 @@ type WeaponFireAction struct {
 
 // FlashAction events
 type FlashAction struct {
-	Tick             int64    `json:"tick"`
-	Second           float64  `json:"seconds"`
-	ClockTime        string   `json:"clockTime"`
-	AttackerSteamID  int64    `json:"attackerSteamID"`
-	AttackerName     string   `json:"attackerName"`
-	AttackerTeam     string   `json:"attackerTeam"`
-	AttackerSide     string   `json:"attackerSide"`
-	AttackerX        float64  `json:"attackerX"`
-	AttackerY        float64  `json:"attackerY"`
-	AttackerZ        float64  `json:"attackerZ"`
-	AttackerViewX    float64  `json:"attackerViewX"`
-	AttackerViewY    float64  `json:"attackerViewY"`
-	PlayerSteamID    *int64   `json:"playerSteamID"`
-	PlayerName       *string  `json:"playerName"`
-	PlayerTeam       *string  `json:"playerTeam"`
-	PlayerSide       *string  `json:"playerSide"`
-	PlayerX          *float64 `json:"playerX"`
-	PlayerY          *float64 `json:"playerY"`
-	PlayerZ          *float64 `json:"playerZ"`
-	PlayerViewX      *float64 `json:"playerViewX"`
-	PlayerViewY      *float64 `json:"playerViewY"`
-	FlashDuration    *float64 `json:"flashDuration"`
+	Tick            int64    `json:"tick"`
+	Second          float64  `json:"seconds"`
+	ClockTime       string   `json:"clockTime"`
+	AttackerSteamID int64    `json:"attackerSteamID"`
+	AttackerName    string   `json:"attackerName"`
+	AttackerTeam    string   `json:"attackerTeam"`
+	AttackerSide    string   `json:"attackerSide"`
+	AttackerX       float64  `json:"attackerX"`
+	AttackerY       float64  `json:"attackerY"`
+	AttackerZ       float64  `json:"attackerZ"`
+	AttackerViewX   float64  `json:"attackerViewX"`
+	AttackerViewY   float64  `json:"attackerViewY"`
+	PlayerSteamID   *int64   `json:"playerSteamID"`
+	PlayerName      *string  `json:"playerName"`
+	PlayerTeam      *string  `json:"playerTeam"`
+	PlayerSide      *string  `json:"playerSide"`
+	PlayerX         *float64 `json:"playerX"`
+	PlayerY         *float64 `json:"playerY"`
+	PlayerZ         *float64 `json:"playerZ"`
+	PlayerViewX     *float64 `json:"playerViewX"`
+	PlayerViewY     *float64 `json:"playerViewY"`
+	FlashDuration   *float64 `json:"flashDuration"`
 }
 
 // GameFrame (game state at time t)
@@ -343,18 +358,18 @@ type BombInfo struct {
 
 // Projectile
 type GrenadeInfo struct {
-	ProjectileType  string  `json:"projectileType"`
-	X               float64 `json:"x"`
-	Y               float64 `json:"y"`
-	Z               float64 `json:"z"`
+	ProjectileType string  `json:"projectileType"`
+	X              float64 `json:"x"`
+	Y              float64 `json:"y"`
+	Z              float64 `json:"z"`
 }
 
 // Inferno from molly or incend. grenade
 type Fire struct {
-	UniqueID      int64   `json:"uniqueID"`
-	X             float64 `json:"x"`
-	Y             float64 `json:"y"`
-	Z             float64 `json:"z"`
+	UniqueID int64   `json:"uniqueID"`
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+	Z        float64 `json:"z"`
 }
 
 // TeamFrameInfo at time t
@@ -549,7 +564,7 @@ func convertHitGroup(hg events.HitGroup) string {
 		return "LeftLeg"
 	case 7:
 		return "RightLeg"
-    case 8:
+	case 8:
 		return "Neck"
 	case 10:
 		return "Gear"
@@ -627,7 +642,7 @@ func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) st
 		phaseEndTick = *currentRound.BombPlantTick
 		seconds_remaining = 40 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
 	}
-	minutes := int64(math.Floor((seconds_remaining/60)))
+	minutes := int64(math.Floor((seconds_remaining / 60)))
 	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
 
 	if (minutes < 0) || (seconds < 0) {
@@ -654,7 +669,7 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	currentPlayer := PlayerInfo{}
 	currentPlayer.PlayerSteamID = int64(p.SteamID64)
 	currentPlayer.PlayerName = p.Name
-	if (p.TeamState != nil) {
+	if p.TeamState != nil {
 		currentPlayer.PlayerTeam = p.TeamState.ClanName()
 	}
 
@@ -770,7 +785,7 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 				}
 			}
 
-			if (w.String() == "C4") {
+			if w.String() == "C4" {
 				currentPlayer.HasBomb = true
 			}
 		}
@@ -790,7 +805,7 @@ func parseTeamBuy(eqVal int64, Side string, Style string) string {
 		} else if eqVal >= 20000 {
 			return "Full Buy"
 		} else {
-			return 	"Unknown"
+			return "Unknown"
 		}
 	} else if Style == "csgo" {
 		// Created this using 4100 and 3700 as armor+gun for CT and T
@@ -852,7 +867,6 @@ func inTradeWindow(killA KillAction, killB KillAction, tickRate int64, tradeTime
 	return (killB.Tick - killA.Tick) <= tradeTime*tickRate
 }
 
-
 func countAlivePlayers(players []PlayerInfo) int64 {
 	var alivePlayers int64
 	alivePlayers = 0
@@ -905,17 +919,17 @@ func cleanMapName(mapName string) string {
 }
 
 func stringInSlice(a string, list []string) bool {
-    for _, b := range list {
-        if b == a {
-            return true
-        }
-    }
-    return false
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 func removeExpiredSmoke(s []Smoke, i int) []Smoke {
-    s[i] = s[len(s)-1]
-    return s[:len(s)-1]
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
 }
 
 // Main
@@ -937,6 +951,7 @@ func main() {
 	damagesRolledPtr := fl.Bool("dmgrolled", false, "Roll up damages")
 	demoIDPtr := fl.String("demoid", "", "Demo string ID")
 	jsonIndentationPtr := fl.Bool("jsonindentation", false, "Indent JSON file")
+	parseChatPtr := fl.Bool("parsechat", false, "Parse chat messages")
 	outpathPtr := fl.String("out", "", "Path to write output JSON")
 
 	err := fl.Parse(os.Args[1:])
@@ -950,6 +965,7 @@ func main() {
 	roundBuyStyle := *roundBuyPtr
 	damagesRolled := *damagesRolledPtr
 	jsonIndentation := *jsonIndentationPtr
+	parseChat := *parseChatPtr
 	outpath := *outpathPtr
 
 	// Read in demofile
@@ -995,9 +1011,12 @@ func main() {
 	// Set parsing options
 	parsingOpts := ParserOpts{}
 	parsingOpts.ParseRate = int(parseRate)
+	parsingOpts.ParseFrames = parseFrames
+	parsingOpts.ParseKillFrames = parseKillFrames
 	parsingOpts.TradeTime = tradeTime
 	parsingOpts.RoundBuyStyle = roundBuyStyle
 	parsingOpts.DamagesRolled = damagesRolled
+	parsingOpts.ParseChat = parseChat
 	currentGame.ParsingOpts = parsingOpts
 
 	currentRound := GameRound{}
@@ -1015,6 +1034,7 @@ func main() {
 
 	// Create empty lists
 	currentGame.MMRanks = []MMRank{}
+	currentGame.Chat = []Chat{}
 	currentGame.MatchPhases.AnnFinalRound = []int64{}
 	currentGame.MatchPhases.AnnLastRoundHalf = []int64{}
 	currentGame.MatchPhases.AnnMatchStarted = []int64{}
@@ -1041,6 +1061,51 @@ func main() {
 		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
 	})
 
+	if parseChat {
+		// Register handler for chat messages (ChatMessage)
+		p.RegisterEventHandler(func(e events.ChatMessage) {
+			if e.Sender != nil {
+				gs := p.GameState()
+				chatMessage := Chat{}
+				senderSteamID := int64(e.Sender.SteamID64)
+				chatMessage.SteamID = &senderSteamID
+				chatMessage.Text = e.Text
+				chatMessage.Tick = int64(gs.IngameTick())
+				chatMessage.IsChat = true
+				chatMessage.IsChatAll = e.IsChatAll
+				chatMessage.Type = "ChatMessage"
+
+				currentGame.Chat = append(currentGame.Chat, chatMessage)
+			}
+		})
+
+		// Register handler for chat messages (SayText)
+		p.RegisterEventHandler(func(e events.SayText) {
+			gs := p.GameState()
+			chatMessage := Chat{}
+			chatMessage.Text = e.Text
+			chatMessage.Tick = int64(gs.IngameTick())
+			chatMessage.IsChat = e.IsChat
+			chatMessage.IsChatAll = e.IsChatAll
+			chatMessage.Type = "SayText"
+
+			currentGame.Chat = append(currentGame.Chat, chatMessage)
+		})
+
+		// Register handler for chat messages (SayText2)
+		p.RegisterEventHandler(func(e events.SayText2) {
+			gs := p.GameState()
+			chatMessage := Chat{}
+			chatMessage.Text = e.Params[1]
+			chatMessage.Params = e.Params
+			chatMessage.Tick = int64(gs.IngameTick())
+			chatMessage.IsChat = e.IsChat
+			chatMessage.IsChatAll = e.IsChatAll
+			chatMessage.Type = "SayText2"
+
+			currentGame.Chat = append(currentGame.Chat, chatMessage)
+		})
+	}
 	// Parse player connects
 	p.RegisterEventHandler(func(e events.PlayerConnect) {
 		if e.Player != nil {
@@ -1328,7 +1393,7 @@ func main() {
 
 			// See if start tick happened during a team switch. If so, then recalc scores.
 			if len(currentGame.MatchPhases.TeamSwitch) > 0 {
-				if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch) - 1] {
+				if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch)-1] {
 					currentRound.TScore = int64(gs.TeamTerrorists().Score())
 					currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
 				}
@@ -1523,7 +1588,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState != nil) {
+		if e.Player.TeamState != nil {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1560,7 +1625,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState != nil) {
+		if e.Player.TeamState != nil {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1599,7 +1664,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState != nil) {
+		if e.Player.TeamState != nil {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1626,7 +1691,7 @@ func main() {
 			currentWeaponFire.ClockTime = calculateClocktime(currentWeaponFire.Tick, currentRound, currentGame)
 			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
 			currentWeaponFire.PlayerName = e.Shooter.Name
-			if (e.Shooter.TeamState != nil) {
+			if e.Shooter.TeamState != nil {
 				currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
 			}
 			playerSide := "Unknown"
@@ -1677,7 +1742,7 @@ func main() {
 			// Attacker
 			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
 			currentFlash.AttackerName = e.Attacker.Name
-			if (e.Attacker.TeamState != nil) {
+			if e.Attacker.TeamState != nil {
 				currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
 			}
 			attackerSide := "Unknown"
@@ -1748,7 +1813,7 @@ func main() {
 					currentFlash.PlayerViewY = &playerViewY
 
 					// Calculate flash duration in seconds
-					flashDuration := float64(e.Player.FlashDurationTimeRemaining())/1000000000
+					flashDuration := float64(e.Player.FlashDurationTimeRemaining()) / 1000000000
 					currentFlash.FlashDuration = &flashDuration
 
 					// Add to list
@@ -1781,7 +1846,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState != nil) {
+		if e.Player.TeamState != nil {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1817,7 +1882,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState != nil) {
+		if e.Player.TeamState != nil {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1854,7 +1919,7 @@ func main() {
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
 		currentBomb.PlayerName = e.Player.Name
-		if (e.Player.TeamState != nil) {
+		if e.Player.TeamState != nil {
 			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
 		}
 
@@ -1966,7 +2031,7 @@ func main() {
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
 			currentFrame.T.Side = "T"
-			if (gs.TeamTerrorists() != nil) {
+			if gs.TeamTerrorists() != nil {
 				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
 			}
 			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
@@ -1987,7 +2052,7 @@ func main() {
 			// Parse CT
 			currentFrame.CT = TeamFrameInfo{}
 			currentFrame.CT.Side = "CT"
-			if (gs.TeamCounterTerrorists() != nil) {
+			if gs.TeamCounterTerrorists() != nil {
 				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
 			}
 			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
@@ -2081,7 +2146,7 @@ func main() {
 			currentKill.AttackerSteamID = &attackerSteamID
 			attackerName := e.Killer.Name
 			currentKill.AttackerName = &attackerName
-			if (e.Killer.TeamState != nil) {
+			if e.Killer.TeamState != nil {
 				attackerTeamName := e.Killer.TeamState.ClanName()
 				currentKill.AttackerTeam = &attackerTeamName
 			}
@@ -2118,7 +2183,7 @@ func main() {
 			currentKill.VictimSteamID = &victimSteamID
 			victimName := e.Victim.Name
 			currentKill.VictimName = &victimName
-			if (e.Victim.TeamState != nil) {
+			if e.Victim.TeamState != nil {
 				victimTeamName := e.Victim.TeamState.ClanName()
 				currentKill.VictimTeam = &victimTeamName
 			}
@@ -2188,7 +2253,7 @@ func main() {
 			currentKill.AssisterSteamID = &assistSteamID
 			assisterName := e.Assister.Name
 			currentKill.AssisterName = &assisterName
-			if (e.Assister.TeamState != nil) {
+			if e.Assister.TeamState != nil {
 				assistTeamName := e.Assister.TeamState.ClanName()
 				currentKill.AssisterTeam = &assistTeamName
 			}
@@ -2213,9 +2278,9 @@ func main() {
 			currentKill.IsFirstKill = true
 		} else {
 			currentKill.IsFirstKill = false
-			for i := len(currentRound.Kills)-1; (i >= 0 && inTradeWindow(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime) && !currentKill.IsTrade); i-- {
+			for i := len(currentRound.Kills) - 1; i >= 0 && inTradeWindow(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime) && !currentKill.IsTrade; i-- {
 				currentKill.IsTrade = isTrade(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
-				if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true  {
+				if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true {
 					currentKill.PlayerTradedName = currentRound.Kills[i].VictimName
 					currentKill.PlayerTradedSteamID = currentRound.Kills[i].VictimSteamID
 					currentKill.PlayerTradedTeam = currentRound.Kills[i].VictimTeam
@@ -2239,7 +2304,7 @@ func main() {
 
 				// Find their latest flash event
 				for _, flash := range currentRound.Flashes {
-					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick - 5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
+					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick-5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
 						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
 						currentKill.FlashThrowerName = &flash.AttackerName
 						currentKill.FlashThrowerTeam = &flash.AttackerTeam
@@ -2277,7 +2342,7 @@ func main() {
 			currentDamage.AttackerSteamID = &attackerSteamID
 			attackerName := e.Attacker.Name
 			currentDamage.AttackerName = &attackerName
-			if (e.Attacker.TeamState != nil) {
+			if e.Attacker.TeamState != nil {
 				attackerTeamName := e.Attacker.TeamState.ClanName()
 				currentDamage.AttackerTeam = &attackerTeamName
 			}
@@ -2321,7 +2386,7 @@ func main() {
 			currentDamage.VictimSteamID = &victimSteamID
 			victimName := e.Player.Name
 			currentDamage.VictimName = &victimName
-			if (e.Player.TeamState != nil) {
+			if e.Player.TeamState != nil {
 				victimTeamName := e.Player.TeamState.ClanName()
 				currentDamage.VictimTeam = &victimTeamName
 			}
@@ -2355,7 +2420,7 @@ func main() {
 			currentDamage.IsTeamDmg = false
 			if currentDamage.AttackerSide != nil {
 				if currentDamage.VictimSide != nil {
-					if (*currentDamage.AttackerSide == *currentDamage.VictimSide) {
+					if *currentDamage.AttackerSide == *currentDamage.VictimSide {
 						currentDamage.IsTeamDmg = true
 					}
 				}
@@ -2403,7 +2468,7 @@ func main() {
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
 			currentFrame.T.Side = "T"
-			if (gs.TeamTerrorists() != nil) {
+			if gs.TeamTerrorists() != nil {
 				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
 			}
 			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
@@ -2424,7 +2489,7 @@ func main() {
 			// Parse CT
 			currentFrame.CT = TeamFrameInfo{}
 			currentFrame.CT.Side = "CT"
-			if (gs.TeamCounterTerrorists() != nil) {
+			if gs.TeamCounterTerrorists() != nil {
 				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
 			}
 			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
@@ -2496,7 +2561,7 @@ func main() {
 
 			// Add frame
 			if (len(currentFrame.CT.Players) > 0) || (len(currentFrame.T.Players) > 0) {
-				if (len(currentRound.Frames) > 0) {
+				if len(currentRound.Frames) > 0 {
 					if currentRound.Frames[len(currentRound.Frames)-1].Tick < currentFrame.Tick {
 						currentRound.Frames = append(currentRound.Frames, currentFrame)
 					}
@@ -2571,7 +2636,7 @@ func main() {
 
 // Function to handle errors
 func checkError(err error) {
-	if (err != nil) {
+	if err != nil {
 		panic(err)
 	}
 }

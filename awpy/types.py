@@ -3,6 +3,20 @@
 from typing import Optional, TypedDict, Literal
 
 
+class Chat(TypedDict):
+    """Chat holds the matchmaking ranks. Only for MM demos."""
+
+    steamID: Optional[int]
+    text: str
+    tick: int
+    params: Optional[list[str]]  # params for SayText2
+    isChat: bool  # true for Chat and variable for SayText(2)
+    # Unclear: Seems true for ChatMessages to allchat
+    # but false for SayText admin commands to all chat
+    isChatAll: bool
+    type: str
+
+
 class Token(TypedDict):
     """TypedDict for token object collection information about player positions
     into tokenized strings."""
@@ -87,6 +101,7 @@ class ParserOpts(TypedDict):
     tradeTime: int
     roundBuyStyle: str
     damagesRolledUp: bool
+    parseChat: bool
 
 
 class MMRank(TypedDict):
@@ -483,6 +498,7 @@ class Game(TypedDict):
     serverVars: ServerConVar
     matchPhases: MatchPhases
     matchmakingRanks: Optional[list[MMRank]]
+    chatMessages: Optional[list[Chat]]
     playerConnections: Optional[list[ConnectAction]]
     gameRounds: Optional[list[GameRound]]
 

@@ -48,6 +48,7 @@ class DemoParser:
         dmg_rolled (bool): Boolean if you want damages rolled up
             (since multiple damages for a player can happen in 1 tick from the same weapon.)
             Default is False
+        parse_chat (bool): Flag if you want to parse chat messages. Default is False
         buy_style (string): Buy style string, one of "hltv" or "csgo"
             Default is "hltv"
         json_indentation (bool): Whether the json file should be pretty printed
@@ -70,6 +71,7 @@ class DemoParser:
         parse_kill_frames: bool = False,
         trade_time: int = 5,
         dmg_rolled: bool = False,
+        parse_chat: bool = False,
         buy_style: str = "hltv",
         json_indentation: bool = False,
     ):
@@ -151,10 +153,12 @@ class DemoParser:
         self.logger.info("Setting buy style to %s", str(self.buy_style))
 
         self.dmg_rolled = dmg_rolled
+        self.parse_chat = parse_chat
         self.parse_frames = parse_frames
         self.parse_kill_frames = parse_kill_frames
         self.json_indentation = json_indentation
         self.logger.info("Rollup damages set to %s", str(self.dmg_rolled))
+        self.logger.info("Parse chat set to %s", str(self.parse_chat))
         self.logger.info("Parse frames set to %s", str(self.parse_frames))
         self.logger.info("Parse kill frames set to %s", str(self.parse_kill_frames))
         self.logger.info(
@@ -180,11 +184,12 @@ class DemoParser:
         # Check if Golang version is compatible
         acceptable_go = check_go_version()
         if not acceptable_go:
+            error_message = "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.17.0."
             self.logger.error(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.17.0."
+                error_message
             )
             raise ValueError(
-                "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.17.0."
+               error_message
             )
         else:
             self.logger.info("Go version>=1.17.0")
@@ -222,6 +227,8 @@ class DemoParser:
             self.parser_cmd.append("--parsekillframes")
         if self.json_indentation:
             self.parser_cmd.append("--jsonindentation")
+        if self.parse_chat:
+            self.parser_cmd.append("--parsechat")
         proc = subprocess.Popen(
             self.parser_cmd,
             stdout=subprocess.PIPE,

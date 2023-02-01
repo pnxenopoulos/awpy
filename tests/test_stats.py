@@ -1,8 +1,8 @@
 import os
-import pytest
 import json
 import numbers
 from math import isclose
+import pytest
 import pandas as pd
 import requests
 
