@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="awpy",
-    version="1.2.2",
+    version="1.2.3",
     packages=find_packages(),
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
@@ -21,7 +21,8 @@ setup(
         "imageio>=2.9.0",
         "tqdm>=4.55.2",
         "Shapely>=1.8.2",
-        "sympy>=1.10.1"],
+        "sympy>=1.10.1",
+    ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
         "": [
