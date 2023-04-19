@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"strconv"
 	"strings"
 
-	dem "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs"
-	common "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/common"
-	events "github.com/markus-wa/demoinfocs-golang/v2/pkg/demoinfocs/events"
+	dem "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs"
+	common "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs/common"
+	events "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs/events"
 )
 
 // Game is the overall struct that holds the parsed demo data
@@ -611,16 +610,9 @@ func convertWeaponClass(wc common.EquipmentClass) string {
 }
 
 func determineSecond(tick int64, currentRound GameRound, currentGame Game) float64 {
-	roundTime := currentGame.ServerVars.RoundTime
-
 	if tick <= 0 {
 		return float64(0)
 	}
-
-	if roundTime == 0 {
-		roundTime = currentGame.ServerVars.RoundTimeDefuse
-	}
-
 	var phaseEndTick int64
 	if currentRound.BombPlantTick == nil {
 		phaseEndTick = currentRound.FreezeTimeEndTick
@@ -639,14 +631,8 @@ func formatTimeNumber(num int64) string {
 }
 
 func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) string {
-	roundTime := currentGame.ServerVars.RoundTime
-
 	if tick <= 0 {
 		return "00:00"
-	}
-
-	if roundTime == 0 {
-		roundTime = currentGame.ServerVars.RoundTimeDefuse
 	}
 
 	var seconds_remaining float64
@@ -856,14 +842,6 @@ func parseTeamBuy(eqVal int64, Side string, Style string) string {
 	}
 }
 
-func acceptableGamePhase(gs dem.GameState) bool {
-	warmup := gs.IsWarmupPeriod()
-	if warmup == false {
-		return true
-	}
-	return false
-}
-
 func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
 	// First, identify is killA has a killer. If there is no killer, there cannot be a trade
 	if killA.AttackerSteamID == nil {
@@ -905,42 +883,13 @@ func countUtility(players []PlayerInfo) int64 {
 	return totalUtility
 }
 
-func sumPlayerEqVal(players []PlayerInfo) int64 {
-	var totalEqVal int64
-	totalEqVal = 0
-	for _, p := range players {
-		if p.IsAlive {
-			totalEqVal = totalEqVal + p.EqVal
-		}
-	}
-	return totalEqVal
-}
-
-func findIdx(sl []string, val string) int {
-	for p, v := range sl {
-		if v == val {
-			return p
-		}
-	}
-	return -1
-}
-
 // Define cleaning functions
 func cleanMapName(mapName string) string {
 	lastSlash := strings.LastIndex(mapName, "/")
 	if lastSlash == -1 {
 		return mapName
 	}
-	return mapName[lastSlash+1 : len(mapName)]
-}
-
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
+	return mapName[lastSlash+1:]
 }
 
 func removeExpiredSmoke(s []Smoke, i int) []Smoke {
@@ -986,8 +935,8 @@ func main() {
 
 	// Read in demofile
 	f, err := os.Open(demPath)
-	defer f.Close()
 	checkError(err)
+	defer f.Close()
 
 	// Create new demoparser
 	p := dem.NewParser(f)
@@ -1348,7 +1297,7 @@ func main() {
 		if convParsed == 0 {
 			// If convars are unparsed, record the convars of the server
 			serverConfig := ServerConVar{}
-			conv := gs.ConVars()
+			conv := gs.Rules().ConVars()
 			serverConfig.CashBombDefused, _ = strconv.ParseInt(conv["cash_player_bomb_defused"], 10, 64)
 			serverConfig.CashBombPlanted, _ = strconv.ParseInt(conv["cash_player_bomb_planted"], 10, 64)
 			serverConfig.CashWinBomb, _ = strconv.ParseInt(conv["cash_team_terrorist_win_bomb"], 10, 64)
@@ -2032,7 +1981,7 @@ func main() {
 	p.RegisterEventHandler(func(e events.Kill) {
 		gs := p.GameState()
 
-		if (roundInFreezetime == 0) && (parseKillFrames == true) {
+		if (roundInFreezetime == 0) && parseKillFrames {
 			currentFrame := GameFrame{}
 			currentFrame.IsKillFrame = true
 
@@ -2055,7 +2004,7 @@ func main() {
 
 			for _, p := range tPlayers {
 				if p != nil {
-					if playerInList(p, currentFrame.T.Players) == false {
+					if !playerInList(p, currentFrame.T.Players) {
 						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(gs, p))
 					}
 				}
@@ -2076,7 +2025,7 @@ func main() {
 
 			for _, p := range ctPlayers {
 				if p != nil {
-					if playerInList(p, currentFrame.CT.Players) == false {
+					if !playerInList(p, currentFrame.CT.Players) {
 						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(gs, p))
 					}
 				}
@@ -2229,7 +2178,7 @@ func main() {
 			currentKill.VictimViewX = &victimViewX
 			currentKill.VictimViewY = &victimViewY
 
-			if currentKill.IsSuicide == false && e.Killer != nil && e.Victim != nil {
+			if !currentKill.IsSuicide && e.Killer != nil && e.Victim != nil {
 				X := math.Pow((*currentKill.AttackerX - *currentKill.VictimX), 2)
 				Y := math.Pow((*currentKill.AttackerY - *currentKill.VictimY), 2)
 				Z := math.Pow((*currentKill.AttackerZ - *currentKill.VictimZ), 2)
@@ -2296,7 +2245,7 @@ func main() {
 			currentKill.IsFirstKill = false
 			for i := len(currentRound.Kills) - 1; i >= 0 && inTradeWindow(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime) && !currentKill.IsTrade; i-- {
 				currentKill.IsTrade = isTrade(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
-				if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade == true {
+				if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade {
 					currentKill.PlayerTradedName = currentRound.Kills[i].VictimName
 					currentKill.PlayerTradedSteamID = currentRound.Kills[i].VictimSteamID
 					currentKill.PlayerTradedTeam = currentRound.Kills[i].VictimTeam
@@ -2469,7 +2418,7 @@ func main() {
 			currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
 		}
 
-		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && (parseFrames == true) {
+		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && parseFrames {
 			currentFrame := GameFrame{}
 			currentFrame.IsKillFrame = false
 
@@ -2492,7 +2441,7 @@ func main() {
 
 			for _, p := range tPlayers {
 				if p != nil {
-					if playerInList(p, currentFrame.T.Players) == false {
+					if !playerInList(p, currentFrame.T.Players) {
 						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(gs, p))
 					}
 				}
@@ -2513,7 +2462,7 @@ func main() {
 
 			for _, p := range ctPlayers {
 				if p != nil {
-					if playerInList(p, currentFrame.CT.Players) == false {
+					if !playerInList(p, currentFrame.CT.Players) {
 						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(gs, p))
 					}
 				}
@@ -2650,7 +2599,7 @@ func main() {
 		} else {
 			file, _ = json.Marshal(currentGame)
 		}
-		_ = ioutil.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
+		_ = os.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
 	}
 
 	// Check error

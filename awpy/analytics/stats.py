@@ -194,7 +194,7 @@ def player_stats(
                 k["victimSide"] in active_sides
                 # mypy does not understand that after the first part k["victimSide"] is Literal["CT", "T"]
                 # and that `k["victimSide"].lower() + "Side"` leads to a Literal["ctSide", "tSide"]
-                and len(r[k["victimSide"].lower() + "Side"]["players"])  # type: ignore[literal-required]
+                and len(r[k["victimSide"].lower() + "Side"]["players"] or [])  # type: ignore[literal-required]
                 - len(players_killed[k["victimSide"]])  # type: ignore[literal-required, index]
                 == 1
             ):
@@ -211,7 +211,7 @@ def player_stats(
                     ):
                         is_clutching.add(clutcher_key)
                         enemies_alive = len(
-                            r[other_side(k["victimSide"]).lower() + "Side"]["players"]  # type: ignore
+                            r[other_side(k["victimSide"]).lower() + "Side"]["players"] or []  # type: ignore
                         ) - len(
                             players_killed[other_side(k["victimSide"])]  # type: ignore
                         )
