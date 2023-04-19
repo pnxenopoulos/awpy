@@ -482,6 +482,8 @@ class GameRound(TypedDict):
     weaponFires: Optional[list[WeaponFireAction]]
     flashes: Optional[list[FlashAction]]
     frames: Optional[list[GameFrame]]
+    mvp: Players
+    mvp_reason: str
 
 
 class Game(TypedDict):

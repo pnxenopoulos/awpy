@@ -132,6 +132,7 @@ def player_stats(
                         "success1v4": 0,
                         "attempts1v5": 0,
                         "success1v5": 0,
+                        "mvp": 0,
                     }
                 player_statistics[player_key]["totalRounds"] += 1
                 kast[player_key] = {}
@@ -383,6 +384,7 @@ def player_stats(
         for player, n_kills in round_kills.items():
             if n_kills in range(6):  # 0, 1, 2, 3, 4, 5
                 player_statistics[player][f"kills{n_kills}"] += 1  # type: ignore[literal-required]
+        player_statistics[str(r["MVPSteamID"])]["mvp"] += 1
 
     for player in player_statistics.values():
         player["kast"] = round(

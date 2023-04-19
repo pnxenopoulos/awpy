@@ -130,6 +130,9 @@ type GameRound struct {
 	WinningTeam          *string            `json:"winningTeam"`
 	LosingTeam           *string            `json:"losingTeam"`
 	Reason               string             `json:"roundEndReason"`
+	MVPName              string             `json:"MVPName"`
+	MVPSteamID           int64              `json:"MVPSteamID"`
+	MVPReason            string             `json:"MVPReason"`
 	CTFreezeTimeEndEqVal int64              `json:"ctFreezeTimeEndEqVal"`
 	CTRoundStartEqVal    int64              `json:"ctRoundStartEqVal"`
 	CTRoundMoneySpend    int64              `json:"ctRoundSpendMoney"`
@@ -541,6 +544,19 @@ func convertRoundEndReason(r events.RoundEndReason) string {
 		return "TerroristsSurrender"
 	case 18:
 		return "CTSurrender"
+	default:
+		return "Unknown"
+	}
+}
+
+func convertRoundMVPReason(r events.RoundMVPReason) string {
+	switch reason := r; reason {
+	case 1:
+		return "MVPReasonMostEliminations"
+	case 2:
+		return "MVPReasonBombDefused"
+	case 3:
+		return "MVPReasonBombPlanted"
 	default:
 		return "Unknown"
 	}
@@ -2583,6 +2599,13 @@ func main() {
 				currentFrameIdx = currentFrameIdx + 1
 			}
 		}
+	})
+
+	// Parse MVP announcements
+	p.RegisterEventHandler(func(e events.RoundMVPAnnouncement) {
+	    currentRound.MVPName = e.Player.Name
+	    currentRound.MVPSteamID = int64(e.Player.SteamID64)
+	    currentRound.MVPReason = convertRoundMVPReason(e.Reason)
 	})
 
 	// Parse demofile to end
