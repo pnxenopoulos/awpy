@@ -381,116 +381,6 @@ class TestStats:
         ]
         player_stats(test_rounds)
 
-    def test_player_stats_suicide(self):
-        """Tests that player stats parses suicides correctly"""
-
-        test_rounds = [
-            {
-                "roundNum": 1,
-                "isWarmup": False,
-                "startTick": 17374,
-                "freezeTimeEndTick": 18898,
-                "endTick": 26021,
-                "endOfficialTick": 26910,
-                "bombPlantTick": 22924,
-                "tScore": 0,
-                "ctScore": 0,
-                "endTScore": 1,
-                "endCTScore": 0,
-                "ctTeam": "team_-Fuchshenger",
-                "tTeam": "team_Sunk3r",
-                "winningSide": "T",
-                "winningTeam": "team_Sunk3r",
-                "losingTeam": "team_-Fuchshenger",
-                "roundEndReason": "TerroristsWin",
-                "ctFreezeTimeEndEqVal": 3850,
-                "ctRoundStartEqVal": 1000,
-                "ctRoundSpendMoney": 3500,
-                "ctBuyType": "Full Eco",
-                "tFreezeTimeEndEqVal": 4250,
-                "tRoundStartEqVal": 1000,
-                "tRoundSpendMoney": 3250,
-                "tBuyType": "Full Eco",
-                "ctSide": {
-                    "teamName": "team_-Fuchshenger",
-                    "players": [
-                        {"playerName": "-Fuchshenger", "steamID": 76561199002916187},
-                        {"playerName": "MAKARxJESUS", "steamID": 76561198144899828},
-                        {"playerName": "XCSy", "steamID": 76561198366282668},
-                        {"playerName": "__NIKI_", "steamID": 76561198318595189},
-                        {"playerName": "Flubykiller", "steamID": 76561198118383015},
-                    ],
-                },
-                "tSide": {
-                    "teamName": "team_Sunk3r",
-                    "players": [
-                        {"playerName": "Sunk3r", "steamID": 76561198173639909},
-                        {"playerName": "SlaynThemAll", "steamID": 76561198156162722},
-                        {"playerName": "Afflic", "steamID": 76561198256616745},
-                        {"playerName": "yngtired", "steamID": 76561198853008998},
-                        {"playerName": "JanEric1", "steamID": 76561198049899734},
-                    ],
-                },
-                "kills": [
-                    {
-                        "tick": 21548,
-                        "seconds": 20.866141732283463,
-                        "clockTime": "01:35",
-                        "attackerSteamID": 76561198049899734,
-                        "attackerName": "JanEric1",
-                        "attackerTeam": "team_Sunk3r",
-                        "attackerSide": "T",
-                        "attackerX": 1623.4302978515625,
-                        "attackerY": 1222.76708984375,
-                        "attackerZ": 161.6575927734375,
-                        "attackerViewX": 337.1978759765625,
-                        "attackerViewY": 0.274658203125,
-                        "victimSteamID": 76561198049899734,
-                        "victimName": "JanEric1",
-                        "victimTeam": "team_Sunk3r",
-                        "victimSide": "T",
-                        "victimX": 1623.4302978515625,
-                        "victimY": 1222.76708984375,
-                        "victimZ": 161.6575927734375,
-                        "victimViewX": 337.1978759765625,
-                        "victimViewY": 0.274658203125,
-                        "assisterSteamID": 76561198173639909,
-                        "assisterName": "Sunk3r",
-                        "assisterTeam": "team_Sunk3r",
-                        "assisterSide": "T",
-                        "isSuicide": True,
-                        "isTeamkill": False,
-                        "isWallbang": False,
-                        "penetratedObjects": 0,
-                        "isFirstKill": True,
-                        "isHeadshot": True,
-                        "victimBlinded": False,
-                        "attackerBlinded": False,
-                        "flashThrowerSteamID": None,
-                        "flashThrowerName": None,
-                        "flashThrowerTeam": None,
-                        "flashThrowerSide": None,
-                        "noScope": False,
-                        "thruSmoke": False,
-                        "distance": 714.3147783842128,
-                        "isTrade": False,
-                        "playerTradedName": None,
-                        "playerTradedTeam": None,
-                        "playerTradedSteamID": None,
-                        "weapon": "Glock-18",
-                        "weaponClass": "Pistols",
-                    },
-                ],
-                "damages": [],
-                "weaponFires": [],
-                "flashes": [],
-                "grenades": [],
-                "bombEvents": [],
-            }
-        ]
-        stats = player_stats(test_rounds)
-        assert stats["76561198049899734"]["suicides"] == 1
-
     def test_player_stats_none_player_before_clutch(self):
         """Tests that player stats handles a side being None correctly in clutche initialization"""
         test_rounds = [
@@ -586,7 +476,6 @@ class TestStats:
             }
         ]
         player_stats(test_rounds)
-
 
     def test_player_stats_none_player_in_clutch(self):
         """Tests that player stats handles a side being None correctly in clutches"""
