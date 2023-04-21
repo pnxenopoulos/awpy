@@ -10,15 +10,12 @@ from awpy.parser import DemoParser
 from awpy.analytics.stats import player_stats, other_side
 
 
-def weighted_avg(
-    metric: str, weighting_metric: str, stats_t: dict, stats_ct: dict
-) -> float:
+def weighted_avg(metric: str, weighting_metric: str, stats_t: dict, stats_ct: dict) -> float:
     """Calculates the weighted average between stats_t and stats_ct for the value of
     'metric' weighted by 'weighting_metric'"""
-    return (
-        (stats_t[metric] * stats_t[weighting_metric])
-        + (stats_ct[metric] * stats_ct[weighting_metric])
-    ) / (stats_t[weighting_metric] + stats_ct[weighting_metric])
+    return ((stats_t[metric] * stats_t[weighting_metric]) + (stats_ct[metric] * stats_ct[weighting_metric])) / (
+        stats_t[weighting_metric] + stats_ct[weighting_metric]
+    )
 
 
 class TestStats:
@@ -45,11 +42,7 @@ class TestStats:
         self.parser = None
         self.data = None
         files_in_directory = os.listdir()
-        filtered_files = [
-            file
-            for file in files_in_directory
-            if file.endswith(".dem") or file.endswith(".json")
-        ]
+        filtered_files = [file for file in files_in_directory if file.endswith(".dem") or file.endswith(".json")]
         if len(filtered_files) > 0:
             for f in filtered_files:
                 os.remove(f)
@@ -65,8 +58,8 @@ class TestStats:
         with pytest.raises(ValueError):
             other_side("apple")
 
-    def test_player_stats_general(self):
-        """Tests player stats generation"""
+    def test_player_stats_both_json(self):
+        """Tests json generation of player stats for both sides."""
         stats = player_stats(self.data["gameRounds"])
         assert isinstance(stats, dict)
         assert stats["76561197995889730"]["kills"] == 19
@@ -95,9 +88,13 @@ class TestStats:
         assert stats["76561197987713664"]["tradeKills"] == 5
         assert stats["76561197987713664"]["tradedDeaths"] == 5
 
+    def test_player_stats_both_df(self):
+        """Tests player stats generation for df."""
         stats_df = player_stats(self.data["gameRounds"], return_type="df")
         assert isinstance(stats_df, pd.DataFrame)
 
+    def test_player_stats_ct(self):
+        """Tests json generation of player stats for ct."""
         stats_ct = player_stats(self.data["gameRounds"], selected_side="ct")
         assert isinstance(stats_ct, dict)
         assert stats_ct["76561197995889730"]["kills"] == 14
@@ -113,6 +110,8 @@ class TestStats:
         assert stats_ct["76561197995889730"]["teamName"] == "Team Liquid"
         assert stats_ct["76561197995889730"]["playerName"] == "nitr0"
 
+    def test_player_stats_t(self):
+        """Tests json generation of player stats for t."""
         stats_t = player_stats(self.data["gameRounds"], selected_side="T")
         assert isinstance(stats_t, dict)
         assert stats_t["76561197995889730"]["kills"] == 5
@@ -128,6 +127,11 @@ class TestStats:
         assert stats_t["76561197995889730"]["teamName"] == "Team Liquid"
         assert stats_t["76561197995889730"]["playerName"] == "nitr0"
 
+    def test_player_stats_sum(self):
+        """Tests that ct and t stats sum to total."""
+        stats = player_stats(self.data["gameRounds"])
+        stats_t = player_stats(self.data["gameRounds"], selected_side="T")
+        stats_ct = player_stats(self.data["gameRounds"], selected_side="CT")
         for player in stats:
             for metric in stats[player]:
                 total_value = stats[player][metric]
@@ -153,36 +157,30 @@ class TestStats:
                 elif metric in {"kast", "adr"}:
                     assert isclose(
                         total_value,
-                        weighted_avg(
-                            metric, "totalRounds", stats_t[player], stats_ct[player]
-                        ),
+                        weighted_avg(metric, "totalRounds", stats_t[player], stats_ct[player]),
                         abs_tol=0.11,
                     )
                 elif metric == "hsPercent":
                     assert isclose(
                         total_value,
-                        weighted_avg(
-                            metric, "kills", stats_t[player], stats_ct[player]
-                        ),
+                        weighted_avg(metric, "kills", stats_t[player], stats_ct[player]),
                         abs_tol=0.11,
                     )
                 elif metric == "kdr":
                     assert isclose(
                         total_value,
-                        weighted_avg(
-                            metric, "deaths", stats_t[player], stats_ct[player]
-                        ),
+                        weighted_avg(metric, "deaths", stats_t[player], stats_ct[player]),
                         abs_tol=0.11,
                     )
                 elif metric == "accuracy":
                     assert isclose(
                         total_value,
-                        weighted_avg(
-                            metric, "totalShots", stats_t[player], stats_ct[player]
-                        ),
+                        weighted_avg(metric, "totalShots", stats_t[player], stats_ct[player]),
                         abs_tol=0.11,
                     )
 
+    def test_suicides(self):
+        """Test that suicides are parsed correctly."""
         test_rounds = [
             {
                 "roundNum": 1,
@@ -289,70 +287,99 @@ class TestStats:
         ]
         stats = player_stats(test_rounds)
         assert stats["76561198049899734"]["suicides"] == 1
-        assert isinstance(stats_df, pd.DataFrame)
 
-    def test_player_stats_consistency(self):
-        """Tests that player stats are self consistent"""
-        stats = player_stats(self.data["gameRounds"])
-
-        stats_ct = player_stats(self.data["gameRounds"], selected_side="ct")
-
-        stats_t = player_stats(self.data["gameRounds"], selected_side="T")
-
-        for player in stats:
-            for metric in stats[player]:
-                total_value = stats[player][metric]
-                t_value = stats_t[player][metric]
-                ct_value = stats_ct[player][metric]
-                # All numerical purely cummulative values should add up
-                if isinstance(total_value, numbers.Number) and metric not in {
-                    "kast",
-                    "rating",
-                    "adr",
-                    "accuracy",
-                    "isBot",
-                    "kdr",
-                    "hsPercent",
-                    "steamID",
-                }:
-                    # Allow for slight deviation in case of rounding
-                    assert isclose(total_value, (t_value + ct_value), abs_tol=0.11)
-                elif metric in {"steamID", "isBot"}:
-                    assert total_value == t_value and total_value == ct_value
-                elif metric in {"playerName", "teamName"}:
-                    assert total_value in {t_value, ct_value}
-                elif metric in {"kast", "adr"}:
-                    assert isclose(
-                        total_value,
-                        weighted_avg(
-                            metric, "totalRounds", stats_t[player], stats_ct[player]
-                        ),
-                        abs_tol=0.11,
-                    )
-                elif metric == "hsPercent":
-                    assert isclose(
-                        total_value,
-                        weighted_avg(
-                            metric, "kills", stats_t[player], stats_ct[player]
-                        ),
-                        abs_tol=0.11,
-                    )
-                elif metric == "kdr":
-                    assert isclose(
-                        total_value,
-                        weighted_avg(
-                            metric, "deaths", stats_t[player], stats_ct[player]
-                        ),
-                        abs_tol=0.11,
-                    )
-                elif metric == "accuracy":
-                    assert isclose(
-                        total_value,
-                        weighted_avg(
-                            metric, "totalShots", stats_t[player], stats_ct[player]
-                        ),
-                        abs_tol=0.11,
-                    )
+    def test_player_timeout(self):
+        """Test that timed out players do not crash."""
+        test_rounds = [
+            {
+                "ctSide": {
+                    "teamName": "team_-Fuchshenger",
+                    "players": [
+                        {"playerName": "-Fuchshenger", "steamID": 76561199002916187},
+                    ],
+                },
+                "tSide": {
+                    "teamName": "team_Sunk3r",
+                    "players": [
+                        {"playerName": "Sunk3r", "steamID": 76561198173639909},
+                    ],
+                },
+                "kills": [],
+                "damages": [],
+                "weaponFires": [],
+                "flashes": [],
+                "grenades": [],
+                "bombEvents": [],
+            },
+            {
+                "ctSide": {
+                    "teamName": "team_-Fuchshenger",
+                    "players": [],
+                },
+                "tSide": {
+                    "teamName": "team_Sunk3r",
+                    "players": [
+                        {"playerName": "Sunk3r", "steamID": 76561198173639909},
+                    ],
+                },
+                "kills": [
+                    {
+                        "tick": 21548,
+                        "seconds": 20.866141732283463,
+                        "clockTime": "01:35",
+                        "attackerSteamID": 76561199002916187,
+                        "attackerName": "-Fuchshenger",
+                        "attackerTeam": "team_Sunk3r",
+                        "attackerSide": "T",
+                        "attackerX": 1623.4302978515625,
+                        "attackerY": 1222.76708984375,
+                        "attackerZ": 161.6575927734375,
+                        "attackerViewX": 337.1978759765625,
+                        "attackerViewY": 0.274658203125,
+                        "victimSteamID": 76561199002916187,
+                        "victimName": "-Fuchshenger",
+                        "victimTeam": "team_Sunk3r",
+                        "victimSide": "T",
+                        "victimX": 1623.4302978515625,
+                        "victimY": 1222.76708984375,
+                        "victimZ": 161.6575927734375,
+                        "victimViewX": 337.1978759765625,
+                        "victimViewY": 0.274658203125,
+                        "assisterSteamID": 76561198173639909,
+                        "assisterName": "Sunk3r",
+                        "assisterTeam": "team_Sunk3r",
+                        "assisterSide": "T",
+                        "isSuicide": True,
+                        "isTeamkill": False,
+                        "isWallbang": False,
+                        "penetratedObjects": 0,
+                        "isFirstKill": True,
+                        "isHeadshot": True,
+                        "victimBlinded": False,
+                        "attackerBlinded": False,
+                        "flashThrowerSteamID": None,
+                        "flashThrowerName": None,
+                        "flashThrowerTeam": None,
+                        "flashThrowerSide": None,
+                        "noScope": False,
+                        "thruSmoke": False,
+                        "distance": 714.3147783842128,
+                        "isTrade": False,
+                        "playerTradedName": None,
+                        "playerTradedTeam": None,
+                        "playerTradedSteamID": None,
+                        "weapon": "Glock-18",
+                        "weaponClass": "Pistols",
+                    },
+                ],
+                "damages": [],
+                "weaponFires": [],
+                "flashes": [],
+                "grenades": [],
+                "bombEvents": [],
+            },
+        ]
+        player_stats(test_rounds)
 
     def test_player_stats_suicide(self):
         """Tests that player stats parses suicides correctly"""
