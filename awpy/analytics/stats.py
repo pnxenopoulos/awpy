@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions to calculate statistics for a player or team from a demofile.
 
     Typical usage example:
@@ -20,7 +19,7 @@
 
     https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
 """
-from typing import Literal, Optional, Union, cast
+from typing import Literal, cast
 
 import pandas as pd
 
@@ -148,7 +147,7 @@ def initialize_round(
 
 def player_stats(
     game_rounds: list[GameRound], return_type: str = "json", selected_side: str = "all"
-) -> Union[dict[str, PlayerStatistics], pd.DataFrame]:
+) -> dict[str, PlayerStatistics] | pd.DataFrame:
     """Generate a stats summary for a list of game rounds as produced by the DemoParser.
 
     Args:
@@ -178,7 +177,7 @@ def player_stats(
             "T": set(),
             "CT": set(),
         }
-        is_clutching: set[Optional[str]] = set()
+        is_clutching: set[str | None] = set()
         for k in r["kills"] or []:
             killer_key = (
                 str(k["attackerName"])

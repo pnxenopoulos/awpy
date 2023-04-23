@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Util functions for csgo package."""
 
 import re

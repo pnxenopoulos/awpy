@@ -1,16 +1,15 @@
-# -*- coding: utf-8 -*-
 """This module contains the type definitions for the parsed json structure."""
 
-from typing import Literal, Optional, TypedDict
+from typing import Literal, TypedDict
 
 
 class Chat(TypedDict):
     """Chat holds the matchmaking ranks. Only for MM demos."""
 
-    steamID: Optional[int]
+    steamID: int | None
     text: str
     tick: int
-    params: Optional[list[str]]  # params for SayText2
+    params: list[str] | None  # params for SayText2
     isChat: bool  # true for Chat and variable for SayText(2)
     # Unclear: Seems true for ChatMessages to allchat
     # but false for SayText admin commands to all chat
@@ -58,18 +57,18 @@ PlaceMatrix = dict[
 class MatchPhases(TypedDict):
     """MatchPhases holds lists of when match events occurred."""
 
-    announcementLastRoundHalf: Optional[list[int]]
-    announcementFinalRound: Optional[list[int]]
-    announcementMatchStarted: Optional[list[int]]
-    roundStarted: Optional[list[int]]
-    roundEnded: Optional[list[int]]
-    roundFreezetimeEnded: Optional[list[int]]
-    roundEndedOfficial: Optional[list[int]]
-    gameHalfEnded: Optional[list[int]]
-    matchStart: Optional[list[int]]
-    matchStartedChanged: Optional[list[int]]
-    warmupChanged: Optional[list[int]]
-    teamSwitch: Optional[list[int]]
+    announcementLastRoundHalf: list[int] | None
+    announcementFinalRound: list[int] | None
+    announcementMatchStarted: list[int] | None
+    roundStarted: list[int] | None
+    roundEnded: list[int] | None
+    roundFreezetimeEnded: list[int] | None
+    roundEndedOfficial: list[int] | None
+    gameHalfEnded: list[int] | None
+    matchStart: list[int] | None
+    matchStartedChanged: list[int] | None
+    warmupChanged: list[int] | None
+    teamSwitch: list[int] | None
 
 
 class ServerConVar(TypedDict):
@@ -139,7 +138,7 @@ class PlayerTeams(TypedDict):
     """PlayerTeam."""
 
     teamName: str
-    players: Optional[list[Players]]
+    players: list[Players] | None
 
 
 class GrenadeAction(TypedDict):
@@ -178,7 +177,7 @@ class BombAction(TypedDict):
     playerY: float
     playerZ: float
     bombAction: str
-    bombSite: Optional[str]
+    bombSite: str | None
 
 
 class DamageAction(TypedDict):
@@ -187,25 +186,25 @@ class DamageAction(TypedDict):
     tick: int
     seconds: float
     clockTime: str
-    attackerSteamID: Optional[int]
-    attackerName: Optional[str]
-    attackerTeam: Optional[str]
-    attackerSide: Optional[str]
-    attackerX: Optional[float]
-    attackerY: Optional[float]
-    attackerZ: Optional[float]
-    attackerViewX: Optional[float]
-    attackerViewY: Optional[float]
-    attackerStrafe: Optional[bool]
-    victimSteamID: Optional[int]
-    victimName: Optional[str]
-    victimTeam: Optional[str]
-    victimSide: Optional[str]
-    victimX: Optional[float]
-    victimY: Optional[float]
-    victimZ: Optional[float]
-    victimViewX: Optional[float]
-    victimViewY: Optional[float]
+    attackerSteamID: int | None
+    attackerName: str | None
+    attackerTeam: str | None
+    attackerSide: str | None
+    attackerX: float | None
+    attackerY: float | None
+    attackerZ: float | None
+    attackerViewX: float | None
+    attackerViewY: float | None
+    attackerStrafe: bool | None
+    victimSteamID: int | None
+    victimName: str | None
+    victimTeam: str | None
+    victimSide: str | None
+    victimX: float | None
+    victimY: float | None
+    victimZ: float | None
+    victimViewX: float | None
+    victimViewY: float | None
     weapon: str
     weaponClass: str
     hpDamage: int
@@ -215,7 +214,7 @@ class DamageAction(TypedDict):
     hitGroup: str
     isFriendlyFire: bool
     distance: float
-    zoomLevel: Optional[int]
+    zoomLevel: int | None
 
 
 class KillAction(TypedDict):
@@ -224,28 +223,28 @@ class KillAction(TypedDict):
     tick: int
     seconds: float
     clockTime: str
-    attackerSteamID: Optional[int]
-    attackerName: Optional[str]
-    attackerTeam: Optional[str]
-    attackerSide: Optional[str]
-    attackerX: Optional[float]
-    attackerY: Optional[float]
-    attackerZ: Optional[float]
-    attackerViewX: Optional[float]
-    attackerViewY: Optional[float]
-    victimSteamID: Optional[int]
-    victimName: Optional[str]
-    victimTeam: Optional[str]
-    victimSide: Optional[str]
-    victimX: Optional[float]
-    victimY: Optional[float]
-    victimZ: Optional[float]
-    victimViewX: Optional[float]
-    victimViewY: Optional[float]
-    assisterSteamID: Optional[int]
-    assisterName: Optional[str]
-    assisterTeam: Optional[str]
-    assisterSide: Optional[str]
+    attackerSteamID: int | None
+    attackerName: str | None
+    attackerTeam: str | None
+    attackerSide: str | None
+    attackerX: float | None
+    attackerY: float | None
+    attackerZ: float | None
+    attackerViewX: float | None
+    attackerViewY: float | None
+    victimSteamID: int | None
+    victimName: str | None
+    victimTeam: str | None
+    victimSide: str | None
+    victimX: float | None
+    victimY: float | None
+    victimZ: float | None
+    victimViewX: float | None
+    victimViewY: float | None
+    assisterSteamID: int | None
+    assisterName: str | None
+    assisterTeam: str | None
+    assisterSide: str | None
     isSuicide: bool
     isTeamkill: bool
     isWallbang: bool
@@ -254,18 +253,18 @@ class KillAction(TypedDict):
     isHeadshot: bool
     victimBlinded: bool
     attackerBlinded: bool
-    flashThrowerSteamID: Optional[int]
-    flashThrowerName: Optional[str]
-    flashThrowerTeam: Optional[str]
-    flashThrowerSide: Optional[str]
+    flashThrowerSteamID: int | None
+    flashThrowerName: str | None
+    flashThrowerTeam: str | None
+    flashThrowerSide: str | None
     noScope: bool
     thruSmoke: bool
     distance: float
     isTrade: bool
-    playerTradedName: Optional[str]
-    playerTradedTeam: Optional[str]
-    playerTradedSteamID: Optional[int]
-    playerTradedSide: Optional[str]
+    playerTradedName: str | None
+    playerTradedTeam: str | None
+    playerTradedSteamID: int | None
+    playerTradedSide: str | None
     weapon: str
     weaponClass: str
 
@@ -308,16 +307,16 @@ class FlashAction(TypedDict):
     attackerZ: float
     attackerViewX: float
     attackerViewY: float
-    playerSteamID: Optional[int]
-    playerName: Optional[str]
-    playerTeam: Optional[str]
-    playerSide: Optional[str]
-    playerX: Optional[float]
-    playerY: Optional[float]
-    playerZ: Optional[float]
-    playerViewX: Optional[float]
-    playerViewY: Optional[float]
-    flashDuration: Optional[float]
+    playerSteamID: int | None
+    playerName: str | None
+    playerTeam: str | None
+    playerSide: str | None
+    playerX: float | None
+    playerY: float | None
+    playerZ: float | None
+    playerViewX: float | None
+    playerViewY: float | None
+    flashDuration: float | None
 
 
 class BombInfo(TypedDict):
@@ -398,8 +397,8 @@ class PlayerInfo(TypedDict):
     isScoped: bool
     isWalk: bool
     isUnknown: bool
-    inventory: Optional[list[WeaponInfo]]
-    spotters: Optional[list[int]]
+    inventory: list[WeaponInfo] | None
+    spotters: list[int] | None
     equipmentValue: int
     equipmentValueFreezetimeEnd: int
     equipmentValueRoundStart: int
@@ -421,7 +420,7 @@ class TeamFrameInfo(TypedDict):
     teamEqVal: int
     alivePlayers: int
     totalUtility: int
-    players: Optional[list[PlayerInfo]]
+    players: list[PlayerInfo] | None
 
 
 class Smoke(TypedDict):
@@ -446,9 +445,9 @@ class GameFrame(TypedDict):
     bombPlanted: bool
     bombsite: str
     bomb: BombInfo
-    projectiles: Optional[list[GrenadeInfo]]
-    smokes: Optional[list[Smoke]]
-    fires: Optional[list[Fire]]
+    projectiles: list[GrenadeInfo] | None
+    smokes: list[Smoke] | None
+    fires: list[Fire] | None
 
 
 class GameRound(TypedDict):
@@ -460,16 +459,16 @@ class GameRound(TypedDict):
     freezeTimeEndTick: int
     endTick: int
     endOfficialTick: int
-    bombPlantTick: Optional[int]
+    bombPlantTick: int | None
     tScore: int
     ctScore: int
     endTScore: int
     endCTScore: int
-    ctTeam: Optional[str]
-    tTeam: Optional[str]
+    ctTeam: str | None
+    tTeam: str | None
     winningSide: str
-    winningTeam: Optional[str]
-    losingTeam: Optional[str]
+    winningTeam: str | None
+    losingTeam: str | None
     roundEndReason: str
     ctFreezeTimeEndEqVal: int
     ctRoundStartEqVal: int
@@ -481,13 +480,13 @@ class GameRound(TypedDict):
     tBuyType: str
     ctSide: PlayerTeams
     tSide: PlayerTeams
-    kills: Optional[list[KillAction]]
-    damages: Optional[list[DamageAction]]
-    grenades: Optional[list[GrenadeAction]]
-    bombEvents: Optional[list[BombAction]]
-    weaponFires: Optional[list[WeaponFireAction]]
-    flashes: Optional[list[FlashAction]]
-    frames: Optional[list[GameFrame]]
+    kills: list[KillAction] | None
+    damages: list[DamageAction] | None
+    grenades: list[GrenadeAction] | None
+    bombEvents: list[BombAction] | None
+    weaponFires: list[WeaponFireAction] | None
+    flashes: list[FlashAction] | None
+    frames: list[GameFrame] | None
 
 
 class Game(TypedDict):
@@ -503,10 +502,10 @@ class Game(TypedDict):
     parserParameters: ParserOpts
     serverVars: ServerConVar
     matchPhases: MatchPhases
-    matchmakingRanks: Optional[list[MMRank]]
-    chatMessages: Optional[list[Chat]]
-    playerConnections: Optional[list[ConnectAction]]
-    gameRounds: Optional[list[GameRound]]
+    matchmakingRanks: list[MMRank] | None
+    chatMessages: list[Chat] | None
+    playerConnections: list[ConnectAction] | None
+    gameRounds: list[GameRound] | None
 
 
 class PlayerStatistics(TypedDict):

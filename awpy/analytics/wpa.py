@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Will provide functionality for WPA and win probabilities.
 
 WPA stands for Win Probability Added and is described in this paper:

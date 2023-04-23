@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 """Data cleaning functions."""
 
 import difflib
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -10,8 +9,8 @@ import textdistance
 
 
 def associate_entities(
-    game_names: Optional[list[Optional[str]]] = None,
-    entity_names: Optional[list[str]] = None,
+    game_names: list[str | None] | None = None,
+    entity_names: list[str] | None = None,
     metric="lcss",
 ) -> dict:
     """A function to return a dict of associated entities. Accepts.
@@ -41,7 +40,7 @@ def associate_entities(
     elif metric.lower() == "jaro":
         dist_metric = textdistance.jaro.distance
     elif metric.lower() == "difflib":
-        entities: dict[Optional[str], Any] = {}
+        entities: dict[str | None, Any] = {}
         for gn in game_names:
             if gn is not None and gn is not np.nan:
                 closest_name = difflib.get_close_matches(

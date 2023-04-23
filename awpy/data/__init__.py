@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Provides data such as radar images and navigation meshes."""
 import json
 import os
@@ -74,7 +73,7 @@ def create_nav_graphs(
                     ),
                 ]
             )
-        edge_list = open(data_path + "nav/" + m + ".txt", "r", encoding="utf8")
+        edge_list = open(data_path + "nav/" + m + ".txt", encoding="utf8")
         edge_list_lines = edge_list.readlines()
         for line in edge_list_lines:
             areas = line.strip().split(",")

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for finding distances between points, areas or states.
 
     Typical usage example:
@@ -1016,7 +1015,7 @@ def token_state_distance(
                 if difference > 0:
                     pos_indices.extend([i] * int(difference))
                 elif difference < 0:
-                    neg_indices.extend([i] * int((abs(difference))))
+                    neg_indices.extend([i] * int(abs(difference)))
             # Get all possible mappings between the differences
             # Eg: diff array is [1,1,-1,-1]
             # then pos_indices is [0,1] and neg_indices is [2,3]

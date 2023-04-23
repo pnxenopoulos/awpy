@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests correct importing of data in data module."""
 import networkx
 

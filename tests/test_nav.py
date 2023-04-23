@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests navigation functionality."""
 import math
 import os

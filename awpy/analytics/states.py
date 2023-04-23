@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions to generate game stats based on snapshots from a demofile."""
 
 from awpy.types import GameFrame

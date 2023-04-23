@@ -8,7 +8,7 @@ authors = [
 ]
 description = "Counter-Strike: Global Offensive data parsing, analysis and visualization functions"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["esports", "sports-analytics", "csgo", "counter-strike"]
 license = {text = "MIT License"}
 classifiers = [
@@ -31,7 +31,7 @@ dynamic = ["version"]
 
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F", "B", "W", "I", "N", "D"]
+select = ["E", "F", "B", "W", "I", "N", "D", "UP"]
 ignore = ["D208"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests cleaning module."""
 import pandas as pd
 import pytest

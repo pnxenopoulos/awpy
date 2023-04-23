@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests WPA module."""
 import json
 import os

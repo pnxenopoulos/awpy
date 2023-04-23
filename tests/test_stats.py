@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests stats module."""
 import json
 import numbers

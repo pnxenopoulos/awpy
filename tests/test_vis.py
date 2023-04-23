@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests visualization module."""
 import os
 from unittest.mock import patch

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests DemoParser functionality."""
 import json
 import logging

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """This module defines the DemoParser class that handles the core functionality.
 
     Core functionality is parsing and cleaning a csgo demo file.
@@ -26,7 +25,7 @@ import json
 import logging
 import os
 import subprocess
-from typing import Any, Literal, Optional, Union, cast, get_args
+from typing import Any, Literal, cast, get_args
 
 import pandas as pd
 
@@ -77,8 +76,8 @@ class DemoParser:
     def __init__(
         self,
         demofile: str = "",
-        outpath: Optional[str] = None,
-        demo_id: Optional[str] = None,
+        outpath: str | None = None,
+        demo_id: str | None = None,
         log: bool = False,
         parse_rate: int = 128,
         parse_frames: bool = True,
@@ -230,7 +229,7 @@ class DemoParser:
         self.parse_error = False
 
         # Initialize json attribute as None
-        self.json: Optional[Game] = None
+        self.json: Game | None = None
 
     def parse_demo(self) -> None:
         """Parse a demofile using the Go script parse_demo.go.
@@ -340,7 +339,7 @@ class DemoParser:
 
     def parse(
         self, return_type: str = "json", clean: bool = True
-    ) -> Union[Game, dict[str, Any]]:
+    ) -> Game | dict[str, Any]:
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
@@ -781,7 +780,7 @@ class DemoParser:
         remove_bad_scoring: bool = True,
         return_type: str = "json",
         save_to_json: bool = True,
-    ) -> Union[Game, dict[str, Any]]:
+    ) -> Game | dict[str, Any]:
         """Cleans a parsed demofile JSON.
 
         Args:
@@ -1086,7 +1085,7 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
-    def remove_end_round(self, bad_endings: Optional[list[str]] = None) -> None:
+    def remove_end_round(self, bad_endings: list[str] | None = None) -> None:
         """Removes rounds with bad end reason.
 
         Args:

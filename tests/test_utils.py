@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests utils module."""
 import tempfile
 from unittest.mock import patch

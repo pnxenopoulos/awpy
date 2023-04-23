@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for plotting player positions and nades.
 
     Typical usage example:
@@ -17,7 +16,7 @@
 """
 import os
 import shutil
-from typing import Literal, Optional, cast
+from typing import Literal, cast
 
 import imageio
 import matplotlib as mpl
@@ -127,11 +126,11 @@ def position_transform_all(
 
 
 def plot_positions(
-    positions: Optional[list[tuple[float, float]]] = None,
-    colors: Optional[list[str]] = None,
-    markers: Optional[list[str]] = None,
-    alphas: Optional[list[float]] = None,
-    sizes: Optional[list[float]] = None,
+    positions: list[tuple[float, float]] | None = None,
+    colors: list[str] | None = None,
+    markers: list[str] | None = None,
+    alphas: list[float] | None = None,
+    sizes: list[float] | None = None,
     map_name: str = "de_ancient",
     map_type: str = "original",
     dark: bool = False,
@@ -277,7 +276,7 @@ def plot_round(
 
 def plot_nades(
     rounds: list[GameRound],
-    nades: Optional[list[str]] = None,
+    nades: list[str] | None = None,
     side: str = "CT",
     map_name: str = "de_ancient",
     map_type: str = "original",

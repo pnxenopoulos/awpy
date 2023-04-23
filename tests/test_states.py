@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests state parsing."""
 import json
 import os

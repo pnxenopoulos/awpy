@@ -14,8 +14,6 @@ repos:
       language: python
     - id: check-docstring-first
       language: python
-    - id: fix-encoding-pragma
-      language: python
     - id: requirements-txt-fixer
       language: python
     - id: check-merge-conflict
