@@ -287,7 +287,7 @@ class DemoParser:
         self.parse_demo()
         self.read_json(json_path=self.outpath + "/" + self.output_file)
         if clean:
-            clean_data = self.clean_rounds()
+            self.clean_rounds()
         if self.json:
             self.logger.info("JSON output found")
             if return_type == "json":

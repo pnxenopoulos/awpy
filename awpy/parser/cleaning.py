@@ -66,7 +66,7 @@ def associate_entities(
                     name_distances.append(dist_metric(gn.lower(), p.lower()))
                     names.append(p)
                 entities[gn] = names[np.argmin(name_distances)]
-                popped_name = entity_names.pop(np.argmin(name_distances))
+                entity_names.pop(np.argmin(name_distances))
         if gn == "":
             entities[gn] = None
     entities[None] = None

@@ -283,7 +283,7 @@ class TestDemoParser:
     def test_wrong_return_type(self):
         """Tests if wrong return type errors out"""
         with pytest.raises(ValueError):
-            d = self.parser.parse(return_type="i_am_wrong")
+            self.parser.parse(return_type="i_am_wrong")
 
     def test_bot_name(self):
         """Tests if bot naming is correct (brought up by Charmees).

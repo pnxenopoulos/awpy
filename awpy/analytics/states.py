@@ -84,7 +84,8 @@ def generate_graph_state(frame: GameFrame) -> dict:
         frame (GameFrame) : Dict output of a frame generated from the DemoParser class
 
     Returns:
-        A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
+        A dict with keys "T", "CT" and "Global",
+        where each entry is a vector. Global vector is CT + T concatenated
     """
     return {"ct": [], "t": [], "global": []}
 
@@ -96,6 +97,7 @@ def generate_set_state(frame: GameFrame) -> dict:
         frame (GameFrame) : Dict output of a frame generated from the DemoParser class
 
     Returns:
-        A dict with keys "T", "CT" and "Global", where each entry is a vector. Global vector is CT + T concatenated
+        A dict with keys "T", "CT" and "Global",
+        where each entry is a vector. Global vector is CT + T concatenated
     """
     return {"ct": [], "t": [], "global": []}
