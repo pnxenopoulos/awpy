@@ -22,7 +22,7 @@ class TestUtils:
         outputs = [True, False, False, False, False, True]
         for my_input, my_output in zip(inputs, outputs, strict=True):
             with tempfile.TemporaryFile() as fp:
-                mock_subproc.Popen.return_value.stdout = fp
+                mock_subproc.Popen.return_value.__enter__.return_value.stdout = fp
                 fp.write(my_input)
                 fp.seek(0)
                 assert check_go_version() is my_output

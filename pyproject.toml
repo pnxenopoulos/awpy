@@ -31,8 +31,8 @@ dynamic = ["version"]
 
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F", "B", "W", "I", "N", "D", "UP", "YTT", "ANN", "S", "BLE", "FBT", "A", "C4", "DTZ", "T10", "EXE", "ISC", "ICN", "G", "INP", "PIE", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM"]
-ignore = ["D208", "ANN101", "T20"]
+select = ["E", "F", "B", "W", "I", "N", "D", "UP", "YTT", "ANN", "S", "BLE", "FBT", "A", "C4", "DTZ", "T10", "EXE", "ISC", "ICN", "G", "INP", "PIE", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "INT", "ARG", "ERA", "PD", "PGH", "PLC", "PLE", "PLR", "PLW", "TRY"]
+ignore = ["D208", "ANN101", "T20", "PTH", "PLR0912", "PLR0915", "PLR0913", "TRY003"]  # , "PLR0912", "PLR0915", "PLR0913"
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
@@ -75,7 +75,10 @@ target-version = "py310"
 "__init__.py" = ["E402", "F401"]
 "awpy/types.py" = ["N815"]
 "setup.py" = ["D100"]
-"tests/test_*.py" = ["ANN201", "S101", "SLF001"]
+"tests/test_*.py" = ["ANN201", "S101", "SLF001", "PLR2004"]
+"awpy/analytics/states.py" = ["ARG001"]
+"awpy/analytics/wpa.py" = ["ARG001"]
+"awpy/parser/cleaning.py" = ["PLC1901"]
 
 [tool.ruff.pydocstyle]
 convention = "google"  # Accepts: "google", "numpy", or "pep257".

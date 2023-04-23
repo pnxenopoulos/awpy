@@ -44,22 +44,28 @@ def check_go_version() -> bool:
     Returns:
         bool whether the found go version is recent enough
     """
-    try:
-        proc = subprocess.Popen(
-            ["go", "version"], stdout=subprocess.PIPE  # noqa: S603,S607,E501
-        )
-        parsed_resp = (
-            proc.stdout.read().splitlines() if proc.stdout is not None else None
-        )
+
+    def parse_go_version(parsed_resp: list[bytes] | None) -> list[str]:
         if parsed_resp is None or len(parsed_resp) != 1:
             raise ValueError("Error finding Go version")
         go_version_text = parsed_resp[0].decode("utf-8")
         go_version = re.findall(r"\d\.\d+", go_version_text)
-        if [int(x) for x in go_version[0].split(".")] >= [1, 18]:
-            return True
-        return False
+        return go_version[0].split(".")
+
+    try:
+        with subprocess.Popen(
+            ["go", "version"], stdout=subprocess.PIPE  # noqa: S603,S607,E501
+        ) as proc:
+            parsed_resp = (
+                proc.stdout.read().splitlines() if proc.stdout is not None else None
+            )
+        parsed_go_version = parse_go_version(parsed_resp)
     except Exception as e:  # noqa: BLE001
         print(e)
+        return False
+    else:
+        if [int(x) for x in parsed_go_version] >= [1, 18]:
+            return True
         return False
 
 
@@ -92,7 +98,7 @@ def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[int, Area]
             # Would rather initiate this as an empty 'Area' typeddict
             cur_dic = {}
             # And cast cur_feature to
-            # Literal["mapName","areaId","areaName","northWestX",...]
+            # Literal["mapName","areaId","areaName","northWestX",...]  # noqa: ERA001
             # However casting from Any to Literal does not work in mypy
             for cur_feature in sample_csv.columns:
                 if cur_feature not in ["mapName", "areaId"]:

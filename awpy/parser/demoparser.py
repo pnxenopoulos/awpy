@@ -170,14 +170,16 @@ class DemoParser:
             )
             parse_rate = 128
             self.parse_rate = parse_rate
-
-        if parse_rate < 64 and parse_rate > 1:
+        parse_rate_lower_bound = 64
+        parse_rate_upper_bound = 256
+        if 1 < parse_rate < parse_rate_lower_bound:
             self.logger.warning(
-                "A parse rate lower than 64 may be slow depending on the tickrate "
-                "of the demo, which is usually 64 for MM and 128 for pro demos."
+                "A parse rate lower than %s may be slow depending on the tickrate "
+                "of the demo, which is usually 64 for MM and 128 for pro demos.",
+                parse_rate_lower_bound,
             )
             self.parse_rate = parse_rate
-        elif parse_rate >= 256:
+        elif parse_rate >= parse_rate_upper_bound:
             self.logger.warning(
                 "A high parse rate means very few frames. "
                 "Only use for testing purposes."
@@ -188,19 +190,23 @@ class DemoParser:
         self.logger.info("Setting parse rate to %s", str(self.parse_rate))
 
         # Handle trade time
+        trade_time_default = 5
+        trade_time_upper_bound = 7
         self.trade_time = trade_time
         if trade_time <= 0:
             self.logger.warning(
-                "Trade time can't be negative, setting to default value of 5 seconds."
+                "Trade time can't be negative, setting to default value of %d seconds.",
+                trade_time_default,
             )
-            self.trade_time = 5
-        elif trade_time > 7:
+            self.trade_time = trade_time_default
+        elif trade_time > trade_time_upper_bound:
             self.logger.warning(
-                "Trade time of %s is rather long. Consider a value between 4-7.",
-                str(trade_time),
+                "Trade time of %d is rather long. Consider a value between 4-%d.",
+                trade_time,
+                trade_time_upper_bound,
             )
 
-        self.logger.info("Setting trade time to %s", str(self.trade_time))
+        self.logger.info("Setting trade time to %d", self.trade_time)
 
         # Handle buy style
         if buy_style not in ["hltv", "csgo"]:
@@ -932,33 +938,33 @@ class DemoParser:
                         + lookahead_round["ctScore"]
                         + lookahead_round["endCTScore"]
                     )
+                    tie_score = 15
+                    ot_tie_score = 3
                     if (
                         # Next round should have higher score than current
                         (lookahead_round_total > current_round_total)
                         # Valid rounds have a winner and a not winner
-                        or ((r["endTScore"] == 16) & (r["endCTScore"] <= 14))
-                        or (r["endCTScore"] == 16) & (r["endTScore"] <= 14)
+                        or (
+                            (r["endTScore"] == tie_score + 1)
+                            & (r["endCTScore"] < tie_score)
+                        )
+                        or (r["endCTScore"] == tie_score + 1)
+                        & (r["endTScore"] < tie_score)
                         # OT win scores are of the type:
                         # 15 + (4xN) with N a natural numbers (1, 2, 3, ...)
                         # So 19, 23, 27, ...
                         # So if you substract 15 from an OT winning round
                         # the number is divisible by 4
                         or (
-                            (r["endCTScore"] - 15) % 4 == 0
+                            (r["endCTScore"] - tie_score) % (ot_tie_score + 1) == 0
                             and r["endTScore"] < r["endCTScore"]
                         )
                         or (
-                            (r["endTScore"] - 15) % 4 == 0
+                            (r["endTScore"] - tie_score) % (ot_tie_score + 1) == 0
                             and r["endCTScore"] < r["endTScore"]
                         )
                     ):
                         cleaned_rounds.append(r)
-                        # OT_Scores = [19, 23, 27, 31, 35, 39, 43, 47]
-                        # for s in OT_Scores:
-                        #     if (r["endCTScore"] == s) & (r["endTScore"] < s - 1):
-                        #         cleaned_rounds.append(r)
-                        #     elif (r["endTScore"] == s) & (r["endCTScore"] < s - 1):
-                        #         cleaned_rounds.append(r)
                 else:
                     lookback_round = self.json["gameRounds"][i - 1]  # type: ignore[index] # noqa: E501
                     lookback_round_total = (
@@ -1021,16 +1027,18 @@ class DemoParser:
             else:
                 cleaned_rounds = []
                 # Remove rounds where the number of players is too large
+                n_players = 5
                 for r in self.json["gameRounds"] or []:
                     if len(r["frames"] or []) > 0:
                         f = r["frames"][0]  # type: ignore[index]
                         if f["ct"]["players"] is None:
                             if f["t"]["players"] is None:
                                 pass
-                            elif len(f["t"]["players"]) <= 5:
+                            elif len(f["t"]["players"]) <= n_players:
                                 cleaned_rounds.append(r)
-                        elif len(f["ct"]["players"]) <= 5 and (
-                            (f["t"]["players"] is None) or (len(f["t"]["players"]) <= 5)
+                        elif len(f["ct"]["players"]) <= n_players and (
+                            (f["t"]["players"] is None)
+                            or (len(f["t"]["players"]) <= n_players)
                         ):
                             cleaned_rounds.append(r)
                 self.json["gameRounds"] = cleaned_rounds
@@ -1137,10 +1145,11 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
+        n_total_players = 10
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"] or []:
-                if not r["isWarmup"] and len(r["kills"] or []) <= 10:
+                if not r["isWarmup"] and len(r["kills"] or []) <= n_total_players:
                     cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:

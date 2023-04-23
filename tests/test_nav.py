@@ -40,7 +40,7 @@ class TestNav:
         #  ^
         #  |
         #  v
-        # 3(2,-2)
+        # 3(2,-2)  # noqa: ERA001
         self.fake_nav = {
             "de_mock": {
                 1: {

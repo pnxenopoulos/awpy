@@ -77,7 +77,8 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
         raise ValueError("Map not found.")
     if area_id not in NAV[map_name]:
         raise ValueError("Area ID not found.")
-    if len(point) != 3:
+    # Three dimensional space. Unlikely to change anytime soon
+    if len(point) != 3:  # noqa: PLR2004
         raise ValueError("Point must be a list [X,Y,Z]")
     contains_x = (
         min(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"])
@@ -116,7 +117,8 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
-    if len(point) != 3:
+    # Three dimensional space. Unlikely to change anytime soon
+    if len(point) != 3:  # noqa: PLR2004
         raise ValueError("Point must be a list [X,Y,Z]")
     closest_area: ClosestArea = {
         "mapName": map_name,
@@ -276,7 +278,8 @@ def point_distance(
     if dist_type in {"graph", "geodesic"}:
         if map_name not in NAV:
             raise ValueError("Map not found.")
-        if len(point_a) != 3 or len(point_b) != 3:
+        # Three dimensional space. Unlikely to change anytime soon
+        if len(point_a) != 3 or len(point_b) != 3:  # noqa: PLR2004
             raise ValueError(
                 "When using graph or geodesic distance, point must be X/Y/Z"
             )
@@ -783,7 +786,11 @@ def position_state_distance(
             "Both states have to have the same number of teams(1 or 2) "
             "and same number of coordinates."
         )
-    if distance_type not in ["geodesic", "graph"] and position_array_1.shape[2] != 3:
+    # Three dimensional space. Unlikely to change anytime soon
+    if (
+        distance_type not in ["geodesic", "graph"]
+        and position_array_1.shape[2] != 3  # noqa: PLR2004
+    ):
         raise ValueError(
             "Game state shapes are incorrect! Both states have to have the same number "
             "of coordinates (3) when not using 'geodesic' or graph 'distance'."
@@ -793,7 +800,11 @@ def position_state_distance(
         position_array_1, position_array_2 = position_array_2, position_array_1
     # Pre compute the area names for each player's position
     # If the x,y and z coordinate are given
-    if distance_type in ["geodesic", "graph"] and position_array_1.shape[-1] == 3:
+    # Three dimensional space. Unlikely to change anytime soon
+    if (
+        distance_type in ["geodesic", "graph"]
+        and position_array_1.shape[-1] == 3  # noqa: PLR2004
+    ):
         areas: dict[int, defaultdict[int, dict]] = {
             1: defaultdict(dict),
             2: defaultdict(dict),
@@ -852,14 +863,14 @@ def position_state_distance(
                     area1 = (
                         # either take values precomputed here
                         areas[1][team][player1]
-                        if position_array_1.shape[-1] == 3
+                        if position_array_1.shape[-1] == 3  # noqa: PLR2004
                         # or if only one position value is given
                         # that should be the area id already
                         else int(position_array_1[team][player1][0])
                     )
                     area2 = (
                         areas[2][team][player2]
-                        if position_array_2.shape[-1] == 3
+                        if position_array_2.shape[-1] == 3  # noqa: PLR2004
                         else int(position_array_2[team][player2][0])
                     )
                     if map_name not in AREA_DIST_MATRIX:
@@ -1006,11 +1017,11 @@ def token_state_distance(
             diff_array = np.subtract(array1, array2)
             pos_indices = []
             neg_indices = []
-            for i, difference in enumerate(diff_array):
+            for differing_index, difference in enumerate(diff_array):
                 if difference > 0:
-                    pos_indices.extend([i] * int(difference))
+                    pos_indices.extend([differing_index] * int(difference))
                 elif difference < 0:
-                    neg_indices.extend([i] * int(abs(difference)))
+                    neg_indices.extend([differing_index] * int(abs(difference)))
             # Get all possible mappings between the differences
             # Eg: diff array is [1,1,-1,-1]
             # then pos_indices is [0,1] and neg_indices is [2,3]

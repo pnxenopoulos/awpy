@@ -90,5 +90,5 @@ def replace_entities(
     """
     if col_name not in df.columns:
         raise ValueError("Column does not exist!")
-    df[col_name].replace(entity_dict, inplace=True)
+    df[col_name] = df[col_name].replace(entity_dict)
     return df

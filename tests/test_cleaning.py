@@ -90,18 +90,18 @@ class TestCleaning:
 
     def test_entity_replace(self):
         """Tests if entity replacement works for a dataframe."""
-        df = pd.DataFrame(
+        test_dataframe = pd.DataFrame(
             {"Person": ["sid", "peter", "joao"], "Country": ["DE", "US", "BR"]}
         )
         entities = {"DE": "Germany", "US": "USA", "BR": "Brazil"}
-        new_df = replace_entities(df, "Country", entities)
+        new_df = replace_entities(test_dataframe, "Country", entities)
         assert new_df.Country.tolist() == ["Germany", "USA", "Brazil"]
 
     def test_entity_replace_no_col(self):
         """Tests if entity replacement fails on a non-contained column."""
-        df = pd.DataFrame(
+        test_dataframe = pd.DataFrame(
             {"Person": ["sid", "peter", "joao"], "Country": ["DE", "US", "BR"]}
         )
         entities = {"DE": "Germany", "US": "USA", "BR": "Brazil"}
         with pytest.raises(ValueError, match="Column does not exist!"):
-            replace_entities(df, "Countryyy", entities)
+            replace_entities(test_dataframe, "Countryyy", entities)
