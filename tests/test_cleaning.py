@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Tests cleaning module."""
 import pandas as pd
 import pytest
 
@@ -6,45 +7,45 @@ from awpy.parser.cleaning import associate_entities, replace_entities
 
 
 class TestCleaning:
-    """Class to test CSGO data cleaning functions"""
+    """Class to test CSGO data cleaning functions."""
 
     def test_association(self):
-        """Test entity association"""
+        """Test entity association."""
         a = ["misutaaa-", "ZyW0o//", "peeter"]
         b = ["misuta", "Zywoo", "peter"]
         c = associate_entities(a, b)
         assert c["misutaaa-"] == "misuta"
 
     def test_lcss_metric(self):
-        """Test LCSS metric"""
+        """Test LCSS metric."""
         a = ["misutaaa-", "ZyW0o//", "peeter"]
         b = ["misuta", "Zywoo", "peter"]
         c = associate_entities(a, b, metric="lcss")
         assert c["misutaaa-"] == "misuta"
 
     def test_hamming_metric(self):
-        """Test Hamming metric"""
+        """Test Hamming metric."""
         a = ["misutaaa-", "ZyW0o//", "peeter"]
         b = ["misuta", "Zywoo", "peter"]
         c = associate_entities(a, b, metric="hamming")
         assert c["misutaaa-"] == "misuta"
 
     def test_levenshtein_metric(self):
-        """Test Levenshtein metric"""
+        """Test Levenshtein metric."""
         a = ["misutaaa-", "ZyW0o//", "peeter"]
         b = ["misuta", "Zywoo", "peter"]
         c = associate_entities(a, b, metric="levenshtein")
         assert c["misutaaa-"] == "misuta"
 
     def test_jaro_metric(self):
-        """Test Jaro-Winkler metric"""
+        """Test Jaro-Winkler metric."""
         a = ["misutaaa-", "ZyW0o//", "peeter"]
         b = ["misuta", "Zywoo", "peter"]
         c = associate_entities(a, b, metric="jaro")
         assert c["misutaaa-"] == "misuta"
 
     def test_difflib(self):
-        """Test difflib"""
+        """Test difflib."""
         a = ["misutaaa-", "ZyW0o//", "peeter"]
         b = ["misuta", "Zywoo", "peter"]
         c = associate_entities(a, b, metric="difflib")
@@ -58,7 +59,7 @@ class TestCleaning:
             associate_entities(a, b, metric="bad_metric")
 
     def test_empty_input(self):
-        """Tests empty input"""
+        """Tests empty input."""
         a = None
         b = None
         c = associate_entities(a, b, "difflib")

@@ -379,13 +379,14 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
 
 
 def tree() -> dict:
-    """Builds tree data structure from nested defaultdicts
+    """Builds tree data structure from nested defaultdicts.
 
     Args:
         None
 
     Returns:
-        An empty tree"""
+        An empty tree
+    """
 
     def the_tree():
         return defaultdict(the_tree)
@@ -576,7 +577,7 @@ def generate_place_distance_matrix(map_name: str, save: bool = False) -> PlaceMa
 def generate_centroids(
     map_name: str,
 ) -> tuple[dict[str, int], dict[str, int]]:
-    """For each region in the given map calculates the centroid and a repr. point
+    """For each region in the given map calculates the centroid and a repr. point.
 
     Also finds the closest tile for each.
 
@@ -638,7 +639,7 @@ def generate_centroids(
 
 
 def stepped_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    """Takes a set of points and produces an approximation of the orthogonal convex hull
+    """Produces an approximation of the orthogonal convex hull.
 
     Args:
         points (list): A list of points given as tuples (x, y)
@@ -697,7 +698,8 @@ def build_stepped_upper(
         max_y (tuple[float, float]): The point with the highest y
 
     Returns:
-        A list of points making up the upper part of the hull"""
+        A list of points making up the upper part of the hull
+    """
     # Steps towards the highest y point
 
     section = [points[0]]
@@ -724,7 +726,8 @@ def build_stepped_lower(
         min_y (tuple[float, float]): The point with the lowest y
 
     Returns:
-        A list of points making up the lower part of the hull"""
+        A list of points making up the lower part of the hull
+    """
     # Steps towards the lowest y point
 
     section = [points[0]]
@@ -745,7 +748,7 @@ def position_state_distance(
     position_array_2: np.ndarray,
     distance_type: DistanceType = "geodesic",
 ) -> float:
-    """Calculates a distance between two game states based on player positions
+    """Calculates a distance between two game states based on player positions.
 
     Args:
         map_name (string): Map to search
@@ -908,7 +911,7 @@ def token_state_distance(
     distance_type: Literal[DistanceType, "edit_distance"] = "geodesic",
     reference_point: Literal["centroid", "representative_point"] = "centroid",
 ) -> float:
-    """Calculates a distance between two game states based on player positions
+    """Calculates a distance between two game states based on player positions.
 
     Args:
         map_name (string): Map to search
@@ -1057,13 +1060,14 @@ def token_state_distance(
 
 
 def get_array_for_frame(frame: GameFrame):
-    """Generates a numpy array with the correct dimensions and content for a gameframe
+    """Generates a numpy array with the correct dimensions and content for a gameframe.
 
     Args:
         frame (GameFrame): A game frame
 
     Returns:
-        numpy array for that frame"""
+        numpy array for that frame
+    """
     pos_array = np.zeros(
         (
             2,
@@ -1086,7 +1090,7 @@ def frame_distance(
     frame2: GameFrame,
     distance_type: DistanceType = "geodesic",
 ) -> float:
-    """Calculates a distance between two frames based on player positions
+    """Calculates a distance between two frames based on player positions.
 
     Args:
         map_name (string): Map to search
@@ -1145,7 +1149,7 @@ def token_distance(
     distance_type: Literal[DistanceType, "edit_distance"] = "geodesic",
     reference_point: Literal["centroid", "representative_point"] = "centroid",
 ) -> float:
-    """Calculates a distance between two game states based on position tokens
+    """Calculates a distance between two game states based on position tokens.
 
     Args:
         map_name (string): Map to search

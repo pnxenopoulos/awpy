@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Tests utils module."""
 import tempfile
 from unittest.mock import patch
 
@@ -6,12 +7,11 @@ from awpy.utils import AutoVivification, check_go_version, is_in_range
 
 
 class TestUtils:
-    """Class to test the csgo package util classes and functions"""
+    """Class to test the csgo package util classes and functions."""
 
     @patch("awpy.utils.subprocess")
     def test_go_version(self, mock_subproc):
-        """Tests if the Golang version >= 1.18.0"""
-
+        """Tests if the Golang version >= 1.18.0."""
         inputs = [
             b"go version go1.18.4 windows/amd64",
             b"go version go1.17.4 windows/amd64",
@@ -32,12 +32,12 @@ class TestUtils:
         assert check_go_version() is False
 
     def test_autoviv_keyerror(self):
-        """Tests if the AutoVivification feature presents a KeyError on missing key"""
+        """Tests if the AutoVivification feature presents a KeyError on missing key."""
         a = AutoVivification()
         a["Ping"]["Pong"] = "Test"
         assert a["Ping"]["Pong"] == "Test"
 
     def test_is_in_range(self):
-        """Tests if in range"""
+        """Tests if in range."""
         assert is_in_range(0, -1, 1)
         assert not is_in_range(-100, -1, 1)

@@ -34,7 +34,7 @@ from awpy.types import KAST, GameRound, PlayerStatistics
 # flash stats
 # econ stats
 def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
-    """Takes a csgo side as input and returns the opposite side in the same formatting
+    """Takes a csgo side as input and returns the opposite side in the same formatting.
 
     Args:
         side (string): A csgo team side (t or ct all upper or all lower case)
@@ -43,7 +43,8 @@ def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
         A string of the opposite team side in the same formatting as the input
 
     Raises:
-        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'"""
+        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
+    """
     if side == "CT":
         return "T"
     if side == "T":
@@ -56,7 +57,7 @@ def initialize_round(
     player_statistics: dict[str, PlayerStatistics],
     active_sides: set[Literal["CT", "T"]],
 ) -> tuple[dict[str, KAST], dict[str, int], set[str]]:
-    """_summary_
+    """Initialize players and statistics for the given round.
 
     Args:
         cur_round (GameRound): Current CSGO round to initialize for.
@@ -148,7 +149,7 @@ def initialize_round(
 def player_stats(
     game_rounds: list[GameRound], return_type: str = "json", selected_side: str = "all"
 ) -> Union[dict[str, PlayerStatistics], pd.DataFrame]:
-    """Generates a stats summary for a list of game rounds as produced by the DemoParser
+    """Generate a stats summary for a list of game rounds as produced by the DemoParser.
 
     Args:
         game_rounds (list[GameRound]): List of game rounds as produced by the DemoParser

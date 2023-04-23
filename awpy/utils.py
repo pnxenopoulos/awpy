@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-""" Util functions for csgo package
-"""
+"""Util functions for csgo package."""
 
 import re
 import subprocess
+from typing import Any
 
 import pandas as pd
 
@@ -17,7 +17,19 @@ class AutoVivification(dict):
     https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python
     """
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: Any) -> Any:
+        """Autovivified get item from dict.
+
+        Tries to get the item as normal.
+        If a KeyError is encountered another
+        AutoVivification dict is added instead.
+
+        Args:
+            item (Any): Item to retrieve the value for.
+
+        Returns:
+            Any: Retrieved value.
+        """
         try:
             return dict.__getitem__(self, item)
         except KeyError:
@@ -31,7 +43,8 @@ def check_go_version() -> bool:
     Returns True if greater than 1.18.0
 
     Returns:
-        bool whether the found go version is recent enough"""
+        bool whether the found go version is recent enough
+    """
     try:
         proc = subprocess.Popen(["go", "version"], stdout=subprocess.PIPE)
         parsed_resp = (
@@ -51,12 +64,13 @@ def check_go_version() -> bool:
 
 
 def is_in_range(value, minimum, maximum) -> bool:
-    """Checks if a value is in the range of two others inclusive
+    """Checks if a value is in the range of two others inclusive.
 
     Args:
         value (Any): Value to check whether it is in range
         minimum (Any): Lower inclusive bound of the range check
-        maximum (Any): Upper inclusive bound of the range check"""
+        maximum (Any): Upper inclusive bound of the range check
+    """
     return minimum <= value <= maximum
 
 
@@ -68,7 +82,8 @@ def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[int, Area]
             Dataframe containing information about areas of each map
 
     Returns:
-        dict[str, dict[int, Area]] containing information about each area of each map"""
+        dict[str, dict[int, Area]] containing information about each area of each map
+    """
     final_dic: dict[str, dict[int, Area]] = {}
     for cur_map in sample_csv["mapName"].unique():
         map_dic: dict[int, Area] = {}

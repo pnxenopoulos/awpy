@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Tests WPA module."""
 import json
 import os
 
@@ -10,13 +11,13 @@ from awpy.parser import DemoParser
 
 
 class TestStates:
-    """Class to test WPA
+    """Class to test WPA.
 
     Uses https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
     """
 
     def setup_class(self):
-        """Setup class by instantiating parser"""
+        """Setup class by instantiating parser."""
         with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
         self._get_demofile(
@@ -26,7 +27,7 @@ class TestStates:
         self.data = self.parser.parse()
 
     def teardown_class(self):
-        """Set parser to none"""
+        """Set parser to none."""
         self.parser = None
         self.data = None
         files_in_directory = os.listdir()
@@ -51,12 +52,12 @@ class TestStates:
         os.remove(demo_name + ".dem")
 
     def test_state_win_probability(self):
-        """Tests state_win_probability"""
+        """Tests state_win_probability."""
         with pytest.raises(NotImplementedError):
             my_model = 0
             state_win_probability(self.data["gameRounds"][7]["frames"][0], my_model)
 
     def test_round_win_probability(self):
-        """Tests round_win_probability"""
+        """Tests round_win_probability."""
         with pytest.raises(NotImplementedError):
             round_win_probability(5, 2, "de_inferno")

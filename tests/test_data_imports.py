@@ -1,31 +1,34 @@
 # -*- coding: utf-8 -*-
+"""Tests correct importing of data in data module."""
 import networkx
 
 from awpy.data import MAP_DATA, NAV, NAV_CSV, NAV_GRAPHS, PLACE_DIST_MATRIX
 
 
 class TestDataImports:
-    """Class to test the data imports"""
+    """Class to test the data imports."""
 
     def test_nav_csv(self):
-        """Tests the nav dataframe"""
+        """Tests the nav dataframe."""
         assert NAV_CSV[NAV_CSV["mapName"] == "de_cbble"].shape[0] == 1180
 
     def test_nav(self):
+        """Test NAV dict structure."""
         assert isinstance(NAV, dict)
         assert isinstance(NAV["de_dust2"][152], dict)
         assert NAV["de_dust2"][152]["areaName"] == "BombsiteA"
 
     def test_nav_graphs(self):
+        """Test NAV_GRAPHS structures."""
         assert isinstance(NAV_GRAPHS, dict)
         assert isinstance(NAV_GRAPHS["de_dust2"], networkx.DiGraph)
 
     def test_map_data(self):
-        """Tests the nav data"""
+        """Tests the nav data."""
         assert MAP_DATA["de_overpass"]["scale"] == 5.2
 
     def test_place_dist_matrix(self):
-        """Tests the nav data"""
+        """Tests the nav data."""
         assert PLACE_DIST_MATRIX["de_nuke"]["TSpawn"]["Silo"]["geodesic"] == {
             "centroid": float("inf"),
             "representative_point": float("inf"),

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Tests stats module."""
 import json
 import numbers
 import os
@@ -15,8 +16,11 @@ from awpy.parser import DemoParser
 def weighted_avg(
     metric: str, weighting_metric: str, stats_t: dict, stats_ct: dict
 ) -> float:
-    """Calculates the weighted average between stats_t and stats_ct for the value of
-    'metric' weighted by 'weighting_metric'"""
+    """Calculates the weighted average.
+
+    Between stats_t and stats_ct for the value of
+    'metric' weighted by 'weighting_metric'.
+    """
     return (
         (stats_t[metric] * stats_t[weighting_metric])
         + (stats_ct[metric] * stats_ct[weighting_metric])
@@ -45,7 +49,7 @@ class TestStats:
         self.data = self.parser.parse(clean=True)
 
     def teardown_class(self):
-        """Set parser to none"""
+        """Set parser to none."""
         self.parser = None
         self.data = None
         files_in_directory = os.listdir()
@@ -59,7 +63,7 @@ class TestStats:
                 os.remove(f)
 
     def test_other_side(self):
-        """Tests other side"""
+        """Tests other side."""
         assert other_side("T") == "CT"
         assert other_side("CT") == "T"
         with pytest.raises(ValueError):
@@ -403,7 +407,8 @@ class TestStats:
     def test_player_stats_none_player_before_clutch(self):
         """Tests that player stats handles None sides correctly.
 
-        Especially in clutch initialization."""
+        Especially in clutch initialization.
+        """
         test_rounds = [
             {
                 "roundNum": 1,
@@ -499,7 +504,7 @@ class TestStats:
         player_stats(test_rounds)
 
     def test_player_stats_none_player_in_clutch(self):
-        """Tests that player stats handles a side being None correctly in clutches"""
+        """Tests that player stats handles a side being None correctly in clutches."""
         test_rounds = [
             {
                 "roundNum": 1,

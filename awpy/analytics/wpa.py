@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""Will provide functionality for WPA and win probabilities.
+
+WPA stands for Win Probability Added and is described in this paper:
+https://arxiv.org/pdf/2011.01324.pdf.
+"""
 from awpy.types import GameFrame
 
 SIMPLE_WP_MODEL = None
@@ -10,6 +15,7 @@ def state_win_probability(frame: GameFrame, model) -> dict:
 
     Args:
         frame (dict): Dict output of a frame generated from the DemoParser class
+        model (Unknown): Model to predict win probabability from.
 
     Returns:
         A dictionary containing the CT and T round win probabilities
@@ -23,7 +29,7 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
     Args:
         ct_score (int): CT Score
         t_score (int): T Score
-        map (str): Map the demo is from
+        map_name (str): Map the demo is from
 
     Returns:
         A dictionary containing the CT game win, T game win and Draw probabilities

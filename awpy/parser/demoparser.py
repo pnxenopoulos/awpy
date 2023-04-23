@@ -89,6 +89,48 @@ class DemoParser:
         buy_style: str = "hltv",
         json_indentation: bool = False,
     ):
+        """Instatiate a DemoParser.
+
+        Args:
+            demofile (string):
+                A string denoting the path to the demo file,
+                which ends in .dem. Defaults to ''
+            outpath (string):
+                Path where to save the outputfile to.
+                Default is current directory
+            demo_id (string):
+                A unique demo name/game id.
+                Default is inferred from demofile name
+            log (bool, optional):
+                A boolean indicating if the log should print to stdout.
+                Default is False
+            parse_rate (int, optional):
+                One of 128, 64, 32, 16, 8, 4, 2, or 1.
+                The lower the value, the more frames are collected.
+                Indicates spacing between parsed demo frames in ticks. Default is 128.
+            parse_frames (bool, optional):
+                Flag if you want to parse frames (trajectory data) or not.
+                Default is True
+            parse_kill_frames (bool, optional):
+                Flag if you want to parse frames on kills.
+                Default is False
+            trade_time (int, optional):
+                Length of the window for a trade (in seconds).
+                Default is 5.
+            dmg_rolled (bool, optional):
+                Boolean if you want damages rolled up.
+                Default is False
+            parse_chat (bool, optional):
+                Flag if you want to parse chat messages. Default is False
+            buy_style (str, optional):
+                Buy style string, one of "hltv" or "csgo"
+                Default is "hltv"
+            json_indentation (bool, optional):
+                Whether the json file should be pretty printed
+                with indentation (larger, more readable)
+                or not (smaller, less human readable)
+                Default is False
+        """
         # Set up logger
         logging.basicConfig(
             level=logging.INFO,
@@ -334,7 +376,7 @@ class DemoParser:
             raise AttributeError("No JSON parsed! Error in producing JSON.")
 
     def parse_json_to_df(self) -> dict[str, Any]:
-        """Returns JSON into dictionary where keys correspond to data frames
+        """Returns JSON into dictionary where keys correspond to data frames.
 
         Returns:
             A dictionary of output
@@ -414,7 +456,7 @@ class DemoParser:
             )
 
     def _parse_frames(self) -> pd.DataFrame:
-        """Returns frames as a Pandas dataframe
+        """Returns frames as a Pandas dataframe.
 
         Returns:
             A Pandas dataframe where each row is a frame (game state) in the demo,
@@ -504,7 +546,7 @@ class DemoParser:
             )
 
     def _parse_rounds(self) -> pd.DataFrame:
-        """Returns rounds as a Pandas dataframe
+        """Returns rounds as a Pandas dataframe.
 
         Returns:
             A Pandas dataframe where each row is a round
@@ -560,7 +602,7 @@ class DemoParser:
             )
 
     def _parse_kills(self) -> pd.DataFrame:
-        """Returns kills as either a Pandas dataframe
+        """Returns kills as either a Pandas dataframe.
 
         Returns:
             A Pandas dataframe where each row is a kill
@@ -588,7 +630,7 @@ class DemoParser:
             )
 
     def _parse_weapon_fires(self) -> pd.DataFrame:
-        """Returns weapon fires as either a list or Pandas dataframe
+        """Returns weapon fires as either a list or Pandas dataframe.
 
         Returns:
             A  Pandas dataframe where each row is a weapon fire event
@@ -616,7 +658,7 @@ class DemoParser:
             )
 
     def _parse_damages(self) -> pd.DataFrame:
-        """Returns damages as a Pandas dataframe
+        """Returns damages as a Pandas dataframe.
 
         Returns:
             A Pandas dataframe where each row is a damage event.
@@ -644,7 +686,7 @@ class DemoParser:
             )
 
     def _parse_grenades(self) -> pd.DataFrame:
-        """Returns grenades as a Pandas dataframe
+        """Returns grenades as a Pandas dataframe.
 
         Returns:
             A list or Pandas dataframe where each row is a grenade throw
@@ -672,7 +714,7 @@ class DemoParser:
             )
 
     def _parse_bomb_events(self) -> pd.DataFrame:
-        """Returns bomb events as a Pandas dataframe
+        """Returns bomb events as a Pandas dataframe.
 
         Returns:
             A Pandas dataframe where each row is a bomb event (defuse, plant, etc.)
@@ -700,7 +742,7 @@ class DemoParser:
             )
 
     def _parse_flashes(self) -> pd.DataFrame:
-        """Returns flashes as a Pandas dataframe
+        """Returns flashes as a Pandas dataframe.
 
         Returns:
             A Pandas dataframe where each row is a flash event.
@@ -807,7 +849,7 @@ class DemoParser:
             )
 
     def write_json(self) -> None:
-        """Rewrite the JSON file"""
+        """Rewrite the JSON file."""
         with open(self.outpath + "/" + self.output_file, "w", encoding="utf8") as fp:
             json.dump(self.json, fp, indent=(1 if self.json_indentation else None))
 
@@ -947,7 +989,7 @@ class DemoParser:
             )
 
     def remove_rounds_with_no_frames(self) -> None:
-        """Removes rounds with no frames
+        """Removes rounds with no frames.
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None

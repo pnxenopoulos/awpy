@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions to to generate game stats based on snapshots from a demofile.
-"""
+"""Functions to generate game stats based on snapshots from a demofile."""
 
 from awpy.types import GameFrame
 
@@ -78,7 +77,7 @@ def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
 
 
 def generate_graph_state(frame: GameFrame) -> dict:
-    """Returns a game state as a graph
+    """Returns a game state as a graph.
 
     Args:
         frame (GameFrame) : Dict output of a frame generated from the DemoParser class
@@ -91,7 +90,7 @@ def generate_graph_state(frame: GameFrame) -> dict:
 
 
 def generate_set_state(frame: GameFrame) -> dict:
-    """Returns a game state as a set
+    """Returns a game state as a set.
 
     Args:
         frame (GameFrame) : Dict output of a frame generated from the DemoParser class

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Tests navigation functionality."""
 import math
 import os
 import sys
@@ -32,7 +33,7 @@ class TestNav:
     """Class to test the nav-related functions."""
 
     def setup_class(self):
-        """Setup class by defining custom NAV and NAV_GRAPHS"""
+        """Setup class by defining custom NAV and NAV_GRAPHS."""
         # Create mock NAV mesh like this:
         # Each area is described in the format areadId(x,y)
         # Arrows indicate (directed) edges
@@ -280,7 +281,7 @@ class TestNav:
         }
 
     def teardown_class(self):
-        """Clean up by delete created file and directory"""
+        """Clean up by delete created file and directory."""
         self.fake_nav = None
         self.fake_graph = None
         self.expected_area_matrix = None
@@ -295,7 +296,7 @@ class TestNav:
         os.rmdir(self.dir)
 
     def test_point_in_area(self):
-        """Tests point in area"""
+        """Tests point in area."""
         with pytest.raises(ValueError):
             point_in_area(map_name="test", area_id=3814, point=[0, 0, 0])
         with pytest.raises(ValueError):
@@ -319,7 +320,7 @@ class TestNav:
         )
 
     def test_find_area(self):
-        """Tests find_area"""
+        """Tests find_area."""
         with pytest.raises(ValueError):
             find_closest_area(map_name="test", point=[0, 0, 0])
         with pytest.raises(ValueError):
@@ -338,7 +339,7 @@ class TestNav:
         assert area_found["areaId"] == 152
 
     def test_area_distance(self):
-        """Tests area distance"""
+        """Tests area distance."""
         with pytest.raises(ValueError):
             area_distance(map_name="test", area_a=152, area_b=152, dist_type="graph")
         with pytest.raises(ValueError):
@@ -374,7 +375,7 @@ class TestNav:
         assert len(euc_dist["areas"]) == 0
 
     def test_point_distance(self):
-        """Tests point distance"""
+        """Tests point distance."""
         with pytest.raises(ValueError):
             point_distance(
                 map_name="test", point_a=[0, 0, 0], point_b=[0, 0, 0], dist_type="graph"
@@ -467,7 +468,7 @@ class TestNav:
             )
 
     def test_position_token(self):
-        """Tests that position token returns correct values"""
+        """Tests that position token returns correct values."""
         map_name = "de_nuke"
         frame = {
             "ct": {
@@ -556,12 +557,12 @@ class TestNav:
             generate_position_token(map_name, frame)
 
     def test_tree(self):
-        """Tests tree"""
+        """Tests tree."""
         my_tree = tree()
         my_tree["1"]["A"][666][("test", 42)] = "Should work"
 
     def test_generate_area_distance_matrix(self):
-        """Tests generate_area_distance_matrix"""
+        """Tests generate_area_distance_matrix."""
 
         # Need to mock awpy.data.NAV to properly test this
         def default_to_regular(d):
@@ -586,7 +587,7 @@ class TestNav:
             _ = generate_area_distance_matrix("de_does_not_exist")
 
     def test_generate_place_distance_matrix(self):
-        """Tests generate_place_distance_matrix"""
+        """Tests generate_place_distance_matrix."""
         # Need to mock awpy.data.NAV to properly test this
         with patch("awpy.analytics.nav.NAV", self.fake_nav):
             with patch("awpy.analytics.nav.NAV_GRAPHS", self.fake_graph):
@@ -616,7 +617,7 @@ class TestNav:
             _ = generate_place_distance_matrix("de_does_not_exist")
 
     def test_generate_centroids(self):
-        """Tests generate centroids"""
+        """Tests generate centroids."""
         with pytest.raises(ValueError):
             generate_centroids(map_name="test")
         centroids, reps = generate_centroids("de_inferno")
@@ -680,7 +681,7 @@ class TestNav:
         }
 
     def test_stepped_hull(self):
-        """Tests stepped hull"""
+        """Tests stepped hull."""
         hull = stepped_hull(
             [
                 (0, 0),
@@ -697,7 +698,7 @@ class TestNav:
         assert stepped_hull([]) == []
 
     def test_position_state_distance(self):
-        """Tests position state distance"""
+        """Tests position state distance."""
         pos_state1 = np.array([[[-500, -850, 100]]])
         pos_state2 = np.array([[[-550, -100, 130]], [[1, 1, 1]]])
         with pytest.raises(ValueError):
@@ -771,7 +772,7 @@ class TestNav:
         assert sys.maxsize / 7 < dist < sys.maxsize / 5
 
     def test_token_state_distance(self):
-        """Tests token state distance"""
+        """Tests token state distance."""
         token_array1 = np.array(
             [
                 0.0,
@@ -1301,7 +1302,7 @@ class TestNav:
         )
 
     def test_get_array_for_frame(self):
-        """Tests get_array_for_frame"""
+        """Tests get_array_for_frame."""
         frame1 = {
             "ct": {
                 "players": [
@@ -1434,7 +1435,7 @@ class TestNav:
         assert np.array_equal(array2, get_array_for_frame(frame2))
 
     def test_frame_distance(self):
-        """Tests frame distance"""
+        """Tests frame distance."""
         map_name = "de_nuke"
         frame1 = {
             "ct": {
@@ -1586,7 +1587,7 @@ class TestNav:
             frame_distance(map_name, frame1, frame2)
 
     def test_token_distance(self):
-        """Tests token distance"""
+        """Tests token distance."""
         map_name = "de_nuke"
         token1 = "000000000000000000100000000000"
         token2 = "000000000000000000000000000001"

@@ -137,7 +137,7 @@ def plot_positions(
     dark: bool = False,
     apply_transformation: bool = False,
 ) -> tuple[plt.Figure, plt.Axes]:
-    """Plots player positions
+    """Plots player positions.
 
     Args:
         positions (list, optional): List of lists of length 2 ([[x,y], ...])

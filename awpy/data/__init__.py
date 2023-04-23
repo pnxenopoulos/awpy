@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Provides data such as radar images and navigation meshes."""
 import json
 import os
 from pathlib import Path
@@ -31,14 +32,15 @@ NAV: dict[str, dict[int, Area]] = transform_csv_to_json(NAV_CSV)
 def create_nav_graphs(
     nav: dict[str, dict[int, Area]], data_path: str
 ) -> dict[str, nx.DiGraph]:
-    """Function to create a dict of DiGraphs from dict of areas and edge_list file
+    """Function to create a dict of DiGraphs from dict of areas and edge_list file.
 
     Args:
         nav (dict): Dictionary containing information about each area of each map
         data_path (str): Path to the awpy.data folder containing navigation and map data
 
     Returns:
-        A dictionary mapping each map (str) to an nx.DiGraph of its traversible areas"""
+        A dictionary mapping each map (str) to an nx.DiGraph of its traversible areas
+    """
     nav_graphs: dict[str, nx.DiGraph] = {}
     for m in nav:
         map_graph = nx.DiGraph()

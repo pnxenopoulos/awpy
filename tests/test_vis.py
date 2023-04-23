@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Tests visualization module."""
 import os
 from unittest.mock import patch
 
@@ -16,17 +17,17 @@ from awpy.visualization.plot import (
 
 
 class TestVis:
-    """Class to test CSGO data cleaning functions"""
+    """Class to test CSGO data cleaning functions."""
 
     def test_position_scale(self):
-        """Test position transforms"""
+        """Test position transforms."""
         assert isinstance(position_transform("de_ancient", 0, "x"), float)
         assert isinstance(position_transform("de_ancient", 0, "y"), float)
         with pytest.raises(ValueError):
             position_transform("de_ancient", 0, "scale")
 
     def test_position_transform_all(self):
-        """Test position_transform_all"""
+        """Test position_transform_all."""
         map_name = "de_nuke"
         pos = (1000, 500, 200)
         transformed = position_transform_all(map_name, pos)
@@ -38,7 +39,7 @@ class TestVis:
         assert transformed[1] == transformed2[1] - 1024
 
     def test_plot_map(self):
-        """Test plot map"""
+        """Test plot map."""
         # Test original with and withouzt z_cutoff
         fig, axis = plot_map(map_name="de_ancient")
         assert isinstance(fig, matplotlib.figure.Figure)
@@ -55,7 +56,7 @@ class TestVis:
 
     @patch("awpy.visualization.plot.mpl.axes.Axes.scatter")
     def test_plot_positions(self, scatter_mock):
-        """Test plot positions"""
+        """Test plot positions."""
         fig, axis = plot_positions()
         assert isinstance(fig, matplotlib.figure.Figure)
         assert isinstance(axis, matplotlib.axes.SubplotBase)
@@ -80,7 +81,7 @@ class TestVis:
         )
 
     def test_plot_round(self):
-        """Test plot round"""
+        """Test plot round."""
         filename = "test.gif"
         frames = [
             {
@@ -117,7 +118,7 @@ class TestVis:
         os.remove(filename)
 
     def test_plot_nades(self):
-        """Test plot nades"""
+        """Test plot nades."""
         nades_to_plot = [
             "Flashbang",
             "HE Grenade",

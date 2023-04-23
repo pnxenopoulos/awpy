@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""This module contains the type definitions for the parsed json structure"""
+"""This module contains the type definitions for the parsed json structure."""
 
 from typing import Literal, Optional, TypedDict
 
@@ -19,8 +19,10 @@ class Chat(TypedDict):
 
 
 class Token(TypedDict):
-    """TypedDict for token object collection information about player positions
-    into tokenized strings."""
+    """TypedDict for token object collection.
+
+    Holding information about player positions in tokenized strings.
+    """
 
     tToken: str
     ctToken: str
@@ -28,7 +30,7 @@ class Token(TypedDict):
 
 
 class Area(TypedDict):
-    """TypedDict for area entries in NAV"""
+    """TypedDict for area entries in NAV."""
 
     areaName: str
     northWestX: float
@@ -54,7 +56,7 @@ PlaceMatrix = dict[
 
 
 class MatchPhases(TypedDict):
-    """MatchPhases holds lists of when match events occurred"""
+    """MatchPhases holds lists of when match events occurred."""
 
     announcementLastRoundHalf: Optional[list[int]]
     announcementFinalRound: Optional[list[int]]
@@ -73,7 +75,8 @@ class MatchPhases(TypedDict):
 class ServerConVar(TypedDict):
     """ServerConVar holds server convars, like round timers and timeouts, etc.
 
-    Not always accurate."""
+    Not always accurate.
+    """
 
     cashBombDefused: int  # cash_player_bomb_defused
     cashBombPlanted: int  # cash_player_bomb_planted
@@ -96,7 +99,7 @@ class ServerConVar(TypedDict):
 
 
 class ParserOpts(TypedDict):
-    """ParserOpts holds the parameters passed to the parser"""
+    """ParserOpts holds the parameters passed to the parser."""
 
     parseRate: int
     parseFrames: bool
@@ -118,7 +121,7 @@ class MMRank(TypedDict):
 
 
 class ConnectAction(TypedDict):
-    """ConnectAction is the act of connecting or disconnecting to the server"""
+    """ConnectAction is the act of connecting or disconnecting to the server."""
 
     tick: int
     action: str
@@ -126,21 +129,21 @@ class ConnectAction(TypedDict):
 
 
 class Players(TypedDict):
-    """Players"""
+    """Players."""
 
     playerName: str
     steamID: int
 
 
 class PlayerTeams(TypedDict):
-    """PlayerTeam"""
+    """PlayerTeam."""
 
     teamName: str
     players: Optional[list[Players]]
 
 
 class GrenadeAction(TypedDict):
-    """GrenadeAction events"""
+    """GrenadeAction events."""
 
     throwTick: int
     destroyTick: int
@@ -163,7 +166,7 @@ class GrenadeAction(TypedDict):
 
 
 class BombAction(TypedDict):
-    """BombAction events"""
+    """BombAction events."""
 
     tick: int
     seconds: float
@@ -179,7 +182,7 @@ class BombAction(TypedDict):
 
 
 class DamageAction(TypedDict):
-    """DamageAction events"""
+    """DamageAction events."""
 
     tick: int
     seconds: float
@@ -216,7 +219,7 @@ class DamageAction(TypedDict):
 
 
 class KillAction(TypedDict):
-    """KillAction events"""
+    """KillAction events."""
 
     tick: int
     seconds: float
@@ -268,7 +271,7 @@ class KillAction(TypedDict):
 
 
 class WeaponFireAction(TypedDict):
-    """WeaponFireAction events"""
+    """WeaponFireAction events."""
 
     tick: int
     seconds: float
@@ -291,7 +294,7 @@ class WeaponFireAction(TypedDict):
 
 
 class FlashAction(TypedDict):
-    """FlashAction events"""
+    """FlashAction events."""
 
     tick: int
     seconds: float
@@ -318,7 +321,7 @@ class FlashAction(TypedDict):
 
 
 class BombInfo(TypedDict):
-    """Bomb location"""
+    """Bomb location."""
 
     x: float
     y: float
@@ -326,7 +329,7 @@ class BombInfo(TypedDict):
 
 
 class GrenadeInfo(TypedDict):
-    """Projectile"""
+    """Projectile."""
 
     projectileType: str
     x: float
@@ -335,7 +338,7 @@ class GrenadeInfo(TypedDict):
 
 
 class Fire(TypedDict):
-    """Inferno from molly or incend. grenade"""
+    """Inferno from molly or incend. grenade."""
 
     uniqueID: int
     x: float
@@ -344,7 +347,7 @@ class Fire(TypedDict):
 
 
 class WeaponInfo(TypedDict):
-    """WeaponInfo contains data on an inventory weapon"""
+    """WeaponInfo contains data on an inventory weapon."""
 
     weaponName: str
     weaponClass: str
@@ -353,7 +356,7 @@ class WeaponInfo(TypedDict):
 
 
 class PlayerInfo(TypedDict):
-    """PlayerInfo at time t"""
+    """PlayerInfo at time t."""
 
     steamID: int
     name: str
@@ -411,7 +414,7 @@ class PlayerInfo(TypedDict):
 
 
 class TeamFrameInfo(TypedDict):
-    """TeamFrameInfo at time t"""
+    """TeamFrameInfo at time t."""
 
     side: str
     teamName: str
@@ -422,7 +425,7 @@ class TeamFrameInfo(TypedDict):
 
 
 class Smoke(TypedDict):
-    """Smoke holds current smoke info"""
+    """Smoke holds current smoke info."""
 
     grenadeEntityID: int
     startTick: int
@@ -432,7 +435,7 @@ class Smoke(TypedDict):
 
 
 class GameFrame(TypedDict):
-    """GameFrame (game state at time t)"""
+    """GameFrame (game state at time t)."""
 
     isKillFrame: bool
     tick: int
@@ -449,7 +452,7 @@ class GameFrame(TypedDict):
 
 
 class GameRound(TypedDict):
-    """GameRound contains round info and events"""
+    """GameRound contains round info and events."""
 
     roundNum: int
     isWarmup: bool
@@ -488,7 +491,7 @@ class GameRound(TypedDict):
 
 
 class Game(TypedDict):
-    """Game is the overall struct that holds the parsed demo data"""
+    """Game is the overall struct that holds the parsed demo data."""
 
     matchID: str
     clientName: str
@@ -507,7 +510,7 @@ class Game(TypedDict):
 
 
 class PlayerStatistics(TypedDict):
-    """Type for the result of awpy.analytics.stats.player_stats"""
+    """Type for the result of awpy.analytics.stats.player_stats."""
 
     steamID: int
     playerName: str
@@ -563,24 +566,33 @@ class PlayerStatistics(TypedDict):
     attempts1v5: int
     success1v5: int
 
+
 class KAST(TypedDict):
     """Type for storing kast information."""
+
     k: bool
     a: bool
     s: bool
     t: bool
 
+
 class ClosestArea(TypedDict):
-    """TypedDict for closest area object holding information about
-    the map, the closest area and the distance to that area"""
+    """TypedDict for closest area object.
+
+    Holding information about the map, the closest area and the distance to that area.
+    """
 
     mapName: str
     areaId: int
     distance: float
 
+
 class DistanceObject(TypedDict):
-    """TypedDict for distance object holding information about
-    distance type, distance and the areas in the path between two points/areas"""
+    """TypedDict for distance object.
+
+    Holding information about distance type,
+    distance and the areas in the path between two points/areas.
+    """
 
     distanceType: str
     distance: float
