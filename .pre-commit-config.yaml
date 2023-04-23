@@ -1,0 +1,41 @@
+---
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+    - id: check-yaml
+      language: python
+    - id: check-json
+      language: python
+    - id: end-of-file-fixer
+      language: python
+    - id: trailing-whitespace
+      language: python
+    - id: check-docstring-first
+      language: python
+    - id: fix-encoding-pragma
+      language: python
+    - id: requirements-txt-fixer
+      language: python
+    - id: check-merge-conflict
+      language: python
+    - id: check-toml
+      language: python
+    - id: check-xml
+      language: python
+    - id: check-ast
+      language: python
+    - id: check-builtin-literals
+      language: python
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: v0.0.262
+  hooks:
+    - id: ruff
+      args:
+        - --fix
+        - --exit-non-zero-on-fix
+- repo: https://github.com/psf/black
+  rev: 23.3.0
+  hooks:
+    - id: black
+      language: python
