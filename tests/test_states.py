@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+
 import requests
 
-from awpy.parser import DemoParser
 from awpy.analytics.states import (
-    generate_vector_state,
     generate_graph_state,
     generate_set_state,
+    generate_vector_state,
 )
+from awpy.parser import DemoParser
 
 
 class TestStates:

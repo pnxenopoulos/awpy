@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
 from unittest.mock import patch
-import pytest
+
 import matplotlib
+import pytest
+
 from awpy.visualization.plot import (
-    position_transform,
-    position_transform_all,
     plot_map,
     plot_nades,
     plot_positions,
     plot_round,
+    position_transform,
+    position_transform_all,
 )
 
 

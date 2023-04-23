@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """This module contains the type definitions for the parsed json structure"""
 
-from typing import Optional, TypedDict, Literal
+from typing import Literal, Optional, TypedDict
 
 
 class Chat(TypedDict):
@@ -569,3 +569,19 @@ class KAST(TypedDict):
     a: bool
     s: bool
     t: bool
+
+class ClosestArea(TypedDict):
+    """TypedDict for closest area object holding information about
+    the map, the closest area and the distance to that area"""
+
+    mapName: str
+    areaId: int
+    distance: float
+
+class DistanceObject(TypedDict):
+    """TypedDict for distance object holding information about
+    distance type, distance and the areas in the path between two points/areas"""
+
+    distanceType: str
+    distance: float
+    areas: list[int]

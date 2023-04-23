@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
-import os
 import logging
+import os
 from unittest.mock import patch
+
 import pandas as pd
 import pytest
 import requests

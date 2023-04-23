@@ -23,14 +23,15 @@
 """
 
 import json
-from typing import Optional, Union, Any, Literal, cast, get_args
 import logging
 import os
 import subprocess
+from typing import Any, Literal, Optional, Union, cast, get_args
+
 import pandas as pd
 
-from awpy.utils import check_go_version
 from awpy.types import Game
+from awpy.utils import check_go_version
 
 
 class DemoParser:
@@ -818,7 +819,7 @@ class DemoParser:
                 has a "gameRounds" key.
         """
         if self.json and self.json["gameRounds"]:
-            for i, r in enumerate(self.json["gameRounds"]):
+            for i, _r in enumerate(self.json["gameRounds"]):
                 self.json["gameRounds"][i]["roundNum"] = i + 1
         else:
             self.logger.error(
@@ -836,7 +837,7 @@ class DemoParser:
                 has no "gameRounds" key.
         """
         if self.json and self.json["gameRounds"]:
-            for i, r in enumerate(self.json["gameRounds"]):
+            for i, _r in enumerate(self.json["gameRounds"]):
                 if i == 0:
                     self.json["gameRounds"][i]["tScore"] = 0
                     self.json["gameRounds"][i]["ctScore"] = 0

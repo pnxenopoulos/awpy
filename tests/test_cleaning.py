@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-import pytest
-
 import pandas as pd
+import pytest
 
 from awpy.parser.cleaning import associate_entities, replace_entities
 

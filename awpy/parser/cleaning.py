@@ -2,8 +2,9 @@
 """ Data cleaning functions
 """
 
-from typing import Optional, Any
 import difflib
+from typing import Any, Optional
+
 import numpy as np
 import pandas as pd
 import textdistance

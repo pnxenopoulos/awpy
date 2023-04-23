@@ -1,31 +1,31 @@
 # -*- coding: utf-8 -*-
-import sys
-import os
 import math
+import os
+import sys
 from collections import defaultdict
 from unittest.mock import patch
-import pytest
+
 import numpy as np
+import pytest
 
-
-from awpy.data import NAV, create_nav_graphs
 from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
+    frame_distance,
+    generate_area_distance_matrix,
+    generate_centroids,
+    generate_place_distance_matrix,
     generate_position_token,
-    tree,
+    get_array_for_frame,
     point_distance,
     point_in_area,
-    generate_centroids,
-    stepped_hull,
     position_state_distance,
-    token_state_distance,
-    get_array_for_frame,
-    frame_distance,
+    stepped_hull,
     token_distance,
-    generate_area_distance_matrix,
-    generate_place_distance_matrix,
+    token_state_distance,
+    tree,
 )
+from awpy.data import NAV, create_nav_graphs
 
 
 class TestNav:

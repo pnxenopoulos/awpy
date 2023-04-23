@@ -2,14 +2,14 @@
 import json
 import os
 from pathlib import Path
-import pandas as pd
-import numpy as np
-from scipy.spatial import distance
+
 import networkx as nx
+import numpy as np
+import pandas as pd
+from scipy.spatial import distance
 
+from awpy.types import Area, AreaMatrix, PlaceMatrix
 from awpy.utils import transform_csv_to_json
-from awpy.types import AreaMatrix, PlaceMatrix, Area
-
 
 PATH = os.path.join(os.path.dirname(__file__), "")
 
@@ -41,10 +41,10 @@ def create_nav_graphs(
         A dictionary mapping each map (str) to an nx.DiGraph of its traversible areas"""
     nav_graphs: dict[str, nx.DiGraph] = {}
     for m in nav:
-        G = nx.DiGraph()
+        map_graph = nx.DiGraph()
         for a in nav[m].keys():
             r = nav[m][a]
-            G.add_nodes_from(
+            map_graph.add_nodes_from(
                 [
                     (
                         a,
@@ -76,15 +76,15 @@ def create_nav_graphs(
         edge_list_lines = edge_list.readlines()
         for line in edge_list_lines:
             areas = line.strip().split(",")
-            G.add_edge(
+            map_graph.add_edge(
                 int(areas[0]),
                 int(areas[1]),
                 weight=distance.euclidean(
-                    G.nodes()[int(areas[0])]["center"],
-                    G.nodes()[int(areas[1])]["center"],
+                    map_graph.nodes()[int(areas[0])]["center"],
+                    map_graph.nodes()[int(areas[1])]["center"],
                 ),
             )
-        nav_graphs[m] = G
+        nav_graphs[m] = map_graph
     return nav_graphs
 
 

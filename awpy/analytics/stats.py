@@ -20,9 +20,11 @@
 
     https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
 """
-from typing import Union, cast, Literal, Optional
+from typing import Literal, Optional, Union, cast
+
 import pandas as pd
-from awpy.types import GameRound, PlayerStatistics, KAST
+
+from awpy.types import KAST, GameRound, PlayerStatistics
 
 
 # accuracy

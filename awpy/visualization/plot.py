@@ -17,12 +17,14 @@
 """
 import os
 import shutil
-from typing import Optional, Literal, cast
-import numpy as np
+from typing import Literal, Optional, cast
+
 import imageio
-from tqdm import tqdm
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import tqdm
+
 from awpy.data import MAP_DATA
 from awpy.types import GameFrame, GameRound
 
@@ -171,7 +173,9 @@ def plot_positions(
     if sizes is None:
         sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    for p, c, m, alpha, s in zip(positions, colors, markers, alphas, sizes):
+    for p, c, m, alpha, s in zip(
+        positions, colors, markers, alphas, sizes, strict=True
+    ):
         if apply_transformation:
             a.scatter(
                 x=position_transform(map_name, p[0], "x"),

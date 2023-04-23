@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 import os
-import requests
-import pytest
 
+import pytest
+import requests
+
+from awpy.analytics.wpa import round_win_probability, state_win_probability
 from awpy.parser import DemoParser
-from awpy.analytics.wpa import state_win_probability, round_win_probability
 
 
 class TestStates:

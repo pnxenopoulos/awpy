@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from unittest.mock import patch
 import tempfile
+from unittest.mock import patch
 
 from awpy.utils import AutoVivification, check_go_version, is_in_range
 
@@ -21,7 +21,7 @@ class TestUtils:
             b"go version go2.1.4 windows/amd64",
         ]
         outputs = [True, False, False, False, False, True]
-        for my_input, my_output in zip(inputs, outputs):
+        for my_input, my_output in zip(inputs, outputs, strict=True):
             with tempfile.TemporaryFile() as fp:
                 mock_subproc.Popen.return_value.stdout = fp
                 fp.write(my_input)

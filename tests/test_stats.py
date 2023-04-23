@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-import os
 import json
 import numbers
+import os
 from math import isclose
-import pytest
+
 import pandas as pd
+import pytest
 import requests
 
+from awpy.analytics.stats import other_side, player_stats
 from awpy.parser import DemoParser
-from awpy.analytics.stats import player_stats, other_side
 
 
 def weighted_avg(

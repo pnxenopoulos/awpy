@@ -31,22 +31,31 @@
 
     https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb
 """
-import sys
-import os
-from typing import TypedDict, Literal, cast, get_args
 import itertools
+import json
+import math
+import os
+import sys
 from collections import defaultdict
 from statistics import mean, median
-import math
-import json
-from sympy.utilities.iterables import multiset_permutations
+from typing import Literal, cast, get_args
+
 import networkx as nx
 import numpy as np
 from scipy.spatial import distance
 from shapely.geometry import Polygon
+from sympy.utilities.iterables import multiset_permutations
 
-from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
-from awpy.types import GameFrame, AreaMatrix, PlaceMatrix, DistanceType, Token
+from awpy.data import AREA_DIST_MATRIX, NAV, NAV_GRAPHS, PATH, PLACE_DIST_MATRIX
+from awpy.types import (
+    AreaMatrix,
+    ClosestArea,
+    DistanceObject,
+    DistanceType,
+    GameFrame,
+    PlaceMatrix,
+    Token,
+)
 
 
 def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
@@ -88,15 +97,6 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
     if contains_x and contains_y:
         return True
     return False
-
-
-class ClosestArea(TypedDict):
-    """TypedDict for closest area object holding information about
-    the map, the closest area and the distance to that area"""
-
-    mapName: str
-    areaId: int
-    distance: float
 
 
 def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
@@ -145,15 +145,6 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     return closest_area
 
 
-class DistanceObject(TypedDict):
-    """TypedDict for distance object holding information about
-    distance type, distance and the areas in the path between two points/areas"""
-
-    distanceType: str
-    distance: float
-    areas: list[int]
-
-
 def area_distance(
     map_name: str,
     area_a: int,
@@ -185,7 +176,7 @@ def area_distance(
         raise ValueError("Area ID not found.")
     if dist_type not in get_args(DistanceType):
         raise ValueError("dist_type can only be graph, geodesic or euclidean")
-    G = NAV_GRAPHS[map_name]
+    map_graph = NAV_GRAPHS[map_name]
     distance_obj: DistanceObject = {
         "distanceType": dist_type,
         "distance": float("inf"),
@@ -193,7 +184,7 @@ def area_distance(
     }
     if dist_type == "graph":
         try:
-            discovered_path = nx.shortest_path(G, area_a, area_b)
+            discovered_path = nx.shortest_path(map_graph, area_a, area_b)
             distance_obj["distance"] = len(discovered_path) - 1
             distance_obj["areas"] = discovered_path
         except nx.NetworkXNoPath:
@@ -203,14 +194,17 @@ def area_distance(
     if dist_type == "geodesic":
 
         def dist_heuristic(a, b):
-            return distance.euclidean(G.nodes()[a]["center"], G.nodes()[b]["center"])
+            return distance.euclidean(
+                map_graph.nodes()[a]["center"], map_graph.nodes()[b]["center"]
+            )
 
         try:
             geodesic_path = nx.astar_path(
-                G, area_a, area_b, heuristic=dist_heuristic, weight="weight"
+                map_graph, area_a, area_b, heuristic=dist_heuristic, weight="weight"
             )
             geodesic_cost = sum(
-                G[u][v]["weight"] for u, v in zip(geodesic_path[:-1], geodesic_path[1:])
+                map_graph[u][v]["weight"]
+                for u, v in zip(geodesic_path[:-1], geodesic_path[1:], strict=True)
             )
             distance_obj["distance"] = geodesic_cost
             distance_obj["areas"] = geodesic_path
@@ -1025,7 +1019,7 @@ def token_state_distance(
             # then pos_indices is [0,1] and neg_indices is [2,3]
             # The possible mappings are then [(0,2),(1,3)] and [(0,3),(1,2)]
             for mapping in (
-                list(zip(x, neg_indices))
+                list(zip(x, neg_indices, strict=True))
                 for x in multiset_permutations(pos_indices, len(neg_indices))
             ):
                 this_dist: float = 0
