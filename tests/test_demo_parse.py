@@ -31,9 +31,7 @@ class TestDemoParser:
         self.parser = None
         files_in_directory = os.listdir()
         filtered_files = [
-            file
-            for file in files_in_directory
-            if file.endswith(".dem") or file.endswith(".json")
+            file for file in files_in_directory if file.endswith((".dem", ".json"))
         ]
         if len(filtered_files) > 0:
             for f in filtered_files:
@@ -93,13 +91,13 @@ class TestDemoParser:
 
     def test_wrong_demo_path(self):
         """Tests if failure on wrong demofile path."""
-        with pytest.raises(FileNotFoundError):
-            self.parser_wrong_demo_path = DemoParser(
-                demofile="bad.dem",
-                log=False,
-                demo_id="test",
-                parse_rate=128,
-            )
+        self.parser_wrong_demo_path = DemoParser(
+            demofile="bad.dem",
+            log=False,
+            demo_id="test",
+            parse_rate=128,
+        )
+        with pytest.raises(FileNotFoundError, match="Demofile path does not exist!"):
             self.parser_wrong_demo_path.parse()
 
     def test_parse_rate(self):
@@ -284,7 +282,7 @@ class TestDemoParser:
 
     def test_wrong_return_type(self):
         """Tests if wrong return type errors out."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Parse return_type must be"):
             self.parser.parse(return_type="i_am_wrong")
 
     def test_bot_name(self):
@@ -397,7 +395,7 @@ class TestDemoParser:
         assert isinstance(df_return["playerFrames"], pd.DataFrame)
         dict_return = self.clean_return_parser.clean_rounds(return_type="json")
         assert isinstance(dict_return, dict)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Invalid return_type of "):
             self.clean_return_parser.clean_rounds(
                 return_type="return_type_does_not_exist"
             )
@@ -515,7 +513,7 @@ class TestDemoParser:
     def test_bad_go_version(self, go_version_mock: MagicMock):
         """Tests parse_demo fails on bad go version."""
         go_version_mock.return_value = False
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Error calling Go."):
             self.parser.parse_demo()
 
     def test_parse_error(self):

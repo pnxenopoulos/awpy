@@ -54,7 +54,7 @@ def associate_entities(
         return entities
     else:
         raise ValueError(
-            "Metric can only be lcss, hamming, levenshtein, jaro or difflib"
+            "Metric can only be lcss, hamming, levenshtein, jaro or difflib."
         )
     entities = {}
     for gn in game_names:

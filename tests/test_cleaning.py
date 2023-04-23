@@ -54,7 +54,10 @@ class TestCleaning:
         """Tests if submitting a wrong metric raises an error."""
         a = ["misutaaa-", "ZyW0o//"]
         b = ["misuta", "Zywoo", "peter"]
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="Metric can only be",
+        ):
             associate_entities(a, b, metric="bad_metric")
 
     def test_empty_input(self):
@@ -100,5 +103,5 @@ class TestCleaning:
             {"Person": ["sid", "peter", "joao"], "Country": ["DE", "US", "BR"]}
         )
         entities = {"DE": "Germany", "US": "USA", "BR": "Brazil"}
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Column does not exist!"):
             replace_entities(df, "Countryyy", entities)

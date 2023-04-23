@@ -31,9 +31,7 @@ class TestStates:
         self.data = None
         files_in_directory = os.listdir()
         filtered_files = [
-            file
-            for file in files_in_directory
-            if file.endswith(".dem") or file.endswith(".json")
+            file for file in files_in_directory if file.endswith((".dem", ".json"))
         ]
         if len(filtered_files) > 0:
             for f in filtered_files:
@@ -52,8 +50,8 @@ class TestStates:
 
     def test_state_win_probability(self):
         """Tests state_win_probability."""
+        my_model = 0
         with pytest.raises(NotImplementedError):
-            my_model = 0
             state_win_probability(self.data["gameRounds"][7]["frames"][0], my_model)
 
     def test_round_win_probability(self):

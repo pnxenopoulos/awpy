@@ -136,11 +136,7 @@ def initialize_round(
                 }
             player_statistics[player_key]["totalRounds"] += 1
     for player_key in active_players:
-        kast[player_key] = {}
-        kast[player_key]["k"] = False
-        kast[player_key]["a"] = False
-        kast[player_key]["s"] = True
-        kast[player_key]["t"] = False
+        kast[player_key] = {"k": False, "a": False, "s": True, "t": False}
         round_kills[player_key] = 0
     return kast, round_kills, active_players
 
@@ -240,9 +236,9 @@ def player_stats(
                     ):
                         is_clutching.add(clutcher_key)
                         enemies_alive = len(
-                            r[other_side(k["victimSide"]).lower() + "Side"]["players"] or []  # type: ignore # noqa: E501
+                            r[other_side(k["victimSide"]).lower() + "Side"]["players"] or []  # type: ignore[arg-type, literal-required] # noqa: E501
                         ) - len(
-                            players_killed[other_side(k["victimSide"])]  # type: ignore
+                            players_killed[other_side(k["victimSide"])]  # type: ignore[arg-type] # noqa: E501
                         )
                         if enemies_alive > 0:
                             player_statistics[clutcher_key][

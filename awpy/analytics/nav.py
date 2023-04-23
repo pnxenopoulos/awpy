@@ -273,28 +273,23 @@ def point_distance(
             "dist_type can only be graph, geodesic,"
             " euclidean, manhattan, canberra or cosine"
         )
+    if dist_type in {"graph", "geodesic"}:
+        if map_name not in NAV:
+            raise ValueError("Map not found.")
+        if len(point_a) != 3 or len(point_b) != 3:
+            raise ValueError(
+                "When using graph or geodesic distance, point must be X/Y/Z"
+            )
     distance_obj: DistanceObject = {
         "distanceType": dist_type,
         "distance": float("inf"),
         "areas": [],
     }
     if dist_type == "graph":
-        if map_name not in NAV:
-            raise ValueError("Map not found.")
-        if len(point_a) != 3 or len(point_b) != 3:
-            raise ValueError(
-                "When using graph or geodesic distance, point must be X/Y/Z"
-            )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     if dist_type == "geodesic":
-        if map_name not in NAV:
-            raise ValueError("Map not found.")
-        if len(point_a) != 3 or len(point_b) != 3:
-            raise ValueError(
-                "When using graph or geodesic distance, point must be X/Y/Z"
-            )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)

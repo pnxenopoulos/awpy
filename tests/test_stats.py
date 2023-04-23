@@ -40,7 +40,7 @@ class TestStats:
         r = requests.get(
             self.demo_data["astralis-vs-liquid-m2-nuke"]["url"], timeout=100
         )
-        open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
+        open("astralis-vs-liquid-m2-nuke.dem", "wb").write(r.content)
         self.parser = DemoParser(
             demofile="astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
@@ -55,9 +55,7 @@ class TestStats:
         self.data = None
         files_in_directory = os.listdir()
         filtered_files = [
-            file
-            for file in files_in_directory
-            if file.endswith(".dem") or file.endswith(".json")
+            file for file in files_in_directory if file.endswith((".dem", ".json"))
         ]
         if len(filtered_files) > 0:
             for f in filtered_files:
@@ -67,11 +65,11 @@ class TestStats:
         """Tests other side."""
         assert other_side("T") == "CT"
         assert other_side("CT") == "T"
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
             other_side("t")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
             other_side("ct")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
             other_side("apple")
 
     def test_player_stats_both_json(self):
@@ -167,7 +165,8 @@ class TestStats:
                     # Allow for slight deviation in case of rounding
                     assert isclose(total_value, (t_value + ct_value), abs_tol=0.11)
                 elif metric in {"steamID", "isBot"}:
-                    assert total_value == t_value and total_value == ct_value
+                    assert total_value == t_value
+                    assert total_value == ct_value
                 elif metric in {"playerName", "teamName"}:
                     assert total_value in {t_value, ct_value}
                 elif metric in {"kast", "adr"}:

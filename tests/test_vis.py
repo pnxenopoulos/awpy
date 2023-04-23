@@ -2,7 +2,7 @@
 import os
 from unittest.mock import MagicMock, patch
 
-import matplotlib
+import matplotlib as mpl
 import pytest
 
 from awpy.visualization.plot import (
@@ -22,7 +22,7 @@ class TestVis:
         """Test position transforms."""
         assert isinstance(position_transform("de_ancient", 0, "x"), float)
         assert isinstance(position_transform("de_ancient", 0, "y"), float)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="'axis' has to be 'x' or 'y' not "):
             position_transform("de_ancient", 0, "scale")
 
     def test_position_transform_all(self):
@@ -41,8 +41,8 @@ class TestVis:
         """Test plot map."""
         # Test original with and withouzt z_cutoff
         fig, axis = plot_map(map_name="de_ancient")
-        assert isinstance(fig, matplotlib.figure.Figure)
-        assert isinstance(axis, matplotlib.axes.SubplotBase)
+        assert isinstance(fig, mpl.figure.Figure)
+        assert isinstance(axis, mpl.axes.SubplotBase)
         fig, axis = plot_map(map_name="de_vertigo")
 
         # Test simpleradar with and withouzt z_cutoff
@@ -57,8 +57,8 @@ class TestVis:
     def test_plot_positions(self, scatter_mock: MagicMock):
         """Test plot positions."""
         fig, axis = plot_positions()
-        assert isinstance(fig, matplotlib.figure.Figure)
-        assert isinstance(axis, matplotlib.axes.SubplotBase)
+        assert isinstance(fig, mpl.figure.Figure)
+        assert isinstance(axis, mpl.axes.SubplotBase)
         fig, axis = plot_positions(
             positions=[(1, 2), (2, 1)],
             colors=["red", "blue"],
@@ -98,7 +98,7 @@ class TestVis:
         assert plot_round(filename, frames)
         assert os.path.exists(filename)
         with patch("awpy.visualization.plot.plot_positions") as plot_positions_mock:
-            plot_positions_mock.return_value = matplotlib.pyplot.subplots()
+            plot_positions_mock.return_value = mpl.pyplot.subplots()
             plot_round(filename, frames)
             assert plot_positions_mock.call_count == 2
             plot_positions_mock.assert_called_with(
@@ -182,8 +182,8 @@ class TestVis:
         ]
 
         fig, axis = plot_nades([])
-        assert isinstance(fig, matplotlib.figure.Figure)
-        assert isinstance(axis, matplotlib.axes.SubplotBase)
+        assert isinstance(fig, mpl.figure.Figure)
+        assert isinstance(axis, mpl.axes.SubplotBase)
         fig, axis = plot_nades(game_rounds, side="CT", nades=nades_to_plot)
         with patch("awpy.visualization.plot.mpl.axes.Axes.scatter") as scatter_mock:
             with patch("awpy.visualization.plot.mpl.axes.Axes.plot") as plot_mock:

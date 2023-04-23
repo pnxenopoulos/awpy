@@ -261,8 +261,9 @@ class DemoParser:
 
         # Check if demofile exists
         if not os.path.exists(os.path.abspath(self.demofile)):
-            self.logger.error("Demofile path does not exist!")
-            raise FileNotFoundError("Demofile path does not exist!")
+            msg = "Demofile path does not exist!"
+            self.logger.error(msg)
+            raise FileNotFoundError(msg)
 
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from %s", path)
@@ -369,8 +370,9 @@ class DemoParser:
                 self.logger.info("Returned dataframe output")
                 return demo_data
             else:
-                self.logger.error("Parse return_type must be either 'json' or 'df'")
-                raise ValueError("return_type must be either 'json' or 'df'")
+                msg = "Parse return_type must be either 'json' or 'df'"
+                self.logger.error(msg)
+                raise ValueError(msg)
         else:
             self.logger.error("JSON couldn't be returned")
             raise AttributeError("No JSON parsed! Error in producing JSON.")

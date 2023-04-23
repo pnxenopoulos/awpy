@@ -14,7 +14,7 @@ class Chat(TypedDict):
     # Unclear: Seems true for ChatMessages to allchat
     # but false for SayText admin commands to all chat
     isChatAll: bool
-    type: str
+    type: str  # noqa: A003
 
 
 class Token(TypedDict):
