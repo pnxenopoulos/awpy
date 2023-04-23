@@ -186,12 +186,8 @@ class DemoParser:
         acceptable_go = check_go_version()
         if not acceptable_go:
             error_message = "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.18.0."
-            self.logger.error(
-                error_message
-            )
-            raise ValueError(
-               error_message
-            )
+            self.logger.error(error_message)
+            raise ValueError(error_message)
         else:
             self.logger.info("Go version>=1.18.0")
 

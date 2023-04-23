@@ -561,6 +561,7 @@ class TestNav:
 
     def test_generate_area_distance_matrix(self):
         """Tests generate_area_distance_matrix"""
+
         # Need to mock awpy.data.NAV to properly test this
         def default_to_regular(d):
             if isinstance(d, defaultdict):

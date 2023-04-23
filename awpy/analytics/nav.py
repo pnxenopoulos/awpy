@@ -624,7 +624,8 @@ def stepped_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]
         points (list): A list of points given as tuples (x, y)
 
     Returns:
-        A list of points making up the hull or four lists of points making up the four quadrants of the hull"""
+        A list of points making up the hull or four lists of points making up the four quadrants of the hull
+    """
     # May be equivalent to the orthogonal convex hull
 
     points = sorted(set(points))
