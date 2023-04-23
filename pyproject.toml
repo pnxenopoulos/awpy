@@ -31,8 +31,8 @@ dynamic = ["version"]
 
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F", "B", "W", "I", "N", "D", "UP"]
-ignore = ["D208"]
+select = ["E", "F", "B", "W", "I", "N", "D", "UP", "YTT", "ANN"]
+ignore = ["D208", "ANN101"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
@@ -75,6 +75,7 @@ target-version = "py310"
 "__init__.py" = ["E402", "F401"]
 "awpy/types.py" = ["N815"]
 "setup.py" = ["D100"]
+"tests/test_*.py" = ["ANN201"]
 
 [tool.ruff.pydocstyle]
 convention = "google"  # Accepts: "google", "numpy", or "pep257".

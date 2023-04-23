@@ -1,7 +1,7 @@
 """Data cleaning functions."""
 
 import difflib
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,7 @@ import textdistance
 def associate_entities(
     game_names: list[str | None] | None = None,
     entity_names: list[str] | None = None,
-    metric="lcss",
+    metric: Literal["lcss", "hamming", "levenshtein", "jaro", "difflib"] = "lcss",
 ) -> dict:
     """A function to return a dict of associated entities. Accepts.
 

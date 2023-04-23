@@ -3,13 +3,15 @@
 WPA stands for Win Probability Added and is described in this paper:
 https://arxiv.org/pdf/2011.01324.pdf.
 """
+from typing import Any
+
 from awpy.types import GameFrame
 
 SIMPLE_WP_MODEL = None
 ADV_WP_MODEL = None
 
 
-def state_win_probability(frame: GameFrame, model) -> dict:
+def state_win_probability(frame: GameFrame, model: Any) -> dict:  # noqa: ANN401
     """Predicts the win probability of a given frame.
 
     Args:

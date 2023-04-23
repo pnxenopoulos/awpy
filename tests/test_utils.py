@@ -1,6 +1,6 @@
 """Tests utils module."""
 import tempfile
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from awpy.utils import AutoVivification, check_go_version, is_in_range
 
@@ -9,7 +9,7 @@ class TestUtils:
     """Class to test the csgo package util classes and functions."""
 
     @patch("awpy.utils.subprocess")
-    def test_go_version(self, mock_subproc):
+    def test_go_version(self, mock_subproc: MagicMock):
         """Tests if the Golang version >= 1.18.0."""
         inputs = [
             b"go version go1.18.4 windows/amd64",

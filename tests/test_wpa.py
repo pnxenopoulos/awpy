@@ -13,7 +13,7 @@ class TestStates:
     """Class to test WPA.
 
     Uses https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
-    """
+    """  # noqa: E501
 
     def setup_class(self):
         """Setup class by instantiating parser."""
@@ -40,13 +40,13 @@ class TestStates:
                 os.remove(f)
 
     @staticmethod
-    def _get_demofile(demo_link, demo_name):
+    def _get_demofile(demo_link: str, demo_name: str) -> None:
         print("Requesting " + demo_link)
         r = requests.get(demo_link)
         open(demo_name + ".dem", "wb").write(r.content)
 
     @staticmethod
-    def _delete_demofile(demo_name):
+    def _delete_demofile(demo_name: str) -> None:
         print("Removing " + demo_name)
         os.remove(demo_name + ".dem")
 

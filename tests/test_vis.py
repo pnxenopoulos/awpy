@@ -1,6 +1,6 @@
 """Tests visualization module."""
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import matplotlib
 import pytest
@@ -54,7 +54,7 @@ class TestVis:
         # Currently there is no map that has a z_cutoff but is missing simpleradar
 
     @patch("awpy.visualization.plot.mpl.axes.Axes.scatter")
-    def test_plot_positions(self, scatter_mock):
+    def test_plot_positions(self, scatter_mock: MagicMock):
         """Test plot positions."""
         fig, axis = plot_positions()
         assert isinstance(fig, matplotlib.figure.Figure)

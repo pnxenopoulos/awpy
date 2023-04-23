@@ -87,7 +87,7 @@ class DemoParser:
         parse_chat: bool = False,
         buy_style: str = "hltv",
         json_indentation: bool = False,
-    ):
+    ) -> None:
         """Instatiate a DemoParser.
 
         Args:
@@ -308,7 +308,7 @@ class DemoParser:
             self.logger.error("No file produced, error in calling Golang")
             self.logger.error(stdout)
 
-    def read_json(self, json_path: str):
+    def read_json(self, json_path: str) -> Game:
         """Reads the JSON file given a JSON path.
 
         Can be used to read in already processed demofiles.
@@ -316,7 +316,7 @@ class DemoParser:
         Args:
             json_path (string): Path to JSON file
 
-        Returns:
+        Returns (Game):
             JSON in Python dictionary form
 
         Raises:

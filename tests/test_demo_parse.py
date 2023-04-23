@@ -2,13 +2,14 @@
 import json
 import logging
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
 import requests
 
 from awpy.parser import DemoParser
+from awpy.types import GameRound
 
 
 class TestDemoParser:
@@ -39,18 +40,18 @@ class TestDemoParser:
                 os.remove(f)
 
     @staticmethod
-    def _get_demofile(demo_link, demo_name):
+    def _get_demofile(demo_link: str, demo_name: str) -> None:
         print("Requesting " + demo_link)
         r = requests.get(demo_link)
         open(demo_name + ".dem", "wb").write(r.content)
 
     @staticmethod
-    def _delete_demofile(demo_name):
+    def _delete_demofile(demo_name: str) -> None:
         print("Removing " + demo_name)
         os.remove(demo_name + ".dem")
 
     @staticmethod
-    def _check_round_scores(rounds):
+    def _check_round_scores(rounds: list[GameRound]) -> None:
         for i, r in enumerate(rounds):
             if i == 0:
                 assert r["tScore"] == 0
@@ -135,7 +136,7 @@ class TestDemoParser:
         """Tests if log file is created."""
         assert self.parser.logger.name == "awpy"
 
-    def test_parse_opts(self, caplog):
+    def test_parse_opts(self, caplog: pytest.LogCaptureFixture):
         """Tests parsing options."""
         caplog.set_level(logging.WARNING)
         self.parser_opts = DemoParser(
@@ -504,14 +505,14 @@ class TestDemoParser:
         assert len(self.esea_ot_data["gameRounds"]) == 35
 
     @patch("os.path.isfile")
-    def test_parse_demo_error(self, isfile_mock):
+    def test_parse_demo_error(self, isfile_mock: MagicMock):
         """Tests if parser sets parse_error correctly if not outputfile can be found."""
         isfile_mock.return_value = False
         self.parser.parse_demo()
         assert self.parser.parse_error is True
 
     @patch("awpy.parser.demoparser.check_go_version")
-    def test_bad_go_version(self, go_version_mock):
+    def test_bad_go_version(self, go_version_mock: MagicMock):
         """Tests parse_demo fails on bad go version."""
         go_version_mock.return_value = False
         with pytest.raises(ValueError):

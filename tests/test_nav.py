@@ -2,7 +2,6 @@
 import math
 import os
 import sys
-from collections import defaultdict
 from unittest.mock import patch
 
 import numpy as np
@@ -562,13 +561,6 @@ class TestNav:
 
     def test_generate_area_distance_matrix(self):
         """Tests generate_area_distance_matrix."""
-
-        # Need to mock awpy.data.NAV to properly test this
-        def default_to_regular(d):
-            if isinstance(d, defaultdict):
-                d = {k: default_to_regular(v) for k, v in d.items()}
-            return d
-
         with patch("awpy.analytics.nav.NAV", self.fake_nav):
             with patch("awpy.analytics.nav.NAV_GRAPHS", self.fake_graph):
                 with patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):

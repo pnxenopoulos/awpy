@@ -192,7 +192,7 @@ def area_distance(
         return distance_obj
     if dist_type == "geodesic":
 
-        def dist_heuristic(a, b):
+        def dist_heuristic(a: int, b: int) -> float:
             return distance.euclidean(
                 map_graph.nodes()[a]["center"], map_graph.nodes()[b]["center"]
             )
@@ -387,7 +387,7 @@ def tree() -> dict:
         An empty tree
     """
 
-    def the_tree():
+    def the_tree() -> dict:
         return defaultdict(the_tree)
 
     return the_tree()
@@ -1058,7 +1058,7 @@ def token_state_distance(
     return token_dist
 
 
-def get_array_for_frame(frame: GameFrame):
+def get_array_for_frame(frame: GameFrame) -> np.ndarray:
     """Generates a numpy array with the correct dimensions and content for a gameframe.
 
     Args:

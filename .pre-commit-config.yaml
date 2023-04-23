@@ -26,6 +26,12 @@ repos:
       language: python
     - id: check-builtin-literals
       language: python
+- repo: https://github.com/pre-commit/pygrep-hooks
+  rev: v1.10.0  # Use the ref you want to point at
+  hooks:
+    - id: python-check-blanket-noqa
+    - id: python-check-blanket-type-ignore
+    - id: python-check-mock-methods
 - repo: https://github.com/charliermarsh/ruff-pre-commit
   rev: v0.0.262
   hooks:

@@ -16,7 +16,7 @@ class AutoVivification(dict):
     https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python
     """
 
-    def __getitem__(self, item: Any) -> Any:
+    def __getitem__(self, item: Any) -> Any:  # noqa: ANN401
         """Autovivified get item from dict.
 
         Tries to get the item as normal.
@@ -62,7 +62,7 @@ def check_go_version() -> bool:
         return False
 
 
-def is_in_range(value, minimum, maximum) -> bool:
+def is_in_range(value: float, minimum: float, maximum: float) -> bool:
     """Checks if a value is in the range of two others inclusive.
 
     Args:
