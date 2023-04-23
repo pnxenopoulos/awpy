@@ -294,7 +294,7 @@ class DemoParser:
         if self.parse_chat:
             self.parser_cmd.append("--parsechat")
         proc = subprocess.Popen(
-            self.parser_cmd,
+            self.parser_cmd,  # noqa: S603
             stdout=subprocess.PIPE,
             cwd=path,
         )

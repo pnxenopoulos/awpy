@@ -42,7 +42,7 @@ class TestStates:
     @staticmethod
     def _get_demofile(demo_link: str, demo_name: str) -> None:
         print("Requesting " + demo_link)
-        r = requests.get(demo_link)
+        r = requests.get(demo_link, timeout=100)
         open(demo_name + ".dem", "wb").write(r.content)
 
     @staticmethod

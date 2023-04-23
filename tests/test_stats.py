@@ -37,7 +37,9 @@ class TestStats:
         """Sets up class by defining the parser, filters, and dataframes."""
         with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
-        r = requests.get(self.demo_data["astralis-vs-liquid-m2-nuke"]["url"])
+        r = requests.get(
+            self.demo_data["astralis-vs-liquid-m2-nuke"]["url"], timeout=100
+        )
         open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
         self.parser = DemoParser(
             demofile="astralis-vs-liquid-m2-nuke.dem",

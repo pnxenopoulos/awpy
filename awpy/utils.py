@@ -45,7 +45,9 @@ def check_go_version() -> bool:
         bool whether the found go version is recent enough
     """
     try:
-        proc = subprocess.Popen(["go", "version"], stdout=subprocess.PIPE)
+        proc = subprocess.Popen(
+            ["go", "version"], stdout=subprocess.PIPE  # noqa: S603,S607,E501
+        )
         parsed_resp = (
             proc.stdout.read().splitlines() if proc.stdout is not None else None
         )
@@ -57,7 +59,7 @@ def check_go_version() -> bool:
             if [int(x) for x in go_version[0].split(".")] >= [1, 18]:
                 return True
             return False
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(e)
         return False
 
