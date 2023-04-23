@@ -71,7 +71,9 @@ class MatchPhases(TypedDict):
 
 
 class ServerConVar(TypedDict):
-    """ServerConVar holds server convars, like round timers and timeouts, etc. Not always accurate."""
+    """ServerConVar holds server convars, like round timers and timeouts, etc.
+
+    Not always accurate."""
 
     cashBombDefused: int  # cash_player_bomb_defused
     cashBombPlanted: int  # cash_player_bomb_planted
@@ -560,3 +562,10 @@ class PlayerStatistics(TypedDict):
     success1v4: int
     attempts1v5: int
     success1v5: int
+
+class KAST(TypedDict):
+    """Type for storing kast information."""
+    k: bool
+    a: bool
+    s: bool
+    t: bool
