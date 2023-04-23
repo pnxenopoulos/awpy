@@ -393,7 +393,7 @@ def tree() -> dict:
     return the_tree()
 
 
-def generate_area_distance_matrix(map_name: str, save: bool = False) -> AreaMatrix:
+def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaMatrix:
     """Generates or grabs a tree like nested dictionary containing distance matrices.
 
     Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)]
@@ -471,7 +471,7 @@ def generate_area_distance_matrix(map_name: str, save: bool = False) -> AreaMatr
     return area_distance_matrix
 
 
-def generate_place_distance_matrix(map_name: str, save: bool = False) -> PlaceMatrix:
+def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> PlaceMatrix:
     """Generates or grabs a tree like nested dictionary containing distance matrices.
 
     Structures is:

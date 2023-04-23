@@ -31,7 +31,7 @@ dynamic = ["version"]
 
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F", "B", "W", "I", "N", "D", "UP", "YTT", "ANN", "S", "BLE"]
+select = ["E", "F", "B", "W", "I", "N", "D", "UP", "YTT", "ANN", "S", "BLE", "FBT"]
 ignore = ["D208", "ANN101"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.

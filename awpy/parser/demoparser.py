@@ -75,6 +75,7 @@ class DemoParser:
 
     def __init__(
         self,
+        *,
         demofile: str = "",
         outpath: str | None = None,
         demo_id: str | None = None,
@@ -338,7 +339,7 @@ class DemoParser:
         return demo_data
 
     def parse(
-        self, return_type: str = "json", clean: bool = True
+        self, *, return_type: str = "json", clean: bool = True
     ) -> Game | dict[str, Any]:
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
@@ -770,6 +771,7 @@ class DemoParser:
 
     def clean_rounds(
         self,
+        *,
         remove_no_frames: bool = True,
         remove_warmups: bool = True,
         remove_knifes: bool = True,

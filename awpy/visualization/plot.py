@@ -29,7 +29,7 @@ from awpy.types import GameFrame, GameRound
 
 
 def plot_map(
-    map_name: str = "de_dust2", map_type: str = "original", dark: bool = False
+    map_name: str = "de_dust2", map_type: str = "original", *, dark: bool = False
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plots a blank map.
 
@@ -133,6 +133,7 @@ def plot_positions(
     sizes: list[float] | None = None,
     map_name: str = "de_ancient",
     map_type: str = "original",
+    *,
     dark: bool = False,
     apply_transformation: bool = False,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -186,8 +187,8 @@ def plot_positions(
             )
         else:
             a.scatter(x=p[0], y=p[1], c=c, marker=m, alpha=alpha, s=s)
-    a.get_xaxis().set_visible(False)
-    a.get_yaxis().set_visible(False)
+    a.get_xaxis().set_visible(b=False)
+    a.get_yaxis().set_visible(b=False)
     return f, a
 
 
@@ -196,6 +197,7 @@ def plot_round(
     frames: list[GameFrame],
     map_name: str = "de_ancient",
     map_type: str = "original",
+    *,
     dark: bool = False,
     fps: int = 10,
 ) -> Literal[True]:
@@ -280,6 +282,7 @@ def plot_nades(
     side: str = "CT",
     map_name: str = "de_ancient",
     map_type: str = "original",
+    *,
     dark: bool = False,
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plots grenade trajectories.
@@ -326,6 +329,6 @@ def plot_nades(
                         if g["grenadeType"] == "Flashbang":
                             a.plot([start_x, end_x], [start_y, end_y], color="gold")
                             a.scatter(end_x, end_y, color="gold")
-    a.get_xaxis().set_visible(False)
-    a.get_yaxis().set_visible(False)
+    a.get_xaxis().set_visible(b=False)
+    a.get_yaxis().set_visible(b=False)
     return f, a
