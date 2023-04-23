@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Functions for finding distances between points, areas or states.
 
     Typical usage example:

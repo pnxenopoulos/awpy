@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Functions to to generate game stats based on snapshots from a demofile.
 """
 

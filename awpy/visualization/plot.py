@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Functions for plotting player positions and nades.
 
     Typical usage example:

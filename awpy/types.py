@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """This module contains the type definitions for the parsed json structure"""
 
 from typing import Optional, TypedDict, Literal

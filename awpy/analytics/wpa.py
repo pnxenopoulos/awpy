@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from awpy.types import GameFrame
 
 SIMPLE_WP_MODEL = None

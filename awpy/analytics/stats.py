@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Functions to calculate statistics for a player or team from a demofile.
 
     Typical usage example:

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """This module defines the DemoParser class that handles the core functionality of parsing and cleaning a csgo demo file
 
     Typical usage example:
