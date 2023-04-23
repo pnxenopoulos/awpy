@@ -185,25 +185,28 @@ class TestVis:
         assert isinstance(fig, mpl.figure.Figure)
         assert isinstance(axis, mpl.axes.SubplotBase)
         fig, axis = plot_nades(game_rounds, side="CT", nades=nades_to_plot)
-        with patch("awpy.visualization.plot.mpl.axes.Axes.scatter") as scatter_mock:
-            with patch("awpy.visualization.plot.mpl.axes.Axes.plot") as plot_mock:
-                fig, axis = plot_nades(game_rounds, side="CT", nades=nades_to_plot)
-                # Only call it for valid grenades (not decay) from the correct side
-                assert scatter_mock.call_count == 4
-                assert plot_mock.call_count == 4
-                plot_mock.assert_called_with(
-                    [
-                        position_transform("de_ancient", -644.28125, "x"),
-                        position_transform("de_ancient", -590.625, "x"),
-                    ],
-                    [
-                        position_transform("de_ancient", -320.75, "y"),
-                        position_transform("de_ancient", -163.84375, "y"),
-                    ],
-                    color="red",
-                )
-                scatter_mock.assert_called_with(
+        with patch(
+            "awpy.visualization.plot.mpl.axes.Axes.scatter"
+        ) as scatter_mock, patch(
+            "awpy.visualization.plot.mpl.axes.Axes.plot"
+        ) as plot_mock:
+            fig, axis = plot_nades(game_rounds, side="CT", nades=nades_to_plot)
+            # Only call it for valid grenades (not decay) from the correct side
+            assert scatter_mock.call_count == 4
+            assert plot_mock.call_count == 4
+            plot_mock.assert_called_with(
+                [
+                    position_transform("de_ancient", -644.28125, "x"),
                     position_transform("de_ancient", -590.625, "x"),
+                ],
+                [
+                    position_transform("de_ancient", -320.75, "y"),
                     position_transform("de_ancient", -163.84375, "y"),
-                    color="red",
-                )
+                ],
+                color="red",
+            )
+            scatter_mock.assert_called_with(
+                position_transform("de_ancient", -590.625, "x"),
+                position_transform("de_ancient", -163.84375, "y"),
+                color="red",
+            )

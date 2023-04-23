@@ -562,12 +562,10 @@ class TestNav:
 
     def test_generate_area_distance_matrix(self):
         """Tests generate_area_distance_matrix."""
-        with patch("awpy.analytics.nav.NAV", self.fake_nav):
-            with patch("awpy.analytics.nav.NAV_GRAPHS", self.fake_graph):
-                with patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
-                    result_matrix = generate_area_distance_matrix(
-                        map_name="de_mock", save=True
-                    )
+        with patch("awpy.analytics.nav.NAV", self.fake_nav), patch(
+            "awpy.analytics.nav.NAV_GRAPHS", self.fake_graph
+        ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
+            result_matrix = generate_area_distance_matrix(map_name="de_mock", save=True)
 
         assert isinstance(result_matrix, dict)
         assert os.path.exists(
@@ -581,20 +579,20 @@ class TestNav:
     def test_generate_place_distance_matrix(self):
         """Tests generate_place_distance_matrix."""
         # Need to mock awpy.data.NAV to properly test this
-        with patch("awpy.analytics.nav.NAV", self.fake_nav):
-            with patch("awpy.analytics.nav.NAV_GRAPHS", self.fake_graph):
-                with patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
-                    with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
-                        result_matrix_1 = generate_place_distance_matrix(
-                            map_name="de_mock", save=True
-                        )
-                    with patch(
-                        "awpy.analytics.nav.AREA_DIST_MATRIX",
-                        {self.map_name: self.expected_area_matrix},
-                    ):
-                        result_matrix_2 = generate_place_distance_matrix(
-                            map_name="de_mock", save=False
-                        )
+        with patch("awpy.analytics.nav.NAV", self.fake_nav), patch(
+            "awpy.analytics.nav.NAV_GRAPHS", self.fake_graph
+        ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
+            with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
+                result_matrix_1 = generate_place_distance_matrix(
+                    map_name="de_mock", save=True
+                )
+            with patch(
+                "awpy.analytics.nav.AREA_DIST_MATRIX",
+                {self.map_name: self.expected_area_matrix},
+            ):
+                result_matrix_2 = generate_place_distance_matrix(
+                    map_name="de_mock", save=False
+                )
 
         assert isinstance(result_matrix_1, dict)
         assert os.path.exists(

@@ -93,7 +93,7 @@ def position_transform(
         pos = position - start
         pos /= scale
         return pos
-    elif axis == "y":
+    if axis == "y":
         pos = start - position
         pos /= scale
         return pos

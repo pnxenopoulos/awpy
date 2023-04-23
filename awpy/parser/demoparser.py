@@ -256,8 +256,7 @@ class DemoParser:
             )
             self.logger.error(error_message)
             raise ValueError(error_message)
-        else:
-            self.logger.info("Go version>=1.18.0")
+        self.logger.info("Go version>=1.18.0")
 
         # Check if demofile exists
         if not os.path.exists(os.path.abspath(self.demofile)):
@@ -365,17 +364,15 @@ class DemoParser:
             self.logger.info("JSON output found")
             if return_type == "json":
                 return self.json
-            elif return_type == "df":
+            if return_type == "df":
                 demo_data = self.parse_json_to_df()
                 self.logger.info("Returned dataframe output")
                 return demo_data
-            else:
-                msg = "Parse return_type must be either 'json' or 'df'"
-                self.logger.error(msg)
-                raise ValueError(msg)
-        else:
-            self.logger.error("JSON couldn't be returned")
-            raise AttributeError("No JSON parsed! Error in producing JSON.")
+            msg = "Parse return_type must be either 'json' or 'df'"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        self.logger.error("JSON couldn't be returned")
+        raise AttributeError("No JSON parsed! Error in producing JSON.")
 
     def parse_json_to_df(self) -> dict[str, Any]:
         """Returns JSON into dictionary where keys correspond to data frames.
@@ -449,13 +446,12 @@ class DemoParser:
             ].astype(pd.Int64Dtype())
             self.logger.info("Returned dataframe output")
             return demo_data
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_frames(self) -> pd.DataFrame:
         """Returns frames as a Pandas dataframe.
@@ -491,13 +487,12 @@ class DemoParser:
             frames_df["matchID"] = self.json["matchID"]
             frames_df["mapName"] = self.json["mapName"]
             return pd.DataFrame(frames_dataframes)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_player_frames(self) -> pd.DataFrame:
         """Returns player frames as a Pandas dataframe.
@@ -539,13 +534,12 @@ class DemoParser:
             player_frames_df["matchID"] = self.json["matchID"]
             player_frames_df["mapName"] = self.json["mapName"]
             return pd.DataFrame(player_frames_df)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_rounds(self) -> pd.DataFrame:
         """Returns rounds as a Pandas dataframe.
@@ -595,13 +589,12 @@ class DemoParser:
                     round_item["mapName"] = self.json["mapName"]
                 rounds.append(round_item)
             return pd.DataFrame(rounds)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_kills(self) -> pd.DataFrame:
         """Returns kills as either a Pandas dataframe.
@@ -623,13 +616,12 @@ class DemoParser:
                         new_k["mapName"] = self.json["mapName"]
                         kills.append(new_k)
             return pd.DataFrame(kills)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_weapon_fires(self) -> pd.DataFrame:
         """Returns weapon fires as either a list or Pandas dataframe.
@@ -651,13 +643,12 @@ class DemoParser:
                         new_wf["mapName"] = self.json["mapName"]
                         shots.append(new_wf)
             return pd.DataFrame(shots)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_damages(self) -> pd.DataFrame:
         """Returns damages as a Pandas dataframe.
@@ -679,13 +670,12 @@ class DemoParser:
                         new_d["mapName"] = self.json["mapName"]
                         damages.append(new_d)
             return pd.DataFrame(damages)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_grenades(self) -> pd.DataFrame:
         """Returns grenades as a Pandas dataframe.
@@ -707,13 +697,12 @@ class DemoParser:
                         new_g["mapName"] = self.json["mapName"]
                         grenades.append(new_g)
             return pd.DataFrame(grenades)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_bomb_events(self) -> pd.DataFrame:
         """Returns bomb events as a Pandas dataframe.
@@ -735,13 +724,12 @@ class DemoParser:
                         new_b["mapName"] = self.json["mapName"]
                         bomb_events.append(new_b)
             return pd.DataFrame(bomb_events)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def _parse_flashes(self) -> pd.DataFrame:
         """Returns flashes as a Pandas dataframe.
@@ -763,13 +751,12 @@ class DemoParser:
                         new_f["mapName"] = self.json["mapName"]
                         flashes.append(new_f)
             return pd.DataFrame(flashes)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def clean_rounds(
         self,
@@ -836,20 +823,19 @@ class DemoParser:
                 self.write_json()
             if return_type == "json":
                 return self.json
-            elif return_type == "df":
+            if return_type == "df":
                 demo_data = self.parse_json_to_df()
                 self.logger.info("Returned cleaned dataframe output")
                 return demo_data
             raise ValueError(
                 f"Invalid return_type of {return_type}. Use 'json' or 'df' instead!"
             )
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def write_json(self) -> None:
         """Rewrite the JSON file."""
@@ -946,27 +932,28 @@ class DemoParser:
                         + lookahead_round["ctScore"]
                         + lookahead_round["endCTScore"]
                     )
-                    if lookahead_round_total > current_round_total:
-                        cleaned_rounds.append(r)
-                    elif (r["endTScore"] == 16) & (r["endCTScore"] <= 14):
-                        cleaned_rounds.append(r)
-                    elif (r["endCTScore"] == 16) & (r["endTScore"] <= 14):
-                        cleaned_rounds.append(r)
-                    else:
+                    if (
+                        # Next round should have higher score than current
+                        (lookahead_round_total > current_round_total)
+                        # Valid rounds have a winner and a not winner
+                        or ((r["endTScore"] == 16) & (r["endCTScore"] <= 14))
+                        or (r["endCTScore"] == 16) & (r["endTScore"] <= 14)
                         # OT win scores are of the type:
                         # 15 + (4xN) with N a natural numbers (1, 2, 3, ...)
                         # So 19, 23, 27, ...
                         # So if you substract 15 from an OT winning round
                         # the number is divisible by 4
-                        # OT_Scores = [19, 23, 27, 31, 35, 39, 43, 47]
-                        if (
+                        or (
                             (r["endCTScore"] - 15) % 4 == 0
                             and r["endTScore"] < r["endCTScore"]
-                        ) or (
+                        )
+                        or (
                             (r["endTScore"] - 15) % 4 == 0
                             and r["endCTScore"] < r["endTScore"]
-                        ):
-                            cleaned_rounds.append(r)
+                        )
+                    ):
+                        cleaned_rounds.append(r)
+                        # OT_Scores = [19, 23, 27, 31, 35, 39, 43, 47]
                         # for s in OT_Scores:
                         #     if (r["endCTScore"] == s) & (r["endTScore"] < s - 1):
                         #         cleaned_rounds.append(r)
@@ -1042,11 +1029,10 @@ class DemoParser:
                                 pass
                             elif len(f["t"]["players"]) <= 5:
                                 cleaned_rounds.append(r)
-                        elif len(f["ct"]["players"]) <= 5:
-                            if (f["t"]["players"] is None) or (
-                                len(f["t"]["players"]) <= 5
-                            ):
-                                cleaned_rounds.append(r)
+                        elif len(f["ct"]["players"]) <= 5 and (
+                            (f["t"]["players"] is None) or (len(f["t"]["players"]) <= 5)
+                        ):
+                            cleaned_rounds.append(r)
                 self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1154,9 +1140,8 @@ class DemoParser:
         if self.json:
             cleaned_rounds = []
             for r in self.json["gameRounds"] or []:
-                if not r["isWarmup"]:
-                    if len(r["kills"] or []) <= 10:
-                        cleaned_rounds.append(r)
+                if not r["isWarmup"] and len(r["kills"] or []) <= 10:
+                    cleaned_rounds.append(r)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(

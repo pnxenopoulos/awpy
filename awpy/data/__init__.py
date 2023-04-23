@@ -43,7 +43,7 @@ def create_nav_graphs(
     nav_graphs: dict[str, nx.DiGraph] = {}
     for m in nav:
         map_graph = nx.DiGraph()
-        for a in nav[m].keys():
+        for a in nav[m]:
             r = nav[m][a]
             map_graph.add_nodes_from(
                 [
@@ -73,8 +73,8 @@ def create_nav_graphs(
                     ),
                 ]
             )
-        edge_list = open(data_path + "nav/" + m + ".txt", encoding="utf8")
-        edge_list_lines = edge_list.readlines()
+        with open(data_path + "nav/" + m + ".txt", encoding="utf8") as edge_list:
+            edge_list_lines = edge_list.readlines()
         for line in edge_list_lines:
             areas = line.strip().split(",")
             map_graph.add_edge(

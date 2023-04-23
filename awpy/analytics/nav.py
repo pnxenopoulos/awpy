@@ -125,7 +125,7 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
         "areaId": 0,
         "distance": float("inf"),
     }
-    for area in NAV[map_name].keys():
+    for area in NAV[map_name]:
         avg_x = (
             NAV[map_name][area]["northWestX"] + NAV[map_name][area]["southEastX"]
         ) / 2

@@ -41,7 +41,8 @@ class TestDemoParser:
     def _get_demofile(demo_link: str, demo_name: str) -> None:
         print("Requesting " + demo_link)
         r = requests.get(demo_link, timeout=100)
-        open(demo_name + ".dem", "wb").write(r.content)
+        with open(demo_name + ".dem", "wb") as demo_file:
+            demo_file.write(r.content)
 
     @staticmethod
     def _delete_demofile(demo_name: str) -> None:
@@ -361,7 +362,7 @@ class TestDemoParser:
             demofile="bombsite_test.dem", log=False, parse_frames=False
         )
         self.phase_data = self.phase_parser.parse()
-        for phase in self.phase_data["matchPhases"].keys():
+        for phase in self.phase_data["matchPhases"]:
             assert isinstance(self.phase_data["matchPhases"][phase], list)
 
     def test_round_clean(self):
@@ -520,12 +521,13 @@ class TestDemoParser:
         """Tests if parser raises an AttributeError for missing json attribute."""
         error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
         error_parser.json = None
-        with patch.object(error_parser, "read_json") as read_mock:
-            with patch.object(error_parser, "parse_demo") as parse_mock:
-                with pytest.raises(AttributeError):
-                    error_parser.parse(clean=False)
-                assert parse_mock.call_count == 1
-                assert read_mock.call_count == 1
+        with patch.object(error_parser, "read_json") as read_mock, patch.object(
+            error_parser, "parse_demo"
+        ) as parse_mock:
+            with pytest.raises(AttributeError):
+                error_parser.parse(clean=False)
+            assert parse_mock.call_count == 1
+            assert read_mock.call_count == 1
 
     def test_no_json(self):
         """Tests if parser raises an AttributeError for missing json attribute."""

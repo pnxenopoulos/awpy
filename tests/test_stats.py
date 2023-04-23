@@ -40,7 +40,8 @@ class TestStats:
         r = requests.get(
             self.demo_data["astralis-vs-liquid-m2-nuke"]["url"], timeout=100
         )
-        open("astralis-vs-liquid-m2-nuke.dem", "wb").write(r.content)
+        with open("astralis-vs-liquid-m2-nuke.dem", "wb") as demo_file:
+            demo_file.write(r.content)
         self.parser = DemoParser(
             demofile="astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",

@@ -53,12 +53,11 @@ def check_go_version() -> bool:
         )
         if parsed_resp is None or len(parsed_resp) != 1:
             raise ValueError("Error finding Go version")
-        else:
-            go_version_text = parsed_resp[0].decode("utf-8")
-            go_version = re.findall(r"\d\.\d+", go_version_text)
-            if [int(x) for x in go_version[0].split(".")] >= [1, 18]:
-                return True
-            return False
+        go_version_text = parsed_resp[0].decode("utf-8")
+        go_version = re.findall(r"\d\.\d+", go_version_text)
+        if [int(x) for x in go_version[0].split(".")] >= [1, 18]:
+            return True
+        return False
     except Exception as e:  # noqa: BLE001
         print(e)
         return False

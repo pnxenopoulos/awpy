@@ -433,5 +433,4 @@ def player_stats(
             .from_dict(player_statistics, orient="index")
             .reset_index(drop=True)
         )
-    else:
-        return player_statistics
+    return player_statistics

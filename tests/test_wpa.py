@@ -41,7 +41,8 @@ class TestStates:
     def _get_demofile(demo_link: str, demo_name: str) -> None:
         print("Requesting " + demo_link)
         r = requests.get(demo_link, timeout=100)
-        open(demo_name + ".dem", "wb").write(r.content)
+        with open(demo_name + ".dem", "wb") as demo_file:
+            demo_file.write(r.content)
 
     @staticmethod
     def _delete_demofile(demo_name: str) -> None:
