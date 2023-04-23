@@ -78,7 +78,8 @@ class TestNav:
             os.makedirs(self.dir)
         else:
             raise AssertionError(
-                "This test needs to be executed in a directory where it can savely create and delte a 'nav' subdir!"
+                "This test needs to be executed in a directory "
+                "where it can savely create and delete a 'nav' subdir!"
             )
         self.map_name = "de_mock"
         self.file_name = f"{self.map_name}.txt"

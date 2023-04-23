@@ -18,7 +18,7 @@ def state_win_probability(frame: GameFrame, model) -> dict:
 
 
 def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
-    """Estimates of game win probability using information from the HLTV win matrix for a given map and score.
+    """Estimates of game win probability using information from the HLTV win matrix.
 
     Args:
         ct_score (int): CT Score

@@ -25,7 +25,8 @@ def associate_entities(
             Defaults to 'lcss'
 
     Returns:
-        A dictionary where the keys are entries in game_names, values are the matched entity names.
+        A dictionary where the keys are entries in game_names,
+        values are the matched entity names.
     """
     if game_names is None:
         game_names = []
@@ -76,12 +77,14 @@ def associate_entities(
 def replace_entities(
     df: pd.DataFrame, col_name: str, entity_dict: dict
 ) -> pd.DataFrame:
-    """A function to replace values in a Pandas df column given an entity dict, as created in associate_entities()
+    """A function to replace values in a Pandas df column given an entity dict.
+
+    entitiy_dict as created in associate_entities().
 
     Args:
         df (DataFrame)     : A Pandas DataFrame
         col_name (string)  : A column in the Pandas DataFrame
-        entity_dict (dict) : A dictionary as created in the associate_entities() function
+        entity_dict (dict) : A dictionary as created in associate_entities()
 
     Returns:
         A dataframe with replaced names.

@@ -9,7 +9,11 @@ from awpy.types import Area
 
 
 class AutoVivification(dict):
-    """Implementation of perl's autovivification feature. Stolen from https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python"""
+    """Implementation of perl's autovivification feature.
+
+    Stolen from:
+    https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python
+    """
 
     def __getitem__(self, item):
         try:
@@ -20,7 +24,9 @@ class AutoVivification(dict):
 
 
 def check_go_version() -> bool:
-    """Function to check the Golang version of the current machine, returns True if greater than 1.18.0
+    """Function to check the Golang version of the current machine.
+
+    Returns True if greater than 1.18.0
 
     Returns:
         bool whether the found go version is recent enough"""
@@ -42,23 +48,22 @@ def check_go_version() -> bool:
         return False
 
 
-def is_in_range(value, min, max) -> bool:
+def is_in_range(value, minimum, maximum) -> bool:
     """Checks if a value is in the range of two others inclusive
 
     Args:
         value (Any): Value to check whether it is in range
-        min (Any): Lower inclusive bound of the range check
-        max (Any): Upper inclusive bound of the range check"""
-    if value >= min and value <= max:
-        return True
-    return False
+        minimum (Any): Lower inclusive bound of the range check
+        maximum (Any): Upper inclusive bound of the range check"""
+    return minimum <= value <= maximum
 
 
 def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[int, Area]]:
     """From Adi. Used to transform a nav file CSV to JSON.
 
     Args:
-        sample_csv (pd.DataFrame): Dataframe containing information about areas of each map
+        sample_csv (pd.DataFrame):
+            Dataframe containing information about areas of each map
 
     Returns:
         dict[str, dict[int, Area]] containing information about each area of each map"""
@@ -69,7 +74,8 @@ def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[int, Area]
             cur_tile = sample_csv.iloc[i]
             # Would rather initiate this as an empty 'Area' typeddict
             cur_dic = {}
-            # And cast cur_feature to Literal["mapName","areaId","areaName","northWestX",...]
+            # And cast cur_feature to
+            # Literal["mapName","areaId","areaName","northWestX",...]
             # However casting from Any to Literal does not work in mypy
             for cur_feature in sample_csv.columns:
                 if cur_feature not in ["mapName", "areaId"]:

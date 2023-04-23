@@ -4,7 +4,14 @@
     Typical usage example:
 
     from awpy.visualization.plot import plot_round
-    plot_round("best_round_ever.gif", d["gameRounds"][7]["frames"], map_name=d["mapName"], map_type="simpleradar", dark=False)
+
+    plot_round(
+        "best_round_ever.gif",
+        d["gameRounds"][7]["frames"],
+        map_name=d["mapName"],
+        map_type="simpleradar",
+        dark=False,
+    )
 
     https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb
 """
@@ -146,7 +153,8 @@ def plot_positions(
         dark (bool, optional): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type
             Defaults to False
-        apply_transformation (bool, optional): Indicates if you need to also use position_transform() for the X/Y coordinates
+        apply_transformation (bool, optional): Indicates if you need to also use
+            position_transform() for the X/Y coordinates,
             Defaults to False
 
     Returns:
@@ -188,7 +196,10 @@ def plot_round(
     dark: bool = False,
     fps: int = 10,
 ) -> Literal[True]:
-    """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
+    """Plots a round and saves as a .gif.
+
+    CTs are blue, Ts are orange, and the bomb is an octagon.
+    Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif

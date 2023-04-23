@@ -11,17 +11,22 @@ from awpy.parser import DemoParser
 from awpy.analytics.stats import player_stats, other_side
 
 
-def weighted_avg(metric: str, weighting_metric: str, stats_t: dict, stats_ct: dict) -> float:
+def weighted_avg(
+    metric: str, weighting_metric: str, stats_t: dict, stats_ct: dict
+) -> float:
     """Calculates the weighted average between stats_t and stats_ct for the value of
     'metric' weighted by 'weighting_metric'"""
-    return ((stats_t[metric] * stats_t[weighting_metric]) + (stats_ct[metric] * stats_ct[weighting_metric])) / (
-        stats_t[weighting_metric] + stats_ct[weighting_metric]
-    )
+    return (
+        (stats_t[metric] * stats_t[weighting_metric])
+        + (stats_ct[metric] * stats_ct[weighting_metric])
+    ) / (stats_t[weighting_metric] + stats_ct[weighting_metric])
 
 
 class TestStats:
     """Class to test the statistics functions.
-    Uses https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
+
+    Uses:
+    https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
     """
 
     def setup_class(self):
@@ -43,7 +48,11 @@ class TestStats:
         self.parser = None
         self.data = None
         files_in_directory = os.listdir()
-        filtered_files = [file for file in files_in_directory if file.endswith(".dem") or file.endswith(".json")]
+        filtered_files = [
+            file
+            for file in files_in_directory
+            if file.endswith(".dem") or file.endswith(".json")
+        ]
         if len(filtered_files) > 0:
             for f in filtered_files:
                 os.remove(f)
@@ -158,25 +167,33 @@ class TestStats:
                 elif metric in {"kast", "adr"}:
                     assert isclose(
                         total_value,
-                        weighted_avg(metric, "totalRounds", stats_t[player], stats_ct[player]),
+                        weighted_avg(
+                            metric, "totalRounds", stats_t[player], stats_ct[player]
+                        ),
                         abs_tol=0.11,
                     )
                 elif metric == "hsPercent":
                     assert isclose(
                         total_value,
-                        weighted_avg(metric, "kills", stats_t[player], stats_ct[player]),
+                        weighted_avg(
+                            metric, "kills", stats_t[player], stats_ct[player]
+                        ),
                         abs_tol=0.11,
                     )
                 elif metric == "kdr":
                     assert isclose(
                         total_value,
-                        weighted_avg(metric, "deaths", stats_t[player], stats_ct[player]),
+                        weighted_avg(
+                            metric, "deaths", stats_t[player], stats_ct[player]
+                        ),
                         abs_tol=0.11,
                     )
                 elif metric == "accuracy":
                     assert isclose(
                         total_value,
-                        weighted_avg(metric, "totalShots", stats_t[player], stats_ct[player]),
+                        weighted_avg(
+                            metric, "totalShots", stats_t[player], stats_ct[player]
+                        ),
                         abs_tol=0.11,
                     )
 
@@ -383,7 +400,9 @@ class TestStats:
         player_stats(test_rounds)
 
     def test_player_stats_none_player_before_clutch(self):
-        """Tests that player stats handles a side being None correctly in clutche initialization"""
+        """Tests that player stats handles None sides correctly.
+
+        Especially in clutch initialization."""
         test_rounds = [
             {
                 "roundNum": 1,

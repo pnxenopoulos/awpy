@@ -39,7 +39,10 @@ setup(
     # metadata to display on PyPI
     author="Peter Xenopoulos",
     author_email="xenopoulos@nyu.edu",
-    description="Counter-Strike: Global Offensive data parsing, analysis and visualization functions",
+    description=(
+        "Counter-Strike: Global Offensive data parsing, "
+        "analysis and visualization functions"
+    ),
     long_description=long_description,
     long_description_content_type="text/markdown",
     keywords="esports sports-analytics csgo counter-strike",

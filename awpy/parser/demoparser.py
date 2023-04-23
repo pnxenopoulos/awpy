@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""This module defines the DemoParser class that handles the core functionality of parsing and cleaning a csgo demo file
+"""This module defines the DemoParser class that handles the core functionality.
+
+    Core functionality is parsing and cleaning a csgo demo file.
 
     Typical usage example:
     from awpy.parser import DemoParser
@@ -32,28 +34,38 @@ from awpy.types import Game
 
 
 class DemoParser:
-    """DemoParser can parse, load and clean data from a CSGO demofile. Can be instantiated without a specified demofile.
+    """DemoParser can parse, load and clean data from a CSGO demofile.
+
+    Can be instantiated without a specified demofile.
 
     Attributes:
-        demofile (string): A string denoting the path to the demo file, which ends in .dem
-            Defaults to ''
-        outpath (string): Path where to save the outputfile to. Default is current directory
-        demo_id (string): A unique demo name/game id. Default is inferred from demofile name
+        demofile (string): A string denoting the path to the demo file,
+            which ends in .dem. Defaults to ''
+        outpath (string): Path where to save the outputfile to.
+            Default is current directory
+        demo_id (string): A unique demo name/game id.
+            Default is inferred from demofile name
         output_file (str): The output file name. Default is 'demoid'+".json"
-        log (bool): A boolean indicating if the log should print to stdout. Default is False
+        log (bool): A boolean indicating if the log should print to stdout.
+            Default is False
         parse_rate (int, optional): One of 128, 64, 32, 16, 8, 4, 2, or 1.
-            The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks. Default is 128.
-        parse_frames (bool): Flag if you want to parse frames (trajectory data) or not. Default is True
-        parse_kill_frames (bool): Flag if you want to parse frames on kills. Default is False
-        trade_time (int, optional): Length of the window for a trade (in seconds). Default is 5.
-        dmg_rolled (bool): Boolean if you want damages rolled up
-            (since multiple damages for a player can happen in 1 tick from the same weapon.)
+            The lower the value, the more frames are collected.
+            Indicates spacing between parsed demo frames in ticks. Default is 128.
+        parse_frames (bool): Flag if you want to parse frames (trajectory data) or not.
+            Default is True
+        parse_kill_frames (bool): Flag if you want to parse frames on kills.
+            Default is False
+        trade_time (int, optional): Length of the window for a trade (in seconds).
+            Default is 5.
+        dmg_rolled (bool): Boolean if you want damages rolled up.
+            As multiple damages for a player can happen in 1 tick from the same weapon.
             Default is False
         parse_chat (bool): Flag if you want to parse chat messages. Default is False
         buy_style (string): Buy style string, one of "hltv" or "csgo"
             Default is "hltv"
         json_indentation (bool): Whether the json file should be pretty printed
-            with indentation (larger, more readable) or not (smaller, less human readable)
+            with indentation (larger, more readable)
+            or not (smaller, less human readable)
             Default is False
         json (dict): Dictionary containing the parsed json file
 
@@ -85,7 +97,8 @@ class DemoParser:
         self.logger = logging.getLogger("awpy")
         self.logger.propagate = log
 
-        # Handle demofile and demo_id name. Only take the file name and remove the last extension.
+        # Handle demofile and demo_id name.
+        # Only take the file name and remove the last extension.
         self.demofile = os.path.abspath(demofile)
 
         self.logger.info("Initialized awpy DemoParser with demofile %s", self.demofile)
@@ -108,7 +121,8 @@ class DemoParser:
         # Handle parse rate. If the parse rate is less than 64, likely to be slow
         if parse_rate < 1 or not isinstance(parse_rate, int):
             self.logger.warning(
-                "Parse rate of %s not acceptable! Parse rate must be an integer greater than 0.",
+                "Parse rate of %s not acceptable! "
+                "Parse rate must be an integer greater than 0.",
                 str(parse_rate),
             )
             parse_rate = 128
@@ -116,12 +130,14 @@ class DemoParser:
 
         if parse_rate < 64 and parse_rate > 1:
             self.logger.warning(
-                "A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos."
+                "A parse rate lower than 64 may be slow depending on the tickrate "
+                "of the demo, which is usually 64 for MM and 128 for pro demos."
             )
             self.parse_rate = parse_rate
         elif parse_rate >= 256:
             self.logger.warning(
-                "A high parse rate means very few frames. Only use for testing purposes."
+                "A high parse rate means very few frames. "
+                "Only use for testing purposes."
             )
             self.parse_rate = parse_rate
         else:
@@ -146,7 +162,8 @@ class DemoParser:
         # Handle buy style
         if buy_style not in ["hltv", "csgo"]:
             self.logger.warning(
-                "Buy style specified is not one of hltv, csgo, will be set to hltv by default"
+                "Buy style specified is not one of hltv, csgo, "
+                "will be set to hltv by default"
             )
             self.buy_style = "hltv"
         else:
@@ -173,19 +190,27 @@ class DemoParser:
         self.json: Optional[Game] = None
 
     def parse_demo(self) -> None:
-        """Parse a demofile using the Go script parse_demo.go -- this function needs the .demofile to be set in the class, and the file needs to exist.
+        """Parse a demofile using the Go script parse_demo.go.
+
+        This function needs the .demofile to be set in the class,
+        and the file needs to exist.
 
         Returns:
             Outputs a JSON file to current working directory.
 
         Raises:
             ValueError: Raises a ValueError if the Golang version is lower than 1.18
-            FileNotFoundError: Raises a FileNotFoundError if the demofile path does not exist.
+            FileNotFoundError: Raises a FileNotFoundError
+                if the demofile path does not exist.
         """
         # Check if Golang version is compatible
         acceptable_go = check_go_version()
         if not acceptable_go:
-            error_message = "Error calling Go. Check if Go is installed using 'go version'. Need at least v1.18.0."
+            error_message = (
+                "Error calling Go. "
+                "Check if Go is installed using 'go version'."
+                " Need at least v1.18.0."
+            )
             self.logger.error(error_message)
             raise ValueError(error_message)
         else:
@@ -242,7 +267,9 @@ class DemoParser:
             self.logger.error(stdout)
 
     def read_json(self, json_path: str):
-        """Reads the JSON file given a JSON path. Can be used to read in already processed demofiles.
+        """Reads the JSON file given a JSON path.
+
+        Can be used to read in already processed demofiles.
 
         Args:
             json_path (string): Path to JSON file
@@ -275,10 +302,12 @@ class DemoParser:
 
         Args:
             return_type (string, optional): Either "json" or "df". Default is "json"
-            clean (bool, optional): True to run clean_rounds, otherwise, uncleaned data is returned. Defaults to True.
+            clean (bool, optional): True to run clean_rounds.
+                Otherwise, uncleaned data is returned. Defaults to True.
 
         Returns:
-            A dictionary of output (which is parsed to a JSON file in the working directory)
+            A dictionary of output which
+            is parsed to a JSON file in the working directory.
 
         Raises:
             ValueError: Raises a ValueError if the return_type is not "json" or "df"
@@ -387,7 +416,8 @@ class DemoParser:
         """Returns frames as a Pandas dataframe
 
         Returns:
-            A Pandas dataframe where each row is a frame (game state) in the demo, which is a discrete point of time.
+            A Pandas dataframe where each row is a frame (game state) in the demo,
+            which is a discrete point of time.
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
@@ -428,7 +458,8 @@ class DemoParser:
         """Returns player frames as a Pandas dataframe.
 
         Returns:
-            A Pandas dataframe where each row is a player's attributes at a given frame (game state).
+            A Pandas dataframe where each row is a player's attributes
+            at a given frame (game state).
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
@@ -442,7 +473,8 @@ class DemoParser:
                         # https://github.com/python/mypy/issues/9230
                         side = cast(Literal["ct", "t"], side)
                         if frame[side]["players"] is not None and (
-                            # The or [] should be unneccesary but mypy can not handle this
+                            # The or [] should be unneccesary
+                            # but mypy can not handle this
                             len(frame[side]["players"] or [])
                             > 0  # Used to be == 5, to ensure the sides were equal.
                         ):
@@ -710,20 +742,27 @@ class DemoParser:
         """Cleans a parsed demofile JSON.
 
         Args:
-            remove_no_frames (bool, optional): Remove rounds where there are no frames. Default to True.
+            remove_no_frames (bool, optional): Remove rounds where there are no frames.
+                Default to True.
             remove_warmups (bool, optional): Remove warmup rounds. Defaults to True.
             remove_knifes (bool, optional): Remove knife rounds. Defaults to True.
             remove_bad_timings (bool, optional): Remove bad timings. Defaults to True.
-            remove_excess_players (bool, optional): Remove rounds with more than 5 players. Defaults to True.
-            remove_excess_kills (bool, optional): Remove rounds with more than 10 kills. Defaults to True.
-            remove_bad_endings (bool, optional): Remove rounds with bad round end reasons. Defaults to True.
-            remove_bad_scoring (bool, optional): Remove rounds where the scoring is off (like scores going below the previous round's). Defaults to False.
+            remove_excess_players (bool, optional):
+                Remove rounds with more than 5 players. Defaults to True.
+            remove_excess_kills (bool, optional): Remove rounds with more than 10 kills.
+                Defaults to True.
+            remove_bad_endings (bool, optional):
+                Remove rounds with bad round end reasons. Defaults to True.
+            remove_bad_scoring (bool, optional): Remove rounds where the scoring is off
+                Like scores going below the previous round's. Defaults to False.
             return_type (str, optional): Return JSON or DataFrame. Defaults to "json".
-            save_to_json (bool, optional): Whether to write the JSON to a file. Defaults to True.
+            save_to_json (bool, optional): Whether to write the JSON to a file.
+                Defaults to True.
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
-            ValueError: Raises a ValueError if the return type is neither 'json' nor 'df'
+            ValueError: Raises a ValueError if the return type is neither
+                'json' nor 'df'
 
         Returns:
             dict: A dictionary of the cleaned demo.
@@ -775,7 +814,8 @@ class DemoParser:
         """Renumbers the rounds.
 
         Raises:
-            AttributeError: Raises an AttributeError if the .json attribute has a "gameRounds" key.
+            AttributeError: Raises an AttributeError if the .json attribute
+                has a "gameRounds" key.
         """
         if self.json and self.json["gameRounds"]:
             for i, r in enumerate(self.json["gameRounds"]):
@@ -792,7 +832,8 @@ class DemoParser:
         """Rescore the rounds based on round end reason.
 
         Raises:
-            AttributeError: Raises an AttributeError if the .json attribute has a "gameRounds" key.
+            AttributeError: Raises an AttributeError if the .json attribute
+                has no "gameRounds" key.
         """
         if self.json and self.json["gameRounds"]:
             for i, r in enumerate(self.json["gameRounds"]):
@@ -852,7 +893,7 @@ class DemoParser:
                 )
                 if i < len(self.json["gameRounds"]) - 1:  # type: ignore[arg-type]
                     # Non-OT rounds
-                    lookahead_round = self.json["gameRounds"][i + 1]  # type: ignore[index]
+                    lookahead_round = self.json["gameRounds"][i + 1]  # type: ignore[index] # noqa: E501
                     lookahead_round_total = (
                         lookahead_round["tScore"]
                         + lookahead_round["endTScore"]
@@ -869,7 +910,8 @@ class DemoParser:
                         # OT win scores are of the type:
                         # 15 + (4xN) with N a natural numbers (1, 2, 3, ...)
                         # So 19, 23, 27, ...
-                        # So if you substract 15 from an OT winning round the number is divisible by 4
+                        # So if you substract 15 from an OT winning round
+                        # the number is divisible by 4
                         # OT_Scores = [19, 23, 27, 31, 35, 39, 43, 47]
                         if (
                             (r["endCTScore"] - 15) % 4 == 0
@@ -885,7 +927,7 @@ class DemoParser:
                         #     elif (r["endTScore"] == s) & (r["endCTScore"] < s - 1):
                         #         cleaned_rounds.append(r)
                 else:
-                    lookback_round = self.json["gameRounds"][i - 1]  # type: ignore[index]
+                    lookback_round = self.json["gameRounds"][i - 1]  # type: ignore[index] # noqa: E501
                     lookback_round_total = (
                         lookback_round["tScore"]
                         + lookback_round["endTScore"]
@@ -912,7 +954,9 @@ class DemoParser:
         if self.json:
             if not self.parse_frames:
                 self.logger.warning(
-                    "parse_frames is set to False, must be true for remove_no_frames to work. Skipping remove_no_frames."
+                    "parse_frames is set to False, "
+                    "must be true for remove_no_frames to work. "
+                    "Skipping remove_no_frames."
                 )
             else:
                 cleaned_rounds = []
@@ -937,7 +981,9 @@ class DemoParser:
         if self.json:
             if not self.parse_frames:
                 self.logger.warning(
-                    "parse_frames is set to False, must be true for remove_excess_players to work. Skipping remove_excess_players."
+                    "parse_frames is set to False, "
+                    "must be true for remove_excess_players to work. "
+                    "Skipping remove_excess_players."
                 )
             else:
                 cleaned_rounds = []
@@ -972,10 +1018,11 @@ class DemoParser:
         """
         if self.json:
             cleaned_rounds = []
-            # Remove warmups where the demo may have started recording in the middle of a warmup round
+            # Remove warmups where the demo may have started recording
+            # in the middle of a warmup round
             if "warmupChanged" in self.json["matchPhases"]:
                 if len(self.json["matchPhases"]["warmupChanged"] or []) > 1:
-                    last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]  # type: ignore[index]
+                    last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]  # type: ignore[index] # noqa: E501
                     for r in self.json["gameRounds"] or []:
                         if (r["startTick"] > last_warmup_changed) and (
                             not r["isWarmup"]
@@ -1000,7 +1047,8 @@ class DemoParser:
         """Removes rounds with bad end reason.
 
         Args:
-            bad_endings (list, optional): List of bad round end reasons. Defaults to ["Draw", "Unknown", ""].
+            bad_endings (list, optional): List of bad round end reasons.
+                Defaults to ["Draw", "Unknown", ""].
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None

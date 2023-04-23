@@ -517,7 +517,7 @@ class TestDemoParser:
             self.parser.parse_demo()
 
     def test_parse_error(self):
-        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        """Tests if parser raises an AttributeError for missing json attribute."""
         error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
         error_parser.json = None
         with patch.object(error_parser, "read_json") as read_mock:
@@ -528,7 +528,7 @@ class TestDemoParser:
                 assert read_mock.call_count == 1
 
     def test_no_json(self):
-        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        """Tests if parser raises an AttributeError for missing json attribute."""
         no_json_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
         # Json ist set but falsy
         no_json_parser.json = None
