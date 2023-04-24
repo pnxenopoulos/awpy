@@ -84,7 +84,7 @@ class TestVis:
         filename = "test.gif"
         frames = [
             {
-                "bomb": {"x": 2890, "y": 74, "z": 1613.03125},
+                "bomb": {"x": 1890, "y": 74, "z": 1613.03125},
                 "t": {"players": []},
                 "ct": {"players": [{"hp": 100, "x": 0, "y": 0}]},
             },
