@@ -271,7 +271,7 @@ def plot_round(
     images = []
     for file in image_files:
         images.append(imageio.imread(file))
-    imageio.mimsave(filename, images, fps=fps)
+    imageio.mimsave(filename, images, duration=1000 / fps)
     shutil.rmtree("csgo_tmp/")
     return True
 
