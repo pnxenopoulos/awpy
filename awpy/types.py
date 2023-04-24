@@ -596,3 +596,13 @@ class DistanceObject(TypedDict):
     distanceType: str
     distance: float
     areas: list[int]
+
+
+class RoundStatistics(TypedDict):
+    """TypedDict for per round statistics."""
+
+    kast: dict[str, KAST]
+    round_kills: dict[str, int]
+    is_clutching: set[str | None]
+    active_players: set[str]
+    players_killed: dict[Literal["CT", "T"], set[str]]
