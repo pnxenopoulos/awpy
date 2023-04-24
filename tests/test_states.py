@@ -16,8 +16,8 @@ class TestStates:
     """Class to test the state parsing.
 
     Uses:
-    https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
-    """  # noqa: E501
+    www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
+    """
 
     def setup_class(self):
         """Setup class by instantiating parser."""

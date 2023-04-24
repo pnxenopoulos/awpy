@@ -36,6 +36,7 @@ import math
 import os
 import sys
 from collections import defaultdict
+from itertools import pairwise
 from statistics import mean, median
 from typing import Literal, cast, get_args
 
@@ -205,7 +206,7 @@ def area_distance(
             )
             geodesic_cost = sum(
                 map_graph[u][v]["weight"]
-                for u, v in zip(geodesic_path[:-1], geodesic_path[1:], strict=True)
+                for u, v in pairwise(geodesic_path)
             )
             distance_obj["distance"] = geodesic_cost
             distance_obj["areas"] = geodesic_path
@@ -615,11 +616,13 @@ def generate_centroids(
         # Get the centroids and rep. point of the hull
         try:
             my_polygon = Polygon(hull)
-            my_centroid = list(np.array(my_polygon.centroid.coords)[0]) + [
-                mean(z_s[area_name])
+            my_centroid = [
+                *list(np.array(my_polygon.centroid.coords)[0]),
+                mean(z_s[area_name]),
             ]
-            rep_point = list(np.array(my_polygon.representative_point().coords)[0]) + [
-                mean(z_s[area_name])
+            rep_point = [
+                *list(np.array(my_polygon.representative_point().coords)[0]),
+                mean(z_s[area_name]),
             ]
         except ValueError:  # A LinearRing must have at least 3 coordinate tuples
             my_centroid = [

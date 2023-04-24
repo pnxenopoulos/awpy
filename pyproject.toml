@@ -3,14 +3,12 @@ requires = ["setuptools", "wheel"]
 
 [project]
 name = "awpy"
-authors = [
-    {name = "Peter Xenopoulos", email = "xenopoulos@nyu.edu"},
-]
+authors = [{ name = "Peter Xenopoulos", email = "xenopoulos@nyu.edu" }]
 description = "Counter-Strike: Global Offensive data parsing, analysis and visualization functions"
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["esports", "sports-analytics", "csgo", "counter-strike"]
-license = {text = "MIT License"}
+license = { text = "MIT License" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -25,17 +23,116 @@ dependencies = [
     "imageio",
     "tqdm",
     "Shapely",
-    "sympy"
+    "sympy",
 ]
 dynamic = ["version"]
 
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F", "B", "W", "I", "N", "D", "UP", "YTT", "ANN", "S", "BLE", "FBT", "A", "C4", "DTZ", "T10", "EXE", "ISC", "ICN", "G", "INP", "PIE", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "INT", "ARG", "ERA", "PD", "PGH", "PLC", "PLE", "PLR", "PLW", "TRY"]
-ignore = ["D208", "ANN101", "T20", "PTH", "PLR0912", "PLR0915", "PLR0913", "TRY003"]  # , "PLR0912", "PLR0915", "PLR0913"
+select = [
+    "E",
+    "F",
+    "B",
+    "W",
+    "I",
+    "N",
+    "D",
+    "UP",
+    "YTT",
+    "ANN",
+    "S",
+    "BLE",
+    "FBT",
+    "A",
+    "C4",
+    "DTZ",
+    "T10",
+    "EXE",
+    "ISC",
+    "ICN",
+    "G",
+    "INP",
+    "PIE",
+    "PYI",
+    "PT",
+    "Q",
+    "RSE",
+    "RET",
+    "SLF",
+    "SIM",
+    "TID",
+    "TCH",
+    "INT",
+    "ARG",
+    "ERA",
+    "PD",
+    "PGH",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "TRY",
+    "NPY",
+    "RUF",
+]
+ignore = [
+    "D208",
+    "ANN101",
+    "T20",
+    "PTH",
+    "PLR0912",
+    "PLR0915",
+    "PLR0913",
+    "TRY003",
+] # , "PLR0912", "PLR0915", "PLR0913"
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
+fixable = [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "I",
+    "N",
+    "Q",
+    "S",
+    "T",
+    "W",
+    "ANN",
+    "ARG",
+    "BLE",
+    "COM",
+    "DJ",
+    "DTZ",
+    "EM",
+    "ERA",
+    "EXE",
+    "FBT",
+    "ICN",
+    "INP",
+    "ISC",
+    "NPY",
+    "PD",
+    "PGH",
+    "PIE",
+    "PL",
+    "PT",
+    "PTH",
+    "PYI",
+    "RET",
+    "RSE",
+    "RUF",
+    "SIM",
+    "SLF",
+    "TCH",
+    "TID",
+    "TRY",
+    "UP",
+    "YTT",
+]
 unfixable = []
 
 # Exclude a variety of commonly ignored directories.
@@ -81,4 +178,4 @@ target-version = "py310"
 "awpy/parser/cleaning.py" = ["PLC1901"]
 
 [tool.ruff.pydocstyle]
-convention = "google"  # Accepts: "google", "numpy", or "pep257".
+convention = "google" # Accepts: "google", "numpy", or "pep257".
