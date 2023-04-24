@@ -1,11 +1,41 @@
 """Data cleaning functions."""
 
 import difflib
-from typing import Any, Literal
+from collections.abc import Sequence
+from typing import Any, Literal, Protocol
 
 import numpy as np
 import pandas as pd
 import textdistance
+
+
+class DistMetricCallable(Protocol):
+    """Class to define valid FOM callables."""
+
+    def __call__(self, *sequences: Sequence[object]) -> float:
+        """Protocol for dist metric callables.
+
+        Take a sequence of objects and return a distance.
+
+        Returns:
+            float: Distance between object.
+        """
+
+
+def _set_distance_metric(metric: str) -> DistMetricCallable:
+    if metric == "lcss":
+        dist_metric = textdistance.lcsseq.distance
+    elif metric == "hamming":
+        dist_metric = textdistance.hamming.distance
+    elif metric == "levenshtein":
+        dist_metric = textdistance.levenshtein.distance
+    elif metric == "jaro":
+        dist_metric = textdistance.jaro.distance
+    else:
+        raise ValueError(
+            "Metric can only be lcss, hamming, levenshtein, jaro or difflib."
+        )
+    return dist_metric
 
 
 def associate_entities(
@@ -26,21 +56,17 @@ def associate_entities(
     Returns:
         A dictionary where the keys are entries in game_names,
         values are the matched entity names.
+
+    Raises:
+        ValueError: If metric is not in:
+            ["lcss", "hamming", "levenshtein", "jaro", "difflib"]
     """
     if game_names is None:
         game_names = []
     if entity_names is None:
         entity_names = []
-    if metric.lower() == "lcss":
-        dist_metric = textdistance.lcsseq.distance
-    elif metric.lower() == "hamming":
-        dist_metric = textdistance.hamming.distance
-    elif metric.lower() == "levenshtein":
-        dist_metric = textdistance.levenshtein.distance
-    elif metric.lower() == "jaro":
-        dist_metric = textdistance.jaro.distance
-    elif metric.lower() == "difflib":
-        entities: dict[str | None, Any] = {}
+    entities: dict[str | None, Any] = {}
+    if metric.lower() == "difflib":
         for gn in game_names:
             if gn is not None and gn is not np.nan:
                 closest_name = difflib.get_close_matches(
@@ -52,11 +78,8 @@ def associate_entities(
                     entities[gn] = None
         entities[None] = None
         return entities
-    else:
-        raise ValueError(
-            "Metric can only be lcss, hamming, levenshtein, jaro or difflib."
-        )
-    entities = {}
+
+    dist_metric = _set_distance_metric(metric.lower())
     for gn in game_names:
         if gn is not None and gn is not np.nan and gn != "":
             name_distances = []

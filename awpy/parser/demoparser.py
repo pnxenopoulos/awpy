@@ -143,14 +143,9 @@ class DemoParser:
         # Handle demofile and demo_id name.
         # Only take the file name and remove the last extension.
         self.demofile = os.path.abspath(demofile)
-
         self.logger.info("Initialized awpy DemoParser with demofile %s", self.demofile)
-        if not demo_id:  # (demo_id is None) | (demo_id == "")
-            self.demo_id = os.path.splitext(
-                os.path.basename(demofile.replace("\\", "/"))
-            )[0]
-        else:
-            self.demo_id = demo_id
+
+        self.set_demo_id(demo_id, demofile)
 
         self.logger.info("Setting demo id to %s", self.demo_id)
 
@@ -161,50 +156,10 @@ class DemoParser:
         else:
             self.outpath = os.path.abspath(outpath)
 
-        # Handle parse rate. If the parse rate is less than 64, likely to be slow
-        if parse_rate < 1 or not isinstance(parse_rate, int):
-            self.logger.warning(
-                "Parse rate of %s not acceptable! "
-                "Parse rate must be an integer greater than 0.",
-                str(parse_rate),
-            )
-            parse_rate = 128
-            self.parse_rate = parse_rate
-        parse_rate_lower_bound = 64
-        parse_rate_upper_bound = 256
-        if 1 < parse_rate < parse_rate_lower_bound:
-            self.logger.warning(
-                "A parse rate lower than %s may be slow depending on the tickrate "
-                "of the demo, which is usually 64 for MM and 128 for pro demos.",
-                parse_rate_lower_bound,
-            )
-            self.parse_rate = parse_rate
-        elif parse_rate >= parse_rate_upper_bound:
-            self.logger.warning(
-                "A high parse rate means very few frames. "
-                "Only use for testing purposes."
-            )
-            self.parse_rate = parse_rate
-        else:
-            self.parse_rate = parse_rate
-        self.logger.info("Setting parse rate to %s", str(self.parse_rate))
-
-        # Handle trade time
-        trade_time_default = 5
-        trade_time_upper_bound = 7
+        self._parse_rate = 128
+        self.parse_rate = parse_rate
+        self._trade_time = 5
         self.trade_time = trade_time
-        if trade_time <= 0:
-            self.logger.warning(
-                "Trade time can't be negative, setting to default value of %d seconds.",
-                trade_time_default,
-            )
-            self.trade_time = trade_time_default
-        elif trade_time > trade_time_upper_bound:
-            self.logger.warning(
-                "Trade time of %d is rather long. Consider a value between 4-%d.",
-                trade_time,
-                trade_time_upper_bound,
-            )
 
         self.logger.info("Setting trade time to %d", self.trade_time)
 
@@ -224,6 +179,17 @@ class DemoParser:
         self.parse_frames = parse_frames
         self.parse_kill_frames = parse_kill_frames
         self.json_indentation = json_indentation
+
+        self.log_settings()
+
+        # Set parse error to False
+        self.parse_error = False
+
+        # Initialize json attribute as None
+        self.json: Game | None = None
+
+    def log_settings(self) -> None:
+        """Log the settings produced in the cosntructor."""
         self.logger.info("Rollup damages set to %s", str(self.dmg_rolled))
         self.logger.info("Parse chat set to %s", str(self.parse_chat))
         self.logger.info("Parse frames set to %s", str(self.parse_frames))
@@ -232,11 +198,115 @@ class DemoParser:
             "Output json indentation set to %s", str(self.json_indentation)
         )
 
-        # Set parse error to False
-        self.parse_error = False
+    @property
+    def trade_time(self) -> int:
+        """Trade time getter.
 
-        # Initialize json attribute as None
-        self.json: Game | None = None
+        Returns:
+            int: Current trade time.
+        """
+        return self._trade_time
+
+    @trade_time.setter
+    def trade_time(self, trade_time: int) -> None:
+        """Set trade time of the parser.
+
+        User will be warned about unusual values.
+
+        Args:
+            trade_time (int): Trade time to user.
+        """
+        # Handle trade time
+        trade_time_default = 5
+        trade_time_upper_bound = 7
+        self._trade_time = trade_time
+        if trade_time <= 0:
+            self.logger.warning(
+                "Trade time can't be negative, setting to default value of %d seconds.",
+                trade_time_default,
+            )
+            self._trade_time = trade_time_default
+        elif trade_time > trade_time_upper_bound:
+            self.logger.warning(
+                "Trade time of %d is rather long. Consider a value between 4-%d.",
+                trade_time,
+                trade_time_upper_bound,
+            )
+
+    @trade_time.deleter
+    def trade_time(self) -> None:
+        """Trade time deleter."""
+        del self._trade_time
+
+    @property
+    def parse_rate(self) -> int:
+        """Parse rate getter.
+
+        Returns:
+            int: Current parse rate.
+        """
+        return self._parse_rate
+
+    @parse_rate.setter
+    def parse_rate(self, parse_rate: int) -> None:
+        """Set the parse rate of the parser.
+
+        Should be a positive integer.
+        User will be warned about values that are unusually
+        high or low.
+
+        Args:
+            parse_rate (int): Parse rate to use.
+        """
+        # Handle parse rate. If the parse rate is less than 64, likely to be slow
+        if parse_rate < 1 or not isinstance(parse_rate, int):
+            self.logger.warning(
+                "Parse rate of %s not acceptable! "
+                "Parse rate must be an integer greater than 0.",
+                str(parse_rate),
+            )
+            parse_rate = 128
+            self._parse_rate = parse_rate
+        parse_rate_lower_bound = 64
+        parse_rate_upper_bound = 256
+        if 1 < parse_rate < parse_rate_lower_bound:
+            self.logger.warning(
+                "A parse rate lower than %s may be slow depending on the tickrate "
+                "of the demo, which is usually 64 for MM and 128 for pro demos.",
+                parse_rate_lower_bound,
+            )
+            self._parse_rate = parse_rate
+        elif parse_rate >= parse_rate_upper_bound:
+            self.logger.warning(
+                "A high parse rate means very few frames. "
+                "Only use for testing purposes."
+            )
+            self._parse_rate = parse_rate
+        else:
+            self._parse_rate = parse_rate
+        self.logger.info("Setting parse rate to %s", str(self.parse_rate))
+
+    @parse_rate.deleter
+    def parse_rate(self) -> None:
+        """Parse rate deleter."""
+        del self._parse_rate
+
+    def set_demo_id(self, demo_id: str | None, demofile: str) -> None:
+        """Set demo_id.
+
+        If a demo_id was passed in that is used directly.
+        Otherwise the demoid is inferred from the demofile.
+
+        Args:
+            demo_id (str | None): Optionally demo_id passed to __init__
+            demofile (str | None): Name of the demofile
+        """
+        if not demo_id:
+            self.demo_id = os.path.splitext(
+                os.path.basename(demofile.replace("\\", "/"))
+            )[0]
+        else:
+            self.demo_id = demo_id
 
     def parse_demo(self) -> None:
         """Parse a demofile using the Go script parse_demo.go.

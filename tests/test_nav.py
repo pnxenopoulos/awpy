@@ -761,8 +761,8 @@ class TestNav:
         assert isinstance(dist, float)
         assert sys.maxsize / 7 < dist < sys.maxsize / 5
 
-    def test_token_state_distance(self):
-        """Tests token state distance."""
+    def test_token_state_distance_raises(self):
+        """Tests that token state dist raises."""
         token_array1 = np.array(
             [
                 0.0,
@@ -900,6 +900,7 @@ class TestNav:
             token_state_distance(
                 "de_ancient", token_array1, token_array2, distance_type="euclidean"
             )
+
         token_array1 = np.array(
             [
                 0.0,
@@ -1003,6 +1004,97 @@ class TestNav:
                 distance_type="graph",
                 reference_point="reference_point_does_not_exist",
             )
+
+    def test_token_state_distance(self):
+        """Tests token state distance."""
+        token_array1 = np.array(
+            [
+                0.0,
+                2.0,
+                0.0,
+                2.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                2.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                1.0,
+                1.0,
+            ]
+        )
+        token_array2 = np.array(
+            [
+                0.0,
+                2.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                2.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                5.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ]
+        )
         dist = token_state_distance(
             "de_ancient", token_array1, token_array2, distance_type="graph"
         )

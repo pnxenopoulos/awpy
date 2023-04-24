@@ -125,7 +125,7 @@ def position_transform_all(
     return (x, y, z)
 
 
-def plot_positions(
+def plot_positions(  # noqa: PLR0913
     positions: list[tuple[float, float]] | None = None,
     colors: list[str] | None = None,
     markers: list[str] | None = None,
