@@ -205,8 +205,7 @@ def area_distance(
                 map_graph, area_a, area_b, heuristic=dist_heuristic, weight="weight"
             )
             geodesic_cost = sum(
-                map_graph[u][v]["weight"]
-                for u, v in pairwise(geodesic_path)
+                map_graph[u][v]["weight"] for u, v in pairwise(geodesic_path)
             )
             distance_obj["distance"] = geodesic_cost
             distance_obj["areas"] = geodesic_path
