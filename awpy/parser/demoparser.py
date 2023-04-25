@@ -33,6 +33,7 @@ import pandas as pd
 
 from awpy.types import ColsType, Game
 from awpy.utils import check_go_version
+from awpy.types import Game, GameActionKey
 
 
 class DemoParser:
@@ -613,7 +614,7 @@ class DemoParser:
             "JSON not found. Run .parse() or .read_json() if JSON already exists"
         )
 
-    def _parse_action(self, action: str) -> pd.DataFrame:
+    def _parse_action(self, action: GameActionKey) -> pd.DataFrame:
         """Returns action as a Pandas dataframe
 
         Args:
