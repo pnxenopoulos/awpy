@@ -522,6 +522,27 @@ class TestDemoParser:
             assert parse_mock.call_count == 1
             assert read_mock.call_count == 1
 
+    def test_json_float_conversion(self):
+        """Tests that ints are not converted to float.
+
+        This used to be an issue where pandas would cast ints to float
+        when there were None values and casting back to int would give
+        a different result than previously."""
+        self.conversion_parser = DemoParser(
+            demofile="vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
+        )
+        self.conversion_parser.parse()
+        references = set()
+        for r in self.conversion_parser.json["gameRounds"] or []:
+            for d in r["damages"] or []:
+                references.add(d["attackerSteamID"])
+        dataframe = self.conversion_parser.parse_json_to_df()
+        targets = set(dataframe["damages"]["attackerSteamID"].unique())
+        # None != pd.NA so remove these before comparing
+        assert {target for target in targets if not pd.isna(target)} == {
+            reference for reference in references if not pd.isna(reference)
+        }
+
     def test_no_json(self):
         """Tests if parser raises an AttributeError for missing json attribute."""
         no_json_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
@@ -534,17 +555,7 @@ class TestDemoParser:
         with pytest.raises(AttributeError):
             no_json_parser._parse_rounds()
         with pytest.raises(AttributeError):
-            no_json_parser._parse_weapon_fires()
-        with pytest.raises(AttributeError):
-            no_json_parser._parse_kills()
-        with pytest.raises(AttributeError):
-            no_json_parser._parse_damages()
-        with pytest.raises(AttributeError):
-            no_json_parser._parse_grenades()
-        with pytest.raises(AttributeError):
-            no_json_parser._parse_bomb_events()
-        with pytest.raises(AttributeError):
-            no_json_parser._parse_flashes()
+            no_json_parser._parse_action("kills")
         with pytest.raises(AttributeError):
             no_json_parser.remove_bad_scoring()
         with pytest.raises(AttributeError):

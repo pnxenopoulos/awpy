@@ -22,6 +22,8 @@
 """
 
 import json
+from typing import Optional, Union, Any, Literal, cast, get_args
+from collections import defaultdict
 import logging
 import os
 import subprocess
@@ -469,57 +471,21 @@ class DemoParser:
             # Rounds
             demo_data["rounds"] = self._parse_rounds()
             # Kills
-            demo_data["kills"] = self._parse_kills()
-            demo_data["kills"]["attackerSteamID"] = demo_data["kills"][
-                "attackerSteamID"
-            ].astype(pd.Int64Dtype())
-            demo_data["kills"]["victimSteamID"] = demo_data["kills"][
-                "victimSteamID"
-            ].astype(pd.Int64Dtype())
-            demo_data["kills"]["assisterSteamID"] = demo_data["kills"][
-                "assisterSteamID"
-            ].astype(pd.Int64Dtype())
-            demo_data["kills"]["flashThrowerSteamID"] = demo_data["kills"][
-                "flashThrowerSteamID"
-            ].astype(pd.Int64Dtype())
+            demo_data["kills"] = self._parse_action("kills")
             # Damages
-            demo_data["damages"] = self._parse_damages()
-            demo_data["damages"]["attackerSteamID"] = demo_data["damages"][
-                "attackerSteamID"
-            ].astype(pd.Int64Dtype())
-            demo_data["damages"]["victimSteamID"] = demo_data["damages"][
-                "victimSteamID"
-            ].astype(pd.Int64Dtype())
+            demo_data["damages"] = self._parse_action("damages")
             # Grenades
-            demo_data["grenades"] = self._parse_grenades()
-            demo_data["grenades"]["throwerSteamID"] = demo_data["grenades"][
-                "throwerSteamID"
-            ].astype(pd.Int64Dtype())
+            demo_data["grenades"] = self._parse_action("grenades")
             # Flashes
-            demo_data["flashes"] = self._parse_flashes()
-            demo_data["flashes"]["attackerSteamID"] = demo_data["flashes"][
-                "attackerSteamID"
-            ].astype(pd.Int64Dtype())
-            demo_data["flashes"]["playerSteamID"] = demo_data["flashes"][
-                "playerSteamID"
-            ].astype(pd.Int64Dtype())
+            demo_data["flashes"] = self._parse_action("flashes")
             # Weapon Fires
-            demo_data["weaponFires"] = self._parse_weapon_fires()
-            demo_data["weaponFires"]["playerSteamID"] = demo_data["weaponFires"][
-                "playerSteamID"
-            ].astype(pd.Int64Dtype())
+            demo_data["weaponFires"] = self._parse_action("weaponFires")
             # Bomb Events
-            demo_data["bombEvents"] = self._parse_bomb_events()
-            demo_data["bombEvents"]["playerSteamID"] = demo_data["bombEvents"][
-                "playerSteamID"
-            ].astype(pd.Int64Dtype())
+            demo_data["bombEvents"] = self._parse_action("bombEvents")
             # Frames
             demo_data["frames"] = self._parse_frames()
             # Player Frames
             demo_data["playerFrames"] = self._parse_player_frames()
-            demo_data["playerFrames"]["steamID"] = demo_data["playerFrames"][
-                "steamID"
-            ].astype(pd.Int64Dtype())
             self.logger.info("Returned dataframe output")
             return demo_data
         self.logger.error(
@@ -647,62 +613,11 @@ class DemoParser:
             "JSON not found. Run .parse() or .read_json() if JSON already exists"
         )
 
-    def _parse_kills(self) -> pd.DataFrame:
-        """Returns kills as either a Pandas dataframe.
+    def _parse_action(self, action: str) -> pd.DataFrame:
+        """Returns action as a Pandas dataframe
 
-        Returns:
-            A Pandas dataframe where each row is a kill
-
-        Raises:
-            AttributeError: Raises an AttributeError if the .json attribute is None
-        """
-        if self.json:
-            kills = []
-            for r in self.json["gameRounds"] or []:
-                if r["kills"] is not None:
-                    for k in r["kills"]:
-                        new_k: dict[str, Any] = dict(k)
-                        new_k["roundNum"] = r["roundNum"]
-                        new_k["matchID"] = self.json["matchID"]
-                        new_k["mapName"] = self.json["mapName"]
-                        kills.append(new_k)
-            return pd.DataFrame(kills)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-
-    def _parse_weapon_fires(self) -> pd.DataFrame:
-        """Returns weapon fires as either a list or Pandas dataframe.
-
-        Returns:
-            A  Pandas dataframe where each row is a weapon fire event
-
-        Raises:
-            AttributeError: Raises an AttributeError if the .json attribute is None
-        """
-        if self.json:
-            shots = []
-            for r in self.json["gameRounds"] or []:
-                if r["weaponFires"] is not None:
-                    for wf in r["weaponFires"]:
-                        new_wf: dict[str, Any] = dict(wf)
-                        new_wf["roundNum"] = r["roundNum"]
-                        new_wf["matchID"] = self.json["matchID"]
-                        new_wf["mapName"] = self.json["mapName"]
-                        shots.append(new_wf)
-            return pd.DataFrame(shots)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-
-    def _parse_damages(self) -> pd.DataFrame:
-        """Returns damages as a Pandas dataframe.
+        Args:
+            actions (str): Action dict to convert to dataframe.
 
         Returns:
             A Pandas dataframe where each row is a damage event.
@@ -711,103 +626,26 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
-            damages = []
-            for r in self.json["gameRounds"] or []:
-                if r["damages"] is not None:
-                    for d in r["damages"]:
-                        new_d: dict[str, Any] = dict(d)
-                        new_d["roundNum"] = r["roundNum"]
-                        new_d["matchID"] = self.json["matchID"]
-                        new_d["mapName"] = self.json["mapName"]
-                        damages.append(new_d)
-            return pd.DataFrame(damages)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-
-    def _parse_grenades(self) -> pd.DataFrame:
-        """Returns grenades as a Pandas dataframe.
-
-        Returns:
-            A list or Pandas dataframe where each row is a grenade throw
-
-        Raises:
-            AttributeError: Raises an AttributeError if the .json attribute is None
-        """
-        if self.json:
-            grenades = []
-            for r in self.json["gameRounds"] or []:
-                if r["grenades"] is not None:
-                    for g in r["grenades"]:
-                        new_g: dict[str, Any] = dict(g)
-                        new_g["roundNum"] = r["roundNum"]
-                        new_g["matchID"] = self.json["matchID"]
-                        new_g["mapName"] = self.json["mapName"]
-                        grenades.append(new_g)
-            return pd.DataFrame(grenades)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-
-    def _parse_bomb_events(self) -> pd.DataFrame:
-        """Returns bomb events as a Pandas dataframe.
-
-        Returns:
-            A Pandas dataframe where each row is a bomb event (defuse, plant, etc.)
-
-        Raises:
-            AttributeError: Raises an AttributeError if the .json attribute is None
-        """
-        if self.json:
-            bomb_events = []
-            for r in self.json["gameRounds"] or []:
-                if r["bombEvents"] is not None:
-                    for b in r["bombEvents"]:
-                        new_b: dict[str, Any] = dict(b)
-                        new_b["roundNum"] = r["roundNum"]
-                        new_b["matchID"] = self.json["matchID"]
-                        new_b["mapName"] = self.json["mapName"]
-                        bomb_events.append(new_b)
-            return pd.DataFrame(bomb_events)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-
-    def _parse_flashes(self) -> pd.DataFrame:
-        """Returns flashes as a Pandas dataframe.
-
-        Returns:
-            A Pandas dataframe where each row is a flash event.
-
-        Raises:
-            AttributeError: Raises an AttributeError if the .json attribute is None
-        """
-        if self.json:
-            flashes = []
-            for r in self.json["gameRounds"] or []:
-                if r["flashes"] is not None:
-                    for f in r["flashes"]:
-                        new_f: dict[str, Any] = dict(f)
-                        new_f["roundNum"] = r["roundNum"]
-                        new_f["matchId"] = self.json["matchID"]
-                        new_f["mapName"] = self.json["mapName"]
-                        flashes.append(new_f)
-            return pd.DataFrame(flashes)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
+            actions: dict[str, list] = defaultdict(list)
+            for game_round in self.json["gameRounds"] or []:
+                for game_action in game_round[action] or []:
+                    for key, value in game_action.items():
+                        actions[key].append(value)
+                    actions["roundNum"].append(game_round["roundNum"])
+                    actions["matchID"].append(self.json["matchID"])
+                    actions["mapName"].append(self.json["mapName"])
+            # pd.array automatically infors nullable ints.
+            actions_array: dict[str, pd.array] = {
+                key: pd.array(value_list) for key, value_list in actions.items()
+            }
+            return pd.DataFrame(actions_array)
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
 
     def clean_rounds(
         self,
