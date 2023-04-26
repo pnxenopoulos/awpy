@@ -334,6 +334,7 @@ type FlashAction struct {
 
 // GameFrame (game state at time t)
 type GameFrame struct {
+	FrameID     int64         `json:"frameID"`
 	IsKillFrame bool          `json:"isKillFrame"`
 	Tick        int64         `json:"tick"`
 	Second      float64       `json:"seconds"`
@@ -879,6 +880,11 @@ func cleanMapName(mapName string) string {
 func removeExpiredSmoke(s []Smoke, i int) []Smoke {
 	s[i] = s[len(s)-1]
 	return s[:len(s)-1]
+}
+
+func appendFrameToRound(currentRound *GameRound, currentFrame *GameFrame) {
+	currentFrame.FrameID = int64(len(currentRound.Frames))
+	currentRound.Frames = append(currentRound.Frames, *currentFrame)
 }
 
 // Main
@@ -2070,8 +2076,7 @@ func main() {
 			} else {
 				currentFrame.BombPlanted = false
 			}
-
-			currentRound.Frames = append(currentRound.Frames, currentFrame)
+			appendFrameToRound(&currentRound, &currentFrame)
 		}
 
 		currentKill := KillAction{}
@@ -2512,10 +2517,10 @@ func main() {
 			if (len(currentFrame.CT.Players) > 0) || (len(currentFrame.T.Players) > 0) {
 				if len(currentRound.Frames) > 0 {
 					if currentRound.Frames[len(currentRound.Frames)-1].Tick < currentFrame.Tick {
-						currentRound.Frames = append(currentRound.Frames, currentFrame)
+						appendFrameToRound(&currentRound, &currentFrame)
 					}
 				} else {
-					currentRound.Frames = append(currentRound.Frames, currentFrame)
+					appendFrameToRound(&currentRound, &currentFrame)
 				}
 			}
 

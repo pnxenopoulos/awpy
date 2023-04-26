@@ -564,3 +564,17 @@ class TestDemoParser:
         no_json_parser.json = {"gameRounds": None}
         with pytest.raises(AttributeError):
             no_json_parser.renumber_rounds()
+
+    def test_frame_indices(self):
+        """Tests that frame indices work as expected.
+
+        Every round has frames with ids going from 0
+        to len(round["frames])-1"""
+        self.index_parser = DemoParser(
+            demofile="vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
+        )
+        self.index_parser.parse()
+        for game_round in self.index_parser.json["gameRounds"]:
+            assert [frame["frameID"] for frame in game_round["frames"]] == list(
+                range(len(game_round["frames"]))
+            )

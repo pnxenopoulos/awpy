@@ -491,6 +491,7 @@ class Smoke(TypedDict):
 class GameFrame(TypedDict):
     """GameFrame (game state at time t)."""
 
+    frameId: int
     isKillFrame: bool
     tick: int
     seconds: float

@@ -898,7 +898,7 @@ class DemoParser:
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute
-                has a "gameRounds" key.
+                has no "gameRounds" key.
         """
         if self.json and self.json["gameRounds"]:
             for i, _r in enumerate(self.json["gameRounds"]):
