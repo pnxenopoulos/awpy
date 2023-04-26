@@ -571,10 +571,19 @@ class TestDemoParser:
         Every round has frames with ids going from 0
         to len(round["frames])-1"""
         self.index_parser = DemoParser(
-            demofile="vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
+            demofile="vitality-vs-g2-m2-mirage.dem",
+            log=False,
+            parse_frames=True,
         )
-        self.index_parser.parse()
+        self.index_parser.parse(clean=False)
         for game_round in self.index_parser.json["gameRounds"]:
             assert [frame["frameID"] for frame in game_round["frames"]] == list(
                 range(len(game_round["frames"]))
             )
+
+        for index, frame in enumerate(
+            frame
+            for game_round in self.index_parser.json["gameRounds"]
+            for frame in game_round["frames"]
+        ):
+            assert index == frame["globalFrameID"]
