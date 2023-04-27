@@ -87,10 +87,8 @@ NAV_GRAPHS = create_nav_graphs(NAV, PATH)
 with open(Path(PATH + "map/map_data.json"), encoding="utf8") as f:
     MAP_DATA: dict[str, MapData] = json.load(f)
 
-PLACE_DIST_MATRIX: dict[str, PlaceMatrix]
-AREA_DIST_MATRIX: dict[str, AreaMatrix]
-PLACE_DIST_MATRIX = {}
-AREA_DIST_MATRIX = {}
+PLACE_DIST_MATRIX: dict[str, PlaceMatrix] = {}
+AREA_DIST_MATRIX: dict[str, AreaMatrix] = {}
 for file in os.listdir(PATH + "nav/"):
     if file.startswith("place_distance_matrix"):
         this_map_name = "_".join(file.split(".")[0].split("_")[-2:])

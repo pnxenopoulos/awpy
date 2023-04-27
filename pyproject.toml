@@ -129,13 +129,28 @@ target-version = "py310"
 [tool.ruff.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
 
-[tool.mypy]
-ignore_missing_imports = true
-install_types = true
-non_interactive = true
-check_untyped_defs = true
-enable_incomplete_feature = ["Unpack"]
-packages = "awpy"
-
 [tool.pyright]
 include = ["awpy"]
+exclude = ["tests"]
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+reportPropertyTypeMismatch = "error"
+reportFunctionMemberAccess = "warning"
+reportMissingTypeStubs = "warning"
+reportUntypedFunctionDecorator = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedBaseClass = "error"
+reportUntypedNamedTuple = "error"
+reportPrivateUsage = "error"
+reportConstantRedefinition = "error"
+reportOverlappingOverload = "error"
+reportMissingParameterType = "warning"
+reportUnnecessaryIsInstance = "error"
+reportUnnecessaryCast = "error"
+reportUnnecessaryComparison = "error"
+reportUnnecessaryContains  = "error"
+reportAssertAlwaysTrue = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportImplicitOverride = "none"
+reportShadowedImports = "error"

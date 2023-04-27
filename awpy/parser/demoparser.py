@@ -259,7 +259,7 @@ class DemoParser:
             parse_rate (int): Parse rate to use.
         """
         # Handle parse rate. If the parse rate is less than 64, likely to be slow
-        if parse_rate < 1 or not isinstance(parse_rate, int):
+        if parse_rate < 1:
             self.logger.warning(
                 "Parse rate of %s not acceptable! "
                 "Parse rate must be an integer greater than 0.",
