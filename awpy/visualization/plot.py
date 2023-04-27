@@ -94,11 +94,10 @@ def position_transform(
         pos = position - start
         pos /= scale
         return pos
-    if axis == "y":
-        pos = start - position
-        pos /= scale
-        return pos
-    raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
+    # axis: "y":
+    pos = start - position
+    pos /= scale
+    return pos
 
 
 def position_transform_all(
