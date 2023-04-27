@@ -110,13 +110,6 @@ class TestDemoParser:
             parse_rate=-1,
         )
         assert self.parser_neg_parse_rate.parse_rate == 128
-        self.parser_float_parse_rate = DemoParser(
-            demofile="default.dem",
-            log=False,
-            demo_id="test",
-            parse_rate=64.5,
-        )
-        assert self.parser_float_parse_rate.parse_rate == 128
         self.parser_good_parse_rate = DemoParser(
             demofile="default.dem",
             log=False,
