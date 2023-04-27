@@ -37,7 +37,6 @@ class Chat(TypedDict):
     isChatAll: bool
     type: str  # noqa: A003
 
-
 class Token(TypedDict):
     """TypedDict for token object collection.
 
@@ -125,10 +124,20 @@ class ParserOpts(TypedDict):
     parseFrames: bool
     parseKillFrames: bool
     tradeTime: int
-    roundBuyStyle: str
+    roundBuyStyle: Literal["hltv", "csgo"]
     damagesRolledUp: bool
     parseChat: bool
 
+class ParserArgs(TypedDict, total=False):
+    """TypedDict for parser **kwargs"""
+    parse_rate: int
+    parse_frames: bool
+    parse_kill_frames: bool
+    trade_time: int
+    dmg_rolled: bool
+    parse_chat: bool
+    buy_style: Literal["hltv","csgo"]
+    json_indentation: bool
 
 class MMRank(TypedDict):
     """MMRank holds the matchmaking ranks. Only for MM demos."""
