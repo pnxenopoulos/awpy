@@ -128,3 +128,11 @@ target-version = "py310"
 
 [tool.ruff.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
+
+[tool.mypy]
+ignore_missing_imports = true
+install_types = true
+non_interactive = true
+check_untyped_defs = true
+enable_incomplete_feature = ["Unpack"]
+packages = "awpy"

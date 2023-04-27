@@ -63,10 +63,9 @@ def check_go_version() -> bool:
     except Exception as e:  # noqa: BLE001
         print(e)
         return False
-    else:
-        if [int(x) for x in parsed_go_version] >= [1, 18]:
-            return True
-        return False
+    if [int(x) for x in parsed_go_version] >= [1, 18]:
+        return True
+    return False
 
 
 def is_in_range(value: float, minimum: float, maximum: float) -> bool:

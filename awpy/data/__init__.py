@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import distance
 
-from awpy.types import Area, AreaMatrix, PlaceMatrix
+from awpy.types import Area, AreaMatrix, MapData, PlaceMatrix
 from awpy.utils import transform_csv_to_json
 
 PATH = os.path.join(os.path.dirname(__file__), "")
@@ -85,7 +85,7 @@ NAV_GRAPHS = create_nav_graphs(NAV, PATH)
 
 # Open map data
 with open(Path(PATH + "map/map_data.json"), encoding="utf8") as f:
-    MAP_DATA: dict = json.load(f)
+    MAP_DATA: dict[str, MapData] = json.load(f)
 
 PLACE_DIST_MATRIX: dict[str, PlaceMatrix]
 AREA_DIST_MATRIX: dict[str, AreaMatrix]

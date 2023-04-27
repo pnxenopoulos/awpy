@@ -23,19 +23,17 @@ class DistMetricCallable(Protocol):
 
 
 def _set_distance_metric(metric: str) -> DistMetricCallable:
-    if metric == "lcss":
-        dist_metric = textdistance.lcsseq.distance
-    elif metric == "hamming":
-        dist_metric = textdistance.hamming.distance
-    elif metric == "levenshtein":
-        dist_metric = textdistance.levenshtein.distance
-    elif metric == "jaro":
-        dist_metric = textdistance.jaro.distance
-    else:
-        raise ValueError(
+    if metric== "lcss":
+        return textdistance.lcsseq.distance
+    if metric == "hamming":
+        return textdistance.hamming.distance
+    if metric == "levenshtein":
+        return textdistance.levenshtein.distance
+    if metric == "jaro":
+        return textdistance.jaro.distance
+    raise ValueError(
             "Metric can only be lcss, hamming, levenshtein, jaro or difflib."
         )
-    return dist_metric
 
 
 def associate_entities(

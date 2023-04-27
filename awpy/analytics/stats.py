@@ -229,7 +229,7 @@ def _get_actor_key(
     # Mypy can not handle dynamic keys for TypedDicts
     return (
         str(game_action[f"{actor}Name"])  # type: ignore[literal-required]
-        if str(game_action[f"{actor}SteamID"]) == 0  # type: ignore[literal-required]
+        if game_action[f"{actor}SteamID"] == 0  # type: ignore[literal-required]
         else str(game_action[f"{actor}SteamID"])  # type: ignore[literal-required]
     )
 
@@ -277,17 +277,17 @@ def _handle_pure_victim_stats(
             and len(
                 game_round[kill_action["victimSide"].lower() + "Side"]["players"] or []  # type: ignore[literal-required] # noqa: E501
             )
-            - len(round_statistics["players_killed"][kill_action["victimSide"]])  # type: ignore[literal-required, index] # noqa: E501
+            - len(round_statistics["players_killed"][kill_action["victimSide"]])  # type: ignore[index] # noqa: E501
             == 1
         ):
             for player in game_round[kill_action["victimSide"].lower() + "Side"]["players"]:  # type: ignore[literal-required] # noqa: E501
                 clutcher_key = (
                     str(player["playermName"])
-                    if str(player["steamID"]) == 0
+                    if player["steamID"] == 0
                     else str(player["steamID"])
                 )
                 if (
-                    clutcher_key not in round_statistics["players_killed"][kill_action["victimSide"]]  # type: ignore[literal-required, index] # noqa: E501
+                    clutcher_key not in round_statistics["players_killed"][kill_action["victimSide"]]  # type: ignore[index] # noqa: E501
                     and clutcher_key not in round_statistics["is_clutching"]
                     and clutcher_key in round_statistics["active_players"]
                 ):

@@ -1,7 +1,14 @@
 """This module contains the type definitions for the parsed json structure."""
 
-from typing import Literal, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
+
+class MapData(TypedDict):
+    """TypedDict that hold information about a map."""
+    pos_x: float
+    pos_y: float
+    scale: float
+    z_cutoff: NotRequired[float]
 
 class Chat(TypedDict):
     """Chat holds the matchmaking ranks. Only for MM demos."""
