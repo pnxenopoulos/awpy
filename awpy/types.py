@@ -2,13 +2,41 @@
 
 from typing import Literal, NotRequired, TypedDict
 
+ColsType = Literal[
+    "roundNum",
+    "startTick",
+    "freezeTimeEndTick",
+    "endTick",
+    "endOfficialTick",
+    "tScore",
+    "ctScore",
+    "endTScore",
+    "endCTScore",
+    "tTeam",
+    "ctTeam",
+    "winningSide",
+    "winningTeam",
+    "losingTeam",
+    "roundEndReason",
+    "ctFreezeTimeEndEqVal",
+    "ctRoundStartEqVal",
+    "ctRoundSpendMoney",
+    "ctBuyType",
+    "tFreezeTimeEndEqVal",
+    "tRoundStartEqVal",
+    "tRoundSpendMoney",
+    "tBuyType",
+]
+
 
 class MapData(TypedDict):
     """TypedDict that hold information about a map."""
+
     pos_x: float
     pos_y: float
     scale: float
     z_cutoff: NotRequired[float]
+
 
 class Chat(TypedDict):
     """Chat holds the matchmaking ranks. Only for MM demos."""
@@ -324,6 +352,26 @@ class FlashAction(TypedDict):
     playerViewX: float | None
     playerViewY: float | None
     flashDuration: float | None
+
+
+GameAction = (
+    KillAction
+    | DamageAction
+    | GrenadeAction
+    | BombAction
+    | WeaponFireAction
+    | FlashAction
+)
+
+GameActionPlayers = Literal[
+    "attacker",
+    "victim",
+    "assister",
+    "flashThrower",
+    "playerTraded",
+    "player",
+    "thrower",
+]
 
 
 class BombInfo(TypedDict):

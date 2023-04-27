@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 import requests
 
-from awpy.analytics.stats import other_side, player_stats
+from awpy.analytics.stats import lower_side, other_side, player_stats
 from awpy.parser import DemoParser
 
 
@@ -72,6 +72,13 @@ class TestStats:
             other_side("ct")
         with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
             other_side("apple")
+
+    def test_lower_side(self):
+        """Tests other side."""
+        assert lower_side("T") == "t"
+        assert lower_side("CT") == "ct"
+        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
+            lower_side("apple")
 
     def test_player_stats_both_json(self):
         """Tests json generation of player stats for both sides."""

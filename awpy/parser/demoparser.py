@@ -29,7 +29,7 @@ from typing import Any, Literal, cast, get_args
 
 import pandas as pd
 
-from awpy.types import Game
+from awpy.types import ColsType, Game
 from awpy.utils import check_go_version
 
 
@@ -631,32 +631,7 @@ class DemoParser:
             # There is currently no better way than this monstrosity...
             # https://github.com/python/mypy/issues/9230
             # https://stackoverflow.com/a/64522240/7895542
-            cols_type = Literal[
-                "roundNum",
-                "startTick",
-                "freezeTimeEndTick",
-                "endTick",
-                "endOfficialTick",
-                "tScore",
-                "ctScore",
-                "endTScore",
-                "endCTScore",
-                "tTeam",
-                "ctTeam",
-                "winningSide",
-                "winningTeam",
-                "losingTeam",
-                "roundEndReason",
-                "ctFreezeTimeEndEqVal",
-                "ctRoundStartEqVal",
-                "ctRoundSpendMoney",
-                "ctBuyType",
-                "tFreezeTimeEndEqVal",
-                "tRoundStartEqVal",
-                "tRoundSpendMoney",
-                "tBuyType",
-            ]
-            cols: list[cols_type] = list(get_args(cols_type))
+            cols: list[ColsType] = list(get_args(ColsType))
             for r in self.json["gameRounds"] or []:
                 round_item: dict[str, Any] = {}
                 for k in cols:
@@ -993,15 +968,15 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        if self.json:
+        if self.json and self.json["gameRounds"]:
             cleaned_rounds = []
-            for i, r in enumerate(self.json["gameRounds"] or []):
+            for i, r in enumerate(self.json["gameRounds"]):
                 current_round_total = (
                     r["tScore"] + r["endTScore"] + r["ctScore"] + r["endCTScore"]
                 )
-                if i < len(self.json["gameRounds"]) - 1:  # type: ignore[arg-type]
+                if i < len(self.json["gameRounds"]) - 1:
                     # Non-OT rounds
-                    lookahead_round = self.json["gameRounds"][i + 1]  # type: ignore[index] # noqa: E501
+                    lookahead_round = self.json["gameRounds"][i + 1]
                     lookahead_round_total = (
                         lookahead_round["tScore"]
                         + lookahead_round["endTScore"]
@@ -1036,7 +1011,7 @@ class DemoParser:
                     ):
                         cleaned_rounds.append(r)
                 else:
-                    lookback_round = self.json["gameRounds"][i - 1]  # type: ignore[index] # noqa: E501
+                    lookback_round = self.json["gameRounds"][i - 1]
                     lookback_round_total = (
                         lookback_round["tScore"]
                         + lookback_round["endTScore"]
@@ -1099,8 +1074,8 @@ class DemoParser:
                 # Remove rounds where the number of players is too large
                 n_players = 5
                 for r in self.json["gameRounds"] or []:
-                    if len(r["frames"] or []) > 0:
-                        f = r["frames"][0]  # type: ignore[index]
+                    if r["frames"] and len(r["frames"]) > 0:
+                        f = r["frames"][0]
                         if f["ct"]["players"] is None:
                             if f["t"]["players"] is None:
                                 pass
@@ -1131,8 +1106,11 @@ class DemoParser:
             # Remove warmups where the demo may have started recording
             # in the middle of a warmup round
             if "warmupChanged" in self.json["matchPhases"]:
-                if len(self.json["matchPhases"]["warmupChanged"] or []) > 1:
-                    last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]  # type: ignore[index] # noqa: E501
+                if (
+                    self.json["matchPhases"]["warmupChanged"] is not None
+                    and len(self.json["matchPhases"]["warmupChanged"]) > 1
+                ):
+                    last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
                     for r in self.json["gameRounds"] or []:
                         if (r["startTick"] > last_warmup_changed) and (
                             not r["isWarmup"]
@@ -1185,17 +1163,20 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        if self.json:
+        if self.json and self.json["gameRounds"]:
             cleaned_rounds = []
-            for r in self.json["gameRounds"] or []:
+            for r in self.json["gameRounds"]:
                 if not r["isWarmup"]:
-                    total_kills = len(r["kills"] or [])
+                    kill_actions = r["kills"]
+                    if kill_actions is None:
+                        continue
+                    total_kills = len(kill_actions)
                     total_knife_kills = 0
                     if total_kills > 0:
                         # We know this is save because the len call gives 0
                         # and this if never gets enteres if r["kills"] is None
                         # but mypy does not know this
-                        for k in r["kills"]:  # type: ignore[union-attr]
+                        for k in kill_actions:
                             if k["weapon"] == "Knife":
                                 total_knife_kills += 1
                     if (total_knife_kills != total_kills) | (total_knife_kills == 0):

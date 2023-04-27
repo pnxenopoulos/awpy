@@ -304,12 +304,12 @@ def point_distance(
         distance_obj["distance"] = distance.cityblock(point_a, point_b)
         return distance_obj
     if dist_type == "canberra":
-        distance_obj["distance"] = distance.canberra(point_a, point_b)
+        distance_obj["distance"] = float(distance.canberra(point_a, point_b))
         return distance_obj
     # redundant due to asserting that only ["graph", "geodesic", "euclidean", manhattan,
     # canberra, cosine] are valid and if checks that it is neither none of the others
     # if dist_type == "cosine":
-    distance_obj["distance"] = distance.cosine(point_a, point_b)
+    distance_obj["distance"] = float(distance.cosine(point_a, point_b))
     return distance_obj
 
 
@@ -329,8 +329,13 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
-    if (len(frame["ct"]["players"] or []) == 0) or (
-        len(frame["t"]["players"] or []) == 0
+    ct_players = frame["ct"]["players"]
+    t_players = frame["t"]["players"]
+    if (
+        ct_players is None
+        or t_players is None
+        or len(ct_players) == 0
+        or len(t_players) == 0
     ):
         raise ValueError("CT or T players has length of 0")
     # Create map area list
@@ -343,7 +348,7 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     ct_token = np.zeros(len(map_area_names), dtype=np.int8)
     # We know this is not None because otherwise we would have already
     # thrown a ValueError
-    for player in frame["ct"]["players"]:  # type: ignore[union-attr]
+    for player in ct_players:
         if player["isAlive"]:
             closest_area = find_closest_area(
                 map_name, [player["x"], player["y"], player["z"]]
@@ -353,7 +358,7 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
             ] += 1
     t_token = np.zeros(len(map_area_names), dtype=np.int8)
     # Same here
-    for player in frame["t"]["players"]:  # type: ignore[union-attr]
+    for player in t_players:
         if player["isAlive"]:
             closest_area = find_closest_area(
                 map_name, [player["x"], player["y"], player["z"]]
@@ -985,6 +990,7 @@ def position_state_distance(
     # Pre compute the area names for each player's position
     # If the x,y and z coordinate are given
     # Three dimensional space. Unlikely to change anytime soon
+    areas: dict[int, dict[int, dict]] = {}
     if distance_type in ["geodesic", "graph"]:
         areas = _precompute_area_names(map_name, position_array_1, position_array_2)
     # Get the minimum mapping distance for each side separately
@@ -998,6 +1004,7 @@ def position_state_distance(
         ):
             cur_dist: float = 0
             for player2, player1 in enumerate(mapping):
+                this_dist = 0
                 if distance_type == "euclidean":
                     this_dist = _euclidean_position_distance(
                         position_array_1, position_array_2, team, player1, player2
@@ -1207,8 +1214,8 @@ def token_state_distance(
     elif distance_type in ["geodesic", "graph", "euclidean"]:
         # If we do not have the precomputed matrix
         # we need to first build the centroids to get them ourselves later
+        ref_points = {}
         if map_name not in PLACE_DIST_MATRIX:
-            ref_points = {}
             (
                 ref_points["centroid"],
                 ref_points["representative_point"],

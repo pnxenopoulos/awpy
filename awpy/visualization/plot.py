@@ -88,7 +88,7 @@ def position_transform(
     if axis not in ["x", "y"]:
         raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
     # vscode can do this, but mypy cant...
-    start = MAP_DATA[map_name]["pos_" + axis] # type: ignore[literal-required]
+    start = MAP_DATA[map_name]["pos_" + axis]
     scale = MAP_DATA[map_name]["scale"]
     if axis == "x":
         pos = position - start
@@ -113,15 +113,16 @@ def position_transform_all(
     Returns:
         tuple
     """
-    start_x = MAP_DATA[map_name]["pos_x"]
-    start_y = MAP_DATA[map_name]["pos_y"]
-    scale = MAP_DATA[map_name]["scale"]
+    current_map_data = MAP_DATA[map_name]
+    start_x = current_map_data["pos_x"]
+    start_y = current_map_data["pos_y"]
+    scale = current_map_data["scale"]
     x = position[0] - start_x
     x /= scale
     y = start_y - position[1]
     y /= scale
     z = position[2]
-    if "z_cutoff" in MAP_DATA[map_name] and z < MAP_DATA[map_name]["z_cutoff"]:
+    if "z_cutoff" in current_map_data and z < current_map_data["z_cutoff"]:
         y += 1024
     return (x, y, z)
 

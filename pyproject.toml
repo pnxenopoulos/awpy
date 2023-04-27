@@ -136,3 +136,6 @@ non_interactive = true
 check_untyped_defs = true
 enable_incomplete_feature = ["Unpack"]
 packages = "awpy"
+
+[tool.pyright]
+include = ["awpy"]

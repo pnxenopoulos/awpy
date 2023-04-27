@@ -20,10 +20,11 @@ class DistMetricCallable(Protocol):
         Returns:
             float: Distance between object.
         """
+        ...
 
 
 def _set_distance_metric(metric: str) -> DistMetricCallable:
-    if metric== "lcss":
+    if metric == "lcss":
         return textdistance.lcsseq.distance
     if metric == "hamming":
         return textdistance.hamming.distance
@@ -31,9 +32,7 @@ def _set_distance_metric(metric: str) -> DistMetricCallable:
         return textdistance.levenshtein.distance
     if metric == "jaro":
         return textdistance.jaro.distance
-    raise ValueError(
-            "Metric can only be lcss, hamming, levenshtein, jaro or difflib."
-        )
+    raise ValueError("Metric can only be lcss, hamming, levenshtein, jaro or difflib.")
 
 
 def associate_entities(
