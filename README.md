@@ -17,7 +17,7 @@ The `awpy` package provides data parsing, analytics and visualization capabiliti
 
 ## Setup
 #### Requirements
-`awpy` requires [Python](https://www.python.org/downloads/) >= 3.10 and [Golang](https://golang.org/dl/) >= 1.18. Python acts as a wrapper for the Go code which parses demofiles.
+`awpy` requires [Python](https://www.python.org/downloads/) >= 3.11 and [Golang](https://golang.org/dl/) >= 1.18. Python acts as a wrapper for the Go code which parses demofiles.
 
 #### Installation
 To install `awpy`, you can run

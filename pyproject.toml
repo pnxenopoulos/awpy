@@ -6,7 +6,7 @@ name = "awpy"
 authors = [{ name = "Peter Xenopoulos", email = "xenopoulos@nyu.edu" }]
 description = "Counter-Strike: Global Offensive data parsing, analysis and visualization functions"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["esports", "sports-analytics", "csgo", "counter-strike"]
 license = { text = "MIT License" }
 classifiers = [
