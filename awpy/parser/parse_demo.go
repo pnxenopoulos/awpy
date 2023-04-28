@@ -14,7 +14,12 @@ import (
 	events "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs/events"
 )
 
-// Game is the overall struct that holds the parsed demo data
+const unknown = "Unknown"
+const spectator = "Spectator"
+const unassigned = "Unassigned"
+const plant = "plant"
+
+// Game is the overall struct that holds the parsed demo data.
 type Game struct {
 	MatchName      string          `json:"matchID"`
 	ClientName     string          `json:"clientName"`
@@ -32,7 +37,7 @@ type Game struct {
 	Rounds         []GameRound     `json:"gameRounds"`
 }
 
-// ParserOpts holds the parameters passed to the parser
+// ParserOpts holds the parameters passed to the parser.
 type ParserOpts struct {
 	ParseRate       int    `json:"parseRate"`
 	ParseFrames     bool   `json:"parseFrames"`
@@ -43,7 +48,7 @@ type ParserOpts struct {
 	ParseChat       bool   `json:"parseChat"`
 }
 
-// MatchPhases holds lists of when match events occurred
+// MatchPhases holds lists of when match events occurred.
 type MatchPhases struct {
 	AnnLastRoundHalf    []int64 `json:"announcementLastRoundHalf"`
 	AnnFinalRound       []int64 `json:"announcementFinalRound"`
@@ -90,7 +95,7 @@ type MMRank struct {
 	WinCount   int     `json:"winCount"`
 }
 
-// Chat player and server chat messages
+// Chat player and server chat messages.
 type Chat struct {
 	SteamID *int64   `json:"steamID"`
 	Text    string   `json:"text"`
@@ -103,14 +108,14 @@ type Chat struct {
 	Type      string `json:"type"`
 }
 
-// ConnectAction is the act of connecting or disconnecting to the server
+// ConnectAction is the act of connecting or disconnecting to the server.
 type ConnectAction struct {
 	Tick        int64  `json:"tick"`
 	ConnectType string `json:"action"`
 	SteamID     uint64 `json:"steamID"`
 }
 
-// GameRound contains round info and events
+// GameRound contains round info and events.
 type GameRound struct {
 	RoundNum             int64              `json:"roundNum"`
 	IsWarmup             bool               `json:"isWarmup"`
@@ -148,19 +153,19 @@ type GameRound struct {
 	Frames               []GameFrame        `json:"frames"`
 }
 
-// PlayerTeam
+// PlayerTeam.
 type PlayerTeams struct {
 	TeamName string    `json:"teamName"`
 	Players  []Players `json:"players"`
 }
 
-// Players
+// Players.
 type Players struct {
 	PlayerName string `json:"playerName"`
 	SteamID    int64  `json:"steamID"`
 }
 
-// GrenadeAction events
+// GrenadeAction events.
 type GrenadeAction struct {
 	ThrowTick        int64   `json:"throwTick"`
 	DestroyTick      int64   `json:"destroyTick"`
@@ -182,7 +187,7 @@ type GrenadeAction struct {
 	UniqueID         int64   `json:"entityId"`
 }
 
-// BombAction events
+// BombAction events.
 type BombAction struct {
 	Tick          int64   `json:"tick"`
 	Second        float64 `json:"seconds"`
@@ -197,7 +202,7 @@ type BombAction struct {
 	BombSite      *string `json:"bombSite"`
 }
 
-// DamageAction events
+// DamageAction events.
 type DamageAction struct {
 	Tick             int64    `json:"tick"`
 	Second           float64  `json:"seconds"`
@@ -233,7 +238,7 @@ type DamageAction struct {
 	ZoomLevel        *int64   `json:"zoomLevel"`
 }
 
-// KillAction events
+// KillAction events.
 type KillAction struct {
 	Tick                int64    `json:"tick"`
 	Second              float64  `json:"seconds"`
@@ -284,7 +289,7 @@ type KillAction struct {
 	WeaponClass         string   `json:"weaponClass"`
 }
 
-// WeaponFireAction events
+// WeaponFireAction events.
 type WeaponFireAction struct {
 	Tick           int64   `json:"tick"`
 	Second         float64 `json:"seconds"`
@@ -306,7 +311,7 @@ type WeaponFireAction struct {
 	ZoomLevel      int64   `json:"zoomLevel"`
 }
 
-// FlashAction events
+// FlashAction events.
 type FlashAction struct {
 	Tick            int64    `json:"tick"`
 	Second          float64  `json:"seconds"`
@@ -332,7 +337,7 @@ type FlashAction struct {
 	FlashDuration   *float64 `json:"flashDuration"`
 }
 
-// GameFrame (game state at time t)
+// GameFrame (game state at time t).
 type GameFrame struct {
 	FrameID       int64         `json:"frameID"`
 	GlobalFrameID int64         `json:"globalFrameID"`
@@ -350,14 +355,14 @@ type GameFrame struct {
 	Fires         []Fire        `json:"fires"`
 }
 
-// Bomb location
+// Bomb location.
 type BombInfo struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
 	Z float64 `json:"z"`
 }
 
-// Projectile
+// Projectile.
 type GrenadeInfo struct {
 	ProjectileType string  `json:"projectileType"`
 	X              float64 `json:"x"`
@@ -365,7 +370,7 @@ type GrenadeInfo struct {
 	Z              float64 `json:"z"`
 }
 
-// Inferno from molly or incend. grenade
+// Inferno from molly or incend. grenade.
 type Fire struct {
 	UniqueID int64   `json:"uniqueID"`
 	X        float64 `json:"x"`
@@ -373,7 +378,7 @@ type Fire struct {
 	Z        float64 `json:"z"`
 }
 
-// TeamFrameInfo at time t
+// TeamFrameInfo at time t.
 type TeamFrameInfo struct {
 	Side         string       `json:"side"`
 	Team         string       `json:"teamName"`
@@ -383,7 +388,7 @@ type TeamFrameInfo struct {
 	Players      []PlayerInfo `json:"players"`
 }
 
-// PlayerInfo at time t
+// PlayerInfo at time t.
 type PlayerInfo struct {
 	PlayerSteamID   int64        `json:"steamID"`
 	PlayerName      string       `json:"name"`
@@ -440,7 +445,7 @@ type PlayerInfo struct {
 	ZoomLevel       int64        `json:"zoomLevel"`
 }
 
-// WeaponInfo contains data on an inventory weapon
+// WeaponInfo contains data on an inventory weapon.
 type WeaponInfo struct {
 	WeaponName     string `json:"weaponName"`
 	WeaponClass    string `json:"weaponClass"`
@@ -448,7 +453,7 @@ type WeaponInfo struct {
 	AmmoInReserve  int64  `json:"ammoInReserve"`
 }
 
-// Smoke holds current smoke info
+// Smoke holds current smoke info.
 type Smoke struct {
 	GrenadeEntityID int64   `json:"grenadeEntityID"`
 	StartTick       int64   `json:"startTick"`
@@ -506,92 +511,92 @@ func convertRank(r int) string {
 
 func convertRoundEndReason(r events.RoundEndReason) string {
 	switch reason := r; reason {
-	case 1:
+	case events.RoundEndReasonTargetBombed:
 		return "TargetBombed"
-	case 2:
+	case events.RoundEndReasonVIPEscaped:
 		return "VIPEscaped"
-	case 3:
+	case events.RoundEndReasonVIPKilled:
 		return "VIPKilled"
-	case 4:
+	case events.RoundEndReasonTerroristsEscaped:
 		return "TerroristsEscaped"
-	case 5:
+	case events.RoundEndReasonCTStoppedEscape:
 		return "CTStoppedEscape"
-	case 6:
+	case events.RoundEndReasonTerroristsStopped:
 		return "TerroristsStopped"
-	case 7:
+	case events.RoundEndReasonBombDefused:
 		return "BombDefused"
-	case 8:
+	case events.RoundEndReasonCTWin:
 		return "CTWin"
-	case 9:
+	case events.RoundEndReasonTerroristsWin:
 		return "TerroristsWin"
-	case 10:
+	case events.RoundEndReasonDraw:
 		return "Draw"
-	case 11:
+	case events.RoundEndReasonHostagesRescued:
 		return "HostagesRescued"
-	case 12:
+	case events.RoundEndReasonTargetSaved:
 		return "TargetSaved"
-	case 13:
+	case events.RoundEndReasonHostagesNotRescued:
 		return "HostagesNotRescued"
-	case 14:
+	case events.RoundEndReasonTerroristsNotEscaped:
 		return "TerroristsNotEscaped"
-	case 15:
+	case events.RoundEndReasonVIPNotEscaped:
 		return "VIPNotEscaped"
-	case 16:
+	case events.RoundEndReasonGameStart:
 		return "GameStart"
-	case 17:
+	case events.RoundEndReasonTerroristsSurrender:
 		return "TerroristsSurrender"
-	case 18:
+	case events.RoundEndReasonCTSurrender:
 		return "CTSurrender"
 	default:
-		return "Unknown"
+		return unknown
 	}
 }
 
 func convertHitGroup(hg events.HitGroup) string {
 	switch hitGroup := hg; hitGroup {
-	case 0:
+	case events.HitGroupGeneric:
 		return "Generic"
-	case 1:
+	case events.HitGroupHead:
 		return "Head"
-	case 2:
+	case events.HitGroupChest:
 		return "Chest"
-	case 3:
+	case events.HitGroupStomach:
 		return "Stomach"
-	case 4:
+	case events.HitGroupLeftArm:
 		return "LeftArm"
-	case 5:
+	case events.HitGroupRightArm:
 		return "RightArm"
-	case 6:
+	case events.HitGroupLeftLeg:
 		return "LeftLeg"
-	case 7:
+	case events.HitGroupRightLeg:
 		return "RightLeg"
-	case 8:
+	case events.HitGroupNeck:
 		return "Neck"
-	case 10:
+	case events.HitGroupGear:
 		return "Gear"
 	default:
-		return "Unknown"
+		return unknown
 	}
 }
 
 func convertWeaponClass(wc common.EquipmentClass) string {
 	switch weaponClass := wc; weaponClass {
-	case 0:
-		return "Unknown"
-	case 1:
+	case common.EqClassUnknown:
+		return unknown
+	case common.EqClassPistols:
 		return "Pistols"
-	case 2:
+	case common.EqClassSMG:
 		return "SMG"
-	case 3:
+	case common.EqClassHeavy:
 		return "Heavy"
-	case 4:
+	case common.EqClassRifle:
 		return "Rifle"
-	case 5:
+	case common.EqClassEquipment:
 		return "Equipment"
-	case 6:
+	case common.EqClassGrenade:
 		return "Grenade"
 	default:
-		return "Unknown"
+		return unknown
 	}
 }
 
@@ -666,8 +671,12 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 		currentPlayer.PlayerSide = "T"
 	case common.TeamCounterTerrorists:
 		currentPlayer.PlayerSide = "CT"
+	case common.TeamSpectators:
+		currentPlayer.PlayerSide = spectator
+	case common.TeamUnassigned:
+		currentPlayer.PlayerSide = unassigned
 	default:
-		currentPlayer.PlayerSide = "Unknown"
+		currentPlayer.PlayerSide = unknown
 	}
 
 	playerPos := p.LastAlivePosition
@@ -730,14 +739,12 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 		if spottedOtherPlayer {
 			spottedPlayers = append(spottedPlayers, int64(player.SteamID64))
 		}
-		spottedOtherPlayer = false
 	}
 	for _, player := range gs.TeamTerrorists().Members() {
 		spottedOtherPlayer = p.HasSpotted(player)
 		if spottedOtherPlayer {
 			spottedPlayers = append(spottedPlayers, int64(player.SteamID64))
 		}
-		spottedOtherPlayer = false
 	}
 	currentPlayer.Spotters = spottedPlayers
 
@@ -754,10 +761,10 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 				currentWeapon.AmmoInMagazine = int64(w.AmmoInMagazine())
 				currentWeapon.AmmoInReserve = int64(w.AmmoReserve())
 
-				//currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
+				// currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
 				currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
 				if w.Class() == 6 {
-					currentPlayer.TotalUtility = currentPlayer.TotalUtility + 1
+					currentPlayer.TotalUtility++
 					if w.Type == 502 || w.Type == 503 {
 						currentPlayer.FireGrenade += 1
 					}
@@ -781,50 +788,55 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	return currentPlayer
 }
 
-func parseTeamBuy(eqVal int64, Side string, Style string) string {
-	if Style == "hltv" {
-		// Taken from hltv economy tab
-		if eqVal < 5000 {
-			return "Full Eco"
-		} else if (eqVal >= 5000) && (eqVal < 10000) {
-			return "Semi Eco"
-		} else if (eqVal >= 10000) && (eqVal < 20000) {
-			return "Semi Buy"
-		} else if eqVal >= 20000 {
-			return "Full Buy"
-		} else {
-			return "Unknown"
-		}
-	} else if Style == "csgo" {
+func parseTeamBuy(eqVal int64, side string, style string) string {
+	full_eco := "Full Eco"
+	semi_eco := "Semi Eco"
+	semi_buy := "Semi Buy"
+	full_buy := "Full Buy"
+	switch {
+	case style == "csgo":
 		// Created this using 4100 and 3700 as armor+gun for CT and T
-		if Side == "CT" {
-			if eqVal < 2000 {
-				return "Full Eco"
-			} else if (eqVal >= 2000) && (eqVal < 6000) {
+		if side == "CT" {
+			switch {
+			case eqVal < 2000:
+				return full_eco
+			case (eqVal >= 2000) && (eqVal < 6000):
 				return "Eco"
-			} else if (eqVal >= 6000) && (eqVal < 22000) {
+			case (eqVal >= 6000) && (eqVal < 22000):
 				return "Half Buy"
-			} else if eqVal >= 22000 {
-				return "Full Buy"
-			} else {
-				return "Unknown"
+			case eqVal >= 22000:
+				return full_buy
+			default:
+				return unknown
 			}
 		} else {
-			if eqVal < 2000 {
-				return "Full Eco"
-			} else if (eqVal >= 2000) && (eqVal < 6000) {
+			switch {
+			case eqVal < 2000:
+				return full_eco
+			case (eqVal >= 2000) && (eqVal < 6000):
 				return "Eco"
-			} else if (eqVal >= 6000) && (eqVal < 18500) {
+			case (eqVal >= 6000) && (eqVal < 18500):
 				return "Half Buy"
-			} else if eqVal >= 18500 {
-				return "Full Buy"
-			} else {
-				return "Unknown"
+			case eqVal >= 18500:
+				return full_buy
+			default:
+				return unknown
 			}
 		}
-	} else {
-		// Default to hltv style
-		return parseTeamBuy(eqVal, Side, "hltv")
+	default:
+		// Taken from hltv economy tab
+		switch {
+		case eqVal < 5000:
+			return full_eco
+		case (eqVal >= 5000) && (eqVal < 10000):
+			return semi_eco
+		case (eqVal >= 10000) && (eqVal < 20000):
+			return semi_buy
+		case eqVal >= 20000:
+			return full_buy
+		default:
+			return unknown
+		}
 	}
 }
 
@@ -833,7 +845,7 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 	if killA.AttackerSteamID == nil {
 		return false
 	} else {
-		// If the the previous killer is not the person killed, it is not a trade
+		// If the previous killer is not the person killed, it is not a trade
 		if killB.VictimSteamID != nil {
 			if *killB.VictimSteamID == *killA.AttackerSteamID {
 				return inTradeWindow(killA, killB, tickRate, tradeTime)
@@ -848,28 +860,26 @@ func inTradeWindow(killA KillAction, killB KillAction, tickRate int64, tradeTime
 }
 
 func countAlivePlayers(players []PlayerInfo) int64 {
-	var alivePlayers int64
-	alivePlayers = 0
+	var alivePlayers int64 = 0
 	for _, p := range players {
 		if p.IsAlive {
-			alivePlayers = alivePlayers + 1
+			alivePlayers++
 		}
 	}
 	return alivePlayers
 }
 
 func countUtility(players []PlayerInfo) int64 {
-	var totalUtility int64
-	totalUtility = 0
+	var totalUtility int64 = 0
 	for _, p := range players {
 		if p.IsAlive {
-			totalUtility = totalUtility + p.TotalUtility
+			totalUtility++
 		}
 	}
 	return totalUtility
 }
 
-// Define cleaning functions
+// Define cleaning functions.
 func cleanMapName(mapName string) string {
 	lastSlash := strings.LastIndex(mapName, "/")
 	if lastSlash == -1 {
@@ -1057,7 +1067,6 @@ func registerSmokeHandler(demoParser *dem.Parser, smokes *[]Smoke) {
 		if !foundNade {
 			*smokes = append(*smokes, s)
 		}
-		foundNade = false
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.SmokeExpired) {
@@ -1144,7 +1153,7 @@ func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, curren
 	})
 }
 
-func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, convParsed *int, RoundRestartDelay *int64, roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
+func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, convParsed *int, roundRestartDelay *int64, roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
 	// Parse round freezetime ends
 	(*demoParser).RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
 		gs := (*demoParser).GameState()
@@ -1194,9 +1203,9 @@ func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game
 
 			// Change so that round restarts are parsed using the server convar
 			if serverConfig.RoundRestartDelay == 0 {
-				*RoundRestartDelay = 5 // This is default on many servers, I think
+				*roundRestartDelay = 5 // This is default on many servers, I think
 			} else {
-				*RoundRestartDelay = serverConfig.RoundRestartDelay
+				*roundRestartDelay = serverConfig.RoundRestartDelay
 			}
 		}
 
@@ -1274,13 +1283,13 @@ func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game
 	})
 }
 
-func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundInEndTime *int, RoundRestartDelay *int64) {
+func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundInEndTime *int, roundRestartDelay *int64) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundEndOfficial) {
 		gs := (*demoParser).GameState()
 		currentGame.MatchPhases.RoundEndedOfficial = append(currentGame.MatchPhases.RoundEndedOfficial, int64(gs.IngameTick()))
 
 		if *roundInEndTime == 0 {
-			currentRound.EndTick = int64(gs.IngameTick()) - (*RoundRestartDelay * currentGame.TickRate)
+			currentRound.EndTick = int64(gs.IngameTick()) - (*roundRestartDelay * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 
 			currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
@@ -1295,12 +1304,12 @@ func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, 
 			aliveCT := 0
 			for _, p := range tPlayers {
 				if p.IsAlive() && p != nil {
-					aliveT = aliveT + 1
+					aliveT++
 				}
 			}
 			for _, p := range ctPlayers {
 				if p.IsAlive() && p != nil {
-					aliveCT = aliveCT + 1
+					aliveCT++
 				}
 			}
 			if aliveCT == 0 {
@@ -1327,13 +1336,12 @@ func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, 
 				currentRound.WinningSide = "CT"
 			}
 		} else {
-			// currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 		}
 	})
 }
 
-func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundStarted *int, roundInEndTime *int, RoundRestartDelay *int64) {
+func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundStarted *int, roundInEndTime *int, roundRestartDelay *int64) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundEnd) {
 		gs := (*demoParser).GameState()
 
@@ -1365,7 +1373,7 @@ func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentR
 
 		*roundInEndTime = 1
 
-		winningTeam := "CT"
+		var winningTeam string
 		switch e.Winner {
 		case common.TeamTerrorists:
 			winningTeam = "T"
@@ -1375,12 +1383,16 @@ func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentR
 			winningTeam = "CT"
 			currentRound.EndCTScore = currentRound.CTScore + 1
 			currentRound.EndTScore = currentRound.TScore
+		case common.TeamSpectators:
+			winningTeam = "Spectators"
+		case common.TeamUnassigned:
+			winningTeam = unassigned
 		default:
-			winningTeam = "Unknown"
+			winningTeam = unknown
 		}
 
 		currentRound.EndTick = int64(gs.IngameTick())
-		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (*RoundRestartDelay * currentGame.TickRate)
+		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (*roundRestartDelay * currentGame.TickRate)
 		currentRound.Reason = convertRoundEndReason(e.Reason)
 		currentRound.WinningSide = winningTeam
 
@@ -1453,7 +1465,7 @@ func registerBombDefuseStartHandler(demoParser *dem.Parser, currentGame *Game, c
 		bombSite := ""
 		bombPlantFound := false
 		for _, b := range currentRound.Bomb {
-			if b.BombAction == "plant" {
+			if b.BombAction == plant {
 				bombSite = *b.BombSite
 				bombPlantFound = true
 			}
@@ -1493,7 +1505,7 @@ func registerBombDefuseAbortHandler(demoParser *dem.Parser, currentGame *Game, c
 		bombSite := ""
 		bombPlantFound := false
 		for _, b := range currentRound.Bomb {
-			if b.BombAction == "plant" {
+			if b.BombAction == plant {
 				bombSite = *b.BombSite
 				bombPlantFound = true
 			}
@@ -1533,18 +1545,18 @@ func registerWeaponFiresHandler(demoParser *dem.Parser, currentGame *Game, curre
 			if e.Shooter.TeamState != nil {
 				currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
 			}
-			playerSide := "Unknown"
+			var playerSide string
 			switch e.Shooter.Team {
 			case common.TeamTerrorists:
 				playerSide = "T"
 			case common.TeamCounterTerrorists:
 				playerSide = "CT"
 			case common.TeamSpectators:
-				playerSide = "Spectator"
+				playerSide = spectator
 			case common.TeamUnassigned:
-				playerSide = "Unassigned"
+				playerSide = unassigned
 			default:
-				playerSide = "Unknown"
+				playerSide = unknown
 			}
 			currentWeaponFire.PlayerSide = playerSide
 
@@ -1585,18 +1597,18 @@ func registerPlayerFlashedHandler(demoParser *dem.Parser, currentGame *Game, cur
 			if e.Attacker.TeamState != nil {
 				currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
 			}
-			attackerSide := "Unknown"
+			var attackerSide string
 			switch e.Attacker.Team {
 			case common.TeamTerrorists:
 				attackerSide = "T"
 			case common.TeamCounterTerrorists:
 				attackerSide = "CT"
 			case common.TeamSpectators:
-				attackerSide = "Spectator"
+				attackerSide = spectator
 			case common.TeamUnassigned:
-				attackerSide = "Unassigned"
+				attackerSide = unassigned
 			default:
-				attackerSide = "Unknown"
+				attackerSide = unknown
 			}
 			currentFlash.AttackerSide = attackerSide
 
@@ -1622,18 +1634,18 @@ func registerPlayerFlashedHandler(demoParser *dem.Parser, currentGame *Game, cur
 					}
 
 					currentFlash.PlayerTeam = &playerClanName
-					playerSide := "Unknown"
+					playerSide := unknown
 					switch e.Player.Team {
 					case common.TeamTerrorists:
 						playerSide = "T"
 					case common.TeamCounterTerrorists:
 						playerSide = "CT"
 					case common.TeamSpectators:
-						playerSide = "Spectator"
+						playerSide = spectator
 					case common.TeamUnassigned:
-						playerSide = "Unassigned"
+						playerSide = unassigned
 					default:
-						playerSide = "Unknown"
+						playerSide = unknown
 					}
 
 					currentFlash.PlayerSide = &playerSide
@@ -1657,7 +1669,7 @@ func registerPlayerFlashedHandler(demoParser *dem.Parser, currentGame *Game, cur
 					currentFlash.FlashDuration = &flashDuration
 
 					// Add to list
-					if *currentFlash.PlayerSide != "Spectator" && *currentFlash.PlayerSide != "Unassigned" && *currentFlash.PlayerSide != "Unknown" {
+					if *currentFlash.PlayerSide != spectator && *currentFlash.PlayerSide != unassigned && *currentFlash.PlayerSide != unknown {
 						currentRound.Flashes = append(currentRound.Flashes, currentFlash)
 					}
 				}
@@ -1675,7 +1687,7 @@ func registerBombPlantedHandler(demoParser *dem.Parser, currentGame *Game, curre
 		currentBomb.Tick = int64(gs.IngameTick())
 		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, *currentGame)
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
-		currentBomb.BombAction = "plant"
+		currentBomb.BombAction = plant
 
 		bombSite := ""
 		if e.Site == 65 {
@@ -1793,7 +1805,6 @@ func registerGrenadeThrowHandler(demoParser *dem.Parser, currentGame *Game, curr
 			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
 			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
-			playerSide := "Unknown"
 
 			tTeam := ""
 			ctTeam := ""
@@ -1802,6 +1813,7 @@ func registerGrenadeThrowHandler(demoParser *dem.Parser, currentGame *Game, curr
 				ctTeam = gs.TeamCounterTerrorists().ClanName()
 			}
 
+			var playerSide string
 			switch e.Projectile.Thrower.Team {
 			case common.TeamTerrorists:
 				playerSide = "T"
@@ -1810,13 +1822,13 @@ func registerGrenadeThrowHandler(demoParser *dem.Parser, currentGame *Game, curr
 				playerSide = "CT"
 				currentGrenade.ThrowerTeam = ctTeam
 			case common.TeamSpectators:
-				playerSide = "Spectator"
+				playerSide = spectator
 				currentGrenade.ThrowerTeam = ""
 			case common.TeamUnassigned:
-				playerSide = "Unassigned"
+				playerSide = unassigned
 				currentGrenade.ThrowerTeam = ""
 			default:
-				playerSide = "Unknown"
+				playerSide = unknown
 				currentGrenade.ThrowerTeam = ""
 			}
 			currentGrenade.ThrowerSide = playerSide
@@ -1959,7 +1971,7 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 			currentFrame.Bomb = currentBomb
 			if len(currentRound.Bomb) > 0 {
 				for _, b := range currentRound.Bomb {
-					if b.BombAction == "plant" {
+					if b.BombAction == plant {
 						currentFrame.BombPlanted = true
 						currentFrame.BombSite = *b.BombSite
 					}
@@ -1995,7 +2007,7 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 				attackerTeamName := e.Killer.TeamState.ClanName()
 				currentKill.AttackerTeam = &attackerTeamName
 			}
-			attackerSide := "Unknown"
+			attackerSide := unknown
 
 			switch e.Killer.Team {
 			case common.TeamTerrorists:
@@ -2003,11 +2015,11 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 			case common.TeamCounterTerrorists:
 				attackerSide = "CT"
 			case common.TeamSpectators:
-				attackerSide = "Spectator"
+				attackerSide = spectator
 			case common.TeamUnassigned:
-				attackerSide = "Unassigned"
+				attackerSide = unassigned
 			default:
-				attackerSide = "Unknown"
+				attackerSide = unknown
 			}
 
 			currentKill.AttackerSide = &attackerSide
@@ -2032,7 +2044,7 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 				victimTeamName := e.Victim.TeamState.ClanName()
 				currentKill.VictimTeam = &victimTeamName
 			}
-			victimSide := "Unknown"
+			victimSide := unknown
 
 			switch e.Victim.Team {
 			case common.TeamTerrorists:
@@ -2040,11 +2052,11 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 			case common.TeamCounterTerrorists:
 				victimSide = "CT"
 			case common.TeamSpectators:
-				victimSide = "Spectator"
+				victimSide = spectator
 			case common.TeamUnassigned:
-				victimSide = "Unassigned"
+				victimSide = unassigned
 			default:
-				victimSide = "Unknown"
+				victimSide = unknown
 			}
 
 			currentKill.VictimSide = &victimSide
@@ -2102,18 +2114,18 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 				assistTeamName := e.Assister.TeamState.ClanName()
 				currentKill.AssisterTeam = &assistTeamName
 			}
-			assisterSide := "Unknown"
+			assisterSide := unknown
 			switch e.Assister.Team {
 			case common.TeamTerrorists:
 				assisterSide = "T"
 			case common.TeamCounterTerrorists:
 				assisterSide = "CT"
 			case common.TeamSpectators:
-				assisterSide = "Spectator"
+				assisterSide = spectator
 			case common.TeamUnassigned:
-				assisterSide = "Unassigned"
+				assisterSide = unassigned
 			default:
-				assisterSide = "Unknown"
+				assisterSide = unknown
 			}
 			currentKill.AssisterSide = &assisterSide
 		}
@@ -2149,7 +2161,8 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 
 				// Find their latest flash event
 				for _, flash := range currentRound.Flashes {
-					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick-5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
+					flash := flash
+					if (flash.PlayerSteamID == currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick-5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
 						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
 						currentKill.FlashThrowerName = &flash.AttackerName
 						currentKill.FlashThrowerTeam = &flash.AttackerTeam
@@ -2193,18 +2206,18 @@ func registerDamageHandler(demoParser *dem.Parser, currentGame *Game, currentRou
 				currentDamage.AttackerTeam = &attackerTeamName
 			}
 
-			attackerSide := "Unknown"
+			attackerSide := unknown
 			switch e.Attacker.Team {
 			case common.TeamTerrorists:
 				attackerSide = "T"
 			case common.TeamCounterTerrorists:
 				attackerSide = "CT"
 			case common.TeamSpectators:
-				attackerSide = "Spectator"
+				attackerSide = spectator
 			case common.TeamUnassigned:
-				attackerSide = "Unassigned"
+				attackerSide = unassigned
 			default:
-				attackerSide = "Unknown"
+				attackerSide = unknown
 			}
 			currentDamage.AttackerSide = &attackerSide
 
@@ -2237,18 +2250,18 @@ func registerDamageHandler(demoParser *dem.Parser, currentGame *Game, currentRou
 				currentDamage.VictimTeam = &victimTeamName
 			}
 
-			victimSide := "Unknown"
+			victimSide := unknown
 			switch e.Player.Team {
 			case common.TeamTerrorists:
 				victimSide = "T"
 			case common.TeamCounterTerrorists:
 				victimSide = "CT"
 			case common.TeamSpectators:
-				victimSide = "Spectator"
+				victimSide = spectator
 			case common.TeamUnassigned:
-				victimSide = "Unassigned"
+				victimSide = unassigned
 			default:
-				victimSide = "Unknown"
+				victimSide = unknown
 			}
 			currentDamage.VictimSide = &victimSide
 
@@ -2397,7 +2410,7 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 			currentFrame.Bomb = currentBomb
 			if len(currentRound.Bomb) > 0 {
 				for _, b := range currentRound.Bomb {
-					if b.BombAction == "plant" {
+					if b.BombAction == plant {
 						currentFrame.BombPlanted = true
 						currentFrame.BombSite = *b.BombSite
 					}
@@ -2420,14 +2433,14 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 			if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
 				*currentFrameIdx = 0
 			} else {
-				*currentFrameIdx = *currentFrameIdx + 1
+				*currentFrameIdx++
 			}
 
 		} else {
 			if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
 				*currentFrameIdx = 0
 			} else {
-				*currentFrameIdx = *currentFrameIdx + 1
+				*currentFrameIdx++
 			}
 		}
 	})
@@ -2446,10 +2459,10 @@ func cleanAndWriteRound(currentGame *Game, jsonIndentation bool, outpath string)
 						(currentGame.Rounds[i].Damages[j].AttackerSteamID == tempDamages[len(tempDamages)-1].AttackerSteamID) &&
 						(currentGame.Rounds[i].Damages[j].VictimSteamID == tempDamages[len(tempDamages)-1].VictimSteamID) &&
 						(currentGame.Rounds[i].Damages[j].Weapon == tempDamages[len(tempDamages)-1].Weapon) {
-						tempDamages[len(tempDamages)].HpDamage = tempDamages[len(tempDamages)-1].HpDamage + currentGame.Rounds[i].Damages[j].HpDamage
-						tempDamages[len(tempDamages)].HpDamageTaken = tempDamages[len(tempDamages)-1].HpDamageTaken + currentGame.Rounds[i].Damages[j].HpDamageTaken
-						tempDamages[len(tempDamages)].ArmorDamage = tempDamages[len(tempDamages)-1].ArmorDamage + currentGame.Rounds[i].Damages[j].ArmorDamage
-						tempDamages[len(tempDamages)].ArmorDamageTaken = tempDamages[len(tempDamages)-1].ArmorDamageTaken + currentGame.Rounds[i].Damages[j].ArmorDamageTaken
+						tempDamages[len(tempDamages)-1].HpDamage += currentGame.Rounds[i].Damages[j].HpDamage
+						tempDamages[len(tempDamages)-1].HpDamageTaken += currentGame.Rounds[i].Damages[j].HpDamageTaken
+						tempDamages[len(tempDamages)-1].ArmorDamage += currentGame.Rounds[i].Damages[j].ArmorDamage
+						tempDamages[len(tempDamages)-1].ArmorDamageTaken += currentGame.Rounds[i].Damages[j].ArmorDamageTaken
 					} else {
 						tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
 					}
@@ -2463,15 +2476,17 @@ func cleanAndWriteRound(currentGame *Game, jsonIndentation bool, outpath string)
 
 	// Write the JSON
 	var file []byte
+	var err error
 	if jsonIndentation {
-		file, _ = json.MarshalIndent(currentGame, "", " ")
+		file, err = json.MarshalIndent(currentGame, "", " ")
 	} else {
-		file, _ = json.Marshal(currentGame)
+		file, err = json.Marshal(currentGame)
 	}
+	checkError(err)
 	_ = os.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
 }
 
-// Main
+// Main.
 func main() {
 	/* Parse the arguments
 
@@ -2656,7 +2671,7 @@ func main() {
 	checkError(err)
 }
 
-// Function to handle errors
+// Function to handle errors.
 func checkError(err error) {
 	if err != nil {
 		panic(err)
