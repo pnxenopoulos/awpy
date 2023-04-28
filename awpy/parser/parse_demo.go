@@ -18,6 +18,7 @@ const unknown = "Unknown"
 const spectator = "Spectator"
 const unassigned = "Unassigned"
 const plant = "plant"
+const unranked = "Unranked"
 
 // Game is the overall struct that holds the parsed demo data.
 type Game struct {
@@ -465,7 +466,7 @@ func convertRank(r int) string {
 	case -1:
 		return "Expired"
 	case 0:
-		return "Unranked"
+		return unranked
 	case 1:
 		return "Silver 1"
 	case 2:
@@ -503,7 +504,7 @@ func convertRank(r int) string {
 	case 18:
 		return "The Global Elite"
 	default:
-		return "Unranked"
+		return unranked
 	}
 }
 
@@ -598,7 +599,7 @@ func convertWeaponClass(wc common.EquipmentClass) string {
 	}
 }
 
-func determineSecond(tick int64, currentRound GameRound, currentGame Game) float64 {
+func determineSecond(tick int64, currentRound GameRound, tickRate int64) float64 {
 	if tick <= 0 {
 		return float64(0)
 	}
@@ -609,7 +610,7 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 		phaseEndTick = *currentRound.BombPlantTick
 	}
 
-	return (float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)
+	return (float64(tick) - float64(phaseEndTick)) / float64(tickRate)
 }
 
 func formatTimeNumber(num int64) string {
@@ -620,7 +621,7 @@ func formatTimeNumber(num int64) string {
 	return fmt.Sprint(num)
 }
 
-func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) string {
+func calculateClocktime(tick int64, currentRound GameRound, tickRate int64) string {
 	if tick <= 0 {
 		return "00:00"
 	}
@@ -633,11 +634,11 @@ func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) st
 
 	if currentRound.BombPlantTick == nil {
 		phaseEndTick = currentRound.FreezeTimeEndTick
-		secondsSincePhaseChange = (float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)
+		secondsSincePhaseChange = (float64(tick) - float64(phaseEndTick)) / float64(tickRate)
 		secondsRemaining = roundLengthSeconds - secondsSincePhaseChange
 	} else {
 		phaseEndTick = *currentRound.BombPlantTick
-		secondsSincePhaseChange = (float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)
+		secondsSincePhaseChange = (float64(tick) - float64(phaseEndTick)) / float64(tickRate)
 		secondsRemaining = bombTimerSeconds - secondsSincePhaseChange
 	}
 	minutes := int64(math.Floor((secondsRemaining / secondsPerMinute)))
@@ -657,8 +658,6 @@ func playerInList(p *common.Player, players []PlayerInfo) bool {
 				return true
 			}
 		}
-	} else {
-		return false
 	}
 
 	return false
@@ -848,7 +847,7 @@ func parseTeamBuy(eqVal int64, side string, style string) string {
 }
 
 func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
-	// First, identify is killA has a killer. If there is no killer, there cannot be a trade
+	// First, identify if killA has a killer. If there is no killer, there cannot be a trade
 	if killA.AttackerSteamID == nil {
 		return false
 	}
@@ -881,7 +880,7 @@ func countUtility(players []PlayerInfo) int64 {
 	var totalUtility int64
 	for _, p := range players {
 		if p.IsAlive {
-			totalUtility++
+			totalUtility += p.TotalUtility
 		}
 	}
 
@@ -1459,8 +1458,8 @@ func registerBombDefusedHandler(demoParser *dem.Parser, currentGame *Game, curre
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, *currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
 		currentBomb.BombAction = "defuse"
 		bombSite := getBombSite(rune(e.Site))
 		currentBomb.BombSite = &bombSite
@@ -1488,8 +1487,8 @@ func registerBombDefuseStartHandler(demoParser *dem.Parser, currentGame *Game, c
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, *currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
 		currentBomb.BombAction = "defuse_start"
 
 		// Find bombsite where event is planted
@@ -1528,8 +1527,8 @@ func registerBombDefuseAbortHandler(demoParser *dem.Parser, currentGame *Game, c
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, *currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
 		currentBomb.BombAction = "defuse_aborted"
 
 		// Find bombsite where event is planted
@@ -1569,8 +1568,8 @@ func registerWeaponFiresHandler(demoParser *dem.Parser, currentGame *Game, curre
 		if (e.Weapon != nil) && (e.Weapon.String() != "Knife") && (e.Weapon.String() != "C4") && (e.Shooter != nil) {
 			currentWeaponFire := WeaponFireAction{}
 			currentWeaponFire.Tick = int64(gs.IngameTick())
-			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, *currentRound, *currentGame)
-			currentWeaponFire.ClockTime = calculateClocktime(currentWeaponFire.Tick, *currentRound, *currentGame)
+			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, *currentRound, currentGame.TickRate)
+			currentWeaponFire.ClockTime = calculateClocktime(currentWeaponFire.Tick, *currentRound, currentGame.TickRate)
 			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
 			currentWeaponFire.PlayerName = e.Shooter.Name
 			if e.Shooter.TeamState != nil {
@@ -1619,8 +1618,8 @@ func registerPlayerFlashedHandler(demoParser *dem.Parser, currentGame *Game, cur
 		if e.Attacker != nil {
 			currentFlash := FlashAction{}
 			currentFlash.Tick = int64(gs.IngameTick())
-			currentFlash.Second = determineSecond(currentFlash.Tick, *currentRound, *currentGame)
-			currentFlash.ClockTime = calculateClocktime(currentFlash.Tick, *currentRound, *currentGame)
+			currentFlash.Second = determineSecond(currentFlash.Tick, *currentRound, currentGame.TickRate)
+			currentFlash.ClockTime = calculateClocktime(currentFlash.Tick, *currentRound, currentGame.TickRate)
 
 			// Attacker
 			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
@@ -1718,8 +1717,8 @@ func registerBombPlantedHandler(demoParser *dem.Parser, currentGame *Game, curre
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, *currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
 		currentBomb.BombAction = plant
 
 		bombSite := getBombSite(rune(e.Site))
@@ -1750,8 +1749,8 @@ func registerBombPlantBeginHandler(demoParser *dem.Parser, currentGame *Game, cu
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, *currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
 		currentBomb.BombAction = "plant_begin"
 
 		bombSite := getBombSite(rune(e.Site))
@@ -1780,8 +1779,8 @@ func registerBombPlantAbortedHandler(demoParser *dem.Parser, currentGame *Game, 
 
 		currentBomb := BombAction{}
 		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, *currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
 		currentBomb.BombAction = "plant_abort"
 
 		// Find bombsite where event is planted
@@ -1822,8 +1821,8 @@ func registerGrenadeThrowHandler(demoParser *dem.Parser, currentGame *Game, curr
 			currentGrenade := GrenadeAction{}
 			currentGrenade.UniqueID = e.Projectile.UniqueID()
 			currentGrenade.ThrowTick = int64(gs.IngameTick())
-			currentGrenade.ThrowSecond = determineSecond(currentGrenade.ThrowTick, *currentRound, *currentGame)
-			currentGrenade.ThrowClockTime = calculateClocktime(currentGrenade.ThrowTick, *currentRound, *currentGame)
+			currentGrenade.ThrowSecond = determineSecond(currentGrenade.ThrowTick, *currentRound, currentGame.TickRate)
+			currentGrenade.ThrowClockTime = calculateClocktime(currentGrenade.ThrowTick, *currentRound, currentGame.TickRate)
 
 			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
 			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
@@ -1880,9 +1879,9 @@ func registerGrenadeDestroyHandler(demoParser *dem.Parser, currentGame *Game, cu
 				if g.UniqueID == e.Projectile.UniqueID() {
 					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
 					currentRound.Grenades[i].DestroySecond = determineSecond(
-						currentRound.Grenades[i].DestroyTick, *currentRound, *currentGame)
+						currentRound.Grenades[i].DestroyTick, *currentRound, currentGame.TickRate)
 					currentRound.Grenades[i].DestroyClockTime = calculateClocktime(
-						currentRound.Grenades[i].DestroyTick, *currentRound, *currentGame)
+						currentRound.Grenades[i].DestroyTick, *currentRound, currentGame.TickRate)
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
 
@@ -1909,8 +1908,8 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 			currentFrame.T.Players = []PlayerInfo{}
 
 			currentFrame.Tick = int64(gs.IngameTick())
-			currentFrame.Second = determineSecond(currentFrame.Tick, *currentRound, *currentGame)
-			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, *currentRound, *currentGame)
+			currentFrame.Second = determineSecond(currentFrame.Tick, *currentRound, currentGame.TickRate)
+			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, *currentRound, currentGame.TickRate)
 
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
@@ -2011,8 +2010,8 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 
 		currentKill := KillAction{}
 		currentKill.Tick = int64(gs.IngameTick())
-		currentKill.Second = determineSecond(currentKill.Tick, *currentRound, *currentGame)
-		currentKill.ClockTime = calculateClocktime(currentKill.Tick, *currentRound, *currentGame)
+		currentKill.Second = determineSecond(currentKill.Tick, *currentRound, currentGame.TickRate)
+		currentKill.ClockTime = calculateClocktime(currentKill.Tick, *currentRound, currentGame.TickRate)
 		if e.Weapon != nil {
 			currentKill.Weapon = e.Weapon.String()
 			currentKill.WeaponClass = convertWeaponClass(e.Weapon.Class())
@@ -2213,8 +2212,8 @@ func registerDamageHandler(demoParser *dem.Parser, currentGame *Game, currentRou
 
 		currentDamage := DamageAction{}
 		currentDamage.Tick = int64(gs.IngameTick())
-		currentDamage.Second = determineSecond(currentDamage.Tick, *currentRound, *currentGame)
-		currentDamage.ClockTime = calculateClocktime(currentDamage.Tick, *currentRound, *currentGame)
+		currentDamage.Second = determineSecond(currentDamage.Tick, *currentRound, currentGame.TickRate)
+		currentDamage.ClockTime = calculateClocktime(currentDamage.Tick, *currentRound, currentGame.TickRate)
 		if e.Weapon != nil {
 			currentDamage.Weapon = e.Weapon.String()
 			currentDamage.WeaponClass = convertWeaponClass(e.Weapon.Class())
@@ -2353,8 +2352,8 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 			currentFrame.T.Players = []PlayerInfo{}
 
 			currentFrame.Tick = int64(gs.IngameTick())
-			currentFrame.Second = determineSecond(currentFrame.Tick, *currentRound, *currentGame)
-			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, *currentRound, *currentGame)
+			currentFrame.Second = determineSecond(currentFrame.Tick, *currentRound, currentGame.TickRate)
+			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, *currentRound, currentGame.TickRate)
 
 			// Parse T
 			currentFrame.T = TeamFrameInfo{}
