@@ -19,6 +19,7 @@ const spectator = "Spectator"
 const unassigned = "Unassigned"
 const plant = "plant"
 const unranked = "Unranked"
+const zeroTime = "00:00"
 
 // Game is the overall struct that holds the parsed demo data.
 type Game struct {
@@ -625,7 +626,7 @@ func formatTimeNumber(num int64) string {
 
 func calculateClocktime(tick int64, currentRound GameRound, tickRate int64) string {
 	if tick <= 0 {
-		return "00:00"
+		return zeroTime
 	}
 	var secondsPerMinute float64 = 60
 	var roundLengthSeconds float64 = 115
@@ -647,7 +648,7 @@ func calculateClocktime(tick int64, currentRound GameRound, tickRate int64) stri
 	seconds := int64(math.Ceil((secondsRemaining - secondsPerMinute*float64(minutes))))
 
 	if (minutes < 0) || (seconds < 0) {
-		return "00:00"
+		return zeroTime
 	}
 
 	return formatTimeNumber(minutes) + ":" + formatTimeNumber(seconds)
