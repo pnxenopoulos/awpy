@@ -87,8 +87,9 @@ func FuzzDetermineSecond(f *testing.F) {
 
 func TestCalculateClockTime(t *testing.T) {
 	t.Parallel()
+	zeroTime := "00:00"
 	var value int64 = -2
-	var want = "00:00"
+	var want = zeroTime
 	var bombPlantTick int64 = 256
 	currentRound := GameRound{FreezeTimeEndTick: 128, BombPlantTick: &bombPlantTick}
 	var tickRate int64 = 128
@@ -126,7 +127,7 @@ func TestCalculateClockTime(t *testing.T) {
 	}
 
 	value = 128 * 500
-	want = "00:00"
+	want = zeroTime
 	currentRound = GameRound{FreezeTimeEndTick: 128, BombPlantTick: nil}
 	tickRate = 64
 	is = calculateClocktime(value, currentRound, tickRate)
