@@ -124,6 +124,15 @@ func TestCalculateClockTime(t *testing.T) {
 	if is != want {
 		t.Errorf("Expected a tick of %v to produce a clockTime of %v but got %v.", value, want, is)
 	}
+
+	value = 128 * 500
+	want = "00:00"
+	currentRound = GameRound{FreezeTimeEndTick: 128, BombPlantTick: nil}
+	tickRate = 64
+	is = calculateClocktime(value, currentRound, tickRate)
+	if is != want {
+		t.Errorf("Expected a tick of %v to produce a clockTime of %v but got %v.", value, want, is)
+	}
 }
 
 func TestPlayerInList(t *testing.T) {
