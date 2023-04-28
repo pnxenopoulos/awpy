@@ -18,5 +18,6 @@ jobs:
       - name: Checkout csgo library
         uses: actions/checkout@v3
       - name: golangci-lint
-        working-directory: ./awpy/parser
         uses: golangci/golangci-lint-action@v3
+        with:
+          working-directory: ./awpy/parser
