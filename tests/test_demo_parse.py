@@ -33,9 +33,9 @@ class TestDemoParser:
         filtered_files = [
             file for file in files_in_directory if file.endswith((".dem", ".json"))
         ]
-        if len(filtered_files) > 0:
-            for f in filtered_files:
-                os.remove(f)
+        # if len(filtered_files) > 0:
+        #     for f in filtered_files:
+        #         os.remove(f)
 
     @staticmethod
     def _get_demofile(demo_link: str, demo_name: str) -> None:

@@ -881,6 +881,519 @@ func removeExpiredSmoke(s []Smoke, i int) []Smoke {
 	return s[:len(s)-1]
 }
 
+func initializeRound(currentRound *GameRound) {
+	currentRound.Bomb = []BombAction{}
+	currentRound.Damages = []DamageAction{}
+	currentRound.Flashes = []FlashAction{}
+	currentRound.Frames = []GameFrame{}
+	currentRound.Grenades = []GrenadeAction{}
+	currentRound.Kills = []KillAction{}
+	currentRound.WeaponFires = []WeaponFireAction{}
+}
+
+func registerChatHandlers(demoParser *dem.Parser, currentGame *Game) {
+	// Register handler for chat messages (ChatMessage)
+	(*demoParser).RegisterEventHandler(func(e events.ChatMessage) {
+		if e.Sender != nil {
+			gs := (*demoParser).GameState()
+			chatMessage := Chat{}
+			senderSteamID := int64(e.Sender.SteamID64)
+			chatMessage.SteamID = &senderSteamID
+			chatMessage.Text = e.Text
+			chatMessage.Tick = int64(gs.IngameTick())
+			chatMessage.IsChat = true
+			chatMessage.IsChatAll = e.IsChatAll
+			chatMessage.Type = "ChatMessage"
+
+			currentGame.Chat = append(currentGame.Chat, chatMessage)
+		}
+	})
+
+	// Register handler for chat messages (SayText)
+	(*demoParser).RegisterEventHandler(func(e events.SayText) {
+		gs := (*demoParser).GameState()
+		chatMessage := Chat{}
+		chatMessage.Text = e.Text
+		chatMessage.Tick = int64(gs.IngameTick())
+		chatMessage.IsChat = e.IsChat
+		chatMessage.IsChatAll = e.IsChatAll
+		chatMessage.Type = "SayText"
+
+		currentGame.Chat = append(currentGame.Chat, chatMessage)
+	})
+
+	// Register handler for chat messages (SayText2)
+	(*demoParser).RegisterEventHandler(func(e events.SayText2) {
+		gs := (*demoParser).GameState()
+		chatMessage := Chat{}
+		chatMessage.Text = e.Params[1]
+		chatMessage.Params = e.Params
+		chatMessage.Tick = int64(gs.IngameTick())
+		chatMessage.IsChat = e.IsChat
+		chatMessage.IsChatAll = e.IsChatAll
+		chatMessage.Type = "SayText2"
+
+		currentGame.Chat = append(currentGame.Chat, chatMessage)
+	})
+}
+
+func registerRankUpdateHandler(demoParser *dem.Parser, currentGame *Game) {
+	(*demoParser).RegisterEventHandler(func(e events.RankUpdate) {
+		rankUpdate := MMRank{}
+
+		rankUpdate.SteamID = e.SteamID64()
+		rankUpdate.RankChange = e.RankChange
+		rankUpdate.RankOld = convertRank(e.RankOld)
+		rankUpdate.RankNew = convertRank(e.RankNew)
+		rankUpdate.WinCount = e.WinCount
+
+		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
+	})
+}
+
+func registerConnectHandler(demoParser *dem.Parser, currentGame *Game) {
+	(*demoParser).RegisterEventHandler(func(e events.PlayerConnect) {
+		if e.Player != nil {
+			gs := (*demoParser).GameState()
+			playerConnected := ConnectAction{}
+
+			playerConnected.Tick = int64(gs.IngameTick())
+			playerConnected.ConnectType = "connect"
+			playerConnected.SteamID = e.Player.SteamID64
+
+			currentGame.Connections = append(currentGame.Connections, playerConnected)
+		}
+	})
+}
+func registerDisonnectHandler(demoParser *dem.Parser, currentGame *Game) {
+	(*demoParser).RegisterEventHandler(func(e events.PlayerDisconnected) {
+		if e.Player != nil {
+			gs := (*demoParser).GameState()
+			playerConnected := ConnectAction{}
+
+			playerConnected.Tick = int64(gs.IngameTick())
+			playerConnected.ConnectType = "disconnect"
+			playerConnected.SteamID = e.Player.SteamID64
+
+			currentGame.Connections = append(currentGame.Connections, playerConnected)
+		}
+	})
+}
+
+func registerMatchphases(demoParser *dem.Parser, currentGame *Game) {
+	(*demoParser).RegisterEventHandler(func(e events.AnnouncementLastRoundHalf) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.AnnLastRoundHalf = append(currentGame.MatchPhases.AnnLastRoundHalf, int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.AnnouncementFinalRound) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.AnnFinalRound = append(currentGame.MatchPhases.AnnFinalRound, int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.AnnouncementMatchStarted) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.AnnMatchStarted = append(currentGame.MatchPhases.AnnMatchStarted, int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.GameHalfEnded) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.GameHalfEnded = append(currentGame.MatchPhases.GameHalfEnded, int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.MatchStart) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.MatchStart = append(currentGame.MatchPhases.MatchStart, int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.MatchStartedChanged) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.MatchStartedChanged = append(currentGame.MatchPhases.MatchStartedChanged, int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.IsWarmupPeriodChanged) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.WarmupChanged = append(currentGame.MatchPhases.WarmupChanged, int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.TeamSideSwitch) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.TeamSwitch = append(currentGame.MatchPhases.TeamSwitch, int64(gs.IngameTick()))
+	})
+}
+
+func registerSmokeHandler(demoParser *dem.Parser, smokes *[]Smoke) {
+	(*demoParser).RegisterEventHandler(func(e events.SmokeStart) {
+		gs := (*demoParser).GameState()
+		s := Smoke{}
+		s.GrenadeEntityID = e.Grenade.UniqueID() // GrenadeEntityID
+		s.StartTick = int64(gs.IngameTick())
+		s.X = float64(e.Position.X)
+		s.Y = float64(e.Position.Y)
+		s.Z = float64(e.Position.Z)
+		foundNade := false
+		for _, ele := range *smokes {
+			if ele.GrenadeEntityID == s.GrenadeEntityID {
+				foundNade = true
+			}
+		}
+		if !foundNade {
+			*smokes = append(*smokes, s)
+		}
+		foundNade = false
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.SmokeExpired) {
+		removeID := e.Grenade.UniqueID() // e.GrenadeEntityID
+		for i, ele := range *smokes {
+			if ele.GrenadeEntityID == removeID {
+				*smokes = removeExpiredSmoke(*smokes, i)
+			}
+		}
+	})
+}
+
+func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
+	(*demoParser).RegisterEventHandler(func(e events.RoundStart) {
+		gs := (*demoParser).GameState()
+		currentGame.MatchPhases.RoundStarted = append(currentGame.MatchPhases.RoundStarted, int64(gs.IngameTick()))
+
+		if *roundStarted == 1 {
+			currentGame.Rounds = append(currentGame.Rounds, *currentRound)
+		}
+
+		*roundStarted = 1
+		*roundInFreezetime = 1
+		*roundInEndTime = 0
+		*currentRound = GameRound{}
+
+		// Reset smokes
+		*smokes = []Smoke{}
+
+		// Create empty action lists
+		initializeRound(currentRound)
+
+		// Parse flags
+		currentRound.IsWarmup = gs.IsWarmupPeriod()
+		currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
+		currentRound.StartTick = int64(gs.IngameTick())
+		currentRound.TScore = int64(gs.TeamTerrorists().Score())
+		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+			currentRound.TTeam = &tTeam
+			currentRound.CTTeam = &ctTeam
+		}
+
+		// Parse the players
+		teamCT := PlayerTeams{}
+		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
+		for _, player := range gs.TeamCounterTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamCT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamCT.Players = append(teamCT.Players, pl)
+			}
+		}
+		currentRound.CTSide = teamCT
+
+		teamT := PlayerTeams{}
+		teamT.TeamName = gs.TeamTerrorists().ClanName()
+		for _, player := range gs.TeamTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamT.Players = append(teamT.Players, pl)
+			}
+		}
+		currentRound.TSide = teamT
+	})
+}
+
+func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, convParsed *int, RoundRestartDelay *int64, roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
+	// Parse round freezetime ends
+	(*demoParser).RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
+		gs := (*demoParser).GameState()
+		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded, int64(gs.IngameTick()))
+
+		// Reupdate the teams to make sure
+		currentRound.TScore = int64(gs.TeamTerrorists().Score())
+		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+			currentRound.TTeam = &tTeam
+			currentRound.CTTeam = &ctTeam
+		}
+
+		// Reset smokes
+		*smokes = []Smoke{}
+
+		// Determine if round is still in warmup mode
+		currentRound.IsWarmup = gs.IsWarmupPeriod()
+
+		// If convars aren't parsed, do so
+		if *convParsed == 0 {
+			// If convars are unparsed, record the convars of the server
+			serverConfig := ServerConVar{}
+			conv := gs.Rules().ConVars()
+			serverConfig.CashBombDefused, _ = strconv.ParseInt(conv["cash_player_bomb_defused"], 10, 64)
+			serverConfig.CashBombPlanted, _ = strconv.ParseInt(conv["cash_player_bomb_planted"], 10, 64)
+			serverConfig.CashWinBomb, _ = strconv.ParseInt(conv["cash_team_terrorist_win_bomb"], 10, 64)
+			serverConfig.CashWinDefuse, _ = strconv.ParseInt(conv["cash_team_win_by_defusing_bomb"], 10, 64)
+			serverConfig.CashWinTimeRunOut, _ = strconv.ParseInt(conv["cash_team_win_by_time_running_out_bomb"], 10, 64)
+			serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
+			serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
+			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
+			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
+			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
+			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime"], 10, 64)
+			serverConfig.RoundTimeDefuse, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
+			serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
+			serverConfig.FreezeTime, _ = strconv.ParseInt(conv["mp_freezetime"], 10, 64)
+			serverConfig.BuyTime, _ = strconv.ParseInt(conv["mp_buytime"], 10, 64)
+			serverConfig.BombTimer, _ = strconv.ParseInt(conv["mp_c4timer"], 10, 64)
+			serverConfig.TimeoutsAllowed, _ = strconv.ParseInt(conv["mp_team_timeout_max"], 10, 64)
+			serverConfig.CoachingAllowed, _ = strconv.ParseInt(conv["sv_coaching_enabled"], 10, 64)
+			currentGame.ServerVars = serverConfig
+			*convParsed = 1
+
+			// Change so that round restarts are parsed using the server convar
+			if serverConfig.RoundRestartDelay == 0 {
+				*RoundRestartDelay = 5 // This is default on many servers, I think
+			} else {
+				*RoundRestartDelay = serverConfig.RoundRestartDelay
+			}
+		}
+
+		if *roundInFreezetime == 0 {
+			// This means the RoundStart event did not fire, but the FreezeTimeEnd did
+			currentGame.Rounds = append(currentGame.Rounds, *currentRound)
+			*roundStarted = 1
+			*roundInEndTime = 0
+			*currentRound = GameRound{}
+
+			// Create empty action lists
+			initializeRound(currentRound)
+
+			currentRound.IsWarmup = gs.IsWarmupPeriod()
+			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
+			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
+			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
+			currentRound.TScore = int64(gs.TeamTerrorists().Score())
+			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
+
+			// See if start tick happened during a team switch. If so, then recalc scores.
+			if len(currentGame.MatchPhases.TeamSwitch) > 0 {
+				if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch)-1] {
+					currentRound.TScore = int64(gs.TeamTerrorists().Score())
+					currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+				}
+			}
+		}
+
+		// Parse the players
+		teamCT := PlayerTeams{}
+		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
+		for _, player := range gs.TeamCounterTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamCT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamCT.Players = append(teamCT.Players, pl)
+			}
+		}
+		currentRound.CTSide = teamCT
+
+		teamT := PlayerTeams{}
+		teamT.TeamName = gs.TeamTerrorists().ClanName()
+		for _, player := range gs.TeamTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamT.Players = append(teamT.Players, pl)
+			}
+		}
+		currentRound.TSide = teamT
+
+		*roundInFreezetime = 0
+		currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
+	})
+}
+
+func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundInEndTime int, RoundRestartDelay int64) {
+	(*demoParser).RegisterEventHandler(func(e events.RoundEndOfficial) {
+		gs := (*demoParser).GameState()
+		currentGame.MatchPhases.RoundEndedOfficial = append(currentGame.MatchPhases.RoundEndedOfficial, int64(gs.IngameTick()))
+
+		if roundInEndTime == 0 {
+			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
+			currentRound.EndOfficialTick = int64(gs.IngameTick())
+
+			currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
+			currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
+			// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
+			// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
+
+			// Parse who won the round, not great...but a stopgap measure
+			tPlayers := gs.TeamTerrorists().Members()
+			aliveT := 0
+			ctPlayers := gs.TeamCounterTerrorists().Members()
+			aliveCT := 0
+			for _, p := range tPlayers {
+				if p.IsAlive() && p != nil {
+					aliveT = aliveT + 1
+				}
+			}
+			for _, p := range ctPlayers {
+				if p.IsAlive() && p != nil {
+					aliveCT = aliveCT + 1
+				}
+			}
+			if aliveCT == 0 {
+				currentRound.Reason = "TerroristsWin"
+				currentRound.EndTScore = currentRound.TScore + 1
+				currentRound.EndCTScore = currentRound.CTScore
+				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+					tTeam := gs.TeamTerrorists().ClanName()
+					ctTeam := gs.TeamCounterTerrorists().ClanName()
+					currentRound.WinningTeam = &tTeam
+					currentRound.LosingTeam = &ctTeam
+				}
+				currentRound.WinningSide = "T"
+			} else {
+				currentRound.Reason = "CTWin"
+				currentRound.EndCTScore = currentRound.CTScore + 1
+				currentRound.EndTScore = currentRound.TScore
+				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+					tTeam := gs.TeamTerrorists().ClanName()
+					ctTeam := gs.TeamCounterTerrorists().ClanName()
+					currentRound.WinningTeam = &ctTeam
+					currentRound.LosingTeam = &tTeam
+				}
+				currentRound.WinningSide = "CT"
+			}
+		} else {
+			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
+			currentRound.EndOfficialTick = int64(gs.IngameTick())
+		}
+	})
+}
+
+func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundStarted *int, roundInEndTime *int, RoundRestartDelay int64) {
+	(*demoParser).RegisterEventHandler(func(e events.RoundEnd) {
+		gs := (*demoParser).GameState()
+
+		if *roundStarted == 1 {
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
+		}
+
+		currentGame.MatchPhases.RoundEnded = append(currentGame.MatchPhases.RoundEnded, int64(gs.IngameTick()))
+
+		if *roundStarted == 0 {
+			*roundStarted = 1
+
+			currentRound.RoundNum = 0
+			currentRound.StartTick = 0
+			currentRound.TScore = 0
+			currentRound.CTScore = 0
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
+		}
+
+		*roundInEndTime = 1
+
+		winningTeam := "CT"
+		switch e.Winner {
+		case common.TeamTerrorists:
+			winningTeam = "T"
+			currentRound.EndTScore = currentRound.TScore + 1
+			currentRound.EndCTScore = currentRound.CTScore
+		case common.TeamCounterTerrorists:
+			winningTeam = "CT"
+			currentRound.EndCTScore = currentRound.CTScore + 1
+			currentRound.EndTScore = currentRound.TScore
+		default:
+			winningTeam = "Unknown"
+		}
+
+		currentRound.EndTick = int64(gs.IngameTick())
+		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (RoundRestartDelay * currentGame.TickRate)
+		currentRound.Reason = convertRoundEndReason(e.Reason)
+		currentRound.WinningSide = winningTeam
+
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+
+			if winningTeam == "CT" {
+				currentRound.LosingTeam = &tTeam
+				currentRound.WinningTeam = &ctTeam
+			} else if winningTeam == "T" {
+				currentRound.LosingTeam = &ctTeam
+				currentRound.WinningTeam = &tTeam
+			}
+		}
+
+		currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
+		currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
+		// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
+		// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
+
+	})
+}
+
 // Main
 func main() {
 	/* Parse the arguments
@@ -971,13 +1484,7 @@ func main() {
 	currentRound := GameRound{}
 
 	// Create empty action lists for first round
-	currentRound.Bomb = []BombAction{}
-	currentRound.Damages = []DamageAction{}
-	currentRound.Flashes = []FlashAction{}
-	currentRound.Frames = []GameFrame{}
-	currentRound.Grenades = []GrenadeAction{}
-	currentRound.Kills = []KillAction{}
-	currentRound.WeaponFires = []WeaponFireAction{}
+	initializeRound((&currentRound))
 
 	RoundRestartDelay := int64(5)
 
@@ -998,525 +1505,33 @@ func main() {
 	currentGame.MatchPhases.RoundEndedOfficial = []int64{}
 
 	// Parse rank updates
-	p.RegisterEventHandler(func(e events.RankUpdate) {
-		rankUpdate := MMRank{}
-
-		rankUpdate.SteamID = e.SteamID64()
-		rankUpdate.RankChange = e.RankChange
-		rankUpdate.RankOld = convertRank(e.RankOld)
-		rankUpdate.RankNew = convertRank(e.RankNew)
-		rankUpdate.WinCount = e.WinCount
-
-		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
-	})
+	registerRankUpdateHandler(&p, &currentGame)
 
 	if parseChat {
-		// Register handler for chat messages (ChatMessage)
-		p.RegisterEventHandler(func(e events.ChatMessage) {
-			if e.Sender != nil {
-				gs := p.GameState()
-				chatMessage := Chat{}
-				senderSteamID := int64(e.Sender.SteamID64)
-				chatMessage.SteamID = &senderSteamID
-				chatMessage.Text = e.Text
-				chatMessage.Tick = int64(gs.IngameTick())
-				chatMessage.IsChat = true
-				chatMessage.IsChatAll = e.IsChatAll
-				chatMessage.Type = "ChatMessage"
-
-				currentGame.Chat = append(currentGame.Chat, chatMessage)
-			}
-		})
-
-		// Register handler for chat messages (SayText)
-		p.RegisterEventHandler(func(e events.SayText) {
-			gs := p.GameState()
-			chatMessage := Chat{}
-			chatMessage.Text = e.Text
-			chatMessage.Tick = int64(gs.IngameTick())
-			chatMessage.IsChat = e.IsChat
-			chatMessage.IsChatAll = e.IsChatAll
-			chatMessage.Type = "SayText"
-
-			currentGame.Chat = append(currentGame.Chat, chatMessage)
-		})
-
-		// Register handler for chat messages (SayText2)
-		p.RegisterEventHandler(func(e events.SayText2) {
-			gs := p.GameState()
-			chatMessage := Chat{}
-			chatMessage.Text = e.Params[1]
-			chatMessage.Params = e.Params
-			chatMessage.Tick = int64(gs.IngameTick())
-			chatMessage.IsChat = e.IsChat
-			chatMessage.IsChatAll = e.IsChatAll
-			chatMessage.Type = "SayText2"
-
-			currentGame.Chat = append(currentGame.Chat, chatMessage)
-		})
+		registerChatHandlers(&p, &currentGame)
 	}
+
 	// Parse player connects
-	p.RegisterEventHandler(func(e events.PlayerConnect) {
-		if e.Player != nil {
-			gs := p.GameState()
-			playerConnected := ConnectAction{}
-
-			playerConnected.Tick = int64(gs.IngameTick())
-			playerConnected.ConnectType = "connect"
-			playerConnected.SteamID = e.Player.SteamID64
-
-			currentGame.Connections = append(currentGame.Connections, playerConnected)
-		}
-	})
+	registerConnectHandler(&p, &currentGame)
 
 	// Parse player disconnects
-	p.RegisterEventHandler(func(e events.PlayerDisconnected) {
-		if e.Player != nil {
-			gs := p.GameState()
-			playerConnected := ConnectAction{}
-
-			playerConnected.Tick = int64(gs.IngameTick())
-			playerConnected.ConnectType = "disconnect"
-			playerConnected.SteamID = e.Player.SteamID64
-
-			currentGame.Connections = append(currentGame.Connections, playerConnected)
-		}
-	})
+	registerDisonnectHandler(&p, &currentGame)
 
 	// Parse the match phases
-	p.RegisterEventHandler(func(e events.AnnouncementLastRoundHalf) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.AnnLastRoundHalf = append(currentGame.MatchPhases.AnnLastRoundHalf, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.AnnouncementFinalRound) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.AnnFinalRound = append(currentGame.MatchPhases.AnnFinalRound, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.AnnouncementMatchStarted) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.AnnMatchStarted = append(currentGame.MatchPhases.AnnMatchStarted, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.GameHalfEnded) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.GameHalfEnded = append(currentGame.MatchPhases.GameHalfEnded, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.MatchStart) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.MatchStart = append(currentGame.MatchPhases.MatchStart, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.MatchStartedChanged) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.MatchStartedChanged = append(currentGame.MatchPhases.MatchStartedChanged, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.IsWarmupPeriodChanged) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.WarmupChanged = append(currentGame.MatchPhases.WarmupChanged, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.TeamSideSwitch) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.TeamSwitch = append(currentGame.MatchPhases.TeamSwitch, int64(gs.IngameTick()))
-	})
+	registerMatchphases(&p, &currentGame)
 
 	// Parse smokes
-	p.RegisterEventHandler(func(e events.SmokeStart) {
-		gs := p.GameState()
-		s := Smoke{}
-		s.GrenadeEntityID = e.Grenade.UniqueID() // GrenadeEntityID
-		s.StartTick = int64(gs.IngameTick())
-		s.X = float64(e.Position.X)
-		s.Y = float64(e.Position.Y)
-		s.Z = float64(e.Position.Z)
-		foundNade := false
-		for _, ele := range smokes {
-			if ele.GrenadeEntityID == s.GrenadeEntityID {
-				foundNade = true
-			}
-		}
-		if !foundNade {
-			smokes = append(smokes, s)
-		}
-		foundNade = false
-	})
-
-	p.RegisterEventHandler(func(e events.SmokeExpired) {
-		removeID := e.Grenade.UniqueID() // e.GrenadeEntityID
-		for i, ele := range smokes {
-			if ele.GrenadeEntityID == removeID {
-				smokes = removeExpiredSmoke(smokes, i)
-			}
-		}
-	})
+	registerSmokeHandler(&p, &smokes)
 
 	// Parse round starts
-	p.RegisterEventHandler(func(e events.RoundStart) {
-		gs := p.GameState()
-		currentGame.MatchPhases.RoundStarted = append(currentGame.MatchPhases.RoundStarted, int64(gs.IngameTick()))
+	registerRoundStartHandler(&p, &currentGame, &currentRound, &roundStarted, &roundInFreezetime, &roundInEndTime, &smokes)
 
-		if roundStarted == 1 {
-			currentGame.Rounds = append(currentGame.Rounds, currentRound)
-		}
+	registerRoundFreezeTimeEndHandler(&p, &currentGame, &currentRound, &convParsed, &RoundRestartDelay, &roundStarted, &roundInFreezetime, &roundInEndTime, &smokes)
 
-		roundStarted = 1
-		roundInFreezetime = 1
-		roundInEndTime = 0
-		currentRound = GameRound{}
-
-		// Reset smokes
-		smokes = []Smoke{}
-
-		// Create empty action lists
-		currentRound.Bomb = []BombAction{}
-		currentRound.Damages = []DamageAction{}
-		currentRound.Flashes = []FlashAction{}
-		currentRound.Frames = []GameFrame{}
-		currentRound.Grenades = []GrenadeAction{}
-		currentRound.Kills = []KillAction{}
-		currentRound.WeaponFires = []WeaponFireAction{}
-
-		// Parse flags
-		currentRound.IsWarmup = gs.IsWarmupPeriod()
-		currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
-		currentRound.StartTick = int64(gs.IngameTick())
-		currentRound.TScore = int64(gs.TeamTerrorists().Score())
-		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-			currentRound.TTeam = &tTeam
-			currentRound.CTTeam = &ctTeam
-		}
-
-		// Parse round money
-		// tPlayers := gs.TeamTerrorists().Members()
-		// currentRound.TBeginMoney = 0
-		// ctPlayers := gs.TeamCounterTerrorists().Members()
-		// currentRound.CTBeginMoney = 0
-		// for _, p := range tPlayers {
-		// 	if p != nil {
-		// 		currentRound.TBeginMoney += int64(p.Money())
-		// 	}
-
-		// }
-		// for _, p := range ctPlayers {
-		// 	if p != nil {
-		// 		currentRound.CTBeginMoney += int64(p.Money())
-		// 	}
-		// }
-
-		// Parse the players
-		teamCT := PlayerTeams{}
-		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
-		for _, player := range gs.TeamCounterTerrorists().Members() {
-			pl := Players{}
-			pl.PlayerName = player.Name
-			pl.SteamID = int64(player.SteamID64)
-			foundPlayer := false
-			for _, p := range teamCT.Players {
-				if p.SteamID == pl.SteamID {
-					foundPlayer = true
-				}
-			}
-			if !foundPlayer {
-				teamCT.Players = append(teamCT.Players, pl)
-			}
-		}
-		currentRound.CTSide = teamCT
-
-		teamT := PlayerTeams{}
-		teamT.TeamName = gs.TeamTerrorists().ClanName()
-		for _, player := range gs.TeamTerrorists().Members() {
-			pl := Players{}
-			pl.PlayerName = player.Name
-			pl.SteamID = int64(player.SteamID64)
-			foundPlayer := false
-			for _, p := range teamT.Players {
-				if p.SteamID == pl.SteamID {
-					foundPlayer = true
-				}
-			}
-			if !foundPlayer {
-				teamT.Players = append(teamT.Players, pl)
-			}
-		}
-		currentRound.TSide = teamT
-	})
-
-	// Parse round freezetime ends
-	p.RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
-		gs := p.GameState()
-		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded, int64(gs.IngameTick()))
-
-		// Reupdate the teams to make sure
-		currentRound.TScore = int64(gs.TeamTerrorists().Score())
-		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-			currentRound.TTeam = &tTeam
-			currentRound.CTTeam = &ctTeam
-		}
-
-		// Reset smokes
-		smokes = []Smoke{}
-
-		// Determine if round is still in warmup mode
-		currentRound.IsWarmup = gs.IsWarmupPeriod()
-
-		// If convars aren't parsed, do so
-		if convParsed == 0 {
-			// If convars are unparsed, record the convars of the server
-			serverConfig := ServerConVar{}
-			conv := gs.Rules().ConVars()
-			serverConfig.CashBombDefused, _ = strconv.ParseInt(conv["cash_player_bomb_defused"], 10, 64)
-			serverConfig.CashBombPlanted, _ = strconv.ParseInt(conv["cash_player_bomb_planted"], 10, 64)
-			serverConfig.CashWinBomb, _ = strconv.ParseInt(conv["cash_team_terrorist_win_bomb"], 10, 64)
-			serverConfig.CashWinDefuse, _ = strconv.ParseInt(conv["cash_team_win_by_defusing_bomb"], 10, 64)
-			serverConfig.CashWinTimeRunOut, _ = strconv.ParseInt(conv["cash_team_win_by_time_running_out_bomb"], 10, 64)
-			serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
-			serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
-			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
-			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
-			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
-			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime"], 10, 64)
-			serverConfig.RoundTimeDefuse, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
-			serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
-			serverConfig.FreezeTime, _ = strconv.ParseInt(conv["mp_freezetime"], 10, 64)
-			serverConfig.BuyTime, _ = strconv.ParseInt(conv["mp_buytime"], 10, 64)
-			serverConfig.BombTimer, _ = strconv.ParseInt(conv["mp_c4timer"], 10, 64)
-			serverConfig.TimeoutsAllowed, _ = strconv.ParseInt(conv["mp_team_timeout_max"], 10, 64)
-			serverConfig.CoachingAllowed, _ = strconv.ParseInt(conv["sv_coaching_enabled"], 10, 64)
-			currentGame.ServerVars = serverConfig
-			convParsed = 1
-
-			// Change so that round restarts are parsed using the server convar
-			if serverConfig.RoundRestartDelay == 0 {
-				RoundRestartDelay = 5 // This is default on many servers, I think
-			} else {
-				RoundRestartDelay = serverConfig.RoundRestartDelay
-			}
-		}
-
-		if roundInFreezetime == 0 {
-			// This means the RoundStart event did not fire, but the FreezeTimeEnd did
-			currentGame.Rounds = append(currentGame.Rounds, currentRound)
-			roundStarted = 1
-			roundInEndTime = 0
-			currentRound = GameRound{}
-
-			// Create empty action lists
-			currentRound.Bomb = []BombAction{}
-			currentRound.Damages = []DamageAction{}
-			currentRound.Flashes = []FlashAction{}
-			currentRound.Frames = []GameFrame{}
-			currentRound.Grenades = []GrenadeAction{}
-			currentRound.Kills = []KillAction{}
-			currentRound.WeaponFires = []WeaponFireAction{}
-
-			currentRound.IsWarmup = gs.IsWarmupPeriod()
-			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
-			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
-			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
-			currentRound.TScore = int64(gs.TeamTerrorists().Score())
-			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-				tTeam := gs.TeamTerrorists().ClanName()
-				ctTeam := gs.TeamCounterTerrorists().ClanName()
-				currentRound.TTeam = &tTeam
-				currentRound.CTTeam = &ctTeam
-			}
-
-			// See if start tick happened during a team switch. If so, then recalc scores.
-			if len(currentGame.MatchPhases.TeamSwitch) > 0 {
-				if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch)-1] {
-					currentRound.TScore = int64(gs.TeamTerrorists().Score())
-					currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-				}
-			}
-		}
-
-		// Parse the players
-		teamCT := PlayerTeams{}
-		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
-		for _, player := range gs.TeamCounterTerrorists().Members() {
-			pl := Players{}
-			pl.PlayerName = player.Name
-			pl.SteamID = int64(player.SteamID64)
-			foundPlayer := false
-			for _, p := range teamCT.Players {
-				if p.SteamID == pl.SteamID {
-					foundPlayer = true
-				}
-			}
-			if !foundPlayer {
-				teamCT.Players = append(teamCT.Players, pl)
-			}
-		}
-		currentRound.CTSide = teamCT
-
-		teamT := PlayerTeams{}
-		teamT.TeamName = gs.TeamTerrorists().ClanName()
-		for _, player := range gs.TeamTerrorists().Members() {
-			pl := Players{}
-			pl.PlayerName = player.Name
-			pl.SteamID = int64(player.SteamID64)
-			foundPlayer := false
-			for _, p := range teamT.Players {
-				if p.SteamID == pl.SteamID {
-					foundPlayer = true
-				}
-			}
-			if !foundPlayer {
-				teamT.Players = append(teamT.Players, pl)
-			}
-		}
-		currentRound.TSide = teamT
-
-		roundInFreezetime = 0
-		currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
-	})
-
-	p.RegisterEventHandler(func(e events.RoundEndOfficial) {
-		gs := p.GameState()
-		currentGame.MatchPhases.RoundEndedOfficial = append(currentGame.MatchPhases.RoundEndedOfficial, int64(gs.IngameTick()))
-
-		if roundInEndTime == 0 {
-			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
-			currentRound.EndOfficialTick = int64(gs.IngameTick())
-
-			currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-			currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
-			// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-			// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
-
-			// Parse who won the round, not great...but a stopgap measure
-			tPlayers := gs.TeamTerrorists().Members()
-			aliveT := 0
-			ctPlayers := gs.TeamCounterTerrorists().Members()
-			aliveCT := 0
-			for _, p := range tPlayers {
-				if p.IsAlive() && p != nil {
-					aliveT = aliveT + 1
-				}
-			}
-			for _, p := range ctPlayers {
-				if p.IsAlive() && p != nil {
-					aliveCT = aliveCT + 1
-				}
-			}
-			if aliveCT == 0 {
-				currentRound.Reason = "TerroristsWin"
-				currentRound.EndTScore = currentRound.TScore + 1
-				currentRound.EndCTScore = currentRound.CTScore
-				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-					tTeam := gs.TeamTerrorists().ClanName()
-					ctTeam := gs.TeamCounterTerrorists().ClanName()
-					currentRound.WinningTeam = &tTeam
-					currentRound.LosingTeam = &ctTeam
-				}
-				currentRound.WinningSide = "T"
-			} else {
-				currentRound.Reason = "CTWin"
-				currentRound.EndCTScore = currentRound.CTScore + 1
-				currentRound.EndTScore = currentRound.TScore
-				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-					tTeam := gs.TeamTerrorists().ClanName()
-					ctTeam := gs.TeamCounterTerrorists().ClanName()
-					currentRound.WinningTeam = &ctTeam
-					currentRound.LosingTeam = &tTeam
-				}
-				currentRound.WinningSide = "CT"
-			}
-		} else {
-			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
-			currentRound.EndOfficialTick = int64(gs.IngameTick())
-		}
-	})
+	registerRoundEndOfficialHandler(&p, &currentGame, &currentRound, roundInEndTime, RoundRestartDelay)
 
 	// Parse round ends
-	p.RegisterEventHandler(func(e events.RoundEnd) {
-		gs := p.GameState()
-
-		if roundStarted == 1 {
-			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-				tTeam := gs.TeamTerrorists().ClanName()
-				ctTeam := gs.TeamCounterTerrorists().ClanName()
-				currentRound.TTeam = &tTeam
-				currentRound.CTTeam = &ctTeam
-			}
-		}
-
-		currentGame.MatchPhases.RoundEnded = append(currentGame.MatchPhases.RoundEnded, int64(gs.IngameTick()))
-
-		if roundStarted == 0 {
-			roundStarted = 1
-
-			currentRound.RoundNum = 0
-			currentRound.StartTick = 0
-			currentRound.TScore = 0
-			currentRound.CTScore = 0
-			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-				tTeam := gs.TeamTerrorists().ClanName()
-				ctTeam := gs.TeamCounterTerrorists().ClanName()
-				currentRound.TTeam = &tTeam
-				currentRound.CTTeam = &ctTeam
-			}
-		}
-
-		roundInEndTime = 1
-
-		winningTeam := "CT"
-		switch e.Winner {
-		case common.TeamTerrorists:
-			winningTeam = "T"
-			currentRound.EndTScore = currentRound.TScore + 1
-			currentRound.EndCTScore = currentRound.CTScore
-		case common.TeamCounterTerrorists:
-			winningTeam = "CT"
-			currentRound.EndCTScore = currentRound.CTScore + 1
-			currentRound.EndTScore = currentRound.TScore
-		default:
-			winningTeam = "Unknown"
-		}
-
-		currentRound.EndTick = int64(gs.IngameTick())
-		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (RoundRestartDelay * currentGame.TickRate)
-		currentRound.Reason = convertRoundEndReason(e.Reason)
-		currentRound.WinningSide = winningTeam
-
-		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-
-			if winningTeam == "CT" {
-				currentRound.LosingTeam = &tTeam
-				currentRound.WinningTeam = &ctTeam
-			} else if winningTeam == "T" {
-				currentRound.LosingTeam = &ctTeam
-				currentRound.WinningTeam = &tTeam
-			}
-		}
-
-		currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-		currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
-		// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-		// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
-
-	})
+	registerRoundEndHandler(&p, &currentGame, &currentRound, &roundStarted, &roundInEndTime, RoundRestartDelay)
 
 	// Parse bomb defuses
 	p.RegisterEventHandler(func(e events.BombDefused) {
