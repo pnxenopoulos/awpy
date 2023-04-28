@@ -608,33 +608,40 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 	} else {
 		phaseEndTick = *currentRound.BombPlantTick
 	}
-	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
+
+	return (float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)
 }
 
 func formatTimeNumber(num int64) string {
 	if num < 10 {
 		return "0" + fmt.Sprint(num)
-	} else {
-		return fmt.Sprint(num)
 	}
+
+	return fmt.Sprint(num)
 }
 
 func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) string {
 	if tick <= 0 {
 		return "00:00"
 	}
-
-	var seconds_remaining float64
+	var secondsPerMinute float64 = 60
+	var roundLengthSeconds float64 = 115
+	var bombTimerSeconds float64 = 40
+	var secondsRemaining float64
 	var phaseEndTick int64
+	var secondsSincePhaseChange float64
+
 	if currentRound.BombPlantTick == nil {
 		phaseEndTick = currentRound.FreezeTimeEndTick
-		seconds_remaining = 115 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
+		secondsSincePhaseChange = (float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)
+		secondsRemaining = roundLengthSeconds - secondsSincePhaseChange
 	} else {
 		phaseEndTick = *currentRound.BombPlantTick
-		seconds_remaining = 40 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
+		secondsSincePhaseChange = (float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)
+		secondsRemaining = bombTimerSeconds - secondsSincePhaseChange
 	}
-	minutes := int64(math.Floor((seconds_remaining / 60)))
-	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
+	minutes := int64(math.Floor((secondsRemaining / secondsPerMinute)))
+	seconds := int64(math.Ceil((secondsRemaining - secondsPerMinute*float64(minutes))))
 
 	if (minutes < 0) || (seconds < 0) {
 		return "00:00"
@@ -653,6 +660,7 @@ func playerInList(p *common.Player, players []PlayerInfo) bool {
 	} else {
 		return false
 	}
+
 	return false
 }
 
@@ -682,15 +690,15 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	playerVel := p.Velocity()
 
 	// Calc other metrics
-	currentPlayer.X = float64(playerPos.X)
-	currentPlayer.Y = float64(playerPos.Y)
-	currentPlayer.Z = float64(playerPos.Z)
-	currentPlayer.EyeX = float64(playerEyePos.X)
-	currentPlayer.EyeY = float64(playerEyePos.Y)
-	currentPlayer.EyeZ = float64(playerEyePos.Z)
-	currentPlayer.VelX = float64(playerVel.X)
-	currentPlayer.VelY = float64(playerVel.Y)
-	currentPlayer.VelZ = float64(playerVel.Z)
+	currentPlayer.X = playerPos.X
+	currentPlayer.Y = playerPos.Y
+	currentPlayer.Z = playerPos.Z
+	currentPlayer.EyeX = playerEyePos.X
+	currentPlayer.EyeY = playerEyePos.Y
+	currentPlayer.EyeZ = playerEyePos.Z
+	currentPlayer.VelX = playerVel.X
+	currentPlayer.VelY = playerVel.Y
+	currentPlayer.VelZ = playerVel.Z
 	currentPlayer.ViewX = float64(p.ViewDirectionX())
 	currentPlayer.ViewY = float64(p.ViewDirectionY())
 	currentPlayer.LastPlaceName = p.LastPlaceName()
@@ -761,19 +769,19 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 
 				// currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
 				currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
-				if w.Class() == 6 {
+				if w.Class() == common.EqClassGrenade {
 					currentPlayer.TotalUtility++
-					if w.Type == 502 || w.Type == 503 {
-						currentPlayer.FireGrenade += 1
+					if w.Type == common.EqMolotov || w.Type == common.EqIncendiary {
+						currentPlayer.FireGrenade++
 					}
-					if w.Type == 504 {
+					if w.Type == common.EqFlash {
 						currentPlayer.FlashGrenade += int64(w.AmmoInMagazine()) + int64(w.AmmoReserve())
 					}
-					if w.Type == 505 {
-						currentPlayer.SmokeGrenade += 1
+					if w.Type == common.EqSmoke {
+						currentPlayer.SmokeGrenade++
 					}
-					if w.Type == 506 {
-						currentPlayer.HEGrenade += 1
+					if w.Type == common.EqHE {
+						currentPlayer.HEGrenade++
 					}
 				}
 			}
@@ -783,40 +791,41 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 			}
 		}
 	}
+
 	return currentPlayer
 }
 
 func parseTeamBuy(eqVal int64, side string, style string) string {
-	full_eco := "Full Eco"
-	semi_eco := "Semi Eco"
-	semi_buy := "Semi Buy"
-	full_buy := "Full Buy"
+	fullEco := "Full Eco"
+	semiEco := "Semi Eco"
+	semiBuy := "Semi Buy"
+	fullBuy := "Full Buy"
 	switch {
 	case style == "csgo":
 		// Created this using 4100 and 3700 as armor+gun for CT and T
 		if side == "CT" {
 			switch {
 			case eqVal < 2000:
-				return full_eco
+				return fullEco
 			case (eqVal >= 2000) && (eqVal < 6000):
 				return "Eco"
 			case (eqVal >= 6000) && (eqVal < 22000):
 				return "Half Buy"
 			case eqVal >= 22000:
-				return full_buy
+				return fullBuy
 			default:
 				return unknown
 			}
 		} else {
 			switch {
 			case eqVal < 2000:
-				return full_eco
+				return fullEco
 			case (eqVal >= 2000) && (eqVal < 6000):
 				return "Eco"
 			case (eqVal >= 6000) && (eqVal < 18500):
 				return "Half Buy"
 			case eqVal >= 18500:
-				return full_buy
+				return fullBuy
 			default:
 				return unknown
 			}
@@ -825,13 +834,13 @@ func parseTeamBuy(eqVal int64, side string, style string) string {
 		// Taken from hltv economy tab
 		switch {
 		case eqVal < 5000:
-			return full_eco
+			return fullEco
 		case (eqVal >= 5000) && (eqVal < 10000):
-			return semi_eco
+			return semiEco
 		case (eqVal >= 10000) && (eqVal < 20000):
-			return semi_buy
+			return semiBuy
 		case eqVal >= 20000:
-			return full_buy
+			return fullBuy
 		default:
 			return unknown
 		}
@@ -842,15 +851,15 @@ func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64
 	// First, identify is killA has a killer. If there is no killer, there cannot be a trade
 	if killA.AttackerSteamID == nil {
 		return false
-	} else {
-		// If the previous killer is not the person killed, it is not a trade
-		if killB.VictimSteamID != nil {
-			if *killB.VictimSteamID == *killA.AttackerSteamID {
-				return inTradeWindow(killA, killB, tickRate, tradeTime)
-			}
-		}
-		return false
 	}
+	// If the previous killer is not the person killed, it is not a trade
+	if killB.VictimSteamID != nil {
+		if *killB.VictimSteamID == *killA.AttackerSteamID {
+			return inTradeWindow(killA, killB, tickRate, tradeTime)
+		}
+	}
+
+	return false
 }
 
 func inTradeWindow(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
@@ -858,22 +867,24 @@ func inTradeWindow(killA KillAction, killB KillAction, tickRate int64, tradeTime
 }
 
 func countAlivePlayers(players []PlayerInfo) int64 {
-	var alivePlayers int64 = 0
+	var alivePlayers int64
 	for _, p := range players {
 		if p.IsAlive {
 			alivePlayers++
 		}
 	}
+
 	return alivePlayers
 }
 
 func countUtility(players []PlayerInfo) int64 {
-	var totalUtility int64 = 0
+	var totalUtility int64
 	for _, p := range players {
 		if p.IsAlive {
 			totalUtility++
 		}
 	}
+
 	return totalUtility
 }
 
@@ -883,11 +894,13 @@ func cleanMapName(mapName string) string {
 	if lastSlash == -1 {
 		return mapName
 	}
+
 	return mapName[lastSlash+1:]
 }
 
 func removeExpiredSmoke(s []Smoke, i int) []Smoke {
 	s[i] = s[len(s)-1]
+
 	return s[:len(s)-1]
 }
 
@@ -994,49 +1007,57 @@ func registerMatchphases(demoParser *dem.Parser, currentGame *Game) {
 	(*demoParser).RegisterEventHandler(func(e events.AnnouncementLastRoundHalf) {
 		gs := (*demoParser).GameState()
 
-		currentGame.MatchPhases.AnnLastRoundHalf = append(currentGame.MatchPhases.AnnLastRoundHalf, int64(gs.IngameTick()))
+		currentGame.MatchPhases.AnnLastRoundHalf = append(currentGame.MatchPhases.AnnLastRoundHalf,
+			int64(gs.IngameTick()))
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.AnnouncementFinalRound) {
 		gs := (*demoParser).GameState()
 
-		currentGame.MatchPhases.AnnFinalRound = append(currentGame.MatchPhases.AnnFinalRound, int64(gs.IngameTick()))
+		currentGame.MatchPhases.AnnFinalRound = append(currentGame.MatchPhases.AnnFinalRound,
+			int64(gs.IngameTick()))
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.AnnouncementMatchStarted) {
 		gs := (*demoParser).GameState()
 
-		currentGame.MatchPhases.AnnMatchStarted = append(currentGame.MatchPhases.AnnMatchStarted, int64(gs.IngameTick()))
+		currentGame.MatchPhases.AnnMatchStarted = append(currentGame.MatchPhases.AnnMatchStarted,
+			int64(gs.IngameTick()))
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.GameHalfEnded) {
 		gs := (*demoParser).GameState()
 
-		currentGame.MatchPhases.GameHalfEnded = append(currentGame.MatchPhases.GameHalfEnded, int64(gs.IngameTick()))
+		currentGame.MatchPhases.GameHalfEnded = append(currentGame.MatchPhases.GameHalfEnded,
+			int64(gs.IngameTick()))
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.MatchStart) {
 		gs := (*demoParser).GameState()
 
-		currentGame.MatchPhases.MatchStart = append(currentGame.MatchPhases.MatchStart, int64(gs.IngameTick()))
+		currentGame.MatchPhases.MatchStart = append(currentGame.MatchPhases.MatchStart,
+			int64(gs.IngameTick()))
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.MatchStartedChanged) {
 		gs := (*demoParser).GameState()
 
-		currentGame.MatchPhases.MatchStartedChanged = append(currentGame.MatchPhases.MatchStartedChanged, int64(gs.IngameTick()))
+		currentGame.MatchPhases.MatchStartedChanged = append(currentGame.MatchPhases.MatchStartedChanged,
+			int64(gs.IngameTick()))
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.IsWarmupPeriodChanged) {
 		gs := (*demoParser).GameState()
 
-		currentGame.MatchPhases.WarmupChanged = append(currentGame.MatchPhases.WarmupChanged, int64(gs.IngameTick()))
+		currentGame.MatchPhases.WarmupChanged = append(currentGame.MatchPhases.WarmupChanged,
+			int64(gs.IngameTick()))
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.TeamSideSwitch) {
 		gs := (*demoParser).GameState()
 
-		currentGame.MatchPhases.TeamSwitch = append(currentGame.MatchPhases.TeamSwitch, int64(gs.IngameTick()))
+		currentGame.MatchPhases.TeamSwitch = append(currentGame.MatchPhases.TeamSwitch,
+			int64(gs.IngameTick()))
 	})
 }
 
@@ -1046,9 +1067,9 @@ func registerSmokeHandler(demoParser *dem.Parser, smokes *[]Smoke) {
 		s := Smoke{}
 		s.GrenadeEntityID = e.Grenade.UniqueID() // GrenadeEntityID
 		s.StartTick = int64(gs.IngameTick())
-		s.X = float64(e.Position.X)
-		s.Y = float64(e.Position.Y)
-		s.Z = float64(e.Position.Z)
+		s.X = e.Position.X
+		s.Y = e.Position.Y
+		s.Z = e.Position.Z
 		foundNade := false
 		for _, ele := range *smokes {
 			if ele.GrenadeEntityID == s.GrenadeEntityID {
@@ -1070,7 +1091,8 @@ func registerSmokeHandler(demoParser *dem.Parser, smokes *[]Smoke) {
 	})
 }
 
-func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
+func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundStart) {
 		gs := (*demoParser).GameState()
 		currentGame.MatchPhases.RoundStarted = append(currentGame.MatchPhases.RoundStarted, int64(gs.IngameTick()))
@@ -1142,11 +1164,14 @@ func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, curren
 	})
 }
 
-func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, convParsed *int, roundRestartDelay *int64, roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
+func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	convParsed *int, roundRestartDelay *int64,
+	roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
 	// Parse round freezetime ends
 	(*demoParser).RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
 		gs := (*demoParser).GameState()
-		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded, int64(gs.IngameTick()))
+		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded,
+			int64(gs.IngameTick()))
 
 		// Reupdate the teams to make sure
 		currentRound.TScore = int64(gs.TeamTerrorists().Score())
@@ -1177,7 +1202,8 @@ func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game
 			serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
 			serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
 			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
-			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
+			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(
+				conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
 			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
 			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime"], 10, 64)
 			serverConfig.RoundTimeDefuse, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
@@ -1272,19 +1298,25 @@ func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game
 	})
 }
 
-func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundInEndTime *int, roundRestartDelay *int64) {
+func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	roundInEndTime *int, roundRestartDelay *int64) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundEndOfficial) {
 		gs := (*demoParser).GameState()
-		currentGame.MatchPhases.RoundEndedOfficial = append(currentGame.MatchPhases.RoundEndedOfficial, int64(gs.IngameTick()))
+		currentGame.MatchPhases.RoundEndedOfficial = append(currentGame.MatchPhases.RoundEndedOfficial,
+			int64(gs.IngameTick()))
 
 		if *roundInEndTime == 0 {
 			currentRound.EndTick = int64(gs.IngameTick()) - (*roundRestartDelay * currentGame.TickRate)
 			currentRound.EndOfficialTick = int64(gs.IngameTick())
 
-			currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-			currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
-			// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-			// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
+			currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT",
+				currentGame.ParsingOpts.RoundBuyStyle)
+			currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T",
+				currentGame.ParsingOpts.RoundBuyStyle)
+			// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend,
+			// 	"CT", currentGame.ParsingOpts.RoundBuyStyle)
+			// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T",
+			// 	currentGame.ParsingOpts.RoundBuyStyle)
 
 			// Parse who won the round, not great...but a stopgap measure
 			tPlayers := gs.TeamTerrorists().Members()
@@ -1330,7 +1362,8 @@ func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, 
 	})
 }
 
-func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, roundStarted *int, roundInEndTime *int, roundRestartDelay *int64) {
+func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	roundStarted *int, roundInEndTime *int, roundRestartDelay *int64) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundEnd) {
 		gs := (*demoParser).GameState()
 
@@ -1398,12 +1431,26 @@ func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentR
 			}
 		}
 
-		currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-		currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
-		// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-		// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
-
+		currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT",
+			currentGame.ParsingOpts.RoundBuyStyle)
+		currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T",
+			currentGame.ParsingOpts.RoundBuyStyle)
+		// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT",
+		// 	currentGame.ParsingOpts.RoundBuyStyle)
+		// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T",
+		// 	currentGame.ParsingOpts.RoundBuyStyle)
 	})
+}
+
+func getBombSite(site rune) string {
+	switch site {
+	case rune(events.BombsiteA):
+		return "A"
+	case rune(events.BombsiteB):
+		return "B"
+	default:
+		return ""
+	}
 }
 
 func registerBombDefusedHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
@@ -1415,12 +1462,7 @@ func registerBombDefusedHandler(demoParser *dem.Parser, currentGame *Game, curre
 		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, *currentGame)
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
 		currentBomb.BombAction = "defuse"
-		bombSite := ""
-		if e.Site == 65 {
-			bombSite = "A"
-		} else if e.Site == 66 {
-			bombSite = "B"
-		}
+		bombSite := getBombSite(rune(e.Site))
 		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
@@ -1431,9 +1473,9 @@ func registerBombDefusedHandler(demoParser *dem.Parser, currentGame *Game, curre
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
 
 		// add bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
@@ -1469,9 +1511,9 @@ func registerBombDefuseStartHandler(demoParser *dem.Parser, currentGame *Game, c
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
 
 		// add
 		if bombPlantFound {
@@ -1509,9 +1551,9 @@ func registerBombDefuseAbortHandler(demoParser *dem.Parser, currentGame *Game, c
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
 
 		// Add Bomb Event
 		if bombPlantFound {
@@ -1552,9 +1594,9 @@ func registerWeaponFiresHandler(demoParser *dem.Parser, currentGame *Game, curre
 			// Player loc
 			playerPos := e.Shooter.LastAlivePosition
 
-			currentWeaponFire.PlayerX = float64(playerPos.X)
-			currentWeaponFire.PlayerY = float64(playerPos.Y)
-			currentWeaponFire.PlayerZ = float64(playerPos.Z)
+			currentWeaponFire.PlayerX = playerPos.X
+			currentWeaponFire.PlayerY = playerPos.Y
+			currentWeaponFire.PlayerZ = playerPos.Z
 			currentWeaponFire.Weapon = e.Weapon.String()
 			currentWeaponFire.WeaponClass = convertWeaponClass(e.Weapon.Class())
 			currentWeaponFire.AmmoInMagazine = int64(e.Weapon.AmmoInMagazine())
@@ -1604,9 +1646,9 @@ func registerPlayerFlashedHandler(demoParser *dem.Parser, currentGame *Game, cur
 			// Attacker loc
 			attackerPos := e.Attacker.LastAlivePosition
 
-			currentFlash.AttackerX = float64(attackerPos.X)
-			currentFlash.AttackerY = float64(attackerPos.Y)
-			currentFlash.AttackerZ = float64(attackerPos.Z)
+			currentFlash.AttackerX = attackerPos.X
+			currentFlash.AttackerY = attackerPos.Y
+			currentFlash.AttackerZ = attackerPos.Z
 			currentFlash.AttackerViewX = float64(e.Attacker.ViewDirectionX())
 			currentFlash.AttackerViewY = float64(e.Attacker.ViewDirectionY())
 
@@ -1642,9 +1684,9 @@ func registerPlayerFlashedHandler(demoParser *dem.Parser, currentGame *Game, cur
 					// Player loc
 					playerPos := e.Player.LastAlivePosition
 
-					playerX := float64(playerPos.X)
-					playerY := float64(playerPos.Y)
-					playerZ := float64(playerPos.Z)
+					playerX := playerPos.X
+					playerY := playerPos.Y
+					playerZ := playerPos.Z
 					currentFlash.PlayerX = &playerX
 					currentFlash.PlayerY = &playerY
 					currentFlash.PlayerZ = &playerZ
@@ -1654,17 +1696,19 @@ func registerPlayerFlashedHandler(demoParser *dem.Parser, currentGame *Game, cur
 					currentFlash.PlayerViewY = &playerViewY
 
 					// Calculate flash duration in seconds
-					flashDuration := float64(e.Player.FlashDurationTimeRemaining()) / 1000000000
+					nanoSecondsPerSecond := 1000000000
+					flashDuration := float64(e.Player.FlashDurationTimeRemaining()) / float64(nanoSecondsPerSecond)
 					currentFlash.FlashDuration = &flashDuration
 
 					// Add to list
-					if *currentFlash.PlayerSide != spectator && *currentFlash.PlayerSide != unassigned && *currentFlash.PlayerSide != unknown {
+					if *currentFlash.PlayerSide != spectator &&
+						*currentFlash.PlayerSide != unassigned &&
+						*currentFlash.PlayerSide != unknown {
 						currentRound.Flashes = append(currentRound.Flashes, currentFlash)
 					}
 				}
 			}
 		}
-
 	})
 }
 
@@ -1678,12 +1722,7 @@ func registerBombPlantedHandler(demoParser *dem.Parser, currentGame *Game, curre
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
 		currentBomb.BombAction = plant
 
-		bombSite := ""
-		if e.Site == 65 {
-			bombSite = "A"
-		} else if e.Site == 66 {
-			bombSite = "B"
-		}
+		bombSite := getBombSite(rune(e.Site))
 		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
@@ -1694,9 +1733,9 @@ func registerBombPlantedHandler(demoParser *dem.Parser, currentGame *Game, curre
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
 
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
@@ -1715,12 +1754,7 @@ func registerBombPlantBeginHandler(demoParser *dem.Parser, currentGame *Game, cu
 		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, *currentGame)
 		currentBomb.BombAction = "plant_begin"
 
-		bombSite := ""
-		if e.Site == 65 {
-			bombSite = "A"
-		} else if e.Site == 66 {
-			bombSite = "B"
-		}
+		bombSite := getBombSite(rune(e.Site))
 		currentBomb.BombSite = &bombSite
 
 		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
@@ -1731,9 +1765,9 @@ func registerBombPlantBeginHandler(demoParser *dem.Parser, currentGame *Game, cu
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
 
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
@@ -1769,9 +1803,9 @@ func registerBombPlantAbortedHandler(demoParser *dem.Parser, currentGame *Game, 
 
 		// Player loc
 		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
 
 		// Add Bomb event
 		if bombPlantFound {
@@ -1825,9 +1859,9 @@ func registerGrenadeThrowHandler(demoParser *dem.Parser, currentGame *Game, curr
 			// Player location (use weaponfire event)
 			playerPos := e.Projectile.Position()
 
-			currentGrenade.ThrowerX = float64(playerPos.X)
-			currentGrenade.ThrowerY = float64(playerPos.Y)
-			currentGrenade.ThrowerZ = float64(playerPos.Z)
+			currentGrenade.ThrowerX = playerPos.X
+			currentGrenade.ThrowerY = playerPos.Y
+			currentGrenade.ThrowerZ = playerPos.Z
 
 			// Add grenade event
 			if playerSide == "CT" || playerSide == "T" {
@@ -1845,21 +1879,24 @@ func registerGrenadeDestroyHandler(demoParser *dem.Parser, currentGame *Game, cu
 			for i, g := range currentRound.Grenades {
 				if g.UniqueID == e.Projectile.UniqueID() {
 					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
-					currentRound.Grenades[i].DestroySecond = determineSecond(currentRound.Grenades[i].DestroyTick, *currentRound, *currentGame)
-					currentRound.Grenades[i].DestroyClockTime = calculateClocktime(currentRound.Grenades[i].DestroyTick, *currentRound, *currentGame)
+					currentRound.Grenades[i].DestroySecond = determineSecond(
+						currentRound.Grenades[i].DestroyTick, *currentRound, *currentGame)
+					currentRound.Grenades[i].DestroyClockTime = calculateClocktime(
+						currentRound.Grenades[i].DestroyTick, *currentRound, *currentGame)
 					// Grenade Location
 					grenadePos := e.Projectile.Position()
 
-					currentRound.Grenades[i].GrenadeX = float64(grenadePos.X)
-					currentRound.Grenades[i].GrenadeY = float64(grenadePos.Y)
-					currentRound.Grenades[i].GrenadeZ = float64(grenadePos.Z)
+					currentRound.Grenades[i].GrenadeX = grenadePos.X
+					currentRound.Grenades[i].GrenadeY = grenadePos.Y
+					currentRound.Grenades[i].GrenadeZ = grenadePos.Z
 				}
 			}
 		}
 	})
 }
 
-func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, smokes *[]Smoke, roundInFreezetime *int, parseKillFrames *bool) {
+func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	smokes *[]Smoke, roundInFreezetime *int, parseKillFrames *bool) {
 	(*demoParser).RegisterEventHandler(func(e events.Kill) {
 		gs := (*demoParser).GameState()
 
@@ -1925,9 +1962,9 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 				currentProjectile.ProjectileType = ele.WeaponInstance.String()
 				objPos := ele.Trajectory[len(ele.Trajectory)-1]
 
-				currentProjectile.X = float64(objPos.X)
-				currentProjectile.Y = float64(objPos.Y)
-				currentProjectile.Z = float64(objPos.Z)
+				currentProjectile.X = objPos.X
+				currentProjectile.Y = objPos.Y
+				currentProjectile.Z = objPos.Z
 				currentFrame.Projectiles = append(currentFrame.Projectiles, currentProjectile)
 			}
 
@@ -1939,9 +1976,9 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 				objPos := ele.Entity.Position()
 				currentFire.UniqueID = ele.UniqueID()
 
-				currentFire.X = float64(objPos.X)
-				currentFire.Y = float64(objPos.Y)
-				currentFire.Z = float64(objPos.Z)
+				currentFire.X = objPos.X
+				currentFire.Y = objPos.Y
+				currentFire.Z = objPos.Z
 				currentFrame.Fires = append(currentFrame.Fires, currentFire)
 			}
 
@@ -1954,9 +1991,9 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 			currentBomb := BombInfo{}
 			objPos := bombObj.Position()
 
-			currentBomb.X = float64(objPos.X)
-			currentBomb.Y = float64(objPos.Y)
-			currentBomb.Z = float64(objPos.Z)
+			currentBomb.X = objPos.X
+			currentBomb.Y = objPos.Y
+			currentBomb.Z = objPos.Z
 			currentFrame.Bomb = currentBomb
 			if len(currentRound.Bomb) > 0 {
 				for _, b := range currentRound.Bomb {
@@ -2091,7 +2128,6 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 				currentKill.IsTeamkill = true
 				currentKill.IsSuicide = true
 			}
-
 		}
 
 		// Assister
@@ -2125,8 +2161,11 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 			currentKill.IsFirstKill = true
 		} else {
 			currentKill.IsFirstKill = false
-			for i := len(currentRound.Kills) - 1; i >= 0 && inTradeWindow(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime) && !currentKill.IsTrade; i-- {
-				currentKill.IsTrade = isTrade(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
+			for i := len(currentRound.Kills) - 1; i >= 0 &&
+				inTradeWindow(currentRound.Kills[i], currentKill, currentGame.TickRate,
+					currentGame.ParsingOpts.TradeTime) && !currentKill.IsTrade; i-- {
+				currentKill.IsTrade = isTrade(currentRound.Kills[i], currentKill,
+					currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
 				if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade {
 					currentKill.PlayerTradedName = currentRound.Kills[i].VictimName
 					currentKill.PlayerTradedSteamID = currentRound.Kills[i].VictimSteamID
@@ -2140,7 +2179,6 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 		if e.Victim != nil {
 			currentKill.VictimBlinded = e.Victim.IsBlinded()
 			if e.Victim.IsBlinded() {
-
 				// This will only be true if in the killfeed the assister is the flasher
 				if e.AssistedFlash {
 					currentKill.AssisterSteamID = nil
@@ -2152,7 +2190,9 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 				// Find their latest flash event
 				for _, flash := range currentRound.Flashes {
 					flash := flash
-					if (flash.PlayerSteamID == currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick-5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
+					if (flash.PlayerSteamID == currentKill.VictimSteamID) &&
+						(flash.Tick >= currentKill.Tick-5*currentGame.TickRate) &&
+						(flash.Tick <= currentKill.Tick) {
 						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
 						currentKill.FlashThrowerName = &flash.AttackerName
 						currentKill.FlashThrowerTeam = &flash.AttackerTeam
@@ -2290,7 +2330,8 @@ func registerDamageHandler(demoParser *dem.Parser, currentGame *Game, currentRou
 	})
 }
 
-func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, smokes *[]Smoke, roundInFreezetime *int, roundInEndTime *int, currentFrameIdx *int, parseFrames *bool) {
+func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	smokes *[]Smoke, roundInFreezetime *int, roundInEndTime *int, currentFrameIdx *int, parseFrames *bool) {
 	(*demoParser).RegisterEventHandler(func(e events.FrameDone) {
 		gs := (*demoParser).GameState()
 
@@ -2365,9 +2406,9 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 				currentProjectile.ProjectileType = ele.WeaponInstance.String()
 				objPos := ele.Trajectory[len(ele.Trajectory)-1]
 
-				currentProjectile.X = float64(objPos.X)
-				currentProjectile.Y = float64(objPos.Y)
-				currentProjectile.Z = float64(objPos.Z)
+				currentProjectile.X = objPos.X
+				currentProjectile.Y = objPos.Y
+				currentProjectile.Z = objPos.Z
 				currentFrame.Projectiles = append(currentFrame.Projectiles, currentProjectile)
 			}
 
@@ -2379,9 +2420,9 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 				objPos := ele.Entity.Position()
 				currentFire.UniqueID = ele.UniqueID()
 
-				currentFire.X = float64(objPos.X)
-				currentFire.Y = float64(objPos.Y)
-				currentFire.Z = float64(objPos.Z)
+				currentFire.X = objPos.X
+				currentFire.Y = objPos.Y
+				currentFire.Z = objPos.Z
 				currentFrame.Fires = append(currentFrame.Fires, currentFire)
 			}
 
@@ -2394,9 +2435,9 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 			currentBomb := BombInfo{}
 			objPos := bombObj.Position()
 
-			currentBomb.X = float64(objPos.X)
-			currentBomb.Y = float64(objPos.Y)
-			currentBomb.Z = float64(objPos.Z)
+			currentBomb.X = objPos.X
+			currentBomb.Y = objPos.Y
+			currentBomb.Z = objPos.Z
 			currentFrame.Bomb = currentBomb
 			if len(currentRound.Bomb) > 0 {
 				for _, b := range currentRound.Bomb {
@@ -2425,7 +2466,6 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 			} else {
 				*currentFrameIdx++
 			}
-
 		} else {
 			if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
 				*currentFrameIdx = 0
@@ -2434,11 +2474,11 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 			}
 		}
 	})
-
 }
 
-func cleanAndWriteRound(currentGame *Game, jsonIndentation bool, outpath string) {
-	// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
+func cleanAndWriteGame(currentGame *Game, jsonIndentation bool, outpath string) {
+	// Loop through damages and see if there are any multi-damages in a single tick,
+	// and reduce them to one attacker-victim-weapon entry per tick
 	if currentGame.ParsingOpts.DamagesRolled {
 		for i := range currentGame.Rounds {
 			var tempDamages []DamageAction
@@ -2473,18 +2513,19 @@ func cleanAndWriteRound(currentGame *Game, jsonIndentation bool, outpath string)
 		file, err = json.Marshal(currentGame)
 	}
 	checkError(err)
-	_ = os.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
+	_ = os.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0600)
 }
 
 // Main.
 func main() {
 	/* Parse the arguments
 
-	Run the parser as follows: go run parse_demo.go -demo /path/to/demo.dem -parserate 1/2/4/8/16/32/64/128 -demoID someDemoIDString
+	Run the parser as follows:
+	go run parse_demo.go -demo /path/to/demo.dem -parserate 1/2/4/8/16/32/64/128 -demoID someDemoIDString
 
-	The parserate should be one of 2^0 to 2^7. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks.
+	The parserate should be one of 2^0 to 2^7. The lower the value, the more frames are collected.
+	Indicates spacing between parsed demo frames in ticks.
 	*/
-
 	fl := new(flag.FlagSet)
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 128, "Parse rate, indicates spacing between ticks")
@@ -2554,7 +2595,7 @@ func main() {
 
 	// Set parsing options
 	parsingOpts := ParserOpts{}
-	parsingOpts.ParseRate = int(parseRate)
+	parsingOpts.ParseRate = parseRate
 	parsingOpts.ParseFrames = parseFrames
 	parsingOpts.ParseKillFrames = parseKillFrames
 	parsingOpts.TradeTime = tradeTime
@@ -2566,7 +2607,7 @@ func main() {
 	currentRound := GameRound{}
 
 	// Create empty action lists for first round
-	initializeRound((&currentRound))
+	initializeRound(&currentRound)
 
 	RoundRestartDelay := int64(5)
 
@@ -2606,8 +2647,10 @@ func main() {
 	registerSmokeHandler(&p, &smokes)
 
 	// Parse round starts
-	registerRoundStartHandler(&p, &currentGame, &currentRound, &roundStarted, &roundInFreezetime, &roundInEndTime, &smokes)
-	registerRoundFreezeTimeEndHandler(&p, &currentGame, &currentRound, &convParsed, &RoundRestartDelay, &roundStarted, &roundInFreezetime, &roundInEndTime, &smokes)
+	registerRoundStartHandler(&p, &currentGame, &currentRound,
+		&roundStarted, &roundInFreezetime, &roundInEndTime, &smokes)
+	registerRoundFreezeTimeEndHandler(&p, &currentGame, &currentRound, &convParsed,
+		&RoundRestartDelay, &roundStarted, &roundInFreezetime, &roundInEndTime, &smokes)
 
 	// Parse round ends
 	registerRoundEndOfficialHandler(&p, &currentGame, &currentRound, &roundInEndTime, &RoundRestartDelay)
@@ -2641,8 +2684,10 @@ func main() {
 	// Parse damage events
 	registerDamageHandler(&p, &currentGame, &currentRound)
 
-	// Parse a demo frame. If parse rate is 1, then every frame is parsed. If parse rate is 2, then every 2 frames is parsed, and so on
-	registerFrameHandler(&p, &currentGame, &currentRound, &smokes, &roundInFreezetime, &roundInEndTime, &currentFrameIdx, &parseFrames)
+	// Parse a demo frame. If parse rate is 1, then every frame is parsed.
+	// If parse rate is 2, then every 2 frames is parsed, and so on
+	registerFrameHandler(&p, &currentGame, &currentRound, &smokes,
+		&roundInFreezetime, &roundInEndTime, &currentFrameIdx, &parseFrames)
 	// Parse demofile to end
 	err = p.ParseToEnd()
 	currentGame.ParsedToFrame = int64(p.CurrentFrame())
@@ -2652,7 +2697,7 @@ func main() {
 
 	// Clean rounds
 	if len(currentGame.Rounds) > 0 {
-		cleanAndWriteRound(&currentGame, jsonIndentation, outpath)
+		cleanAndWriteGame(&currentGame, jsonIndentation, outpath)
 	}
 
 	// Check error

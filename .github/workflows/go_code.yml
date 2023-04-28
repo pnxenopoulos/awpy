@@ -1,0 +1,22 @@
+# This workflow will run lints and tests on the go code.
+
+name: check_go
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v4
+      - name: Checkout csgo library
+        uses: actions/checkout@v3
+      - name: golangci-lint
+        working-directory: ./awpy/parser
+        uses: golangci/golangci-lint-action@v3
