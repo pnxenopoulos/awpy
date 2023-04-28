@@ -31,6 +31,7 @@ setup(
             "data/map/*.json",
             "data/nav/*.txt",
             "data/nav/*.csv",
+            "data/nav/*.json",
             "*.mod",
             "*.sum",
         ]

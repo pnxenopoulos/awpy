@@ -30,6 +30,24 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["awpy"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "*.go",
+    "data/map/*.png",
+    "data/map/*.json",
+    "data/nav/*.txt",
+    "data/nav/*.csv",
+    "data/nav/*.json",
+    "*.mod",
+    "*.sum",
+]
+
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
 select = [
@@ -151,3 +169,11 @@ reportAssertAlwaysTrue             = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
 reportImplicitOverride             = "none"
 reportShadowedImports              = "error"
+
+
+[tool.coverage.run]
+branch = true
+source = ["awpy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
