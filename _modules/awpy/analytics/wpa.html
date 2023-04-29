@@ -80,17 +80,25 @@
            <div itemprop="articleBody">
              
   <h1>Source code for awpy.analytics.wpa</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">awpy.types</span> <span class="kn">import</span> <span class="n">GameFrame</span>
+<span></span><span class="sd">&quot;&quot;&quot;Will provide functionality for WPA and win probabilities.</span>
+
+<span class="sd">WPA stands for Win Probability Added and is described in this paper:</span>
+<span class="sd">https://arxiv.org/pdf/2011.01324.pdf.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">awpy.types</span> <span class="kn">import</span> <span class="n">GameFrame</span>
 
 <span class="n">SIMPLE_WP_MODEL</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="n">ADV_WP_MODEL</span> <span class="o">=</span> <span class="kc">None</span>
 
 
-<div class="viewcode-block" id="state_win_probability"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.wpa.state_win_probability">[docs]</a><span class="k">def</span> <span class="nf">state_win_probability</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">GameFrame</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<div class="viewcode-block" id="state_win_probability"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.wpa.state_win_probability">[docs]</a><span class="k">def</span> <span class="nf">state_win_probability</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">GameFrame</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>  <span class="c1"># noqa: ANN401</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Predicts the win probability of a given frame.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        frame (dict): Dict output of a frame generated from the DemoParser class</span>
+<span class="sd">        model (Unknown): Model to predict win probabability from.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A dictionary containing the CT and T round win probabilities</span>
@@ -99,12 +107,12 @@
 
 
 <div class="viewcode-block" id="round_win_probability"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.wpa.round_win_probability">[docs]</a><span class="k">def</span> <span class="nf">round_win_probability</span><span class="p">(</span><span class="n">ct_score</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">t_score</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">map_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimates of game win probability using information from the HLTV win matrix for a given map and score.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimates of game win probability using information from the HLTV win matrix.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        ct_score (int): CT Score</span>
 <span class="sd">        t_score (int): T Score</span>
-<span class="sd">        map (str): Map the demo is from</span>
+<span class="sd">        map_name (str): Map the demo is from</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A dictionary containing the CT game win, T game win and Draw probabilities</span>

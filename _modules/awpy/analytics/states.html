@@ -80,8 +80,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for awpy.analytics.states</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Functions to to generate game stats based on snapshots from a demofile.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Functions to generate game stats based on snapshots from a demofile.&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">awpy.types</span> <span class="kn">import</span> <span class="n">GameFrame</span>
 
@@ -159,25 +158,27 @@
 
 
 <div class="viewcode-block" id="generate_graph_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_graph_state">[docs]</a><span class="k">def</span> <span class="nf">generate_graph_state</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">GameFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a game state as a graph</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a game state as a graph.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        frame (GameFrame) : Dict output of a frame generated from the DemoParser class</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;, where each entry is a vector. Global vector is CT + T concatenated</span>
+<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;,</span>
+<span class="sd">        where each entry is a vector. Global vector is CT + T concatenated</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ct&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;global&quot;</span><span class="p">:</span> <span class="p">[]}</span></div>
 
 
 <div class="viewcode-block" id="generate_set_state"><a class="viewcode-back" href="../../../analytics.html#awpy.analytics.states.generate_set_state">[docs]</a><span class="k">def</span> <span class="nf">generate_set_state</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">GameFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a game state as a set</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a game state as a set.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        frame (GameFrame) : Dict output of a frame generated from the DemoParser class</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;, where each entry is a vector. Global vector is CT + T concatenated</span>
+<span class="sd">        A dict with keys &quot;T&quot;, &quot;CT&quot; and &quot;Global&quot;,</span>
+<span class="sd">        where each entry is a vector. Global vector is CT + T concatenated</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;ct&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;global&quot;</span><span class="p">:</span> <span class="p">[]}</span></div>
 </pre></div>
