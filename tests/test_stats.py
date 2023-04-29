@@ -1,34 +1,47 @@
-import os
+"""Tests stats module."""
 import json
 import numbers
+import os
 from math import isclose
-import pytest
+
 import pandas as pd
+import pytest
 import requests
 
+from awpy.analytics.stats import lower_side, other_side, player_stats
 from awpy.parser import DemoParser
-from awpy.analytics.stats import player_stats, other_side
 
 
-def weighted_avg(metric: str, weighting_metric: str, stats_t: dict, stats_ct: dict) -> float:
-    """Calculates the weighted average between stats_t and stats_ct for the value of
-    'metric' weighted by 'weighting_metric'"""
-    return ((stats_t[metric] * stats_t[weighting_metric]) + (stats_ct[metric] * stats_ct[weighting_metric])) / (
-        stats_t[weighting_metric] + stats_ct[weighting_metric]
-    )
+def weighted_avg(
+    metric: str, weighting_metric: str, stats_t: dict, stats_ct: dict
+) -> float:
+    """Calculates the weighted average.
+
+    Between stats_t and stats_ct for the value of
+    'metric' weighted by 'weighting_metric'.
+    """
+    return (
+        (stats_t[metric] * stats_t[weighting_metric])
+        + (stats_ct[metric] * stats_ct[weighting_metric])
+    ) / (stats_t[weighting_metric] + stats_ct[weighting_metric])
 
 
 class TestStats:
     """Class to test the statistics functions.
-    Uses https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
+
+    Uses:
+    https://www.hltv.org/matches/2337844/astralis-vs-liquid-blast-pro-series-global-final-2019.
     """
 
     def setup_class(self):
         """Sets up class by defining the parser, filters, and dataframes."""
         with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
-        r = requests.get(self.demo_data["astralis-vs-liquid-m2-nuke"]["url"])
-        open("astralis-vs-liquid-m2-nuke" + ".dem", "wb").write(r.content)
+        r = requests.get(
+            self.demo_data["astralis-vs-liquid-m2-nuke"]["url"], timeout=100
+        )
+        with open("astralis-vs-liquid-m2-nuke.dem", "wb") as demo_file:
+            demo_file.write(r.content)
         self.parser = DemoParser(
             demofile="astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
@@ -38,25 +51,34 @@ class TestStats:
         self.data = self.parser.parse(clean=True)
 
     def teardown_class(self):
-        """Set parser to none"""
+        """Set parser to none."""
         self.parser = None
         self.data = None
         files_in_directory = os.listdir()
-        filtered_files = [file for file in files_in_directory if file.endswith(".dem") or file.endswith(".json")]
+        filtered_files = [
+            file for file in files_in_directory if file.endswith((".dem", ".json"))
+        ]
         if len(filtered_files) > 0:
             for f in filtered_files:
                 os.remove(f)
 
     def test_other_side(self):
-        """Tests other side"""
+        """Tests other side."""
         assert other_side("T") == "CT"
         assert other_side("CT") == "T"
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
             other_side("t")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
             other_side("ct")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
             other_side("apple")
+
+    def test_lower_side(self):
+        """Tests other side."""
+        assert lower_side("T") == "t"
+        assert lower_side("CT") == "ct"
+        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
+            lower_side("apple")
 
     def test_player_stats_both_json(self):
         """Tests json generation of player stats for both sides."""
@@ -151,31 +173,40 @@ class TestStats:
                     # Allow for slight deviation in case of rounding
                     assert isclose(total_value, (t_value + ct_value), abs_tol=0.11)
                 elif metric in {"steamID", "isBot"}:
-                    assert total_value == t_value and total_value == ct_value
+                    assert total_value == t_value
+                    assert total_value == ct_value
                 elif metric in {"playerName", "teamName"}:
                     assert total_value in {t_value, ct_value}
                 elif metric in {"kast", "adr"}:
                     assert isclose(
                         total_value,
-                        weighted_avg(metric, "totalRounds", stats_t[player], stats_ct[player]),
+                        weighted_avg(
+                            metric, "totalRounds", stats_t[player], stats_ct[player]
+                        ),
                         abs_tol=0.11,
                     )
                 elif metric == "hsPercent":
                     assert isclose(
                         total_value,
-                        weighted_avg(metric, "kills", stats_t[player], stats_ct[player]),
+                        weighted_avg(
+                            metric, "kills", stats_t[player], stats_ct[player]
+                        ),
                         abs_tol=0.11,
                     )
                 elif metric == "kdr":
                     assert isclose(
                         total_value,
-                        weighted_avg(metric, "deaths", stats_t[player], stats_ct[player]),
+                        weighted_avg(
+                            metric, "deaths", stats_t[player], stats_ct[player]
+                        ),
                         abs_tol=0.11,
                     )
                 elif metric == "accuracy":
                     assert isclose(
                         total_value,
-                        weighted_avg(metric, "totalShots", stats_t[player], stats_ct[player]),
+                        weighted_avg(
+                            metric, "totalShots", stats_t[player], stats_ct[player]
+                        ),
                         abs_tol=0.11,
                     )
 
@@ -382,7 +413,10 @@ class TestStats:
         player_stats(test_rounds)
 
     def test_player_stats_none_player_before_clutch(self):
-        """Tests that player stats handles a side being None correctly in clutche initialization"""
+        """Tests that player stats handles None sides correctly.
+
+        Especially in clutch initialization.
+        """
         test_rounds = [
             {
                 "roundNum": 1,
@@ -478,7 +512,7 @@ class TestStats:
         player_stats(test_rounds)
 
     def test_player_stats_none_player_in_clutch(self):
-        """Tests that player stats handles a side being None correctly in clutches"""
+        """Tests that player stats handles a side being None correctly in clutches."""
         test_rounds = [
             {
                 "roundNum": 1,

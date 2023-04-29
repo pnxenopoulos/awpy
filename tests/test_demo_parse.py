@@ -1,22 +1,25 @@
+"""Tests DemoParser functionality."""
 import json
-import os
 import logging
-from unittest.mock import patch
+import os
+from unittest.mock import MagicMock, patch
+
 import pandas as pd
 import pytest
 import requests
 
 from awpy.parser import DemoParser
+from awpy.types import GameRound
 
 
 class TestDemoParser:
-    """Class to test the match parser
+    """Class to test the match parser.
 
     We use the demofiles in test_data.json
     """
 
     def setup_class(self):
-        """Setup class by defining loading dictionary of test demo files"""
+        """Setup class by defining loading dictionary of test demo files."""
         with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
         for file in self.demo_data:
@@ -24,31 +27,30 @@ class TestDemoParser:
         self.parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
 
     def teardown_class(self):
-        """Set parser to none, deletes all demofiles and JSON"""
+        """Set parser to none, deletes all demofiles and JSON."""
         self.parser = None
         files_in_directory = os.listdir()
         filtered_files = [
-            file
-            for file in files_in_directory
-            if file.endswith(".dem") or file.endswith(".json")
+            file for file in files_in_directory if file.endswith((".dem", ".json"))
         ]
         if len(filtered_files) > 0:
             for f in filtered_files:
                 os.remove(f)
 
     @staticmethod
-    def _get_demofile(demo_link, demo_name):
+    def _get_demofile(demo_link: str, demo_name: str) -> None:
         print("Requesting " + demo_link)
-        r = requests.get(demo_link)
-        open(demo_name + ".dem", "wb").write(r.content)
+        r = requests.get(demo_link, timeout=100)
+        with open(demo_name + ".dem", "wb") as demo_file:
+            demo_file.write(r.content)
 
     @staticmethod
-    def _delete_demofile(demo_name):
+    def _delete_demofile(demo_name: str) -> None:
         print("Removing " + demo_name)
         os.remove(demo_name + ".dem")
 
     @staticmethod
-    def _check_round_scores(rounds):
+    def _check_round_scores(rounds: list[GameRound]) -> None:
         for i, r in enumerate(rounds):
             if i == 0:
                 assert r["tScore"] == 0
@@ -63,7 +65,7 @@ class TestDemoParser:
                     assert r["tScore"] > rounds[i - 1]["tScore"]
 
     def test_demo_id_inferred(self):
-        """Tests if a demo_id is correctly inferred"""
+        """Tests if a demo_id is correctly inferred."""
         self.parser_inferred = DemoParser(
             demofile="default.dem",
             log=False,
@@ -75,12 +77,12 @@ class TestDemoParser:
         assert self.parser_inferred.demo_id == "900"
 
     def test_outpath(self):
-        """Tests if the outpath is correctly recorded"""
+        """Tests if the outpath is correctly recorded."""
         self.parser_outpath = DemoParser(demofile="default.dem", log=False, outpath=".")
         assert self.parser_outpath.outpath == os.getcwd()
 
     def test_demo_id_given(self):
-        """Tests if a demo_id is correctly set"""
+        """Tests if a demo_id is correctly set."""
         self.parser_inferred = DemoParser(
             demofile="default.dem",
             demo_id="test",
@@ -89,18 +91,18 @@ class TestDemoParser:
         assert self.parser_inferred.demo_id == "test"
 
     def test_wrong_demo_path(self):
-        """Tests if failure on wrong demofile path"""
-        with pytest.raises(FileNotFoundError):
-            self.parser_wrong_demo_path = DemoParser(
-                demofile="bad.dem",
-                log=False,
-                demo_id="test",
-                parse_rate=128,
-            )
+        """Tests if failure on wrong demofile path."""
+        self.parser_wrong_demo_path = DemoParser(
+            demofile="bad.dem",
+            log=False,
+            demo_id="test",
+            parse_rate=128,
+        )
+        with pytest.raises(FileNotFoundError, match="Demofile path does not exist!"):
             self.parser_wrong_demo_path.parse()
 
     def test_parse_rate(self):
-        """Tests if bad parse rates fail"""
+        """Tests if bad parse rates fail."""
         self.parser_neg_parse_rate = DemoParser(
             demofile="default.dem",
             log=False,
@@ -108,13 +110,6 @@ class TestDemoParser:
             parse_rate=-1,
         )
         assert self.parser_neg_parse_rate.parse_rate == 128
-        self.parser_float_parse_rate = DemoParser(
-            demofile="default.dem",
-            log=False,
-            demo_id="test",
-            parse_rate=64.5,
-        )
-        assert self.parser_float_parse_rate.parse_rate == 128
         self.parser_good_parse_rate = DemoParser(
             demofile="default.dem",
             log=False,
@@ -130,11 +125,11 @@ class TestDemoParser:
         assert self.parser_inferred_parse_rate.parse_rate == 128
 
     def test_logger_set(self):
-        """Tests if log file is created"""
+        """Tests if log file is created."""
         assert self.parser.logger.name == "awpy"
 
-    def test_parse_opts(self, caplog):
-        """Tests parsing options"""
+    def test_parse_opts(self, caplog: pytest.LogCaptureFixture):
+        """Tests parsing options."""
         caplog.set_level(logging.WARNING)
         self.parser_opts = DemoParser(
             demofile="default.dem",
@@ -184,7 +179,7 @@ class TestDemoParser:
         )
 
     def test_parse_chat(self):
-        """Tests whether parse chat works"""
+        """Tests whether parse chat works."""
         self.test_chat = DemoParser(
             demofile="default.dem",
             parse_chat=True,
@@ -199,13 +194,13 @@ class TestDemoParser:
         assert len(self.test_chat.json["chatMessages"]) == 0
 
     def test_read_json_bad_path(self):
-        """Tests if the read_json fails on bad path"""
+        """Tests if the read_json fails on bad path."""
         p = DemoParser()
         with pytest.raises(FileNotFoundError):
             p.read_json("bad_json.json")
 
     def test_parse_output_type(self):
-        """Tests if the JSON output from parse is a dict"""
+        """Tests if the JSON output from parse is a dict."""
         output_json = self.parser.parse()
         assert isinstance(output_json, dict)
         assert os.path.exists("default.json")
@@ -213,7 +208,7 @@ class TestDemoParser:
         assert self.parser.parse_error is False
 
     def test_parse_valve_matchmaking(self):
-        """Tests if demos parse correctly"""
+        """Tests if demos parse correctly."""
         self.valve_mm = DemoParser(
             demofile="valve_matchmaking.dem",
             log=False,
@@ -223,7 +218,7 @@ class TestDemoParser:
         assert len(self.valve_mm_data["gameRounds"]) == 25  # 26
 
     def test_ot_demos(self):
-        """Test overtime demos"""
+        """Test overtime demos."""
         self.faceit_ot = DemoParser(
             demofile="faceit_ecs_ot.dem", log=False, parse_rate=256
         )
@@ -232,7 +227,7 @@ class TestDemoParser:
         assert self.faceit_ot_data["tickRate"] == 128
 
     def test_default_parse(self):
-        """Tests default parse"""
+        """Tests default parse."""
         self.default_data = self.parser.parse()
         assert self.default_data["mapName"] == "de_cache"
         assert self.default_data["tickRate"] == 128
@@ -252,7 +247,7 @@ class TestDemoParser:
             assert isinstance(r["frames"], list)
 
     def test_parse_kill_frames(self):
-        """Tests parse kill frames"""
+        """Tests parse kill frames."""
         self.parser_kill_frames = DemoParser(
             demofile="default.dem",
             log=False,
@@ -264,7 +259,7 @@ class TestDemoParser:
             assert len(r["kills"]) == len(r["frames"])
 
     def test_default_parse_df(self):
-        """Tests default parse to dataframe"""
+        """Tests default parse to dataframe."""
         self.default_data_df = self.parser.parse(return_type="df")
         assert isinstance(self.default_data_df["rounds"], pd.DataFrame)
         assert isinstance(self.default_data_df["kills"], pd.DataFrame)
@@ -280,13 +275,14 @@ class TestDemoParser:
             self.parser.parse_json_to_df()
 
     def test_wrong_return_type(self):
-        """Tests if wrong return type errors out"""
-        with pytest.raises(ValueError):
-            d = self.parser.parse(return_type="i_am_wrong")
+        """Tests if wrong return type errors out."""
+        with pytest.raises(ValueError, match="Parse return_type must be"):
+            self.parser.parse(return_type="i_am_wrong")
 
     def test_bot_name(self):
         """Tests if bot naming is correct (brought up by Charmees).
-        Original error had "Troy" (bot) showing up instead of "Charmees" (player)
+
+        Original error had "Troy" (bot) showing up instead of "Charmees" (player).
         """
         self.bot_name_parser = DemoParser(
             demofile="bot_name_test.dem", log=False, parse_frames=False
@@ -301,7 +297,7 @@ class TestDemoParser:
         assert charmees_found > 0
 
     def test_remove_bad_scoring(self):
-        """Tests if remove bad scoring works. Issue 149 raised by kenmareirl"""
+        """Tests if remove bad scoring works. Issue 149 raised by kenmareirl."""
         self.bad_scoring_parser_bad_demo = DemoParser(
             demofile="anonymo-vs-ldlc-m1-nuke.dem", log=False, parse_frames=False
         )
@@ -359,7 +355,7 @@ class TestDemoParser:
             demofile="bombsite_test.dem", log=False, parse_frames=False
         )
         self.phase_data = self.phase_parser.parse()
-        for phase in self.phase_data["matchPhases"].keys():
+        for phase in self.phase_data["matchPhases"]:
             assert isinstance(self.phase_data["matchPhases"][phase], list)
 
     def test_round_clean(self):
@@ -393,7 +389,7 @@ class TestDemoParser:
         assert isinstance(df_return["playerFrames"], pd.DataFrame)
         dict_return = self.clean_return_parser.clean_rounds(return_type="json")
         assert isinstance(dict_return, dict)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Invalid return_type of "):
             self.clean_return_parser.clean_rounds(
                 return_type="return_type_does_not_exist"
             )
@@ -466,7 +462,7 @@ class TestDemoParser:
         assert len(self.player_clean_parser.json["gameRounds"]) == 3
 
     def test_zero_kills(self):
-        """Tests a demo that raised many errors"""
+        """Tests a demo that raised many errors."""
         self.zero_kills_parser = DemoParser(
             demofile="nip-vs-gambit-m2-inferno.dem", log=False, parse_rate=256
         )
@@ -474,7 +470,7 @@ class TestDemoParser:
         assert len(self.zero_kills_data["gameRounds"]) == 22
 
     def test_end_round_cleanup(self):
-        """Tests cleaning the last round"""
+        """Tests cleaning the last round."""
         self.end_round_parser = DemoParser(
             demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
         )
@@ -482,7 +478,7 @@ class TestDemoParser:
         assert len(self.end_round_data["gameRounds"]) == 30
 
     def test_clean_no_json(self):
-        """Tests cleaning when parser.json is not set or None"""
+        """Tests cleaning when parser.json is not set or None."""
         self.no_json_parser = DemoParser(
             demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
         )
@@ -493,7 +489,7 @@ class TestDemoParser:
             self.no_json_parser.clean_rounds()
 
     def test_esea_ot_demo(self):
-        """Tests an ESEA demo with OT rounds"""
+        """Tests an ESEA demo with OT rounds."""
         self.esea_ot_parser = DemoParser(
             demofile="esea_match_16902209.dem", log=False, parse_rate=256
         )
@@ -501,33 +497,33 @@ class TestDemoParser:
         assert len(self.esea_ot_data["gameRounds"]) == 35
 
     @patch("os.path.isfile")
-    def test_parse_demo_error(self, isfile_mock):
-        """Tests if parser sets parse_error correctly
-        if not outputfile can be found"""
+    def test_parse_demo_error(self, isfile_mock: MagicMock):
+        """Tests if parser sets parse_error correctly if not outputfile can be found."""
         isfile_mock.return_value = False
         self.parser.parse_demo()
         assert self.parser.parse_error is True
 
     @patch("awpy.parser.demoparser.check_go_version")
-    def test_bad_go_version(self, go_version_mock):
-        """Tests parse_demo fails on bad go version"""
+    def test_bad_go_version(self, go_version_mock: MagicMock):
+        """Tests parse_demo fails on bad go version."""
         go_version_mock.return_value = False
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Error calling Go."):
             self.parser.parse_demo()
 
     def test_parse_error(self):
-        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        """Tests if parser raises an AttributeError for missing json attribute."""
         error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
         error_parser.json = None
-        with patch.object(error_parser, "read_json") as read_mock:
-            with patch.object(error_parser, "parse_demo") as parse_mock:
-                with pytest.raises(AttributeError):
-                    error_parser.parse(clean=False)
-                assert parse_mock.call_count == 1
-                assert read_mock.call_count == 1
+        with patch.object(error_parser, "read_json") as read_mock, patch.object(
+            error_parser, "parse_demo"
+        ) as parse_mock:
+            with pytest.raises(AttributeError):
+                error_parser.parse(clean=False)
+            assert parse_mock.call_count == 1
+            assert read_mock.call_count == 1
 
     def test_no_json(self):
-        """Tests if parser raises an AttributeError if the json attribute does not get set"""
+        """Tests if parser raises an AttributeError for missing json attribute."""
         no_json_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
         # Json ist set but falsy
         no_json_parser.json = None

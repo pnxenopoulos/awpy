@@ -4,39 +4,59 @@
 
     from awpy.analytics.nav import area_distance
 
-    geodesic_dist = area_distance(map_name="de_dust2", area_a=152, area_b=8970, dist_type="geodesic")
-    f, ax = plot_map(map_name = "de_dust2", map_type = 'simpleradar', dark = True)
+    geodesic_dist = area_distance(
+        map_name="de_dust2", area_a=152, area_b=8970, dist_type="geodesic"
+    )
+    f, ax = plot_map(map_name="de_dust2", map_type="simpleradar", dark=True)
 
     for a in NAV["de_dust2"]:
         area = NAV["de_dust2"][a]
         color = "None"
         if a in geodesic_dist["areas"]:
             color = "red"
-        width = (area["southEastX"] - area["northWestX"])
-        height = (area["northWestY"] - area["southEastY"])
+        width = area["southEastX"] - area["northWestX"]
+        height = area["northWestY"] - area["southEastY"]
         southwest_x = area["northWestX"]
         southwest_y = area["southEastY"]
-        rect = patches.Rectangle((southwest_x,southwest_y), width, height, linewidth=1, edgecolor="yellow", facecolor=color)
+        rect = patches.Rectangle(
+            (southwest_x, southwest_y),
+            width,
+            height,
+            linewidth=1,
+            edgecolor="yellow",
+            facecolor=color,
+        )
         ax.add_patch(rect)
 
     https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb
 """
-import sys
-import os
-from typing import TypedDict, Literal, cast, get_args
 import itertools
-from collections import defaultdict
-from statistics import mean, median
-import math
 import json
-from sympy.utilities.iterables import multiset_permutations
+import math
+import os
+import sys
+from collections import defaultdict
+from itertools import pairwise
+from statistics import mean, median
+from typing import Literal, cast, get_args
+
 import networkx as nx
 import numpy as np
+import numpy.typing as npt
 from scipy.spatial import distance
 from shapely.geometry import Polygon
+from sympy.utilities.iterables import multiset_permutations
 
-from awpy.data import NAV, NAV_GRAPHS, AREA_DIST_MATRIX, PLACE_DIST_MATRIX, PATH
-from awpy.types import GameFrame, AreaMatrix, PlaceMatrix, DistanceType, Token
+from awpy.data import AREA_DIST_MATRIX, NAV, NAV_GRAPHS, PATH, PLACE_DIST_MATRIX
+from awpy.types import (
+    AreaMatrix,
+    ClosestArea,
+    DistanceObject,
+    DistanceType,
+    GameFrame,
+    PlaceMatrix,
+    Token,
+)
 
 
 def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
@@ -59,7 +79,8 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
         raise ValueError("Map not found.")
     if area_id not in NAV[map_name]:
         raise ValueError("Area ID not found.")
-    if len(point) != 3:
+    # Three dimensional space. Unlikely to change anytime soon
+    if len(point) != 3:  # noqa: PLR2004
         raise ValueError("Point must be a list [X,Y,Z]")
     contains_x = (
         min(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"])
@@ -80,17 +101,10 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
     return False
 
 
-class ClosestArea(TypedDict):
-    """TypedDict for closest area object holding information about
-    the map, the closest area and the distance to that area"""
-
-    mapName: str
-    areaId: int
-    distance: float
-
-
 def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
-    """Finds the closest area in the nav mesh. Searches through all the areas by comparing point to area centerpoint.
+    """Finds the closest area in the nav mesh.
+
+    Searches through all the areas by comparing point to area centerpoint.
 
     Args:
         map_name (string): Map to search
@@ -105,7 +119,8 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
-    if len(point) != 3:
+    # Three dimensional space. Unlikely to change anytime soon
+    if len(point) != 3:  # noqa: PLR2004
         raise ValueError("Point must be a list [X,Y,Z]")
     closest_area: ClosestArea = {
         "mapName": map_name,
@@ -114,7 +129,7 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
         "areaId": 0,
         "distance": float("inf"),
     }
-    for area in NAV[map_name].keys():
+    for area in NAV[map_name]:
         avg_x = (
             NAV[map_name][area]["northWestX"] + NAV[map_name][area]["southEastX"]
         ) / 2
@@ -133,29 +148,22 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     return closest_area
 
 
-class DistanceObject(TypedDict):
-    """TypedDict for distance object holding information about
-    distance type, distance and the areas in the path between two points/areas"""
-
-    distanceType: str
-    distance: float
-    areas: list[int]
-
-
 def area_distance(
     map_name: str,
     area_a: int,
     area_b: int,
     dist_type: DistanceType = "graph",
 ) -> DistanceObject:
-    """Returns the distance between two areas. Dist type can be graph, geodesic or euclidean.
+    """Returns the distance between two areas.
+
+    Dist type can be [graph, geodesic, euclidean].
 
     Args:
         map_name (string): Map to search
         area_a (int): Area id
         area_b (int): Area id
-        dist_type (string, optional): String indicating the type of distance to use (graph,
-            geodesic or euclidean). Defaults to 'graph'
+        dist_type (string, optional): String indicating the type of distance to use
+            (graph, geodesic or euclidean). Defaults to 'graph'
 
     Returns:
         A dict containing info on the path between two areas.
@@ -171,7 +179,7 @@ def area_distance(
         raise ValueError("Area ID not found.")
     if dist_type not in get_args(DistanceType):
         raise ValueError("dist_type can only be graph, geodesic or euclidean")
-    G = NAV_GRAPHS[map_name]
+    map_graph = NAV_GRAPHS[map_name]
     distance_obj: DistanceObject = {
         "distanceType": dist_type,
         "distance": float("inf"),
@@ -179,7 +187,7 @@ def area_distance(
     }
     if dist_type == "graph":
         try:
-            discovered_path = nx.shortest_path(G, area_a, area_b)
+            discovered_path = nx.shortest_path(map_graph, area_a, area_b)
             distance_obj["distance"] = len(discovered_path) - 1
             distance_obj["areas"] = discovered_path
         except nx.NetworkXNoPath:
@@ -188,15 +196,17 @@ def area_distance(
         return distance_obj
     if dist_type == "geodesic":
 
-        def dist_heuristic(a, b):
-            return distance.euclidean(G.nodes()[a]["center"], G.nodes()[b]["center"])
+        def dist_heuristic(a: int, b: int) -> float:
+            return distance.euclidean(
+                map_graph.nodes()[a]["center"], map_graph.nodes()[b]["center"]
+            )
 
         try:
             geodesic_path = nx.astar_path(
-                G, area_a, area_b, heuristic=dist_heuristic, weight="weight"
+                map_graph, area_a, area_b, heuristic=dist_heuristic, weight="weight"
             )
             geodesic_cost = sum(
-                G[u][v]["weight"] for u, v in zip(geodesic_path[:-1], geodesic_path[1:])
+                map_graph[u][v]["weight"] for u, v in pairwise(geodesic_path)
             )
             distance_obj["distance"] = geodesic_cost
             distance_obj["areas"] = geodesic_path
@@ -256,35 +266,34 @@ def point_distance(
         A dict containing info on the distance between two points.
 
     Raises:
-        ValueError: If map_name is not in awpy.data.NAV if dist_type is "graph" or "geodesic"
-                    If either point_a or point_b does not have a length of 3 (for "graph" or "geodesic" dist_type)
+        ValueError: If map_name is not in awpy.data.NAV:
+                        if dist_type is "graph" or "geodesic"
+                    If either point_a or point_b does not have a length of 3
+                        (for "graph" or "geodesic" dist_type)
     """
     if dist_type not in get_args(PointDistanceType):
         raise ValueError(
-            "dist_type can only be graph, geodesic, euclidean, manhattan, canberra or cosine"
+            "dist_type can only be graph, geodesic,"
+            " euclidean, manhattan, canberra or cosine"
         )
+    if dist_type in {"graph", "geodesic"}:
+        if map_name not in NAV:
+            raise ValueError("Map not found.")
+        # Three dimensional space. Unlikely to change anytime soon
+        if len(point_a) != 3 or len(point_b) != 3:  # noqa: PLR2004
+            raise ValueError(
+                "When using graph or geodesic distance, point must be X/Y/Z"
+            )
     distance_obj: DistanceObject = {
         "distanceType": dist_type,
         "distance": float("inf"),
         "areas": [],
     }
     if dist_type == "graph":
-        if map_name not in NAV:
-            raise ValueError("Map not found.")
-        if len(point_a) != 3 or len(point_b) != 3:
-            raise ValueError(
-                "When using graph or geodesic distance, point must be X/Y/Z"
-            )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
     if dist_type == "geodesic":
-        if map_name not in NAV:
-            raise ValueError("Map not found.")
-        if len(point_a) != 3 or len(point_b) != 3:
-            raise ValueError(
-                "When using graph or geodesic distance, point must be X/Y/Z"
-            )
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
@@ -295,12 +304,12 @@ def point_distance(
         distance_obj["distance"] = distance.cityblock(point_a, point_b)
         return distance_obj
     if dist_type == "canberra":
-        distance_obj["distance"] = distance.canberra(point_a, point_b)
+        distance_obj["distance"] = float(distance.canberra(point_a, point_b))
         return distance_obj
     # redundant due to asserting that only ["graph", "geodesic", "euclidean", manhattan,
     # canberra, cosine] are valid and if checks that it is neither none of the others
     # if dist_type == "cosine":
-    distance_obj["distance"] = distance.cosine(point_a, point_b)
+    distance_obj["distance"] = float(distance.cosine(point_a, point_b))
     return distance_obj
 
 
@@ -320,8 +329,13 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
-    if (len(frame["ct"]["players"] or []) == 0) or (
-        len(frame["t"]["players"] or []) == 0
+    ct_players = frame["ct"]["players"]
+    t_players = frame["t"]["players"]
+    if (
+        ct_players is None
+        or t_players is None
+        or len(ct_players) == 0
+        or len(t_players) == 0
     ):
         raise ValueError("CT or T players has length of 0")
     # Create map area list
@@ -334,7 +348,7 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     ct_token = np.zeros(len(map_area_names), dtype=np.int8)
     # We know this is not None because otherwise we would have already
     # thrown a ValueError
-    for player in frame["ct"]["players"]:  # type: ignore[union-attr]
+    for player in ct_players:
         if player["isAlive"]:
             closest_area = find_closest_area(
                 map_name, [player["x"], player["y"], player["z"]]
@@ -344,7 +358,7 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
             ] += 1
     t_token = np.zeros(len(map_area_names), dtype=np.int8)
     # Same here
-    for player in frame["t"]["players"]:  # type: ignore[union-attr]
+    for player in t_players:
         if player["isAlive"]:
             closest_area = find_closest_area(
                 map_name, [player["x"], player["y"], player["z"]]
@@ -368,22 +382,24 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
 
 
 def tree() -> dict:
-    """Builds tree data structure from nested defaultdicts
+    """Builds tree data structure from nested defaultdicts.
 
     Args:
         None
 
     Returns:
-        An empty tree"""
+        An empty tree
+    """
 
-    def the_tree():
+    def the_tree() -> dict:
         return defaultdict(the_tree)
 
     return the_tree()
 
 
-def generate_area_distance_matrix(map_name: str, save: bool = False) -> AreaMatrix:
-    """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all area
+def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaMatrix:
+    """Generates or grabs a tree like nested dictionary containing distance matrices.
+
     Structures is [map_name][area1id][area2id][dist_type(euclidean,graph,geodesic)]
 
     Note that this can take 20min to 5h to run depending on the map and produces
@@ -401,8 +417,10 @@ def generate_area_distance_matrix(map_name: str, save: bool = False) -> AreaMatr
         ValueError: Raises a ValueError if map_name is not in awpy.data.NAV
     """
     print(
-        """Note that this can take 20min to 5h to run depending on the map and produces an output file of 50-300mb.
-    If you run this offline and want to store the result for later reuse make sure to set 'save=True'!"""
+        "Note that this can take 20min to 5h to run depending on the"
+        " map and produces an output file of 50-300mb."
+        "If you run this offline and want to store the result "
+        "for later reuse make sure to set 'save=True'!"
     )
     # Initialize the dict structure
     area_distance_matrix: AreaMatrix = tree()
@@ -457,9 +475,12 @@ def generate_area_distance_matrix(map_name: str, save: bool = False) -> AreaMatr
     return area_distance_matrix
 
 
-def generate_place_distance_matrix(map_name: str, save: bool = False) -> PlaceMatrix:
-    """Generates or grabs a tree like nested dictionary containing distance matrices (as dicts) for each map for all regions
-    Structures is [map_name][placeid][place2id][dist_type(euclidean,graph,geodesic)][reference_point(centroid,representative_point,median_dist)]
+def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> PlaceMatrix:
+    """Generates or grabs a tree like nested dictionary containing distance matrices.
+
+    Structures is:
+    [map_name][placeid][place2id][dist_type(euclidean,graph,geodesic)]
+    [reference_point(centroid,representative_point,median_dist)]
 
     Args:
         map_name (string): Map to generate the place matrix for
@@ -505,7 +526,8 @@ def generate_place_distance_matrix(map_name: str, save: bool = False) -> PlaceMa
                     )[
                         "distance"
                     ]
-                    # Median of all the distance pairs for areaA in place1 to areaB in place2
+                    # Median of all the distance pairs for areaA in place1
+                    # to areaB in place2
                     connections = []
                     for sub_area1 in area_mapping[place1]:
                         for sub_area2 in area_mapping[place2]:
@@ -558,13 +580,16 @@ def generate_place_distance_matrix(map_name: str, save: bool = False) -> PlaceMa
 def generate_centroids(
     map_name: str,
 ) -> tuple[dict[str, int], dict[str, int]]:
-    """For each region in the given map calculates the centroid and a representative point and finds the closest tile for each
+    """For each region in the given map calculates the centroid and a repr. point.
+
+    Also finds the closest tile for each.
 
     Args:
         map_name (string): Name of the map for which to calculate the centroids
 
     Returns:
-        Tuple of dictionaries containing the centroid and representative tiles for each region of the map
+        Tuple of dictionaries containing the centroid and representative tiles
+        for each region of the map
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -596,11 +621,13 @@ def generate_centroids(
         # Get the centroids and rep. point of the hull
         try:
             my_polygon = Polygon(hull)
-            my_centroid = list(np.array(my_polygon.centroid.coords)[0]) + [
-                mean(z_s[area_name])
+            my_centroid = [
+                *list(np.array(my_polygon.centroid.coords)[0]),
+                mean(z_s[area_name]),
             ]
-            rep_point = list(np.array(my_polygon.representative_point().coords)[0]) + [
-                mean(z_s[area_name])
+            rep_point = [
+                *list(np.array(my_polygon.representative_point().coords)[0]),
+                mean(z_s[area_name]),
             ]
         except ValueError:  # A LinearRing must have at least 3 coordinate tuples
             my_centroid = [
@@ -617,13 +644,15 @@ def generate_centroids(
 
 
 def stepped_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    """Takes a set of points and produces an approximation of their orthogonal convex hull
+    """Produces an approximation of the orthogonal convex hull.
 
     Args:
         points (list): A list of points given as tuples (x, y)
 
     Returns:
-        A list of points making up the hull or four lists of points making up the four quadrants of the hull"""
+        A list of points making up the hull or
+        four lists of points making up the four quadrants of the hull
+    """
     # May be equivalent to the orthogonal convex hull
 
     points = sorted(set(points))
@@ -664,14 +693,18 @@ def stepped_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]
 def build_stepped_upper(
     points: list[tuple[float, float]], max_y: tuple[float, float]
 ) -> list[tuple[float, float]]:
-    """Builds builds towards the upper part of the hull based on starting point and maximum y value.
+    """Builds towards the upper part of the hull.
+
+    Based on starting point and maximum y value.
 
     Args:
-        points (list[tuple[float, float]]): A list of points to build the upper left hull section from
+        points (list[tuple[float, float]]): A list of points to build
+            the upper left hull section from
         max_y (tuple[float, float]): The point with the highest y
 
     Returns:
-        A list of points making up the upper part of the hull"""
+        A list of points making up the upper part of the hull
+    """
     # Steps towards the highest y point
 
     section = [points[0]]
@@ -688,14 +721,18 @@ def build_stepped_upper(
 def build_stepped_lower(
     points: list[tuple[float, float]], min_y: tuple[float, float]
 ) -> list[tuple[float, float]]:
-    """Builds builds towards the lower part of the hull based on starting point and maximum y value.
+    """Builds towards the lower part of the hull.
+
+    Based on starting point and maximum y value.
 
     Args:
-        points (list[tuple[float, float]]): A list of points to build the upper left hull section from
+        points (list[tuple[float, float]]): A list of points to build
+            the upper left hull section from
         min_y (tuple[float, float]): The point with the lowest y
 
     Returns:
-        A list of points making up the lower part of the hull"""
+        A list of points making up the lower part of the hull
+    """
     # Steps towards the lowest y point
 
     section = [points[0]]
@@ -710,179 +747,310 @@ def build_stepped_lower(
     return section
 
 
-def position_state_distance(
+def _check_arguments_position_distance(
     map_name: str,
-    position_array_1: np.ndarray,
-    position_array_2: np.ndarray,
+    position_array_1: npt.NDArray,
+    position_array_2: npt.NDArray,
     distance_type: DistanceType = "geodesic",
-) -> float:
-    """Calculates a distance between two game states based on player positions
+) -> tuple[npt.NDArray, npt.NDArray]:
+    """Check arguments of `position_state_distance`.
+
+    Checks if arguments are valid and raises ValueErrors if not.
+    Also orders position_arrays such that position_array_1 never contains
+    fewer alive players than position_array_2.
 
     Args:
         map_name (string): Map to search
-        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team,
-            the second the player and the third the coordinate. Alternatively the array can have shape (2|1, 5, 1)
-            where the last value gives the area_id. Used only with geodesic and graph distance
-        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3) with the first index indicating the team,
-            the second the player and the third the coordinate. Alternatively the array can have shape (2|1, 5, 1)
-            where the last value gives the area_id. Used only with geodesic and graph distance
-        distance_type (string, optional): String indicating how the distance between two player positions should be calculated.
+        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3)
+            with the first index indicating the team, the second the player
+            and the third the coordinate.
+            Alternatively the array can have shape (2|1, 5, 1) where the last value
+            gives the area_id. Used only with geodesic and graph distance
+        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3)
+            with the first index indicating the team, the second the playe
+            and the third the coordinate.
+            Alternatively the array can have shape (2|1, 5, 1) where the last value
+            gives the area_id. Used only with geodesic and graph distance
+        distance_type (string, optional): String indicating how the distance between
+            two player positions should be calculated.
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV.
+        ValueError: If distance_type is not one of ["graph", "geodesic", "euclidean"].
+        ValueError: If the 0th (number of teams) and 2nd (number of features) dimensions
+                        of the inputs do not have the same size.
+        ValueError: If number of features is not 3 for euclidean distance_type
+
+    Returns:
+       tuple[npt.NDArray, npt.NDArray]: Potentially reordered position arrays.
+    """
+    if map_name not in NAV:
+        raise ValueError("Map not found.")
+    if distance_type not in get_args(DistanceType):
+        raise ValueError("distance_type can only be graph, geodesic or euclidean")
+    if (
+        position_array_1.shape[0] != position_array_2.shape[0]
+        or position_array_1.shape[2] != position_array_2.shape[2]
+    ):
+        raise ValueError(
+            "Game state shapes do not match! "
+            "Both states have to have the same number of teams(1 or 2) "
+            "and same number of coordinates."
+        )
+    # Three dimensional space. Unlikely to change anytime soon
+    if (
+        distance_type not in ["geodesic", "graph"]
+        and position_array_1.shape[2] != 3  # noqa: PLR2004
+    ):
+        raise ValueError(
+            "Game state shapes are incorrect! Both states have to have the same number "
+            "of coordinates (3) when not using 'geodesic' or graph 'distance'."
+        )
+    # Make sure array1 is the one with more players alive
+    if position_array_1.shape[1] < position_array_2.shape[1]:
+        position_array_1, position_array_2 = position_array_2, position_array_1
+    return position_array_1, position_array_2
+
+
+def _precompute_area_names(
+    map_name: str, position_array_1: npt.NDArray, position_array_2: npt.NDArray
+) -> dict[int, dict[int, dict]]:
+    """Precompute the area names for each player position.
+
+    Args:
+        map_name (string): Map to search
+        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3)
+            with the first index indicating the team, the second the player
+            and the third the coordinate.
+            Alternatively the array can have shape (2|1, 5, 1) where the last value
+            gives the area_id. Used only with geodesic and graph distance
+        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3)
+            with the first index indicating the team, the second the playe
+            and the third the coordinate.
+            Alternatively the array can have shape (2|1, 5, 1) where the last value
+            gives the area_id. Used only with geodesic and graph distance
+
+    Returns:
+        dict[int, defaultdict[int, dict]]: Mapping for each team
+            containing the areaId for each player.
+    """
+    areas: dict[int, dict[int, dict[int, int]]] = {
+        1: defaultdict(dict),
+        2: defaultdict(dict),
+    }
+    if position_array_1.shape[-1] == 3:  # noqa: PLR2004
+        for team in range(position_array_1.shape[0]):
+            for player in range(position_array_1.shape[1]):
+                areas[1][team][player] = find_closest_area(
+                    map_name, position_array_1[team][player]
+                )["areaId"]
+            for player in range(position_array_2.shape[1]):
+                areas[2][team][player] = find_closest_area(
+                    map_name, position_array_2[team][player]
+                )["areaId"]
+    else:
+        areas[1] = {
+            team: {player: int(features[0]) for player, features in enumerate(row)}
+            for team, row in enumerate(position_array_1)
+        }
+        areas[2] = {
+            team: {player: int(features[0]) for player, features in enumerate(row)}
+            for team, row in enumerate(position_array_2)
+        }
+    return areas
+
+
+def _euclidean_position_distance(
+    position_array_1: npt.NDArray,
+    position_array_2: npt.NDArray,
+    team: int,
+    player1: int,
+    player2: int,
+) -> float:
+    """Calculate euclidean distance between two players.
+
+    Calculate the euclidean distance between player1 and player2 on `team` for
+    position_array_1 vs position_array_2.
+    Fast but ignores walls.
+
+    Args:
+        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3)
+            with the first index indicating the team, the second the player
+            and the third the coordinate.
+            Alternatively the array can have shape (2|1, 5, 1) where the last value
+            gives the area_id. Used only with geodesic and graph distance
+        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3)
+            with the first index indicating the team, the second the playe
+            and the third the coordinate.
+            Alternatively the array can have shape (2|1, 5, 1) where the last value
+            gives the area_id. Used only with geodesic and graph distance
+        team (int): Which team to consider
+        player1 (int): First player in distance calculation
+        player2 (int): Second player in distance calculation
+
+    Returns:
+        float: Euclidean distance between player1 and player2 in team.
+    """
+    return math.sqrt(
+        (position_array_1[team][player1][0] - position_array_2[team][player2][0]) ** 2
+        + (position_array_1[team][player1][1] - position_array_2[team][player2][1]) ** 2
+        + (position_array_1[team][player1][2] - position_array_2[team][player2][2]) ** 2
+    )
+
+
+def _graph_based_position_distance(
+    map_name: str,
+    area1: int,
+    area2: int,
+    distance_type: DistanceType,
+) -> float:
+    """Calculate graph based distance between two areas.
+
+    Takes into account the actual map
+    The underlying graph is directed
+    (There is a short path to drop down a ledge
+    but a long one is needed to get back up)
+    So calculate both possible values and take the minimum one so
+    that the distance between two states/trajectories is commutative
+
+    Args:
+        map_name (string): Map to search
+        area1 (int): First area in distance calculation
+        area2 (int): Second area in distance calculation
+        distance_type (string, optional): String indicating how the distance between
+            two player positions should be calculated.
+            Options are "geodesic", "graph".
+
+    Returns:
+        float: Graph based distance between two areas.
+    """
+    if map_name not in AREA_DIST_MATRIX:
+        this_dist = min(
+            area_distance(
+                map_name,
+                area1,
+                area2,
+                dist_type=distance_type,
+            )["distance"],
+            area_distance(
+                map_name,
+                area2,
+                area1,
+                dist_type=distance_type,
+            )["distance"],
+        )
+    else:
+        this_dist = min(
+            AREA_DIST_MATRIX[map_name][str(area1)][str(area2)][distance_type],
+            AREA_DIST_MATRIX[map_name][str(area2)][str(area1)][distance_type],
+        )
+    if this_dist == float("inf"):
+        this_dist = sys.maxsize / 6
+    return this_dist
+
+
+def position_state_distance(
+    map_name: str,
+    position_array_1: npt.NDArray,
+    position_array_2: npt.NDArray,
+    distance_type: DistanceType = "geodesic",
+) -> float:
+    """Calculates a distance between two game states based on player positions.
+
+    Args:
+        map_name (string): Map to search
+        position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3)
+            with the first index indicating the team, the second the player
+            and the third the coordinate.
+            Alternatively the array can have shape (2|1, 5, 1) where the last value
+            gives the area_id. Used only with geodesic and graph distance
+        position_array_2 (numpy array): Numpy array with shape (2|1, 5, 3)
+            with the first index indicating the team, the second the playe
+            and the third the coordinate.
+            Alternatively the array can have shape (2|1, 5, 1) where the last value
+            gives the area_id. Used only with geodesic and graph distance
+        distance_type (string, optional): String indicating how the distance between
+            two player positions should be calculated.
             Options are "geodesic", "graph" and "euclidean". Defaults to 'geodesic'
 
     Returns:
         A float representing the distance between these two game states
 
     Raises:
-        ValueError: If map_name is not in awpy.data.NAV
-                    If distance_type is not one of ["graph", "geodesic", "euclidean"]
-                    If the 0th(number of teams) and 2nd(number of features) dimensions of the inputs do not have the same size
+        ValueError: If map_name is not in awpy.data.NAV.
+        ValueError: If distance_type is not one of ["graph", "geodesic", "euclidean"].
+        ValueError: If the 0th (number of teams) and 2nd (number of features) dimensions
+                        of the inputs do not have the same size.
+        ValueError: If number of features is not 3 for euclidean distance_type
     """
-    if map_name not in NAV:
-        raise ValueError("Map not found.")
-    if distance_type not in get_args(DistanceType):
-        raise ValueError("distance_type can only be graph, geodesic or euclidean")
+    position_array_1, position_array_2 = _check_arguments_position_distance(
+        map_name, position_array_1, position_array_2, distance_type
+    )
     pos_distance: float = 0
-    if (
-        position_array_1.shape[0] != position_array_2.shape[0]
-        or position_array_1.shape[2] != position_array_2.shape[2]
-    ):
-        raise ValueError(
-            "Game state shapes do not match! Both states have to have the same number of teams(1 or 2) and same number of coordinates."
-        )
-    if distance_type not in ["geodesic", "graph"] and position_array_1.shape[2] != 3:
-        raise ValueError(
-            "Game state shapes are incorrect! Both states have to have the same number of coordinates (3) when not using 'geodesic' or graph 'distance'."
-        )
-    # Make sure array1 is the one with more players alive
-    if position_array_1.shape[1] < position_array_2.shape[1]:
-        position_array_1, position_array_2 = position_array_2, position_array_1
     # Pre compute the area names for each player's position
     # If the x,y and z coordinate are given
-    if distance_type in ["geodesic", "graph"] and position_array_1.shape[-1] == 3:
-        areas: dict[int, defaultdict[int, dict]] = {
-            1: defaultdict(dict),
-            2: defaultdict(dict),
-        }
-        for team in range(position_array_1.shape[0]):
-            for player in range(position_array_1.shape[1]):
-                areas[1][team][player] = find_closest_area(
-                    map_name, position_array_1[team][player]
-                )["areaId"]
-        for team in range(position_array_2.shape[0]):
-            for player in range(position_array_2.shape[1]):
-                areas[2][team][player] = find_closest_area(
-                    map_name, position_array_2[team][player]
-                )["areaId"]
+    # Three dimensional space. Unlikely to change anytime soon
+    areas: dict[int, dict[int, dict]] = {}
+    if distance_type in ["geodesic", "graph"]:
+        areas = _precompute_area_names(map_name, position_array_1, position_array_2)
     # Get the minimum mapping distance for each side separately
     for team in range(position_array_1.shape[0]):
         side_distance = float("inf")
-        # Generate all possible mappings between players from array1 and array2. (Map player1 from array1 to player1 from array2 and player2's to each other or match player1's with player2's and so on)
+        # Generate all possible mappings between players from array1 and array2.
+        # Map player1 from array1 to player1 from array2 and
+        # player2's to each other or match player1's with player2's and so on
         for mapping in itertools.permutations(
             range(position_array_1.shape[1]), position_array_2.shape[1]
         ):
-            # Distance team distance for the current mapping
             cur_dist: float = 0
-            # Calculate the distance between each pair of players in the current mapping
             for player2, player1 in enumerate(mapping):
-                # Just take euclidian distance between the two players. Fast but ignores walls
+                this_dist = 0
                 if distance_type == "euclidean":
-                    this_dist = math.sqrt(
-                        (
-                            position_array_1[team][player1][0]
-                            - position_array_2[team][player2][0]
-                        )
-                        ** 2
-                        + (
-                            position_array_1[team][player1][1]
-                            - position_array_2[team][player2][1]
-                        )
-                        ** 2
-                        + (
-                            position_array_1[team][player1][2]
-                            - position_array_2[team][player2][2]
-                        )
-                        ** 2
+                    this_dist = _euclidean_position_distance(
+                        position_array_1, position_array_2, team, player1, player2
                     )
-                # Use a more accurate graph based distance that takes into account the actual map
                 elif distance_type in ["geodesic", "graph"]:
-                    # The underlying graph is directed (There is a short path to drop down a ledge but a long one is needed to get back up)
-                    # So calculate both possible values and take the minimum one so that the distance between two states/trajectories is commutative
-                    area1 = (
-                        # either take values precomputed here
-                        areas[1][team][player1]
-                        if position_array_1.shape[-1] == 3
-                        # or if only one position value is given that should be the area id already
-                        else int(position_array_1[team][player1][0])
+                    area1 = areas[1][team][player1]
+                    area2 = areas[2][team][player2]
+                    this_dist = _graph_based_position_distance(
+                        map_name, area1, area2, distance_type
                     )
-                    area2 = (
-                        areas[2][team][player2]
-                        if position_array_2.shape[-1] == 3
-                        else int(position_array_2[team][player2][0])
-                    )
-                    if map_name not in AREA_DIST_MATRIX:
-                        this_dist = min(
-                            area_distance(
-                                map_name,
-                                area1,
-                                area2,
-                                dist_type=distance_type,
-                            )["distance"],
-                            area_distance(
-                                map_name,
-                                area2,
-                                area1,
-                                dist_type=distance_type,
-                            )["distance"],
-                        )
-                    else:
-                        this_dist = min(
-                            AREA_DIST_MATRIX[map_name][str(area1)][str(area2)][
-                                distance_type
-                            ],
-                            AREA_DIST_MATRIX[map_name][str(area2)][str(area1)][
-                                distance_type
-                            ],
-                        )
-                    if this_dist == float("inf"):
-                        this_dist = sys.maxsize / 6
-                # Build up the overall distance for the current mapping of the current side
                 cur_dist += this_dist / len(mapping)
-            # Only keep the smallest distance from all the mappings
             side_distance = min(side_distance, cur_dist)
-        # Build the total distance as the sum of the individual side's distances
         pos_distance += side_distance / position_array_1.shape[0]
     return pos_distance
 
 
-def token_state_distance(
+def _check_arguments_token_distance(
     map_name: str,
-    token_array_1: np.ndarray,
-    token_array_2: np.ndarray,
+    token_array_1: npt.NDArray,
+    token_array_2: npt.NDArray,
     distance_type: Literal[DistanceType, "edit_distance"] = "geodesic",
     reference_point: Literal["centroid", "representative_point"] = "centroid",
-) -> float:
-    """Calculates a distance between two game states based on player positions
+) -> None:
+    """Check arguments of `token_state_distance`.
+
+    Checks if arguments are valid and raises ValueErrors if not.
 
     Args:
         map_name (string): Map to search
         token_array_1 (numpy array): 1-D numpy array of a position token
         token_array_2 (numpy array): 1-D numpy array of a position token
-        distance_type (string, optional): String indicating how the distance between two player positions
-            should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance".
+        distance_type (string, optional): String indicating how the distance
+            between two player positions should be calculated.
+            Options are "geodesic", "graph", "euclidean" and "edit_distance".
             Defaults to 'geodesic'
-        reference_point (string, optional): String indicating which reference point to use
-            to determine area distance. Options are "centroid" and "representative_point".
+        reference_point (string, optional): String indicating which reference point
+            to use to determine area distance.
+            Options are "centroid" and "representative_point".
             Defaults to 'centroid'
-
-    Returns:
-        A float representing the distance between these two game states
-
     Raises:
-        ValueError: If map_name is not in awpy.data.NAV
-                    If distance_type is not one of ["graph", "geodesic", "euclidean", "edit_distance"]
-                    If reference_point is not one if ["centroid", "representative_point"]
-                    If the input token arrays do not have the same length
-                    If the length of the token arrays do not match the expected length for that map
+        ValueError: If map_name is not in awpy.data.NAV.
+        ValueError: If distance_type is not one of:
+                        ["graph", "geodesic", "euclidean", "edit_distance"]
+        ValueError: If reference_point is not one of:
+                        ["centroid", "representative_point"]
+        ValueError: If the input token arrays do not have the same length.
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
@@ -894,34 +1062,160 @@ def token_state_distance(
         raise ValueError("reference_point can only be centroid or representative_point")
     if len(token_array_1) != len(token_array_2):
         raise ValueError("Token arrays have to have the same length!")
-    # Get the list of named areas. Needed to translate back from token position to area name
-    map_area_names = []
-    for area_id in NAV[map_name]:
-        if NAV[map_name][area_id]["areaName"] not in map_area_names:
-            map_area_names.append(NAV[map_name][area_id]["areaName"])
-    map_area_names.sort()
 
+
+def _get_map_area_names(map_name: str) -> list[str]:
+    """Get the list of named areas.
+
+    Needed to translate back from token position to area name.
+
+    Args:
+        map_name (string): Map to search
+        token_array_1 (numpy array): 1-D numpy array of a position token
+
+    Returns:
+        list[str]: Sorted list of named areas on the map.
+    """
+    map_area_names: set[str] = set()
+    for area_id in NAV[map_name]:
+        map_area_names.add(NAV[map_name][area_id]["areaName"])
+
+    return sorted(map_area_names)
+
+
+def _check_proper_token_length(
+    map_area_names: list[str], token_array: npt.NDArray
+) -> None:
+    """Checks that the length of the token array matches expectation.
+
+    Args:
+        map_area_names (list[str]): Map to search
+        token_array (npt.NDArray): 1-D numpy array of a position token
+
+    Raises:
+        ValueError: If the length of the token arrays do not match
+                        the expected length for that map.
+    """
     if (
-        len(token_array_1) != len(map_area_names)
-        and len(token_array_1) != len(map_area_names) * 2
+        len(token_array) != len(map_area_names)
+        and len(token_array) != len(map_area_names) * 2
     ):
         raise ValueError(
-            "Token arrays do not have the correct length. There has to be one entry per named area per team considered!"
+            "Token arrays do not have the correct length. "
+            "There has to be one entry per named area per team considered!"
         )
+
+
+def _edit_distance_tokens(
+    token_array_1: npt.NDArray[np.int_],
+    token_array_2: npt.NDArray[np.int_],
+    nom_token_length: int,
+) -> float:
+    """Calculate the edit distance between two token arrays.
+
+    How many edits of one value by 1 (up or down)
+    are needed to go from one array to the other
+    Eg: [3,0,0] to [0,1,0] needs 4 edits.
+    Three to get the first index from 3 to 0
+    and then one to get the second from 0 to 1
+
+    Args:
+        token_array_1 (numpy array): 1-D numpy array of a position token
+        token_array_2 (numpy array): 1-D numpy array of a position token
+        nom_token_length (int): Length of a position token for one side
+
+    Returns:
+        float: Edit distance between two token arrays
+    """
+    token_dist: float = sum(map(abs, np.subtract(token_array_1, token_array_2)))
+    token_dist /= len(token_array_1) // nom_token_length
+    return token_dist
+
+
+def _get_index_differences(
+    array1: npt.NDArray[np.int_], array2: npt.NDArray[np.int_]
+) -> tuple[list[int], list[int]]:
+    """Get indinices that differ between two array.
+
+    Build separate lists for indices where array1/array2 has a larger values.
+    Each index ends up in list as many times are the difference of values.
+
+    Args:
+        array1 (npt.NDArray[int]): 1-D numpy array of a position token
+        array2 (npt.NDArray[int]): 1-D numpy array of a position token
+
+    Returns:
+        tuple[list[int], list[int]]: Lists of differing indices.
+    """
+    # Get the indices where array1 and array2 have larger values than the other.
+    # Use each index as often as it if larger
+    diff_array = np.subtract(array1, array2)
+    pos_indices: list[int] = []
+    neg_indices: list[int] = []
+    for differing_index, difference in enumerate(diff_array):
+        if difference > 0:
+            pos_indices.extend([differing_index] * int(difference))
+        elif difference < 0:
+            neg_indices.extend([differing_index] * int(abs(difference)))
+    return pos_indices, neg_indices
+
+
+def token_state_distance(
+    map_name: str,
+    token_array_1: npt.NDArray[np.int_],
+    token_array_2: npt.NDArray[np.int_],
+    distance_type: Literal[DistanceType, "edit_distance"] = "geodesic",
+    reference_point: Literal["centroid", "representative_point"] = "centroid",
+) -> float:
+    """Calculates a distance between two game states based on player positions.
+
+    Args:
+        map_name (string): Map to search
+        token_array_1 (numpy array): 1-D numpy array of a position token
+        token_array_2 (numpy array): 1-D numpy array of a position token
+        distance_type (string, optional): String indicating how the distance
+            between two player positions should be calculated.
+            Options are "geodesic", "graph", "euclidean" and "edit_distance".
+            Defaults to 'geodesic'
+        reference_point (string, optional): String indicating which reference point
+            to use to determine area distance.
+            Options are "centroid" and "representative_point".
+            Defaults to 'centroid'
+
+    Returns:
+        A float representing the distance between these two game states
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV.
+        ValueError: If distance_type is not one of:
+                        ["graph", "geodesic", "euclidean", "edit_distance"]
+        ValueError: If reference_point is not one of:
+                        ["centroid", "representative_point"]
+        ValueError: If the input token arrays do not have the same length.
+        ValueError: If the length of the token arrays do not match
+                        the expected length for that map.
+    """
+    _check_arguments_token_distance(
+        map_name, token_array_1, token_array_2, distance_type, reference_point
+    )
+    # Get the list of named areas.
+    # Needed to translate back from token position to area name
+    map_area_names = _get_map_area_names(map_name)
+    _check_proper_token_length(map_area_names, token_array_1)
 
     token_dist: float = 0
 
     if distance_type == "edit_distance":
-        # How many edits of one value by 1 (up or down) are needed to go from one array to the other
-        # Eg: [3,0,0] to [0,1,0] needs 4 edits. Three to get the first index from 3 to 0 and then one to get the second from 0 to 1
-        token_dist = sum(map(abs, np.subtract(token_array_1, token_array_2)))
-        token_dist /= len(token_array_1) // len(map_area_names)
+        token_dist = _edit_distance_tokens(
+            token_array_1, token_array_2, len(map_area_names)
+        )
 
     # More complicated distances based on actual area locations
     elif distance_type in ["geodesic", "graph", "euclidean"]:
-        # If we do not have the precomputed matrix we need to first build the centroids to get them ourselves later
+        # If we do not have the precomputed matrix
+        # we need to first build the centroids to get them ourselves later
+        ref_points = {}
         if map_name not in PLACE_DIST_MATRIX:
-            ref_points = {}
             (
                 ref_points["centroid"],
                 ref_points["representative_point"],
@@ -946,21 +1240,14 @@ def token_state_distance(
             if sum(array1) < sum(array2):
                 array1, array2 = array2, array1
             size = sum(array2)
-            # Get the indices where array1 and array2 have larger values than the other.
-            # Use each index as often as it if larger
-            diff_array = np.subtract(array1, array2)
-            pos_indices = []
-            neg_indices = []
-            for i, difference in enumerate(diff_array):
-                if difference > 0:
-                    pos_indices.extend([i] * int(difference))
-                elif difference < 0:
-                    neg_indices.extend([i] * int((abs(difference))))
+
+            pos_indices, neg_indices = _get_index_differences(array1, array2)
             # Get all possible mappings between the differences
-            # Eg: diff array is [1,1,-1,-1] then pos_indices is [0,1] and neg_indices is [2,3]
+            # Eg: diff array is [1,1,-1,-1]
+            # then pos_indices is [0,1] and neg_indices is [2,3]
             # The possible mappings are then [(0,2),(1,3)] and [(0,3),(1,2)]
             for mapping in (
-                list(zip(x, neg_indices))
+                list(zip(x, neg_indices, strict=True))
                 for x in multiset_permutations(pos_indices, len(neg_indices))
             ):
                 this_dist: float = 0
@@ -997,14 +1284,15 @@ def token_state_distance(
     return token_dist
 
 
-def get_array_for_frame(frame: GameFrame):
-    """Generates a numpy array with the correct dimensions and content for a gameframe
+def get_array_for_frame(frame: GameFrame) -> npt.NDArray:
+    """Generates a numpy array with the correct dimensions and content for a gameframe.
 
     Args:
         frame (GameFrame): A game frame
 
     Returns:
-        numpy array for that frame"""
+        numpy array for that frame
+    """
     pos_array = np.zeros(
         (
             2,
@@ -1027,22 +1315,25 @@ def frame_distance(
     frame2: GameFrame,
     distance_type: DistanceType = "geodesic",
 ) -> float:
-    """Calculates a distance between two frames based on player positions
+    """Calculates a distance between two frames based on player positions.
 
     Args:
         map_name (string): Map to search
         frame1 (GameFrame): A game frame
         frame2 (GameFrame): A game frame
-        distance_type (string, optional): String indicating how the distance between two player
-            positions should be calculated. Options are "geodesic", "graph" and "euclidean"
+        distance_type (string, optional): String indicating how the distance between
+            two player positions should be calculated.
+            Options are "geodesic", "graph" and "euclidean"
             Defaults to 'geodesic'
 
     Returns:
         A float representing the distance between these two game states
 
     Raises:
-        ValueError: Raises a ValueError if there is a discrepancy between the frames regarding which sides are filled.
-                    If the ct side of frame1 contains players while that of frame2 is empty or None the error will be raised.
+        ValueError: Raises a ValueError if there is a discrepancy between
+                        the frames regarding which sides are filled.
+                    If the ct side of frame1 contains players
+                        while that of frame2 is empty or None the error will be raised.
                     The same happens for the t sides.
     """
     if (
@@ -1057,9 +1348,11 @@ def frame_distance(
     pos_array2 = get_array_for_frame(frame2)
     # position_state distance averages the result over the teams
     # However here we are always passing it the values for both team
-    # This means if one side is empty and we only want to consider the other one the result is halfed
+    # This means if one side is empty and
+    # we only want to consider the other one the result is halfed
     # So in that case we multiply the result back with 2
-    # Only need to look at one frame here because `position_state_distance` will throw an error
+    # Only need to look at one frame here because
+    # `position_state_distance` will throw an error
     # anyway if the number of teams does not match between the frames
     team_number_multipler = (
         1
@@ -1081,17 +1374,19 @@ def token_distance(
     distance_type: Literal[DistanceType, "edit_distance"] = "geodesic",
     reference_point: Literal["centroid", "representative_point"] = "centroid",
 ) -> float:
-    """Calculates a distance between two game states based on position tokens
+    """Calculates a distance between two game states based on position tokens.
 
     Args:
         map_name (string): Map to search
         token1 (string): A team position token
         token2 (string): A team position token
-        distance_type (string, optional): String indicating how the distance between two player positions
-            should be calculated. Options are "geodesic", "graph", "euclidean" and "edit_distance".
+        distance_type (string, optional): String indicating how the distance between
+            two player positions should be calculated.
+            Options are "geodesic", "graph", "euclidean" and "edit_distance".
             Defaults to 'geodesic'
-        reference_point (string, optional): String indicating which reference point to use
-            to determine area distance. Options are "centroid" and "representative_point".
+        reference_point (string, optional): String indicating which reference point
+            to use to determine area distance.
+            Options are "centroid" and "representative_point".
             Defaults to 'centroid'
 
     Returns:

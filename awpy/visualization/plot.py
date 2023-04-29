@@ -3,24 +3,33 @@
     Typical usage example:
 
     from awpy.visualization.plot import plot_round
-    plot_round("best_round_ever.gif", d["gameRounds"][7]["frames"], map_name=d["mapName"], map_type="simpleradar", dark=False)
+
+    plot_round(
+        "best_round_ever.gif",
+        d["gameRounds"][7]["frames"],
+        map_name=d["mapName"],
+        map_type="simpleradar",
+        dark=False,
+    )
 
     https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb
 """
 import os
 import shutil
-from typing import Optional, Literal, cast
-import numpy as np
+from typing import Literal, cast
+
 import imageio
-from tqdm import tqdm
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import tqdm
+
 from awpy.data import MAP_DATA
 from awpy.types import GameFrame, GameRound
 
 
 def plot_map(
-    map_name: str = "de_dust2", map_type: str = "original", dark: bool = False
+    map_name: str = "de_dust2", map_type: str = "original", *, dark: bool = False
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plots a blank map.
 
@@ -78,17 +87,17 @@ def position_transform(
     """
     if axis not in ["x", "y"]:
         raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
+    # vscode can do this, but mypy cant...
     start = MAP_DATA[map_name]["pos_" + axis]
     scale = MAP_DATA[map_name]["scale"]
     if axis == "x":
         pos = position - start
         pos /= scale
         return pos
-    elif axis == "y":
-        pos = start - position
-        pos /= scale
-        return pos
-    raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
+    # axis: "y":
+    pos = start - position
+    pos /= scale
+    return pos
 
 
 def position_transform_all(
@@ -103,31 +112,33 @@ def position_transform_all(
     Returns:
         tuple
     """
-    start_x = MAP_DATA[map_name]["pos_x"]
-    start_y = MAP_DATA[map_name]["pos_y"]
-    scale = MAP_DATA[map_name]["scale"]
+    current_map_data = MAP_DATA[map_name]
+    start_x = current_map_data["pos_x"]
+    start_y = current_map_data["pos_y"]
+    scale = current_map_data["scale"]
     x = position[0] - start_x
     x /= scale
     y = start_y - position[1]
     y /= scale
     z = position[2]
-    if "z_cutoff" in MAP_DATA[map_name] and z < MAP_DATA[map_name]["z_cutoff"]:
+    if "z_cutoff" in current_map_data and z < current_map_data["z_cutoff"]:
         y += 1024
     return (x, y, z)
 
 
-def plot_positions(
-    positions: Optional[list[tuple[float, float]]] = None,
-    colors: Optional[list[str]] = None,
-    markers: Optional[list[str]] = None,
-    alphas: Optional[list[float]] = None,
-    sizes: Optional[list[float]] = None,
+def plot_positions(  # noqa: PLR0913
+    positions: list[tuple[float, float]] | None = None,
+    colors: list[str] | None = None,
+    markers: list[str] | None = None,
+    alphas: list[float] | None = None,
+    sizes: list[float] | None = None,
     map_name: str = "de_ancient",
     map_type: str = "original",
+    *,
     dark: bool = False,
     apply_transformation: bool = False,
 ) -> tuple[plt.Figure, plt.Axes]:
-    """Plots player positions
+    """Plots player positions.
 
     Args:
         positions (list, optional): List of lists of length 2 ([[x,y], ...])
@@ -145,7 +156,8 @@ def plot_positions(
         dark (bool, optional): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type
             Defaults to False
-        apply_transformation (bool, optional): Indicates if you need to also use position_transform() for the X/Y coordinates
+        apply_transformation (bool, optional): Indicates if you need to also use
+            position_transform() for the X/Y coordinates,
             Defaults to False
 
     Returns:
@@ -162,7 +174,9 @@ def plot_positions(
     if sizes is None:
         sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
     f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    for p, c, m, alpha, s in zip(positions, colors, markers, alphas, sizes):
+    for p, c, m, alpha, s in zip(
+        positions, colors, markers, alphas, sizes, strict=True
+    ):
         if apply_transformation:
             a.scatter(
                 x=position_transform(map_name, p[0], "x"),
@@ -174,8 +188,8 @@ def plot_positions(
             )
         else:
             a.scatter(x=p[0], y=p[1], c=c, marker=m, alpha=alpha, s=s)
-    a.get_xaxis().set_visible(False)
-    a.get_yaxis().set_visible(False)
+    a.get_xaxis().set_visible(b=False)
+    a.get_yaxis().set_visible(b=False)
     return f, a
 
 
@@ -184,10 +198,14 @@ def plot_round(
     frames: list[GameFrame],
     map_name: str = "de_ancient",
     map_type: str = "original",
+    *,
     dark: bool = False,
     fps: int = 10,
 ) -> Literal[True]:
-    """Plots a round and saves as a .gif. CTs are blue, Ts are orange, and the bomb is an octagon. Only use untransformed coordinates.
+    """Plots a round and saves as a .gif.
+
+    CTs are blue, Ts are orange, and the bomb is an octagon.
+    Only use untransformed coordinates.
 
     Args:
         filename (string): Filename to save the gif
@@ -254,17 +272,18 @@ def plot_round(
     images = []
     for file in image_files:
         images.append(imageio.imread(file))
-    imageio.mimsave(filename, images, fps=fps)
+    imageio.mimsave(filename, images, duration=1000 / fps)
     shutil.rmtree("csgo_tmp/")
     return True
 
 
 def plot_nades(
     rounds: list[GameRound],
-    nades: Optional[list[str]] = None,
+    nades: list[str] | None = None,
     side: str = "CT",
     map_name: str = "de_ancient",
     map_type: str = "original",
+    *,
     dark: bool = False,
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plots grenade trajectories.
@@ -311,6 +330,6 @@ def plot_nades(
                         if g["grenadeType"] == "Flashbang":
                             a.plot([start_x, end_x], [start_y, end_y], color="gold")
                             a.scatter(end_x, end_y, color="gold")
-    a.get_xaxis().set_visible(False)
-    a.get_yaxis().set_visible(False)
+    a.get_xaxis().set_visible(b=False)
+    a.get_yaxis().set_visible(b=False)
     return f, a

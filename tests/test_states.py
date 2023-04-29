@@ -1,23 +1,26 @@
+"""Tests state parsing."""
 import json
 import os
+
 import requests
 
-from awpy.parser import DemoParser
 from awpy.analytics.states import (
-    generate_vector_state,
     generate_graph_state,
     generate_set_state,
+    generate_vector_state,
 )
+from awpy.parser import DemoParser
 
 
 class TestStates:
-    """Class to test the state parsing
+    """Class to test the state parsing.
 
-    Uses https://www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
+    Uses:
+    www.hltv.org/matches/2344822/og-vs-natus-vincere-blast-premier-fall-series-2020
     """
 
     def setup_class(self):
-        """Setup class by instantiating parser"""
+        """Setup class by instantiating parser."""
         with open("tests/test_data.json", encoding="utf-8") as f:
             self.demo_data = json.load(f)
         self._get_demofile(
@@ -27,32 +30,31 @@ class TestStates:
         self.data = self.parser.parse()
 
     def teardown_class(self):
-        """Set parser to none"""
+        """Set parser to none."""
         self.parser = None
         self.data = None
         files_in_directory = os.listdir()
         filtered_files = [
-            file
-            for file in files_in_directory
-            if file.endswith(".dem") or file.endswith(".json")
+            file for file in files_in_directory if file.endswith((".dem", ".json"))
         ]
         if len(filtered_files) > 0:
             for f in filtered_files:
                 os.remove(f)
 
     @staticmethod
-    def _get_demofile(demo_link, demo_name):
+    def _get_demofile(demo_link: str, demo_name: str) -> None:
         print("Requesting " + demo_link)
-        r = requests.get(demo_link)
-        open(demo_name + ".dem", "wb").write(r.content)
+        r = requests.get(demo_link, timeout=100)
+        with open(demo_name + ".dem", "wb") as demo_file:
+            demo_file.write(r.content)
 
     @staticmethod
-    def _delete_demofile(demo_name):
+    def _delete_demofile(demo_name: str) -> None:
         print("Removing " + demo_name)
         os.remove(demo_name + ".dem")
 
     def test_vector_output(self):
-        """Tests that vector output is a dict with 3 keys"""
+        """Tests that vector output is a dict with 3 keys."""
         game_state = generate_vector_state(
             self.data["gameRounds"][7]["frames"][0], self.data["mapName"]
         )
@@ -287,7 +289,7 @@ class TestStates:
         assert game_state["tBombZone"] == 1
 
     def test_graph_output(self):
-        """Tests that vector output is a dict with 3 keys"""
+        """Tests that vector output is a dict with 3 keys."""
         game_state = generate_graph_state(self.data["gameRounds"][7]["frames"][0])
         assert isinstance(game_state, dict)
 
@@ -299,7 +301,7 @@ class TestStates:
         assert isinstance(game_state["global"], list)
 
     def test_set_output(self):
-        """Tests that set output is a dict with 3 keys"""
+        """Tests that set output is a dict with 3 keys."""
         game_state = generate_set_state(self.data["gameRounds"][7]["frames"][0])
         assert isinstance(game_state, dict)
 

@@ -1,6 +1,6 @@
-from setuptools import setup, find_packages
-
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text(encoding="utf-8")
@@ -31,6 +31,7 @@ setup(
             "data/map/*.json",
             "data/nav/*.txt",
             "data/nav/*.csv",
+            "data/nav/*.json",
             "*.mod",
             "*.sum",
         ]
@@ -38,7 +39,10 @@ setup(
     # metadata to display on PyPI
     author="Peter Xenopoulos",
     author_email="xenopoulos@nyu.edu",
-    description="Counter-Strike: Global Offensive data parsing, analysis and visualization functions",
+    description=(
+        "Counter-Strike: Global Offensive data parsing, "
+        "analysis and visualization functions"
+    ),
     long_description=long_description,
     long_description_content_type="text/markdown",
     keywords="esports sports-analytics csgo counter-strike",

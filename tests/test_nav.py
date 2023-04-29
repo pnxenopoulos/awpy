@@ -1,37 +1,38 @@
-import sys
-import os
+"""Tests navigation functionality."""
 import math
-from collections import defaultdict
+import os
+import re
+import sys
 from unittest.mock import patch
-import pytest
+
 import numpy as np
+import pytest
 
-
-from awpy.data import NAV, create_nav_graphs
 from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
+    frame_distance,
+    generate_area_distance_matrix,
+    generate_centroids,
+    generate_place_distance_matrix,
     generate_position_token,
-    tree,
+    get_array_for_frame,
     point_distance,
     point_in_area,
-    generate_centroids,
-    stepped_hull,
     position_state_distance,
-    token_state_distance,
-    get_array_for_frame,
-    frame_distance,
+    stepped_hull,
     token_distance,
-    generate_area_distance_matrix,
-    generate_place_distance_matrix,
+    token_state_distance,
+    tree,
 )
+from awpy.data import NAV, create_nav_graphs
 
 
 class TestNav:
     """Class to test the nav-related functions."""
 
     def setup_class(self):
-        """Setup class by defining custom NAV and NAV_GRAPHS"""
+        """Setup class by defining custom NAV and NAV_GRAPHS."""
         # Create mock NAV mesh like this:
         # Each area is described in the format areadId(x,y)
         # Arrows indicate (directed) edges
@@ -39,7 +40,7 @@ class TestNav:
         #  ^
         #  |
         #  v
-        # 3(2,-2)
+        # 3(2,-2)  # noqa: ERA001
         self.fake_nav = {
             "de_mock": {
                 1: {
@@ -77,7 +78,8 @@ class TestNav:
             os.makedirs(self.dir)
         else:
             raise AssertionError(
-                "This test needs to be executed in a directory where it can savely create and delte a 'nav' subdir!"
+                "This test needs to be executed in a directory "
+                "where it can savely create and delete a 'nav' subdir!"
             )
         self.map_name = "de_mock"
         self.file_name = f"{self.map_name}.txt"
@@ -278,7 +280,7 @@ class TestNav:
         }
 
     def teardown_class(self):
-        """Clean up by delete created file and directory"""
+        """Clean up by delete created file and directory."""
         self.fake_nav = None
         self.fake_graph = None
         self.expected_area_matrix = None
@@ -293,12 +295,12 @@ class TestNav:
         os.rmdir(self.dir)
 
     def test_point_in_area(self):
-        """Tests point in area"""
-        with pytest.raises(ValueError):
+        """Tests point in area."""
+        with pytest.raises(ValueError, match="Map not found."):
             point_in_area(map_name="test", area_id=3814, point=[0, 0, 0])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Area ID not found."):
             point_in_area(map_name="de_dust2", area_id=0, point=[0, 0, 0])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
             point_in_area(map_name="de_dust2", area_id=3814, point=[0])
         avg_x = (
             NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"]
@@ -317,10 +319,10 @@ class TestNav:
         )
 
     def test_find_area(self):
-        """Tests find_area"""
-        with pytest.raises(ValueError):
+        """Tests find_area."""
+        with pytest.raises(ValueError, match="Map not found."):
             find_closest_area(map_name="test", point=[0, 0, 0])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
             find_closest_area(map_name="de_dust2", point=[0, 0])
         avg_x = (
             NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"]
@@ -336,12 +338,12 @@ class TestNav:
         assert area_found["areaId"] == 152
 
     def test_area_distance(self):
-        """Tests area distance"""
-        with pytest.raises(ValueError):
+        """Tests area distance."""
+        with pytest.raises(ValueError, match="Map not found."):
             area_distance(map_name="test", area_a=152, area_b=152, dist_type="graph")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Area ID not found."):
             area_distance(map_name="de_dust2", area_a=0, area_b=0, dist_type="graph")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="dist_type can only be "):
             area_distance(map_name="de_dust2", area_a=152, area_b=152, dist_type="test")
         graph_dist = area_distance(
             map_name="de_dust2", area_a=152, area_b=152, dist_type="graph"
@@ -372,23 +374,23 @@ class TestNav:
         assert len(euc_dist["areas"]) == 0
 
     def test_point_distance(self):
-        """Tests point distance"""
-        with pytest.raises(ValueError):
+        """Tests point distance."""
+        with pytest.raises(ValueError, match="Map not found."):
             point_distance(
                 map_name="test", point_a=[0, 0, 0], point_b=[0, 0, 0], dist_type="graph"
             )
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="point must be X/Y/Z"):
             point_distance(
                 map_name="de_dust2", point_a=[0, 0], point_b=[0, 0], dist_type="graph"
             )
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Map not found."):
             point_distance(
                 map_name="test",
                 point_a=[0, 0, 0],
                 point_b=[0, 0, 0],
                 dist_type="geodesic",
             )
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="point must be X/Y/Z"):
             point_distance(
                 map_name="de_dust2",
                 point_a=[0, 0],
@@ -456,7 +458,7 @@ class TestNav:
             == 0
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="dist_type can only be"):
             point_distance(
                 map_name="de_dust2",
                 point_a=[0, 0],
@@ -465,7 +467,7 @@ class TestNav:
             )
 
     def test_position_token(self):
-        """Tests that position token returns correct values"""
+        """Tests that position token returns correct values."""
         map_name = "de_nuke"
         frame = {
             "ct": {
@@ -498,7 +500,7 @@ class TestNav:
         assert token["ctToken"] == "000000000000000000000000000000"
         assert (
             token["token"]
-            == "000000000000000000000000000000000000000000000000100000000000"
+            == "000000000000000000000000000000000000000000000000100000000000"  # noqa: S105,E501
         )
         frame = {
             "ct": {
@@ -531,10 +533,10 @@ class TestNav:
         assert token["ctToken"] == "000000000000000000100000000000"
         assert (
             token["token"]
-            == "000000000000000000100000000000000000000000000000000000000000"
+            == "000000000000000000100000000000000000000000000000000000000000"  # noqa: S105,E501
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Map not found."):
             generate_position_token("de_does_not_exist", frame)
 
         frame = {
@@ -550,28 +552,20 @@ class TestNav:
                 ]
             },
         }
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="CT or T players has length of 0"):
             generate_position_token(map_name, frame)
 
     def test_tree(self):
-        """Tests tree"""
+        """Tests tree."""
         my_tree = tree()
         my_tree["1"]["A"][666][("test", 42)] = "Should work"
 
     def test_generate_area_distance_matrix(self):
-        """Tests generate_area_distance_matrix"""
-        # Need to mock awpy.data.NAV to properly test this
-        def default_to_regular(d):
-            if isinstance(d, defaultdict):
-                d = {k: default_to_regular(v) for k, v in d.items()}
-            return d
-
-        with patch("awpy.analytics.nav.NAV", self.fake_nav):
-            with patch("awpy.analytics.nav.NAV_GRAPHS", self.fake_graph):
-                with patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
-                    result_matrix = generate_area_distance_matrix(
-                        map_name="de_mock", save=True
-                    )
+        """Tests generate_area_distance_matrix."""
+        with patch("awpy.analytics.nav.NAV", self.fake_nav), patch(
+            "awpy.analytics.nav.NAV_GRAPHS", self.fake_graph
+        ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
+            result_matrix = generate_area_distance_matrix(map_name="de_mock", save=True)
 
         assert isinstance(result_matrix, dict)
         assert os.path.exists(
@@ -579,26 +573,26 @@ class TestNav:
         )
 
         assert self.expected_area_matrix == result_matrix
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Map not found."):
             _ = generate_area_distance_matrix("de_does_not_exist")
 
     def test_generate_place_distance_matrix(self):
-        """Tests generate_place_distance_matrix"""
+        """Tests generate_place_distance_matrix."""
         # Need to mock awpy.data.NAV to properly test this
-        with patch("awpy.analytics.nav.NAV", self.fake_nav):
-            with patch("awpy.analytics.nav.NAV_GRAPHS", self.fake_graph):
-                with patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
-                    with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
-                        result_matrix_1 = generate_place_distance_matrix(
-                            map_name="de_mock", save=True
-                        )
-                    with patch(
-                        "awpy.analytics.nav.AREA_DIST_MATRIX",
-                        {self.map_name: self.expected_area_matrix},
-                    ):
-                        result_matrix_2 = generate_place_distance_matrix(
-                            map_name="de_mock", save=False
-                        )
+        with patch("awpy.analytics.nav.NAV", self.fake_nav), patch(
+            "awpy.analytics.nav.NAV_GRAPHS", self.fake_graph
+        ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
+            with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
+                result_matrix_1 = generate_place_distance_matrix(
+                    map_name="de_mock", save=True
+                )
+            with patch(
+                "awpy.analytics.nav.AREA_DIST_MATRIX",
+                {self.map_name: self.expected_area_matrix},
+            ):
+                result_matrix_2 = generate_place_distance_matrix(
+                    map_name="de_mock", save=False
+                )
 
         assert isinstance(result_matrix_1, dict)
         assert os.path.exists(
@@ -609,12 +603,12 @@ class TestNav:
 
         assert self.expected_place_matrix == result_matrix_1
         assert self.expected_place_matrix == result_matrix_2
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Map not found."):
             _ = generate_place_distance_matrix("de_does_not_exist")
 
     def test_generate_centroids(self):
-        """Tests generate centroids"""
-        with pytest.raises(ValueError):
+        """Tests generate centroids."""
+        with pytest.raises(ValueError, match="Map not found."):
             generate_centroids(map_name="test")
         centroids, reps = generate_centroids("de_inferno")
         assert isinstance(centroids, dict)
@@ -677,7 +671,7 @@ class TestNav:
         }
 
     def test_stepped_hull(self):
-        """Tests stepped hull"""
+        """Tests stepped hull."""
         hull = stepped_hull(
             [
                 (0, 0),
@@ -694,31 +688,31 @@ class TestNav:
         assert stepped_hull([]) == []
 
     def test_position_state_distance(self):
-        """Tests position state distance"""
+        """Tests position state distance."""
         pos_state1 = np.array([[[-500, -850, 100]]])
         pos_state2 = np.array([[[-550, -100, 130]], [[1, 1, 1]]])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Game state shapes do not match!"):
             position_state_distance(
                 "de_ancient", pos_state1, pos_state2, distance_type="euclidean"
             )
 
         pos_state1 = np.array([[[-500, -850, 100, 6]]])
         pos_state2 = np.array([[[-550, -100, 130, 6]]])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Game state shapes are incorrect!"):
             position_state_distance(
                 "de_ancient", pos_state1, pos_state2, distance_type="euclidean"
             )
 
         pos_state1 = np.array([[[-500, -850, 100]]])
         pos_state2 = np.array([[[-550, -100, 130]]])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Map not found."):
             position_state_distance(
                 "de_map_does_not_exist",
                 pos_state1,
                 pos_state2,
                 distance_type="euclidean",
             )
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="distance_type can only be "):
             position_state_distance(
                 "de_ancient",
                 pos_state1,
@@ -767,8 +761,8 @@ class TestNav:
         assert isinstance(dist, float)
         assert sys.maxsize / 7 < dist < sys.maxsize / 5
 
-    def test_token_state_distance(self):
-        """Tests token state distance"""
+    def test_token_state_distance_raises(self):
+        """Tests that token state dist raises."""
         token_array1 = np.array(
             [
                 0.0,
@@ -837,14 +831,16 @@ class TestNav:
                 0.0,
             ]
         )
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Map not found."):
             token_state_distance(
                 "de_map_does_not_exist",
                 token_array1,
                 token_array2,
                 distance_type="euclidean",
             )
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Token arrays have to have the same length!"
+        ):
             token_state_distance(
                 "de_ancient", token_array1, token_array2, distance_type="euclidean"
             )
@@ -898,10 +894,13 @@ class TestNav:
                 0.0,
             ]
         )
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Token arrays do not have the correct length."
+        ):
             token_state_distance(
                 "de_ancient", token_array1, token_array2, distance_type="euclidean"
             )
+
         token_array1 = np.array(
             [
                 0.0,
@@ -990,14 +989,14 @@ class TestNav:
                 0.0,
             ]
         )
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="distance_type can only be "):
             token_state_distance(
                 "de_ancient",
                 token_array1,
                 token_array2,
                 distance_type="distance_type_does_not_exist",
             )
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="reference_point can only be "):
             token_state_distance(
                 "de_ancient",
                 token_array1,
@@ -1005,6 +1004,97 @@ class TestNav:
                 distance_type="graph",
                 reference_point="reference_point_does_not_exist",
             )
+
+    def test_token_state_distance(self):
+        """Tests token state distance."""
+        token_array1 = np.array(
+            [
+                0.0,
+                2.0,
+                0.0,
+                2.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                2.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                1.0,
+                1.0,
+            ]
+        )
+        token_array2 = np.array(
+            [
+                0.0,
+                2.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                2.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                5.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ]
+        )
         dist = token_state_distance(
             "de_ancient", token_array1, token_array2, distance_type="graph"
         )
@@ -1298,7 +1388,7 @@ class TestNav:
         )
 
     def test_get_array_for_frame(self):
-        """Tests get_array_for_frame"""
+        """Tests get_array_for_frame."""
         frame1 = {
             "ct": {
                 "players": [
@@ -1431,7 +1521,7 @@ class TestNav:
         assert np.array_equal(array2, get_array_for_frame(frame2))
 
     def test_frame_distance(self):
-        """Tests frame distance"""
+        """Tests frame distance."""
         map_name = "de_nuke"
         frame1 = {
             "ct": {
@@ -1579,11 +1669,13 @@ class TestNav:
             "t": {"players": []},
             "isKillFrame": True,
         }
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="The active sides between the two frames have to match."
+        ):
             frame_distance(map_name, frame1, frame2)
 
     def test_token_distance(self):
-        """Tests token distance"""
+        """Tests token distance."""
         map_name = "de_nuke"
         token1 = "000000000000000000100000000000"
         token2 = "000000000000000000000000000001"
