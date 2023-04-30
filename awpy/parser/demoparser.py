@@ -23,18 +23,15 @@ https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofi
 """
 
 import json
-from typing import Optional, Union, Any, Literal, cast, get_args, Unpack
 import logging
 import os
 import subprocess
-from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import Any, Literal, Unpack, cast, get_args
 
 import pandas as pd
 
-from awpy.types import Game, GameActionKey, GameRound, PlayerInfo
+from awpy.types import ColsType, Game, ParserArgs
 from awpy.utils import check_go_version
-from awpy.types import Game, ParserArgs
 
 if TYPE_CHECKING:
     from pandas.core.arrays.base import ExtensionArray
@@ -88,7 +85,51 @@ class DemoParser:
         demo_id: str | None = None,
         log: bool = False,
         **parser_args: Unpack[ParserArgs],
-    ):
+    ) -> None:
+        """Instatiate a DemoParser.
+
+        Args:
+            demofile (string):
+                A string denoting the path to the demo file,
+                which ends in .dem. Defaults to ''
+            outpath (string):
+                Path where to save the outputfile to.
+                Default is current directory
+            demo_id (string):
+                A unique demo name/game id.
+                Default is inferred from demofile name
+            log (bool, optional):
+                A boolean indicating if the log should print to stdout.
+                Default is False
+            **parser_args (ParserArgs): Further keyword args:
+                parse_rate (int, optional):
+                    One of 128, 64, 32, 16, 8, 4, 2, or 1.
+                    The lower the value, the more frames are collected.
+                    Indicates spacing between parsed demo frames in ticks.
+                    Default is 128.
+                parse_frames (bool, optional):
+                    Flag if you want to parse frames (trajectory data) or not.
+                    Default is True
+                parse_kill_frames (bool, optional):
+                    Flag if you want to parse frames on kills.
+                    Default is False
+                trade_time (int, optional):
+                    Length of the window for a trade (in seconds).
+                    Default is 5.
+                dmg_rolled (bool, optional):
+                    Boolean if you want damages rolled up.
+                    Default is False
+                parse_chat (bool, optional):
+                    Flag if you want to parse chat messages. Default is False
+                buy_style (str, optional):
+                    Buy style string, one of "hltv" or "csgo"
+                    Default is "hltv"
+                json_indentation (bool, optional):
+                    Whether the json file should be pretty printed
+                    with indentation (larger, more readable)
+                    or not (smaller, less human readable)
+                    Default is False
+        """
         # Set up logger
         logging.basicConfig(
             level=logging.INFO,
@@ -122,38 +163,15 @@ class DemoParser:
         parse_chat = parser_args.setdefault("parse_chat", False)
         buy_style = parser_args.setdefault("buy_style", "hltv")
         json_indentation = parser_args.setdefault("json_indentation", False)
-        # Handle parse rate. If the parse rate is less than 64, likely to be slow
-        if parse_rate < 1 or not isinstance(parse_rate, int):
-            self.logger.warning(
-                "Parse rate of %s not acceptable! Parse rate must be an integer greater than 0.",
-                str(parse_rate),
-            )
-            parse_rate = 128
-            self.parse_rate = parse_rate
 
-        if parse_rate < 64 and parse_rate > 1:
-            self.logger.warning(
-                "A parse rate lower than 64 may be slow depending on the tickrate of the demo, which is usually 64 for MM and 128 for pro demos."
-            )
-            self.parse_rate = parse_rate
-        elif parse_rate >= 256:
-            self.logger.warning(
-                "A high parse rate means very few frames. Only use for testing purposes."
-            )
-            self.parse_rate = parse_rate
-        else:
-            self.parse_rate = parse_rate
-        self.logger.info("Setting parse rate to %s", str(self.parse_rate))
-
-        # Handle trade time
+        self._parse_rate = 128
+        self.parse_rate = parse_rate
+        self._trade_time = 5
         self.trade_time = trade_time
 
         self.logger.info("Setting trade time to %d", self.trade_time)
 
-        # Handle buy style
-        if buy_style in {"hltv", "csgo"}:
-            self.buy_style = buy_style
-        else:
+        if buy_style not in ["hltv", "csgo"]:
             self.logger.warning(
                 "Buy style specified is not one of hltv, csgo, "
                 "will be set to hltv by default"
