@@ -919,7 +919,8 @@ class DemoParser:
         some indices to be skipped.
 
         Raises:
-            AttributeError: Raises an AttributeError if the .json attribute has no "gameRounds" key.
+            AttributeError: Raises an AttributeError if the .json attribute
+                has no "gameRounds" key.
         """
         if self.json and self.json["gameRounds"]:
             for index, frame in enumerate(
