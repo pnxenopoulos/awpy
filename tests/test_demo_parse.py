@@ -527,7 +527,8 @@ class TestDemoParser:
 
         This used to be an issue where pandas would cast ints to float
         when there were None values and casting back to int would give
-        a different result than previously."""
+        a different result than previously.
+        """
         self.conversion_parser = DemoParser(
             demofile="vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
         )

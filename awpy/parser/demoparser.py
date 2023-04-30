@@ -22,18 +22,16 @@
 """
 
 import json
-from typing import Optional, Union, Any, Literal, cast, get_args
-from collections import defaultdict
 import logging
 import os
 import subprocess
+from collections import defaultdict
 from typing import Any, Literal, cast, get_args
 
 import pandas as pd
 
-from awpy.types import ColsType, Game
+from awpy.types import ColsType, Game, GameActionKey
 from awpy.utils import check_go_version
-from awpy.types import Game, GameActionKey
 
 
 class DemoParser:
@@ -615,10 +613,10 @@ class DemoParser:
         )
 
     def _parse_action(self, action: GameActionKey) -> pd.DataFrame:
-        """Returns action as a Pandas dataframe
+        """Returns action as a Pandas dataframe.
 
         Args:
-            actions (str): Action dict to convert to dataframe.
+            action (str): Action dict to convert to dataframe.
 
         Returns:
             A Pandas dataframe where each row is a damage event.
@@ -640,13 +638,12 @@ class DemoParser:
                 key: pd.array(value_list) for key, value_list in actions.items()
             }
             return pd.DataFrame(actions_array)
-        else:
-            self.logger.error(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+        self.logger.error(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
+        raise AttributeError(
+            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        )
 
     def clean_rounds(
         self,
