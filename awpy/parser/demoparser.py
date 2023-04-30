@@ -26,9 +26,12 @@ import logging
 import os
 import subprocess
 from collections import defaultdict
-from typing import Any, Literal, cast, get_args
+from typing import TYPE_CHECKING, Any, Literal, cast, get_args
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from pandas.core.arrays.base import ExtensionArray
 
 from awpy.types import ColsType, Game, GameActionKey
 from awpy.utils import check_go_version
@@ -634,7 +637,7 @@ class DemoParser:
                     actions["matchID"].append(self.json["matchID"])
                     actions["mapName"].append(self.json["mapName"])
             # pd.array automatically infors nullable ints.
-            actions_array: dict[str, pd.array] = {
+            actions_array: dict[str, ExtensionArray] = {
                 key: pd.array(value_list) for key, value_list in actions.items()
             }
             return pd.DataFrame(actions_array)
