@@ -30,12 +30,9 @@ Example::
 
 https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb
 """
-import sys
-import os
-import logging
-from typing import TypedDict, Literal, cast, get_args
 import itertools
 import json
+import logging
 import math
 import os
 import sys
@@ -426,8 +423,10 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
         datefmt="%H:%M:%S",
     )
     logging.warning(
-        """Note that this can take 20min to 13h to run depending on the map and produces an output file of 50-600mb.
-If you run this offline and want to store the result for later reuse make sure to set 'save=True'!"""
+        "Note that this can take 20min to 13h to run depending on the"
+        " map and produces an output file of 50-600mb.\n"
+        "If you run this offline and want to store the result "
+        "for later reuse make sure to set 'save=True'!"
     )
     # Initialize the dict structure
     area_distance_matrix: AreaMatrix = tree()
@@ -545,27 +544,13 @@ If you want to have those included run `generate_area_distance_matrix` first!"""
                     )[
                         "distance"
                     ]
-                    # Median of all the distance pairs for areaA in place1 to areaB in place2
+                    # Median of all the distance pairs for areaA in place1
+                    # to areaB in place2
+                    # Without having the AREA_DISTANCE_MATRIX precalculated
+                    # this step could take up to 13 hours
                     place_distance_matrix[place1][place2][dist_type][
                         "median_dist"
                     ] = 0.0
-                    # Without having the AREA_DISTANCE_MATRIX precalculated
-                    # this step could take up to 13 hours
-                    # connections = []
-                    # for sub_area1 in area_mapping[place1]:
-                    #     for sub_area2 in area_mapping[place2]:
-                    #         connections.append(
-                    #             area_distance(
-                    #                 map_name,
-                    #                 sub_area1,
-                    #                 sub_area2,
-                    #                 dist_type=dist_type,
-                    #             )["distance"]
-                    #         )
-                    # place_distance_matrix[place1][place2][dist_type][
-                    #     "median_dist"
-                    # ] = median(connections)
-                # If precomputed values exist just grab those
                 else:
                     place_distance_matrix[place1][place2][dist_type][
                         "centroid"

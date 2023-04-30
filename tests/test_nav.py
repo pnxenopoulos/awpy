@@ -8,11 +8,6 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-<<<<<<< HEAD
-=======
-
-from awpy.data import NAV, create_nav_graphs, PLACE_DIST_MATRIX
->>>>>>> 2613e59 (Adding test for dist. matrix structure and content)
 from awpy.analytics.nav import (
     area_distance,
     find_closest_area,
@@ -30,7 +25,7 @@ from awpy.analytics.nav import (
     token_state_distance,
     tree,
 )
-from awpy.data import NAV, create_nav_graphs
+from awpy.data import NAV, PLACE_DIST_MATRIX, create_nav_graphs
 
 
 class TestNav:
@@ -743,7 +738,7 @@ class TestNav:
                 for dist_type in result_matrix[area1_id][area2_id]:
                     assert dist_type in {"geodesic", "euclidean", "graph"}
                     assert isinstance(
-                        result_matrix[area1_id][area2_id][dist_type], (float, int)
+                        result_matrix[area1_id][area2_id][dist_type], float | int
                     )
         assert os.path.exists(
             os.path.join(self.dir, "area_distance_matrix_de_mock.json")
@@ -790,7 +785,7 @@ class TestNav:
                             result_matrix_1[place1_name][place2_name][dist_type][
                                 ref_point
                             ],
-                            (float, int),
+                            float | int,
                         )
         assert os.path.exists(
             os.path.join(self.dir, f"place_distance_matrix_{self.map_name}.json")
@@ -821,7 +816,10 @@ class TestNav:
                                     == result_matrix[place1_name][place2_name][
                                         dist_type
                                     ][ref_point]
-                                ), f"{map_name}, {place1_name}, {place2_name}, {dist_type}, {ref_point}"
+                                ), (
+                                    f"{map_name}, {place1_name}, {place2_name}, "
+                                    f"{dist_type}, {ref_point}"
+                                )
 
     def test_generate_centroids(self):
         """Tests generate centroids."""
