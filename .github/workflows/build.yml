@@ -18,6 +18,8 @@ jobs:
         python-version: ["3.11"]  #, "3.12-dev"]
         go-version: ["1.18", "1.19", "1.20"]
     steps:
+      - name: Checkout csgo library
+        uses: actions/checkout@v3
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -31,8 +33,6 @@ jobs:
           cache-dependency-path: |
             requirements.txt
             tests/requirements.txt
-      - name: Checkout csgo library
-        uses: actions/checkout@v3
       - name: Installation
         run: |
           python -m pip install --upgrade pip
