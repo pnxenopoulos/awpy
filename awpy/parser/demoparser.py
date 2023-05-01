@@ -29,6 +29,7 @@ from typing import Any, Literal, cast, get_args
 
 import pandas as pd
 
+from awpy.parser.awpygo import awpygo
 from awpy.types import ColsType, Game
 from awpy.utils import check_go_version
 
@@ -376,6 +377,19 @@ class DemoParser:
             cwd=path,
         )
         stdout = proc.stdout.read().splitlines() if proc.stdout is not None else None
+        awpygo.ParseDemo(
+            self.demofile,
+            self.demo_id,
+            self.parse_rate,
+            self.parse_frames,
+            self.parse_kill_frames,
+            self.trade_time,
+            self.buy_style,
+            self.dmg_rolled,
+            self.json_indentation,
+            self.parse_chat,
+            self.outpath,
+        )
         self.output_file = self.demo_id + ".json"
         if os.path.isfile(self.outpath + "/" + self.output_file):
             self.logger.info("Wrote demo parse output to %s", self.output_file)

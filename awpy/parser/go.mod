@@ -1,8 +1,11 @@
-module github.com/pnxenopoulos/csgo
+module github.com/pnxenopoulos/awpygo
 
 go 1.18
 
-require github.com/markus-wa/demoinfocs-golang/v3 v3.3.0
+require (
+	github.com/go-python/gopy v0.4.7
+	github.com/markus-wa/demoinfocs-golang/v3 v3.3.0
+)
 
 require (
 	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551 // indirect
