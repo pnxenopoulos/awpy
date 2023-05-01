@@ -121,6 +121,7 @@ exclude = [
     "node_modules",
     "venv",
     "docs",
+    "awpy/parser/awpygo"
 ]
 
 # Same as Black.
@@ -146,7 +147,7 @@ convention = "google" # Accepts: "google", "numpy", or "pep257".
 
 [tool.pyright]
 include                            = ["awpy"]
-exclude                            = ["tests"]
+exclude                            = ["tests", "awpy/parser/awpygo"]
 strictListInference                = true
 strictDictionaryInference          = true
 strictSetInference                 = true
