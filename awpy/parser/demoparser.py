@@ -34,7 +34,7 @@ import pandas as pd
 if TYPE_CHECKING:
     from pandas.core.arrays.base import ExtensionArray
 
-from awpy.types import ColsType, Game, GameActionKey
+from awpy.types import ColsType, Game, GameActionKey, GameRound, PlayerInfo
 from awpy.utils import check_go_version
 
 
@@ -348,7 +348,7 @@ class DemoParser:
         path = os.path.join(os.path.dirname(__file__), "")
         self.logger.info("Running Golang parser from %s", path)
         self.logger.info("Looking for file at %s", self.demofile)
-        self.parser_cmd = [
+        parser_cmd = [
             "go",
             "run",
             "parse_demo.go",
@@ -366,21 +366,23 @@ class DemoParser:
             self.outpath,
         ]
         if self.dmg_rolled:
-            self.parser_cmd.append("--dmgrolled")
+            parser_cmd.append("--dmgrolled")
         if self.parse_frames:
-            self.parser_cmd.append("--parseframes")
+            parser_cmd.append("--parseframes")
         if self.parse_kill_frames:
-            self.parser_cmd.append("--parsekillframes")
+            parser_cmd.append("--parsekillframes")
         if self.json_indentation:
-            self.parser_cmd.append("--jsonindentation")
+            parser_cmd.append("--jsonindentation")
         if self.parse_chat:
-            self.parser_cmd.append("--parsechat")
-        proc = subprocess.Popen(
-            self.parser_cmd,  # noqa: S603
+            parser_cmd.append("--parsechat")
+        with subprocess.Popen(
+            parser_cmd,  # noqa: S603
             stdout=subprocess.PIPE,
             cwd=path,
-        )
-        stdout = proc.stdout.read().splitlines() if proc.stdout is not None else None
+        ) as proc:
+            stdout = (
+                proc.stdout.read().splitlines() if proc.stdout is not None else None
+            )
         self.output_file = self.demo_id + ".json"
         if os.path.isfile(self.outpath + "/" + self.output_file):
             self.logger.info("Wrote demo parse output to %s", self.output_file)
@@ -515,9 +517,6 @@ class DemoParser:
                     frame_item: dict[str, Any] = {}
                     frame_item["roundNum"] = r["roundNum"]
                     for k in ("tick", "seconds"):
-                        # Currently there is no better way:
-                        # https://github.com/python/mypy/issues/9230
-                        k = cast(Literal["tick", "seconds"], k)
                         frame_item[k] = frame[k]
                     frame_item["ctTeamName"] = frame["ct"]["teamName"]
                     frame_item["ctEqVal"] = frame["ct"]["teamEqVal"]
@@ -539,6 +538,21 @@ class DemoParser:
             "JSON not found. Run .parse() or .read_json() if JSON already exists"
         )
 
+    def add_player_specific_information(
+        self, player_item: dict[str, Any], player: PlayerInfo
+    ) -> None:
+        """Add player specific information to player_item dict.
+
+        Args:
+            player_item (dict[str, Any]): Dictionary containing player specific
+                and general information for a frame.
+            player (PlayerInfo): TypedDict containing information for a single player
+                for a specific frame.
+        """
+        for col, val in player.items():
+            if col != "inventory":
+                player_item[col] = val
+
     def _parse_player_frames(self) -> pd.DataFrame:
         """Returns player frames as a Pandas dataframe.
 
@@ -553,28 +567,19 @@ class DemoParser:
             player_frames = []
             for r in self.json["gameRounds"] or []:
                 for frame in r["frames"] or []:
-                    for side in ["ct", "t"]:
-                        # Currently there is no better way:
-                        # https://github.com/python/mypy/issues/9230
-                        side = cast(Literal["ct", "t"], side)
-                        if frame[side]["players"] is not None and (
-                            # The or [] should be unneccesary
-                            # but mypy can not handle this
-                            len(frame[side]["players"] or [])
-                            > 0  # Used to be == 5, to ensure the sides were equal.
-                        ):
-                            # Same here
-                            for player in frame[side]["players"] or []:
-                                player_item: dict[str, Any] = {}
-                                player_item["roundNum"] = r["roundNum"]
-                                player_item["tick"] = frame["tick"]
-                                player_item["seconds"] = frame["seconds"]
-                                player_item["side"] = side
-                                player_item["teamName"] = frame[side]["teamName"]
-                                for col, val in player.items():
-                                    if col != "inventory":
-                                        player_item[col] = val
-                                player_frames.append(player_item)
+                    for side in ("ct", "t"):
+                        players = frame[side]["players"]
+                        if players is None:
+                            continue
+                        for player in players:
+                            player_item: dict[str, Any] = {}
+                            player_item["roundNum"] = r["roundNum"]
+                            player_item["tick"] = frame["tick"]
+                            player_item["seconds"] = frame["seconds"]
+                            player_item["side"] = side
+                            player_item["teamName"] = frame[side]["teamName"]
+                            self.add_player_specific_information(player_item, player)
+                            player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
             player_frames_df["matchID"] = self.json["matchID"]
             player_frames_df["mapName"] = self.json["mapName"]
@@ -597,10 +602,31 @@ class DemoParser:
         """
         if self.json:
             rounds = []
-            # There is currently no better way than this monstrosity...
-            # https://github.com/python/mypy/issues/9230
-            # https://stackoverflow.com/a/64522240/7895542
-            cols: list[ColsType] = list(get_args(ColsType))
+            cols = (
+                "roundNum",
+                "startTick",
+                "freezeTimeEndTick",
+                "endTick",
+                "endOfficialTick",
+                "tScore",
+                "ctScore",
+                "endTScore",
+                "endCTScore",
+                "tTeam",
+                "ctTeam",
+                "winningSide",
+                "winningTeam",
+                "losingTeam",
+                "roundEndReason",
+                "ctFreezeTimeEndEqVal",
+                "ctRoundStartEqVal",
+                "ctRoundSpendMoney",
+                "ctBuyType",
+                "tFreezeTimeEndEqVal",
+                "tRoundStartEqVal",
+                "tRoundSpendMoney",
+                "tBuyType",
+            )
             for r in self.json["gameRounds"] or []:
                 round_item: dict[str, Any] = {}
                 for k in cols:
@@ -798,6 +824,34 @@ class DemoParser:
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
 
+    def _has_winner_and_not_winner(self, game_round: GameRound) -> bool:
+        tie_score = 15
+        ot_tie_score = 3
+        regular_valid_t_win = (game_round["endTScore"] == tie_score + 1) and (
+            game_round["endCTScore"] < tie_score
+        )
+        regular_valid_ct_win = (
+            game_round["endCTScore"] == tie_score + 1
+            and game_round["endTScore"] < tie_score
+        )
+        # OT win scores are of the type:
+        # 15 + (4xN) with N a natural numbers (1, 2, 3, ...)
+        # So 19, 23, 27, ...
+        # So if you substract 15 from an OT winning round
+        # the number is divisible by 4
+        ot_valid_ct_win = (game_round["endCTScore"] - tie_score) % (
+            ot_tie_score + 1
+        ) == 0 and game_round["endTScore"] < game_round["endCTScore"]
+        ot_valid_t_win = (game_round["endTScore"] - tie_score) % (
+            ot_tie_score + 1
+        ) == 0 and game_round["endCTScore"] < game_round["endTScore"]
+        return (
+            regular_valid_ct_win
+            or regular_valid_t_win
+            or ot_valid_ct_win
+            or ot_valid_t_win
+        )
+
     def remove_bad_scoring(self) -> None:
         """Removes rounds where the scoring is bad.
 
@@ -823,31 +877,12 @@ class DemoParser:
                         + lookahead_round["ctScore"]
                         + lookahead_round["endCTScore"]
                     )
-                    tie_score = 15
-                    ot_tie_score = 3
+
                     if (
                         # Next round should have higher score than current
                         (lookahead_round_total > current_round_total)
                         # Valid rounds have a winner and a not winner
-                        or (
-                            (r["endTScore"] == tie_score + 1)
-                            & (r["endCTScore"] < tie_score)
-                        )
-                        or (r["endCTScore"] == tie_score + 1)
-                        & (r["endTScore"] < tie_score)
-                        # OT win scores are of the type:
-                        # 15 + (4xN) with N a natural numbers (1, 2, 3, ...)
-                        # So 19, 23, 27, ...
-                        # So if you substract 15 from an OT winning round
-                        # the number is divisible by 4
-                        or (
-                            (r["endCTScore"] - tie_score) % (ot_tie_score + 1) == 0
-                            and r["endTScore"] < r["endCTScore"]
-                        )
-                        or (
-                            (r["endTScore"] - tie_score) % (ot_tie_score + 1) == 0
-                            and r["endCTScore"] < r["endTScore"]
-                        )
+                        or self._has_winner_and_not_winner(game_round=r)
                     ):
                         cleaned_rounds.append(r)
                 else:

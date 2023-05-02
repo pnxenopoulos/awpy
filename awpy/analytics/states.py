@@ -1,5 +1,5 @@
 """Functions to generate game stats based on snapshots from a demofile."""
-
+# pylint: disable=unused-argument
 from awpy.types import GameFrame
 
 

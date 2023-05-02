@@ -2,32 +2,6 @@
 
 from typing import Literal, NotRequired, TypedDict
 
-ColsType = Literal[
-    "roundNum",
-    "startTick",
-    "freezeTimeEndTick",
-    "endTick",
-    "endOfficialTick",
-    "tScore",
-    "ctScore",
-    "endTScore",
-    "endCTScore",
-    "tTeam",
-    "ctTeam",
-    "winningSide",
-    "winningTeam",
-    "losingTeam",
-    "roundEndReason",
-    "ctFreezeTimeEndEqVal",
-    "ctRoundStartEqVal",
-    "ctRoundSpendMoney",
-    "ctBuyType",
-    "tFreezeTimeEndEqVal",
-    "tRoundStartEqVal",
-    "tRoundSpendMoney",
-    "tBuyType",
-]
-
 
 class MapData(TypedDict):
     """TypedDict that hold information about a map."""
