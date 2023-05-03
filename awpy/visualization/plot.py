@@ -305,33 +305,26 @@ def plot_nades(
         nades = []
     figure, axes = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for game_round in rounds:
-        if game_round["grenades"]:
-            for grenade_action in game_round["grenades"]:
-                if grenade_action["throwerSide"] == side:
-                    start_x = position_transform(
-                        map_name, grenade_action["throwerX"], "x"
-                    )
-                    start_y = position_transform(
-                        map_name, grenade_action["throwerY"], "y"
-                    )
-                    end_x = position_transform(
-                        map_name, grenade_action["grenadeX"], "x"
-                    )
-                    end_y = position_transform(
-                        map_name, grenade_action["grenadeY"], "y"
-                    )
-                    if grenade_action["grenadeType"] in nades:
-                        g_type = grenade_action["grenadeType"]
-                        if g_type in nades:
-                            g_color = {
-                                "Incendiary Grenade": "red",
-                                "Molotov": "red",
-                                "Smoke Grenade": "gray",
-                                "HE Grenade": "green",
-                                "Flashbang": "gold",
-                            }[g_type]
-                            axes.plot([start_x, end_x], [start_y, end_y], color=g_color)
-                            axes.scatter(end_x, end_y, color=g_color)
+        if game_round["grenades"] is None:
+            continue
+        for grenade_action in game_round["grenades"]:
+            if (
+                grenade_action["throwerSide"] == side
+                and grenade_action["grenadeType"] in nades
+            ):
+                start_x = position_transform(map_name, grenade_action["throwerX"], "x")
+                start_y = position_transform(map_name, grenade_action["throwerY"], "y")
+                end_x = position_transform(map_name, grenade_action["grenadeX"], "x")
+                end_y = position_transform(map_name, grenade_action["grenadeY"], "y")
+                g_color = {
+                    "Incendiary Grenade": "red",
+                    "Molotov": "red",
+                    "Smoke Grenade": "gray",
+                    "HE Grenade": "green",
+                    "Flashbang": "gold",
+                }[grenade_action["grenadeType"]]
+                axes.plot([start_x, end_x], [start_y, end_y], color=g_color)
+                axes.scatter(end_x, end_y, color=g_color)
     axes.get_xaxis().set_visible(b=False)
     axes.get_yaxis().set_visible(b=False)
     return figure, axes

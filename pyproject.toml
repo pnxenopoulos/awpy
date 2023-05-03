@@ -153,7 +153,7 @@ strictSetInference                 = true
 useLibraryCodeForTypes             = false
 reportPropertyTypeMismatch         = "error"
 reportFunctionMemberAccess         = "warning"
-reportMissingTypeStubs             = "warning"
+reportMissingTypeStubs             = "none"
 reportUntypedFunctionDecorator     = "error"
 reportUntypedClassDecorator        = "error"
 reportUntypedBaseClass             = "error"
@@ -161,7 +161,7 @@ reportUntypedNamedTuple            = "error"
 reportPrivateUsage                 = "error"
 reportConstantRedefinition         = "error"
 reportOverlappingOverload          = "error"
-reportMissingParameterType         = "warning"
+reportMissingParameterType         = "error"
 reportUnnecessaryIsInstance        = "error"
 reportUnnecessaryCast              = "error"
 reportUnnecessaryComparison        = "error"
@@ -181,13 +181,11 @@ testpaths = ["tests"]
 
 [tool.pylint.main]
 # Specify a score threshold under which the program will exit with error.
-fail-under = 9.92
+fail-under = 9.94
 
 # Minimum Python version to use for version dependent checks. Will default to the
 # version used to run pylint.
 py-version = "3.11"
-
-disable = ["W2301"] # unnecessary-ellipsis but needed for pyright
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
@@ -246,16 +244,7 @@ confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFIN
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable = [
-    "raw-checker-failed",
-    "bad-inline-option",
-    "locally-disabled",
-    "file-ignored",
-    "suppressed-message",
-    "useless-suppression",
-    "deprecated-pragma",
-    "use-symbolic-message-instead",
-]
+disable = ["unnecessary-ellipsis"] #  but needed for pyright
 
 [tool.pylint.miscellaneous]
 # List of note tags to take in consideration, separated by a comma.
