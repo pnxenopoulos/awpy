@@ -183,9 +183,6 @@ testpaths = ["tests"]
 # Specify a score threshold under which the program will exit with error.
 fail-under = 9.94
 
-# Minimum Python version to use for version dependent checks. Will default to the
-# version used to run pylint.
-py-version = "3.11"
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
