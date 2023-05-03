@@ -31,19 +31,19 @@ def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
     game_state["ctEqValStart"] = 0
     game_state["ctBombZone"] = 0
     game_state["defusers"] = 0
-    for p in frame["ct"]["players"] or []:
-        game_state["ctEqValStart"] += p["equipmentValueFreezetimeEnd"]
-        if p["isAlive"]:
+    for player in frame["ct"]["players"] or []:
+        game_state["ctEqValStart"] += player["equipmentValueFreezetimeEnd"]
+        if player["isAlive"]:
             game_state["ctAlive"] += 1
-            game_state["ctHp"] += p["hp"]
-            game_state["ctArmor"] += p["armor"]
-            game_state["ctHelmet"] += p["hasHelmet"]
-            game_state["ctEq"] += p["equipmentValue"]
-            game_state["ctUtility"] += p["totalUtility"]
-            game_state["defusers"] += p["hasDefuse"]
+            game_state["ctHp"] += player["hp"]
+            game_state["ctArmor"] += player["armor"]
+            game_state["ctHelmet"] += player["hasHelmet"]
+            game_state["ctEq"] += player["equipmentValue"]
+            game_state["ctUtility"] += player["totalUtility"]
+            game_state["defusers"] += player["hasDefuse"]
             # This does not seem to work correctly
             # It is never filled in parse_demo.go
-            if p["isInBombZone"]:
+            if player["isInBombZone"]:
                 game_state["ctBombZone"] += 1
 
     # Team specific info (T)
@@ -56,20 +56,20 @@ def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
     game_state["tEqValStart"] = 0
     game_state["tHoldingBomb"] = 0
     game_state["tBombZone"] = 0
-    for p in frame["t"]["players"] or []:
-        game_state["tEqValStart"] += p["equipmentValueFreezetimeEnd"]
-        if p["isAlive"]:
+    for player in frame["t"]["players"] or []:
+        game_state["tEqValStart"] += player["equipmentValueFreezetimeEnd"]
+        if player["isAlive"]:
             game_state["tAlive"] += 1
-            game_state["tHp"] += p["hp"]
-            game_state["tArmor"] += p["armor"]
-            game_state["tHelmet"] += p["hasHelmet"]
-            game_state["tEq"] += p["equipmentValue"]
-            game_state["tUtility"] += p["totalUtility"]
+            game_state["tHp"] += player["hp"]
+            game_state["tArmor"] += player["armor"]
+            game_state["tHelmet"] += player["hasHelmet"]
+            game_state["tEq"] += player["equipmentValue"]
+            game_state["tUtility"] += player["totalUtility"]
             # This does not seem to work correctly
             # It is never filled in parse_demo.go
-            if p["isInBombZone"]:
+            if player["isInBombZone"]:
                 game_state["tBombZone"] += 1
-            if p["hasBomb"]:
+            if player["hasBomb"]:
                 game_state["tHoldingBomb"] = 1
 
     return game_state

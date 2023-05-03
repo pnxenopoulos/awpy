@@ -412,8 +412,8 @@ class DemoParser:
             raise FileNotFoundError("JSON path does not exist!")
 
         # Read in json to .json attribute
-        with open(json_path, encoding="utf8") as f:
-            demo_data: Game = json.load(f)
+        with open(json_path, encoding="utf8") as game_data:
+            demo_data: Game = json.load(game_data)
 
         self.json = demo_data
         self.logger.info(
@@ -512,10 +512,10 @@ class DemoParser:
         """
         if self.json:
             frames_dataframes = []
-            for r in self.json["gameRounds"] or []:
-                for frame in r["frames"] or []:
+            for game_round in self.json["gameRounds"] or []:
+                for frame in game_round["frames"] or []:
                     frame_item: dict[str, Any] = {}
-                    frame_item["roundNum"] = r["roundNum"]
+                    frame_item["roundNum"] = game_round["roundNum"]
                     for k in ("tick", "seconds"):
                         frame_item[k] = frame[k]
                     frame_item["ctTeamName"] = frame["ct"]["teamName"]
@@ -565,15 +565,15 @@ class DemoParser:
         """
         if self.json:
             player_frames = []
-            for r in self.json["gameRounds"] or []:
-                for frame in r["frames"] or []:
+            for game_round in self.json["gameRounds"] or []:
+                for frame in game_round["frames"] or []:
                     for side in ("ct", "t"):
                         players = frame[side]["players"]
                         if players is None:
                             continue
                         for player in players:
                             player_item: dict[str, Any] = {}
-                            player_item["roundNum"] = r["roundNum"]
+                            player_item["roundNum"] = game_round["roundNum"]
                             player_item["tick"] = frame["tick"]
                             player_item["seconds"] = frame["seconds"]
                             player_item["side"] = side
@@ -627,10 +627,10 @@ class DemoParser:
                 "tRoundSpendMoney",
                 "tBuyType",
             )
-            for r in self.json["gameRounds"] or []:
+            for game_round in self.json["gameRounds"] or []:
                 round_item: dict[str, Any] = {}
                 for k in cols:
-                    round_item[k] = r[k]
+                    round_item[k] = game_round[k]
                     round_item["matchID"] = self.json["matchID"]
                     round_item["mapName"] = self.json["mapName"]
                 rounds.append(round_item)
@@ -756,8 +756,12 @@ class DemoParser:
 
     def write_json(self) -> None:
         """Rewrite the JSON file."""
-        with open(self.outpath + "/" + self.output_file, "w", encoding="utf8") as fp:
-            json.dump(self.json, fp, indent=(1 if self.json_indentation else None))
+        with open(
+            self.outpath + "/" + self.output_file, "w", encoding="utf8"
+        ) as file_path:
+            json.dump(
+                self.json, file_path, indent=(1 if self.json_indentation else None)
+            )
 
     def renumber_rounds(self) -> None:
         """Renumbers the rounds.
@@ -864,9 +868,12 @@ class DemoParser:
         """
         if self.json and self.json["gameRounds"]:
             cleaned_rounds = []
-            for i, r in enumerate(self.json["gameRounds"]):
+            for i, game_round in enumerate(self.json["gameRounds"]):
                 current_round_total = (
-                    r["tScore"] + r["endTScore"] + r["ctScore"] + r["endCTScore"]
+                    game_round["tScore"]
+                    + game_round["endTScore"]
+                    + game_round["ctScore"]
+                    + game_round["endCTScore"]
                 )
                 if i < len(self.json["gameRounds"]) - 1:
                     # Non-OT rounds
@@ -882,9 +889,9 @@ class DemoParser:
                         # Next round should have higher score than current
                         (lookahead_round_total > current_round_total)
                         # Valid rounds have a winner and a not winner
-                        or self._has_winner_and_not_winner(game_round=r)
+                        or self._has_winner_and_not_winner(game_round=game_round)
                     ):
-                        cleaned_rounds.append(r)
+                        cleaned_rounds.append(game_round)
                 else:
                     lookback_round = self.json["gameRounds"][i - 1]
                     lookback_round_total = (
@@ -894,7 +901,7 @@ class DemoParser:
                         + lookback_round["endCTScore"]
                     )
                     if current_round_total > lookback_round_total:
-                        cleaned_rounds.append(r)
+                        cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -919,9 +926,9 @@ class DemoParser:
                 )
             else:
                 cleaned_rounds = []
-                for r in self.json["gameRounds"] or []:
-                    if len(r["frames"] or []) > 0:
-                        cleaned_rounds.append(r)
+                for game_round in self.json["gameRounds"] or []:
+                    if len(game_round["frames"] or []) > 0:
+                        cleaned_rounds.append(game_round)
                 self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -948,19 +955,19 @@ class DemoParser:
                 cleaned_rounds = []
                 # Remove rounds where the number of players is too large
                 n_players = 5
-                for r in self.json["gameRounds"] or []:
-                    if r["frames"] and len(r["frames"]) > 0:
-                        f = r["frames"][0]
-                        if f["ct"]["players"] is None:
-                            if f["t"]["players"] is None:
+                for game_round in self.json["gameRounds"] or []:
+                    if game_round["frames"] and len(game_round["frames"]) > 0:
+                        game_frame = game_round["frames"][0]
+                        if game_frame["ct"]["players"] is None:
+                            if game_frame["t"]["players"] is None:
                                 pass
-                            elif len(f["t"]["players"]) <= n_players:
-                                cleaned_rounds.append(r)
-                        elif len(f["ct"]["players"]) <= n_players and (
-                            (f["t"]["players"] is None)
-                            or (len(f["t"]["players"]) <= n_players)
+                            elif len(game_frame["t"]["players"]) <= n_players:
+                                cleaned_rounds.append(game_round)
+                        elif len(game_frame["ct"]["players"]) <= n_players and (
+                            (game_frame["t"]["players"] is None)
+                            or (len(game_frame["t"]["players"]) <= n_players)
                         ):
-                            cleaned_rounds.append(r)
+                            cleaned_rounds.append(game_round)
                 self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -986,17 +993,17 @@ class DemoParser:
                     and len(self.json["matchPhases"]["warmupChanged"]) > 1
                 ):
                     last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
-                    for r in self.json["gameRounds"] or []:
-                        if (r["startTick"] > last_warmup_changed) and (
-                            not r["isWarmup"]
+                    for game_round in self.json["gameRounds"] or []:
+                        if (game_round["startTick"] > last_warmup_changed) and (
+                            not game_round["isWarmup"]
                         ):
-                            cleaned_rounds.append(r)
-                        if r["startTick"] == last_warmup_changed:
-                            cleaned_rounds.append(r)
+                            cleaned_rounds.append(game_round)
+                        if game_round["startTick"] == last_warmup_changed:
+                            cleaned_rounds.append(game_round)
                 else:
-                    for r in self.json["gameRounds"] or []:
-                        if not r["isWarmup"]:
-                            cleaned_rounds.append(r)
+                    for game_round in self.json["gameRounds"] or []:
+                        if not game_round["isWarmup"]:
+                            cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1020,9 +1027,9 @@ class DemoParser:
             bad_endings = ["Draw", "Unknown", ""]
         if self.json:
             cleaned_rounds = []
-            for r in self.json["gameRounds"] or []:
-                if r["roundEndReason"] not in bad_endings:
-                    cleaned_rounds.append(r)
+            for game_round in self.json["gameRounds"] or []:
+                if game_round["roundEndReason"] not in bad_endings:
+                    cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1040,22 +1047,22 @@ class DemoParser:
         """
         if self.json and self.json["gameRounds"]:
             cleaned_rounds = []
-            for r in self.json["gameRounds"]:
-                if not r["isWarmup"]:
-                    kill_actions = r["kills"]
+            for game_round in self.json["gameRounds"]:
+                if not game_round["isWarmup"]:
+                    kill_actions = game_round["kills"]
                     if kill_actions is None:
                         continue
                     total_kills = len(kill_actions)
                     total_knife_kills = 0
                     if total_kills > 0:
                         # We know this is save because the len call gives 0
-                        # and this if never gets enteres if r["kills"] is None
+                        # and this if never gets enteres if game_round["kills"] is None
                         # but mypy does not know this
                         for k in kill_actions:
                             if k["weapon"] == "Knife":
                                 total_knife_kills += 1
                     if (total_knife_kills != total_kills) | (total_knife_kills == 0):
-                        cleaned_rounds.append(r)
+                        cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1074,9 +1081,12 @@ class DemoParser:
         n_total_players = 10
         if self.json:
             cleaned_rounds = []
-            for r in self.json["gameRounds"] or []:
-                if not r["isWarmup"] and len(r["kills"] or []) <= n_total_players:
-                    cleaned_rounds.append(r)
+            for game_round in self.json["gameRounds"] or []:
+                if (
+                    not game_round["isWarmup"]
+                    and len(game_round["kills"] or []) <= n_total_players
+                ):
+                    cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1094,13 +1104,13 @@ class DemoParser:
         """
         if self.json:
             cleaned_rounds = []
-            for r in self.json["gameRounds"] or []:
+            for game_round in self.json["gameRounds"] or []:
                 if (
-                    (r["startTick"] <= r["endTick"])
-                    and (r["startTick"] <= r["endOfficialTick"])
-                    and (r["startTick"] <= r["freezeTimeEndTick"])
+                    (game_round["startTick"] <= game_round["endTick"])
+                    and (game_round["startTick"] <= game_round["endOfficialTick"])
+                    and (game_round["startTick"] <= game_round["freezeTimeEndTick"])
                 ):
-                    cleaned_rounds.append(r)
+                    cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(

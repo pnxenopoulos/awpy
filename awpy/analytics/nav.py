@@ -197,9 +197,9 @@ def area_distance(
         return distance_obj
     if dist_type == "geodesic":
 
-        def dist_heuristic(a: int, b: int) -> float:
+        def dist_heuristic(node_a: int, node_b: int) -> float:
             return distance.euclidean(
-                map_graph.nodes()[a]["center"], map_graph.nodes()[b]["center"]
+                map_graph.nodes()[node_a]["center"], map_graph.nodes()[node_b]["center"]
             )
 
         try:
@@ -608,8 +608,8 @@ def generate_centroids(
     z_s = defaultdict(list)
     area_ids_cent: dict[str, int] = {}
     area_ids_rep: dict[str, int] = {}
-    for a in NAV[map_name]:
-        area = NAV[map_name][a]
+    for area_id in NAV[map_name]:
+        area = NAV[map_name][area_id]
         cur_x = []
         cur_y = []
         cur_x.append(area["southEastX"])

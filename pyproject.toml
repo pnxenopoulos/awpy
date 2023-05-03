@@ -186,11 +186,11 @@ fail-under = 9.92
 # version used to run pylint.
 py-version = "3.11"
 
-disable = ["C0103", "W2301"]
+disable = ["W2301"] # unnecessary-ellipsis but needed for pyright
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
-good-names = ["i", "j", "k", "ex", "Run", "_"]
+good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e"]
 
 [tool.pylint.design]
 # Maximum number of arguments for function / method.

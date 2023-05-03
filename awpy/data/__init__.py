@@ -33,39 +33,39 @@ def create_nav_graphs(
         A dictionary mapping each map (str) to an nx.DiGraph of its traversible areas
     """
     nav_graphs: dict[str, nx.DiGraph] = {}
-    for m in nav:
+    for map_name in nav:
         map_graph = nx.DiGraph()
-        for a in nav[m]:
-            r = nav[m][a]
+        for area_id in nav[map_name]:
+            area = nav[map_name][area_id]
             map_graph.add_nodes_from(
                 [
                     (
-                        a,
+                        area_id,
                         {
-                            "mapName": m,
-                            "areaID": a,
-                            "areaName": r["areaName"],
-                            "northWestX": r["northWestX"],
-                            "northWestY": r["northWestY"],
-                            "northWestZ": r["northWestZ"],
-                            "southEastX": r["southEastX"],
-                            "southEastY": r["southEastY"],
-                            "southEastZ": r["southEastZ"],
+                            "mapName": map_name,
+                            "areaID": area_id,
+                            "areaName": area["areaName"],
+                            "northWestX": area["northWestX"],
+                            "northWestY": area["northWestY"],
+                            "northWestZ": area["northWestZ"],
+                            "southEastX": area["southEastX"],
+                            "southEastY": area["southEastY"],
+                            "southEastZ": area["southEastZ"],
                             "center": [
-                                (r["northWestX"] + r["southEastX"]) / 2,
-                                (r["northWestY"] + r["southEastY"]) / 2,
-                                (r["northWestZ"] + r["southEastZ"]) / 2,
+                                (area["northWestX"] + area["southEastX"]) / 2,
+                                (area["northWestY"] + area["southEastY"]) / 2,
+                                (area["northWestZ"] + area["southEastZ"]) / 2,
                             ],
                             "size": np.sqrt(
-                                (r["northWestX"] - r["southEastX"]) ** 2
-                                + (r["northWestY"] - r["southEastY"]) ** 2
-                                + (r["northWestZ"] - r["southEastZ"]) ** 2
+                                (area["northWestX"] - area["southEastX"]) ** 2
+                                + (area["northWestY"] - area["southEastY"]) ** 2
+                                + (area["northWestZ"] - area["southEastZ"]) ** 2
                             ),
                         },
                     ),
                 ]
             )
-        with open(data_path + "nav/" + m + ".txt", encoding="utf8") as edge_list:
+        with open(data_path + "nav/" + map_name + ".txt", encoding="utf8") as edge_list:
             edge_list_lines = edge_list.readlines()
         for line in edge_list_lines:
             areas = line.strip().split(",")
@@ -77,24 +77,30 @@ def create_nav_graphs(
                     map_graph.nodes()[int(areas[1])]["center"],
                 ),
             )
-        nav_graphs[m] = map_graph
+        nav_graphs[map_name] = map_graph
     return nav_graphs
 
 
 NAV_GRAPHS = create_nav_graphs(NAV, PATH)
 
 # Open map data
-with open(Path(PATH + "map/map_data.json"), encoding="utf8") as f:
-    MAP_DATA: dict[str, MapData] = json.load(f)
+with open(Path(PATH + "map/map_data.json"), encoding="utf8") as map_data:
+    MAP_DATA: dict[str, MapData] = json.load(map_data)
 
-PLACE_DIST_MATRIX: dict[str, PlaceMatrix] = {}
-AREA_DIST_MATRIX: dict[str, AreaMatrix] = {}
-for file in os.listdir(PATH + "nav/"):
-    if file.startswith("place_distance_matrix"):
-        this_map_name = "_".join(file.split(".")[0].split("_")[-2:])
-        with open(Path(PATH + "nav/" + file), encoding="utf8") as f:
-            PLACE_DIST_MATRIX[this_map_name] = json.load(f)
-    elif file.startswith("area_distance_matrix"):
-        this_map_name = "_".join(file.split(".")[0].split("_")[-2:])
-        with open(Path(PATH + "nav/" + file), encoding="utf8") as f:
-            AREA_DIST_MATRIX[this_map_name] = json.load(f)
+
+def _get_dist_matrices() -> tuple[dict[str, PlaceMatrix], dict[str, AreaMatrix]]:
+    place_dist_matrix: dict[str, PlaceMatrix] = {}
+    area_dist_matrix: dict[str, AreaMatrix] = {}
+    for file in os.listdir(PATH + "nav/"):
+        if file.startswith("place_distance_matrix"):
+            this_map_name = "_".join(file.split(".")[0].split("_")[-2:])
+            with open(Path(PATH + "nav/" + file), encoding="utf8") as place_dist_data:
+                place_dist_matrix[this_map_name] = json.load(place_dist_data)
+        elif file.startswith("area_distance_matrix"):
+            this_map_name = "_".join(file.split(".")[0].split("_")[-2:])
+            with open(Path(PATH + "nav/" + file), encoding="utf8") as area_dist_data:
+                area_dist_matrix[this_map_name] = json.load(area_dist_data)
+    return place_dist_matrix, area_dist_matrix
+
+
+PLACE_DIST_MATRIX, AREA_DIST_MATRIX = _get_dist_matrices()

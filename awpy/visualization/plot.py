@@ -63,9 +63,9 @@ def plot_map(
             if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
                 map_bg_lower = imageio.imread(base_path + "_lower.png")
                 map_bg = np.concatenate([map_bg, map_bg_lower])
-    fig, ax = plt.subplots()
-    ax.imshow(map_bg, zorder=0)
-    return fig, ax
+    figure, axis = plt.subplots()
+    axis.imshow(map_bg, zorder=0)
+    return figure, axis
 
 
 # Position function courtesy of PureSkill.gg
@@ -173,24 +173,31 @@ def plot_positions(  # noqa: PLR0913
         alphas = [1.0] * len(positions)
     if sizes is None:
         sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
-    f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    for p, c, m, alpha, s in zip(
+    figure, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+    for position, color, marker, alpha, size in zip(
         positions, colors, markers, alphas, sizes, strict=True
     ):
         if apply_transformation:
-            a.scatter(
-                x=position_transform(map_name, p[0], "x"),
-                y=position_transform(map_name, p[1], "y"),
-                c=c,
-                marker=m,
+            axis.scatter(
+                x=position_transform(map_name, position[0], "x"),
+                y=position_transform(map_name, position[1], "y"),
+                c=color,
+                marker=marker,
                 alpha=alpha,
-                s=s,
+                s=size,
             )
         else:
-            a.scatter(x=p[0], y=p[1], c=c, marker=m, alpha=alpha, s=s)
-    a.get_xaxis().set_visible(b=False)
-    a.get_yaxis().set_visible(b=False)
-    return f, a
+            axis.scatter(
+                x=position[0],
+                y=position[1],
+                c=color,
+                marker=marker,
+                alpha=alpha,
+                s=size,
+            )
+    axis.get_xaxis().set_visible(b=False)
+    axis.get_yaxis().set_visible(b=False)
+    return figure, axis
 
 
 def plot_round(
@@ -225,18 +232,18 @@ def plot_round(
         shutil.rmtree("csgo_tmp/")
     os.mkdir("csgo_tmp")
     image_files = []
-    for i, f in tqdm(enumerate(frames)):
+    for i, game_frame in tqdm(enumerate(frames)):
         positions = []
         colors = []
         markers = []
         # Plot bomb
         # Thanks to https://github.com/pablonieto0981 for adding this code!
-        if f["bomb"]:
+        if game_frame["bomb"]:
             colors.append("orange")
             markers.append("8")
             pos = (
-                position_transform(map_name, f["bomb"]["x"], "x"),
-                position_transform(map_name, f["bomb"]["y"], "y"),
+                position_transform(map_name, game_frame["bomb"]["x"], "x"),
+                position_transform(map_name, game_frame["bomb"]["y"], "y"),
             )
             positions.append(pos)
         else:
@@ -244,21 +251,21 @@ def plot_round(
         # Plot players
         for side in ["ct", "t"]:
             side = cast(Literal["ct", "t"], side)
-            for p in f[side]["players"] or []:
+            for player in game_frame[side]["players"] or []:
                 if side == "ct":
                     colors.append("cyan")
                 else:
                     colors.append("red")
-                if p["hp"] == 0:
+                if player["hp"] == 0:
                     markers.append("x")
                 else:
                     markers.append(".")
                 pos = (
-                    position_transform(map_name, p["x"], "x"),
-                    position_transform(map_name, p["y"], "y"),
+                    position_transform(map_name, player["x"], "x"),
+                    position_transform(map_name, player["y"], "y"),
                 )
                 positions.append(pos)
-        fig, _ = plot_positions(
+        figure, _ = plot_positions(
             positions=positions,
             colors=colors,
             markers=markers,
@@ -267,7 +274,7 @@ def plot_round(
             dark=dark,
         )
         image_files.append(f"csgo_tmp/{i}.png")
-        fig.savefig(image_files[-1], dpi=300, bbox_inches="tight")
+        figure.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = []
     for file in image_files:
@@ -305,31 +312,39 @@ def plot_nades(
     """
     if nades is None:
         nades = []
-    f, a = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    for r in rounds:
-        if r["grenades"]:
-            for g in r["grenades"]:
-                if g["throwerSide"] == side:
-                    start_x = position_transform(map_name, g["throwerX"], "x")
-                    start_y = position_transform(map_name, g["throwerY"], "y")
-                    end_x = position_transform(map_name, g["grenadeX"], "x")
-                    end_y = position_transform(map_name, g["grenadeY"], "y")
-                    if g["grenadeType"] in nades:
+    figure, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+    for game_round in rounds:
+        if game_round["grenades"]:
+            for grenade_action in game_round["grenades"]:
+                if grenade_action["throwerSide"] == side:
+                    start_x = position_transform(
+                        map_name, grenade_action["throwerX"], "x"
+                    )
+                    start_y = position_transform(
+                        map_name, grenade_action["throwerY"], "y"
+                    )
+                    end_x = position_transform(
+                        map_name, grenade_action["grenadeX"], "x"
+                    )
+                    end_y = position_transform(
+                        map_name, grenade_action["grenadeY"], "y"
+                    )
+                    if grenade_action["grenadeType"] in nades:
                         if (
-                            g["grenadeType"] == "Incendiary Grenade"
-                            or g["grenadeType"] == "Molotov"
+                            grenade_action["grenadeType"] == "Incendiary Grenade"
+                            or grenade_action["grenadeType"] == "Molotov"
                         ):
-                            a.plot([start_x, end_x], [start_y, end_y], color="red")
-                            a.scatter(end_x, end_y, color="red")
-                        if g["grenadeType"] == "Smoke Grenade":
-                            a.plot([start_x, end_x], [start_y, end_y], color="gray")
-                            a.scatter(end_x, end_y, color="gray")
-                        if g["grenadeType"] == "HE Grenade":
-                            a.plot([start_x, end_x], [start_y, end_y], color="green")
-                            a.scatter(end_x, end_y, color="green")
-                        if g["grenadeType"] == "Flashbang":
-                            a.plot([start_x, end_x], [start_y, end_y], color="gold")
-                            a.scatter(end_x, end_y, color="gold")
-    a.get_xaxis().set_visible(b=False)
-    a.get_yaxis().set_visible(b=False)
-    return f, a
+                            axis.plot([start_x, end_x], [start_y, end_y], color="red")
+                            axis.scatter(end_x, end_y, color="red")
+                        if grenade_action["grenadeType"] == "Smoke Grenade":
+                            axis.plot([start_x, end_x], [start_y, end_y], color="gray")
+                            axis.scatter(end_x, end_y, color="gray")
+                        if grenade_action["grenadeType"] == "HE Grenade":
+                            axis.plot([start_x, end_x], [start_y, end_y], color="green")
+                            axis.scatter(end_x, end_y, color="green")
+                        if grenade_action["grenadeType"] == "Flashbang":
+                            axis.plot([start_x, end_x], [start_y, end_y], color="gold")
+                            axis.scatter(end_x, end_y, color="gold")
+    axis.get_xaxis().set_visible(b=False)
+    axis.get_yaxis().set_visible(b=False)
+    return figure, axis
