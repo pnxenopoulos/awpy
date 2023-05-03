@@ -19,7 +19,7 @@ Example::
 
 https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
 """
-from typing import Literal, TypeGuard, cast, overload
+from typing import Any, Literal, TypeGuard, cast, overload
 
 import pandas as pd
 
@@ -286,8 +286,8 @@ def _get_actor_key(
 
 
 def _get_actor_key(
-    actor,
-    game_action,
+    actor: Any,
+    game_action: Any,
 ) -> str:
     if (actor + "Name") not in game_action or (actor + "SteamID") not in game_action:
         raise ValueError(

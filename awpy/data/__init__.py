@@ -73,8 +73,8 @@ def create_nav_graphs(
                 int(areas[0]),
                 int(areas[1]),
                 weight=distance.euclidean(
-                    map_graph.nodes()[int(areas[0])]["center"],
-                    map_graph.nodes()[int(areas[1])]["center"],
+                    map_graph.nodes[int(areas[0])]["center"],
+                    map_graph.nodes[int(areas[1])]["center"],
                 ),
             )
         nav_graphs[map_name] = map_graph

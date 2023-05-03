@@ -1,6 +1,18 @@
 """This module contains the type definitions for the parsed json structure."""
 
+from dataclasses import dataclass
 from typing import Literal, NotRequired, TypedDict
+
+
+@dataclass
+class PlotPosition:
+    """Class to store information needed for plotting a position."""
+
+    position: tuple[float, float]
+    color: str
+    marker: str
+    alpha: float | None = None
+    size: float | None = None
 
 
 class MapData(TypedDict):

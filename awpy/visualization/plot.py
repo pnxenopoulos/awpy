@@ -16,21 +16,22 @@ https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualizat
 """
 import os
 import shutil
-from typing import Literal, cast
+from typing import Literal
 
-import imageio
-import matplotlib as mpl
+import imageio.v3 as imageio
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from tqdm import tqdm
 
 from awpy.data import MAP_DATA
-from awpy.types import GameFrame, GameRound
+from awpy.types import BombInfo, GameFrame, GameRound, PlayerInfo, PlotPosition
 
 
 def plot_map(
     map_name: str = "de_dust2", map_type: str = "original", *, dark: bool = False
-) -> tuple[plt.Figure, plt.Axes]:
+) -> tuple[Figure, Axes]:
     """Plots a blank map.
 
     Args:
@@ -63,9 +64,9 @@ def plot_map(
             if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
                 map_bg_lower = imageio.imread(base_path + "_lower.png")
                 map_bg = np.concatenate([map_bg, map_bg_lower])
-    figure, axis = plt.subplots()
-    axis.imshow(map_bg, zorder=0)
-    return figure, axis
+    figure, axes = plt.subplots()
+    axes.imshow(map_bg, zorder=0)
+    return figure, axes
 
 
 # Position function courtesy of PureSkill.gg
@@ -126,31 +127,23 @@ def position_transform_all(
     return (x, y, z)
 
 
-def plot_positions(  # noqa: PLR0913
-    positions: list[tuple[float, float]] | None = None,
-    colors: list[str] | None = None,
-    markers: list[str] | None = None,
-    alphas: list[float] | None = None,
-    sizes: list[float] | None = None,
+def plot_positions(
+    positions: list[PlotPosition],
     map_name: str = "de_ancient",
     map_type: str = "original",
     *,
     dark: bool = False,
     apply_transformation: bool = False,
-) -> tuple[plt.Figure, plt.Axes]:
+) -> tuple[Figure, Axes]:
     """Plots player positions.
 
     Args:
-        positions (list, optional): List of lists of length 2 ([[x,y], ...])
-            Defaults to []
-        colors (list, optional): List of colors for each player
-            Defaults to []
-        markers (list, optional): List of marker types for each player
-            Defaults to []
-        alphas (list, optional): List of alpha values for each player
-            Defaults to [1.0] * len(positions)
-        sizes (list, optional): List of marker sizes for each player
-            Defaults to [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
+        positions (list[PlotPosition]): List of lists of plot positions containing:
+            position (tuple[float, float]): Tuple of length 2 ([[x,y], ...])
+            color (str): Color for the position
+            marker (str): Marker for the position
+            alpha (float): Alpha value for the position
+            sizes (float): Size for the position
         map_name (string, optional): Map to search. Defaults to "de_ancient"
         map_type (string, optional): "original" or "simpleradar". Defaults to "original"
         dark (bool, optional): Only for use with map_type="simpleradar".
@@ -163,41 +156,67 @@ def plot_positions(  # noqa: PLR0913
     Returns:
         matplotlib fig and ax
     """
-    if positions is None:
-        positions = []
-    if colors is None:
-        colors = []
-    if markers is None:
-        markers = []
-    if alphas is None:
-        alphas = [1.0] * len(positions)
-    if sizes is None:
-        sizes = [mpl.rcParams["lines.markersize"] ** 2] * len(positions)
-    figure, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
-    for position, color, marker, alpha, size in zip(
-        positions, colors, markers, alphas, sizes, strict=True
-    ):
+    figure, axes = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+    for position in positions:
         if apply_transformation:
-            axis.scatter(
-                x=position_transform(map_name, position[0], "x"),
-                y=position_transform(map_name, position[1], "y"),
-                c=color,
-                marker=marker,
-                alpha=alpha,
-                s=size,
-            )
+            x = position_transform(map_name, position.position[0], "x")
+            y = position_transform(map_name, position.position[1], "y")
+
         else:
-            axis.scatter(
-                x=position[0],
-                y=position[1],
-                c=color,
-                marker=marker,
-                alpha=alpha,
-                s=size,
-            )
-    axis.get_xaxis().set_visible(b=False)
-    axis.get_yaxis().set_visible(b=False)
-    return figure, axis
+            x = position.position[0]
+            y = position.position[1]
+        axes.scatter(
+            x=x,
+            y=y,
+            c=position.color,
+            marker=position.marker,
+            alpha=position.alpha,
+            s=position.size,
+        )
+    axes.get_xaxis().set_visible(b=False)
+    axes.get_yaxis().set_visible(b=False)
+    return figure, axes
+
+
+def _get_plot_position_for_player(
+    player: PlayerInfo, side: Literal["ct", "t"], map_name: str
+) -> PlotPosition:
+    """Build a PlotPosition class for the given player.
+
+    Args:
+        player (PlayerInfo): Information about a player at a point in time.
+        side (Literal["ct", "t"]): Side that the player is playing on.
+        map_name (str): Map that the player is playing on.
+
+    Returns:
+        PlotPosition: Information needed to plot the player.
+    """
+    pos = (
+        position_transform(map_name, player["x"], "x"),
+        position_transform(map_name, player["y"], "y"),
+    )
+    color = "cyan" if side == "ct" else "red"
+    marker = "x" if player["hp"] == 0 else "."
+    return PlotPosition(position=pos, color=color, marker=marker)
+
+
+def _get_plot_position_for_bomb(bomb: BombInfo, map_name: str) -> PlotPosition:
+    """Build a PlotPosition class for the given player.
+
+    Args:
+        bomb (BombInfo): Information about a bomb at a point in time.
+        map_name (str): Map that the bomb is playing on.
+
+    Returns:
+        PlotPosition: Information needed to plot the bomb.
+    """
+    pos = (
+        position_transform(map_name, bomb["x"], "x"),
+        position_transform(map_name, bomb["y"], "y"),
+    )
+    color = "orange"
+    marker = "8"
+    return PlotPosition(position=pos, color=color, marker=marker)
 
 
 def plot_round(
@@ -231,44 +250,18 @@ def plot_round(
     if os.path.isdir("csgo_tmp"):
         shutil.rmtree("csgo_tmp/")
     os.mkdir("csgo_tmp")
-    image_files = []
+    image_files: list[str] = []
     for i, game_frame in tqdm(enumerate(frames)):
         positions = []
-        colors = []
-        markers = []
         # Plot bomb
         # Thanks to https://github.com/pablonieto0981 for adding this code!
-        if game_frame["bomb"]:
-            colors.append("orange")
-            markers.append("8")
-            pos = (
-                position_transform(map_name, game_frame["bomb"]["x"], "x"),
-                position_transform(map_name, game_frame["bomb"]["y"], "y"),
-            )
-            positions.append(pos)
-        else:
-            pass
+        positions.append(_get_plot_position_for_bomb(game_frame["bomb"], map_name))
         # Plot players
-        for side in ["ct", "t"]:
-            side = cast(Literal["ct", "t"], side)
+        for side in ("ct", "t"):
             for player in game_frame[side]["players"] or []:
-                if side == "ct":
-                    colors.append("cyan")
-                else:
-                    colors.append("red")
-                if player["hp"] == 0:
-                    markers.append("x")
-                else:
-                    markers.append(".")
-                pos = (
-                    position_transform(map_name, player["x"], "x"),
-                    position_transform(map_name, player["y"], "y"),
-                )
-                positions.append(pos)
+                positions.append(_get_plot_position_for_player(player, side, map_name))
         figure, _ = plot_positions(
             positions=positions,
-            colors=colors,
-            markers=markers,
             map_name=map_name,
             map_type=map_type,
             dark=dark,
@@ -276,10 +269,8 @@ def plot_round(
         image_files.append(f"csgo_tmp/{i}.png")
         figure.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
-    images = []
-    for file in image_files:
-        images.append(imageio.imread(file))
-    imageio.mimsave(filename, images, duration=1000 / fps)
+    images = [imageio.imread(file) for file in image_files]
+    imageio.imwrite(filename, images, duration=1000 / fps)
     shutil.rmtree("csgo_tmp/")
     return True
 
@@ -292,7 +283,7 @@ def plot_nades(
     map_type: str = "original",
     *,
     dark: bool = False,
-) -> tuple[plt.Figure, plt.Axes]:
+) -> tuple[Figure, Axes]:
     """Plots grenade trajectories.
 
     Args:
@@ -312,7 +303,7 @@ def plot_nades(
     """
     if nades is None:
         nades = []
-    figure, axis = plot_map(map_name=map_name, map_type=map_type, dark=dark)
+    figure, axes = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for game_round in rounds:
         if game_round["grenades"]:
             for grenade_action in game_round["grenades"]:
@@ -330,21 +321,17 @@ def plot_nades(
                         map_name, grenade_action["grenadeY"], "y"
                     )
                     if grenade_action["grenadeType"] in nades:
-                        if (
-                            grenade_action["grenadeType"] == "Incendiary Grenade"
-                            or grenade_action["grenadeType"] == "Molotov"
-                        ):
-                            axis.plot([start_x, end_x], [start_y, end_y], color="red")
-                            axis.scatter(end_x, end_y, color="red")
-                        if grenade_action["grenadeType"] == "Smoke Grenade":
-                            axis.plot([start_x, end_x], [start_y, end_y], color="gray")
-                            axis.scatter(end_x, end_y, color="gray")
-                        if grenade_action["grenadeType"] == "HE Grenade":
-                            axis.plot([start_x, end_x], [start_y, end_y], color="green")
-                            axis.scatter(end_x, end_y, color="green")
-                        if grenade_action["grenadeType"] == "Flashbang":
-                            axis.plot([start_x, end_x], [start_y, end_y], color="gold")
-                            axis.scatter(end_x, end_y, color="gold")
-    axis.get_xaxis().set_visible(b=False)
-    axis.get_yaxis().set_visible(b=False)
-    return figure, axis
+                        g_type = grenade_action["grenadeType"]
+                        if g_type in nades:
+                            g_color = {
+                                "Incendiary Grenade": "red",
+                                "Molotov": "red",
+                                "Smoke Grenade": "gray",
+                                "HE Grenade": "green",
+                                "Flashbang": "gold",
+                            }[g_type]
+                            axes.plot([start_x, end_x], [start_y, end_y], color=g_color)
+                            axes.scatter(end_x, end_y, color=g_color)
+    axes.get_xaxis().set_visible(b=False)
+    axes.get_yaxis().set_visible(b=False)
+    return figure, axes

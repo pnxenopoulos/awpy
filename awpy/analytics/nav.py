@@ -188,7 +188,7 @@ def area_distance(
     }
     if dist_type == "graph":
         try:
-            discovered_path = nx.shortest_path(map_graph, area_a, area_b)
+            discovered_path = nx.bidirectional_shortest_path(map_graph, area_a, area_b)
             distance_obj["distance"] = len(discovered_path) - 1
             distance_obj["areas"] = discovered_path
         except nx.NetworkXNoPath:
@@ -199,7 +199,7 @@ def area_distance(
 
         def dist_heuristic(node_a: int, node_b: int) -> float:
             return distance.euclidean(
-                map_graph.nodes()[node_a]["center"], map_graph.nodes()[node_b]["center"]
+                map_graph.nodes[node_a]["center"], map_graph.nodes[node_b]["center"]
             )
 
         try:

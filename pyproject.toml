@@ -96,7 +96,7 @@ select = [
     "NPY",
     "RUF",
 ]
-ignore = ["D208", "ANN101", "T20", "PTH", "TRY003"] # , "PLR0912", "PLR0915", "PLR0913"
+ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "PLR0913"] # , "PLR0912", "PLR0915"
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -150,6 +150,7 @@ exclude                            = ["tests"]
 strictListInference                = true
 strictDictionaryInference          = true
 strictSetInference                 = true
+useLibraryCodeForTypes             = false
 reportPropertyTypeMismatch         = "error"
 reportFunctionMemberAccess         = "warning"
 reportMissingTypeStubs             = "warning"
@@ -194,7 +195,7 @@ good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e"]
 
 [tool.pylint.design]
 # Maximum number of arguments for function / method.
-max-args = 5
+max-args = 10
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes = 7
@@ -245,7 +246,16 @@ confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFIN
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable = ["raw-checker-failed", "bad-inline-option", "locally-disabled", "file-ignored", "suppressed-message", "useless-suppression", "deprecated-pragma", "use-symbolic-message-instead"]
+disable = [
+    "raw-checker-failed",
+    "bad-inline-option",
+    "locally-disabled",
+    "file-ignored",
+    "suppressed-message",
+    "useless-suppression",
+    "deprecated-pragma",
+    "use-symbolic-message-instead",
+]
 
 [tool.pylint.miscellaneous]
 # List of note tags to take in consideration, separated by a comma.
