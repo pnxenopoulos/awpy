@@ -155,35 +155,26 @@ class DemoParser:
         else:
             self.outpath = os.path.abspath(outpath)
 
-        parse_rate = parser_args.setdefault("parse_rate", 128)
-        parse_frames = parser_args.setdefault("parse_frames", True)
-        parse_kill_frames = parser_args.setdefault("parse_kill_frames", False)
-        trade_time = parser_args.setdefault("trade_time", 5)
-        dmg_rolled = parser_args.setdefault("dmg_rolled", False)
-        parse_chat = parser_args.setdefault("parse_chat", False)
-        buy_style = parser_args.setdefault("buy_style", "hltv")
-        json_indentation = parser_args.setdefault("json_indentation", False)
-
-        self._parse_rate = 128
-        self.parse_rate = parse_rate
-        self._trade_time = 5
-        self.trade_time = trade_time
+        self.parse_rate = parser_args.setdefault("parse_rate", 128)
+        self.trade_time = parser_args.setdefault("trade_time", 5)
+        self.parse_frames = parser_args.setdefault("parse_frames", True)
+        self.parse_kill_frames = parser_args.setdefault("parse_kill_frames", False)
+        self.dmg_rolled = parser_args.setdefault("dmg_rolled", False)
+        self.parse_chat = parser_args.setdefault("parse_chat", False)
+        self.json_indentation = parser_args.setdefault("json_indentation", False)
 
         self.logger.info("Setting trade time to %d", self.trade_time)
 
-        if buy_style not in ["hltv", "csgo"]:
+        if (buy_style := parser_args.setdefault("buy_style", "hltv")) not in (
+            "hltv",
+            "csgo",
+        ):
             self.logger.warning(
                 "Buy style specified is not one of hltv, csgo, "
                 "will be set to hltv by default"
             )
             self.buy_style = "hltv"
         self.logger.info("Setting buy style to %s", self.buy_style)
-
-        self.dmg_rolled = dmg_rolled
-        self.parse_chat = parse_chat
-        self.parse_frames = parse_frames
-        self.parse_kill_frames = parse_kill_frames
-        self.json_indentation = json_indentation
 
         self.log_settings()
 
