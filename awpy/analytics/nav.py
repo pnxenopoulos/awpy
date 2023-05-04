@@ -77,12 +77,15 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
                     If the length of point is not 3
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     if area_id not in NAV[map_name]:
-        raise ValueError("Area ID not found.")
+        msg = "Area ID not found."
+        raise ValueError(msg)
     # Three dimensional space. Unlikely to change anytime soon
     if len(point) != 3:  # noqa: PLR2004
-        raise ValueError("Point must be a list [X,Y,Z]")
+        msg = "Point must be a list [X,Y,Z]"
+        raise ValueError(msg)
     contains_x = (
         min(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"])
         < point[0]
@@ -119,10 +122,12 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
                     If the length of point is not 3
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     # Three dimensional space. Unlikely to change anytime soon
     if len(point) != 3:  # noqa: PLR2004
-        raise ValueError("Point must be a list [X,Y,Z]")
+        msg = "Point must be a list [X,Y,Z]"
+        raise ValueError(msg)
     closest_area: ClosestArea = {
         "mapName": map_name,
         # I do not think there is anyway this can actually be None
@@ -175,11 +180,14 @@ def area_distance(
                     If the dist_type is not one of ["graph", "geodesic", "euclidean"]
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     if (area_a not in NAV[map_name].keys()) or (area_b not in NAV[map_name].keys()):
-        raise ValueError("Area ID not found.")
+        msg = "Area ID not found."
+        raise ValueError(msg)
     if dist_type not in get_args(DistanceType):
-        raise ValueError("dist_type can only be graph, geodesic or euclidean")
+        msg = "dist_type can only be graph, geodesic or euclidean"
+        raise ValueError(msg)
     map_graph = NAV_GRAPHS[map_name]
     distance_obj: DistanceObject = {
         "distanceType": dist_type,
@@ -273,18 +281,19 @@ def point_distance(
                         (for "graph" or "geodesic" dist_type)
     """
     if dist_type not in get_args(PointDistanceType):
-        raise ValueError(
-            "dist_type can only be graph, geodesic,"
-            " euclidean, manhattan, canberra or cosine"
+        msg = (
+            "dist_type can only be graph, geodesic, "
+            "euclidean, manhattan, canberra or cosine"
         )
+        raise ValueError(msg)
     if dist_type in {"graph", "geodesic"}:
         if map_name not in NAV:
-            raise ValueError("Map not found.")
+            msg = "Map not found."
+            raise ValueError(msg)
         # Three dimensional space. Unlikely to change anytime soon
         if len(point_a) != 3 or len(point_b) != 3:  # noqa: PLR2004
-            raise ValueError(
-                "When using graph or geodesic distance, point must be X/Y/Z"
-            )
+            msg = "When using graph or geodesic distance, point must be X/Y/Z"
+            raise ValueError(msg)
     distance_obj: DistanceObject = {
         "distanceType": dist_type,
         "distance": float("inf"),
@@ -329,7 +338,8 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
                     If either side ("ct" or "t") in the frame has no players
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     ct_players = frame["ct"]["players"]
     t_players = frame["t"]["players"]
     if (
@@ -338,7 +348,8 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
         or len(ct_players) == 0
         or len(t_players) == 0
     ):
-        raise ValueError("CT or T players has length of 0")
+        msg = "CT or T players has length of 0"
+        raise ValueError(msg)
     # Create map area list
     map_area_names = []
     for area_id in NAV[map_name]:
@@ -431,7 +442,8 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
     # Initialize the dict structure
     area_distance_matrix: AreaMatrix = tree()
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     areas = NAV[map_name]
     # And there over each area
     for area1 in areas:
@@ -505,7 +517,8 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
         datefmt="%H:%M:%S",
     )
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     if map_name not in AREA_DIST_MATRIX:
         logging.warning(
             """Skipping calculation of median distances between places.
@@ -603,7 +616,8 @@ def generate_centroids(
         ValueError: If map_name is not in awpy.data.NAV
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     area_points: dict[str, list[tuple[float, float]]] = defaultdict(list)
     z_s = defaultdict(list)
     area_ids_cent: dict[str, int] = {}
@@ -793,27 +807,32 @@ def _check_arguments_position_distance(
        tuple[npt.NDArray, npt.NDArray]: Potentially reordered position arrays.
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     if distance_type not in get_args(DistanceType):
-        raise ValueError("distance_type can only be graph, geodesic or euclidean")
+        msg = "distance_type can only be graph, geodesic or euclidean"
+        raise ValueError(msg)
     if (
         position_array_1.shape[0] != position_array_2.shape[0]
         or position_array_1.shape[2] != position_array_2.shape[2]
     ):
-        raise ValueError(
+        msg = (
             "Game state shapes do not match! "
-            "Both states have to have the same number of teams(1 or 2) "
+            "Both states have to have the same number of teams (1 or 2) "
             "and same number of coordinates."
         )
+        raise ValueError(msg)
     # Three dimensional space. Unlikely to change anytime soon
     if (
         distance_type not in ["geodesic", "graph"]
         and position_array_1.shape[2] != 3  # noqa: PLR2004
     ):
-        raise ValueError(
-            "Game state shapes are incorrect! Both states have to have the same number "
-            "of coordinates (3) when not using 'geodesic' or graph 'distance'."
+        msg = (
+            "Game state shapes are incorrect! "
+            "Both states have to have the same number of coordinates (3)"
+            " when not using 'geodesic' or graph 'distance'."
         )
+        raise ValueError(msg)
     # Make sure array1 is the one with more players alive
     if position_array_1.shape[1] < position_array_2.shape[1]:
         position_array_1, position_array_2 = position_array_2, position_array_1
@@ -1061,15 +1080,17 @@ def _check_arguments_token_distance(
         ValueError: If the input token arrays do not have the same length.
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
     if distance_type not in ["graph", "geodesic", "euclidean", "edit_distance"]:
-        raise ValueError(
-            "distance_type can only be graph, geodesic, euclidean or edit_distance"
-        )
+        msg = "distance_type can only be graph, geodesic, euclidean or edit_distance"
+        raise ValueError(msg)
     if reference_point not in ["centroid", "representative_point"]:
-        raise ValueError("reference_point can only be centroid or representative_point")
+        msg = "reference_point can only be centroid or representative_point"
+        raise ValueError(msg)
     if len(token_array_1) != len(token_array_2):
-        raise ValueError("Token arrays have to have the same length!")
+        msg = "Token arrays have to have the same length!"
+        raise ValueError(msg)
 
 
 def _get_map_area_names(map_name: str) -> list[str]:
@@ -1108,10 +1129,11 @@ def _check_proper_token_length(
         len(token_array) != len(map_area_names)
         and len(token_array) != len(map_area_names) * 2
     ):
-        raise ValueError(
+        msg = (
             "Token arrays do not have the correct length. "
             "There has to be one entry per named area per team considered!"
         )
+        raise ValueError(msg)
 
 
 def _edit_distance_tokens(
@@ -1351,7 +1373,8 @@ def frame_distance(
         (len(frame1["t"]["players"] or []) > 0)
         != (len(frame2["t"]["players"] or []) > 0)
     ):
-        raise ValueError("The active sides between the two frames have to match.")
+        msg = "The active sides between the two frames have to match."
+        raise ValueError(msg)
     pos_array1 = get_array_for_frame(frame1)
     pos_array2 = get_array_for_frame(frame2)
     # position_state distance averages the result over the teams

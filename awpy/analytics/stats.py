@@ -60,7 +60,8 @@ def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
         return "T"
     if side == "T":
         return "CT"
-    raise ValueError("side has to be either 'CT' or 'T'")
+    msg = "side has to be either 'CT' or 'T'"
+    raise ValueError(msg)
 
 
 @overload
@@ -89,7 +90,8 @@ def lower_side(side: Literal["CT", "T"]) -> Literal["ct", "t"]:
         return "ct"
     if side == "T":
         return "t"
-    raise ValueError("side has to be either 'CT' or 'T'")
+    msg = "side has to be either 'CT' or 'T'"
+    raise ValueError(msg)
 
 
 def initialize_round(
@@ -292,9 +294,10 @@ def _get_actor_key(
     actor_name = actor + "Name"
     actor_steamid = actor + "SteamID"
     if (actor_name) not in game_action or (actor_steamid) not in game_action:
-        raise KeyError(
+        msg = (
             f"{actor} is not a valid actor for game_action of type {type(game_action)}."
         )
+        raise KeyError(msg)
 
     return (
         str(game_action[actor_name])
@@ -409,7 +412,8 @@ def _int_to_string_kills(
         return "4"
     if kills == 5:  # noqa: Ruff(PLR2004)
         return "5"
-    raise ValueError("kills has to be in range(1,6)")
+    msg = "kills has to be in range(1,6)"
+    raise ValueError(msg)
 
 
 def _handle_clutching(

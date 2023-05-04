@@ -47,7 +47,8 @@ def check_go_version() -> bool:
 
     def parse_go_version(parsed_resp: list[bytes] | None) -> list[str]:
         if parsed_resp is None or len(parsed_resp) != 1:
-            raise ValueError("Error finding Go version")
+            msg = "Error finding Go version"
+            raise ValueError(msg)
         go_version_text = parsed_resp[0].decode("utf-8")
         go_version = re.findall(r"\d\.\d+", go_version_text)
         return go_version[0].split(".")

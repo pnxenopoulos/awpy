@@ -409,7 +409,8 @@ class DemoParser:
         # Check if JSON exists
         if not os.path.exists(json_path):
             self.logger.error("JSON path does not exist!")
-            raise FileNotFoundError("JSON path does not exist!")
+            msg = "JSON path does not exist!"
+            raise FileNotFoundError(msg)
 
         # Read in json to .json attribute
         with open(json_path, encoding="utf8") as game_data:
@@ -454,8 +455,9 @@ class DemoParser:
             msg = "Parse return_type must be either 'json' or 'df'"
             self.logger.error(msg)
             raise ValueError(msg)
-        self.logger.error("JSON couldn't be returned")
-        raise AttributeError("No JSON parsed! Error in producing JSON.")
+        msg = "No JSON parsed! Error in producing JSON."
+        self.logger.error(msg)
+        raise AttributeError(msg)
 
     def parse_json_to_df(self) -> dict[str, Any]:
         """Returns JSON into dictionary where keys correspond to data frames.
@@ -493,12 +495,10 @@ class DemoParser:
             demo_data["playerFrames"] = self._parse_player_frames()
             self.logger.info("Returned dataframe output")
             return demo_data
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
+        msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        self.logger.error(msg)
+
+        raise AttributeError(msg)
 
     def _parse_frames(self) -> pd.DataFrame:
         """Returns frames as a Pandas dataframe.
@@ -531,12 +531,10 @@ class DemoParser:
             frames_df["matchID"] = self.json["matchID"]
             frames_df["mapName"] = self.json["mapName"]
             return pd.DataFrame(frames_dataframes)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
+        msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        self.logger.error(msg)
+
+        raise AttributeError(msg)
 
     def add_player_specific_information(
         self, player_item: dict[str, Any], player: PlayerInfo
@@ -584,12 +582,10 @@ class DemoParser:
             player_frames_df["matchID"] = self.json["matchID"]
             player_frames_df["mapName"] = self.json["mapName"]
             return pd.DataFrame(player_frames_df)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
+        msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        self.logger.error(msg)
+
+        raise AttributeError(msg)
 
     def _parse_rounds(self) -> pd.DataFrame:
         """Returns rounds as a Pandas dataframe.
@@ -635,12 +631,10 @@ class DemoParser:
                     round_item["mapName"] = self.json["mapName"]
                 rounds.append(round_item)
             return pd.DataFrame(rounds)
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
+        msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        self.logger.error(msg)
+
+        raise AttributeError(msg)
 
     def _parse_action(self, action: GameActionKey) -> pd.DataFrame:
         """Returns action as a Pandas dataframe.
@@ -668,11 +662,12 @@ class DemoParser:
                 key: pd.array(value_list) for key, value_list in actions.items()
             }
             return pd.DataFrame(actions_array)
+        msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
         self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            msg
         )
         raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            msg
         )
 
     def clean_rounds(
@@ -744,15 +739,11 @@ class DemoParser:
                 demo_data = self.parse_json_to_df()
                 self.logger.info("Returned cleaned dataframe output")
                 return demo_data
-            raise ValueError(
-                f"Invalid return_type of {return_type}. Use 'json' or 'df' instead!"
-            )
-        self.logger.error(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
-        raise AttributeError(
-            "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        )
+            msg = f"Invalid return_type of {return_type}. Use 'json' or 'df' instead!"
+            raise ValueError(msg)
+        msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+        self.logger.error(msg)
+        raise AttributeError(msg)
 
     def write_json(self) -> None:
         """Rewrite the JSON file."""
@@ -777,9 +768,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def rescore_rounds(self) -> None:
         """Rescore the rounds based on round end reason.
@@ -824,9 +814,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def _has_winner_and_not_winner(self, game_round: GameRound) -> bool:
         tie_score = 15
@@ -907,9 +896,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def remove_rounds_with_no_frames(self) -> None:
         """Removes rounds with no frames.
@@ -934,9 +922,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def remove_excess_players(self) -> None:
         """Removes rounds where there are more than 5 players on a side.
@@ -973,9 +960,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def remove_warmups(self) -> None:
         """Removes warmup rounds.
@@ -1009,9 +995,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def remove_end_round(self, bad_endings: list[str] | None = None) -> None:
         """Removes rounds with bad end reason.
@@ -1035,9 +1020,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def remove_knife_rounds(self) -> None:
         """Removes knife rounds.
@@ -1068,9 +1052,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def remove_excess_kill_rounds(self) -> None:
         """Removes rounds with more than 10 kills.
@@ -1092,9 +1075,8 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)
 
     def remove_time_rounds(self) -> None:
         """Remove rounds with odd round timings.
@@ -1116,6 +1098,5 @@ class DemoParser:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"
             )
-            raise AttributeError(
-                "JSON not found. Run .parse() or .read_json() if JSON already exists"
-            )
+            msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            raise AttributeError(msg)

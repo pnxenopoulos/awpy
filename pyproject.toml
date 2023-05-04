@@ -95,6 +95,7 @@ select = [
     "TRY",
     "NPY",
     "RUF",
+    "EM",
 ]
 ignore = ["D208", "ANN101", "T20", "PTH", "TRY003"] # , "PLR0912", "PLR0915", "PLR0913"
 

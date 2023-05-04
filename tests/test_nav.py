@@ -77,10 +77,11 @@ class TestNav:
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
         else:
-            raise AssertionError(
-                "This test needs to be executed in a directory "
-                "where it can savely create and delete a 'nav' subdir!"
+            msg = (
+                "This test needs to be executed in a directory where "
+                "it can savely create and delete a 'nav' subdir!"
             )
+            raise AssertionError(msg)
         self.map_name = "de_mock"
         self.file_name = f"{self.map_name}.txt"
         with open(os.path.join(self.dir, self.file_name), "w", encoding="utf8") as f:

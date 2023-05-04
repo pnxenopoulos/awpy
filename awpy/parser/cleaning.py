@@ -32,7 +32,8 @@ def _set_distance_metric(metric: str) -> DistMetricCallable:
         return textdistance.levenshtein.distance
     if metric == "jaro":
         return textdistance.jaro.distance
-    raise ValueError("Metric can only be lcss, hamming, levenshtein, jaro or difflib.")
+    msg = "Metric can only be lcss, hamming, levenshtein, jaro or difflib."
+    raise ValueError(msg)
 
 
 def associate_entities(
@@ -103,7 +104,7 @@ def replace_entities(
     entitiy_dict as created in associate_entities().
 
     Args:
-        dataframe (DataFrame)     : A Pandas DataFrame
+        dataframe (DataFrame) : A Pandas DataFrame
         col_name (string)  : A column in the Pandas DataFrame
         entity_dict (dict) : A dictionary as created in associate_entities()
 
@@ -111,6 +112,7 @@ def replace_entities(
         A dataframe with replaced names.
     """
     if col_name not in dataframe.columns:
-        raise ValueError("Column does not exist!")
+        msg = "Column does not exist!"
+        raise KeyError(msg)
     dataframe[col_name] = dataframe[col_name].replace(entity_dict)
     return dataframe

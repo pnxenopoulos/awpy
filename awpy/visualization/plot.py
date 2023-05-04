@@ -87,7 +87,8 @@ def position_transform(
         ValueError: Raises a ValueError if axis not 'x' or 'y'
     """
     if axis not in ["x", "y"]:
-        raise ValueError(f"'axis' has to be 'x' or 'y' not {axis}")
+        msg = f"'axis' has to be 'x' or 'y' not {axis}"
+        raise ValueError(msg)
     # vscode can do this, but mypy cant...
     start = MAP_DATA[map_name]["pos_" + axis]
     scale = MAP_DATA[map_name]["scale"]
