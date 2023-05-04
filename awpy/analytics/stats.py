@@ -289,14 +289,17 @@ def _get_actor_key(
     actor: Any,
     game_action: Any,
 ) -> str:
-    if (actor + "Name") not in game_action or (actor + "SteamID") not in game_action:
+    actor_name = actor + "Name"
+    actor_steamid = actor + "SteamID"
+    if (actor_name) not in game_action or (actor_steamid) not in game_action:
         raise ValueError(
             f"{actor} is not a valid actor for game_action of type {type(game_action)}."
         )
+
     return (
-        str(game_action[actor + "Name"])
-        if game_action[actor + "SteamID"] == 0
-        else str(game_action[actor + "SteamID"])
+        str(game_action[actor_name])
+        if game_action[actor_steamid] == 0
+        else str(game_action[actor_steamid])
     )
 
 
