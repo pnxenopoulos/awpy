@@ -78,7 +78,7 @@ class TestDemoParser:
     def test_outpath(self):
         """Tests if the outpath is correctly recorded."""
         self.parser_outpath = DemoParser(demofile="default.dem", log=False, outpath=".")
-        assert self.parser_outpath.outpath == os.getcwd()
+        assert os.path.dirname(self.parser_outpath.output_file) == os.getcwd()
 
     def test_demo_id_given(self):
         """Tests if a demo_id is correctly set."""
@@ -203,7 +203,10 @@ class TestDemoParser:
         output_json = self.parser.parse()
         assert isinstance(output_json, dict)
         assert os.path.exists("default.json")
-        assert self.parser.output_file == "default.json"
+        assert (
+            os.path.basename(self.parser.output_file.replace("\\", "/"))
+            == "default.json"
+        )
         assert self.parser.parse_error is False
 
     def test_parse_valve_matchmaking(self):

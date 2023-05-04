@@ -130,17 +130,28 @@ class ParserOpts(TypedDict):
     parseChat: bool
 
 
-class ParserArgs(TypedDict, total=False):
-    """TypedDict for parser **kwargs."""
+ParseRate = Literal[128, 64, 32, 16, 8, 4, 2, 1]
 
-    parse_rate: int
+BuyStyle = Literal["hltv", "csgo"]
+
+RoundReturnType = Literal["json", "df"]
+
+
+class FullParserArgs(TypedDict):
+    """TypedDict for total parser **kwargs."""
+
+    parse_rate: ParseRate
     parse_frames: bool
     parse_kill_frames: bool
     trade_time: int
     dmg_rolled: bool
     parse_chat: bool
-    buy_style: Literal["hltv", "csgo"]
+    buy_style: BuyStyle
     json_indentation: bool
+
+
+class ParserArgs(FullParserArgs, total=False):
+    """Non total parser **kwargs."""
 
 
 class MMRank(TypedDict):
