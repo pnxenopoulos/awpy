@@ -943,18 +943,23 @@ class DemoParser:
                 # Remove rounds where the number of players is too large
                 n_players = 5
                 for game_round in self.json["gameRounds"] or []:
-                    if game_round["frames"] and len(game_round["frames"]) > 0:
-                        game_frame = game_round["frames"][0]
-                        if game_frame["ct"]["players"] is None:
-                            if game_frame["t"]["players"] is None:
-                                pass
-                            elif len(game_frame["t"]["players"]) <= n_players:
-                                cleaned_rounds.append(game_round)
-                        elif len(game_frame["ct"]["players"]) <= n_players and (
-                            (game_frame["t"]["players"] is None)
-                            or (len(game_frame["t"]["players"]) <= n_players)
-                        ):
-                            cleaned_rounds.append(game_round)
+                    if not game_round["frames"]:
+                        continue
+                    game_frame = game_round["frames"][0]
+                    player_lists = (
+                        game_frame["t"]["players"],
+                        game_frame["ct"]["players"],
+                    )
+                    # Remove if any side has > 5 players
+                    if any(
+                        len(player_list or []) > n_players
+                        for player_list in player_lists
+                    ):
+                        continue
+                    # Remove if both sides are None
+                    if all(player_list is None for player_list in player_lists):
+                        continue
+                    cleaned_rounds.append(game_round)
                 self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1010,9 +1015,9 @@ class DemoParser:
         """
         if bad_endings is None:
             bad_endings = ["Draw", "Unknown", ""]
-        if self.json:
+        if self.json and (game_rounds := self.json["gameRounds"]):
             cleaned_rounds = []
-            for game_round in self.json["gameRounds"] or []:
+            for game_round in game_rounds:
                 if game_round["roundEndReason"] not in bad_endings:
                     cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
@@ -1029,24 +1034,20 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json and (game_rounds := self.json["gameRounds"]):
             cleaned_rounds = []
-            for game_round in self.json["gameRounds"]:
-                if not game_round["isWarmup"]:
-                    kill_actions = game_round["kills"]
-                    if kill_actions is None:
-                        continue
-                    total_kills = len(kill_actions)
-                    total_knife_kills = 0
-                    if total_kills > 0:
-                        # We know this is save because the len call gives 0
-                        # and this if never gets enteres if game_round["kills"] is None
-                        # but mypy does not know this
-                        for k in kill_actions:
-                            if k["weapon"] == "Knife":
-                                total_knife_kills += 1
-                    if (total_knife_kills != total_kills) | (total_knife_kills == 0):
-                        cleaned_rounds.append(game_round)
+            for game_round in game_rounds:
+                if game_round["isWarmup"]:
+                    continue
+                if (kill_actions := game_round["kills"]) is None:
+                    continue
+                total_kills = len(kill_actions)
+                total_knife_kills = 0
+                for k in kill_actions:
+                    if k["weapon"] == "Knife":
+                        total_knife_kills += 1
+                if (total_knife_kills != total_kills) | (total_knife_kills == 0):
+                    cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
