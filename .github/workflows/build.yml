@@ -50,6 +50,7 @@ jobs:
         run: |
           coverage run -m pytest --durations=10
           coverage report -m
+          coverage json
           coverage html
       - name: Archive code coverage results
         uses: actions/upload-artifact@v3
