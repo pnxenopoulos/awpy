@@ -544,6 +544,20 @@ class GameRound(TypedDict):
     frames: list[GameFrame] | None
 
 
+GameAction = (
+    KillAction
+    | DamageAction
+    | GrenadeAction
+    | BombAction
+    | WeaponFireAction
+    | FlashAction
+    | BombAction
+)
+GameActionKey = Literal[
+    "kills", "damages", "grenades", "bombEvents", "weaponFires", "flashes"
+]
+
+
 class Game(TypedDict):
     """Game is the overall struct that holds the parsed demo data."""
 

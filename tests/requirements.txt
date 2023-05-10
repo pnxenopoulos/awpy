@@ -1,3 +1,4 @@
 pandas-stubs==2.0.0.230412
 pytest==7.3.1
 pytest-cov==4.0.0
+requests>=2.25.1

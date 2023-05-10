@@ -14,7 +14,7 @@ setup(
     install_requires=[
         "pandas>=0.25.3",
         "numpy>=1.18.1",
-        "scipy>=1.4.1",
+        "scipy>=1.7.3",
         "matplotlib>=3.1.2",
         "networkx>=2.6.3",
         "textdistance>=4.2.0",
