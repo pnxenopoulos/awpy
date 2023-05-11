@@ -27,15 +27,15 @@ import logging
 import os
 import subprocess
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Literal, cast, get_args
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
+from awpy.types import Game, GameActionKey, GameRound, PlayerInfo
+from awpy.utils import check_go_version
+
 if TYPE_CHECKING:
     from pandas.core.arrays.base import ExtensionArray
-
-from awpy.types import ColsType, Game, GameActionKey, GameRound, PlayerInfo
-from awpy.utils import check_go_version
 
 
 class DemoParser:
@@ -663,12 +663,8 @@ class DemoParser:
             }
             return pd.DataFrame(actions_array)
         msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
-        self.logger.error(
-            msg
-        )
-        raise AttributeError(
-            msg
-        )
+        self.logger.error(msg)
+        raise AttributeError(msg)
 
     def clean_rounds(
         self,
