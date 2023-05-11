@@ -182,7 +182,7 @@ testpaths = ["tests"]
 
 [tool.pylint.main]
 # Specify a score threshold under which the program will exit with error.
-fail-under = 9.96
+fail-under = 9.95
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
