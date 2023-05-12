@@ -659,7 +659,6 @@ class PlayerStatistics(TypedDict):
     attempts1v5: int
     success1v5: int
 
-
 class KAST(TypedDict):
     """Type for storing kast information."""
 
@@ -701,6 +700,11 @@ class RoundStatistics(TypedDict):
     active_players: set[str]
     players_killed: dict[Literal["CT", "T"], set[str]]
 
+class FrameMapControl(TypedDict):
+    """Type for the result of awpy.analytics.map_control.parseRoundFrame"""
+
+    t: dict
+    ct: dict
 
 @overload
 def other_side(side: Literal["CT"]) -> Literal["T"]:
