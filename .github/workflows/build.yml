@@ -42,8 +42,12 @@ jobs:
         uses: psf/black@stable
       - name: Lint with ruff
         uses: chartboost/ruff-action@v1
+        with:
+          version: 0.0.265
       - name: Typecheck with pyright
         uses: jakebailey/pyright-action@v1
+        with:
+          version: 1.1.307
       - name: Thorough check with pylint
         run: pylint awpy
       - name: Test with pytest
