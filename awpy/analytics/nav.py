@@ -64,7 +64,7 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
     """Returns if the point is within a nav area for a map.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         area_id (int): Area ID as an integer
         point (list): Point as a list [x,y,z]
 
@@ -100,9 +100,7 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
             NAV[map_name][area_id]["northWestY"], NAV[map_name][area_id]["southEastY"]
         )
     )
-    if contains_x and contains_y:
-        return True
-    return False
+    return contains_x and contains_y
 
 
 def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
@@ -154,18 +152,18 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     return closest_area
 
 
-def area_distance(
+def _check_arguments_area_distance(
     map_name: str,
     area_a: int,
     area_b: int,
     dist_type: DistanceType = "graph",
-) -> DistanceObject:
+) -> None:
     """Returns the distance between two areas.
 
     Dist type can be [graph, geodesic, euclidean].
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         area_a (int): Area id
         area_b (int): Area id
         dist_type (string, optional): String indicating the type of distance to use
@@ -188,44 +186,23 @@ def area_distance(
     if dist_type not in get_args(DistanceType):
         msg = "dist_type can only be graph, geodesic or euclidean"
         raise ValueError(msg)
-    map_graph = NAV_GRAPHS[map_name]
-    distance_obj: DistanceObject = {
-        "distanceType": dist_type,
-        "distance": float("inf"),
-        "areas": [],
-    }
-    if dist_type == "graph":
-        try:
-            discovered_path = nx.bidirectional_shortest_path(map_graph, area_a, area_b)
-            distance_obj["distance"] = len(discovered_path) - 1
-            distance_obj["areas"] = discovered_path
-        except nx.NetworkXNoPath:
-            distance_obj["distance"] = float("inf")
-            distance_obj["areas"] = []
-        return distance_obj
-    if dist_type == "geodesic":
 
-        def dist_heuristic(node_a: int, node_b: int) -> float:
-            return distance.euclidean(
-                map_graph.nodes[node_a]["center"], map_graph.nodes[node_b]["center"]
-            )
 
-        try:
-            geodesic_path = nx.astar_path(
-                map_graph, area_a, area_b, heuristic=dist_heuristic, weight="weight"
-            )
-            geodesic_cost = sum(
-                map_graph[u][v]["weight"] for u, v in pairwise(geodesic_path)
-            )
-            distance_obj["distance"] = geodesic_cost
-            distance_obj["areas"] = geodesic_path
-        except nx.NetworkXNoPath:
-            distance_obj["distance"] = float("inf")
-            distance_obj["areas"] = []
-        return distance_obj
-    # redundant due to asserting that only ["graph", "geodesic", "euclidean"] are valid
-    # and if checks that it is neither 'graph' nor 'geodesic'
-    # if dist_type == "euclidean":
+def _get_euclidean_area_distance(
+    map_name: str,
+    area_a: int,
+    area_b: int,
+) -> float:
+    """Returns the euclidean distance the centers of two areas.
+
+    Args:
+        map_name (string): Map to search
+        area_a (int): Area id
+        area_b (int): Area id
+
+    Returns:
+        Distance between the centers of the two areas.
+    """
     area_a_x = (
         NAV[map_name][area_a]["southEastX"] + NAV[map_name][area_a]["northWestX"]
     ) / 2
@@ -244,11 +221,115 @@ def area_distance(
     area_b_z = (
         NAV[map_name][area_b]["southEastZ"] + NAV[map_name][area_b]["northWestZ"]
     ) / 2
-    distance_obj["distance"] = math.sqrt(
+    return math.sqrt(
         (area_a_x - area_b_x) ** 2
         + (area_a_y - area_b_y) ** 2
         + (area_a_z - area_b_z) ** 2
     )
+
+
+def _get_graph_area_distance(
+    map_graph: nx.DiGraph,
+    area_a: int,
+    area_b: int,
+) -> tuple[float, list[int]]:
+    """Returns the graph distance between two areas.
+
+    Args:
+        map_graph (nx.DiGraph): DiGraph for the considered map
+        area_a (int): Area id
+        area_b (int): Area id
+
+    Returns:
+        tuple containing
+        - Distance between two areas as length of the path
+        - Path between the two areas as list of (int) nodes
+    """
+    try:
+        discovered_path = nx.bidirectional_shortest_path(map_graph, area_a, area_b)
+    except nx.NetworkXNoPath:
+        return float("inf"), []
+    return len(discovered_path) - 1, discovered_path
+
+
+def _get_geodesic_area_distance(
+    map_graph: nx.DiGraph,
+    area_a: int,
+    area_b: int,
+) -> tuple[float, list[int]]:
+    """Returns the geodesic distance between two areas.
+
+    Args:
+        map_graph (nx.DiGraph): DiGraph for the considered map
+        area_a (int): Area id
+        area_b (int): Area id
+
+    Returns:
+        tuple containing
+        - Distance between two areas as geodesic cost
+        - Path between the two areas as list of (int) nodes
+    """
+
+    def dist_heuristic(node_a: int, node_b: int) -> float:
+        return distance.euclidean(
+            map_graph.nodes[node_a]["center"], map_graph.nodes[node_b]["center"]
+        )
+
+    try:
+        geodesic_path = nx.astar_path(
+            map_graph, area_a, area_b, heuristic=dist_heuristic, weight="weight"
+        )
+        geodesic_cost = sum(
+            map_graph[u][v]["weight"] for u, v in pairwise(geodesic_path)
+        )
+    except nx.NetworkXNoPath:
+        return float("inf"), []
+    return geodesic_cost, geodesic_path
+
+
+def area_distance(
+    map_name: str,
+    area_a: int,
+    area_b: int,
+    dist_type: DistanceType = "graph",
+) -> DistanceObject:
+    """Returns the distance between two areas.
+
+    Dist type can be [graph, geodesic, euclidean].
+
+    Args:
+        map_name (string): Map to consider
+        area_a (int): Area id
+        area_b (int): Area id
+        dist_type (string, optional): String indicating the type of distance to use
+            (graph, geodesic or euclidean). Defaults to 'graph'
+
+    Returns:
+        A dict containing info on the path between two areas.
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV
+                    If either area_a or area_b is not in awpy.data.NAV[map_name]
+                    If the dist_type is not one of ["graph", "geodesic", "euclidean"]
+    """
+    _check_arguments_area_distance(map_name, area_a, area_b, dist_type)
+    map_graph = NAV_GRAPHS[map_name]
+    distance_obj: DistanceObject = {
+        "distanceType": dist_type,
+        "distance": float("inf"),
+        "areas": [],
+    }
+    if dist_type == "graph":
+        distance_obj["distance"], distance_obj["areas"] = _get_graph_area_distance(
+            map_graph, area_a, area_b
+        )
+        return distance_obj
+    if dist_type == "geodesic":
+        distance_obj["distance"], distance_obj["areas"] = _get_geodesic_area_distance(
+            map_graph, area_a, area_b
+        )
+        return distance_obj
+    distance_obj["distance"] = _get_euclidean_area_distance(map_name, area_a, area_b)
     return distance_obj
 
 
@@ -264,7 +345,7 @@ def point_distance(
     """Returns the distance between two points.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         point_a (list): Point as a list (x,y,z)
         point_b (list): Point as a list (x,y,z)
         dist_type (string, optional): String indicating the type of distance to use.
@@ -299,11 +380,7 @@ def point_distance(
         "distance": float("inf"),
         "areas": [],
     }
-    if dist_type == "graph":
-        area_a = find_closest_area(map_name, point_a)["areaId"]
-        area_b = find_closest_area(map_name, point_b)["areaId"]
-        return area_distance(map_name, area_a, area_b, dist_type=dist_type)
-    if dist_type == "geodesic":
+    if dist_type in ("graph", "geodesic"):
         area_a = find_closest_area(map_name, point_a)["areaId"]
         area_b = find_closest_area(map_name, point_b)["areaId"]
         return area_distance(map_name, area_a, area_b, dist_type=dist_type)
@@ -327,7 +404,7 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     """Generates the position token for a game frame.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         frame (dict): A game frame
 
     Returns:
@@ -579,12 +656,12 @@ If you want to have those included run `generate_area_distance_matrix` first!"""
                     ]
                     connections = []
                     for sub_area1 in area_mapping[place1]:
-                        for sub_area2 in area_mapping[place2]:
-                            connections.append(
-                                AREA_DIST_MATRIX[map_name][str(sub_area1)][
-                                    str(sub_area2)
-                                ][dist_type]
-                            )
+                        connections.extend(
+                            AREA_DIST_MATRIX[map_name][str(sub_area1)][str(sub_area2)][
+                                dist_type
+                            ]
+                            for sub_area2 in area_mapping[place2]
+                        )
                     place_distance_matrix[place1][place2][dist_type][
                         "median_dist"
                     ] = median(connections)
@@ -624,12 +701,8 @@ def generate_centroids(
     area_ids_rep: dict[str, int] = {}
     for area_id in NAV[map_name]:
         area = NAV[map_name][area_id]
-        cur_x = []
-        cur_y = []
-        cur_x.append(area["southEastX"])
-        cur_x.append(area["northWestX"])
-        cur_y.append(area["southEastY"])
-        cur_y.append(area["northWestY"])
+        cur_x = [area["southEastX"], area["northWestX"]]
+        cur_y = [area["southEastY"], area["northWestY"]]
         # Get the z coordinates for each tile of a named area
         z_s[area["areaName"]].append(area["northWestZ"])
         z_s[area["areaName"]].append(area["southEastZ"])
@@ -782,7 +855,7 @@ def _check_arguments_position_distance(
     fewer alive players than position_array_2.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3)
             with the first index indicating the team, the second the player
             and the third the coordinate.
@@ -845,7 +918,7 @@ def _precompute_area_names(
     """Precompute the area names for each player position.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3)
             with the first index indicating the team, the second the player
             and the third the coordinate.
@@ -941,7 +1014,7 @@ def _graph_based_position_distance(
     that the distance between two states/trajectories is commutative
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         area1 (int): First area in distance calculation
         area2 (int): Second area in distance calculation
         distance_type (string, optional): String indicating how the distance between
@@ -985,7 +1058,7 @@ def position_state_distance(
     """Calculates a distance between two game states based on player positions.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         position_array_1 (numpy array): Numpy array with shape (2|1, 5, 3)
             with the first index indicating the team, the second the player
             and the third the coordinate.
@@ -1060,7 +1133,7 @@ def _check_arguments_token_distance(
     Checks if arguments are valid and raises ValueErrors if not.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         token_array_1 (numpy array): 1-D numpy array of a position token
         token_array_2 (numpy array): 1-D numpy array of a position token
         distance_type (string, optional): String indicating how the distance
@@ -1099,16 +1172,15 @@ def _get_map_area_names(map_name: str) -> list[str]:
     Needed to translate back from token position to area name.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         token_array_1 (numpy array): 1-D numpy array of a position token
 
     Returns:
         list[str]: Sorted list of named areas on the map.
     """
-    map_area_names: set[str] = set()
-    for area_id in NAV[map_name]:
-        map_area_names.add(NAV[map_name][area_id]["areaName"])
-
+    map_area_names: set[str] = {
+        NAV[map_name][area_id]["areaName"] for area_id in NAV[map_name]
+    }
     return sorted(map_area_names)
 
 
@@ -1118,17 +1190,14 @@ def _check_proper_token_length(
     """Checks that the length of the token array matches expectation.
 
     Args:
-        map_area_names (list[str]): Map to search
+        map_area_names (list[str]): Map to consider
         token_array (npt.NDArray): 1-D numpy array of a position token
 
     Raises:
         ValueError: If the length of the token arrays do not match
                         the expected length for that map.
     """
-    if (
-        len(token_array) != len(map_area_names)
-        and len(token_array) != len(map_area_names) * 2
-    ):
+    if len(token_array) not in [len(map_area_names), len(map_area_names) * 2]:
         msg = (
             "Token arrays do not have the correct length. "
             "There has to be one entry per named area per team considered!"
@@ -1200,7 +1269,7 @@ def token_state_distance(
     """Calculates a distance between two game states based on player positions.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         token_array_1 (numpy array): 1-D numpy array of a position token
         token_array_2 (numpy array): 1-D numpy array of a position token
         distance_type (string, optional): String indicating how the distance
@@ -1240,7 +1309,6 @@ def token_state_distance(
             token_array_1, token_array_2, len(map_area_names)
         )
 
-    # More complicated distances based on actual area locations
     elif distance_type in ["geodesic", "graph", "euclidean"]:
         # If we do not have the precomputed matrix
         # we need to first build the centroids to get them ourselves later
@@ -1280,12 +1348,9 @@ def token_state_distance(
                 list(zip(x, neg_indices, strict=True))
                 for x in multiset_permutations(pos_indices, len(neg_indices))
             ):
-                this_dist: float = 0
-                # Iterate of the mapping. Eg: [(0,2),(1,3)] and get their total distance
-                # For the example this would be dist(0,2)+dist(1,3)
-                for area1, area2 in mapping:
-                    if map_name not in PLACE_DIST_MATRIX:
-                        this_dist += min(
+                this_dist: float = sum(
+                    min(
+                        (
                             area_distance(
                                 map_name,
                                 ref_points[reference_point][map_area_names[area1]],
@@ -1299,8 +1364,8 @@ def token_state_distance(
                                 dist_type=distance_type,
                             )["distance"],
                         )
-                    else:
-                        this_dist += min(
+                        if map_name not in PLACE_DIST_MATRIX
+                        else (
                             PLACE_DIST_MATRIX[map_name][map_area_names[area1]][
                                 map_area_names[area2]
                             ][distance_type][reference_point],
@@ -1308,6 +1373,10 @@ def token_state_distance(
                                 map_area_names[area1]
                             ][distance_type][reference_point],
                         )
+                    )
+                    for area1, area2 in mapping
+                )
+
                 this_dist /= size
                 side_distance = min(side_distance, this_dist)
             token_dist += side_distance / (len(token_array_1) // len(map_area_names))
@@ -1348,7 +1417,7 @@ def frame_distance(
     """Calculates a distance between two frames based on player positions.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         frame1 (GameFrame): A game frame
         frame2 (GameFrame): A game frame
         distance_type (string, optional): String indicating how the distance between
@@ -1408,7 +1477,7 @@ def token_distance(
     """Calculates a distance between two game states based on position tokens.
 
     Args:
-        map_name (string): Map to search
+        map_name (string): Map to consider
         token1 (string): A team position token
         token2 (string): A team position token
         distance_type (string, optional): String indicating how the distance between
