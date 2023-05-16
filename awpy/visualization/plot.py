@@ -46,23 +46,21 @@ def plot_map(
     """
     base_path = os.path.join(os.path.dirname(__file__), f"""../data/map/{map_name}""")
     if map_type == "original":
-        map_bg = imageio.imread(base_path + ".png")
+        map_bg = imageio.imread(f"{base_path}.png")
         if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
-            map_bg_lower = imageio.imread(base_path + "_lower.png")
+            map_bg_lower = imageio.imread(f"{base_path}_lower.png")
             map_bg = np.concatenate([map_bg, map_bg_lower])
     else:
         try:
-            col = "light"
-            if dark:
-                col = "dark"
-            map_bg = imageio.imread(base_path + f"_{col}.png")
+            col = "dark" if dark else "light"
+            map_bg = imageio.imread(f"{base_path}_{col}.png")
             if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
-                map_bg_lower = imageio.imread(base_path + f"_lower_{col}.png")
+                map_bg_lower = imageio.imread(f"{base_path}_lower_{col}.png")
                 map_bg = np.concatenate([map_bg, map_bg_lower])
         except FileNotFoundError:
-            map_bg = imageio.imread(base_path + ".png")
+            map_bg = imageio.imread(f"{base_path}.png")
             if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
-                map_bg_lower = imageio.imread(base_path + "_lower.png")
+                map_bg_lower = imageio.imread(f"{base_path}_lower.png")
                 map_bg = np.concatenate([map_bg, map_bg_lower])
     figure, axes = plt.subplots()
     axes.imshow(map_bg, zorder=0)
@@ -72,7 +70,7 @@ def plot_map(
 # Position function courtesy of PureSkill.gg
 def position_transform(
     map_name: str, position: float, axis: Literal["x", "y"]
-) -> float:
+) -> float:  # sourcery skip: use-fstring-for-concatenation
     """Transforms an X or Y coordinate.
 
     Args:
@@ -89,7 +87,7 @@ def position_transform(
     if axis not in ["x", "y"]:
         msg = f"'axis' has to be 'x' or 'y' not {axis}"
         raise ValueError(msg)
-    # vscode can do this, but mypy cant...
+    # Have to skip f-string for pyright to handle literal math
     start = MAP_DATA[map_name]["pos_" + axis]
     scale = MAP_DATA[map_name]["scale"]
     if axis == "x":
@@ -253,14 +251,13 @@ def plot_round(
     os.mkdir("csgo_tmp")
     image_files: list[str] = []
     for i, game_frame in tqdm(enumerate(frames)):
-        positions = []
-        # Plot bomb
-        # Thanks to https://github.com/pablonieto0981 for adding this code!
-        positions.append(_get_plot_position_for_bomb(game_frame["bomb"], map_name))
+        positions = [_get_plot_position_for_bomb(game_frame["bomb"], map_name)]
         # Plot players
         for side in ("ct", "t"):
-            for player in game_frame[side]["players"] or []:
-                positions.append(_get_plot_position_for_player(player, side, map_name))
+            positions.extend(
+                _get_plot_position_for_player(player, side, map_name)
+                for player in game_frame[side]["players"] or []
+            )
         figure, _ = plot_positions(
             positions=positions,
             map_name=map_name,

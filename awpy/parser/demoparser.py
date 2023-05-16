@@ -169,15 +169,15 @@ class DemoParser:
         self.logger.info("Setting trade time to %d", self.trade_time)
 
         # Handle buy style
-        if buy_style not in ["hltv", "csgo"]:
+        if buy_style in {"hltv", "csgo"}:
+            self.buy_style = buy_style
+        else:
             self.logger.warning(
                 "Buy style specified is not one of hltv, csgo, "
                 "will be set to hltv by default"
             )
             self.buy_style = "hltv"
-        else:
-            self.buy_style = buy_style
-        self.logger.info("Setting buy style to %s", str(self.buy_style))
+        self.logger.info("Setting buy style to %s", self.buy_style)
 
         self.dmg_rolled = dmg_rolled
         self.parse_chat = parse_chat
@@ -221,11 +221,11 @@ class DemoParser:
         Args:
             trade_time (int): Trade time to user.
         """
-        # Handle trade time
-        trade_time_default = 5
         trade_time_upper_bound = 7
         self._trade_time = trade_time
         if trade_time <= 0:
+            # Handle trade time
+            trade_time_default = 5
             self.logger.warning(
                 "Trade time can't be negative, setting to default value of %d seconds.",
                 trade_time_default,
@@ -280,15 +280,12 @@ class DemoParser:
                 "of the demo, which is usually 64 for MM and 128 for pro demos.",
                 parse_rate_lower_bound,
             )
-            self._parse_rate = parse_rate
         elif parse_rate >= parse_rate_upper_bound:
             self.logger.warning(
                 "A high parse rate means very few frames. "
                 "Only use for testing purposes."
             )
-            self._parse_rate = parse_rate
-        else:
-            self._parse_rate = parse_rate
+        self._parse_rate = parse_rate
         self.logger.info("Setting parse rate to %s", str(self.parse_rate))
 
     @parse_rate.deleter
@@ -460,6 +457,7 @@ class DemoParser:
         raise AttributeError(msg)
 
     def parse_json_to_df(self) -> dict[str, Any]:
+        # sourcery skip: extract-method
         """Returns JSON into dictionary where keys correspond to data frames.
 
         Returns:
@@ -469,14 +467,14 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
-            demo_data: dict[str, Any] = {}
-            demo_data["matchID"] = self.json["matchID"]
-            demo_data["clientName"] = self.json["clientName"]
-            demo_data["mapName"] = self.json["mapName"]
-            demo_data["tickRate"] = self.json["tickRate"]
-            demo_data["playbackTicks"] = self.json["playbackTicks"]
-            # Rounds
-            demo_data["rounds"] = self._parse_rounds()
+            demo_data: dict[str, Any] = {
+                "matchID": self.json["matchID"],
+                "clientName": self.json["clientName"],
+                "mapName": self.json["mapName"],
+                "tickRate": self.json["tickRate"],
+                "playbackTicks": self.json["playbackTicks"],
+                "rounds": self._parse_rounds(),
+            }
             # Kills
             demo_data["kills"] = self._parse_action("kills")
             # Damages
@@ -497,10 +495,10 @@ class DemoParser:
             return demo_data
         msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
         self.logger.error(msg)
-
         raise AttributeError(msg)
 
-    def _parse_frames(self) -> pd.DataFrame:
+    # Can not easily extract due to type checking
+    def _parse_frames(self) -> pd.DataFrame:  # sourcery skip: extract-method
         """Returns frames as a Pandas dataframe.
 
         Returns:
@@ -514,8 +512,7 @@ class DemoParser:
             frames_dataframes = []
             for game_round in self.json["gameRounds"] or []:
                 for frame in game_round["frames"] or []:
-                    frame_item: dict[str, Any] = {}
-                    frame_item["roundNum"] = game_round["roundNum"]
+                    frame_item: dict[str, Any] = {"roundNum": game_round["roundNum"]}
                     for k in ("tick", "seconds"):
                         frame_item[k] = frame[k]
                     frame_item["ctTeamName"] = frame["ct"]["teamName"]
@@ -552,6 +549,8 @@ class DemoParser:
                 player_item[col] = val
 
     def _parse_player_frames(self) -> pd.DataFrame:
+        # Can not easily extract due to type checking
+        # sourcery skip: extract-method
         """Returns player frames as a Pandas dataframe.
 
         Returns:
@@ -570,12 +569,13 @@ class DemoParser:
                         if players is None:
                             continue
                         for player in players:
-                            player_item: dict[str, Any] = {}
-                            player_item["roundNum"] = game_round["roundNum"]
-                            player_item["tick"] = frame["tick"]
-                            player_item["seconds"] = frame["seconds"]
-                            player_item["side"] = side
-                            player_item["teamName"] = frame[side]["teamName"]
+                            player_item: dict[str, Any] = {
+                                "roundNum": game_round["roundNum"],
+                                "tick": frame["tick"],
+                                "seconds": frame["seconds"],
+                                "side": side,
+                                "teamName": frame[side]["teamName"],
+                            }
                             self.add_player_specific_information(player_item, player)
                             player_frames.append(player_item)
             player_frames_df = pd.DataFrame(player_frames)
@@ -909,10 +909,11 @@ class DemoParser:
                     "Skipping remove_no_frames."
                 )
             else:
-                cleaned_rounds = []
-                for game_round in self.json["gameRounds"] or []:
-                    if len(game_round["frames"] or []) > 0:
-                        cleaned_rounds.append(game_round)
+                cleaned_rounds = [
+                    game_round
+                    for game_round in self.json["gameRounds"] or []
+                    if len(game_round["frames"] or []) > 0
+                ]
                 self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -947,15 +948,12 @@ class DemoParser:
                         game_frame["ct"]["players"],
                     )
                     # Remove if any side has > 5 players
-                    if any(
-                        len(player_list or []) > n_players
-                        for player_list in player_lists
-                    ):
-                        continue
                     # Remove if both sides are None
-                    if all(player_list is None for player_list in player_lists):
-                        continue
-                    cleaned_rounds.append(game_round)
+                    if all(
+                        len(player_list or []) <= n_players
+                        for player_list in player_lists
+                    ) and any(player_list is not None for player_list in player_lists):
+                        cleaned_rounds.append(game_round)
                 self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -988,9 +986,11 @@ class DemoParser:
                         if game_round["startTick"] == last_warmup_changed:
                             cleaned_rounds.append(game_round)
                 else:
-                    for game_round in self.json["gameRounds"] or []:
-                        if not game_round["isWarmup"]:
-                            cleaned_rounds.append(game_round)
+                    cleaned_rounds.extend(
+                        game_round
+                        for game_round in self.json["gameRounds"] or []
+                        if not game_round["isWarmup"]
+                    )
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1012,10 +1012,11 @@ class DemoParser:
         if bad_endings is None:
             bad_endings = ["Draw", "Unknown", ""]
         if self.json and (game_rounds := self.json["gameRounds"]):
-            cleaned_rounds = []
-            for game_round in game_rounds:
-                if game_round["roundEndReason"] not in bad_endings:
-                    cleaned_rounds.append(game_round)
+            cleaned_rounds = [
+                game_round
+                for game_round in game_rounds
+                if game_round["roundEndReason"] not in bad_endings
+            ]
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1038,10 +1039,9 @@ class DemoParser:
                 if (kill_actions := game_round["kills"]) is None:
                     continue
                 total_kills = len(kill_actions)
-                total_knife_kills = 0
-                for k in kill_actions:
-                    if k["weapon"] == "Knife":
-                        total_knife_kills += 1
+                total_knife_kills = sum(
+                    1 for k in kill_actions if k["weapon"] == "Knife"
+                )
                 if (total_knife_kills != total_kills) | (total_knife_kills == 0):
                     cleaned_rounds.append(game_round)
             self.json["gameRounds"] = cleaned_rounds
@@ -1058,15 +1058,16 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        n_total_players = 10
         if self.json:
-            cleaned_rounds = []
-            for game_round in self.json["gameRounds"] or []:
+            n_total_players = 10
+            cleaned_rounds = [
+                game_round
+                for game_round in self.json["gameRounds"] or []
                 if (
                     not game_round["isWarmup"]
                     and len(game_round["kills"] or []) <= n_total_players
-                ):
-                    cleaned_rounds.append(game_round)
+                )
+            ]
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(
@@ -1082,14 +1083,15 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
-            cleaned_rounds = []
-            for game_round in self.json["gameRounds"] or []:
+            cleaned_rounds = [
+                game_round
+                for game_round in self.json["gameRounds"] or []
                 if (
                     (game_round["startTick"] <= game_round["endTick"])
                     and (game_round["startTick"] <= game_round["endOfficialTick"])
                     and (game_round["startTick"] <= game_round["freezeTimeEndTick"])
-                ):
-                    cleaned_rounds.append(game_round)
+                )
+            ]
             self.json["gameRounds"] = cleaned_rounds
         else:
             self.logger.error(

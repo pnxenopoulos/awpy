@@ -65,7 +65,9 @@ def create_nav_graphs(
                     ),
                 ]
             )
-        with open(data_path + "nav/" + map_name + ".txt", encoding="utf8") as edge_list:
+        with open(
+            os.path.join(data_path, "nav", f"{map_name}.txt"), encoding="utf8"
+        ) as edge_list:
             edge_list_lines = edge_list.readlines()
         for line in edge_list_lines:
             areas = line.strip().split(",")

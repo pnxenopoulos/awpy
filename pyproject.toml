@@ -145,6 +145,9 @@ target-version = "py311"
 [tool.ruff.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
 
+[tool.ruff.pylint]
+max-args = 15
+
 [tool.pyright]
 include                            = ["awpy"]
 exclude                            = ["tests"]
@@ -190,7 +193,7 @@ good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e"]
 
 [tool.pylint.design]
 # Maximum number of arguments for function / method.
-max-args = 10
+max-args = 15
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes = 7
