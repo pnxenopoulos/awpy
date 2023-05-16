@@ -188,6 +188,22 @@ def _check_arguments_area_distance(
         raise ValueError(msg)
 
 
+def _get_area_center(map_name: str, area: int) -> tuple[float, float, float]:
+    """Get the coordinates of the center of an area.
+
+    Args:
+        map_name (string): Map to consider
+        area (int): Area id
+
+    Returns:
+        Tuple of x, y, z coordinates of the area center.
+    """
+    area_x = (NAV[map_name][area]["southEastX"] + NAV[map_name][area]["northWestX"]) / 2
+    area_y = (NAV[map_name][area]["southEastY"] + NAV[map_name][area]["northWestY"]) / 2
+    area_z = (NAV[map_name][area]["southEastZ"] + NAV[map_name][area]["northWestZ"]) / 2
+    return area_x, area_y, area_z
+
+
 def _get_euclidean_area_distance(
     map_name: str,
     area_a: int,
@@ -203,24 +219,8 @@ def _get_euclidean_area_distance(
     Returns:
         Distance between the centers of the two areas.
     """
-    area_a_x = (
-        NAV[map_name][area_a]["southEastX"] + NAV[map_name][area_a]["northWestX"]
-    ) / 2
-    area_a_y = (
-        NAV[map_name][area_a]["southEastY"] + NAV[map_name][area_a]["northWestY"]
-    ) / 2
-    area_a_z = (
-        NAV[map_name][area_a]["southEastZ"] + NAV[map_name][area_a]["northWestZ"]
-    ) / 2
-    area_b_x = (
-        NAV[map_name][area_b]["southEastX"] + NAV[map_name][area_b]["northWestX"]
-    ) / 2
-    area_b_y = (
-        NAV[map_name][area_b]["southEastY"] + NAV[map_name][area_b]["northWestY"]
-    ) / 2
-    area_b_z = (
-        NAV[map_name][area_b]["southEastZ"] + NAV[map_name][area_b]["northWestZ"]
-    ) / 2
+    area_a_x, area_a_y, area_a_z = _get_area_center(map_name, area_a)
+    area_b_x, area_b_y, area_b_z = _get_area_center(map_name, area_b)
     return math.sqrt(
         (area_a_x - area_b_x) ** 2
         + (area_a_y - area_b_y) ** 2
@@ -521,32 +521,15 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-    areas = NAV[map_name]
     # And there over each area
-    for area1 in areas:
+    for area1 in NAV[map_name]:
         logging.info("Calculating distances from area %s", area1)
         # Precompute the tile center
-        area1_x = (
-            NAV[map_name][area1]["southEastX"] + NAV[map_name][area1]["northWestX"]
-        ) / 2
-        area1_y = (
-            NAV[map_name][area1]["southEastY"] + NAV[map_name][area1]["northWestY"]
-        ) / 2
-        area1_z = (
-            NAV[map_name][area1]["southEastZ"] + NAV[map_name][area1]["northWestZ"]
-        ) / 2
+        area1_x, area1_y, area1_z = _get_area_center(map_name, area1)
         # Loop over every pair of areas
-        for area2 in areas:
-            # # Compute center of second area
-            area2_x = (
-                NAV[map_name][area2]["southEastX"] + NAV[map_name][area2]["northWestX"]
-            ) / 2
-            area2_y = (
-                NAV[map_name][area2]["southEastY"] + NAV[map_name][area2]["northWestY"]
-            ) / 2
-            area2_z = (
-                NAV[map_name][area2]["southEastZ"] + NAV[map_name][area2]["northWestZ"]
-            ) / 2
+        for area2 in NAV[map_name]:
+            # Compute center of second area
+            area2_x, area2_y, area2_z = _get_area_center(map_name, area2)
             # Calculate basic euclidean distance
             area_distance_matrix[str(area1)][str(area2)]["euclidean"] = math.sqrt(
                 (area1_x - area2_x) ** 2
@@ -554,13 +537,13 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
                 + (area1_z - area2_z) ** 2
             )
             # Also get graph distance
-            graph = area_distance(map_name, area1, area2, dist_type="graph")
-            area_distance_matrix[str(area1)][str(area2)]["graph"] = graph["distance"]
+            area_distance_matrix[str(area1)][str(area2)]["graph"] = area_distance(
+                map_name, area1, area2, dist_type="graph"
+            )["distance"]
             # And geodesic like distance
-            geodesic = area_distance(map_name, area1, area2, dist_type="geodesic")
-            area_distance_matrix[str(area1)][str(area2)]["geodesic"] = geodesic[
-                "distance"
-            ]
+            area_distance_matrix[str(area1)][str(area2)]["geodesic"] = area_distance(
+                map_name, area1, area2, dist_type="geodesic"
+            )["distance"]
     if save:
         with open(
             os.path.join(PATH, f"nav/area_distance_matrix_{map_name}.json"),
