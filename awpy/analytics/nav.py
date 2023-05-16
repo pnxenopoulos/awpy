@@ -1298,20 +1298,29 @@ def _edit_distance_tokens(
 
 
 def _get_index_differences(
-    array1: npt.NDArray[np.int_], array2: npt.NDArray[np.int_]
-) -> tuple[list[int], list[int]]:
+    token_array_1: npt.NDArray[np.int_],
+    token_array_2: npt.NDArray[np.int_],
+    map_area_names: list[str],
+    team_index: int,
+) -> tuple[list[int], list[int], int]:
     """Get indinices that differ between two array.
 
     Build separate lists for indices where array1/array2 has a larger values.
     Each index ends up in list as many times are the difference of values.
 
     Args:
-        array1 (npt.NDArray[int]): 1-D numpy array of a position token
-        array2 (npt.NDArray[int]): 1-D numpy array of a position token
+        token_array_1 (numpy array): 1-D numpy array of a position token
+        token_array_2 (numpy array): 1-D numpy array of a position token
+        map_area_names (list[str]): Sorted list of named areas on the map.
+        team_index (int): Which team is currently being considered. First or second.
 
     Returns:
-        tuple[list[int], list[int]]: Lists of differing indices.
+        tuple[list[int], list[int], int]: Lists of differing indices and
+            Sum of the smaller array.
     """
+    array1, array2, size = _clean_token_arrays(
+        token_array_1, token_array_2, map_area_names, team_index=team_index
+    )
     # Get the indices where array1 and array2 have larger values than the other.
     # Use each index as often as it if larger
     diff_array = np.subtract(array1, array2)
@@ -1322,7 +1331,51 @@ def _get_index_differences(
             pos_indices.extend([differing_index] * int(difference))
         elif difference < 0:
             neg_indices.extend([differing_index] * int(abs(difference)))
-    return pos_indices, neg_indices
+    return pos_indices, neg_indices, size
+
+
+def _clean_token_arrays(
+    token_array_1: npt.NDArray[np.int_],
+    token_array_2: npt.NDArray[np.int_],
+    map_area_names: list[str],
+    team_index: int,
+) -> tuple[npt.NDArray[np.int_], npt.NDArray[np.int_], int]:
+    """Clean the token arrays used to calculate a token state distance.
+
+    Extract the sub array for the currently considered team,
+    make sure array1 is the larger one and
+    get the normalization factor for the distance.
+
+    The normalization factor is the sum of the smaller array as the
+    a distance is calculated for each player in the smaller array
+    and the distance per player pair is desired.
+
+    Args:
+        token_array_1 (numpy array): 1-D numpy array of a position token
+        token_array_2 (numpy array): 1-D numpy array of a position token
+        map_area_names (list[str]): Sorted list of named areas on the map.
+        team_index (int): Which team is currently being considered. First or second.
+
+    Returns:
+        array1 (numpy array): 1-D numpy array of a position sub token.
+        array2 (numpy array): 1-D numpy array of a position sub token.
+        size (int): Sum of the smaller array.
+    """
+    array1, array2 = (
+        token_array_1[
+            team_index * len(map_area_names) : len(map_area_names)
+            + team_index * len(map_area_names),
+        ],
+        token_array_2[
+            team_index * len(map_area_names) : len(map_area_names)
+            + team_index * len(map_area_names),
+        ],
+    )
+    # Make sure array1 is the larger one
+    if sum(array1) < sum(array2):
+        array1, array2 = array2, array1
+    size = sum(array2)
+    return array1, array2, size
 
 
 def token_state_distance(
@@ -1368,84 +1421,65 @@ def token_state_distance(
     map_area_names = _get_map_area_names(map_name)
     _check_proper_token_length(map_area_names, token_array_1)
 
-    token_dist: float = 0
-
     if distance_type == "edit_distance":
-        token_dist = _edit_distance_tokens(
-            token_array_1, token_array_2, len(map_area_names)
+        return _edit_distance_tokens(token_array_1, token_array_2, len(map_area_names))
+
+    # If we do not have the precomputed matrix
+    # we need to first build the centroids to get them ourselves later
+    ref_points = {}
+
+    if map_name not in PLACE_DIST_MATRIX:
+        (
+            ref_points["centroid"],
+            ref_points["representative_point"],
+        ) = generate_centroids(map_name)
+    # Loop over each team
+    token_dist: float = 0
+    for i in range(len(token_array_1) // len(map_area_names)):
+        side_distance = float("inf")
+        # Get the sub arrays for this team from the total array
+        pos_indices, neg_indices, size = _get_index_differences(
+            token_array_1, token_array_2, map_area_names, team_index=i
         )
-
-    elif distance_type in ["geodesic", "graph", "euclidean"]:
-        # If we do not have the precomputed matrix
-        # we need to first build the centroids to get them ourselves later
-        ref_points = {}
-        if map_name not in PLACE_DIST_MATRIX:
-            (
-                ref_points["centroid"],
-                ref_points["representative_point"],
-            ) = generate_centroids(map_name)
-        # Loop over each team
-        for i in range(len(token_array_1) // len(map_area_names)):
-            side_distance = float("inf")
-            # Get the sub arrays for this team from the total array
-            array1, array2 = (
-                token_array_1[
-                    0
-                    + i * len(map_area_names) : len(map_area_names)
-                    + i * len(map_area_names),
-                ],
-                token_array_2[
-                    0
-                    + i * len(map_area_names) : len(map_area_names)
-                    + i * len(map_area_names),
-                ],
-            )
-            # Make sure array1 is the larger one
-            if sum(array1) < sum(array2):
-                array1, array2 = array2, array1
-            size = sum(array2)
-
-            pos_indices, neg_indices = _get_index_differences(array1, array2)
-            # Get all possible mappings between the differences
-            # Eg: diff array is [1,1,-1,-1]
-            # then pos_indices is [0,1] and neg_indices is [2,3]
-            # The possible mappings are then [(0,2),(1,3)] and [(0,3),(1,2)]
-            for mapping in (
-                list(zip(x, neg_indices, strict=True))
-                for x in multiset_permutations(pos_indices, len(neg_indices))
-            ):
-                this_dist: float = sum(
-                    min(
-                        (
-                            area_distance(
-                                map_name,
-                                ref_points[reference_point][map_area_names[area1]],
-                                ref_points[reference_point][map_area_names[area2]],
-                                dist_type=distance_type,
-                            )["distance"],
-                            area_distance(
-                                map_name,
-                                ref_points[reference_point][map_area_names[area2]],
-                                ref_points[reference_point][map_area_names[area1]],
-                                dist_type=distance_type,
-                            )["distance"],
-                        )
-                        if map_name not in PLACE_DIST_MATRIX
-                        else (
-                            PLACE_DIST_MATRIX[map_name][map_area_names[area1]][
-                                map_area_names[area2]
-                            ][distance_type][reference_point],
-                            PLACE_DIST_MATRIX[map_name][map_area_names[area2]][
-                                map_area_names[area1]
-                            ][distance_type][reference_point],
-                        )
+        # Get all possible mappings between the differences
+        # Eg: diff array is [1,1,-1,-1]
+        # then pos_indices is [0,1] and neg_indices is [2,3]
+        # The possible mappings are then [(0,2),(1,3)] and [(0,3),(1,2)]
+        for mapping in (
+            list(zip(x, neg_indices, strict=True))
+            for x in multiset_permutations(pos_indices, len(neg_indices))
+        ):
+            this_dist: float = sum(
+                min(
+                    (
+                        area_distance(
+                            map_name,
+                            ref_points[reference_point][map_area_names[area1]],
+                            ref_points[reference_point][map_area_names[area2]],
+                            dist_type=distance_type,
+                        )["distance"],
+                        area_distance(
+                            map_name,
+                            ref_points[reference_point][map_area_names[area2]],
+                            ref_points[reference_point][map_area_names[area1]],
+                            dist_type=distance_type,
+                        )["distance"],
                     )
-                    for area1, area2 in mapping
+                    if map_name not in PLACE_DIST_MATRIX
+                    else (
+                        PLACE_DIST_MATRIX[map_name][map_area_names[area1]][
+                            map_area_names[area2]
+                        ][distance_type][reference_point],
+                        PLACE_DIST_MATRIX[map_name][map_area_names[area2]][
+                            map_area_names[area1]
+                        ][distance_type][reference_point],
+                    )
                 )
+                for area1, area2 in mapping
+            )
 
-                this_dist /= size
-                side_distance = min(side_distance, this_dist)
-            token_dist += side_distance / (len(token_array_1) // len(map_area_names))
+            side_distance = min(side_distance, this_dist / size)
+        token_dist += side_distance / (len(token_array_1) // len(map_area_names))
     return token_dist
 
 
