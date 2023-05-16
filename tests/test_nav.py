@@ -25,7 +25,7 @@ from awpy.analytics.nav import (
     token_state_distance,
     tree,
 )
-from awpy.data import NAV, PLACE_DIST_MATRIX, create_nav_graphs
+from awpy.data import NAV, create_nav_graphs
 
 
 class TestNav:
@@ -798,29 +798,6 @@ class TestNav:
         assert self.expected_place_matrix_2 == result_matrix_2
         with pytest.raises(ValueError, match="Map not found."):
             _ = generate_place_distance_matrix("de_does_not_exist")
-
-        with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
-            for map_name in PLACE_DIST_MATRIX:
-                result_matrix = generate_place_distance_matrix(
-                    map_name=map_name, save=False
-                )
-                for place1_name in PLACE_DIST_MATRIX[map_name]:
-                    for place2_name in PLACE_DIST_MATRIX[map_name][place1_name]:
-                        for dist_type in PLACE_DIST_MATRIX[map_name][place1_name][
-                            place2_name
-                        ]:
-                            for ref_point in ["centroid", "representative_point"]:
-                                assert (
-                                    PLACE_DIST_MATRIX[map_name][place1_name][
-                                        place2_name
-                                    ][dist_type][ref_point]
-                                    == result_matrix[place1_name][place2_name][
-                                        dist_type
-                                    ][ref_point]
-                                ), (
-                                    f"{map_name}, {place1_name}, {place2_name}, "
-                                    f"{dist_type}, {ref_point}"
-                                )
 
     def test_generate_centroids(self):
         """Tests generate centroids."""

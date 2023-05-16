@@ -228,7 +228,7 @@ overgeneral-exceptions = ["builtins.BaseException"]
 max-line-length = 88
 
 # Maximum number of lines in a module.
-max-module-lines = 1500
+max-module-lines = 2000
 
 [tool.pylint."messages control"]
 # Only show warnings with the listed confidence levels. Leave empty to show all.
