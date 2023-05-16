@@ -39,7 +39,7 @@ import sys
 from collections import defaultdict
 from itertools import pairwise
 from statistics import mean, median
-from typing import Literal, cast, get_args
+from typing import Literal, get_args
 
 import networkx as nx
 import numpy as np
@@ -486,6 +486,30 @@ def tree() -> dict:
     return the_tree()
 
 
+def _save_matrix_to_file(
+    map_name: str,
+    dist_matrix: AreaMatrix | PlaceMatrix,
+    matrix_type: Literal["area", "place"],
+) -> None:
+    """Save the given matrix to a json file.
+
+    Args:
+        map_name (str): Name of the map corresponding to the matrix
+        dist_matrix (AreaMatrix | PlaceMatrix): The nested dict to save to file.
+        matrix_type (Literal["area", "place"]): Whether an area or place matrix
+            is being saved
+    """
+    if matrix_type not in ("area", "place"):
+        msg = f"Matrix type has to be one of ('area', 'place') but was {matrix_type}!"
+        raise ValueError(msg)
+    with open(
+        os.path.join(PATH, "nav", f"{matrix_type}_distance_matrix_{map_name}.json"),
+        "w",
+        encoding="utf8",
+    ) as json_file:
+        json.dump(dist_matrix, json_file)
+
+
 def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaMatrix:
     """Generates or grabs a tree like nested dictionary containing distance matrices.
 
@@ -545,13 +569,77 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
                 map_name, area1, area2, dist_type="geodesic"
             )["distance"]
     if save:
-        with open(
-            os.path.join(PATH, f"nav/area_distance_matrix_{map_name}.json"),
-            "w",
-            encoding="utf8",
-        ) as json_file:
-            json.dump(area_distance_matrix, json_file)
+        _save_matrix_to_file(map_name, area_distance_matrix, "area")
     return area_distance_matrix
+
+
+def _check_place_matrix_map_name(map_name: str) -> None:
+    """Checks if the given map_name is in NAV and AREA_DIST_MATRIX.
+
+    Raises a ValueError if the map_name is not in NAV and
+    logs a warning if it is not in AREA_DIST_MATRIX.
+
+    Args:
+        map_name (str): Name of the map to check
+
+    Raises:
+        ValueError: If the map is not in NAV.
+    """
+    if map_name not in NAV:
+        msg = "Map not found."
+        raise ValueError(msg)
+    if map_name not in AREA_DIST_MATRIX:
+        logging.warning(
+            """Skipping calculation of median distances between places.
+If you want to have those included run `generate_area_distance_matrix` first!"""
+        )
+
+
+def _get_area_place_mapping(map_name: str) -> dict[str, list[int]]:
+    """Get the mapping of a named place to all areas that it contains.
+
+    Get the mapping "areaName": [areas that have this area name]
+
+    Args:
+        map_name (str): Name of the map to get the mapping for.
+
+    Returns:
+        The mapping "areaName": [areas that have this area name] for each "areaName"
+    """
+    area_mapping = defaultdict(list)
+    # Get the mapping "areaName": [areas that have this area name]
+    for area in NAV[map_name]:
+        area_mapping[NAV[map_name][area]["areaName"]].append(area)
+    return area_mapping
+
+
+def _get_median_place_distance(
+    map_name: str,
+    place1: str,
+    place2: str,
+    area_mapping: dict[str, list[int]],
+    dist_type: DistanceType,
+) -> float:
+    """Get the median distance between the areas of two places.
+
+    Args:
+        map_name (str): Name of the map to get the distances for
+        place1 (str): First place in the pair
+        place2 (str): Second place in the pair
+        area_mapping (dict[str, list[int]]): Mapping of each place to all area it
+            contains
+        dist_type (DistanceType): Distance type to consider.
+
+    Returns:
+        Median distance between all areas in two places.
+    """
+    connections = []
+    for sub_area1 in area_mapping[place1]:
+        connections.extend(
+            AREA_DIST_MATRIX[map_name][str(sub_area1)][str(sub_area2)][dist_type]
+            for sub_area2 in area_mapping[place2]
+        )
+    return median(connections)
 
 
 def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> PlaceMatrix:
@@ -576,20 +664,9 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S",
     )
-    if map_name not in NAV:
-        msg = "Map not found."
-        raise ValueError(msg)
-    if map_name not in AREA_DIST_MATRIX:
-        logging.warning(
-            """Skipping calculation of median distances between places.
-If you want to have those included run `generate_area_distance_matrix` first!"""
-        )
-    areas = NAV[map_name]
+    _check_place_matrix_map_name(map_name)
     place_distance_matrix: PlaceMatrix = tree()
-    area_mapping = defaultdict(list)
-    # Get the mapping "areaName": [areas that have this area name]
-    for area in areas:
-        area_mapping[areas[area]["areaName"]].append(area)
+    area_mapping = _get_area_place_mapping(map_name)
     # Get the centroids and representative points for each named place on the map
     centroids, reps = generate_centroids(map_name)
     # Loop over all pairs of named places
@@ -597,8 +674,7 @@ If you want to have those included run `generate_area_distance_matrix` first!"""
         logging.info("Calculating distances from place %s", place1)
         for place2, centroid2 in centroids.items():
             # Loop over all three considered distance types
-            for dist_type in ["geodesic", "graph", "euclidean"]:
-                dist_type = cast(DistanceType, dist_type)
+            for dist_type in ("geodesic", "graph", "euclidean"):
                 # If precomputed values do not exist calculate them
                 if map_name not in AREA_DIST_MATRIX:
                     # Distances between the centroids for each named place
@@ -637,25 +713,43 @@ If you want to have those included run `generate_area_distance_matrix` first!"""
                     ][
                         dist_type
                     ]
-                    connections = []
-                    for sub_area1 in area_mapping[place1]:
-                        connections.extend(
-                            AREA_DIST_MATRIX[map_name][str(sub_area1)][str(sub_area2)][
-                                dist_type
-                            ]
-                            for sub_area2 in area_mapping[place2]
-                        )
                     place_distance_matrix[place1][place2][dist_type][
                         "median_dist"
-                    ] = median(connections)
+                    ] = _get_median_place_distance(
+                        map_name, place1, place2, area_mapping, dist_type
+                    )
     if save:
-        with open(
-            os.path.join(PATH, f"nav/place_distance_matrix_{map_name}.json"),
-            "w",
-            encoding="utf8",
-        ) as json_file:
-            json.dump(place_distance_matrix, json_file)
+        _save_matrix_to_file(map_name, place_distance_matrix, "place")
     return place_distance_matrix
+
+
+def _get_area_points_z_s(
+    map_name: str,
+) -> tuple[dict[str, list[tuple[float, float]]], dict[str, list[float]]]:
+    """Get the x, y and z coordinates for all areas in all places.
+
+    Args:
+        map_name (str): Map to get the coordinates for
+
+    Returns:
+        area_points (dict[str, list[tuple[float, float]]]): Dict mapping each place
+            to the x and y coordiantes of each area inside it.
+        z_s  (dict[str, list]): Dict mapping each place to the z coordinates of each
+            area inside it.
+    """
+    area_points: dict[str, list[tuple[float, float]]] = defaultdict(list)
+    z_s: dict[str, list[float]] = defaultdict(list)
+    for area_id in NAV[map_name]:
+        area = NAV[map_name][area_id]
+        cur_x = [area["southEastX"], area["northWestX"]]
+        cur_y = [area["southEastY"], area["northWestY"]]
+        # Get the z coordinates for each tile of a named area
+        z_s[area["areaName"]].append(area["northWestZ"])
+        z_s[area["areaName"]].append(area["southEastZ"])
+        # Get all the (x,y) points that make up each tile of a named area
+        for x, y in itertools.product(cur_x, cur_y):
+            area_points[area["areaName"]].append((x, y))
+    return area_points, z_s
 
 
 def generate_centroids(
@@ -678,20 +772,9 @@ def generate_centroids(
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-    area_points: dict[str, list[tuple[float, float]]] = defaultdict(list)
-    z_s = defaultdict(list)
+    area_points, z_s = _get_area_points_z_s(map_name)
     area_ids_cent: dict[str, int] = {}
     area_ids_rep: dict[str, int] = {}
-    for area_id in NAV[map_name]:
-        area = NAV[map_name][area_id]
-        cur_x = [area["southEastX"], area["northWestX"]]
-        cur_y = [area["southEastY"], area["northWestY"]]
-        # Get the z coordinates for each tile of a named area
-        z_s[area["areaName"]].append(area["northWestZ"])
-        z_s[area["areaName"]].append(area["southEastZ"])
-        # Get all the (x,y) points that make up each tile of a named area
-        for x, y in itertools.product(cur_x, cur_y):
-            area_points[area["areaName"]].append((x, y))
     # For each named area
     for area_name in area_points:
         # Get the (approximate) orthogonal convex hull
