@@ -701,7 +701,10 @@ class RoundStatistics(TypedDict):
     players_killed: dict[Literal["CT", "T"], set[str]]
 
 class FrameMapControl(TypedDict):
-    """Type for the result of awpy.analytics.map_control.parseRoundFrame"""
+    """Type for the result of awpy.analytics.map_control.calc_map_control
+
+    Holds map control values for each time for a certain frame
+    """
 
     t: dict
     ct: dict

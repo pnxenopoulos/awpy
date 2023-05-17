@@ -20,47 +20,19 @@ class TestMapControl:
         }
         self.fake_frames = {
             "map_control_sanity_t_control": {
-                "t": {
-                    "players": [
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                    ]
-                },
+                "t": {"players": [self.fake_alive_player.copy() for _ in range(5)]},
                 "ct": {"players": [self.fake_alive_player.copy()]},
             },
             "map_control_sanity_ct_control": {
-                "ct": {
-                    "players": [
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                    ]
-                },
+                "ct": {"players": [self.fake_alive_player.copy() for _ in range(5)]},
                 "t": {"players": [self.fake_alive_player.copy()]},
             },
             "map_control_null_5v1": {
-                "t": {
-                    "players": [
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                        self.fake_alive_player.copy(),
-                    ]
-                },
+                "t": {"players": [self.fake_alive_player.copy() for _ in range(5)]},
                 "ct": {"players": []},
             },
             "map_control_null_1v0": {
-                "t": {
-                    "players": [
-                        self.fake_alive_player.copy()
-                    ]
-                },
+                "t": {"players": [self.fake_alive_player.copy()]},
                 "ct": {"players": []},
             },
             "map_control_null_0v0": {

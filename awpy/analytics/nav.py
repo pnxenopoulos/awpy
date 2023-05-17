@@ -1600,3 +1600,36 @@ def token_distance(
         distance_type,
         reference_point,
     )
+
+def calculate_tile_area(
+    map_name: str,
+    tile_id: int,
+) -> float:
+    """Calculates area of a given tile in a given map
+    
+    Args:
+        map_name (string): Map for tile
+        tile_id (string): Id for tile
+
+    ValueError: If map_name is not in awpy.data.NAV
+            If area_id is not in awpy.data.NAV[map_name]
+
+    Returns:
+        A float representing the area of the tile
+    """
+    if map_name not in NAV:
+        raise ValueError("Map not found.")
+    if tile_id not in NAV[map_name]:
+        raise ValueError("Tile ID not found.")
+
+    tile_info = NAV[map_name][tile_id]
+
+    tile_width = (
+        tile_info["northWestX"] - tile_info["southEastX"]
+    )
+    tile_height = (
+        tile_info["northWestY"] - tile_info["southEastY"]
+    )
+
+    tile_area = tile_width * tile_height
+    return tile_area

@@ -30,10 +30,11 @@ from awpy.types import BombInfo, GameFrame, GameRound, PlayerInfo, PlotPosition
 
 from matplotlib import patches, axes
 from awpy.analytics.map_control import (
-    parseRoundFrame,
-    calcMapControlHelper,
+    extract_player_positions,
+    _calc_map_control_helper,
     frame_map_control_metric,
 )
+from cv2 import resize
 
 
 def plot_map(
@@ -335,7 +336,7 @@ def plot_nades(
     axes.get_yaxis().set_visible(b=False)
     return figure, axes
 
-def plot_map_control_snapshot_helper(
+def _plot_map_control_snapshot_helper(
     map_name: str,
     ct_tiles: dict,
     t_tiles: dict,
@@ -344,6 +345,7 @@ def plot_map_control_snapshot_helper(
 ):
     """Helper function to plot map control nav tile plot on given
         matplotlib.axes object
+
     Args:
         map_name (string)       : Map used position_transform call
         ct_tiles (dict)         : CT map control values dictionary
@@ -351,95 +353,90 @@ def plot_map_control_snapshot_helper(
         ax (matplotlib.axes)    : axes object for plotting
         player_dict (dict)      : Dictionary of player positions
                                   for each team. Expected format
-                                  same as output of parseRoundFrame
+                                  same as output of extract_player_positions
 
     Returns: Nothing, all plotting is done on ax object
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
                     If player_dict not of expected
-                    parseRoundFrame output format
+                    extract_player_positions output format
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
     if player_data and ("t" not in player_data or "ct" not in player_data):
-        raise ValueError("player_dict not of expected parseRoundFrame output format.")
+        raise ValueError("player_dict not of expected extract_player_positions output format.")
 
-    ctTileLocs, tTileLocs = set(ct_tiles.keys()), set(t_tiles.keys())
-    allRelevantTiles = ctTileLocs.union(tTileLocs)
+    ct_tile_set, t_tile_set = set(ct_tiles.keys()), set(t_tiles.keys())
+    all_tiles = ct_tile_set.union(t_tile_set)
 
     # Iterate through the tiles that have a value
-    for curTile in allRelevantTiles:
-        if curTile in NAV[map_name]:
-            area = NAV[map_name][curTile]
-            tmpSE_X = position_transform(map_name, area["southEastX"], "x")
-            tmpNW_X = position_transform(map_name, area["northWestX"], "x")
-            tmpSE_Y = position_transform(map_name, area["southEastY"], "y")
-            tmpNW_Y = position_transform(map_name, area["northWestY"], "y")
-            width = tmpSE_X - tmpNW_X
-            height = tmpNW_Y - tmpSE_Y
-            southwest_x = tmpNW_X
-            southwest_y = tmpSE_Y
+    for tile in all_tiles:
+        if tile in NAV[map_name]:
+            area = NAV[map_name][tile]
+            se_x = position_transform(map_name, area["southEastX"], "x")
+            nw_x = position_transform(map_name, area["northWestX"], "x")
+            se_y = position_transform(map_name, area["southEastY"], "y")
+            nw_y = position_transform(map_name, area["northWestY"], "y")
+            width = se_x - nw_x
+            height = nw_y - se_y
 
             # Use max value (if exists) for each side for the current tile
-            tileCTValue, tileTValue = max(ct_tiles[curTile] + [0]), max(
-                t_tiles[curTile] + [0]
-            )
+            ct_val = max(ct_tiles[tile] + [0])
+            t_val = max(t_tiles[tile] + [0])
 
             # Use each side's value above as weights for weighted average
             # to find correct color
-            curColor = min(
-                tileCTValue / (tileCTValue + tileTValue), tileCTValue
-            ) * np.array([0, 1, 0]) + min(
-                tileTValue / (tileCTValue + tileTValue), tileTValue
-            ) * np.array(
-                [1, 0, 0]
-            )
+            cur_color = min(
+                ct_val / (ct_val + t_val), ct_val
+                ) * np.array([0, 1, 0]) + min(
+                t_val / (ct_val + t_val), t_val
+                ) * np.array([1, 0, 0])   
 
             rect = patches.Rectangle(
-                (southwest_x, southwest_y),
+                (nw_x, se_y),
                 width,
                 height,
                 linewidth=1,
-                edgecolor=curColor,
-                facecolor=curColor,
+                edgecolor=cur_color,
+                facecolor=cur_color,
                 alpha=1.0,
             )
             ax.add_patch(rect)
         else:
-            print("Tile not found in map:", curTile)
+            print("Tile not found in map:", tile)
 
     # Plot player positions if given
     if len(player_data) > 0:
-        tPlayerPositions, ctPlayerPositions = (
+        t_positions, ct_positions = (
             player_data["t"]["player-locations"],
             player_data["ct"]["player-locations"],
         )
-        if len(tPlayerPositions) > 0:
-            transformedX = [
-                position_transform(map_name, loc[0], "x") for loc in tPlayerPositions
+        if len(t_positions) > 0:
+            transformed_x = [
+                position_transform(map_name, loc[0], "x") for loc in t_positions
             ]
-            transformedY = [
-                position_transform(map_name, loc[1], "y") for loc in tPlayerPositions
+            transformed_y = [
+                position_transform(map_name, loc[1], "y") for loc in t_positions
             ]
-            colorArr = ["#5d79ae"] * len(tPlayerPositions)
-            ax.scatter(transformedX, transformedY, c=colorArr)
-        if len(ctPlayerPositions) > 0:
-            colorArr = ["#de9b35"] * len(ctPlayerPositions)
-            transformedX = [
-                position_transform(map_name, loc[0], "x") for loc in ctPlayerPositions
+            color_arr = ["#5d79ae"] * len(t_positions)
+            ax.scatter(transformed_x, transformed_y, c=color_arr)
+        if len(ct_positions) > 0:
+            transformed_x = [
+                position_transform(map_name, loc[0], "x") for loc in ct_positions
             ]
-            transformedY = [
-                position_transform(map_name, loc[1], "y") for loc in ctPlayerPositions
+            transformed_y = [
+                position_transform(map_name, loc[1], "y") for loc in ct_positions
             ]
-            ax.scatter(transformedX, transformedY, c=colorArr)
+            color_arr = ["#de9b35"] * len(ct_positions)
+            ax.scatter(transformed_x, transformed_y, c=color_arr)
     ax.axis("off")
 
 
 def plot_map_control_snapshot(
     map_name: str,
-    ct_tiles: dict,
-    t_tiles: dict,
+    ct_tiles: dict[int, list[float]],
+    t_tiles: dict[int, list[float]],
     player_pos: dict = {},
     given_fig_ax: tuple[plt.Figure, axes] = (None, None),
     save_filepath: str = "",
@@ -447,13 +444,14 @@ def plot_map_control_snapshot(
     """Visualize map control for given ct/t map control value
         dictionaries. Tile values are mapped to RGB colors and then
         plotted. Plot player positions also if given.
+
     Args:
         map_name (string)       : Map used position_transform call
         ct_tiles (dict)         : CT map control values dictionary
         t_tiles (dict)          : T map control values dictionary
         player_pos (dict)       : Dictionary of player positions
                                   for each team. Expected format
-                                  same as output of parseRoundFrame
+                                  same as output of extract_player_positions
         save_filepath (str)     : Filepath to save the figure to file
                                   if required
 
@@ -465,13 +463,12 @@ def plot_map_control_snapshot(
     if map_name not in NAV:
         raise ValueError("Map not found.")
 
-        # if not useAx[0]:
     if not given_fig_ax[0]:
-        f, baseAx = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
+        f, base_ax = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
     else:
-        f, baseAx = given_fig_ax
-    plot_map_control_snapshot_helper(
-        map_name, ct_tiles, t_tiles, ax=baseAx, player_data=player_pos
+        f, base_ax = given_fig_ax
+    _plot_map_control_snapshot_helper(
+        map_name, ct_tiles, t_tiles, ax=base_ax, player_data=player_pos
     )
 
     if len(save_filepath) > 0:
@@ -483,17 +480,17 @@ def plot_map_control_snapshot(
 
 def plot_frame_map_control(
     map_name: str,
-    frame: dict,
+    frame: GameFrame,
     players_plotted: bool = False,
     given_fig_ax: tuple[plt.Figure, axes] = (None, None),
     save_filepath: str = "",
 ):
-    # returnWanted=False, save = (False, ), axWanted=(False, )):
     """Visualize map control given awpy frame data structure.
         Plot player positions also if necessary.
+
     Args:
         map_name (string)       : Map used position_transform call
-        frame (dict)            : awpy frame to calculate map
+        frame (GameFrame)       : awpy frame to calculate map
                                   control for
         players_plotted (bool)  : Boolean for whether alive players
                                   should be plotted
@@ -508,22 +505,22 @@ def plot_frame_map_control(
     if map_name not in NAV:
         raise ValueError("Map not found.")
 
-    parsedData = parseRoundFrame(frame)
-    mapControlDict = calcMapControlHelper(map_name, parsedData, True)
+    player_positions = extract_player_positions(frame)
+    map_control_dict = _calc_map_control_helper(map_name, player_positions, True)
     if players_plotted:
         plot_map_control_snapshot(
             map_name,
-            mapControlDict["ct"],
-            mapControlDict["t"],
-            player_pos=parsedData,
+            map_control_dict["ct"],
+            map_control_dict["t"],
+            player_pos=player_positions,
             given_fig_ax=given_fig_ax,
             save_filepath=save_filepath,
         )
     else:
         plot_map_control_snapshot(
             map_name,
-            mapControlDict["ct"],
-            mapControlDict["t"],
+            map_control_dict["ct"],
+            map_control_dict["t"],
             given_fig_ax=given_fig_ax,
             save_filepath=save_filepath,
         )
@@ -531,20 +528,20 @@ def plot_frame_map_control(
 
 def create_round_map_control_gif(
     map_name: str,
-    round_data: dict,
+    round_data: GameRound,
     players_plotted: bool = False,
     gif_filepath: str = "./results/round_mc.gif",
 ):
     """Create gif summarizing map control for round by
         animating frame visualizations. Plot player
         positions also if necessary.
+
     Args:
         map_name (string)       : Map used in plot_frame_map_control
                                   call
-        round_data (dict)       : Round whose map control will be
+        round_data (GameRound)  : Round whose map control will be
                                   animated. Expected format that
                                   of awpy round
-                                      ex: demo['gameRounds'][i]
         players_plotted (bool)  : Boolean for whether alive players
                                   should be plotted
         gif_filepath (str)      : Filepath to save the gif to file
@@ -565,11 +562,11 @@ def create_round_map_control_gif(
             "Frame visualizations cannot be saved to the ./tmp folder - it does not exist"
         )
 
-    images = []
+    images: list[np.array] = []
     print("Saving/loading frames")
     for i in range(len(round_data["frames"])):
         frame = round_data["frames"][i]
-        currentFilename = "./tmp/tmp" + str(i) + ".png"
+        filename = "./tmp/tmp" + str(i) + ".png"
 
         # Save current frame map control viz to file
         # All frames are saved to './tmp/ folder '
@@ -577,23 +574,24 @@ def create_round_map_control_gif(
             map_name,
             frame,
             players_plotted=players_plotted,
-            save_filepath=currentFilename,
+            save_filepath=filename,
         )
 
         # Load image back as frame of gif that will
         # be created at the end of this function
-        images.append(imageio.imread(currentFilename))
+        images.append(imageio.imread(filename))
 
     print("Creating gif!")
     imageio.mimsave(gif_filepath, images)
 
 
-def plot_map_control_metrics_helper(
+def _plot_map_control_metrics_helper(
     metrics: list[float],
-    axObject: axes,
+    ax: axes,
 ):
     """Helper function to plot map control metric plot
         onto given axes object
+
     Args:
         metrics (list)       : List containing map control values
                                to plot
@@ -607,23 +605,23 @@ def plot_map_control_metrics_helper(
     if not metrics:
         raise ValueError("Metrics is empty.")
 
-    xArr = list(range(1, len(metrics) + 1))
-    axObject.plot(xArr, metrics)  # , x=
-    axObject.set_ylim(0, 1)
-    axObject.axhline(0.5, linestyle="--", c="k")
-    axObject.set_ylabel("Map Control Metric Value")
-    axObject.set_xlabel("Frame Number")
-    axObject.set_title("Map Control Metric Progress")
+    x = list(range(1, len(metrics) + 1))
+    ax.plot(x, metrics)
+    ax.set_ylim(0, 1)
+    ax.axhline(0.5, linestyle="--", c="k")
+    ax.set_ylabel("Map Control Metric Value")
+    ax.set_xlabel("Frame Number")
+    ax.set_title("Map Control Metric Progress")
     if len(metrics) > 10:
-        axObject.set_xticks(list(range(1, len(metrics) + 1, int(len(metrics) // 10))))
+        ax.set_xticks(list(range(1, len(metrics) + 1, int(len(metrics) // 10))))
 
 
 def plot_map_control_metrics(
     metric_arr=list[float],
     given_fig_ax: tuple[plt.Figure, axes] = (None, None),
-    plotFig=False,
 ):
     """Function to plot given map control metrics
+
     Args:
         metric_arr (list)     : List containing map control values
                                to plot
@@ -639,14 +637,14 @@ def plot_map_control_metrics(
         raise ValueError("Metrics is empty.")
 
     if given_fig_ax[0]:
-        plot_map_control_metrics_helper(metric_arr, given_fig_ax[1])
+        _plot_map_control_metrics_helper(metric_arr, given_fig_ax[1])
     else:
-        f, curAx = plt.subplots()
-        plot_map_control_metrics_helper(metric_arr, curAx)
+        f, curr_ax = plt.subplots()
+        _plot_map_control_metrics_helper(metric_arr, curr_ax)
         plt.show()
 
 
-def map_control_graphic_helper(
+def _save_map_control_graphic_helper(
     map_name: str,
     frame: GameFrame,
     metrics: list[float],
@@ -654,6 +652,7 @@ def map_control_graphic_helper(
 ):
     """Helper function to generate map control graphic for given awpy
     round.
+
     Args:
         map_name (string)       : Map used in
                                   frame_map_control_metric call
@@ -674,7 +673,7 @@ def map_control_graphic_helper(
     plot_frame_map_control(
         map_name, frame, players_plotted=True, given_fig_ax=(fig, axs[0])
     )
-    plot_map_control_metrics_helper(metrics, axs[1])
+    _plot_map_control_metrics_helper(metrics, axs[1])
     plt.tight_layout()
     if save_path:
         fig.savefig(fname=save_path, bbox_inches="tight", dpi=400)
@@ -691,6 +690,7 @@ def save_map_control_graphic(
     """Function to generate map control graphic for given awpy
     round. Graphic is a gif including minimap visualization
     and map control metric plot for each frame in the round
+
     Args:
         map_name (string)       : Map used in
                                   frame_map_control_metric call
@@ -705,19 +705,23 @@ def save_map_control_graphic(
     if map_name not in NAV:
         raise ValueError("Map not found.")
 
-    metricValues = []
-    images = []
+    metrics: list[float] = []
+    images: list[np.array] = []
 
     print("Saving/loading frames!")
     for i in range(len(frames)):
         frame = frames[i]
-        metricValues.append(frame_map_control_metric(map_name, frame))
-        currentFilename = "./tmp/tmp" + str(i) + ".png"
-        map_control_graphic_helper(
-            map_name, frame, metricValues, save_path=currentFilename
+        metrics.append(frame_map_control_metric(map_name, frame))
+        temp_filename = "./tmp/tmp" + str(i) + ".png"
+        _save_map_control_graphic_helper(
+            map_name, frame, metrics, save_path=temp_filename
         )
         if save_path:
-            images.append(imageio.imread(currentFilename))
+            # sometime second dimension has an extra entry
+            # so resize to expected size
+            cur_img = resize(imageio.imread(temp_filename), (4760, 4760))
+            #4759, 4758
+            images.append(cur_img)
     if save_path:
         print("Saving map control graphic gif")
         imageio.mimsave(save_path, images)
