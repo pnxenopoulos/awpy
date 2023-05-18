@@ -576,3 +576,68 @@ class TestDemoParser:
         no_json_parser.json = {"gameRounds": None}
         with pytest.raises(AttributeError):
             no_json_parser.renumber_rounds()
+
+    def test_frame_indices(self):
+        """Tests that frame indices work as expected.
+
+        Every round has frames with ids going from 0
+        to len(round["frames])-1
+        """
+        self.index_parser = DemoParser(
+            demofile="vitality-vs-g2-m2-mirage.dem",
+            log=False,
+            parse_frames=True,
+        )
+        self.index_parser.parse(clean=False)
+        for game_round in self.index_parser.json["gameRounds"]:
+            assert [frame["frameID"] for frame in game_round["frames"]] == list(
+                range(len(game_round["frames"]))
+            )
+
+        for index, frame in enumerate(
+            frame
+            for game_round in self.index_parser.json["gameRounds"]
+            for frame in game_round["frames"]
+        ):
+            assert index == frame["globalFrameID"]
+
+    def test_renumbering(self):
+        """Tests that renumbering rounds and frames works."""
+        self.renumbering_parser = DemoParser(
+            demofile="esea_match_16902209.dem", log=False, parse_frames=True
+        )
+        self.round_clean_data = self.renumbering_parser.parse(clean=False)
+        self.renumbering_parser.remove_rounds_with_no_frames()
+        self.renumbering_parser.remove_warmups()
+        self.renumbering_parser.remove_knife_rounds()
+        self.renumbering_parser.remove_time_rounds()
+        self.renumbering_parser.remove_excess_players()
+        self.renumbering_parser.remove_excess_kill_rounds()
+        self.renumbering_parser.remove_end_round()
+        self.renumbering_parser.remove_bad_scoring()
+        assert [
+            game_round["roundNum"] - 1
+            for game_round in self.renumbering_parser.json["gameRounds"]
+        ] != list(range(len(self.renumbering_parser.json["gameRounds"])))
+
+        for index, frame in enumerate(
+            frame
+            for game_round in self.renumbering_parser.json["gameRounds"]
+            for frame in game_round["frames"]
+        ):
+            with pytest.raises(AssertionError, match="globalFrameID off somewhere"):
+                assert index == frame["globalFrameID"], "globalFrameID off somewhere"
+
+        self.renumbering_parser.renumber_rounds()
+        self.renumbering_parser.renumber_frames()
+        assert [
+            game_round["roundNum"] - 1
+            for game_round in self.renumbering_parser.json["gameRounds"]
+        ] == list(range(len(self.renumbering_parser.json["gameRounds"])))
+
+        for index, frame in enumerate(
+            frame
+            for game_round in self.renumbering_parser.json["gameRounds"]
+            for frame in game_round["frames"]
+        ):
+            assert index == frame["globalFrameID"]

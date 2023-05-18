@@ -708,6 +708,7 @@ class DemoParser:
             if remove_bad_scoring:
                 self.remove_bad_scoring()
             self.renumber_rounds()
+            self.renumber_frames()
             # self.rescore_rounds() -- Need to edit to take into account half switches
             if save_to_json:
                 self.write_json()
@@ -737,11 +738,36 @@ class DemoParser:
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute
-                has a "gameRounds" key.
+                has no "gameRounds" key.
         """
         if self.json and self.json["gameRounds"]:
             for i, _r in enumerate(self.json["gameRounds"]):
                 self.json["gameRounds"][i]["roundNum"] = i + 1
+        else:
+            self.logger.error(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+            raise AttributeError(
+                "JSON not found. Run .parse() or .read_json() if JSON already exists"
+            )
+
+    def renumber_frames(self) -> None:
+        """Renumbers the frames.
+
+        Needed since cleaning can remove frames and cause
+        some indices to be skipped.
+
+        Raises:
+            AttributeError: Raises an AttributeError if the .json attribute
+                has no "gameRounds" key.
+        """
+        if self.json and self.json["gameRounds"]:
+            for index, frame in enumerate(
+                frame
+                for game_round in self.json["gameRounds"]
+                for frame in game_round["frames"] or []
+            ):
+                frame["globalFrameID"] = index
         else:
             self.logger.error(
                 "JSON not found. Run .parse() or .read_json() if JSON already exists"

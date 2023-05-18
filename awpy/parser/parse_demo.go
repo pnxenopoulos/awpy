@@ -334,18 +334,20 @@ type FlashAction struct {
 
 // GameFrame (game state at time t)
 type GameFrame struct {
-	IsKillFrame bool          `json:"isKillFrame"`
-	Tick        int64         `json:"tick"`
-	Second      float64       `json:"seconds"`
-	ClockTime   string        `json:"clockTime"`
-	T           TeamFrameInfo `json:"t"`
-	CT          TeamFrameInfo `json:"ct"`
-	BombPlanted bool          `json:"bombPlanted"`
-	BombSite    string        `json:"bombsite"`
-	Bomb        BombInfo      `json:"bomb"`
-	Projectiles []GrenadeInfo `json:"projectiles"`
-	Smokes      []Smoke       `json:"smokes"`
-	Fires       []Fire        `json:"fires"`
+	FrameID       int64         `json:"frameID"`
+	GlobalFrameID int64         `json:"globalFrameID"`
+	IsKillFrame   bool          `json:"isKillFrame"`
+	Tick          int64         `json:"tick"`
+	Second        float64       `json:"seconds"`
+	ClockTime     string        `json:"clockTime"`
+	T             TeamFrameInfo `json:"t"`
+	CT            TeamFrameInfo `json:"ct"`
+	BombPlanted   bool          `json:"bombPlanted"`
+	BombSite      string        `json:"bombsite"`
+	Bomb          BombInfo      `json:"bomb"`
+	Projectiles   []GrenadeInfo `json:"projectiles"`
+	Smokes        []Smoke       `json:"smokes"`
+	Fires         []Fire        `json:"fires"`
 }
 
 // Bomb location
@@ -881,6 +883,13 @@ func removeExpiredSmoke(s []Smoke, i int) []Smoke {
 	return s[:len(s)-1]
 }
 
+func appendFrameToRound(currentRound *GameRound, currentFrame *GameFrame, globalFrameIndex *int64) {
+	currentFrame.FrameID = int64(len(currentRound.Frames))
+	currentFrame.GlobalFrameID = int64(*globalFrameIndex)
+	*globalFrameIndex += 1
+	currentRound.Frames = append(currentRound.Frames, *currentFrame)
+}
+
 // Main
 func main() {
 	/* Parse the arguments
@@ -967,6 +976,8 @@ func main() {
 	parsingOpts.DamagesRolled = damagesRolled
 	parsingOpts.ParseChat = parseChat
 	currentGame.ParsingOpts = parsingOpts
+
+	globalFrameIndex := int64(0)
 
 	currentRound := GameRound{}
 
@@ -1169,6 +1180,8 @@ func main() {
 
 		if roundStarted == 1 {
 			currentGame.Rounds = append(currentGame.Rounds, currentRound)
+		} else {
+			globalFrameIndex = 0
 		}
 
 		roundStarted = 1
@@ -2070,8 +2083,7 @@ func main() {
 			} else {
 				currentFrame.BombPlanted = false
 			}
-
-			currentRound.Frames = append(currentRound.Frames, currentFrame)
+			appendFrameToRound(&currentRound, &currentFrame, &globalFrameIndex)
 		}
 
 		currentKill := KillAction{}
@@ -2512,10 +2524,10 @@ func main() {
 			if (len(currentFrame.CT.Players) > 0) || (len(currentFrame.T.Players) > 0) {
 				if len(currentRound.Frames) > 0 {
 					if currentRound.Frames[len(currentRound.Frames)-1].Tick < currentFrame.Tick {
-						currentRound.Frames = append(currentRound.Frames, currentFrame)
+						appendFrameToRound(&currentRound, &currentFrame, &globalFrameIndex)
 					}
 				} else {
-					currentRound.Frames = append(currentRound.Frames, currentFrame)
+					appendFrameToRound(&currentRound, &currentFrame, &globalFrameIndex)
 				}
 			}
 
