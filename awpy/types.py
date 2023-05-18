@@ -767,73 +767,73 @@ def is_valid_side(side: str) -> TypeGuard[Literal["CT", "T"]]:
     return side in {"CT", "T"}
 
 
-def proper_kills(kills: int, /) -> TypeGuard[Literal[0, 1, 2, 3, 4, 5]]:
+def proper_player_number(n_players: int, /) -> TypeGuard[Literal[0, 1, 2, 3, 4, 5]]:
     """TypeGuard for int being in range(6).
 
     Args:
-        kills (int): Int to type guard
+        n_players (int): Int to type guard
 
     Returns:
         Whether the int is in range(6)
     """
-    return kills in range(6)
+    return n_players in range(6)
 
 
 @overload
-def int_to_string_kills(kills: Literal[0]) -> Literal["0"]:
+def int_to_string_n_players(n_players: Literal[0]) -> Literal["0"]:
     ...
 
 
 @overload
-def int_to_string_kills(kills: Literal[1]) -> Literal["1"]:
+def int_to_string_n_players(n_players: Literal[1]) -> Literal["1"]:
     ...
 
 
 @overload
-def int_to_string_kills(kills: Literal[2]) -> Literal["2"]:
+def int_to_string_n_players(n_players: Literal[2]) -> Literal["2"]:
     ...
 
 
 @overload
-def int_to_string_kills(kills: Literal[3]) -> Literal["3"]:
+def int_to_string_n_players(n_players: Literal[3]) -> Literal["3"]:
     ...
 
 
 @overload
-def int_to_string_kills(kills: Literal[4]) -> Literal["4"]:
+def int_to_string_n_players(n_players: Literal[4]) -> Literal["4"]:
     ...
 
 
 @overload
-def int_to_string_kills(kills: Literal[5]) -> Literal["5"]:
+def int_to_string_n_players(n_players: Literal[5]) -> Literal["5"]:
     ...
 
 
-def int_to_string_kills(
-    kills: Literal[0, 1, 2, 3, 4, 5]
+def int_to_string_n_players(
+    n_players: Literal[0, 1, 2, 3, 4, 5]
 ) -> Literal["0", "1", "2", "3", "4", "5"]:
     """_Typeguarded conversion from int in range(6) to str.
 
     Args:
-        kills (Literal[0, 1, 2, 3, 4, 5]): Int to convert to string.
+        n_players (Literal[0, 1, 2, 3, 4, 5]): Int to convert to string.
 
     Raises:
         ValueError: If the int is not in range(6)
 
     Returns:
-        str(kills)
+        str(n_players)
     """
-    if kills == 0:
+    if n_players == 0:
         return "0"
-    if kills == 1:
+    if n_players == 1:
         return "1"
-    if kills == 2:  # noqa: Ruff(PLR2004)
+    if n_players == 2:  # noqa: Ruff(PLR2004)
         return "2"
-    if kills == 3:  # noqa: Ruff(PLR2004)
+    if n_players == 3:  # noqa: Ruff(PLR2004)
         return "3"
-    if kills == 4:  # noqa: Ruff(PLR2004)
+    if n_players == 4:  # noqa: Ruff(PLR2004)
         return "4"
-    if kills == 5:  # noqa: Ruff(PLR2004)
+    if n_players == 5:  # noqa: Ruff(PLR2004)
         return "5"
-    msg = "kills has to be in range(6)"
+    msg = "n_players has to be in range(6)"
     raise ValueError(msg)
