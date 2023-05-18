@@ -1,6 +1,6 @@
 """Functions to calculate statistics for a player or team from a demofile.
 
-    Typical usage example:
+Example::
 
     from awpy.parser import DemoParser
     from awpy.analytics.stats import player_stats
@@ -17,9 +17,9 @@
     player_stats_json = player_stats(data["gameRounds"])
     player_stats_json[76561197999004010]
 
-    https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
+https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
 """
-from typing import Literal, TypeGuard, cast, overload
+from typing import Any, Literal, cast, overload
 
 import pandas as pd
 
@@ -35,8 +35,12 @@ from awpy.types import (
     PlayerStatistics,
     RoundStatistics,
     WeaponFireAction,
+    int_to_string_kills,
+    is_valid_side,
+    lower_side,
+    other_side,
+    proper_kills,
 )
-
 
 # accuracy
 # kast
@@ -44,52 +48,6 @@ from awpy.types import (
 # kill stats
 # flash stats
 # econ stats
-def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
-    """Takes a csgo side as input and returns the opposite side in the same formatting.
-
-    Args:
-        side (string): A csgo team side (t or ct all upper or all lower case)
-
-    Returns:
-        A string of the opposite team side in the same formatting as the input
-
-    Raises:
-        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
-    """
-    if side == "CT":
-        return "T"
-    if side == "T":
-        return "CT"
-    raise ValueError("side has to be either 'CT' or 'T'")
-
-
-@overload
-def lower_side(side: Literal["CT"]) -> Literal["ct"]:
-    ...
-
-
-@overload
-def lower_side(side: Literal["T"]) -> Literal["t"]:
-    ...
-
-
-def lower_side(side: Literal["CT", "T"]) -> Literal["ct", "t"]:
-    """Takes a csgo side as input and returns lower cased version.
-
-    Args:
-        side (string): A csgo team side (T or CT )
-
-    Returns:
-        The lower cased string.
-
-    Raises:
-        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
-    """
-    if side == "CT":
-        return "ct"
-    if side == "T":
-        return "t"
-    raise ValueError("side has to be either 'CT' or 'T'")
 
 
 def initialize_round(
@@ -116,15 +74,19 @@ def initialize_round(
     active_players: set[str] = set()
     for side in [lower_side(team) + "Side" for team in active_sides]:
         side = cast(Literal["ctSide", "tSide"], side)
-        for p in cur_round[side]["players"] or []:
-            player_key = p["playerName"] if p["steamID"] == 0 else str(p["steamID"])
+        for player in cur_round[side]["players"] or []:
+            player_key = (
+                player["playerName"]
+                if player["steamID"] == 0
+                else str(player["steamID"])
+            )
             active_players.add(player_key)
             if player_key not in player_statistics:
                 player_statistics[player_key] = {
-                    "steamID": p["steamID"],
-                    "playerName": p["playerName"],
+                    "steamID": player["steamID"],
+                    "playerName": player["playerName"],
                     "teamName": cur_round[side]["teamName"],
-                    "isBot": p["steamID"] == 0,
+                    "isBot": player["steamID"] == 0,
                     "totalRounds": 0,
                     "kills": 0,
                     "deaths": 0,
@@ -282,17 +244,21 @@ def _get_actor_key(
 
 
 def _get_actor_key(
-    actor,
-    game_action,
+    actor: Any,
+    game_action: Any,
 ) -> str:
-    if (actor + "Name") not in game_action or (actor + "SteamID") not in game_action:
-        raise ValueError(
+    actor_name = actor + "Name"
+    actor_steamid = actor + "SteamID"
+    if (actor_name) not in game_action or (actor_steamid) not in game_action:
+        msg = (
             f"{actor} is not a valid actor for game_action of type {type(game_action)}."
         )
+        raise KeyError(msg)
+
     return (
-        str(game_action[actor + "Name"])
-        if game_action[actor + "SteamID"] == 0
-        else str(game_action[actor + "SteamID"])
+        str(game_action[actor_name])
+        if game_action[actor_steamid] == 0
+        else str(game_action[actor_steamid])
     )
 
 
@@ -315,10 +281,6 @@ def _handle_pure_killer_stats(
             player_statistics[killer_key]["teamKills"] += 1
         if kill_action["isHeadshot"]:
             player_statistics[killer_key]["hs"] += 1
-
-
-def _is_valid_side(side: str) -> TypeGuard[Literal["CT", "T"]]:
-    return side in {"CT", "T"}
 
 
 def _is_clutch(
@@ -353,58 +315,6 @@ def _find_clutcher(
     return ""
 
 
-def _proper_kills(kills: int) -> TypeGuard[Literal[0, 1, 2, 3, 4, 5]]:
-    return kills in range(6)
-
-
-@overload
-def _int_to_string_kills(kills: Literal[0]) -> Literal["0"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[1]) -> Literal["1"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[2]) -> Literal["2"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[3]) -> Literal["3"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[4]) -> Literal["4"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[5]) -> Literal["5"]:
-    ...
-
-
-def _int_to_string_kills(
-    kills: Literal[0, 1, 2, 3, 4, 5]
-) -> Literal["0", "1", "2", "3", "4", "5"]:
-    if kills == 0:
-        return "0"
-    if kills == 1:
-        return "1"
-    if kills == 2:  # noqa: Ruff(PLR2004)
-        return "2"
-    if kills == 3:  # noqa: Ruff(PLR2004)
-        return "3"
-    if kills == 4:  # noqa: Ruff(PLR2004)
-        return "4"
-    if kills == 5:  # noqa: Ruff(PLR2004)
-        return "5"
-    raise ValueError("kills has to be in range(1,6)")
-
-
 def _handle_clutching(
     kill_action: KillAction,
     game_round: GameRound,
@@ -413,7 +323,7 @@ def _handle_clutching(
 ) -> None:
     # Clutch logic
     victim_side = kill_action["victimSide"]
-    if victim_side is None or not _is_valid_side(victim_side):
+    if victim_side is None or not is_valid_side(victim_side):
         return
     if not _is_clutch(victim_side, game_round, round_statistics):
         return
@@ -435,14 +345,14 @@ def _handle_clutching(
     )
 
     # Typeguard and not 1 v 0
-    if not _proper_kills(enemies_alive) or enemies_alive == 0:
+    if not proper_kills(enemies_alive) or enemies_alive == 0:
         return
     player_statistics[clutcher_key][
-        "attempts1v" + _int_to_string_kills(enemies_alive)
+        "attempts1v" + int_to_string_kills(enemies_alive)
     ] += 1
     if game_round["winningSide"] == kill_action["victimSide"]:
         player_statistics[clutcher_key][
-            "success1v" + _int_to_string_kills(enemies_alive)
+            "success1v" + int_to_string_kills(enemies_alive)
         ] += 1
 
 
@@ -537,17 +447,17 @@ def _handle_first_kill(
 
 
 def _handle_kills(
-    r: GameRound,
+    game_round: GameRound,
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
-    for k in r["kills"] or []:
+    for k in game_round["kills"] or []:
         killer_key = _get_actor_key("attacker", k)
         victim_key = _get_actor_key("victim", k)
         assister_key = _get_actor_key("assister", k)
         flashthrower_key = _get_actor_key("flashThrower", k)
         victim_side = k["victimSide"]
-        if victim_side is None or not _is_valid_side(victim_side):
+        if victim_side is None or not is_valid_side(victim_side):
             return
         if victim_side in round_statistics["players_killed"]:
             round_statistics["players_killed"][victim_side].add(victim_key)
@@ -555,7 +465,11 @@ def _handle_kills(
             killer_key, player_statistics, round_statistics, kill_action=k
         )
         _handle_pure_victim_stats(
-            victim_key, player_statistics, round_statistics, kill_action=k, game_round=r
+            victim_key,
+            player_statistics,
+            round_statistics,
+            kill_action=k,
+            game_round=game_round,
         )
         _handle_trade_stats(
             killer_key, player_statistics, round_statistics, kill_action=k
@@ -573,92 +487,113 @@ def _handle_kills(
 
 
 def _handle_damages(
-    r: GameRound,
+    game_round: GameRound,
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
-    for d in r["damages"] or []:
-        attacker_key = _get_actor_key("attacker", d)
-        victim_key = _get_actor_key("victim", d)
+    for damage_action in game_round["damages"] or []:
+        attacker_key = _get_actor_key("attacker", damage_action)
+        victim_key = _get_actor_key("victim", damage_action)
         # Purely attacker related stats
-        if attacker_key in round_statistics["active_players"] and d["attackerSteamID"]:
-            if not d["isFriendlyFire"]:
-                player_statistics[attacker_key]["totalDamageGiven"] += d[
+        if (
+            attacker_key in round_statistics["active_players"]
+            and damage_action["attackerSteamID"]
+        ):
+            if not damage_action["isFriendlyFire"]:
+                player_statistics[attacker_key]["totalDamageGiven"] += damage_action[
                     "hpDamageTaken"
                 ]
-            else:  # d["isFriendlyFire"]:
-                player_statistics[attacker_key]["totalTeamDamageGiven"] += d[
-                    "hpDamageTaken"
-                ]
-            if d["weaponClass"] not in ["Unknown", "Grenade", "Equipment"]:
+            else:  # damage_action["isFriendlyFire"]:
+                player_statistics[attacker_key][
+                    "totalTeamDamageGiven"
+                ] += damage_action["hpDamageTaken"]
+            if damage_action["weaponClass"] not in ["Unknown", "Grenade", "Equipment"]:
                 player_statistics[attacker_key]["shotsHit"] += 1
-            if d["weaponClass"] == "Grenade":
-                player_statistics[attacker_key]["utilityDamage"] += d["hpDamageTaken"]
-        if d["victimSteamID"] and victim_key in round_statistics["active_players"]:
-            player_statistics[victim_key]["totalDamageTaken"] += d["hpDamageTaken"]
+            if damage_action["weaponClass"] == "Grenade":
+                player_statistics[attacker_key]["utilityDamage"] += damage_action[
+                    "hpDamageTaken"
+                ]
+        if (
+            damage_action["victimSteamID"]
+            and victim_key in round_statistics["active_players"]
+        ):
+            player_statistics[victim_key]["totalDamageTaken"] += damage_action[
+                "hpDamageTaken"
+            ]
 
 
 def _handle_weapon_fires(
-    r: GameRound,
+    game_round: GameRound,
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
-    for w in r["weaponFires"] or []:
-        fire_key = (
-            w["playerName"] if w["playerSteamID"] == 0 else str(w["playerSteamID"])
-        )
+    for weapon_fire in game_round["weaponFires"] or []:
+        fire_key = _get_actor_key("player", weapon_fire)
         if fire_key in round_statistics["active_players"]:
             player_statistics[fire_key]["totalShots"] += 1
 
 
 def _handle_flashes(
-    r: GameRound,
+    game_round: GameRound,
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
-    for f in r["flashes"] or []:
-        flasher_key = _get_actor_key("attacker", f)
-        if f["attackerSteamID"] and flasher_key in round_statistics["active_players"]:
-            if f["attackerSide"] == f["playerSide"]:
+    for flash_action in game_round["flashes"] or []:
+        flasher_key = _get_actor_key("attacker", flash_action)
+        if (
+            flash_action["attackerSteamID"]
+            and flasher_key in round_statistics["active_players"]
+        ):
+            if flash_action["attackerSide"] == flash_action["playerSide"]:
                 player_statistics[flasher_key]["teammatesFlashed"] += 1
             else:
                 player_statistics[flasher_key]["enemiesFlashed"] += 1
                 player_statistics[flasher_key]["blindTime"] += (
-                    0 if f["flashDuration"] is None else f["flashDuration"]
+                    0
+                    if flash_action["flashDuration"] is None
+                    else flash_action["flashDuration"]
                 )
 
 
 def _handle_grenades(
-    r: GameRound,
+    game_round: GameRound,
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
-    for g in r["grenades"] or []:
-        thrower_key = _get_actor_key("thrower", g)
-        if g["throwerSteamID"] and thrower_key in round_statistics["active_players"]:
-            if g["grenadeType"] == "Smoke Grenade":
+    for grenade_action in game_round["grenades"] or []:
+        thrower_key = _get_actor_key("thrower", grenade_action)
+        if (
+            grenade_action["throwerSteamID"]
+            and thrower_key in round_statistics["active_players"]
+        ):
+            if grenade_action["grenadeType"] == "Smoke Grenade":
                 player_statistics[thrower_key]["smokesThrown"] += 1
-            if g["grenadeType"] == "Flashbang":
+            if grenade_action["grenadeType"] == "Flashbang":
                 player_statistics[thrower_key]["flashesThrown"] += 1
-            if g["grenadeType"] == "HE Grenade":
+            if grenade_action["grenadeType"] == "HE Grenade":
                 player_statistics[thrower_key]["heThrown"] += 1
-            if g["grenadeType"] in ["Incendiary Grenade", "Molotov"]:
+            if grenade_action["grenadeType"] in ["Incendiary Grenade", "Molotov"]:
                 player_statistics[thrower_key]["fireThrown"] += 1
 
 
 def _handle_bomb(
-    r: GameRound,
+    game_round: GameRound,
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
-    for b in r["bombEvents"] or []:
+    for bomb_event in game_round["bombEvents"] or []:
         player_key = (
-            b["playerName"] if b["playerSteamID"] == 0 else str(b["playerSteamID"])
+            bomb_event["playerName"]
+            if bomb_event["playerSteamID"] == 0
+            else str(bomb_event["playerSteamID"])
         )
-        if b["playerSteamID"] and player_key in round_statistics["active_players"]:
-            if b["bombAction"] == "plant":
+        if (
+            bomb_event["playerSteamID"]
+            and player_key in round_statistics["active_players"]
+        ):
+            if bomb_event["bombAction"] == "plant":
                 player_statistics[player_key]["plants"] += 1
-            if b["bombAction"] == "defuse":
+            if bomb_event["bombAction"] == "defuse":
                 player_statistics[player_key]["defuses"] += 1
 
 
@@ -683,9 +618,9 @@ def _handle_multi_kills(
 def _increment_statistic(
     player_statistics: dict[str, PlayerStatistics], player: str, n_kills: int
 ) -> None:
-    if not _proper_kills(n_kills):  # 0, 1, 2, 3, 4, 5
+    if not proper_kills(n_kills):  # 0, 1, 2, 3, 4, 5
         return
-    kills_string = "kills" + _int_to_string_kills(n_kills)
+    kills_string = "kills" + int_to_string_kills(n_kills)
     player_statistics[player][kills_string] += 1
 
 
@@ -713,16 +648,16 @@ def player_stats(
     else:
         active_sides = {"CT", "T"}
 
-    for r in game_rounds:
+    for game_round in game_rounds:
         # Add players
-        round_statistics = initialize_round(r, player_statistics, active_sides)
+        round_statistics = initialize_round(game_round, player_statistics, active_sides)
 
-        _handle_kills(r, player_statistics, round_statistics)
-        _handle_damages(r, player_statistics, round_statistics)
-        _handle_weapon_fires(r, player_statistics, round_statistics)
-        _handle_flashes(r, player_statistics, round_statistics)
-        _handle_grenades(r, player_statistics, round_statistics)
-        _handle_bomb(r, player_statistics, round_statistics)
+        _handle_kills(game_round, player_statistics, round_statistics)
+        _handle_damages(game_round, player_statistics, round_statistics)
+        _handle_weapon_fires(game_round, player_statistics, round_statistics)
+        _handle_flashes(game_round, player_statistics, round_statistics)
+        _handle_grenades(game_round, player_statistics, round_statistics)
+        _handle_bomb(game_round, player_statistics, round_statistics)
         _handle_kast(player_statistics, round_statistics)
         _handle_multi_kills(player_statistics, round_statistics)
 

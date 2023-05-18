@@ -77,10 +77,11 @@ class TestNav:
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
         else:
-            raise AssertionError(
-                "This test needs to be executed in a directory "
-                "where it can savely create and delete a 'nav' subdir!"
+            msg = (
+                "This test needs to be executed in a directory where "
+                "it can savely create and delete a 'nav' subdir!"
             )
+            raise AssertionError(msg)
         self.map_name = "de_mock"
         self.file_name = f"{self.map_name}.txt"
         with open(os.path.join(self.dir, self.file_name), "w", encoding="utf8") as f:
@@ -117,7 +118,168 @@ class TestNav:
                 "3": {"euclidean": 0, "graph": 0, "geodesic": 0},
             },
         }
-        self.expected_place_matrix = {
+        self.expected_place_matrix_1 = {
+            "Place1": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                    "geodesic": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0.0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                    "geodesic": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0.0,
+                    },
+                },
+            },
+            "Place2": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0.0,
+                    },
+                    "graph": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": 0,
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": math.sqrt(5),
+                        "representative_point": math.sqrt(5),
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": float("inf"),
+                        "representative_point": float("inf"),
+                        "median_dist": 0,
+                    },
+                },
+            },
+            "Place3": {
+                "Place1": {
+                    "euclidean": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 1.0,
+                        "representative_point": 1.0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place2": {
+                    "euclidean": {
+                        "centroid": math.sqrt(5),
+                        "representative_point": math.sqrt(5),
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 2.0,
+                        "representative_point": 2.0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 3.0,
+                        "representative_point": 3.0,
+                        "median_dist": 0,
+                    },
+                },
+                "Place3": {
+                    "euclidean": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "graph": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                    "geodesic": {
+                        "centroid": 0,
+                        "representative_point": 0,
+                        "median_dist": 0,
+                    },
+                },
+            },
+        }
+        self.expected_place_matrix_2 = {
             "Place1": {
                 "Place1": {
                     "euclidean": {
@@ -286,11 +448,11 @@ class TestNav:
         self.expected_area_matrix = None
         self.expected_place_matrix = None
         for file in os.listdir(self.dir):
-            if (
-                file == self.file_name
-                or file == f"area_distance_matrix_{self.map_name}.json"
-                or file == f"place_distance_matrix_{self.map_name}.json"
-            ):
+            if file in [
+                self.file_name,
+                f"area_distance_matrix_{self.map_name}.json",
+                f"place_distance_matrix_{self.map_name}.json",
+            ]:
                 os.remove(os.path.join(self.dir, file))
         os.rmdir(self.dir)
 
@@ -337,7 +499,7 @@ class TestNav:
         assert isinstance(area_found, dict)
         assert area_found["areaId"] == 152
 
-    def test_area_distance(self):
+    def test_area_distance(self):  # sourcery skip: extract-duplicate-method
         """Tests area distance."""
         with pytest.raises(ValueError, match="Map not found."):
             area_distance(map_name="test", area_a=152, area_b=152, dist_type="graph")
@@ -568,6 +730,17 @@ class TestNav:
             result_matrix = generate_area_distance_matrix(map_name="de_mock", save=True)
 
         assert isinstance(result_matrix, dict)
+        for area1_id in result_matrix:
+            assert isinstance(area1_id, str)
+            assert str(int(area1_id)) == area1_id
+            for area2_id in result_matrix[area1_id]:
+                assert isinstance(area2_id, str)
+                assert str(int(area2_id)) == area2_id
+                for dist_type in result_matrix[area1_id][area2_id]:
+                    assert dist_type in {"geodesic", "euclidean", "graph"}
+                    assert isinstance(
+                        result_matrix[area1_id][area2_id][dist_type], float | int
+                    )
         assert os.path.exists(
             os.path.join(self.dir, "area_distance_matrix_de_mock.json")
         )
@@ -584,25 +757,45 @@ class TestNav:
         ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
             with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
                 result_matrix_1 = generate_place_distance_matrix(
-                    map_name="de_mock", save=True
+                    map_name=self.map_name, save=True
                 )
             with patch(
                 "awpy.analytics.nav.AREA_DIST_MATRIX",
                 {self.map_name: self.expected_area_matrix},
             ):
                 result_matrix_2 = generate_place_distance_matrix(
-                    map_name="de_mock", save=False
+                    map_name=self.map_name, save=False
                 )
 
         assert isinstance(result_matrix_1, dict)
+        for place1_name in result_matrix_1:
+            assert isinstance(place1_name, str)
+            for place2_name in result_matrix_1[place1_name]:
+                assert isinstance(place2_name, str)
+                for dist_type in result_matrix_1[place1_name][place2_name]:
+                    assert dist_type in {"geodesic", "euclidean", "graph"}
+                    for ref_point in result_matrix_1[place1_name][place2_name][
+                        dist_type
+                    ]:
+                        assert ref_point in {
+                            "centroid",
+                            "representative_point",
+                            "median_dist",
+                        }
+                        assert isinstance(
+                            result_matrix_1[place1_name][place2_name][dist_type][
+                                ref_point
+                            ],
+                            float | int,
+                        )
         assert os.path.exists(
             os.path.join(self.dir, f"place_distance_matrix_{self.map_name}.json")
         )
 
         assert isinstance(result_matrix_2, dict)
 
-        assert self.expected_place_matrix == result_matrix_1
-        assert self.expected_place_matrix == result_matrix_2
+        assert self.expected_place_matrix_1 == result_matrix_1
+        assert self.expected_place_matrix_2 == result_matrix_2
         with pytest.raises(ValueError, match="Map not found."):
             _ = generate_place_distance_matrix("de_does_not_exist")
 

@@ -103,5 +103,5 @@ class TestCleaning:
             {"Person": ["sid", "peter", "joao"], "Country": ["DE", "US", "BR"]}
         )
         entities = {"DE": "Germany", "US": "USA", "BR": "Brazil"}
-        with pytest.raises(ValueError, match="Column does not exist!"):
+        with pytest.raises(KeyError, match="Column does not exist!"):
             replace_entities(test_dataframe, "Countryyy", entities)

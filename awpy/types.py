@@ -1,32 +1,18 @@
 """This module contains the type definitions for the parsed json structure."""
 
-from typing import Literal, NotRequired, TypedDict
+from dataclasses import dataclass
+from typing import Literal, NotRequired, TypedDict, TypeGuard, overload
 
-ColsType = Literal[
-    "roundNum",
-    "startTick",
-    "freezeTimeEndTick",
-    "endTick",
-    "endOfficialTick",
-    "tScore",
-    "ctScore",
-    "endTScore",
-    "endCTScore",
-    "tTeam",
-    "ctTeam",
-    "winningSide",
-    "winningTeam",
-    "losingTeam",
-    "roundEndReason",
-    "ctFreezeTimeEndEqVal",
-    "ctRoundStartEqVal",
-    "ctRoundSpendMoney",
-    "ctBuyType",
-    "tFreezeTimeEndEqVal",
-    "tRoundStartEqVal",
-    "tRoundSpendMoney",
-    "tBuyType",
-]
+
+@dataclass
+class PlotPosition:
+    """Class to store information needed for plotting a position."""
+
+    position: tuple[float, float]
+    color: str
+    marker: str
+    alpha: float | None = None
+    size: float | None = None
 
 
 class MapData(TypedDict):
@@ -677,3 +663,177 @@ class RoundStatistics(TypedDict):
     is_clutching: set[str | None]
     active_players: set[str]
     players_killed: dict[Literal["CT", "T"], set[str]]
+
+
+@overload
+def other_side(side: Literal["CT"]) -> Literal["T"]:
+    ...
+
+
+@overload
+def other_side(side: Literal["T"]) -> Literal["CT"]:
+    ...
+
+
+def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
+    """Takes a csgo side as input and returns the opposite side in the same formatting.
+
+    Args:
+        side (string): A csgo team side (t or ct all upper or all lower case)
+
+    Returns:
+        A string of the opposite team side in the same formatting as the input
+
+    Raises:
+        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
+    """
+    if side == "CT":
+        return "T"
+    if side == "T":
+        return "CT"
+    msg = "side has to be either 'CT' or 'T'"
+    raise ValueError(msg)
+
+
+@overload
+def lower_side(side: Literal["CT"]) -> Literal["ct"]:
+    ...
+
+
+@overload
+def lower_side(side: Literal["T"]) -> Literal["t"]:
+    ...
+
+
+def lower_side(side: Literal["CT", "T"]) -> Literal["ct", "t"]:
+    """Takes a csgo side as input and returns lower cased version.
+
+    Args:
+        side (string): A csgo team side (T or CT )
+
+    Returns:
+        The lower cased string.
+
+    Raises:
+        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
+    """
+    if side == "CT":
+        return "ct"
+    if side == "T":
+        return "t"
+    msg = "side has to be either 'CT' or 'T'"
+    raise ValueError(msg)
+
+
+@overload
+def upper_side(side: Literal["ct"]) -> Literal["CT"]:
+    ...
+
+
+@overload
+def upper_side(side: Literal["t"]) -> Literal["T"]:
+    ...
+
+
+def upper_side(side: Literal["ct", "t"]) -> Literal["CT", "T"]:
+    """Takes a csgo side as input and returns upper cased version.
+
+    Args:
+        side (string): A csgo team side (t or ct )
+
+    Returns:
+        The upper cased string.
+
+    Raises:
+        ValueError: Raises a ValueError if side not neither 'ct' nor 't'
+    """
+    if side == "ct":
+        return "CT"
+    if side == "t":
+        return "T"
+    msg = "side has to be either 'ct' or 't'"
+    raise ValueError(msg)
+
+
+def is_valid_side(side: str) -> TypeGuard[Literal["CT", "T"]]:
+    """TypeGuard for string being CT or T.
+
+    Args:
+        side (str): String to type guard
+
+    Returns:
+        Whether it is CT or T
+    """
+    return side in {"CT", "T"}
+
+
+def proper_kills(kills: int, /) -> TypeGuard[Literal[0, 1, 2, 3, 4, 5]]:
+    """TypeGuard for int being in range(6).
+
+    Args:
+        kills (int): Int to type guard
+
+    Returns:
+        Whether the int is in range(6)
+    """
+    return kills in range(6)
+
+
+@overload
+def int_to_string_kills(kills: Literal[0]) -> Literal["0"]:
+    ...
+
+
+@overload
+def int_to_string_kills(kills: Literal[1]) -> Literal["1"]:
+    ...
+
+
+@overload
+def int_to_string_kills(kills: Literal[2]) -> Literal["2"]:
+    ...
+
+
+@overload
+def int_to_string_kills(kills: Literal[3]) -> Literal["3"]:
+    ...
+
+
+@overload
+def int_to_string_kills(kills: Literal[4]) -> Literal["4"]:
+    ...
+
+
+@overload
+def int_to_string_kills(kills: Literal[5]) -> Literal["5"]:
+    ...
+
+
+def int_to_string_kills(
+    kills: Literal[0, 1, 2, 3, 4, 5]
+) -> Literal["0", "1", "2", "3", "4", "5"]:
+    """_Typeguarded conversion from int in range(6) to str.
+
+    Args:
+        kills (Literal[0, 1, 2, 3, 4, 5]): Int to convert to string.
+
+    Raises:
+        ValueError: If the int is not in range(6)
+
+    Returns:
+        str(kills)
+    """
+    if kills == 0:
+        return "0"
+    if kills == 1:
+        return "1"
+    if kills == 2:  # noqa: Ruff(PLR2004)
+        return "2"
+    if kills == 3:  # noqa: Ruff(PLR2004)
+        return "3"
+    if kills == 4:  # noqa: Ruff(PLR2004)
+        return "4"
+    if kills == 5:  # noqa: Ruff(PLR2004)
+        return "5"
+    msg = "kills has to be in range(6)"
+    raise ValueError(msg)

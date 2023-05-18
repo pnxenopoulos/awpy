@@ -32,7 +32,8 @@ def _set_distance_metric(metric: str) -> DistMetricCallable:
         return textdistance.levenshtein.distance
     if metric == "jaro":
         return textdistance.jaro.distance
-    raise ValueError("Metric can only be lcss, hamming, levenshtein, jaro or difflib.")
+    msg = "Metric can only be lcss, hamming, levenshtein, jaro or difflib."
+    raise ValueError(msg)
 
 
 def associate_entities(
@@ -64,51 +65,53 @@ def associate_entities(
         entity_names = []
     entities: dict[str | None, Any] = {}
     if metric.lower() == "difflib":
-        for gn in game_names:
-            if gn is not None and gn is not np.nan:
+        for game_name in game_names:
+            if game_name is not None and game_name is not np.nan:
                 closest_name = difflib.get_close_matches(
-                    gn, entity_names, n=1, cutoff=0.0
+                    game_name, entity_names, n=1, cutoff=0.0
                 )
-                if len(closest_name) > 0:
-                    entities[gn] = closest_name[0]
-                else:
-                    entities[gn] = None
+                entities[game_name] = closest_name[0] if len(closest_name) > 0 else None
         entities[None] = None
         return entities
 
     dist_metric = _set_distance_metric(metric.lower())
-    for gn in game_names:
-        if gn is not None and gn is not np.nan and gn != "":
+    for game_name in game_names:
+        if (
+            game_name is not None
+            and game_name is not np.nan
+            and game_name != ""
+            and len(entity_names) > 0
+        ):
             name_distances = []
             names = []
-            if len(entity_names) > 0:
-                for p in entity_names:
-                    name_distances.append(dist_metric(gn.lower(), p.lower()))
-                    names.append(p)
-                entities[gn] = names[np.argmin(name_distances)]
-                entity_names.pop(np.argmin(name_distances))
-        if gn == "":
-            entities[gn] = None
+            for player in entity_names:
+                name_distances.append(dist_metric(game_name.lower(), player.lower()))
+                names.append(player)
+            entities[game_name] = names[np.argmin(name_distances)]
+            entity_names.pop(np.argmin(name_distances))
+        if game_name == "":
+            entities[game_name] = None
     entities[None] = None
     return entities
 
 
 def replace_entities(
-    df: pd.DataFrame, col_name: str, entity_dict: dict
+    dataframe: pd.DataFrame, col_name: str, entity_dict: dict
 ) -> pd.DataFrame:
     """A function to replace values in a Pandas df column given an entity dict.
 
     entitiy_dict as created in associate_entities().
 
     Args:
-        df (DataFrame)     : A Pandas DataFrame
+        dataframe (DataFrame) : A Pandas DataFrame
         col_name (string)  : A column in the Pandas DataFrame
         entity_dict (dict) : A dictionary as created in associate_entities()
 
     Returns:
         A dataframe with replaced names.
     """
-    if col_name not in df.columns:
-        raise ValueError("Column does not exist!")
-    df[col_name] = df[col_name].replace(entity_dict)
-    return df
+    if col_name not in dataframe.columns:
+        msg = "Column does not exist!"
+        raise KeyError(msg)
+    dataframe[col_name] = dataframe[col_name].replace(entity_dict)
+    return dataframe
