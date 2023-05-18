@@ -1,9 +1,17 @@
+"""Functions for calculating map control values and metrics.
+
+    Example notebook:
+
+    https://github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
+"""
+
 from collections import defaultdict
+
 import numpy as np
 
+from awpy.analytics.nav import area_distance, calculate_tile_area, find_closest_area
 from awpy.data import NAV, NAV_GRAPHS
-from awpy.analytics.nav import area_distance, find_closest_area, calculate_tile_area
-from awpy.types import GameRound, GameFrame, TeamFrameInfo, FrameMapControl
+from awpy.types import FrameMapControl, GameFrame, GameRound, TeamFrameInfo
 
 
 def approx_neighbors(
@@ -11,8 +19,7 @@ def approx_neighbors(
     source_tile_id: int,
     n: int = 5,
 ) -> list[tuple[float, int]]:
-    """Approximates neighbors for tiles by finding n closest. Helpful for
-       tiles who are 'isolated' (they have no navigable tiles as a neighbor).
+    """Approximates neighbors for isolated tiles by finding n closest tiles.
 
     Args:
         map_name (string)   : Map for source_tile_id
@@ -28,7 +35,6 @@ def approx_neighbors(
                     If source_tile_id is not in awpy.data.NAV[map_name]
                     If the length of point is not 3
     """
-
     if map_name not in NAV:
         raise ValueError("Map not found.")
     if source_tile_id not in NAV[map_name].keys():
@@ -54,9 +60,8 @@ def bfs_helper(
     map_name: str,
     current_tiles: list[int],
     neighbor_info: dict[int, list[int]],
-    estimate_neighbors: bool,
 ) -> dict:
-    """Helper function to run bfs from each tile in current_tiles
+    """Helper function to run bfs from each tile in current_tiles.
 
     Args:
         map_name (string)        : Map for current_tiles
@@ -64,40 +69,38 @@ def bfs_helper(
                                    for bfs iteration(s)
         neighbor_info (dict)     : Dictionary mapping tile to its
                                    navigable neighbors
-        estimate_neighbors (bool): Boolean whetheer neighbors should
-                                   be estimated for isolated tiles
-                                   (tiles with neighbors)
+
     Returns:
         Dictionary mapping tile id -> list of map control values
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
     """
-
     if map_name not in NAV:
         raise ValueError("Map not found.")
 
     current_dict = defaultdict(list)
-    for cur_id in current_tiles:
-        cur_id = int(cur_id)
+    for start_id in current_tiles:
         start_val = 10
         step_size = 1
         tiles_seen = set()
         stack: list[tuple[int, int]] = []
-        starting_node = (cur_id, start_val)
+        starting_node = (start_id, start_val)
         stack.append(starting_node)
         while len(stack) > 0 and stack[0][1] > 0:
-            cur_id, curVal = stack.pop(0)
+            cur_id, cur_val = stack.pop(0)
             if cur_id not in tiles_seen:
                 tiles_seen.add(cur_id)
                 cur_tile_values = current_dict[cur_id]
-                cur_tile_values.append(curVal / start_val)
+                cur_tile_values.append(cur_val / start_val)
                 current_dict[cur_id] = cur_tile_values
                 neighbors = neighbor_info[cur_id]
-                if estimate_neighbors and len(neighbors) == 0:
-                    neighbors = [tile_id for _, tile_id in approx_neighbors(map_name, cur_id)]
+                if len(neighbors) == 0:
+                    neighbors = [
+                        tile_id for _, tile_id in approx_neighbors(map_name, cur_id)
+                    ]
                 for neighbor in neighbors:
-                    stack.append((neighbor, curVal - step_size))
+                    stack.append((neighbor, cur_val - step_size))
 
     return current_dict
 
@@ -107,10 +110,8 @@ def frame_tile_map_control_values(
     ct_tiles_wanted: list[int],
     t_tiles_wanted: list[int],
     neighbor_info: dict[int, list[int]],
-    estimate_neighbors: bool = True,
 ) -> tuple[dict[int, list[float]], dict[int, list[float]]]:
-    """Calculate a frame's map control values for each side given
-       a list of tiles habited by each side
+    """Calculate a frame's map control values for each side.
 
     Args:
         map_name (string)        : Map for other arguments
@@ -120,10 +121,7 @@ def frame_tile_map_control_values(
                                    are located
         neighbor_info (dict)     : Dictionary mapping tile to its
                                    navigable neighbors
-        estimate_neighbors (bool): Boolean whetheer neighbors should
-                                   be estimated for isolated tiles
-                                   (tiles with neighbors).
-                                   Set to true as default.
+
     Returns:
         Tuple containing map control dictionary for each side
             Tuple[0] -> CT Dict
@@ -131,15 +129,14 @@ def frame_tile_map_control_values(
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
     """
-
     ct_tiles = [int(i) for i in list(ct_tiles_wanted)]
     t_tiles = [int(i) for i in list(t_tiles_wanted)]
 
     # Run BFS For CT Tiles
-    ct_dict = bfs_helper(map_name, ct_tiles, neighbor_info, estimate_neighbors)
+    ct_dict = bfs_helper(map_name, ct_tiles, neighbor_info)
 
     # Run BFS For T Tiles
-    t_dict = bfs_helper(map_name, t_tiles, neighbor_info, estimate_neighbors)
+    t_dict = bfs_helper(map_name, t_tiles, neighbor_info)
 
     return (ct_dict, t_dict)
 
@@ -147,16 +144,13 @@ def frame_tile_map_control_values(
 def graph_to_tile_neighbors(
     neighbor_pairs: list[tuple[int, int]],
 ) -> dict[int, set[int]]:
-    """Given a list of neighboring tiles, return a dictionary
-       mapping a tile id to a set containing its neighboring tiles'
-       ids
+    """Convert list of neighboring tiles to lookup table.
 
     Args:
         neighbor_pairs (list[...])  : List of tuples (pairs of
                                        neighboring tiles)
     Returns: Dictionary that maps a tile to a set of neighboring tiles
     """
-
     tile_to_neighbors = defaultdict(set)
 
     for tile_1, tile_2 in neighbor_pairs:
@@ -170,9 +164,8 @@ def graph_to_tile_neighbors(
 def _calc_map_control_helper(
     map_name: str,
     current_player_data: dict,
-    approx_neighbors: bool = True,
 ) -> FrameMapControl:
-    """Helper function to calculate tile map control values for each team
+    """Helper function to calculate tile map control values for each team.
 
     Args:
         map_name (string)            : Map used for find_closest_area and
@@ -180,10 +173,6 @@ def _calc_map_control_helper(
         current_player_data (dict)   : Dictionary containing alive player
                                        locations. Expects extract_player_positions
                                        output format
-        estimate_neighbors (boolean) : Boolean whether neighbors should
-                                       be estimated for isolated tiles
-                                       (tiles with neighbors).
-                                       Set to true as default.
 
     Returns: Dictionary for each team's map control values
 
@@ -192,7 +181,6 @@ def _calc_map_control_helper(
                     If current_player_data not of expected
                     awpy frame format
     """
-
     if map_name not in NAV:
         raise ValueError("Map not found.")
     if "t" not in current_player_data or "ct" not in current_player_data:
@@ -201,15 +189,13 @@ def _calc_map_control_helper(
     t_locations = current_player_data["t"]["player-locations"]
     ct_locations = current_player_data["ct"]["player-locations"]
 
-    neighbors_dict = graph_to_tile_neighbors(
-        NAV_GRAPHS[map_name].edges
-    ) 
+    neighbors_dict = graph_to_tile_neighbors(NAV_GRAPHS[map_name].edges)
 
     t_tiles = [find_closest_area(map_name, i)["areaId"] for i in t_locations]
     ct_tiles = [find_closest_area(map_name, i)["areaId"] for i in ct_locations]
 
     ct_values, t_values = frame_tile_map_control_values(
-        map_name, ct_tiles, t_tiles, neighbors_dict, approx_neighbors
+        map_name, ct_tiles, t_tiles, neighbors_dict
     )
 
     frame_map_control: FrameMapControl = {
@@ -223,19 +209,14 @@ def _calc_map_control_helper(
 def calc_map_control(
     map_name: str,
     frame: GameFrame,
-    approx_neighbors: bool = True,
 ) -> FrameMapControl:
-    """Calculate tile map control values for each team given frame object
+    """Calculate tile map control values for each team given frame object.
 
     Args:
         map_name (string)            : Map used for find_closest_area and
                                        and relevant tile neighbor dictionary
         frame (GameFrame)            : Awpy frame object for map control
                                        calculations
-        estimate_neighbors (boolean) : Boolean whetheer neighbors should
-                                       be estimated for isolated tiles
-                                       (tiles with neighbors).
-                                       Set to true as default.
 
     Returns: Dictionary for each team's map control values
 
@@ -244,7 +225,6 @@ def calc_map_control(
                     If current_player_data not of expected
                     awpy frame format
     """
-
     if map_name not in NAV:
         raise ValueError("Map not found.")
 
@@ -253,15 +233,13 @@ def calc_map_control(
     return _calc_map_control_helper(
         map_name=map_name,
         current_player_data=player_positions,
-        approx_neighbors=approx_neighbors,
     )
 
 
 def _extract_player_positions_helper(
     side_data: TeamFrameInfo,
 ) -> list[list[float]]:
-    """Helper function to parse player locations for
-       alive players in given side_data
+    """Helper function to parse player locations in given side_data.
 
     Args:
         side_data (TeamFrameInfo)       : Dict holding data for sides' players.
@@ -279,11 +257,14 @@ def _extract_player_positions_helper(
         raise ValueError(
             "side_data variable not of expected awpy frame['t'] or frame['ct'] format."
         )
+    if len(side_data["players"]) == 0:
+        raise ValueError("players array is length 0")
 
     coords = ["x", "y", "z"]
     alive_players: list[list[float]] = []
 
     for player in side_data["players"]:
+        # Players that are not alive are ignored
         if player["isAlive"]:
             alive_players.append([player[dim] for dim in coords])
     return alive_players
@@ -292,12 +273,12 @@ def _extract_player_positions_helper(
 def extract_player_positions(
     frame: GameFrame,
 ) -> dict[str, dict[str, list[list[float]]]]:
-    """Parse frame data for alive player locations for
-       both sides and return data in a dictionary
+    """Parse frame data for alive player locations for both sides.
 
     Args:
         frame (GameFrame)  : Dictionary in the form of an awpy frame
                              containing relevant data for both sides
+
     Returns: Dictionary containing player locations for both sides
              for the current frame
 
@@ -306,23 +287,29 @@ def extract_player_positions(
                     awpy frame format
                     If no players are alive for both sides
     """
-
     if "t" not in frame or "ct" not in frame:
         raise ValueError("frame variable not of expected awpy frame format.")
 
     return_dict: dict[str, dict[str, list[list[float]]]] = {}
-    return_dict["t"] = {"player-locations": _extract_player_positions_helper(frame["t"])}
-    return_dict["ct"] = {"player-locations": _extract_player_positions_helper(frame["ct"])}
-    if len(return_dict["t"]['player-locations']) == 0 and len(return_dict["ct"]['player-locations']) == 0:
+    return_dict["t"] = {
+        "player-locations": _extract_player_positions_helper(frame["t"])
+    }
+    return_dict["ct"] = {
+        "player-locations": _extract_player_positions_helper(frame["ct"])
+    }
+    if (
+        len(return_dict["t"]["player-locations"]) == 0
+        and len(return_dict["ct"]["player-locations"]) == 0
+    ):
         raise ValueError("No alive players on either team for given frame")
     return return_dict
+
 
 def _map_control_metric_helper(
     map_name: str,
     mc_values: FrameMapControl,
 ) -> float:
-    """Return map control metric given map control dictionary
-       containing values for both teams (output of calc_map_control)
+    """Return map control metric given FrameMapControl object.
 
     Args:
         map_name (string)               : Map used in calculate_tile_area
@@ -359,7 +346,7 @@ def frame_map_control_metric(
     map_name: str,
     frame: GameFrame,
 ) -> float:
-    """Return map control metric for given awpy frame
+    """Return map control metric for given awpy frame.
 
     Args:
         map_name (string)       : Map used position_transform call
@@ -374,7 +361,7 @@ def frame_map_control_metric(
     if map_name not in NAV:
         raise ValueError("Map not found.")
 
-    map_control_values = calc_map_control(map_name, frame, True)
+    map_control_values = calc_map_control(map_name, frame)
     return _map_control_metric_helper(map_name, map_control_values)
 
 
@@ -382,7 +369,7 @@ def calculate_round_map_control_metrics(
     map_name: str,
     round_data: GameRound,
 ) -> list[float]:
-    """Return list of map control metric for given awpy round
+    """Return list of map control metric for given awpy round.
 
     Args:
         map_name (string)       : Map used position_transform call

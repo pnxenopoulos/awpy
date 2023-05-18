@@ -1601,12 +1601,13 @@ def token_distance(
         reference_point,
     )
 
+
 def calculate_tile_area(
     map_name: str,
     tile_id: int,
 ) -> float:
-    """Calculates area of a given tile in a given map
-    
+    """Calculates area of a given tile in a given map.
+
     Args:
         map_name (string): Map for tile
         tile_id (string): Id for tile
@@ -1624,12 +1625,7 @@ def calculate_tile_area(
 
     tile_info = NAV[map_name][tile_id]
 
-    tile_width = (
-        tile_info["northWestX"] - tile_info["southEastX"]
-    )
-    tile_height = (
-        tile_info["northWestY"] - tile_info["southEastY"]
-    )
+    tile_width = tile_info["northWestX"] - tile_info["southEastX"]
+    tile_height = tile_info["northWestY"] - tile_info["southEastY"]
 
-    tile_area = tile_width * tile_height
-    return tile_area
+    return tile_width * tile_height
