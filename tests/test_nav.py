@@ -448,11 +448,11 @@ class TestNav:
         self.expected_area_matrix = None
         self.expected_place_matrix = None
         for file in os.listdir(self.dir):
-            if (
-                file == self.file_name
-                or file == f"area_distance_matrix_{self.map_name}.json"
-                or file == f"place_distance_matrix_{self.map_name}.json"
-            ):
+            if file in [
+                self.file_name,
+                f"area_distance_matrix_{self.map_name}.json",
+                f"place_distance_matrix_{self.map_name}.json",
+            ]:
                 os.remove(os.path.join(self.dir, file))
         os.rmdir(self.dir)
 
@@ -499,7 +499,7 @@ class TestNav:
         assert isinstance(area_found, dict)
         assert area_found["areaId"] == 152
 
-    def test_area_distance(self):
+    def test_area_distance(self):  # sourcery skip: extract-duplicate-method
         """Tests area distance."""
         with pytest.raises(ValueError, match="Map not found."):
             area_distance(map_name="test", area_a=152, area_b=152, dist_type="graph")

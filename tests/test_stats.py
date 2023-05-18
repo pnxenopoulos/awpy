@@ -5,10 +5,9 @@ import os
 from math import isclose
 
 import pandas as pd
-import pytest
 import requests
 
-from awpy.analytics.stats import lower_side, other_side, player_stats
+from awpy.analytics.stats import player_stats
 from awpy.parser import DemoParser
 
 
@@ -55,30 +54,11 @@ class TestStats:
         self.parser = None
         self.data = None
         files_in_directory = os.listdir()
-        filtered_files = [
+        if filtered_files := [
             file for file in files_in_directory if file.endswith((".dem", ".json"))
-        ]
-        if len(filtered_files) > 0:
+        ]:
             for f in filtered_files:
                 os.remove(f)
-
-    def test_other_side(self):
-        """Tests other side."""
-        assert other_side("T") == "CT"
-        assert other_side("CT") == "T"
-        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
-            other_side("t")
-        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
-            other_side("ct")
-        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
-            other_side("apple")
-
-    def test_lower_side(self):
-        """Tests other side."""
-        assert lower_side("T") == "t"
-        assert lower_side("CT") == "ct"
-        with pytest.raises(ValueError, match="side has to be either 'CT' or 'T'"):
-            lower_side("apple")
 
     def test_player_stats_both_json(self):
         """Tests json generation of player stats for both sides."""

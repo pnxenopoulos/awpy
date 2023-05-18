@@ -19,7 +19,7 @@ Example::
 
 https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb
 """
-from typing import Any, Literal, TypeGuard, cast, overload
+from typing import Any, Literal, cast, overload
 
 import pandas as pd
 
@@ -35,8 +35,12 @@ from awpy.types import (
     PlayerStatistics,
     RoundStatistics,
     WeaponFireAction,
+    int_to_string_kills,
+    is_valid_side,
+    lower_side,
+    other_side,
+    proper_kills,
 )
-
 
 # accuracy
 # kast
@@ -44,64 +48,6 @@ from awpy.types import (
 # kill stats
 # flash stats
 # econ stats
-@overload
-def other_side(side: Literal["CT"]) -> Literal["T"]:
-    ...
-
-
-@overload
-def other_side(side: Literal["T"]) -> Literal["CT"]:
-    ...
-
-
-def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
-    """Takes a csgo side as input and returns the opposite side in the same formatting.
-
-    Args:
-        side (string): A csgo team side (t or ct all upper or all lower case)
-
-    Returns:
-        A string of the opposite team side in the same formatting as the input
-
-    Raises:
-        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
-    """
-    if side == "CT":
-        return "T"
-    if side == "T":
-        return "CT"
-    msg = "side has to be either 'CT' or 'T'"
-    raise ValueError(msg)
-
-
-@overload
-def lower_side(side: Literal["CT"]) -> Literal["ct"]:
-    ...
-
-
-@overload
-def lower_side(side: Literal["T"]) -> Literal["t"]:
-    ...
-
-
-def lower_side(side: Literal["CT", "T"]) -> Literal["ct", "t"]:
-    """Takes a csgo side as input and returns lower cased version.
-
-    Args:
-        side (string): A csgo team side (T or CT )
-
-    Returns:
-        The lower cased string.
-
-    Raises:
-        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
-    """
-    if side == "CT":
-        return "ct"
-    if side == "T":
-        return "t"
-    msg = "side has to be either 'CT' or 'T'"
-    raise ValueError(msg)
 
 
 def initialize_round(
@@ -337,10 +283,6 @@ def _handle_pure_killer_stats(
             player_statistics[killer_key]["hs"] += 1
 
 
-def _is_valid_side(side: str) -> TypeGuard[Literal["CT", "T"]]:
-    return side in {"CT", "T"}
-
-
 def _is_clutch(
     victim_side: Literal["CT", "T"],
     game_round: GameRound,
@@ -373,59 +315,6 @@ def _find_clutcher(
     return ""
 
 
-def _proper_kills(kills: int) -> TypeGuard[Literal[0, 1, 2, 3, 4, 5]]:
-    return kills in range(6)
-
-
-@overload
-def _int_to_string_kills(kills: Literal[0]) -> Literal["0"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[1]) -> Literal["1"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[2]) -> Literal["2"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[3]) -> Literal["3"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[4]) -> Literal["4"]:
-    ...
-
-
-@overload
-def _int_to_string_kills(kills: Literal[5]) -> Literal["5"]:
-    ...
-
-
-def _int_to_string_kills(
-    kills: Literal[0, 1, 2, 3, 4, 5]
-) -> Literal["0", "1", "2", "3", "4", "5"]:
-    if kills == 0:
-        return "0"
-    if kills == 1:
-        return "1"
-    if kills == 2:  # noqa: Ruff(PLR2004)
-        return "2"
-    if kills == 3:  # noqa: Ruff(PLR2004)
-        return "3"
-    if kills == 4:  # noqa: Ruff(PLR2004)
-        return "4"
-    if kills == 5:  # noqa: Ruff(PLR2004)
-        return "5"
-    msg = "kills has to be in range(1,6)"
-    raise ValueError(msg)
-
-
 def _handle_clutching(
     kill_action: KillAction,
     game_round: GameRound,
@@ -434,7 +323,7 @@ def _handle_clutching(
 ) -> None:
     # Clutch logic
     victim_side = kill_action["victimSide"]
-    if victim_side is None or not _is_valid_side(victim_side):
+    if victim_side is None or not is_valid_side(victim_side):
         return
     if not _is_clutch(victim_side, game_round, round_statistics):
         return
@@ -456,14 +345,14 @@ def _handle_clutching(
     )
 
     # Typeguard and not 1 v 0
-    if not _proper_kills(enemies_alive) or enemies_alive == 0:
+    if not proper_kills(enemies_alive) or enemies_alive == 0:
         return
     player_statistics[clutcher_key][
-        "attempts1v" + _int_to_string_kills(enemies_alive)
+        "attempts1v" + int_to_string_kills(enemies_alive)
     ] += 1
     if game_round["winningSide"] == kill_action["victimSide"]:
         player_statistics[clutcher_key][
-            "success1v" + _int_to_string_kills(enemies_alive)
+            "success1v" + int_to_string_kills(enemies_alive)
         ] += 1
 
 
@@ -568,7 +457,7 @@ def _handle_kills(
         assister_key = _get_actor_key("assister", k)
         flashthrower_key = _get_actor_key("flashThrower", k)
         victim_side = k["victimSide"]
-        if victim_side is None or not _is_valid_side(victim_side):
+        if victim_side is None or not is_valid_side(victim_side):
             return
         if victim_side in round_statistics["players_killed"]:
             round_statistics["players_killed"][victim_side].add(victim_key)
@@ -729,9 +618,9 @@ def _handle_multi_kills(
 def _increment_statistic(
     player_statistics: dict[str, PlayerStatistics], player: str, n_kills: int
 ) -> None:
-    if not _proper_kills(n_kills):  # 0, 1, 2, 3, 4, 5
+    if not proper_kills(n_kills):  # 0, 1, 2, 3, 4, 5
         return
-    kills_string = "kills" + _int_to_string_kills(n_kills)
+    kills_string = "kills" + int_to_string_kills(n_kills)
     player_statistics[player][kills_string] += 1
 
 

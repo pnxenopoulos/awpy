@@ -30,24 +30,23 @@ class TestDemoParser:
         """Set parser to none, deletes all demofiles and JSON."""
         self.parser = None
         files_in_directory = os.listdir()
-        filtered_files = [
+        if filtered_files := [
             file for file in files_in_directory if file.endswith((".dem", ".json"))
-        ]
-        if len(filtered_files) > 0:
+        ]:
             for f in filtered_files:
                 os.remove(f)
 
     @staticmethod
     def _get_demofile(demo_link: str, demo_name: str) -> None:
-        print("Requesting " + demo_link)
+        print(f"Requesting {demo_link}")
         r = requests.get(demo_link, timeout=100)
-        with open(demo_name + ".dem", "wb") as demo_file:
+        with open(f"{demo_name}.dem", "wb") as demo_file:
             demo_file.write(r.content)
 
     @staticmethod
     def _delete_demofile(demo_name: str) -> None:
-        print("Removing " + demo_name)
-        os.remove(demo_name + ".dem")
+        print(f"Removing {demo_name}")
+        os.remove(f"{demo_name}.dem")
 
     @staticmethod
     def _check_round_scores(rounds: list[GameRound]) -> None:
@@ -60,7 +59,7 @@ class TestDemoParser:
                 if winning_side == "ct":
                     assert r["ctScore"] > rounds[i - 1]["ctScore"]
                     assert r["tScore"] == rounds[i - 1]["tScore"]
-                if winning_side == "t":
+                elif winning_side == "t":
                     assert r["ctScore"] == rounds[i - 1]["ctScore"]
                     assert r["tScore"] > rounds[i - 1]["tScore"]
 
@@ -226,7 +225,7 @@ class TestDemoParser:
         assert len(self.faceit_ot_data["gameRounds"]) > 30
         assert self.faceit_ot_data["tickRate"] == 128
 
-    def test_default_parse(self):
+    def test_default_parse(self):  # sourcery skip: extract-method
         """Tests default parse."""
         self.default_data = self.parser.parse()
         assert self.default_data["mapName"] == "de_cache"
@@ -347,7 +346,7 @@ class TestDemoParser:
         self.bombsite_data = self.bombsite_parser.parse()
         for r in self.bombsite_data["gameRounds"]:
             for e in r["bombEvents"]:
-                assert (e["bombSite"] == "A") or (e["bombSite"] == "B")
+                assert e["bombSite"] in ["A", "B"]
 
     def test_phase_lists(self):
         """Tests that phase lists are lists."""
