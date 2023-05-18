@@ -44,6 +44,16 @@ from awpy.types import (
 # kill stats
 # flash stats
 # econ stats
+@overload
+def other_side(side: Literal["CT"]) -> Literal["T"]:
+    ...
+
+
+@overload
+def other_side(side: Literal["T"]) -> Literal["CT"]:
+    ...
+
+
 def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
     """Takes a csgo side as input and returns the opposite side in the same formatting.
 

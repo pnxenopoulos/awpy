@@ -134,15 +134,7 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
         "distance": float("inf"),
     }
     for area in NAV[map_name]:
-        avg_x = (
-            NAV[map_name][area]["northWestX"] + NAV[map_name][area]["southEastX"]
-        ) / 2
-        avg_y = (
-            NAV[map_name][area]["northWestY"] + NAV[map_name][area]["southEastY"]
-        ) / 2
-        avg_z = (
-            NAV[map_name][area]["northWestZ"] + NAV[map_name][area]["southEastZ"]
-        ) / 2
+        avg_x, avg_y, avg_z = _get_area_center(map_name, area)
         dist = np.sqrt(
             (point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2 + (point[2] - avg_z) ** 2
         )
