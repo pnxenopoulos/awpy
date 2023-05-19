@@ -104,7 +104,7 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
 
 
 def find_closest_area(
-    map_name: str, point: list[float], flat: bool = False
+    map_name: str, point: list[float], *, flat: bool = False
 ) -> ClosestArea:
     """Finds the closest area in the nav mesh.
 
@@ -125,15 +125,13 @@ def find_closest_area(
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-    # Three dimensional space. Unlikely to change anytime soon
-    if len(point) != 3:  # noqa: PLR2004
+    if flat:
+        if len(point) != 2:  # noqa: PLR2004
+            msg = "Point must be a list [X,Y] when flat is True"
+            raise ValueError(msg)
+    elif len(point) != 3:  # noqa: PLR2004
         msg = "Point must be a list [X,Y,Z]"
         raise ValueError(msg)
-    if flat:
-        if len(point) != 2:
-            raise ValueError("Point must be a list [X,Y] when flat is True")
-    elif len(point) != 3:
-        raise ValueError("Point must be a list [X,Y,Z]")
     closest_area: ClosestArea = {
         "mapName": map_name,
         # I do not think there is anyway this can actually be None
@@ -143,7 +141,6 @@ def find_closest_area(
     }
     for area in NAV[map_name]:
         avg_x, avg_y, avg_z = _get_area_center(map_name, area)
-
         if flat:
             dist = np.sqrt((point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2)
         else:

@@ -486,7 +486,9 @@ class TestNav:
             find_closest_area(map_name="test", point=[0, 0, 0])
         with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
             find_closest_area(map_name="de_dust2", point=[0, 0])
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match=re.escape("Point must be a list [X,Y] when flat is True")
+        ):
             find_closest_area(map_name="de_dust2", point=[0, 0, 0], flat=True)
         example_area = NAV["de_dust2"][152]
         avg_x = (example_area["northWestX"] + example_area["southEastX"]) / 2
@@ -502,7 +504,6 @@ class TestNav:
         area_found_flat = find_closest_area(
             map_name="de_dust2", point=[avg_x, avg_y], flat=True
         )
-        # find_closest_area(map_name="de_dust2", point=[avg_x, avg_y, 100])
         # gives areaId of 8303. So if you are picking from a flat map
         # any constant z value could lead to wrong results somewhere
         # even on a 1 layer map if it still has elevation changes
