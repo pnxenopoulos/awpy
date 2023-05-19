@@ -908,10 +908,9 @@ func removeExpiredSmoke(s []Smoke, i int) []Smoke {
 
 func appendFrameToRound(currentRound *GameRound, currentFrame *GameFrame, globalFrameIndex *int64) {
 	currentFrame.FrameID = int64(len(currentRound.Frames))
-	currentFrame.GlobalFrameID = int64(*globalFrameIndex)
-	*globalFrameIndex += 1
+	currentFrame.GlobalFrameID = *globalFrameIndex
+	*globalFrameIndex++
 	currentRound.Frames = append(currentRound.Frames, *currentFrame)
-
 }
 func initializeRound(currentRound *GameRound) {
 	currentRound.Bomb = []BombAction{}
