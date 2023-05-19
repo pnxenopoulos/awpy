@@ -26,17 +26,20 @@ import json
 import logging
 import os
 import subprocess
-from typing import Any, Literal, Unpack, cast, get_args, overload
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Literal, Unpack, get_args, overload
 
 import pandas as pd
 
 from awpy.types import (
     BuyStyle,
-    ColsType,
     FullParserArgs,
     Game,
+    GameActionKey,
+    GameRound,
     ParserArgs,
     ParseRate,
+    PlayerInfo,
     RoundReturnType,
 )
 from awpy.utils import check_go_version
@@ -328,10 +331,10 @@ class DemoParser:
 
     def _check_trade_time(self) -> None:
         """Check that trade time is positive and not too large."""
-        # Handle trade time
-        trade_time_default = 5
         trade_time_upper_bound = 7
         if self.trade_time <= 0:
+            # Handle trade time
+            trade_time_default = 5
             self.logger.warning(
                 "Trade time can't be negative, setting to default value of %d seconds.",
                 trade_time_default,
@@ -477,14 +480,16 @@ class DemoParser:
         if self.json_indentation:
             parser_cmd.append("--jsonindentation")
         if self.parse_chat:
-            self.parser_cmd.append("--parsechat")
-        self.logger.debug(self.parser_cmd)
-        proc = subprocess.Popen(
-            self.parser_cmd,  # noqa: S603
+            parser_cmd.append("--parsechat")
+        self.logger.debug(parser_cmd)
+        with subprocess.Popen(
+            parser_cmd,  # noqa: S603
             stdout=subprocess.PIPE,
             cwd=path,
-        )
-        stdout = proc.stdout.read().splitlines() if proc.stdout is not None else None
+        ) as proc:
+            stdout = (
+                proc.stdout.read().splitlines() if proc.stdout is not None else None
+            )
         if os.path.isfile(self.output_file):
             self.logger.info("Wrote demo parse output to %s", self.output_file)
             self.parse_error = False
@@ -887,8 +892,10 @@ class DemoParser:
 
     def write_json(self) -> None:
         """Rewrite the JSON file."""
-        with open(self.output_file, "w", encoding="utf8") as fp:
-            json.dump(self.json, fp, indent=(1 if self.json_indentation else None))
+        with open(self.output_file, "w", encoding="utf8") as file_path:
+            json.dump(
+                self.json, file_path, indent=(1 if self.json_indentation else None)
+            )
 
     def renumber_rounds(self) -> None:
         """Renumbers the rounds.
