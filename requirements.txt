@@ -1,4 +1,4 @@
-imageio==2.9
+imageio==2.28
 matplotlib==3.7
 networkx==2.6
 numpy>=1.20,<=1.25
