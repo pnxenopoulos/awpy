@@ -1,5 +1,5 @@
 imageio==2.9
-matplotlib==3.1
+matplotlib==3.7
 networkx==2.6
 numpy>=1.20,<=1.25
 pandas>=2.0.1, <=2.1
