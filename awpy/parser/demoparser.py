@@ -212,7 +212,7 @@ class DemoParser:
         """buy_style getter.
 
         Returns:
-           BuyStyle: Current buy_style.
+            BuyStyle: Current buy_style.
         """
         return self.parser_args["buy_style"]
 
