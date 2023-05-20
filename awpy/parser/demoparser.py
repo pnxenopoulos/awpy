@@ -176,7 +176,7 @@ class DemoParser:
             "buy_style": "hltv",
         }
 
-        self.parser_args.update(parser_args)
+        self._update_parser_args(parser_args)
 
         self._check_trade_time()
         self._check_parse_rate()
@@ -189,6 +189,10 @@ class DemoParser:
 
         # Initialize json attribute as None
         self.json: Game | None = None
+
+    def _update_parser_args(self, parser_args: ParserArgs) -> None:
+        for key in parser_args:
+            self.parser_args[key] = parser_args[key]
 
     def log_settings(self) -> None:
         """Log the settings produced in the cosntructor."""
