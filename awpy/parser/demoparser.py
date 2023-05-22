@@ -533,7 +533,9 @@ class DemoParser:
         return demo_data
 
     @overload
-    def parse(self, *, return_type: Literal["json"], clean: bool = ...) -> Game:
+    def parse(
+        self, *, return_type: Literal["json"] = "json", clean: bool = ...
+    ) -> Game:
         ...
 
     @overload
@@ -796,7 +798,7 @@ class DemoParser:
         remove_excess_kills: bool = ...,
         remove_bad_endings: bool = ...,
         remove_bad_scoring: bool = ...,
-        return_type: Literal["json"] = ...,
+        return_type: Literal["json"] = "json",
         save_to_json: bool = ...,
     ) -> Game:
         ...
@@ -908,7 +910,9 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute
                 has no "gameRounds" key.
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json:
+            if self.json["gameRounds"] is None:
+                return
             for i, _r in enumerate(self.json["gameRounds"]):
                 self.json["gameRounds"][i]["roundNum"] = i + 1
         else:
@@ -926,7 +930,9 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute
                 has no "gameRounds" key.
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json:
+            if self.json["gameRounds"] is None:
+                return
             for index, frame in enumerate(
                 frame
                 for game_round in self.json["gameRounds"]
@@ -945,7 +951,9 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute
                 has no "gameRounds" key.
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json:
+            if self.json["gameRounds"] is None:
+                return
             for i, _r in enumerate(self.json["gameRounds"]):
                 if i == 0:
                     self.json["gameRounds"][i]["tScore"] = 0
@@ -1020,7 +1028,9 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json:
+            if self.json["gameRounds"] is None:
+                return
             cleaned_rounds = []
             for i, game_round in enumerate(self.json["gameRounds"]):
                 current_round_total = (
@@ -1172,7 +1182,9 @@ class DemoParser:
         """
         if bad_endings is None:
             bad_endings = ["Draw", "Unknown", ""]
-        if self.json and (game_rounds := self.json["gameRounds"]):
+        if self.json:
+            if (game_rounds := self.json["gameRounds"]) is None:
+                return
             cleaned_rounds = [
                 game_round
                 for game_round in game_rounds
@@ -1190,7 +1202,9 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        if self.json and (game_rounds := self.json["gameRounds"]):
+        if self.json:
+            if (game_rounds := self.json["gameRounds"]) is None:
+                return
             cleaned_rounds = []
             for game_round in game_rounds:
                 if game_round["isWarmup"]:
