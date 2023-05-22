@@ -18,30 +18,31 @@ import os
 import shutil
 from typing import Literal
 
+import cv2
 import imageio.v3 as imageio
 import matplotlib.pyplot as plt
 import numpy as np
-
+from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from cv2 import resize
-
 from tqdm import tqdm
 
-from awpy.data import MAP_DATA
-from awpy.types import BombInfo, GameFrame, GameRound, PlayerInfo, PlotPosition
-
-from matplotlib import patches, axes
-
-from cv2 import resize
-
 from awpy.analytics.map_control import (
-    _calc_map_control_helper,
-    extract_player_positions,
-    frame_map_control_metric,
+    calc_frame_map_control_metric,
+    calc_parsed_frame_map_control_values,
+    extract_teams_metadata,
 )
 from awpy.data import MAP_DATA, NAV
-from awpy.types import FrameMapControl, GameFrame, GameRound
+from awpy.types import (
+    BombInfo,
+    FrameMapControlValues,
+    FrameTeamMetadataObject,
+    GameFrame,
+    GameRound,
+    PlayerInfo,
+    PlotPosition,
+    TeamMapControlValuesDict,
+)
 
 
 def plot_map(
@@ -50,8 +51,8 @@ def plot_map(
     """Plots a blank map.
 
     Args:
-        map_name (string, optional): Map to search. Defaults to "de_dust2"
-        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        map_name (str, optional): Map to search. Defaults to "de_dust2"
+        map_type (str, optional): "original" or "simpleradar". Defaults to "original"
         dark (bool, optional): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type
             Defaults to False
@@ -89,9 +90,9 @@ def position_transform(
     """Transforms an X or Y coordinate.
 
     Args:
-        map_name (string): Map to search
+        map_name (str): Map to search
         position (float): X or Y coordinate
-        axis (string): Either "x" or "y" (lowercase)
+        axis (str): Either "x" or "y" (lowercase)
 
     Returns:
         float
@@ -121,7 +122,7 @@ def position_transform_all(
     """Transforms an X or Y coordinate.
 
     Args:
-        map_name (string): Map to search
+        map_name (str): Map to search
         position (tuple): (X,Y,Z) coordinates
 
     Returns:
@@ -158,8 +159,8 @@ def plot_positions(
             marker (str): Marker for the position
             alpha (float): Alpha value for the position
             sizes (float): Size for the position
-        map_name (string, optional): Map to search. Defaults to "de_ancient"
-        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        map_name (str, optional): Map to search. Defaults to "de_ancient"
+        map_type (str, optional): "original" or "simpleradar". Defaults to "original"
         dark (bool, optional): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type
             Defaults to False
@@ -248,10 +249,10 @@ def plot_round(
     Only use untransformed coordinates.
 
     Args:
-        filename (string): Filename to save the gif
+        filename (str): Filename to save the gif
         frames (list): List of frames from a parsed demo
-        map_name (string, optional): Map to search. Defaults to "de_ancient"
-        map_type (string, optional): "original" or "simpleradar". Defaults to "original
+        map_name (str, optional): Map to search. Defaults to "de_ancient"
+        map_type (str, optional): "original" or "simpleradar". Defaults to "original
         dark (bool, optional): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type
             Defaults to False
@@ -303,10 +304,10 @@ def plot_nades(
         rounds (list): List of round objects from a parsed demo
         nades (list, optional): List of grenade types to plot
             Defaults to []
-        side (string, optional): Specify side to plot grenades. Either "CT" or "T".
+        side (str, optional): Specify side to plot grenades. Either "CT" or "T".
             Defaults to "CT"
-        map_name (string, optional): Map to search. Defaults to "de_ancient"
-        map_type (string, optional): "original" or "simpleradar". Defaults to "original"
+        map_name (str, optional): Map to search. Defaults to "de_ancient"
+        map_type (str, optional): "original" or "simpleradar". Defaults to "original"
         dark (bool, optional): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type.
             Defaults to False
@@ -343,34 +344,26 @@ def plot_nades(
     axes.get_yaxis().set_visible(b=False)
     return figure, axes
 
+
 def _plot_map_control_snapshot_helper(
     map_name: str,
-    ct_tiles: dict,
-    t_tiles: dict,
-    ax: plt.Axes,
-    player_data: dict | None = None,
+    ct_tiles: TeamMapControlValuesDict,
+    t_tiles: TeamMapControlValuesDict,
+    axes: plt.Axes,
+    player_data: FrameTeamMetadataObject | None = None,
 ) -> None:
     """Helper function to plot map control nav tile plot.
 
     Args:
-        map_name (string)       : Map used position_transform call
-        ct_tiles (dict)         : CT map control values dictionary
-        t_tiles (dict)          : T map control values dictionary
-        ax (matplotlib.axes)    : axes object for plotting
-        player_data (dict)      : Dictionary of player positions
-                                  for each team. Expected format
-                                  same as output of extract_player_positions
+        map_name (str): Map used position_transform call
+        ct_tiles (dict): CT map control values dictionary
+        t_tiles (dict): T map control values dictionary
+        axes (plt.axes): axes object for plotting
+        player_data (FrameTeamMetadataObject): Dictionary of player positions
+            for each team. Expected format same as output of extract_player_positions
 
     Returns: Nothing, all plotting is done on ax object
-
-    Raises:
-        ValueError: If map_name is not in awpy.data.NAV
-                    If player_dict not of expected
-                    extract_player_positions output format
     """
-    if map_name not in NAV:
-        raise ValueError("Map not found.")
-
     ct_tile_set, t_tile_set = set(ct_tiles.keys()), set(t_tiles.keys())
     all_tiles = ct_tile_set.union(t_tile_set)
 
@@ -404,15 +397,15 @@ def _plot_map_control_snapshot_helper(
                 facecolor=cur_color,
                 alpha=1.0,
             )
-            ax.add_patch(rect)
+            axes.add_patch(rect)
         else:
             print("Tile not found in map:", tile)
 
     # Plot player positions if given
     if player_data is not None:
         t_positions, ct_positions = (
-            player_data["t"]["player-locations"],
-            player_data["ct"]["player-locations"],
+            player_data["t"]["alive_player_locations"],
+            player_data["ct"]["alive_player_locations"],
         )
         if len(t_positions) > 0:
             transformed_x = [
@@ -422,7 +415,7 @@ def _plot_map_control_snapshot_helper(
                 position_transform(map_name, loc[1], "y") for loc in t_positions
             ]
             color_arr = ["#5d79ae"] * len(t_positions)
-            ax.scatter(transformed_x, transformed_y, c=color_arr)
+            axes.scatter(transformed_x, transformed_y, c=color_arr)
         if len(ct_positions) > 0:
             transformed_x = [
                 position_transform(map_name, loc[0], "x") for loc in ct_positions
@@ -431,31 +424,27 @@ def _plot_map_control_snapshot_helper(
                 position_transform(map_name, loc[1], "y") for loc in ct_positions
             ]
             color_arr = ["#de9b35"] * len(ct_positions)
-            ax.scatter(transformed_x, transformed_y, c=color_arr)
-    ax.axis("off")
+            axes.scatter(transformed_x, transformed_y, c=color_arr)
+    axes.axis("off")
 
 
 def plot_map_control_snapshot(
     map_name: str,
-    tile_values: FrameMapControl,
-    player_pos: dict | None = None,
+    tile_values: FrameMapControlValues,
+    player_pos: FrameTeamMetadataObject | None = None,
     given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
     save_filepath: str = "",
 ) -> None:
     """Visualize map control for given ct/t map control value dictionaries.
 
     Args:
-        map_name (string)       : Map used position_transform call
-        tile_values (dict)            : List with map control values dictionary
-                                  for both sides
-                                    Expected format = [CT Dict, T Dict]
-        player_pos (dict)       : Dictionary of player positions
-                                  for each team. Expected format
-                                  same as output of extract_player_positions
-        given_fig_ax            : Optional tuple containing figure and ax
-                                  objects for plotting
-        save_filepath (str)     : Filepath to save the figure to file
-                                  if required
+        map_name (str): Map used position_transform call
+        tile_values (dict): List with map control values dictionary for both sides
+            Expected format = [CT Dict, T Dict]
+        player_pos (dict): Dictionary of player positions for each team.
+            Expected format same as output of extract_player_positions
+        given_fig_ax: Optional tuple containing figure and ax objects for plotting
+        save_filepath (str) : Filepath to save the figure to file if required
 
     Returns: Nothing, all plotting is done on ax object
 
@@ -463,26 +452,21 @@ def plot_map_control_snapshot(
         ValueError: If map_name is not in awpy.data.NAV
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
-    if "ct" not in tile_values.keys() or "t" not in tile_values.keys():
-        raise ValueError("Tile values argument not in expected FrameMapControl format")
-    ct_tiles, t_tiles = tile_values["ct"], tile_values["t"]
-    f, base_ax = given_fig_ax
-    if f is not None:
-        _plot_map_control_snapshot_helper(
-            map_name, ct_tiles, t_tiles, base_ax, player_data=player_pos
-        )
-    else:
-        f, base_ax = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
-        _plot_map_control_snapshot_helper(
-            map_name, ct_tiles, t_tiles, base_ax, player_data=player_pos
-        )
+        msg = "Map not found."
+        raise ValueError(msg)
 
-    if len(save_filepath) > 0:
-        f.savefig(fname=save_filepath, bbox_inches="tight", dpi=400)
-        plt.close(f)
+    ct_tiles, t_tiles = tile_values["ct"], tile_values["t"]
+    figure, base_ax = given_fig_ax
+    if figure is None:
+        figure, base_ax = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
+    _plot_map_control_snapshot_helper(
+        map_name, ct_tiles, t_tiles, base_ax, player_data=player_pos
+    )
+    if save_filepath:
+        figure.savefig(fname=save_filepath, bbox_inches="tight", dpi=400)
+        plt.close(figure)
     elif not given_fig_ax[0]:
-        plt.show(f)
+        plt.show(figure)
 
 
 def plot_frame_map_control(
@@ -495,15 +479,12 @@ def plot_frame_map_control(
     """Visualize map control for awpy frame.
 
     Args:
-        map_name (string)       : Map used position_transform call
-        frame (GameFrame)       : awpy frame to calculate map
-                                  control for
-        plot_type (str)         : Determines which type of plot is created
-                                  (either with or without players)
-        given_fig_ax            : Optional tuple containing figure and ax
-                                  objects for plotting
-        save_filepath (str)     : Filepath to save the figure to file
-                                  if required
+        map_name (str): Map used position_transform call
+        frame (GameFrame): awpy frame to calculate map control for
+        plot_type (str): Determines which type of plot is created
+            (either with or without players)
+        given_fig_ax: Optional tuple containing figure and ax objects for plotting
+        save_filepath (str): Filepath to save the figure to file if required
 
     Returns: Nothing, all plotting is done on ax object
 
@@ -511,10 +492,11 @@ def plot_frame_map_control(
         ValueError: If map_name is not in awpy.data.NAV
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
 
-    player_positions = extract_player_positions(frame)
-    map_control_dict = _calc_map_control_helper(map_name, player_positions)
+    player_positions = extract_teams_metadata(frame)
+    map_control_dict = calc_parsed_frame_map_control_values(map_name, player_positions)
     if plot_type == "players":
         plot_map_control_snapshot(
             map_name,
@@ -541,14 +523,12 @@ def create_round_map_control_gif(
     """Create gif summarizing map control for round.
 
     Args:
-        map_name (string)       : Map used in plot_frame_map_control
-                                  call
-        round_data (GameRound)  : Round whose map control will be
-                                  animated. Expected format that
-                                  of awpy round
-        plot_type (str)         : Determines which type of plot is created
-                                  (either with or without players)
-        gif_filepath (str)      : Filepath to save the gif to file
+        map_name (str): Map used in plot_frame_map_control call
+        round_data (GameRound): Round whose map control will be animated.
+            Expected format that of awpy round
+        plot_type (str): Determines which type of plot is created
+            (either with or without players)
+        gif_filepath (str): Filepath to save the gif to file
 
     Returns: Nothing, all plotting is done on ax object
 
@@ -558,9 +538,8 @@ def create_round_map_control_gif(
                     awpy frame format
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
-    if "frames" not in round_data:
-        raise ValueError("round_data argument not of expected awpy round format.")
+        msg = "Map not found."
+        raise ValueError(msg)
     if "tmp" not in os.listdir():
         error_string = (
             "Frame visualizations cannot be saved to the"
@@ -574,7 +553,7 @@ def create_round_map_control_gif(
     i = 0
     while frames and i < len(frames):
         frame = frames[i]
-        filename = "./tmp/tmp" + str(i) + ".png"
+        filename = f"./tmp/tmp{i}.png"
 
         # Save current frame map control viz to file
         # All frames are saved to './tmp/ folder '
@@ -591,39 +570,32 @@ def create_round_map_control_gif(
         i += 1
 
     print("Creating gif!")
-    imageio.mimsave(gif_filepath, images)
+    imageio.imwrite(gif_filepath, images)
 
 
 def _plot_map_control_metrics_helper(
     metrics: list[float],
-    ax: plt.Axes,
+    axes: plt.Axes,
 ) -> None:
     """Helper function to plot map control metrics.
 
     Args:
-        metrics (list)       : List containing map control values
-                               to plot
-        ax (axes)            : axes object for plotting
+        metrics (list): List containing map control values to plot
+        axes (axes): axes object for plotting
 
     Returns: Nothing, all plotting is done on ax_object
-
-    Raises:
-        ValueError: If metrics is empty
     """
-    if not metrics:
-        raise ValueError("Metrics is empty.")
-
     x = list(range(1, len(metrics) + 1))
-    ax.plot(x, metrics)
-    ax.set_ylim(0, 1)
-    ax.axhline(y=0.5, linestyle="--", c="k")
-    ax.set_ylabel("Map Control Metric Value")
-    ax.set_xlabel("Frame Number")
-    ax.set_title("Map Control Metric Progress")
+    axes.plot(x, metrics)
+    axes.set_ylim(0, 1)
+    axes.axhline(y=0.5, linestyle="--", c="k")
+    axes.set_ylabel("Map Control Metric Value")
+    axes.set_xlabel("Frame Number")
+    axes.set_title("Map Control Metric Progress")
     x_tick_threshold = 10
     if len(metrics) > x_tick_threshold:
         step_size = int(len(metrics) // x_tick_threshold)
-        ax.set_xticks(list(range(1, len(metrics) + 1, step_size)))
+        axes.set_xticks(list(range(1, len(metrics) + 1, step_size)))
 
 
 def plot_map_control_metrics(
@@ -633,23 +605,22 @@ def plot_map_control_metrics(
     """Function to plot given map control metrics.
 
     Args:
-        metric_arr   (list)     : List containing map control values
-                                  to plot
-        given_fig_ax (tuple)    : Fig and ax objects if given
+        metric_arr (list): List containing map control values to plot
+        given_fig_ax (tuple): Fig and ax objects if given
 
-    Returns: Plot given map control metric values onto axes
-             object
+    Returns: Plot given map control metric values onto axes object
 
     Raises:
         ValueError: If metrics is empty
     """
     if not metric_arr:
-        raise ValueError("Metrics is empty.")
+        msg = "Metrics is empty."
+        raise ValueError(msg)
 
     if given_fig_ax[0] is not None:
         _plot_map_control_metrics_helper(metric_arr, given_fig_ax[1])
     else:
-        f, curr_ax = plt.subplots()
+        _, curr_ax = plt.subplots()
         _plot_map_control_metrics_helper(metric_arr, curr_ax)
         plt.show()
 
@@ -663,30 +634,20 @@ def _save_map_control_graphic_helper(
     """Helper function to generate map control graphic for awpy round.
 
     Args:
-        map_name (string)       : Map used in
-                                  frame_map_control_metric call
-        frame (GameFrame)       : awpy frame to create map
-                                  control graphic
-        metrics  (list)         : List containing map control values
-                                  to plot
-        save_path (string)      : Location where graphic should
-                                  be saved on file
-
-    Raises:
-        ValueError: If map_name is not in awpy.data.NAV
+        map_name (str): Map used in frame_map_control_metric call
+        frame (GameFrame): awpy frame to create map control graphic
+        metrics  (list): List containing map control values to plot
+        save_path (str): Location where graphic should be saved on file
     """
-    if map_name not in NAV:
-        raise ValueError("Map not found.")
-
     fig, axs = plt.subplots(1, 2, figsize=(12, 12))
-    map_bg = plt.imread("../awpy/data/map/" + map_name + "_dark.png")
+    map_bg = plt.imread(f"../awpy/data/map/{map_name}_dark.png")
     axs[0].imshow(map_bg, zorder=0)
     plot_frame_map_control(
         map_name, frame, plot_type="players", given_fig_ax=(fig, axs[0])
     )
     _plot_map_control_metrics_helper(metrics, axs[1])
     plt.tight_layout()
-    if save_path and fig is not None:
+    if save_path:
         fig.savefig(fname=save_path, bbox_inches="tight", dpi=400)
     else:
         plt.show(fig)
@@ -704,35 +665,32 @@ def save_map_control_graphic(
     and map control metric plot for each frame in the round.
 
     Args:
-        map_name (string)       : Map used in
-                                  frame_map_control_metric call
-        frames (list)           : List of GameFrame for map
-                                  control graphic
-        save_path (string)      : Location where graphic should
-                                  be saved on file
+        map_name (str): Map used inframe_map_control_metric call
+        frames (list): List of GameFrame for map control graphic
+        save_path (str): Location where graphic should be saved on file
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
     """
     if map_name not in NAV:
-        raise ValueError("Map not found.")
+        msg = "Map not found."
+        raise ValueError(msg)
 
     metrics: list[float] = []
     images: list[np.ndarray] = []
 
     print("Saving/loading frames!")
-    for i in range(len(frames)):
-        frame = frames[i]
-        metrics.append(frame_map_control_metric(map_name, frame))
-        temp_filename = "./tmp/tmp" + str(i) + ".png"
+    for i, frame in enumerate(frames):
+        metrics.append(calc_frame_map_control_metric(map_name, frame))
+        temp_filename = f"./tmp/tmp{i!s}.png"
         _save_map_control_graphic_helper(
             map_name, frame, metrics, save_path=temp_filename
         )
         if save_path:
             # sometime second dimension has an extra entry
             # so resize to expected size
-            cur_img = resize(imageio.imread(temp_filename), (4760, 4760))
+            cur_img = cv2.resize(imageio.imread(temp_filename), (4760, 4760))
             images.append(cur_img)
     if save_path:
         print("Saving map control graphic gif")
-        imageio.mimsave(save_path, images)
+        imageio.imwrite(save_path, images)

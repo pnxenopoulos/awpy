@@ -1,10 +1,9 @@
 """This module contains the type definitions for the parsed json structure."""
 
 from dataclasses import dataclass
-from typing import Literal, NotRequired, TypeGuard, final, overload
+from typing import Literal, NewType, NotRequired, TypeGuard, final, overload
 
 from typing_extensions import TypedDict
-
 
 @dataclass
 class PlotPosition:
@@ -702,14 +701,81 @@ class RoundStatistics(TypedDict):
     players_killed: dict[Literal["CT", "T"], set[str]]
 
 
-class FrameMapControl(TypedDict):
-    """Type for the result of awpy.analytics.map_control.calc_map_control.
+# Type to represent tile id for navigation tiles.
+# TODO: Incorporate TileIdObject into rest of repo.
+TileIdObject = NewType("TileIdObject", int)
 
-    Holds map control values for each time for a certain frame
+# eturn type for awpy.analytics.map_control._bfs_helper.
+# Contains map control values for one team.
+# Maps TileIdObject to list of tile map control values.
+TeamMapControlValuesDict = NewType(
+    "TeamMapControlValuesDict", dict[TileIdObject, list[float]]
+)
+
+# Return type for awpy.analytics.map_control.graph_to_tile_neighbors
+# Maps TileIdObject to set of neighboring tiles.
+TileNeighborsDict = NewType("TileNeighborsDict", dict[TileIdObject, set[int]])
+
+
+class TileDistanceObject(TypedDict):
+    """Dataclass with data for map control tile distance calculations.
+
+    Holds information for distance to source tile and tile_id
+    distance is associated with.
+
+    TODO: Merge TileDistanceObject with TileDistance object
+          as their functionality seems very similar
     """
 
-    t: dict
-    ct: dict
+    distance: float
+    tile_id: TileIdObject
+
+
+# @dataclass
+class BFSTileData(TypedDict):
+    """Dataclass containing data for tiles during bfs algorithm.
+
+    Holds information for tile_id for tile, current map control
+    value, and steps remaining for bfs algorithm
+    """
+
+    tile_id: TileIdObject
+    map_control_value: float
+    steps_left: int
+
+
+# @dataclass
+class FrameTeamMetadataDict(TypedDict):
+    """Dataclass containing metadata for one team.
+
+    Holds information for aliver player locations. Can include
+    more metadata (utility, bomb location, etc.) in the future
+    """
+
+    alive_player_locations: list[list[float]] | list
+
+
+# @dataclass
+class FrameTeamMetadataObject(TypedDict):
+    """Return type for awpy.analytics.map_control.extract_teams_metadata.
+
+    Holds parsed metadata object (FrameTeamMetadataDict) for both teams
+    """
+
+    t: FrameTeamMetadataDict
+    ct: FrameTeamMetadataDict
+
+
+# @dataclass
+class FrameMapControlValues(TypedDict):
+    """Return type for awpy.analytics.map_control.calc_map_control.
+
+    Holds TeamMapControlValuesDict for each team for a certain frame.
+    """
+
+    t: TeamMapControlValuesDict
+    ct: TeamMapControlValuesDict
+
 
 @overload
 def other_side(side: Literal["CT"]) -> Literal["T"]:
