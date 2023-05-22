@@ -43,7 +43,7 @@ def approx_neighbors(
         raise ValueError("n must be >= 0")
 
     current_map_info = NAV[map_name]
-    distance_arr: list[float] = []
+    distance_arr: list[tuple[float, int]] = []
 
     for tile in current_map_info:
         if tile != source_tile_id:
@@ -59,7 +59,7 @@ def approx_neighbors(
 def bfs_helper(
     map_name: str,
     current_tiles: list[int],
-    neighbor_info: dict[int, list[int]],
+    neighbor_info: dict[int, set[int]],
 ) -> dict:
     """Helper function to run bfs from each tile in current_tiles.
 
@@ -109,7 +109,7 @@ def frame_tile_map_control_values(
     map_name: str,
     ct_tiles_wanted: list[int],
     t_tiles_wanted: list[int],
-    neighbor_info: dict[int, list[int]],
+    neighbor_info: dict[int, set[int]],
 ) -> tuple[dict[int, list[float]], dict[int, list[float]]]:
     """Calculate a frame's map control values for each side.
 
@@ -189,7 +189,7 @@ def _calc_map_control_helper(
     t_locations = current_player_data["t"]["player-locations"]
     ct_locations = current_player_data["ct"]["player-locations"]
 
-    neighbors_dict = graph_to_tile_neighbors(NAV_GRAPHS[map_name].edges)
+    neighbors_dict = graph_to_tile_neighbors(list(NAV_GRAPHS[map_name].edges))
 
     t_tiles = [find_closest_area(map_name, i)["areaId"] for i in t_locations]
     ct_tiles = [find_closest_area(map_name, i)["areaId"] for i in ct_locations]
@@ -238,7 +238,7 @@ def calc_map_control(
 
 def _extract_player_positions_helper(
     side_data: TeamFrameInfo,
-) -> list[list[float]]:
+) -> list[list[float]] | list:
     """Helper function to parse player locations in given side_data.
 
     Args:
@@ -249,21 +249,15 @@ def _extract_player_positions_helper(
     Returns: List of player locations
 
     Raises:
-        ValueError: If side_data not of expected awpy frame['t'] or
-                    frame['ct']
-
+        ValueError: If side_data not in TeamFrameInfo format
     """
     if "players" not in side_data:
-        raise ValueError(
-            "side_data variable not of expected awpy frame['t'] or frame['ct'] format."
-        )
-    if len(side_data["players"]) == 0:
-        raise ValueError("players array is length 0")
+        raise ValueError("side_data arg not in expected TeamFrameInfo format.")
 
     coords = ["x", "y", "z"]
-    alive_players: list[list[float]] = []
+    alive_players: list[list[float]] | list = []
 
-    for player in side_data["players"]:
+    for player in side_data["players"] or []:
         # Players that are not alive are ignored
         if player["isAlive"]:
             alive_players.append([player[dim] for dim in coords])
@@ -336,10 +330,10 @@ def _map_control_metric_helper(
         current_map_control_value.append(sum(ct_val) / (sum(ct_val) + sum(t_val)))
         tile_areas.append(calculate_tile_area(map_name, int(tile)))
 
-    current_map_control_value = np.array(current_map_control_value)
-    tile_areas = np.array(tile_areas)
+    np_current_map_control_value = np.array(current_map_control_value)
+    np_tile_areas = np.array(tile_areas)
 
-    return sum(current_map_control_value * tile_areas) / sum(tile_areas)
+    return sum(np_current_map_control_value * np_tile_areas) / sum(np_tile_areas)
 
 
 def frame_map_control_metric(
@@ -387,7 +381,7 @@ def calculate_round_map_control_metrics(
         raise ValueError("Round data not in expected round format.")
 
     map_control_metrics: list[float] = []
-    for frame in round_data["frames"]:
+    for frame in round_data["frames"] or []:
         current_frame_metric = frame_map_control_metric(map_name, frame)
         map_control_metrics.append(current_frame_metric)
     return map_control_metrics

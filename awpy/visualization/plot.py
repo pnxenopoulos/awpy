@@ -24,6 +24,8 @@ import numpy as np
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from cv2 import resize
+
 from tqdm import tqdm
 
 from awpy.data import MAP_DATA
@@ -345,8 +347,8 @@ def _plot_map_control_snapshot_helper(
     map_name: str,
     ct_tiles: dict,
     t_tiles: dict,
-    ax: axes,
-    player_data: dict = None,
+    ax: plt.Axes,
+    player_data: dict | None = None,
 ) -> None:
     """Helper function to plot map control nav tile plot.
 
@@ -436,8 +438,8 @@ def _plot_map_control_snapshot_helper(
 def plot_map_control_snapshot(
     map_name: str,
     tile_values: FrameMapControl,
-    player_pos: dict = None,
-    given_fig_ax: tuple[plt.Figure, axes] = (None, None),
+    player_pos: dict | None = None,
+    given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
     save_filepath: str = "",
 ) -> None:
     """Visualize map control for given ct/t map control value dictionaries.
@@ -462,16 +464,19 @@ def plot_map_control_snapshot(
     """
     if map_name not in NAV:
         raise ValueError("Map not found.")
-
-    if not given_fig_ax[0]:
-        f, base_ax = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
-    else:
-        f, base_ax = given_fig_ax
-
+    if "ct" not in tile_values.keys() or "t" not in tile_values.keys():
+        raise ValueError("Tile values argument not in expected FrameMapControl format")
     ct_tiles, t_tiles = tile_values["ct"], tile_values["t"]
-    _plot_map_control_snapshot_helper(
-        map_name, ct_tiles, t_tiles, ax=base_ax, player_data=player_pos
-    )
+    f, base_ax = given_fig_ax
+    if f is not None:
+        _plot_map_control_snapshot_helper(
+            map_name, ct_tiles, t_tiles, base_ax, player_data=player_pos
+        )
+    else:
+        f, base_ax = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
+        _plot_map_control_snapshot_helper(
+            map_name, ct_tiles, t_tiles, base_ax, player_data=player_pos
+        )
 
     if len(save_filepath) > 0:
         f.savefig(fname=save_filepath, bbox_inches="tight", dpi=400)
@@ -484,7 +489,7 @@ def plot_frame_map_control(
     map_name: str,
     frame: GameFrame,
     plot_type: str = "",
-    given_fig_ax: tuple[plt.Figure, axes] = (None, None),
+    given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
     save_filepath: str = "",
 ) -> None:
     """Visualize map control for awpy frame.
@@ -563,10 +568,12 @@ def create_round_map_control_gif(
         )
         raise ValueError(error_string)
 
-    images: list[np.array] = []
+    images: list[np.ndarray] = []
     print("Saving/loading frames")
-    for i in range(len(round_data["frames"])):
-        frame = round_data["frames"][i]
+    frames = round_data["frames"]
+    i = 0
+    while frames and i < len(frames):
+        frame = frames[i]
         filename = "./tmp/tmp" + str(i) + ".png"
 
         # Save current frame map control viz to file
@@ -581,6 +588,7 @@ def create_round_map_control_gif(
         # Load image back as frame of gif that will
         # be created at the end of this function
         images.append(imageio.imread(filename))
+        i += 1
 
     print("Creating gif!")
     imageio.mimsave(gif_filepath, images)
@@ -588,7 +596,7 @@ def create_round_map_control_gif(
 
 def _plot_map_control_metrics_helper(
     metrics: list[float],
-    ax: axes,
+    ax: plt.Axes,
 ) -> None:
     """Helper function to plot map control metrics.
 
@@ -608,7 +616,7 @@ def _plot_map_control_metrics_helper(
     x = list(range(1, len(metrics) + 1))
     ax.plot(x, metrics)
     ax.set_ylim(0, 1)
-    ax.axhline(0.5, linestyle="--", c="k")
+    ax.axhline(y=0.5, linestyle="--", c="k")
     ax.set_ylabel("Map Control Metric Value")
     ax.set_xlabel("Frame Number")
     ax.set_title("Map Control Metric Progress")
@@ -620,7 +628,7 @@ def _plot_map_control_metrics_helper(
 
 def plot_map_control_metrics(
     metric_arr: list[float],
-    given_fig_ax: tuple[plt.Figure, axes] = (None, None),
+    given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
 ) -> None:
     """Function to plot given map control metrics.
 
@@ -638,7 +646,7 @@ def plot_map_control_metrics(
     if not metric_arr:
         raise ValueError("Metrics is empty.")
 
-    if given_fig_ax[0]:
+    if given_fig_ax[0] is not None:
         _plot_map_control_metrics_helper(metric_arr, given_fig_ax[1])
     else:
         f, curr_ax = plt.subplots()
@@ -678,7 +686,7 @@ def _save_map_control_graphic_helper(
     )
     _plot_map_control_metrics_helper(metrics, axs[1])
     plt.tight_layout()
-    if save_path:
+    if save_path and fig is not None:
         fig.savefig(fname=save_path, bbox_inches="tight", dpi=400)
     else:
         plt.show(fig)
@@ -710,7 +718,7 @@ def save_map_control_graphic(
         raise ValueError("Map not found.")
 
     metrics: list[float] = []
-    images: list[np.array] = []
+    images: list[np.ndarray] = []
 
     print("Saving/loading frames!")
     for i in range(len(frames)):
