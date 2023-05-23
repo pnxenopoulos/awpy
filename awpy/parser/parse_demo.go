@@ -1073,7 +1073,11 @@ func registerSmokeHandler(demoParser *dem.Parser, smokes *[]Smoke) {
 	(*demoParser).RegisterEventHandler(func(e events.SmokeStart) {
 		gs := (*demoParser).GameState()
 		s := Smoke{}
-		s.GrenadeEntityID = e.Grenade.UniqueID() // GrenadeEntityID
+		if e.Grenade != nil {
+			s.GrenadeEntityID = e.Grenade.UniqueID()
+		} else {
+			s.GrenadeEntityID = int64(e.GrenadeEntityID)
+		}
 		s.StartTick = int64(gs.IngameTick())
 		s.X = e.Position.X
 		s.Y = e.Position.Y
@@ -1090,7 +1094,12 @@ func registerSmokeHandler(demoParser *dem.Parser, smokes *[]Smoke) {
 	})
 
 	(*demoParser).RegisterEventHandler(func(e events.SmokeExpired) {
-		removeID := e.Grenade.UniqueID() // e.GrenadeEntityID
+		var removeID int64
+		if e.Grenade != nil {
+			removeID = e.Grenade.UniqueID()
+		} else {
+			removeID = int64(e.GrenadeEntityID)
+		}
 		for i, ele := range *smokes {
 			if ele.GrenadeEntityID == removeID {
 				*smokes = removeExpiredSmoke(*smokes, i)
@@ -1828,7 +1837,7 @@ func registerGrenadeThrowHandler(demoParser *dem.Parser, currentGame *Game, curr
 	(*demoParser).RegisterEventHandler(func(e events.GrenadeProjectileThrow) {
 		gs := (*demoParser).GameState()
 
-		if e.Projectile.Thrower != nil {
+		if e.Projectile != nil && e.Projectile.Thrower != nil {
 			currentGrenade := GrenadeAction{}
 			currentGrenade.UniqueID = e.Projectile.UniqueID()
 			currentGrenade.ThrowTick = int64(gs.IngameTick())
@@ -1885,7 +1894,7 @@ func registerGrenadeDestroyHandler(demoParser *dem.Parser, currentGame *Game, cu
 	(*demoParser).RegisterEventHandler(func(e events.GrenadeProjectileDestroy) {
 		gs := (*demoParser).GameState()
 
-		if e.Projectile.Thrower != nil {
+		if e.Projectile != nil && e.Projectile.Thrower != nil {
 			for i, g := range currentRound.Grenades {
 				if g.UniqueID == e.Projectile.UniqueID() {
 					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
@@ -1968,28 +1977,32 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 			allGrenades := gs.GrenadeProjectiles()
 			currentFrame.Projectiles = []GrenadeInfo{}
 			for _, ele := range allGrenades {
-				currentProjectile := GrenadeInfo{}
-				currentProjectile.ProjectileType = ele.WeaponInstance.String()
-				objPos := ele.Trajectory[len(ele.Trajectory)-1]
+				if ele != nil {
+					currentFire := Fire{}
+					objPos := ele.Entity.Position()
+					currentFire.UniqueID = ele.UniqueID()
 
-				currentProjectile.X = objPos.X
-				currentProjectile.Y = objPos.Y
-				currentProjectile.Z = objPos.Z
-				currentFrame.Projectiles = append(currentFrame.Projectiles, currentProjectile)
+					currentFire.X = objPos.X
+					currentFire.Y = objPos.Y
+					currentFire.Z = objPos.Z
+					currentFrame.Fires = append(currentFrame.Fires, currentFire)
+				}
 			}
 
 			// Parse infernos
 			allInfernos := gs.Infernos()
 			currentFrame.Fires = []Fire{}
 			for _, ele := range allInfernos {
-				currentFire := Fire{}
-				objPos := ele.Entity.Position()
-				currentFire.UniqueID = ele.UniqueID()
+				if ele != nil {
+					currentFire := Fire{}
+					objPos := ele.Entity.Position()
+					currentFire.UniqueID = ele.UniqueID()
 
-				currentFire.X = objPos.X
-				currentFire.Y = objPos.Y
-				currentFire.Z = objPos.Z
-				currentFrame.Fires = append(currentFrame.Fires, currentFire)
+					currentFire.X = objPos.X
+					currentFire.Y = objPos.Y
+					currentFire.Z = objPos.Z
+					currentFrame.Fires = append(currentFrame.Fires, currentFire)
+				}
 			}
 
 			// Parse smokes
