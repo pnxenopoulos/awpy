@@ -573,17 +573,17 @@ def generate_area_distance_matrix(map_name: str, *, save: bool = False) -> AreaM
             # Compute center of second area
             area2_x, area2_y, area2_z = _get_area_center(map_name, area2)
             # Calculate basic euclidean distance
-            area_distance_matrix[str(area1)][str(area2)]["euclidean"] = math.sqrt(
+            area_distance_matrix[area1][area2]["euclidean"] = math.sqrt(
                 (area1_x - area2_x) ** 2
                 + (area1_y - area2_y) ** 2
                 + (area1_z - area2_z) ** 2
             )
             # Also get graph distance
-            area_distance_matrix[str(area1)][str(area2)]["graph"] = area_distance(
+            area_distance_matrix[area1][area2]["graph"] = area_distance(
                 map_name, area1, area2, dist_type="graph"
             )["distance"]
             # And geodesic like distance
-            area_distance_matrix[str(area1)][str(area2)]["geodesic"] = area_distance(
+            area_distance_matrix[area1][area2]["geodesic"] = area_distance(
                 map_name, area1, area2, dist_type="geodesic"
             )["distance"]
     if save:
@@ -654,7 +654,7 @@ def _get_median_place_distance(
     connections = []
     for sub_area1 in area_mapping[place1]:
         connections.extend(
-            AREA_DIST_MATRIX[map_name][str(sub_area1)][str(sub_area2)][dist_type]
+            AREA_DIST_MATRIX[map_name][sub_area1][sub_area2][dist_type]
             for sub_area2 in area_mapping[place2]
         )
     return median(connections)
@@ -721,14 +721,10 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
                 else:
                     place_distance_matrix[place1][place2][dist_type][
                         "centroid"
-                    ] = AREA_DIST_MATRIX[map_name][str(centroid1)][str(centroid2)][
-                        dist_type
-                    ]
+                    ] = AREA_DIST_MATRIX[map_name][centroid1][centroid2][dist_type]
                     place_distance_matrix[place1][place2][dist_type][
                         "representative_point"
-                    ] = AREA_DIST_MATRIX[map_name][str(reps[place1])][
-                        str(reps[place2])
-                    ][
+                    ] = AREA_DIST_MATRIX[map_name][reps[place1]][reps[place2]][
                         dist_type
                     ]
                     place_distance_matrix[place1][place2][dist_type][
@@ -965,7 +961,7 @@ def _check_arguments_position_distance(
         ValueError: If number of features is not 3 for euclidean distance_type
 
     Returns:
-       tuple[npt.NDArray, npt.NDArray]: Potentially reordered position arrays.
+        tuple[npt.NDArray, npt.NDArray]: Potentially reordered position arrays.
     """
     if map_name not in NAV:
         msg = "Map not found."
@@ -1129,8 +1125,8 @@ def _graph_based_position_distance(
         )
     else:
         this_dist = min(
-            AREA_DIST_MATRIX[map_name][str(area1)][str(area2)][distance_type],
-            AREA_DIST_MATRIX[map_name][str(area2)][str(area1)][distance_type],
+            AREA_DIST_MATRIX[map_name][area1][area2][distance_type],
+            AREA_DIST_MATRIX[map_name][area2][area1][distance_type],
         )
     if this_dist == float("inf"):
         this_dist = sys.maxsize / 6
@@ -1166,10 +1162,10 @@ def position_state_distance(
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV.
-        ValueError: If distance_type is not one of ["graph", "geodesic", "euclidean"].
-        ValueError: If the 0th (number of teams) and 2nd (number of features) dimensions
+                    If distance_type is not one of ["graph", "geodesic", "euclidean"].
+                    If the 0th (number of teams) and 2nd (number of features) dimensions
                         of the inputs do not have the same size.
-        ValueError: If number of features is not 3 for euclidean distance_type
+                    If number of features is not 3 for euclidean distance_type
     """
     position_array_1, position_array_2 = _check_arguments_position_distance(
         map_name, position_array_1, position_array_2, distance_type
