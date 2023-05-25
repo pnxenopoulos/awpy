@@ -62,7 +62,7 @@ class Area(TypedDict):
 
 
 DistanceType = Literal["graph", "geodesic", "euclidean"]
-AreaMatrix = dict[str, dict[str, dict[DistanceType, float]]]
+AreaMatrix = dict[int, dict[int, dict[DistanceType, float]]]
 PlaceMatrix = dict[
     str,
     dict[

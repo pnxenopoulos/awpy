@@ -94,28 +94,28 @@ class TestNav:
         )
 
         self.expected_area_matrix = {
-            "1": {
-                "1": {"euclidean": 0, "graph": 0, "geodesic": 0},
-                "2": {"euclidean": 1.0, "graph": 1.0, "geodesic": 1.0},
-                "3": {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
+            1: {
+                1: {"euclidean": 0, "graph": 0, "geodesic": 0},
+                2: {"euclidean": 1.0, "graph": 1.0, "geodesic": 1.0},
+                3: {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
             },
-            "2": {
-                "1": {
+            2: {
+                1: {
                     "euclidean": 1.0,
                     "graph": float("inf"),
                     "geodesic": float("inf"),
                 },
-                "2": {"euclidean": 0, "graph": 0, "geodesic": 0},
-                "3": {
+                2: {"euclidean": 0, "graph": 0, "geodesic": 0},
+                3: {
                     "euclidean": math.sqrt(5),
                     "graph": float("inf"),
                     "geodesic": float("inf"),
                 },
             },
-            "3": {
-                "1": {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
-                "2": {"euclidean": math.sqrt(5), "graph": 2.0, "geodesic": 3.0},
-                "3": {"euclidean": 0, "graph": 0, "geodesic": 0},
+            3: {
+                1: {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
+                2: {"euclidean": math.sqrt(5), "graph": 2.0, "geodesic": 3.0},
+                3: {"euclidean": 0, "graph": 0, "geodesic": 0},
             },
         }
         self.expected_place_matrix_1 = {
@@ -742,11 +742,9 @@ class TestNav:
 
         assert isinstance(result_matrix, dict)
         for area1_id in result_matrix:
-            assert isinstance(area1_id, str)
-            assert str(int(area1_id)) == area1_id
+            assert isinstance(area1_id, int)
             for area2_id in result_matrix[area1_id]:
-                assert isinstance(area2_id, str)
-                assert str(int(area2_id)) == area2_id
+                assert isinstance(area2_id, int)
                 for dist_type in result_matrix[area1_id][area2_id]:
                     assert dist_type in {"geodesic", "euclidean", "graph"}
                     assert isinstance(
