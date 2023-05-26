@@ -702,21 +702,20 @@ class RoundStatistics(TypedDict):
 
 
 # Type to represent tile id for navigation tiles.
-# TODO: Incorporate TileIdObject into rest of repo.
-TileIdObject = NewType("TileIdObject", int)
+# TODO: Incorporate TileId into rest of repo.
+TileId = NewType("TileId", int)
 
 # Return type for awpy.analytics.map_control._bfs_helper.
 # Contains map control values for one team.
-# Maps TileIdObject to list of tile map control values.
-TeamMapControlValuesDict = NewType(
-    "TeamMapControlValuesDict", dict[TileIdObject, list[float]]
-)
+# Maps TileId to list of tile map control values.
+TeamMapControlValues = NewType("TeamMapControlValues", dict[TileId, list[float]])
 
 # Return type for awpy.analytics.map_control.graph_to_tile_neighbors
-# Maps TileIdObject to set of neighboring tiles.
-TileNeighborsDict = NewType("TileNeighborsDict", dict[TileIdObject, set[int]])
+# Maps TileId to set of neighboring tiles.
+TileNeighbors = NewType("TileNeighbors", dict[TileId, set[int]])
 
 
+@dataclass
 class TileDistanceObject(TypedDict):
     """Dataclass with data for map control tile distance calculations.
 
@@ -728,10 +727,10 @@ class TileDistanceObject(TypedDict):
     """
 
     distance: float
-    tile_id: TileIdObject
+    tile_id: TileId
 
 
-# @dataclass
+@dataclass
 class BFSTileData(TypedDict):
     """Dataclass containing data for tiles during bfs algorithm.
 
@@ -739,13 +738,13 @@ class BFSTileData(TypedDict):
     value, and steps remaining for bfs algorithm
     """
 
-    tile_id: TileIdObject
+    tile_id: TileId
     map_control_value: float
     steps_left: int
 
 
-# @dataclass
-class FrameTeamMetadataDict(TypedDict):
+@dataclass
+class TeamMetadata(TypedDict):
     """Dataclass containing metadata for one team.
 
     Holds information for aliver player locations. Can include
@@ -755,26 +754,28 @@ class FrameTeamMetadataDict(TypedDict):
     alive_player_locations: list[list[float]] | list
 
 
-# @dataclass
-class FrameTeamMetadataObject(TypedDict):
-    """Return type for awpy.analytics.map_control.extract_teams_metadata.
+@dataclass
+class FrameTeamMetadata(TypedDict):
+    """Dataclass with metadata on both teams in frame.
 
-    Holds parsed metadata object (FrameTeamMetadataDict) for both teams
+    Return type for awpy.analytics.map_control.extract_teams_metadata.
+    Holds parsed metadata object (TeamMetadata) for both teams
     """
 
-    t: FrameTeamMetadataDict
-    ct: FrameTeamMetadataDict
+    t: TeamMetadata
+    ct: TeamMetadata
 
 
-# @dataclass
+@dataclass
 class FrameMapControlValues(TypedDict):
-    """Return type for awpy.analytics.map_control.calc_map_control.
+    """Dataclass with map control values for both teams in frame.
 
-    Holds TeamMapControlValuesDict for each team for a certain frame.
+    Return type for awpy.analytics.map_control.calc_map_control.
+    Holds TeamMapControlValues for each team for a certain frame.
     """
 
-    t: TeamMapControlValuesDict
-    ct: TeamMapControlValuesDict
+    t: TeamMapControlValues
+    ct: TeamMapControlValues
 
 
 @overload

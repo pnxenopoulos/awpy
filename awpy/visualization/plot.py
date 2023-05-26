@@ -37,13 +37,12 @@ from awpy.data import MAP_DATA, NAV
 from awpy.types import (
     BombInfo,
     FrameMapControlValues,
-    FrameTeamMetadataDict,
-    FrameTeamMetadataObject,
+    FrameTeamMetadata,
     GameFrame,
     GameRound,
     PlayerInfo,
     PlotPosition,
-    TeamMapControlValuesDict,
+    TeamMetadata,
     lower_side,
 )
 from awpy.visualization import (
@@ -354,9 +353,20 @@ def plot_nades(
 def _plot_frame_team_player_positions(
     map_name: str,
     side: Literal["CT", "T"],
-    player_data: FrameTeamMetadataDict,
+    player_data: TeamMetadata,
     axes: plt.Axes,
 ) -> None:
+    """Helper function to team's alive player positions.
+
+    Args:
+        map_name (str): Map used position_transform call
+        side (Literal): Side used to determine player scatterplot color
+        player_data (TeamMetadata): Team's metadata dictionary. Expected format same as
+            output of extract_player_positions
+        axes (plt.axes): axes object for plotting
+
+    Returns: Nothing, all plotting is done on ax object
+    """
     transformed_x = [
         position_transform(map_name, loc[0], "x")
         for loc in player_data["alive_player_locations"]
@@ -372,23 +382,22 @@ def _plot_frame_team_player_positions(
 
 def _plot_map_control_snapshot_helper(
     map_name: str,
-    ct_tiles: TeamMapControlValuesDict,
-    t_tiles: TeamMapControlValuesDict,
+    occupied_tiles: FrameMapControlValues,
     axes: plt.Axes,
-    player_data: FrameTeamMetadataObject | None = None,
+    player_data: FrameTeamMetadata | None = None,
 ) -> None:
     """Helper function to plot map control nav tile plot.
 
     Args:
         map_name (str): Map used position_transform call
-        ct_tiles (dict): CT map control values dictionary
-        t_tiles (dict): T map control values dictionary
+        occupied_tiles (TeamMapControlValues): Map control values for occupied tiles
         axes (plt.axes): axes object for plotting
-        player_data (FrameTeamMetadataObject): Dictionary of player positions
+        player_data (FrameTeamMetadata): Dictionary of player positions
             for each team. Expected format same as output of extract_player_positions
 
     Returns: Nothing, all plotting is done on ax object
     """
+    ct_tiles, t_tiles = occupied_tiles["ct"], occupied_tiles["t"]
     ct_tile_set, t_tile_set = set(ct_tiles.keys()), set(t_tiles.keys())
     all_tiles = ct_tile_set.union(t_tile_set)
 
@@ -404,8 +413,10 @@ def _plot_map_control_snapshot_helper(
                 map_name, area["northWestY"], "y"
             ) - position_transform(map_name, area["southEastY"], "y")
 
-            # Use max value (default value 0 if no values exist)
-            # for each side for the current tile
+            """
+            Use max value (default value 0 if no values exist)
+            for each side for the current tile
+            """
             ct_val = max(ct_tiles[tile], default=0)
             t_val = max(t_tiles[tile], default=0)
 
@@ -416,14 +427,6 @@ def _plot_map_control_snapshot_helper(
             If T and CT Val are non-zero, color is weighted average
             between Green and Red.
             """
-            cur_color = min(ct_val / (ct_val + t_val), ct_val) * np.array(
-                [0, 1, 0]
-            ) + min(t_val / (ct_val + t_val), t_val) * np.array([1, 0, 0])
-
-            cur_color = (ct_val / (ct_val + t_val)) / 5 * np.array([0, 1, 0]) + (
-                t_val / (ct_val + t_val) / 5
-            ) * np.array([1, 0, 0])
-
             cur_color = ct_val * np.array([0, 1, 0]) + t_val * np.array([1, 0, 0])
 
             rect = patches.Rectangle(
@@ -454,7 +457,7 @@ def _plot_map_control_snapshot_helper(
 def plot_map_control_snapshot(
     map_name: str,
     tile_values: FrameMapControlValues,
-    player_pos: FrameTeamMetadataObject | None = None,
+    player_pos: FrameTeamMetadata | None = None,
     given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
     save_filepath: str = "",
 ) -> None:
@@ -462,9 +465,10 @@ def plot_map_control_snapshot(
 
     Args:
         map_name (str): Map used position_transform call
-        tile_values (dict): List with map control values dictionary for both sides
-            Expected format = [CT Dict, T Dict]
-        player_pos (dict): Dictionary of player positions for each team.
+        tile_values (FrameMapControlValues): Object contain map control values
+            for both sides
+        player_pos (FrameTeamMetadata): Object with metadata (player
+            positions, etc.) for each team.
             Expected format same as output of extract_player_positions
         given_fig_ax: Optional tuple containing figure and ax objects for plotting
         save_filepath (str) : Filepath to save the figure to file if required
@@ -478,12 +482,11 @@ def plot_map_control_snapshot(
         msg = "Map not found."
         raise ValueError(msg)
 
-    ct_tiles, t_tiles = tile_values["ct"], tile_values["t"]
     figure, base_ax = given_fig_ax
     if figure is None:
         figure, base_ax = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
     _plot_map_control_snapshot_helper(
-        map_name, ct_tiles, t_tiles, base_ax, player_data=player_pos
+        map_name, tile_values, base_ax, player_data=player_pos
     )
     if save_filepath:
         figure.savefig(fname=save_filepath, bbox_inches="tight", dpi=400)
@@ -557,8 +560,7 @@ def create_round_map_control_gif(
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
-                    If roundData not of expected
-                    awpy frame format
+    ]
     """
     if map_name not in NAV:
         msg = "Map not found."
@@ -682,16 +684,19 @@ def save_map_control_graphic(
     map_name: str,
     frames: list[GameFrame],
     save_path: str = "",
+    gif_size: tuple[int, int] = (4760, 4760),
 ) -> None:
     """Function to generate map control gif for awpy round.
 
-    Gif including minimap visualization
-    and map control metric plot for each frame in the round.
+    Gif includes minimap visualization and map control metric
+    plot for each frame in the round.
 
     Args:
         map_name (str): Map used inframe_map_control_metric call
         frames (list): List of GameFrame for map control graphic
         save_path (str): Location where graphic should be saved on file
+        gif_size (tuple): Size of generated gif. Default is
+            default plot size
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -713,7 +718,7 @@ def save_map_control_graphic(
         if save_path:
             # sometime second dimension has an extra entry
             # so resize to expected size
-            cur_img = cv2.resize(imageio.imread(temp_filename), (4760, 4760))
+            cur_img = cv2.resize(imageio.imread(temp_filename), gif_size)
             images.append(cur_img)
     if save_path:
         print("Saving map control graphic gif")

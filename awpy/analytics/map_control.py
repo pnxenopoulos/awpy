@@ -17,28 +17,28 @@ from awpy.data import NAV, NAV_GRAPHS
 from awpy.types import (
     BFSTileData,
     FrameMapControlValues,
-    FrameTeamMetadataDict,
-    FrameTeamMetadataObject,
+    FrameTeamMetadata,
     GameFrame,
     GameRound,
     TeamFrameInfo,
-    TeamMapControlValuesDict,
+    TeamMapControlValues,
+    TeamMetadata,
     TileDistanceObject,
-    TileIdObject,
-    TileNeighborsDict,
+    TileId,
+    TileNeighbors,
 )
 
 
 def _approx_neighbors(
     map_name: str,
-    source_tile_id: TileIdObject,
+    source_tile_id: TileId,
     n_neighbors: int = 5,
 ) -> list[TileDistanceObject]:
     """Approximates neighbors for isolated tiles by finding n closest tiles.
 
     Args:
         map_name (str): Map for source_tile_id
-        source_tile_id (TileIdObject): TileIdObject for source tile
+        source_tile_id (TileId): TileId for source tile
         n_neighbors (int): Number of closest tiles/approximated neighbors wanted
 
     Returns:
@@ -48,7 +48,7 @@ def _approx_neighbors(
         ValueError: If source_tile_id is not in awpy.data.NAV[map_name]
                     If n_neighbors <= 0
     """
-    if source_tile_id not in NAV[map_name].keys():
+    if source_tile_id not in NAV[map_name]:
         msg = "Area ID not found."
         raise ValueError(msg)
     if n_neighbors <= 0:
@@ -61,40 +61,24 @@ def _approx_neighbors(
     for tile in current_map_info:
         if tile != source_tile_id:
             # TODO: See if AREA_DIST_MATRIX is worth incorporating
-            current_distance = area_distance(
-                map_name, tile, source_tile_id, dist_type="euclidean"
-            )["distance"]
-            current_tile_id = TileIdObject(tile)
             current_tile_distance_obj: TileDistanceObject = {
-                "distance": current_distance,
-                "tile_id": current_tile_id,
+                "distance": area_distance(
+                    map_name, tile, source_tile_id, dist_type="euclidean"
+                )["distance"],
+                "tile_id": TileId(tile),
             }
             possible_neighbors_arr.append(current_tile_distance_obj)
 
-    sorted_neighbors = sorted(possible_neighbors_arr, key=lambda d: d["distance"])
-
-    return sorted_neighbors[:n_neighbors]
+    return sorted(possible_neighbors_arr, key=lambda d: d["distance"])[:n_neighbors]
 
 
 def _bfs_helper(
     map_name: str,
-    current_tiles: list[TileIdObject],
-    neighbor_info: TileNeighborsDict,
+    current_tiles: list[TileId],
+    neighbor_info: TileNeighbors,
     max_depth: int = 10,
-) -> TeamMapControlValuesDict:
+) -> TeamMapControlValues:
     """Helper function to run bfs from given tiles to generate map_control values dict.
-
-    Args:
-        map_name (str): Map for current_tiles
-        current_tiles (TileIdObject): List of source tiles for bfs iteration(s)
-        neighbor_info (dict): Dictionary mapping tile to its navigable neighbors
-        max_depth (int): Max tile distance from source tile to be considered
-
-    Returns:
-        TeamMapControlValuesDict containing map control values
-
-    Raises:
-        ValueError: If max_depth <= 0
 
     Values are allocated to tiles depending on how many tiles are between it
     and the source tile (aka tile distance). The smaller the tile distance,
@@ -102,14 +86,26 @@ def _bfs_helper(
     the max_depth argument, which is 10 as default. If the max_depth is kept
     as default 10, this means the BFS search will stop once a tile
     distance of 10 is reached.
+
+    Args:
+        map_name (str): Map for current_tiles
+        current_tiles (TileId): List of source tiles for bfs iteration(s)
+        neighbor_info (dict): Dictionary mapping tile to its navigable neighbors
+        max_depth (int): Max tile distance from source tile to be considered
+
+    Returns:
+        TeamMapControlValues containing map control values
+
+    Raises:
+        ValueError: If max_depth <= 0
     """
     if max_depth <= 0:
         msg = "Invalid max_depth value. Must be > 0."
         raise ValueError(msg)
 
-    map_control_values = TeamMapControlValuesDict(defaultdict(list))
+    map_control_values = TeamMapControlValues(defaultdict(list))
     for cur_start_tile in current_tiles:
-        tiles_seen: set[TileIdObject] = set()
+        tiles_seen: set[TileId] = set()
 
         start_tile: BFSTileData = {
             "tile_id": cur_start_tile,
@@ -126,7 +122,7 @@ def _bfs_helper(
                 tiles_seen.add(cur_id)
                 map_control_values[cur_id].append(cur_tile["map_control_value"])
 
-                neighbors = [TileIdObject(i) for i in neighbor_info[cur_id]]
+                neighbors = [TileId(i) for i in neighbor_info[cur_id]]
                 if len(neighbors) == 0:
                     neighbors = [
                         tile["tile_id"] for tile in _approx_neighbors(map_name, cur_id)
@@ -151,20 +147,11 @@ def _bfs_helper(
 
 def _frame_tile_map_control_values(
     map_name: str,
-    ct_tiles: list[TileIdObject],
-    t_tiles: list[TileIdObject],
-    neighbor_info: TileNeighborsDict,
+    ct_tiles: list[TileId],
+    t_tiles: list[TileId],
+    neighbor_info: TileNeighbors,
 ) -> FrameMapControlValues:
     """Calculate a frame's map control values for each side.
-
-    Args:
-        map_name (str): Map for other arguments
-        ct_tiles (list): List of CT-occupied tiles
-        t_tiles (list): List of T-occupied tiles
-        neighbor_info (TileNeighborsDict): Object with tile to neighbor mapping
-
-    Returns:
-        FrameMapControlValues object containing each team's map control values
 
     Values are allocated to tiles depending on how many tiles are between it
     and the source tile (aka tile distance). The smaller the tile distance,
@@ -172,6 +159,15 @@ def _frame_tile_map_control_values(
     the max_depth argument, which is 10 as default. If the max_depth is kept
     as default 10, this means the BFS search will stop once a tile
     distance of 10 is reached.
+
+    Args:
+        map_name (str): Map for other arguments
+        ct_tiles (list): List of CT-occupied tiles
+        t_tiles (list): List of T-occupied tiles
+        neighbor_info (TileNeighbors): Object with tile to neighbor mapping
+
+    Returns:
+        FrameMapControlValues object containing each team's map control values
     """
     # Run BFS For CT Tiles
     ct_values = _bfs_helper(map_name, ct_tiles, neighbor_info)
@@ -188,16 +184,16 @@ def _frame_tile_map_control_values(
 
 
 def graph_to_tile_neighbors(
-    neighbor_pairs: list[tuple[TileIdObject, TileIdObject]],
-) -> TileNeighborsDict:
-    """Convert list of neighboring tiles to TileNeighborsDict object.
+    neighbor_pairs: list[tuple[TileId, TileId]],
+) -> TileNeighbors:
+    """Convert list of neighboring tiles to TileNeighbors object.
 
     Args:
-        neighbor_pairs (list): List of tuples (pairs of TileIdObject)
+        neighbor_pairs (list): List of tuples (pairs of TileId)
 
-    Returns: TileNeighborsDict object with tile to neighbor mapping
+    Returns: TileNeighbors object with tile to neighbor mapping
     """
-    tile_to_neighbors = TileNeighborsDict(defaultdict(set))
+    tile_to_neighbors = TileNeighbors(defaultdict(set))
 
     for tile_1, tile_2 in neighbor_pairs:
         tile_to_neighbors[tile_1].add(tile_2)
@@ -208,22 +204,9 @@ def graph_to_tile_neighbors(
 
 def calc_parsed_frame_map_control_values(
     map_name: str,
-    current_player_data: FrameTeamMetadataObject,
+    current_player_data: FrameTeamMetadata,
 ) -> FrameMapControlValues:
     """Calculate tile map control values for each team given parsed frame.
-
-    Args:
-        map_name (str): Map used for find_closest_area and
-                        relevant tile neighbor dictionary
-        current_player_data (FrameTeamMetadataObject): Object containing team metadata
-                                                       (player positions, etc.)
-                                                       Expects extract_player_positions
-                                                       output format
-
-    Returns: FrameMapControlValues object containing each team's map control values
-
-    Raises:
-        ValueError: If map_name is not in awpy.data.NAV
 
     Values are allocated to tiles depending on how many tiles are between it
     and the source tile (aka tile distance). The smaller the tile distance,
@@ -231,6 +214,17 @@ def calc_parsed_frame_map_control_values(
     the max_depth argument, which is 10 as default. If the max_depth is kept
     as default 10, this means the BFS search will stop once a tile
     distance of 10 is reached.
+
+    Args:
+        map_name (str): Map used for find_closest_area and
+            relevant tile neighbor dictionary
+        current_player_data (FrameTeamMetadata): Object containing team metadata
+            (player positions, etc.). Expects extract_team_metadata output format
+
+    Returns: FrameMapControlValues object containing each team's map control values
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV
     """
     if map_name not in NAV:
         msg = "Map not found."
@@ -241,18 +235,12 @@ def calc_parsed_frame_map_control_values(
 
     neighboring_tiles = list(NAV_GRAPHS[map_name].edges)
 
-    neighboring_tile_id_objs = [
-        (TileIdObject(i), TileIdObject(j)) for i, j in neighboring_tiles
-    ]
+    neighbors_dict = graph_to_tile_neighbors(
+        [(TileId(i), TileId(j)) for i, j in neighboring_tiles]
+    )
 
-    neighbors_dict = graph_to_tile_neighbors(neighboring_tile_id_objs)
-
-    t_tiles = [
-        TileIdObject(find_closest_area(map_name, i)["areaId"]) for i in t_locations
-    ]
-    ct_tiles = [
-        TileIdObject(find_closest_area(map_name, i)["areaId"]) for i in ct_locations
-    ]
+    t_tiles = [TileId(find_closest_area(map_name, i)["areaId"]) for i in t_locations]
+    ct_tiles = [TileId(find_closest_area(map_name, i)["areaId"]) for i in ct_locations]
 
     return _frame_tile_map_control_values(map_name, ct_tiles, t_tiles, neighbors_dict)
 
@@ -263,6 +251,13 @@ def calc_frame_map_control_values(
 ) -> FrameMapControlValues:
     """Calculate tile map control values for each team given frame object.
 
+    Values are allocated to tiles depending on how many tiles are between it
+    and the source tile (aka tile distance). The smaller the tile distance,
+    the close the tile's value is to 1. The tile distance can get as high as
+    the max_depth argument, which is 10 as default. If the max_depth is kept
+    as default 10, this means the BFS search will stop once a tile
+    distance of 10 is reached.
+
     Args:
         map_name (str): Map used for find_closest_area and
             relevant tile neighbor dictionary
@@ -272,13 +267,6 @@ def calc_frame_map_control_values(
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
-
-    Values are allocated to tiles depending on how many tiles are between it
-    and the source tile (aka tile distance). The smaller the tile distance,
-    the close the tile's value is to 1. The tile distance can get as high as
-    the max_depth argument, which is 10 as default. If the max_depth is kept
-    as default 10, this means the BFS search will stop once a tile
-    distance of 10 is reached.
     """
     if map_name not in NAV:
         msg = "Map not found."
@@ -292,13 +280,13 @@ def calc_frame_map_control_values(
 
 def _extract_team_metadata_helper(
     side_data: TeamFrameInfo,
-) -> FrameTeamMetadataDict:
+) -> TeamMetadata:
     """Helper function to parse player locations in given side_data.
 
     Args:
         side_data (TeamFrameInfo): Object with metadata for side's players.
 
-    Returns: FrameTeamMetadataDict with metadata on team's players
+    Returns: TeamMetadata with metadata on team's players
     """
     coords = ("x", "y", "z")
     alive_players: list[list[float]] | list = [
@@ -307,25 +295,25 @@ def _extract_team_metadata_helper(
         if player["isAlive"]
     ]
 
-    return FrameTeamMetadataDict({"alive_player_locations": alive_players})
+    return TeamMetadata({"alive_player_locations": alive_players})
 
 
 def extract_teams_metadata(
     frame: GameFrame,
-) -> FrameTeamMetadataObject:
+) -> FrameTeamMetadata:
     """Parse frame data for alive player locations for both sides.
 
     Args:
         frame (GameFrame): Dictionary in the form of an awpy frame
-                           containing relevant data for both sides
+            containing relevant data for both sides
 
-    Returns: FrameTeamMetadataObject containing team metadata (player
-             positions, etc.)
+    Returns: FrameTeamMetadata containing team metadata (player
+        positions, etc.)
 
     Raises:
         ValueError: If no players are alive for both sides
     """
-    teams_metadata: FrameTeamMetadataObject = {
+    teams_metadata: FrameTeamMetadata = {
         "t": _extract_team_metadata_helper(frame["t"]),
         "ct": _extract_team_metadata_helper(frame["ct"]),
     }
@@ -339,19 +327,6 @@ def _map_control_metric_helper(
 ) -> float:
     """Return map control metric given FrameMapControlValues object.
 
-    Args:
-        map_name (str): Map used in calculate_tile_area
-        mc_values (FrameMapControlValues): FrameMapControlValues object
-                                           containing map control values
-                                           for both teams.
-                                           Expected format that of
-                                           calc_frame_map_control_values output
-
-    Returns: Map Control Metric given dictionary of values
-
-    Raises:
-        ValueError: If mc_values is not in expected format
-
     Map Control metric is used to quantify how much of the map is controlled
     by T/CT. Each tile is given a value between 0 (complete T control) and 1
     (complete CT control). If a tile is controlled by both teams, a value is
@@ -359,6 +334,14 @@ def _map_control_metric_helper(
     T values. Once all of the tiles' values are calculated, a weighted sum
     is done on the tiles' values where the tiles' area is the weights.
     This weighted sum is the map control metric returned at the end of the function.
+
+    Args:
+        map_name (str): Map used in calculate_tile_area
+        mc_values (FrameMapControlValues): Object containing map control
+            values for both teams.
+            Expected format that of calc_frame_map_control_values output
+
+    Returns: Map Control Metric
     """
     current_map_control_value: list[float] = []
     tile_areas: list[float] = []
@@ -380,6 +363,14 @@ def calc_frame_map_control_metric(
 ) -> float:
     """Return map control metric for given awpy frame.
 
+    Map Control metric is used to quantify how much of the map is controlled
+    by T/CT. Each tile is given a value between 0 (complete T control) and 1
+    (complete CT control). If a tile is controlled by both teams, a value is
+    found by taking the ratio between the sum of CT values and sum of CT and
+    T values. Once all of the tiles' values are calculated, a weighted sum
+    is done on the tiles' values where the tiles' area is the weights.
+    This weighted sum is the map control metric returned at the end of the function.
+
     Args:
         map_name (str): Map used position_transform call
         frame (GameFrame): awpy frame to calculate map control metric for
@@ -388,14 +379,6 @@ def calc_frame_map_control_metric(
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
-
-    Map Control metric is used to quantify how much of the map is controlled
-    by T/CT. Each tile is given a value between 0 (complete T control) and 1
-    (complete CT control). If a tile is controlled by both teams, a value is
-    found by taking the ratio between the sum of CT values and sum of CT and
-    T values. Once all of the tiles' values are calculated, a weighted sum
-    is done on the tiles' values where the tiles' area is the weights.
-    This weighted sum is the map control metric returned at the end of the function.
     """
     if map_name not in NAV:
         msg = "Map not found."
@@ -411,6 +394,14 @@ def calculate_round_map_control_metrics(
 ) -> list[float]:
     """Return list of map control metric for given awpy round.
 
+    Map Control metric is used to quantify how much of the map is controlled
+    by T/CT. Each tile is given a value between 0 (complete T control) and 1
+    (complete CT control). If a tile is controlled by both teams, a value is
+    found by taking the ratio between the sum of CT values and sum of CT and
+    T values. Once all of the tiles' values are calculated, a weighted sum
+    is done on the tiles' values where the tiles' area is the weights.
+    This weighted sum is the map control metric returned at the end of the function.
+
     Args:
         map_name (str): Map used position_transform call
         round_data (GameRound): awpy round to calculate map control metrics for
@@ -419,14 +410,6 @@ def calculate_round_map_control_metrics(
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
-
-    Map Control metric is used to quantify how much of the map is controlled
-    by T/CT. Each tile is given a value between 0 (complete T control) and 1
-    (complete CT control). If a tile is controlled by both teams, a value is
-    found by taking the ratio between the sum of CT values and sum of CT and
-    T values. Once all of the tiles' values are calculated, a weighted sum
-    is done on the tiles' values where the tiles' area is the weights.
-    This weighted sum is the map control metric returned at the end of the function.
     """
     if map_name not in NAV:
         msg = "Map not found."
