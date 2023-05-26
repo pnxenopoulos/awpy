@@ -705,7 +705,7 @@ class RoundStatistics(TypedDict):
 # TODO: Incorporate TileIdObject into rest of repo.
 TileIdObject = NewType("TileIdObject", int)
 
-# eturn type for awpy.analytics.map_control._bfs_helper.
+# Return type for awpy.analytics.map_control._bfs_helper.
 # Contains map control values for one team.
 # Maps TileIdObject to list of tile map control values.
 TeamMapControlValuesDict = NewType(

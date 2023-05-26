@@ -14,6 +14,7 @@ Example::
 
 https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb
 """
+import logging
 import os
 import shutil
 from typing import Literal
@@ -36,12 +37,17 @@ from awpy.data import MAP_DATA, NAV
 from awpy.types import (
     BombInfo,
     FrameMapControlValues,
+    FrameTeamMetadataDict,
     FrameTeamMetadataObject,
     GameFrame,
     GameRound,
     PlayerInfo,
     PlotPosition,
     TeamMapControlValuesDict,
+    lower_side,
+)
+from awpy.visualization import (
+    SIDE_COLORS,
 )
 
 
@@ -345,6 +351,25 @@ def plot_nades(
     return figure, axes
 
 
+def _plot_frame_team_player_positions(
+    map_name: str,
+    side: Literal["CT", "T"],
+    player_data: FrameTeamMetadataDict,
+    axes: plt.Axes,
+) -> None:
+    transformed_x = [
+        position_transform(map_name, loc[0], "x")
+        for loc in player_data["alive_player_locations"]
+    ]
+    transformed_y = [
+        position_transform(map_name, loc[1], "y")
+        for loc in player_data["alive_player_locations"]
+    ]
+    side_color = SIDE_COLORS[lower_side(side)]
+    color_arr = [side_color] * len(player_data["alive_player_locations"])
+    axes.scatter(transformed_x, transformed_y, c=color_arr)
+
+
 def _plot_map_control_snapshot_helper(
     map_name: str,
     ct_tiles: TeamMapControlValuesDict,
@@ -371,25 +396,41 @@ def _plot_map_control_snapshot_helper(
     for tile in all_tiles:
         if tile in NAV[map_name]:
             area = NAV[map_name][tile]
-            se_x = position_transform(map_name, area["southEastX"], "x")
-            nw_x = position_transform(map_name, area["northWestX"], "x")
-            se_y = position_transform(map_name, area["southEastY"], "y")
-            nw_y = position_transform(map_name, area["northWestY"], "y")
-            width = se_x - nw_x
-            height = nw_y - se_y
 
-            # Use max value (if exists) for each side for the current tile
-            ct_val = max(ct_tiles[tile] + [0])
-            t_val = max(t_tiles[tile] + [0])
+            width = position_transform(
+                map_name, area["southEastX"], "x"
+            ) - position_transform(map_name, area["northWestX"], "x")
+            height = position_transform(
+                map_name, area["northWestY"], "y"
+            ) - position_transform(map_name, area["southEastY"], "y")
 
-            # Use each side's value above as weights for weighted average
-            # to find correct color
+            # Use max value (default value 0 if no values exist)
+            # for each side for the current tile
+            ct_val = max(ct_tiles[tile], default=0)
+            t_val = max(t_tiles[tile], default=0)
+
+            """
+            Map T/CT Val to RGB Color.
+            If CT Val is non-zero and T Val is 0, color will be Green
+            If T Val is non-zero and CT Val is 0, color will be Red
+            If T and CT Val are non-zero, color is weighted average
+            between Green and Red.
+            """
             cur_color = min(ct_val / (ct_val + t_val), ct_val) * np.array(
                 [0, 1, 0]
             ) + min(t_val / (ct_val + t_val), t_val) * np.array([1, 0, 0])
 
+            cur_color = (ct_val / (ct_val + t_val)) / 5 * np.array([0, 1, 0]) + (
+                t_val / (ct_val + t_val) / 5
+            ) * np.array([1, 0, 0])
+
+            cur_color = ct_val * np.array([0, 1, 0]) + t_val * np.array([1, 0, 0])
+
             rect = patches.Rectangle(
-                (nw_x, se_y),
+                (
+                    position_transform(map_name, area["northWestX"], "x"),
+                    position_transform(map_name, area["southEastY"], "y"),
+                ),
                 width,
                 height,
                 linewidth=1,
@@ -399,32 +440,14 @@ def _plot_map_control_snapshot_helper(
             )
             axes.add_patch(rect)
         else:
-            print("Tile not found in map:", tile)
+            log_message = "Tile not found in map:" + tile
+            logging.info(log_message)
 
     # Plot player positions if given
     if player_data is not None:
-        t_positions, ct_positions = (
-            player_data["t"]["alive_player_locations"],
-            player_data["ct"]["alive_player_locations"],
-        )
-        if len(t_positions) > 0:
-            transformed_x = [
-                position_transform(map_name, loc[0], "x") for loc in t_positions
-            ]
-            transformed_y = [
-                position_transform(map_name, loc[1], "y") for loc in t_positions
-            ]
-            color_arr = ["#5d79ae"] * len(t_positions)
-            axes.scatter(transformed_x, transformed_y, c=color_arr)
-        if len(ct_positions) > 0:
-            transformed_x = [
-                position_transform(map_name, loc[0], "x") for loc in ct_positions
-            ]
-            transformed_y = [
-                position_transform(map_name, loc[1], "y") for loc in ct_positions
-            ]
-            color_arr = ["#de9b35"] * len(ct_positions)
-            axes.scatter(transformed_x, transformed_y, c=color_arr)
+        _plot_frame_team_player_positions(map_name, "CT", player_data["ct"], axes)
+        _plot_frame_team_player_positions(map_name, "T", player_data["t"], axes)
+
     axes.axis("off")
 
 
@@ -551,8 +574,7 @@ def create_round_map_control_gif(
     print("Saving/loading frames")
     frames = round_data["frames"]
     i = 0
-    while frames and i < len(frames):
-        frame = frames[i]
+    for frame in frames or []:
         filename = f"./tmp/tmp{i}.png"
 
         # Save current frame map control viz to file
@@ -566,7 +588,9 @@ def create_round_map_control_gif(
 
         # Load image back as frame of gif that will
         # be created at the end of this function
-        images.append(imageio.imread(filename))
+        cur_img = imageio.imread(filename)
+        images.append(cur_img)
+
         i += 1
 
     print("Creating gif!")
