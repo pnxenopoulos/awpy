@@ -5,7 +5,7 @@
 
     Example notebook:
 
-    github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
+    _path_to_awpy_repo/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
 """
 
 from collections import defaultdict, deque
@@ -165,8 +165,8 @@ def _frame_tile_map_control_values(
         FrameMapControlValues object containing each team's map control values
     """
     return FrameMapControlValues(
-        t=_bfs_helper(map_name, t_tiles, neighbor_info),
-        ct=_bfs_helper(map_name, ct_tiles, neighbor_info),
+        t_values=_bfs_helper(map_name, t_tiles, neighbor_info),
+        ct_values=_bfs_helper(map_name, ct_tiles, neighbor_info),
     )
 
 
@@ -217,17 +217,15 @@ def calc_parsed_frame_map_control_values(
         msg = "Map not found."
         raise ValueError(msg)
 
-    neighboring_tiles = list(NAV_GRAPHS[map_name].edges)
-
-    neighbors_dict = graph_to_tile_neighbors([(i, j) for i, j in neighboring_tiles])
+    neighbors_dict = graph_to_tile_neighbors(list(NAV_GRAPHS[map_name].edges))
 
     t_tiles = [
         find_closest_area(map_name, i)["areaId"]
-        for i in current_player_data.t.alive_player_locations
+        for i in current_player_data.t_metadata.alive_player_locations
     ]
     ct_tiles = [
         find_closest_area(map_name, i)["areaId"]
-        for i in current_player_data.ct.alive_player_locations
+        for i in current_player_data.ct_metadata.alive_player_locations
     ]
 
     return _frame_tile_map_control_values(map_name, ct_tiles, t_tiles, neighbors_dict)
@@ -299,8 +297,8 @@ def extract_teams_metadata(
         positions, etc.)
     """
     return FrameTeamMetadata(
-        t=_extract_team_metadata_helper(frame["t"]),
-        ct=_extract_team_metadata_helper(frame["ct"]),
+        t_metadata=_extract_team_metadata_helper(frame["t"]),
+        ct_metadata=_extract_team_metadata_helper(frame["ct"]),
     )
 
 
@@ -328,7 +326,7 @@ def _map_control_metric_helper(
     """
     current_map_control_value: list[float] = []
     tile_areas: list[float] = []
-    for tile in set(mc_values.ct.keys() | set(mc_values.t.keys())):
+    for tile in set(mc_values.ct_values.keys() | set(mc_values.t_values.keys())):
         ct_val, t_val = mc_values.ct[tile], mc_values.t[tile]
 
         current_map_control_value.append(sum(ct_val) / (sum(ct_val) + sum(t_val)))

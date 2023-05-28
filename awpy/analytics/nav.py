@@ -1622,11 +1622,11 @@ def calculate_tile_area(
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-    if int(tile_id) not in NAV[map_name]:
+    if tile_id not in NAV[map_name]:
         msg = "Tile ID not found."
         raise ValueError(msg)
 
-    tile_info = NAV[map_name][int(tile_id)]
+    tile_info = NAV[map_name][tile_id]
 
     tile_width = tile_info["northWestX"] - tile_info["southEastX"]
     tile_height = tile_info["northWestY"] - tile_info["southEastY"]

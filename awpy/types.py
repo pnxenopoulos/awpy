@@ -704,6 +704,9 @@ class RoundStatistics(TypedDict):
 # Type to represent tile id for navigation tiles.
 TileId: TypeAlias = int
 
+# Type to represent player position (list of floats [x, y, z])
+PlayerPosition: TypeAlias = list[float]
+
 # Return type for awpy.analytics.map_control._bfs_helper.
 # Contains map control values for one team.
 # Maps TileId to list of tile map control values.
@@ -722,20 +725,8 @@ class TileDistanceObject:
     distance is associated with.
     """
 
-    def __init__(
-        self,
-        *,
-        tile_id: TileId,
-        distance: float,
-    ) -> None:
-        """Initialze TileDistanceObject class instance.
-
-        Args:
-            distance (float): Distance from source tile to tile_id
-            tile_id (TileId): TileId for tile
-        """
-        self.tile_id = tile_id
-        self.distance = distance
+    tile_id: TileId
+    distance: float
 
 
 @dataclass
@@ -746,24 +737,9 @@ class BFSTileData:
     value, and steps remaining for bfs algorithm
     """
 
-    def __init__(
-        self,
-        *,
-        tile_id: TileId,
-        map_control_value: float,
-        steps_left: int,
-    ) -> None:
-        """Initialze BFSTileData class instance.
-
-        Args:
-            tile_id (TileId): TileId for tile
-            map_control_value (float): Map control value for tile
-            steps_left (int): Number of steps remaining for BFS
-                algorithm
-        """
-        self.tile_id = tile_id
-        self.map_control_value = map_control_value
-        self.steps_left = steps_left
+    tile_id: TileId
+    map_control_value: float
+    steps_left: int
 
 
 @dataclass
@@ -774,17 +750,7 @@ class TeamMetadata:
     more metadata (utility, bomb location, etc.) in the future
     """
 
-    def __init__(
-        self,
-        *,
-        alive_player_locations: list[list[float]],
-    ) -> None:
-        """Initialze TeamMetadata class instance.
-
-        Args:
-            alive_player_locations (list): List of player locations
-        """
-        self.alive_player_locations = alive_player_locations
+    alive_player_locations: list[PlayerPosition]
 
 
 @dataclass
@@ -795,20 +761,8 @@ class FrameTeamMetadata:
     Holds parsed metadata object (TeamMetadata) for both teams
     """
 
-    def __init__(
-        self,
-        *,
-        t: TeamMetadata,
-        ct: TeamMetadata,
-    ) -> None:
-        """Initialze TeamMetadata class instance.
-
-        Args:
-            t (TeamMetadata): Object describing t side
-            ct (TeamMetadata): Object describing ct side
-        """
-        self.t = t
-        self.ct = ct
+    t_metadata: TeamMetadata
+    ct_metadata: TeamMetadata
 
 
 @dataclass
@@ -819,20 +773,8 @@ class FrameMapControlValues:
     Holds TeamMapControlValues for each team for a certain frame.
     """
 
-    def __init__(
-        self,
-        *,
-        t: TeamMapControlValues,
-        ct: TeamMapControlValues,
-    ) -> None:
-        """Initialze FrameMapControlValues class instance.
-
-        Args:
-            t (TeamMapControlValues): Map contol values for t side
-            ct (TeamMapControlValues): Map contol values for ct side
-        """
-        self.t = t
-        self.ct = ct
+    t_values: TeamMapControlValues
+    ct_values: TeamMapControlValues
 
 
 @overload

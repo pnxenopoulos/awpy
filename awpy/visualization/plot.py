@@ -45,7 +45,7 @@ from awpy.types import (
     TeamMetadata,
     lower_side,
 )
-from awpy.visualization import _TMP_FOLDER, SIDE_COLORS
+from awpy.visualization import AWPY_TMP_FOLDER, SIDE_COLORS
 
 
 def plot_map(
@@ -265,9 +265,9 @@ def plot_round(
     Returns:
         True, saves .gif
     """
-    if os.path.isdir(_TMP_FOLDER):
-        shutil.rmtree(f"{_TMP_FOLDER}/")
-    os.mkdir(_TMP_FOLDER)
+    if os.path.isdir(AWPY_TMP_FOLDER):
+        shutil.rmtree(f"{AWPY_TMP_FOLDER}/")
+    os.mkdir(AWPY_TMP_FOLDER)
     image_files: list[str] = []
     for i, game_frame in tqdm(enumerate(frames)):
         positions = [_get_plot_position_for_bomb(game_frame["bomb"], map_name)]
@@ -283,12 +283,12 @@ def plot_round(
             map_type=map_type,
             dark=dark,
         )
-        image_files.append(f"{_TMP_FOLDER}/{i}.png")
+        image_files.append(f"{AWPY_TMP_FOLDER}/{i}.png")
         figure.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = [imageio.imread(file) for file in image_files]
     imageio.imwrite(filename, images, duration=1000 / fps)
-    shutil.rmtree(f"{_TMP_FOLDER}/")
+    shutil.rmtree(f"{AWPY_TMP_FOLDER}/")
     return True
 
 
@@ -395,7 +395,7 @@ def _plot_map_control_snapshot_helper(
 
     Returns: Nothing, all plotting is done on ax object
     """
-    ct_tiles, t_tiles = occupied_tiles.ct, occupied_tiles.t
+    ct_tiles, t_tiles = occupied_tiles.ct_values, occupied_tiles.t_values
     ct_tile_set, t_tile_set = set(ct_tiles.keys()), set(t_tiles.keys())
     all_tiles = ct_tile_set.union(t_tile_set)
 
@@ -411,20 +411,16 @@ def _plot_map_control_snapshot_helper(
                 map_name, area["northWestY"], "y"
             ) - position_transform(map_name, area["southEastY"], "y")
 
-            """
-            Use max value (default value 0 if no values exist)
-            for each side for the current tile
-            """
+            # Use max value (default value 0 if no values exist)
+            # for each side for the current tile
             ct_val = max(ct_tiles[tile], default=0)
             t_val = max(t_tiles[tile], default=0)
 
-            """
-            Map T/CT Val to RGB Color.
-            If CT Val is non-zero and T Val is 0, color will be Green
-            If T Val is non-zero and CT Val is 0, color will be Red
-            If T and CT Val are non-zero, color is weighted average
-            between Green and Red.
-            """
+            # Map T/CT Val to RGB Color.
+            # If CT Val is non-zero and T Val is 0, color will be Green
+            # If T Val is non-zero and CT Val is 0, color will be Red
+            # If T and CT Val are non-zero, color is weighted average
+            # between Green and Red.
             cur_color = ct_val * np.array([0, 1, 0]) + t_val * np.array([1, 0, 0])
 
             rect = patches.Rectangle(
@@ -445,8 +441,8 @@ def _plot_map_control_snapshot_helper(
 
     # Plot player positions if given
     if player_data is not None:
-        _plot_frame_team_player_positions(map_name, "CT", player_data.ct, axes)
-        _plot_frame_team_player_positions(map_name, "T", player_data.t, axes)
+        _plot_frame_team_player_positions(map_name, "CT", player_data.ct_metadata, axes)
+        _plot_frame_team_player_positions(map_name, "T", player_data.t_metadata, axes)
 
     axes.axis("off")
 
@@ -563,16 +559,16 @@ def create_round_map_control_gif(
         msg = "Map not found."
         raise ValueError(msg)
 
-    if os.path.isdir(_TMP_FOLDER):
-        shutil.rmtree(f"{_TMP_FOLDER}/")
-    os.mkdir(_TMP_FOLDER)
+    if os.path.isdir(AWPY_TMP_FOLDER):
+        shutil.rmtree(f"{AWPY_TMP_FOLDER}/")
+    os.mkdir(AWPY_TMP_FOLDER)
 
     images: list[np.ndarray] = []
     print("Saving/loading frames")
     frames = round_data["frames"]
 
-    for i, frame in enumerate(frames) or []:
-        filename = f"{_TMP_FOLDER}/frame_{i}.png"
+    for i, frame in enumerate(frames or []):
+        filename = f"{AWPY_TMP_FOLDER}/frame_{i}.png"
 
         # Save current frame map control viz to file
         # All frames are saved to './tmp/ folder '
@@ -703,7 +699,7 @@ def save_map_control_graphic(
     print("Saving/loading frames!")
     for i, frame in enumerate(frames):
         metrics.append(calc_frame_map_control_metric(map_name, frame))
-        temp_filename = f"{_TMP_FOLDER}/frame_{i}.png"
+        temp_filename = f"{AWPY_TMP_FOLDER}/frame_{i}.png"
         _save_map_control_graphic_helper(
             map_name, frame, metrics, save_path=temp_filename
         )
