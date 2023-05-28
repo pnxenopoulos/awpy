@@ -60,16 +60,16 @@ def _approx_neighbors(
 
     for tile in current_map_info:
         if tile != source_tile_id:
-            # TODO: See if AREA_DIST_MATRIX is worth incorporating
-            current_tile_distance_obj: TileDistanceObject = {
-                "distance": area_distance(
+            current_tile_distance_obj = TileDistanceObject(
+                tile_id=tile,
+                distance=area_distance(
                     map_name, tile, source_tile_id, dist_type="euclidean"
                 )["distance"],
-                "tile_id": TileId(tile),
-            }
+            )
+
             possible_neighbors_arr.append(current_tile_distance_obj)
 
-    return sorted(possible_neighbors_arr, key=lambda d: d["distance"])[:n_neighbors]
+    return sorted(possible_neighbors_arr, key=lambda d: d.distance)[:n_neighbors]
 
 
 def _bfs_helper(
@@ -107,36 +107,31 @@ def _bfs_helper(
     for cur_start_tile in current_tiles:
         tiles_seen: set[TileId] = set()
 
-        start_tile: BFSTileData = {
-            "tile_id": cur_start_tile,
-            "map_control_value": 1.0,
-            "steps_left": max_depth,
-        }
+        start_tile = BFSTileData(
+            tile_id=cur_start_tile, map_control_value=1.0, steps_left=max_depth
+        )
 
         queue: deque[BFSTileData] = deque([start_tile])
 
-        while queue and queue[0]["steps_left"] > 0:
+        while queue and queue[0].steps_left > 0:
             cur_tile = queue.popleft()
-            cur_id = cur_tile["tile_id"]
+            cur_id = cur_tile.tile_id
             if cur_id not in tiles_seen:
                 tiles_seen.add(cur_id)
-                map_control_values[cur_id].append(cur_tile["map_control_value"])
+                map_control_values[cur_id].append(cur_tile.map_control_value)
 
-                neighbors = [TileId(i) for i in neighbor_info[cur_id]]
+                neighbors = list(neighbor_info[cur_id])
                 if len(neighbors) == 0:
                     neighbors = [
-                        tile["tile_id"] for tile in _approx_neighbors(map_name, cur_id)
+                        tile.tile_id for tile in _approx_neighbors(map_name, cur_id)
                     ]
 
                 queue.extend(
                     [
                         BFSTileData(
-                            {
-                                "tile_id": neighbor,
-                                "map_control_value": (cur_tile["steps_left"] - 1)
-                                / max_depth,
-                                "steps_left": cur_tile["steps_left"] - 1,
-                            }
+                            tile_id=neighbor,
+                            map_control_value=(cur_tile.steps_left - 1) / max_depth,
+                            steps_left=cur_tile.steps_left - 1,
                         )
                         for neighbor in neighbors
                     ]
@@ -169,18 +164,10 @@ def _frame_tile_map_control_values(
     Returns:
         FrameMapControlValues object containing each team's map control values
     """
-    # Run BFS For CT Tiles
-    ct_values = _bfs_helper(map_name, ct_tiles, neighbor_info)
-
-    # Run BFS For T Tiles
-    t_values = _bfs_helper(map_name, t_tiles, neighbor_info)
-
-    frame_map_control: FrameMapControlValues = {
-        "ct": ct_values,
-        "t": t_values,
-    }
-
-    return frame_map_control
+    return FrameMapControlValues(
+        t=_bfs_helper(map_name, t_tiles, neighbor_info),
+        ct=_bfs_helper(map_name, ct_tiles, neighbor_info),
+    )
 
 
 def graph_to_tile_neighbors(
@@ -230,17 +217,18 @@ def calc_parsed_frame_map_control_values(
         msg = "Map not found."
         raise ValueError(msg)
 
-    t_locations = current_player_data["t"]["alive_player_locations"]
-    ct_locations = current_player_data["ct"]["alive_player_locations"]
-
     neighboring_tiles = list(NAV_GRAPHS[map_name].edges)
 
-    neighbors_dict = graph_to_tile_neighbors(
-        [(TileId(i), TileId(j)) for i, j in neighboring_tiles]
-    )
+    neighbors_dict = graph_to_tile_neighbors([(i, j) for i, j in neighboring_tiles])
 
-    t_tiles = [TileId(find_closest_area(map_name, i)["areaId"]) for i in t_locations]
-    ct_tiles = [TileId(find_closest_area(map_name, i)["areaId"]) for i in ct_locations]
+    t_tiles = [
+        find_closest_area(map_name, i)["areaId"]
+        for i in current_player_data.t.alive_player_locations
+    ]
+    ct_tiles = [
+        find_closest_area(map_name, i)["areaId"]
+        for i in current_player_data.ct.alive_player_locations
+    ]
 
     return _frame_tile_map_control_values(map_name, ct_tiles, t_tiles, neighbors_dict)
 
@@ -295,7 +283,7 @@ def _extract_team_metadata_helper(
         if player["isAlive"]
     ]
 
-    return TeamMetadata({"alive_player_locations": alive_players})
+    return TeamMetadata(alive_player_locations=alive_players)
 
 
 def extract_teams_metadata(
@@ -309,16 +297,11 @@ def extract_teams_metadata(
 
     Returns: FrameTeamMetadata containing team metadata (player
         positions, etc.)
-
-    Raises:
-        ValueError: If no players are alive for both sides
     """
-    teams_metadata: FrameTeamMetadata = {
-        "t": _extract_team_metadata_helper(frame["t"]),
-        "ct": _extract_team_metadata_helper(frame["ct"]),
-    }
-
-    return teams_metadata
+    return FrameTeamMetadata(
+        t=_extract_team_metadata_helper(frame["t"]),
+        ct=_extract_team_metadata_helper(frame["ct"]),
+    )
 
 
 def _map_control_metric_helper(
@@ -345,8 +328,8 @@ def _map_control_metric_helper(
     """
     current_map_control_value: list[float] = []
     tile_areas: list[float] = []
-    for tile in set(mc_values["ct"].keys() | set(mc_values["t"].keys())):
-        ct_val, t_val = mc_values["ct"][tile], mc_values["t"][tile]
+    for tile in set(mc_values.ct.keys() | set(mc_values.t.keys())):
+        ct_val, t_val = mc_values.ct[tile], mc_values.t[tile]
 
         current_map_control_value.append(sum(ct_val) / (sum(ct_val) + sum(t_val)))
         tile_areas.append(calculate_tile_area(map_name, int(tile)))

@@ -45,9 +45,7 @@ from awpy.types import (
     TeamMetadata,
     lower_side,
 )
-from awpy.visualization import (
-    SIDE_COLORS,
-)
+from awpy.visualization import _TMP_FOLDER, SIDE_COLORS
 
 
 def plot_map(
@@ -267,9 +265,9 @@ def plot_round(
     Returns:
         True, saves .gif
     """
-    if os.path.isdir("csgo_tmp"):
-        shutil.rmtree("csgo_tmp/")
-    os.mkdir("csgo_tmp")
+    if os.path.isdir(_TMP_FOLDER):
+        shutil.rmtree(f"{_TMP_FOLDER}/")
+    os.mkdir(_TMP_FOLDER)
     image_files: list[str] = []
     for i, game_frame in tqdm(enumerate(frames)):
         positions = [_get_plot_position_for_bomb(game_frame["bomb"], map_name)]
@@ -285,12 +283,12 @@ def plot_round(
             map_type=map_type,
             dark=dark,
         )
-        image_files.append(f"csgo_tmp/{i}.png")
+        image_files.append(f"{_TMP_FOLDER}/{i}.png")
         figure.savefig(image_files[-1], dpi=300, bbox_inches="tight")
         plt.close()
     images = [imageio.imread(file) for file in image_files]
     imageio.imwrite(filename, images, duration=1000 / fps)
-    shutil.rmtree("csgo_tmp/")
+    shutil.rmtree(f"{_TMP_FOLDER}/")
     return True
 
 
@@ -369,14 +367,14 @@ def _plot_frame_team_player_positions(
     """
     transformed_x = [
         position_transform(map_name, loc[0], "x")
-        for loc in player_data["alive_player_locations"]
+        for loc in player_data.alive_player_locations
     ]
     transformed_y = [
         position_transform(map_name, loc[1], "y")
-        for loc in player_data["alive_player_locations"]
+        for loc in player_data.alive_player_locations
     ]
     side_color = SIDE_COLORS[lower_side(side)]
-    color_arr = [side_color] * len(player_data["alive_player_locations"])
+    color_arr = [side_color] * len(player_data.alive_player_locations)
     axes.scatter(transformed_x, transformed_y, c=color_arr)
 
 
@@ -397,7 +395,7 @@ def _plot_map_control_snapshot_helper(
 
     Returns: Nothing, all plotting is done on ax object
     """
-    ct_tiles, t_tiles = occupied_tiles["ct"], occupied_tiles["t"]
+    ct_tiles, t_tiles = occupied_tiles.ct, occupied_tiles.t
     ct_tile_set, t_tile_set = set(ct_tiles.keys()), set(t_tiles.keys())
     all_tiles = ct_tile_set.union(t_tile_set)
 
@@ -443,13 +441,12 @@ def _plot_map_control_snapshot_helper(
             )
             axes.add_patch(rect)
         else:
-            log_message = "Tile not found in map:" + tile
-            logging.info(log_message)
+            logging.info("Tile not found in map: %s", tile)
 
     # Plot player positions if given
     if player_data is not None:
-        _plot_frame_team_player_positions(map_name, "CT", player_data["ct"], axes)
-        _plot_frame_team_player_positions(map_name, "T", player_data["t"], axes)
+        _plot_frame_team_player_positions(map_name, "CT", player_data.ct, axes)
+        _plot_frame_team_player_positions(map_name, "T", player_data.t, axes)
 
     axes.axis("off")
 
@@ -565,19 +562,17 @@ def create_round_map_control_gif(
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-    if "tmp" not in os.listdir():
-        error_string = (
-            "Frame visualizations cannot be saved to the"
-            "./tmp folder - it does not exist"
-        )
-        raise ValueError(error_string)
+
+    if os.path.isdir(_TMP_FOLDER):
+        shutil.rmtree(f"{_TMP_FOLDER}/")
+    os.mkdir(_TMP_FOLDER)
 
     images: list[np.ndarray] = []
     print("Saving/loading frames")
     frames = round_data["frames"]
-    i = 0
-    for frame in frames or []:
-        filename = f"./tmp/tmp{i}.png"
+
+    for i, frame in enumerate(frames) or []:
+        filename = f"{_TMP_FOLDER}/frame_{i}.png"
 
         # Save current frame map control viz to file
         # All frames are saved to './tmp/ folder '
@@ -590,10 +585,7 @@ def create_round_map_control_gif(
 
         # Load image back as frame of gif that will
         # be created at the end of this function
-        cur_img = imageio.imread(filename)
-        images.append(cur_img)
-
-        i += 1
+        images.append(imageio.imread(filename))
 
     print("Creating gif!")
     imageio.imwrite(gif_filepath, images)
@@ -711,7 +703,7 @@ def save_map_control_graphic(
     print("Saving/loading frames!")
     for i, frame in enumerate(frames):
         metrics.append(calc_frame_map_control_metric(map_name, frame))
-        temp_filename = f"./tmp/tmp{i!s}.png"
+        temp_filename = f"{_TMP_FOLDER}/frame_{i}.png"
         _save_map_control_graphic_helper(
             map_name, frame, metrics, save_path=temp_filename
         )

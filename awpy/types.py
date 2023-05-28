@@ -1,7 +1,7 @@
 """This module contains the type definitions for the parsed json structure."""
 
 from dataclasses import dataclass
-from typing import Literal, NewType, NotRequired, TypeGuard, final, overload
+from typing import Literal, NewType, NotRequired, TypeGuard, TypeAlias, final, overload
 
 from typing_extensions import TypedDict
 
@@ -702,8 +702,7 @@ class RoundStatistics(TypedDict):
 
 
 # Type to represent tile id for navigation tiles.
-# TODO: Incorporate TileId into rest of repo.
-TileId = NewType("TileId", int)
+TileId: TypeAlias = int
 
 # Return type for awpy.analytics.map_control._bfs_helper.
 # Contains map control values for one team.
@@ -716,66 +715,124 @@ TileNeighbors = NewType("TileNeighbors", dict[TileId, set[int]])
 
 
 @dataclass
-class TileDistanceObject(TypedDict):
+class TileDistanceObject:
     """Dataclass with data for map control tile distance calculations.
 
     Holds information for distance to source tile and tile_id
     distance is associated with.
-
-    TODO: Merge TileDistanceObject with TileDistance object
-          as their functionality seems very similar
     """
 
-    distance: float
-    tile_id: TileId
+    def __init__(
+        self,
+        *,
+        tile_id: TileId,
+        distance: float,
+    ) -> None:
+        """Initialze TileDistanceObject class instance.
+
+        Args:
+            distance (float): Distance from source tile to tile_id
+            tile_id (TileId): TileId for tile
+        """
+        self.tile_id = tile_id
+        self.distance = distance
 
 
 @dataclass
-class BFSTileData(TypedDict):
+class BFSTileData:
     """Dataclass containing data for tiles during bfs algorithm.
 
     Holds information for tile_id for tile, current map control
     value, and steps remaining for bfs algorithm
     """
 
-    tile_id: TileId
-    map_control_value: float
-    steps_left: int
+    def __init__(
+        self,
+        *,
+        tile_id: TileId,
+        map_control_value: float,
+        steps_left: int,
+    ) -> None:
+        """Initialze BFSTileData class instance.
+
+        Args:
+            tile_id (TileId): TileId for tile
+            map_control_value (float): Map control value for tile
+            steps_left (int): Number of steps remaining for BFS
+                algorithm
+        """
+        self.tile_id = tile_id
+        self.map_control_value = map_control_value
+        self.steps_left = steps_left
 
 
 @dataclass
-class TeamMetadata(TypedDict):
+class TeamMetadata:
     """Dataclass containing metadata for one team.
 
     Holds information for aliver player locations. Can include
     more metadata (utility, bomb location, etc.) in the future
     """
 
-    alive_player_locations: list[list[float]] | list
+    def __init__(
+        self,
+        *,
+        alive_player_locations: list[list[float]],
+    ) -> None:
+        """Initialze TeamMetadata class instance.
+
+        Args:
+            alive_player_locations (list): List of player locations
+        """
+        self.alive_player_locations = alive_player_locations
 
 
 @dataclass
-class FrameTeamMetadata(TypedDict):
+class FrameTeamMetadata:
     """Dataclass with metadata on both teams in frame.
 
     Return type for awpy.analytics.map_control.extract_teams_metadata.
     Holds parsed metadata object (TeamMetadata) for both teams
     """
 
-    t: TeamMetadata
-    ct: TeamMetadata
+    def __init__(
+        self,
+        *,
+        t: TeamMetadata,
+        ct: TeamMetadata,
+    ) -> None:
+        """Initialze TeamMetadata class instance.
+
+        Args:
+            t (TeamMetadata): Object describing t side
+            ct (TeamMetadata): Object describing ct side
+        """
+        self.t = t
+        self.ct = ct
 
 
 @dataclass
-class FrameMapControlValues(TypedDict):
+class FrameMapControlValues:
     """Dataclass with map control values for both teams in frame.
 
     Return type for awpy.analytics.map_control.calc_map_control.
     Holds TeamMapControlValues for each team for a certain frame.
     """
 
-    t: TeamMapControlValues
-    ct: TeamMapControlValues
+    def __init__(
+        self,
+        *,
+        t: TeamMapControlValues,
+        ct: TeamMapControlValues,
+    ) -> None:
+        """Initialze FrameMapControlValues class instance.
+
+        Args:
+            t (TeamMapControlValues): Map contol values for t side
+            ct (TeamMapControlValues): Map contol values for ct side
+        """
+        self.t = t
+        self.ct = ct
 
 
 @overload
