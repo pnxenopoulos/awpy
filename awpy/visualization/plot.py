@@ -485,7 +485,8 @@ def plot_map_control_snapshot(
         figure.savefig(fname=save_filepath, bbox_inches="tight", dpi=400)
         plt.close(figure)
     elif not given_fig_ax[0]:
-        plt.show(figure)
+        plt.show()
+        plt.close(figure)
 
 
 def plot_frame_map_control(

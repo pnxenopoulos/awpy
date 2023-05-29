@@ -49,10 +49,10 @@ def _approx_neighbors(
                     If n_neighbors <= 0
     """
     if source_tile_id not in NAV[map_name]:
-        msg = "Area ID not found."
+        msg = "Tile ID not found."
         raise ValueError(msg)
     if n_neighbors <= 0:
-        msg = "Invalid n_neighbors value. Must be > 0"
+        msg = "Invalid n_neighbors value. Must be > 0."
         raise ValueError(msg)
 
     current_map_info = NAV[map_name]
@@ -327,7 +327,7 @@ def _map_control_metric_helper(
     current_map_control_value: list[float] = []
     tile_areas: list[float] = []
     for tile in set(mc_values.ct_values.keys() | set(mc_values.t_values.keys())):
-        ct_val, t_val = mc_values.ct[tile], mc_values.t[tile]
+        ct_val, t_val = mc_values.ct_values[tile], mc_values.t_values[tile]
 
         current_map_control_value.append(sum(ct_val) / (sum(ct_val) + sum(t_val)))
         tile_areas.append(calculate_tile_area(map_name, int(tile)))
