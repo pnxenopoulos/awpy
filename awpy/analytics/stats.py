@@ -35,11 +35,11 @@ from awpy.types import (
     PlayerStatistics,
     RoundStatistics,
     WeaponFireAction,
-    int_to_string_kills,
+    int_to_string_n_players,
     is_valid_side,
     lower_side,
     other_side,
-    proper_kills,
+    proper_player_number,
 )
 
 # accuracy
@@ -345,14 +345,14 @@ def _handle_clutching(
     )
 
     # Typeguard and not 1 v 0
-    if not proper_kills(enemies_alive) or enemies_alive == 0:
+    if not proper_player_number(enemies_alive) or enemies_alive == 0:
         return
     player_statistics[clutcher_key][
-        "attempts1v" + int_to_string_kills(enemies_alive)
+        "attempts1v" + int_to_string_n_players(enemies_alive)
     ] += 1
     if game_round["winningSide"] == kill_action["victimSide"]:
         player_statistics[clutcher_key][
-            "success1v" + int_to_string_kills(enemies_alive)
+            "success1v" + int_to_string_n_players(enemies_alive)
         ] += 1
 
 
@@ -618,9 +618,9 @@ def _handle_multi_kills(
 def _increment_statistic(
     player_statistics: dict[str, PlayerStatistics], player: str, n_kills: int
 ) -> None:
-    if not proper_kills(n_kills):  # 0, 1, 2, 3, 4, 5
+    if not proper_player_number(n_kills):  # 0, 1, 2, 3, 4, 5
         return
-    kills_string = "kills" + int_to_string_kills(n_kills)
+    kills_string = "kills" + int_to_string_n_players(n_kills)
     player_statistics[player][kills_string] += 1
 
 

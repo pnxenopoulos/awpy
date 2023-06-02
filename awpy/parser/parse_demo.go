@@ -14,7 +14,14 @@ import (
 	events "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs/events"
 )
 
-// Game is the overall struct that holds the parsed demo data
+const unknown = "Unknown"
+const spectator = "Spectator"
+const unassigned = "Unassigned"
+const plant = "plant"
+const unranked = "Unranked"
+const zeroTime = "00:00"
+
+// Game is the overall struct that holds the parsed demo data.
 type Game struct {
 	MatchName      string          `json:"matchID"`
 	ClientName     string          `json:"clientName"`
@@ -32,7 +39,7 @@ type Game struct {
 	Rounds         []GameRound     `json:"gameRounds"`
 }
 
-// ParserOpts holds the parameters passed to the parser
+// ParserOpts holds the parameters passed to the parser.
 type ParserOpts struct {
 	ParseRate       int    `json:"parseRate"`
 	ParseFrames     bool   `json:"parseFrames"`
@@ -43,7 +50,7 @@ type ParserOpts struct {
 	ParseChat       bool   `json:"parseChat"`
 }
 
-// MatchPhases holds lists of when match events occurred
+// MatchPhases holds lists of when match events occurred.
 type MatchPhases struct {
 	AnnLastRoundHalf    []int64 `json:"announcementLastRoundHalf"`
 	AnnFinalRound       []int64 `json:"announcementFinalRound"`
@@ -90,7 +97,7 @@ type MMRank struct {
 	WinCount   int     `json:"winCount"`
 }
 
-// Chat player and server chat messages
+// Chat player and server chat messages.
 type Chat struct {
 	SteamID *int64   `json:"steamID"`
 	Text    string   `json:"text"`
@@ -103,14 +110,14 @@ type Chat struct {
 	Type      string `json:"type"`
 }
 
-// ConnectAction is the act of connecting or disconnecting to the server
+// ConnectAction is the act of connecting or disconnecting to the server.
 type ConnectAction struct {
 	Tick        int64  `json:"tick"`
 	ConnectType string `json:"action"`
 	SteamID     uint64 `json:"steamID"`
 }
 
-// GameRound contains round info and events
+// GameRound contains round info and events.
 type GameRound struct {
 	RoundNum             int64              `json:"roundNum"`
 	IsWarmup             bool               `json:"isWarmup"`
@@ -148,19 +155,19 @@ type GameRound struct {
 	Frames               []GameFrame        `json:"frames"`
 }
 
-// PlayerTeam
+// PlayerTeam.
 type PlayerTeams struct {
 	TeamName string    `json:"teamName"`
 	Players  []Players `json:"players"`
 }
 
-// Players
+// Players.
 type Players struct {
 	PlayerName string `json:"playerName"`
 	SteamID    int64  `json:"steamID"`
 }
 
-// GrenadeAction events
+// GrenadeAction events.
 type GrenadeAction struct {
 	ThrowTick        int64   `json:"throwTick"`
 	DestroyTick      int64   `json:"destroyTick"`
@@ -182,7 +189,7 @@ type GrenadeAction struct {
 	UniqueID         int64   `json:"entityId"`
 }
 
-// BombAction events
+// BombAction events.
 type BombAction struct {
 	Tick          int64   `json:"tick"`
 	Second        float64 `json:"seconds"`
@@ -197,7 +204,7 @@ type BombAction struct {
 	BombSite      *string `json:"bombSite"`
 }
 
-// DamageAction events
+// DamageAction events.
 type DamageAction struct {
 	Tick             int64    `json:"tick"`
 	Second           float64  `json:"seconds"`
@@ -233,7 +240,7 @@ type DamageAction struct {
 	ZoomLevel        *int64   `json:"zoomLevel"`
 }
 
-// KillAction events
+// KillAction events.
 type KillAction struct {
 	Tick                int64    `json:"tick"`
 	Second              float64  `json:"seconds"`
@@ -284,7 +291,7 @@ type KillAction struct {
 	WeaponClass         string   `json:"weaponClass"`
 }
 
-// WeaponFireAction events
+// WeaponFireAction events.
 type WeaponFireAction struct {
 	Tick           int64   `json:"tick"`
 	Second         float64 `json:"seconds"`
@@ -306,7 +313,7 @@ type WeaponFireAction struct {
 	ZoomLevel      int64   `json:"zoomLevel"`
 }
 
-// FlashAction events
+// FlashAction events.
 type FlashAction struct {
 	Tick            int64    `json:"tick"`
 	Second          float64  `json:"seconds"`
@@ -332,7 +339,7 @@ type FlashAction struct {
 	FlashDuration   *float64 `json:"flashDuration"`
 }
 
-// GameFrame (game state at time t)
+// GameFrame (game state at time t).
 type GameFrame struct {
 	FrameID       int64         `json:"frameID"`
 	GlobalFrameID int64         `json:"globalFrameID"`
@@ -350,14 +357,14 @@ type GameFrame struct {
 	Fires         []Fire        `json:"fires"`
 }
 
-// Bomb location
+// Bomb location.
 type BombInfo struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
 	Z float64 `json:"z"`
 }
 
-// Projectile
+// Projectile.
 type GrenadeInfo struct {
 	ProjectileType string  `json:"projectileType"`
 	X              float64 `json:"x"`
@@ -365,7 +372,7 @@ type GrenadeInfo struct {
 	Z              float64 `json:"z"`
 }
 
-// Inferno from molly or incend. grenade
+// Inferno from molly or incend. grenade.
 type Fire struct {
 	UniqueID int64   `json:"uniqueID"`
 	X        float64 `json:"x"`
@@ -373,7 +380,7 @@ type Fire struct {
 	Z        float64 `json:"z"`
 }
 
-// TeamFrameInfo at time t
+// TeamFrameInfo at time t.
 type TeamFrameInfo struct {
 	Side         string       `json:"side"`
 	Team         string       `json:"teamName"`
@@ -383,7 +390,7 @@ type TeamFrameInfo struct {
 	Players      []PlayerInfo `json:"players"`
 }
 
-// PlayerInfo at time t
+// PlayerInfo at time t.
 type PlayerInfo struct {
 	PlayerSteamID   int64        `json:"steamID"`
 	PlayerName      string       `json:"name"`
@@ -440,7 +447,7 @@ type PlayerInfo struct {
 	ZoomLevel       int64        `json:"zoomLevel"`
 }
 
-// WeaponInfo contains data on an inventory weapon
+// WeaponInfo contains data on an inventory weapon.
 type WeaponInfo struct {
 	WeaponName     string `json:"weaponName"`
 	WeaponClass    string `json:"weaponClass"`
@@ -448,7 +455,7 @@ type WeaponInfo struct {
 	AmmoInReserve  int64  `json:"ammoInReserve"`
 }
 
-// Smoke holds current smoke info
+// Smoke holds current smoke info.
 type Smoke struct {
 	GrenadeEntityID int64   `json:"grenadeEntityID"`
 	StartTick       int64   `json:"startTick"`
@@ -462,7 +469,7 @@ func convertRank(r int) string {
 	case -1:
 		return "Expired"
 	case 0:
-		return "Unranked"
+		return unranked
 	case 1:
 		return "Silver 1"
 	case 2:
@@ -500,102 +507,102 @@ func convertRank(r int) string {
 	case 18:
 		return "The Global Elite"
 	default:
-		return "Unranked"
+		return unranked
 	}
 }
 
 func convertRoundEndReason(r events.RoundEndReason) string {
 	switch reason := r; reason {
-	case 1:
+	case events.RoundEndReasonTargetBombed:
 		return "TargetBombed"
-	case 2:
+	case events.RoundEndReasonVIPEscaped:
 		return "VIPEscaped"
-	case 3:
+	case events.RoundEndReasonVIPKilled:
 		return "VIPKilled"
-	case 4:
+	case events.RoundEndReasonTerroristsEscaped:
 		return "TerroristsEscaped"
-	case 5:
+	case events.RoundEndReasonCTStoppedEscape:
 		return "CTStoppedEscape"
-	case 6:
+	case events.RoundEndReasonTerroristsStopped:
 		return "TerroristsStopped"
-	case 7:
+	case events.RoundEndReasonBombDefused:
 		return "BombDefused"
-	case 8:
+	case events.RoundEndReasonCTWin:
 		return "CTWin"
-	case 9:
+	case events.RoundEndReasonTerroristsWin:
 		return "TerroristsWin"
-	case 10:
+	case events.RoundEndReasonDraw:
 		return "Draw"
-	case 11:
+	case events.RoundEndReasonHostagesRescued:
 		return "HostagesRescued"
-	case 12:
+	case events.RoundEndReasonTargetSaved:
 		return "TargetSaved"
-	case 13:
+	case events.RoundEndReasonHostagesNotRescued:
 		return "HostagesNotRescued"
-	case 14:
+	case events.RoundEndReasonTerroristsNotEscaped:
 		return "TerroristsNotEscaped"
-	case 15:
+	case events.RoundEndReasonVIPNotEscaped:
 		return "VIPNotEscaped"
-	case 16:
+	case events.RoundEndReasonGameStart:
 		return "GameStart"
-	case 17:
+	case events.RoundEndReasonTerroristsSurrender:
 		return "TerroristsSurrender"
-	case 18:
+	case events.RoundEndReasonCTSurrender:
 		return "CTSurrender"
 	default:
-		return "Unknown"
+		return unknown
 	}
 }
 
 func convertHitGroup(hg events.HitGroup) string {
 	switch hitGroup := hg; hitGroup {
-	case 0:
+	case events.HitGroupGeneric:
 		return "Generic"
-	case 1:
+	case events.HitGroupHead:
 		return "Head"
-	case 2:
+	case events.HitGroupChest:
 		return "Chest"
-	case 3:
+	case events.HitGroupStomach:
 		return "Stomach"
-	case 4:
+	case events.HitGroupLeftArm:
 		return "LeftArm"
-	case 5:
+	case events.HitGroupRightArm:
 		return "RightArm"
-	case 6:
+	case events.HitGroupLeftLeg:
 		return "LeftLeg"
-	case 7:
+	case events.HitGroupRightLeg:
 		return "RightLeg"
-	case 8:
+	case events.HitGroupNeck:
 		return "Neck"
-	case 10:
+	case events.HitGroupGear:
 		return "Gear"
 	default:
-		return "Unknown"
+		return unknown
 	}
 }
 
 func convertWeaponClass(wc common.EquipmentClass) string {
 	switch weaponClass := wc; weaponClass {
-	case 0:
-		return "Unknown"
-	case 1:
+	case common.EqClassUnknown:
+		return unknown
+	case common.EqClassPistols:
 		return "Pistols"
-	case 2:
+	case common.EqClassSMG:
 		return "SMG"
-	case 3:
+	case common.EqClassHeavy:
 		return "Heavy"
-	case 4:
+	case common.EqClassRifle:
 		return "Rifle"
-	case 5:
+	case common.EqClassEquipment:
 		return "Equipment"
-	case 6:
+	case common.EqClassGrenade:
 		return "Grenade"
 	default:
-		return "Unknown"
+		return unknown
 	}
 }
 
-func determineSecond(tick int64, currentRound GameRound, currentGame Game) float64 {
+func determineSecond(tick int64, currentRound GameRound, tickRate int64) float64 {
 	if tick <= 0 {
 		return float64(0)
 	}
@@ -605,36 +612,43 @@ func determineSecond(tick int64, currentRound GameRound, currentGame Game) float
 	} else {
 		phaseEndTick = *currentRound.BombPlantTick
 	}
-	return float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate))
+
+	return (float64(tick) - float64(phaseEndTick)) / float64(tickRate)
 }
 
 func formatTimeNumber(num int64) string {
 	if num < 10 {
 		return "0" + fmt.Sprint(num)
-	} else {
-		return fmt.Sprint(num)
 	}
+
+	return fmt.Sprint(num)
 }
 
-func calculateClocktime(tick int64, currentRound GameRound, currentGame Game) string {
+func calculateClocktime(tick int64, currentRound GameRound, tickRate int64) string {
 	if tick <= 0 {
-		return "00:00"
+		return zeroTime
 	}
-
-	var seconds_remaining float64
+	var secondsPerMinute float64 = 60
+	var roundLengthSeconds float64 = 115
+	var bombTimerSeconds float64 = 40
+	var secondsRemaining float64
 	var phaseEndTick int64
+	var secondsSincePhaseChange float64
+
 	if currentRound.BombPlantTick == nil {
 		phaseEndTick = currentRound.FreezeTimeEndTick
-		seconds_remaining = 115 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
+		secondsSincePhaseChange = (float64(tick) - float64(phaseEndTick)) / float64(tickRate)
+		secondsRemaining = roundLengthSeconds - secondsSincePhaseChange
 	} else {
 		phaseEndTick = *currentRound.BombPlantTick
-		seconds_remaining = 40 - (float64((float64(tick) - float64(phaseEndTick)) / float64(currentGame.TickRate)))
+		secondsSincePhaseChange = (float64(tick) - float64(phaseEndTick)) / float64(tickRate)
+		secondsRemaining = bombTimerSeconds - secondsSincePhaseChange
 	}
-	minutes := int64(math.Floor((seconds_remaining / 60)))
-	seconds := int64(math.Ceil((seconds_remaining - 60*float64(minutes))))
+	minutes := int64(math.Floor((secondsRemaining / secondsPerMinute)))
+	seconds := int64(math.Ceil((secondsRemaining - secondsPerMinute*float64(minutes))))
 
 	if (minutes < 0) || (seconds < 0) {
-		return "00:00"
+		return zeroTime
 	}
 
 	return formatTimeNumber(minutes) + ":" + formatTimeNumber(seconds)
@@ -647,9 +661,8 @@ func playerInList(p *common.Player, players []PlayerInfo) bool {
 				return true
 			}
 		}
-	} else {
-		return false
 	}
+
 	return false
 }
 
@@ -666,8 +679,12 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 		currentPlayer.PlayerSide = "T"
 	case common.TeamCounterTerrorists:
 		currentPlayer.PlayerSide = "CT"
+	case common.TeamSpectators:
+		currentPlayer.PlayerSide = spectator
+	case common.TeamUnassigned:
+		currentPlayer.PlayerSide = unassigned
 	default:
-		currentPlayer.PlayerSide = "Unknown"
+		currentPlayer.PlayerSide = unknown
 	}
 
 	playerPos := p.LastAlivePosition
@@ -675,15 +692,15 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	playerVel := p.Velocity()
 
 	// Calc other metrics
-	currentPlayer.X = float64(playerPos.X)
-	currentPlayer.Y = float64(playerPos.Y)
-	currentPlayer.Z = float64(playerPos.Z)
-	currentPlayer.EyeX = float64(playerEyePos.X)
-	currentPlayer.EyeY = float64(playerEyePos.Y)
-	currentPlayer.EyeZ = float64(playerEyePos.Z)
-	currentPlayer.VelX = float64(playerVel.X)
-	currentPlayer.VelY = float64(playerVel.Y)
-	currentPlayer.VelZ = float64(playerVel.Z)
+	currentPlayer.X = playerPos.X
+	currentPlayer.Y = playerPos.Y
+	currentPlayer.Z = playerPos.Z
+	currentPlayer.EyeX = playerEyePos.X
+	currentPlayer.EyeY = playerEyePos.Y
+	currentPlayer.EyeZ = playerEyePos.Z
+	currentPlayer.VelX = playerVel.X
+	currentPlayer.VelY = playerVel.Y
+	currentPlayer.VelZ = playerVel.Z
 	currentPlayer.ViewX = float64(p.ViewDirectionX())
 	currentPlayer.ViewY = float64(p.ViewDirectionY())
 	currentPlayer.LastPlaceName = p.LastPlaceName()
@@ -730,14 +747,12 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 		if spottedOtherPlayer {
 			spottedPlayers = append(spottedPlayers, int64(player.SteamID64))
 		}
-		spottedOtherPlayer = false
 	}
 	for _, player := range gs.TeamTerrorists().Members() {
 		spottedOtherPlayer = p.HasSpotted(player)
 		if spottedOtherPlayer {
 			spottedPlayers = append(spottedPlayers, int64(player.SteamID64))
 		}
-		spottedOtherPlayer = false
 	}
 	currentPlayer.Spotters = spottedPlayers
 
@@ -754,21 +769,21 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 				currentWeapon.AmmoInMagazine = int64(w.AmmoInMagazine())
 				currentWeapon.AmmoInReserve = int64(w.AmmoReserve())
 
-				//currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
+				// currentPlayer.Inventory = append(currentPlayer.Inventory, w.String())
 				currentPlayer.Inventory = append(currentPlayer.Inventory, currentWeapon)
-				if w.Class() == 6 {
-					currentPlayer.TotalUtility = currentPlayer.TotalUtility + 1
-					if w.Type == 502 || w.Type == 503 {
-						currentPlayer.FireGrenade += 1
+				if w.Class() == common.EqClassGrenade {
+					currentPlayer.TotalUtility++
+					if w.Type == common.EqMolotov || w.Type == common.EqIncendiary {
+						currentPlayer.FireGrenade++
 					}
-					if w.Type == 504 {
+					if w.Type == common.EqFlash {
 						currentPlayer.FlashGrenade += int64(w.AmmoInMagazine()) + int64(w.AmmoReserve())
 					}
-					if w.Type == 505 {
-						currentPlayer.SmokeGrenade += 1
+					if w.Type == common.EqSmoke {
+						currentPlayer.SmokeGrenade++
 					}
-					if w.Type == 506 {
-						currentPlayer.HEGrenade += 1
+					if w.Type == common.EqHE {
+						currentPlayer.HEGrenade++
 					}
 				}
 			}
@@ -778,69 +793,75 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 			}
 		}
 	}
+
 	return currentPlayer
 }
 
-func parseTeamBuy(eqVal int64, Side string, Style string) string {
-	if Style == "hltv" {
-		// Taken from hltv economy tab
-		if eqVal < 5000 {
-			return "Full Eco"
-		} else if (eqVal >= 5000) && (eqVal < 10000) {
-			return "Semi Eco"
-		} else if (eqVal >= 10000) && (eqVal < 20000) {
-			return "Semi Buy"
-		} else if eqVal >= 20000 {
-			return "Full Buy"
-		} else {
-			return "Unknown"
-		}
-	} else if Style == "csgo" {
+func parseTeamBuy(eqVal int64, side string, style string) string {
+	fullEco := "Full Eco"
+	semiEco := "Semi Eco"
+	semiBuy := "Semi Buy"
+	fullBuy := "Full Buy"
+	switch {
+	case style == "csgo":
 		// Created this using 4100 and 3700 as armor+gun for CT and T
-		if Side == "CT" {
-			if eqVal < 2000 {
-				return "Full Eco"
-			} else if (eqVal >= 2000) && (eqVal < 6000) {
+		if side == "CT" {
+			switch {
+			case eqVal < 2000:
+				return fullEco
+			case (eqVal >= 2000) && (eqVal < 6000):
 				return "Eco"
-			} else if (eqVal >= 6000) && (eqVal < 22000) {
+			case (eqVal >= 6000) && (eqVal < 22000):
 				return "Half Buy"
-			} else if eqVal >= 22000 {
-				return "Full Buy"
-			} else {
-				return "Unknown"
+			case eqVal >= 22000:
+				return fullBuy
+			default:
+				return unknown
 			}
 		} else {
-			if eqVal < 2000 {
-				return "Full Eco"
-			} else if (eqVal >= 2000) && (eqVal < 6000) {
+			switch {
+			case eqVal < 2000:
+				return fullEco
+			case (eqVal >= 2000) && (eqVal < 6000):
 				return "Eco"
-			} else if (eqVal >= 6000) && (eqVal < 18500) {
+			case (eqVal >= 6000) && (eqVal < 18500):
 				return "Half Buy"
-			} else if eqVal >= 18500 {
-				return "Full Buy"
-			} else {
-				return "Unknown"
+			case eqVal >= 18500:
+				return fullBuy
+			default:
+				return unknown
 			}
 		}
-	} else {
-		// Default to hltv style
-		return parseTeamBuy(eqVal, Side, "hltv")
+	default:
+		// Taken from hltv economy tab
+		switch {
+		case eqVal < 5000:
+			return fullEco
+		case (eqVal >= 5000) && (eqVal < 10000):
+			return semiEco
+		case (eqVal >= 10000) && (eqVal < 20000):
+			return semiBuy
+		case eqVal >= 20000:
+			return fullBuy
+		default:
+			return unknown
+		}
 	}
 }
 
 func isTrade(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
-	// First, identify is killA has a killer. If there is no killer, there cannot be a trade
+	// First, identify if killA has a killer. If there is no killer, there cannot be a trade
 	if killA.AttackerSteamID == nil {
 		return false
-	} else {
-		// If the the previous killer is not the person killed, it is not a trade
-		if killB.VictimSteamID != nil {
-			if *killB.VictimSteamID == *killA.AttackerSteamID {
-				return inTradeWindow(killA, killB, tickRate, tradeTime)
-			}
-		}
-		return false
 	}
+	// If the previous killer is not the person killed, it is not a trade
+	if killB.VictimSteamID != nil {
+		if *killB.VictimSteamID == *killA.AttackerSteamID {
+			return inTradeWindow(killA, killB, tickRate, tradeTime)
+		}
+	}
+
+	return false
 }
 
 func inTradeWindow(killA KillAction, killB KillAction, tickRate int64, tradeTime int64) bool {
@@ -849,56 +870,1671 @@ func inTradeWindow(killA KillAction, killB KillAction, tickRate int64, tradeTime
 
 func countAlivePlayers(players []PlayerInfo) int64 {
 	var alivePlayers int64
-	alivePlayers = 0
 	for _, p := range players {
 		if p.IsAlive {
-			alivePlayers = alivePlayers + 1
+			alivePlayers++
 		}
 	}
+
 	return alivePlayers
 }
 
 func countUtility(players []PlayerInfo) int64 {
 	var totalUtility int64
-	totalUtility = 0
 	for _, p := range players {
 		if p.IsAlive {
-			totalUtility = totalUtility + p.TotalUtility
+			totalUtility += p.TotalUtility
 		}
 	}
+
 	return totalUtility
 }
 
-// Define cleaning functions
+// Define cleaning functions.
 func cleanMapName(mapName string) string {
 	lastSlash := strings.LastIndex(mapName, "/")
 	if lastSlash == -1 {
 		return mapName
 	}
+
 	return mapName[lastSlash+1:]
 }
 
 func removeExpiredSmoke(s []Smoke, i int) []Smoke {
 	s[i] = s[len(s)-1]
+
 	return s[:len(s)-1]
 }
 
 func appendFrameToRound(currentRound *GameRound, currentFrame *GameFrame, globalFrameIndex *int64) {
 	currentFrame.FrameID = int64(len(currentRound.Frames))
-	currentFrame.GlobalFrameID = int64(*globalFrameIndex)
-	*globalFrameIndex += 1
+	currentFrame.GlobalFrameID = *globalFrameIndex
+	*globalFrameIndex++
 	currentRound.Frames = append(currentRound.Frames, *currentFrame)
 }
+func initializeRound(currentRound *GameRound) {
+	currentRound.Bomb = []BombAction{}
+	currentRound.Damages = []DamageAction{}
+	currentRound.Flashes = []FlashAction{}
+	currentRound.Frames = []GameFrame{}
+	currentRound.Grenades = []GrenadeAction{}
+	currentRound.Kills = []KillAction{}
+	currentRound.WeaponFires = []WeaponFireAction{}
+}
 
-// Main
+func registerChatHandlers(demoParser *dem.Parser, currentGame *Game) {
+	// Register handler for chat messages (ChatMessage)
+	(*demoParser).RegisterEventHandler(func(e events.ChatMessage) {
+		if e.Sender != nil {
+			gs := (*demoParser).GameState()
+			chatMessage := Chat{}
+			senderSteamID := int64(e.Sender.SteamID64)
+			chatMessage.SteamID = &senderSteamID
+			chatMessage.Text = e.Text
+			chatMessage.Tick = int64(gs.IngameTick())
+			chatMessage.IsChat = true
+			chatMessage.IsChatAll = e.IsChatAll
+			chatMessage.Type = "ChatMessage"
+
+			currentGame.Chat = append(currentGame.Chat, chatMessage)
+		}
+	})
+
+	// Register handler for chat messages (SayText)
+	(*demoParser).RegisterEventHandler(func(e events.SayText) {
+		gs := (*demoParser).GameState()
+		chatMessage := Chat{}
+		chatMessage.Text = e.Text
+		chatMessage.Tick = int64(gs.IngameTick())
+		chatMessage.IsChat = e.IsChat
+		chatMessage.IsChatAll = e.IsChatAll
+		chatMessage.Type = "SayText"
+
+		currentGame.Chat = append(currentGame.Chat, chatMessage)
+	})
+
+	// Register handler for chat messages (SayText2)
+	(*demoParser).RegisterEventHandler(func(e events.SayText2) {
+		gs := (*demoParser).GameState()
+		chatMessage := Chat{}
+		chatMessage.Text = e.Params[1]
+		chatMessage.Params = e.Params
+		chatMessage.Tick = int64(gs.IngameTick())
+		chatMessage.IsChat = e.IsChat
+		chatMessage.IsChatAll = e.IsChatAll
+		chatMessage.Type = "SayText2"
+
+		currentGame.Chat = append(currentGame.Chat, chatMessage)
+	})
+}
+
+func registerRankUpdateHandler(demoParser *dem.Parser, currentGame *Game) {
+	(*demoParser).RegisterEventHandler(func(e events.RankUpdate) {
+		rankUpdate := MMRank{}
+
+		rankUpdate.SteamID = e.SteamID64()
+		rankUpdate.RankChange = e.RankChange
+		rankUpdate.RankOld = convertRank(e.RankOld)
+		rankUpdate.RankNew = convertRank(e.RankNew)
+		rankUpdate.WinCount = e.WinCount
+
+		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
+	})
+}
+
+func registerConnectHandler(demoParser *dem.Parser, currentGame *Game) {
+	(*demoParser).RegisterEventHandler(func(e events.PlayerConnect) {
+		if e.Player != nil {
+			gs := (*demoParser).GameState()
+			playerConnected := ConnectAction{}
+
+			playerConnected.Tick = int64(gs.IngameTick())
+			playerConnected.ConnectType = "connect"
+			playerConnected.SteamID = e.Player.SteamID64
+
+			currentGame.Connections = append(currentGame.Connections, playerConnected)
+		}
+	})
+}
+func registerDisonnectHandler(demoParser *dem.Parser, currentGame *Game) {
+	(*demoParser).RegisterEventHandler(func(e events.PlayerDisconnected) {
+		if e.Player != nil {
+			gs := (*demoParser).GameState()
+			playerConnected := ConnectAction{}
+
+			playerConnected.Tick = int64(gs.IngameTick())
+			playerConnected.ConnectType = "disconnect"
+			playerConnected.SteamID = e.Player.SteamID64
+
+			currentGame.Connections = append(currentGame.Connections, playerConnected)
+		}
+	})
+}
+
+func registerMatchphases(demoParser *dem.Parser, currentGame *Game) {
+	(*demoParser).RegisterEventHandler(func(e events.AnnouncementLastRoundHalf) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.AnnLastRoundHalf = append(currentGame.MatchPhases.AnnLastRoundHalf,
+			int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.AnnouncementFinalRound) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.AnnFinalRound = append(currentGame.MatchPhases.AnnFinalRound,
+			int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.AnnouncementMatchStarted) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.AnnMatchStarted = append(currentGame.MatchPhases.AnnMatchStarted,
+			int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.GameHalfEnded) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.GameHalfEnded = append(currentGame.MatchPhases.GameHalfEnded,
+			int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.MatchStart) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.MatchStart = append(currentGame.MatchPhases.MatchStart,
+			int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.MatchStartedChanged) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.MatchStartedChanged = append(currentGame.MatchPhases.MatchStartedChanged,
+			int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.IsWarmupPeriodChanged) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.WarmupChanged = append(currentGame.MatchPhases.WarmupChanged,
+			int64(gs.IngameTick()))
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.TeamSideSwitch) {
+		gs := (*demoParser).GameState()
+
+		currentGame.MatchPhases.TeamSwitch = append(currentGame.MatchPhases.TeamSwitch,
+			int64(gs.IngameTick()))
+	})
+}
+
+func registerSmokeHandler(demoParser *dem.Parser, smokes *[]Smoke) {
+	(*demoParser).RegisterEventHandler(func(e events.SmokeStart) {
+		gs := (*demoParser).GameState()
+		s := Smoke{}
+		s.GrenadeEntityID = e.Grenade.UniqueID() // GrenadeEntityID
+		s.StartTick = int64(gs.IngameTick())
+		s.X = e.Position.X
+		s.Y = e.Position.Y
+		s.Z = e.Position.Z
+		foundNade := false
+		for _, ele := range *smokes {
+			if ele.GrenadeEntityID == s.GrenadeEntityID {
+				foundNade = true
+			}
+		}
+		if !foundNade {
+			*smokes = append(*smokes, s)
+		}
+	})
+
+	(*demoParser).RegisterEventHandler(func(e events.SmokeExpired) {
+		removeID := e.Grenade.UniqueID() // e.GrenadeEntityID
+		for i, ele := range *smokes {
+			if ele.GrenadeEntityID == removeID {
+				*smokes = removeExpiredSmoke(*smokes, i)
+			}
+		}
+	})
+}
+
+func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke, globalFrameIndex *int64) {
+	(*demoParser).RegisterEventHandler(func(e events.RoundStart) {
+		gs := (*demoParser).GameState()
+		currentGame.MatchPhases.RoundStarted = append(currentGame.MatchPhases.RoundStarted, int64(gs.IngameTick()))
+
+		if *roundStarted == 1 {
+			currentGame.Rounds = append(currentGame.Rounds, *currentRound)
+		} else {
+			*globalFrameIndex = 0
+		}
+
+		*roundStarted = 1
+		*roundInFreezetime = 1
+		*roundInEndTime = 0
+		*currentRound = GameRound{}
+
+		// Reset smokes
+		*smokes = []Smoke{}
+
+		// Create empty action lists
+		initializeRound(currentRound)
+
+		// Parse flags
+		currentRound.IsWarmup = gs.IsWarmupPeriod()
+		currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
+		currentRound.StartTick = int64(gs.IngameTick())
+		currentRound.TScore = int64(gs.TeamTerrorists().Score())
+		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+			currentRound.TTeam = &tTeam
+			currentRound.CTTeam = &ctTeam
+		}
+
+		// Parse the players
+		teamCT := PlayerTeams{}
+		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
+		for _, player := range gs.TeamCounterTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamCT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamCT.Players = append(teamCT.Players, pl)
+			}
+		}
+		currentRound.CTSide = teamCT
+
+		teamT := PlayerTeams{}
+		teamT.TeamName = gs.TeamTerrorists().ClanName()
+		for _, player := range gs.TeamTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamT.Players = append(teamT.Players, pl)
+			}
+		}
+		currentRound.TSide = teamT
+	})
+}
+
+func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	convParsed *int, roundRestartDelay *int64,
+	roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
+	// Parse round freezetime ends
+	(*demoParser).RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
+		gs := (*demoParser).GameState()
+		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded,
+			int64(gs.IngameTick()))
+
+		// Reupdate the teams to make sure
+		currentRound.TScore = int64(gs.TeamTerrorists().Score())
+		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+			currentRound.TTeam = &tTeam
+			currentRound.CTTeam = &ctTeam
+		}
+
+		// Reset smokes
+		*smokes = []Smoke{}
+
+		// Determine if round is still in warmup mode
+		currentRound.IsWarmup = gs.IsWarmupPeriod()
+
+		// If convars aren't parsed, do so
+		if *convParsed == 0 {
+			// If convars are unparsed, record the convars of the server
+			serverConfig := ServerConVar{}
+			conv := gs.Rules().ConVars()
+			serverConfig.CashBombDefused, _ = strconv.ParseInt(conv["cash_player_bomb_defused"], 10, 64)
+			serverConfig.CashBombPlanted, _ = strconv.ParseInt(conv["cash_player_bomb_planted"], 10, 64)
+			serverConfig.CashWinBomb, _ = strconv.ParseInt(conv["cash_team_terrorist_win_bomb"], 10, 64)
+			serverConfig.CashWinDefuse, _ = strconv.ParseInt(conv["cash_team_win_by_defusing_bomb"], 10, 64)
+			serverConfig.CashWinTimeRunOut, _ = strconv.ParseInt(conv["cash_team_win_by_time_running_out_bomb"], 10, 64)
+			serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
+			serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
+			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
+			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(
+				conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
+			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
+			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime"], 10, 64)
+			serverConfig.RoundTimeDefuse, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
+			serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
+			serverConfig.FreezeTime, _ = strconv.ParseInt(conv["mp_freezetime"], 10, 64)
+			serverConfig.BuyTime, _ = strconv.ParseInt(conv["mp_buytime"], 10, 64)
+			serverConfig.BombTimer, _ = strconv.ParseInt(conv["mp_c4timer"], 10, 64)
+			serverConfig.TimeoutsAllowed, _ = strconv.ParseInt(conv["mp_team_timeout_max"], 10, 64)
+			serverConfig.CoachingAllowed, _ = strconv.ParseInt(conv["sv_coaching_enabled"], 10, 64)
+			currentGame.ServerVars = serverConfig
+			*convParsed = 1
+
+			// Change so that round restarts are parsed using the server convar
+			if serverConfig.RoundRestartDelay == 0 {
+				*roundRestartDelay = 5 // This is default on many servers, I think
+			} else {
+				*roundRestartDelay = serverConfig.RoundRestartDelay
+			}
+		}
+
+		if *roundInFreezetime == 0 {
+			// This means the RoundStart event did not fire, but the FreezeTimeEnd did
+			currentGame.Rounds = append(currentGame.Rounds, *currentRound)
+			*roundStarted = 1
+			*roundInEndTime = 0
+			*currentRound = GameRound{}
+
+			// Create empty action lists
+			initializeRound(currentRound)
+
+			currentRound.IsWarmup = gs.IsWarmupPeriod()
+			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
+			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
+			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
+			currentRound.TScore = int64(gs.TeamTerrorists().Score())
+			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
+
+			// See if start tick happened during a team switch. If so, then recalc scores.
+			if len(currentGame.MatchPhases.TeamSwitch) > 0 {
+				if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch)-1] {
+					currentRound.TScore = int64(gs.TeamTerrorists().Score())
+					currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+				}
+			}
+		}
+
+		// Parse the players
+		teamCT := PlayerTeams{}
+		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
+		for _, player := range gs.TeamCounterTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamCT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamCT.Players = append(teamCT.Players, pl)
+			}
+		}
+		currentRound.CTSide = teamCT
+
+		teamT := PlayerTeams{}
+		teamT.TeamName = gs.TeamTerrorists().ClanName()
+		for _, player := range gs.TeamTerrorists().Members() {
+			pl := Players{}
+			pl.PlayerName = player.Name
+			pl.SteamID = int64(player.SteamID64)
+			foundPlayer := false
+			for _, p := range teamT.Players {
+				if p.SteamID == pl.SteamID {
+					foundPlayer = true
+				}
+			}
+			if !foundPlayer {
+				teamT.Players = append(teamT.Players, pl)
+			}
+		}
+		currentRound.TSide = teamT
+
+		*roundInFreezetime = 0
+		currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
+	})
+}
+
+func registerRoundEndOfficialHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	roundInEndTime *int, roundRestartDelay *int64) {
+	(*demoParser).RegisterEventHandler(func(e events.RoundEndOfficial) {
+		gs := (*demoParser).GameState()
+		currentGame.MatchPhases.RoundEndedOfficial = append(currentGame.MatchPhases.RoundEndedOfficial,
+			int64(gs.IngameTick()))
+
+		if *roundInEndTime == 0 {
+			currentRound.EndTick = int64(gs.IngameTick()) - (*roundRestartDelay * currentGame.TickRate)
+			currentRound.EndOfficialTick = int64(gs.IngameTick())
+
+			currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT",
+				currentGame.ParsingOpts.RoundBuyStyle)
+			currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T",
+				currentGame.ParsingOpts.RoundBuyStyle)
+			// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend,
+			// 	"CT", currentGame.ParsingOpts.RoundBuyStyle)
+			// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T",
+			// 	currentGame.ParsingOpts.RoundBuyStyle)
+
+			// Parse who won the round, not great...but a stopgap measure
+			tPlayers := gs.TeamTerrorists().Members()
+			aliveT := 0
+			ctPlayers := gs.TeamCounterTerrorists().Members()
+			aliveCT := 0
+			for _, p := range tPlayers {
+				if p.IsAlive() && p != nil {
+					aliveT++
+				}
+			}
+			for _, p := range ctPlayers {
+				if p.IsAlive() && p != nil {
+					aliveCT++
+				}
+			}
+			if aliveCT == 0 {
+				currentRound.Reason = "TerroristsWin"
+				currentRound.EndTScore = currentRound.TScore + 1
+				currentRound.EndCTScore = currentRound.CTScore
+				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+					tTeam := gs.TeamTerrorists().ClanName()
+					ctTeam := gs.TeamCounterTerrorists().ClanName()
+					currentRound.WinningTeam = &tTeam
+					currentRound.LosingTeam = &ctTeam
+				}
+				currentRound.WinningSide = "T"
+			} else {
+				currentRound.Reason = "CTWin"
+				currentRound.EndCTScore = currentRound.CTScore + 1
+				currentRound.EndTScore = currentRound.TScore
+				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+					tTeam := gs.TeamTerrorists().ClanName()
+					ctTeam := gs.TeamCounterTerrorists().ClanName()
+					currentRound.WinningTeam = &ctTeam
+					currentRound.LosingTeam = &tTeam
+				}
+				currentRound.WinningSide = "CT"
+			}
+		} else {
+			currentRound.EndOfficialTick = int64(gs.IngameTick())
+		}
+	})
+}
+
+func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	roundStarted *int, roundInEndTime *int, roundRestartDelay *int64) {
+	(*demoParser).RegisterEventHandler(func(e events.RoundEnd) {
+		gs := (*demoParser).GameState()
+
+		if *roundStarted == 1 {
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
+		}
+
+		currentGame.MatchPhases.RoundEnded = append(currentGame.MatchPhases.RoundEnded, int64(gs.IngameTick()))
+
+		if *roundStarted == 0 {
+			*roundStarted = 1
+
+			currentRound.RoundNum = 0
+			currentRound.StartTick = 0
+			currentRound.TScore = 0
+			currentRound.CTScore = 0
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam := gs.TeamTerrorists().ClanName()
+				ctTeam := gs.TeamCounterTerrorists().ClanName()
+				currentRound.TTeam = &tTeam
+				currentRound.CTTeam = &ctTeam
+			}
+		}
+
+		*roundInEndTime = 1
+
+		var winningTeam string
+		switch e.Winner {
+		case common.TeamTerrorists:
+			winningTeam = "T"
+			currentRound.EndTScore = currentRound.TScore + 1
+			currentRound.EndCTScore = currentRound.CTScore
+		case common.TeamCounterTerrorists:
+			winningTeam = "CT"
+			currentRound.EndCTScore = currentRound.CTScore + 1
+			currentRound.EndTScore = currentRound.TScore
+		case common.TeamSpectators:
+			winningTeam = "Spectators"
+		case common.TeamUnassigned:
+			winningTeam = unassigned
+		default:
+			winningTeam = unknown
+		}
+
+		currentRound.EndTick = int64(gs.IngameTick())
+		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (*roundRestartDelay * currentGame.TickRate)
+		currentRound.Reason = convertRoundEndReason(e.Reason)
+		currentRound.WinningSide = winningTeam
+
+		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+			tTeam := gs.TeamTerrorists().ClanName()
+			ctTeam := gs.TeamCounterTerrorists().ClanName()
+
+			if winningTeam == "CT" {
+				currentRound.LosingTeam = &tTeam
+				currentRound.WinningTeam = &ctTeam
+			} else if winningTeam == "T" {
+				currentRound.LosingTeam = &ctTeam
+				currentRound.WinningTeam = &tTeam
+			}
+		}
+
+		currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT",
+			currentGame.ParsingOpts.RoundBuyStyle)
+		currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T",
+			currentGame.ParsingOpts.RoundBuyStyle)
+		// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT",
+		// 	currentGame.ParsingOpts.RoundBuyStyle)
+		// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T",
+		// 	currentGame.ParsingOpts.RoundBuyStyle)
+	})
+}
+
+func getBombSite(site rune) string {
+	switch site {
+	case rune(events.BombsiteA):
+		return "A"
+	case rune(events.BombsiteB):
+		return "B"
+	default:
+		return ""
+	}
+}
+
+func registerBombDefusedHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.BombDefused) {
+		gs := (*demoParser).GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.BombAction = "defuse"
+		bombSite := getBombSite(rune(e.Site))
+		currentBomb.BombSite = &bombSite
+
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		if e.Player.TeamState != nil {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
+
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
+
+		// add bomb event
+		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+	})
+}
+
+func registerBombDefuseStartHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.BombDefuseStart) {
+		gs := (*demoParser).GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.BombAction = "defuse_start"
+
+		// Find bombsite where event is planted
+		bombSite := ""
+		bombPlantFound := false
+		for _, b := range currentRound.Bomb {
+			if b.BombAction == plant {
+				bombSite = *b.BombSite
+				bombPlantFound = true
+			}
+		}
+		currentBomb.BombSite = &bombSite
+
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		if e.Player.TeamState != nil {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
+
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
+
+		// add
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
+	})
+}
+
+func registerBombDefuseAbortHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.BombDefuseAborted) {
+		gs := (*demoParser).GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.BombAction = "defuse_aborted"
+
+		// Find bombsite where event is planted
+		bombSite := ""
+		bombPlantFound := false
+		for _, b := range currentRound.Bomb {
+			if b.BombAction == plant {
+				bombSite = *b.BombSite
+				bombPlantFound = true
+			}
+		}
+		currentBomb.BombSite = &bombSite
+
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		if e.Player.TeamState != nil {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
+
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
+
+		// Add Bomb Event
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
+	})
+}
+
+func registerWeaponFiresHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.WeaponFire) {
+		gs := (*demoParser).GameState()
+
+		if (e.Weapon != nil) && (e.Weapon.String() != "Knife") && (e.Weapon.String() != "C4") && (e.Shooter != nil) {
+			currentWeaponFire := WeaponFireAction{}
+			currentWeaponFire.Tick = int64(gs.IngameTick())
+			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, *currentRound, currentGame.TickRate)
+			currentWeaponFire.ClockTime = calculateClocktime(currentWeaponFire.Tick, *currentRound, currentGame.TickRate)
+			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
+			currentWeaponFire.PlayerName = e.Shooter.Name
+			if e.Shooter.TeamState != nil {
+				currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
+			}
+			var playerSide string
+			switch e.Shooter.Team {
+			case common.TeamTerrorists:
+				playerSide = "T"
+			case common.TeamCounterTerrorists:
+				playerSide = "CT"
+			case common.TeamSpectators:
+				playerSide = spectator
+			case common.TeamUnassigned:
+				playerSide = unassigned
+			default:
+				playerSide = unknown
+			}
+			currentWeaponFire.PlayerSide = playerSide
+
+			// Player loc
+			playerPos := e.Shooter.LastAlivePosition
+
+			currentWeaponFire.PlayerX = playerPos.X
+			currentWeaponFire.PlayerY = playerPos.Y
+			currentWeaponFire.PlayerZ = playerPos.Z
+			currentWeaponFire.Weapon = e.Weapon.String()
+			currentWeaponFire.WeaponClass = convertWeaponClass(e.Weapon.Class())
+			currentWeaponFire.AmmoInMagazine = int64(e.Weapon.AmmoInMagazine())
+			currentWeaponFire.AmmoInReserve = int64(e.Weapon.AmmoReserve())
+			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
+			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
+			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
+			currentWeaponFire.ZoomLevel = int64(e.Weapon.ZoomLevel())
+
+			// add
+			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
+		}
+	})
+}
+
+func registerPlayerFlashedHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.PlayerFlashed) {
+		gs := (*demoParser).GameState()
+
+		if e.Attacker != nil {
+			currentFlash := FlashAction{}
+			currentFlash.Tick = int64(gs.IngameTick())
+			currentFlash.Second = determineSecond(currentFlash.Tick, *currentRound, currentGame.TickRate)
+			currentFlash.ClockTime = calculateClocktime(currentFlash.Tick, *currentRound, currentGame.TickRate)
+
+			// Attacker
+			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
+			currentFlash.AttackerName = e.Attacker.Name
+			if e.Attacker.TeamState != nil {
+				currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
+			}
+			var attackerSide string
+			switch e.Attacker.Team {
+			case common.TeamTerrorists:
+				attackerSide = "T"
+			case common.TeamCounterTerrorists:
+				attackerSide = "CT"
+			case common.TeamSpectators:
+				attackerSide = spectator
+			case common.TeamUnassigned:
+				attackerSide = unassigned
+			default:
+				attackerSide = unknown
+			}
+			currentFlash.AttackerSide = attackerSide
+
+			// Attacker loc
+			attackerPos := e.Attacker.LastAlivePosition
+
+			currentFlash.AttackerX = attackerPos.X
+			currentFlash.AttackerY = attackerPos.Y
+			currentFlash.AttackerZ = attackerPos.Z
+			currentFlash.AttackerViewX = float64(e.Attacker.ViewDirectionX())
+			currentFlash.AttackerViewY = float64(e.Attacker.ViewDirectionY())
+
+			// Player
+			if e.Player != nil {
+				if e.Player.IsAlive() {
+					playerSteamID := int64(e.Player.SteamID64)
+					currentFlash.PlayerSteamID = &playerSteamID
+					currentFlash.PlayerName = &e.Player.Name
+					playerClanName := ""
+
+					if e.Player.TeamState != nil {
+						playerClanName = e.Player.TeamState.ClanName()
+					}
+
+					currentFlash.PlayerTeam = &playerClanName
+					playerSide := unknown
+					switch e.Player.Team {
+					case common.TeamTerrorists:
+						playerSide = "T"
+					case common.TeamCounterTerrorists:
+						playerSide = "CT"
+					case common.TeamSpectators:
+						playerSide = spectator
+					case common.TeamUnassigned:
+						playerSide = unassigned
+					default:
+						playerSide = unknown
+					}
+
+					currentFlash.PlayerSide = &playerSide
+
+					// Player loc
+					playerPos := e.Player.LastAlivePosition
+
+					playerX := playerPos.X
+					playerY := playerPos.Y
+					playerZ := playerPos.Z
+					currentFlash.PlayerX = &playerX
+					currentFlash.PlayerY = &playerY
+					currentFlash.PlayerZ = &playerZ
+					playerViewX := float64(e.Player.ViewDirectionX())
+					playerViewY := float64(e.Player.ViewDirectionY())
+					currentFlash.PlayerViewX = &playerViewX
+					currentFlash.PlayerViewY = &playerViewY
+
+					// Calculate flash duration in seconds
+					nanoSecondsPerSecond := 1000000000
+					flashDuration := float64(e.Player.FlashDurationTimeRemaining()) / float64(nanoSecondsPerSecond)
+					currentFlash.FlashDuration = &flashDuration
+
+					// Add to list
+					if *currentFlash.PlayerSide != spectator &&
+						*currentFlash.PlayerSide != unassigned &&
+						*currentFlash.PlayerSide != unknown {
+						currentRound.Flashes = append(currentRound.Flashes, currentFlash)
+					}
+				}
+			}
+		}
+	})
+}
+
+func registerBombPlantedHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.BombPlanted) {
+		gs := (*demoParser).GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.BombAction = plant
+
+		bombSite := getBombSite(rune(e.Site))
+		currentBomb.BombSite = &bombSite
+
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		if e.Player.TeamState != nil {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
+
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
+
+		// Bomb event
+		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		plantTick := int64(gs.IngameTick())
+		currentRound.BombPlantTick = &plantTick
+	})
+}
+
+func registerBombPlantBeginHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.BombPlantBegin) {
+		gs := (*demoParser).GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.BombAction = "plant_begin"
+
+		bombSite := getBombSite(rune(e.Site))
+		currentBomb.BombSite = &bombSite
+
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		if e.Player.TeamState != nil {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
+
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
+
+		// Bomb event
+		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+	})
+}
+
+func registerBombPlantAbortedHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.BombPlantAborted) {
+		gs := (*demoParser).GameState()
+
+		currentBomb := BombAction{}
+		currentBomb.Tick = int64(gs.IngameTick())
+		currentBomb.Second = determineSecond(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, *currentRound, currentGame.TickRate)
+		currentBomb.BombAction = "plant_abort"
+
+		// Find bombsite where event is planted
+		bombSite := ""
+		bombPlantFound := false
+		for _, b := range currentRound.Bomb {
+			if b.BombAction == "plant_begin" {
+				bombSite = *b.BombSite
+				bombPlantFound = true
+			}
+		}
+		currentBomb.BombSite = &bombSite
+
+		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		currentBomb.PlayerName = e.Player.Name
+		if e.Player.TeamState != nil {
+			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		}
+
+		// Player loc
+		playerPos := e.Player.LastAlivePosition
+		currentBomb.PlayerX = playerPos.X
+		currentBomb.PlayerY = playerPos.Y
+		currentBomb.PlayerZ = playerPos.Z
+
+		// Add Bomb event
+		if bombPlantFound {
+			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
+		}
+	})
+}
+
+func registerGrenadeThrowHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.GrenadeProjectileThrow) {
+		gs := (*demoParser).GameState()
+
+		if e.Projectile.Thrower != nil {
+			currentGrenade := GrenadeAction{}
+			currentGrenade.UniqueID = e.Projectile.UniqueID()
+			currentGrenade.ThrowTick = int64(gs.IngameTick())
+			currentGrenade.ThrowSecond = determineSecond(currentGrenade.ThrowTick, *currentRound, currentGame.TickRate)
+			currentGrenade.ThrowClockTime = calculateClocktime(currentGrenade.ThrowTick, *currentRound, currentGame.TickRate)
+
+			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
+			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
+			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
+
+			tTeam := ""
+			ctTeam := ""
+			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
+				tTeam = gs.TeamTerrorists().ClanName()
+				ctTeam = gs.TeamCounterTerrorists().ClanName()
+			}
+
+			var playerSide string
+			switch e.Projectile.Thrower.Team {
+			case common.TeamTerrorists:
+				playerSide = "T"
+				currentGrenade.ThrowerTeam = tTeam
+			case common.TeamCounterTerrorists:
+				playerSide = "CT"
+				currentGrenade.ThrowerTeam = ctTeam
+			case common.TeamSpectators:
+				playerSide = spectator
+				currentGrenade.ThrowerTeam = ""
+			case common.TeamUnassigned:
+				playerSide = unassigned
+				currentGrenade.ThrowerTeam = ""
+			default:
+				playerSide = unknown
+				currentGrenade.ThrowerTeam = ""
+			}
+			currentGrenade.ThrowerSide = playerSide
+
+			// Player location (use weaponfire event)
+			playerPos := e.Projectile.Position()
+
+			currentGrenade.ThrowerX = playerPos.X
+			currentGrenade.ThrowerY = playerPos.Y
+			currentGrenade.ThrowerZ = playerPos.Z
+
+			// Add grenade event
+			if playerSide == "CT" || playerSide == "T" {
+				currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
+			}
+		}
+	})
+}
+
+func registerGrenadeDestroyHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.GrenadeProjectileDestroy) {
+		gs := (*demoParser).GameState()
+
+		if e.Projectile.Thrower != nil {
+			for i, g := range currentRound.Grenades {
+				if g.UniqueID == e.Projectile.UniqueID() {
+					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
+					currentRound.Grenades[i].DestroySecond = determineSecond(
+						currentRound.Grenades[i].DestroyTick, *currentRound, currentGame.TickRate)
+					currentRound.Grenades[i].DestroyClockTime = calculateClocktime(
+						currentRound.Grenades[i].DestroyTick, *currentRound, currentGame.TickRate)
+					// Grenade Location
+					grenadePos := e.Projectile.Position()
+
+					currentRound.Grenades[i].GrenadeX = grenadePos.X
+					currentRound.Grenades[i].GrenadeY = grenadePos.Y
+					currentRound.Grenades[i].GrenadeZ = grenadePos.Z
+				}
+			}
+		}
+	})
+}
+
+func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
+	smokes *[]Smoke, roundInFreezetime *int, parseKillFrames *bool, globalFrameIndex *int64) {
+	(*demoParser).RegisterEventHandler(func(e events.Kill) {
+		gs := (*demoParser).GameState()
+
+		if (*roundInFreezetime == 0) && *parseKillFrames {
+			currentFrame := GameFrame{}
+			currentFrame.IsKillFrame = true
+
+			// Create empty player lists
+			currentFrame.CT.Players = []PlayerInfo{}
+			currentFrame.T.Players = []PlayerInfo{}
+
+			currentFrame.Tick = int64(gs.IngameTick())
+			currentFrame.Second = determineSecond(currentFrame.Tick, *currentRound, currentGame.TickRate)
+			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, *currentRound, currentGame.TickRate)
+
+			// Parse T
+			currentFrame.T = TeamFrameInfo{}
+			currentFrame.T.Side = "T"
+			if gs.TeamTerrorists() != nil {
+				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
+			}
+			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
+			tPlayers := gs.TeamTerrorists().Members()
+
+			for _, p := range tPlayers {
+				if p != nil {
+					if !playerInList(p, currentFrame.T.Players) {
+						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(gs, p))
+					}
+				}
+			}
+
+			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
+			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
+			// currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
+
+			// Parse CT
+			currentFrame.CT = TeamFrameInfo{}
+			currentFrame.CT.Side = "CT"
+			if gs.TeamCounterTerrorists() != nil {
+				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
+			}
+			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
+			ctPlayers := gs.TeamCounterTerrorists().Members()
+
+			for _, p := range ctPlayers {
+				if p != nil {
+					if !playerInList(p, currentFrame.CT.Players) {
+						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(gs, p))
+					}
+				}
+			}
+
+			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
+			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
+			// currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.CT.Players)
+
+			// Parse projectiles objects
+			allGrenades := gs.GrenadeProjectiles()
+			currentFrame.Projectiles = []GrenadeInfo{}
+			for _, ele := range allGrenades {
+				currentProjectile := GrenadeInfo{}
+				currentProjectile.ProjectileType = ele.WeaponInstance.String()
+				objPos := ele.Trajectory[len(ele.Trajectory)-1]
+
+				currentProjectile.X = objPos.X
+				currentProjectile.Y = objPos.Y
+				currentProjectile.Z = objPos.Z
+				currentFrame.Projectiles = append(currentFrame.Projectiles, currentProjectile)
+			}
+
+			// Parse infernos
+			allInfernos := gs.Infernos()
+			currentFrame.Fires = []Fire{}
+			for _, ele := range allInfernos {
+				currentFire := Fire{}
+				objPos := ele.Entity.Position()
+				currentFire.UniqueID = ele.UniqueID()
+
+				currentFire.X = objPos.X
+				currentFire.Y = objPos.Y
+				currentFire.Z = objPos.Z
+				currentFrame.Fires = append(currentFrame.Fires, currentFire)
+			}
+
+			// Parse smokes
+			currentFrame.Smokes = []Smoke{}
+			currentFrame.Smokes = *smokes
+
+			// Parse bomb
+			bombObj := gs.Bomb()
+			currentBomb := BombInfo{}
+			objPos := bombObj.Position()
+
+			currentBomb.X = objPos.X
+			currentBomb.Y = objPos.Y
+			currentBomb.Z = objPos.Z
+			currentFrame.Bomb = currentBomb
+			if len(currentRound.Bomb) > 0 {
+				for _, b := range currentRound.Bomb {
+					if b.BombAction == plant {
+						currentFrame.BombPlanted = true
+						currentFrame.BombSite = *b.BombSite
+					}
+				}
+			} else {
+				currentFrame.BombPlanted = false
+			}
+			appendFrameToRound(currentRound, &currentFrame, globalFrameIndex)
+		}
+
+		currentKill := KillAction{}
+		currentKill.Tick = int64(gs.IngameTick())
+		currentKill.Second = determineSecond(currentKill.Tick, *currentRound, currentGame.TickRate)
+		currentKill.ClockTime = calculateClocktime(currentKill.Tick, *currentRound, currentGame.TickRate)
+		if e.Weapon != nil {
+			currentKill.Weapon = e.Weapon.String()
+			currentKill.WeaponClass = convertWeaponClass(e.Weapon.Class())
+		}
+		currentKill.IsWallbang = e.IsWallBang()
+		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
+		currentKill.IsHeadshot = e.IsHeadshot
+		currentKill.AttackerBlinded = e.AttackerBlind
+		currentKill.NoScope = e.NoScope
+		currentKill.ThruSmoke = e.ThroughSmoke
+
+		// Attacker
+		if e.Killer != nil {
+			attackerSteamID := int64(e.Killer.SteamID64)
+			currentKill.AttackerSteamID = &attackerSteamID
+			attackerName := e.Killer.Name
+			currentKill.AttackerName = &attackerName
+			if e.Killer.TeamState != nil {
+				attackerTeamName := e.Killer.TeamState.ClanName()
+				currentKill.AttackerTeam = &attackerTeamName
+			}
+			attackerSide := unknown
+
+			switch e.Killer.Team {
+			case common.TeamTerrorists:
+				attackerSide = "T"
+			case common.TeamCounterTerrorists:
+				attackerSide = "CT"
+			case common.TeamSpectators:
+				attackerSide = spectator
+			case common.TeamUnassigned:
+				attackerSide = unassigned
+			default:
+				attackerSide = unknown
+			}
+
+			currentKill.AttackerSide = &attackerSide
+			attackerPos := e.Killer.LastAlivePosition
+
+			currentKill.AttackerX = &attackerPos.X
+			currentKill.AttackerY = &attackerPos.Y
+			currentKill.AttackerZ = &attackerPos.Z
+			attackerViewX := float64(e.Killer.ViewDirectionX())
+			attackerViewY := float64(e.Killer.ViewDirectionY())
+			currentKill.AttackerViewX = &attackerViewX
+			currentKill.AttackerViewY = &attackerViewY
+		}
+
+		// Victim
+		if e.Victim != nil {
+			victimSteamID := int64(e.Victim.SteamID64)
+			currentKill.VictimSteamID = &victimSteamID
+			victimName := e.Victim.Name
+			currentKill.VictimName = &victimName
+			if e.Victim.TeamState != nil {
+				victimTeamName := e.Victim.TeamState.ClanName()
+				currentKill.VictimTeam = &victimTeamName
+			}
+			victimSide := unknown
+
+			switch e.Victim.Team {
+			case common.TeamTerrorists:
+				victimSide = "T"
+			case common.TeamCounterTerrorists:
+				victimSide = "CT"
+			case common.TeamSpectators:
+				victimSide = spectator
+			case common.TeamUnassigned:
+				victimSide = unassigned
+			default:
+				victimSide = unknown
+			}
+
+			currentKill.VictimSide = &victimSide
+			victimPos := e.Victim.LastAlivePosition
+
+			currentKill.VictimX = &victimPos.X
+			currentKill.VictimY = &victimPos.Y
+			currentKill.VictimZ = &victimPos.Z
+			victimViewX := float64(e.Victim.ViewDirectionX())
+			victimViewY := float64(e.Victim.ViewDirectionY())
+			currentKill.VictimViewX = &victimViewX
+			currentKill.VictimViewY = &victimViewY
+
+			if !currentKill.IsSuicide && e.Killer != nil && e.Victim != nil {
+				X := math.Pow((*currentKill.AttackerX - *currentKill.VictimX), 2)
+				Y := math.Pow((*currentKill.AttackerY - *currentKill.VictimY), 2)
+				Z := math.Pow((*currentKill.AttackerZ - *currentKill.VictimZ), 2)
+				currentKill.Distance = math.Sqrt(X + Y + Z)
+			} else {
+				currentKill.Distance = 0.0
+			}
+
+			// Parse teamkill
+			currentKill.IsTeamkill = false
+			currentKill.IsSuicide = false
+
+			if e.Killer != nil {
+				// Parse TKs
+				if *currentKill.AttackerSide == *currentKill.VictimSide {
+					currentKill.IsTeamkill = true
+				} else {
+					currentKill.IsTeamkill = false
+				}
+
+				// Parse Suicides
+				if *currentKill.AttackerSteamID == *currentKill.VictimSteamID {
+					currentKill.IsSuicide = true
+				} else {
+					currentKill.IsSuicide = false
+				}
+			} else {
+				currentKill.IsTeamkill = true
+				currentKill.IsSuicide = true
+			}
+		}
+
+		// Assister
+		if e.Assister != nil {
+			assistSteamID := int64(e.Assister.SteamID64)
+			currentKill.AssisterSteamID = &assistSteamID
+			assisterName := e.Assister.Name
+			currentKill.AssisterName = &assisterName
+			if e.Assister.TeamState != nil {
+				assistTeamName := e.Assister.TeamState.ClanName()
+				currentKill.AssisterTeam = &assistTeamName
+			}
+			assisterSide := unknown
+			switch e.Assister.Team {
+			case common.TeamTerrorists:
+				assisterSide = "T"
+			case common.TeamCounterTerrorists:
+				assisterSide = "CT"
+			case common.TeamSpectators:
+				assisterSide = spectator
+			case common.TeamUnassigned:
+				assisterSide = unassigned
+			default:
+				assisterSide = unknown
+			}
+			currentKill.AssisterSide = &assisterSide
+		}
+
+		// Parse the opening kill info and trade info
+		if len(currentRound.Kills) == 0 {
+			currentKill.IsFirstKill = true
+		} else {
+			currentKill.IsFirstKill = false
+			for i := len(currentRound.Kills) - 1; i >= 0 &&
+				inTradeWindow(currentRound.Kills[i], currentKill, currentGame.TickRate,
+					currentGame.ParsingOpts.TradeTime) && !currentKill.IsTrade; i-- {
+				currentKill.IsTrade = isTrade(currentRound.Kills[i], currentKill,
+					currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
+				if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade {
+					currentKill.PlayerTradedName = currentRound.Kills[i].VictimName
+					currentKill.PlayerTradedSteamID = currentRound.Kills[i].VictimSteamID
+					currentKill.PlayerTradedTeam = currentRound.Kills[i].VictimTeam
+					currentKill.PlayerTradedSide = currentRound.Kills[i].VictimSide
+				}
+			}
+		}
+
+		// Parse flash info for kill
+		if e.Victim != nil {
+			currentKill.VictimBlinded = e.Victim.IsBlinded()
+			if e.Victim.IsBlinded() {
+				// This will only be true if in the killfeed the assister is the flasher
+				if e.AssistedFlash {
+					currentKill.AssisterSteamID = nil
+					currentKill.AssisterName = nil
+					currentKill.AssisterTeam = nil
+					currentKill.AssisterSide = nil
+				}
+
+				// Find their latest flash event
+				for _, flash := range currentRound.Flashes {
+					flash := flash
+					if (flash.PlayerSteamID == currentKill.VictimSteamID) &&
+						(flash.Tick >= currentKill.Tick-5*currentGame.TickRate) &&
+						(flash.Tick <= currentKill.Tick) {
+						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
+						currentKill.FlashThrowerName = &flash.AttackerName
+						currentKill.FlashThrowerTeam = &flash.AttackerTeam
+						currentKill.FlashThrowerSide = &flash.AttackerSide
+					}
+				}
+			}
+		}
+
+		// Add Kill
+		currentRound.Kills = append(currentRound.Kills, currentKill)
+	})
+}
+
+func registerDamageHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.PlayerHurt) {
+		gs := (*demoParser).GameState()
+
+		currentDamage := DamageAction{}
+		currentDamage.Tick = int64(gs.IngameTick())
+		currentDamage.Second = determineSecond(currentDamage.Tick, *currentRound, currentGame.TickRate)
+		currentDamage.ClockTime = calculateClocktime(currentDamage.Tick, *currentRound, currentGame.TickRate)
+		if e.Weapon != nil {
+			currentDamage.Weapon = e.Weapon.String()
+			currentDamage.WeaponClass = convertWeaponClass(e.Weapon.Class())
+		}
+		currentDamage.HitGroup = convertHitGroup(e.HitGroup)
+		currentDamage.HpDamage = int64(e.HealthDamage)
+		currentDamage.HpDamageTaken = int64(e.HealthDamageTaken)
+		currentDamage.ArmorDamage = int64(e.ArmorDamage)
+		currentDamage.ArmorDamageTaken = int64(e.ArmorDamageTaken)
+
+		// Attacker
+		if e.Attacker != nil {
+			attackerSteamID := int64(e.Attacker.SteamID64)
+			currentDamage.AttackerSteamID = &attackerSteamID
+			attackerName := e.Attacker.Name
+			currentDamage.AttackerName = &attackerName
+			if e.Attacker.TeamState != nil {
+				attackerTeamName := e.Attacker.TeamState.ClanName()
+				currentDamage.AttackerTeam = &attackerTeamName
+			}
+
+			attackerSide := unknown
+			switch e.Attacker.Team {
+			case common.TeamTerrorists:
+				attackerSide = "T"
+			case common.TeamCounterTerrorists:
+				attackerSide = "CT"
+			case common.TeamSpectators:
+				attackerSide = spectator
+			case common.TeamUnassigned:
+				attackerSide = unassigned
+			default:
+				attackerSide = unknown
+			}
+			currentDamage.AttackerSide = &attackerSide
+
+			attackerPos := e.Attacker.LastAlivePosition
+
+			currentDamage.AttackerX = &attackerPos.X
+			currentDamage.AttackerY = &attackerPos.Y
+			currentDamage.AttackerZ = &attackerPos.Z
+			attackerViewX := float64(e.Attacker.ViewDirectionX())
+			attackerViewY := float64(e.Attacker.ViewDirectionY())
+			currentDamage.AttackerViewX = &attackerViewX
+			currentDamage.AttackerViewY = &attackerViewY
+			attackerStrafe := e.Attacker.IsWalking()
+			currentDamage.AttackerStrafe = &attackerStrafe
+
+			if e.Weapon != nil {
+				zoomLevel := int64(e.Weapon.ZoomLevel())
+				currentDamage.ZoomLevel = &zoomLevel
+			}
+		}
+
+		// Victim
+		if e.Player != nil {
+			victimSteamID := int64(e.Player.SteamID64)
+			currentDamage.VictimSteamID = &victimSteamID
+			victimName := e.Player.Name
+			currentDamage.VictimName = &victimName
+			if e.Player.TeamState != nil {
+				victimTeamName := e.Player.TeamState.ClanName()
+				currentDamage.VictimTeam = &victimTeamName
+			}
+
+			victimSide := unknown
+			switch e.Player.Team {
+			case common.TeamTerrorists:
+				victimSide = "T"
+			case common.TeamCounterTerrorists:
+				victimSide = "CT"
+			case common.TeamSpectators:
+				victimSide = spectator
+			case common.TeamUnassigned:
+				victimSide = unassigned
+			default:
+				victimSide = unknown
+			}
+			currentDamage.VictimSide = &victimSide
+
+			victimPos := e.Player.LastAlivePosition
+
+			currentDamage.VictimX = &victimPos.X
+			currentDamage.VictimY = &victimPos.Y
+			currentDamage.VictimZ = &victimPos.Z
+			victimViewX := float64(e.Player.ViewDirectionX())
+			victimViewY := float64(e.Player.ViewDirectionY())
+			currentDamage.VictimViewX = &victimViewX
+			currentDamage.VictimViewY = &victimViewY
+
+			// Parse team damage
+			currentDamage.IsTeamDmg = false
+			if currentDamage.AttackerSide != nil {
+				if currentDamage.VictimSide != nil {
+					if *currentDamage.AttackerSide == *currentDamage.VictimSide {
+						currentDamage.IsTeamDmg = true
+					}
+				}
+			}
+
+			// Parse distance
+			currentDamage.Distance = 0.0
+			if e.Attacker != nil {
+				X := math.Pow((*currentDamage.AttackerX - *currentDamage.VictimX), 2)
+				Y := math.Pow((*currentDamage.AttackerY - *currentDamage.VictimY), 2)
+				Z := math.Pow((*currentDamage.AttackerZ - *currentDamage.VictimZ), 2)
+				currentDamage.Distance = math.Sqrt(X + Y + Z)
+			}
+		}
+
+		// Add damages
+		currentRound.Damages = append(currentRound.Damages, currentDamage)
+	})
+}
+
+func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, smokes *[]Smoke,
+	roundInFreezetime *int, roundInEndTime *int, currentFrameIdx *int, parseFrames *bool, globalFrameIndex *int64) {
+	(*demoParser).RegisterEventHandler(func(e events.FrameDone) {
+		gs := (*demoParser).GameState()
+
+		if (*roundInFreezetime == 0) && (*roundInEndTime == 0) {
+			currentRound.CTRoundStartEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
+			currentRound.TRoundStartEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
+			currentRound.CTFreezeTimeEndEqVal = int64(gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue())
+			currentRound.TFreezeTimeEndEqVal = int64(gs.TeamTerrorists().FreezeTimeEndEquipmentValue())
+			currentRound.CTRoundMoneySpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
+			currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
+		}
+
+		if (*roundInFreezetime == 0) && (*currentFrameIdx == 0) && *parseFrames {
+			currentFrame := GameFrame{}
+			currentFrame.IsKillFrame = false
+
+			// Create empty player lists
+			currentFrame.CT.Players = []PlayerInfo{}
+			currentFrame.T.Players = []PlayerInfo{}
+
+			currentFrame.Tick = int64(gs.IngameTick())
+			currentFrame.Second = determineSecond(currentFrame.Tick, *currentRound, currentGame.TickRate)
+			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, *currentRound, currentGame.TickRate)
+
+			// Parse T
+			currentFrame.T = TeamFrameInfo{}
+			currentFrame.T.Side = "T"
+			if gs.TeamTerrorists() != nil {
+				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
+			}
+			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
+			tPlayers := gs.TeamTerrorists().Members()
+
+			for _, p := range tPlayers {
+				if p != nil {
+					if !playerInList(p, currentFrame.T.Players) {
+						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(gs, p))
+					}
+				}
+			}
+
+			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
+			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
+			// currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
+
+			// Parse CT
+			currentFrame.CT = TeamFrameInfo{}
+			currentFrame.CT.Side = "CT"
+			if gs.TeamCounterTerrorists() != nil {
+				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
+			}
+			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
+			ctPlayers := gs.TeamCounterTerrorists().Members()
+
+			for _, p := range ctPlayers {
+				if p != nil {
+					if !playerInList(p, currentFrame.CT.Players) {
+						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(gs, p))
+					}
+				}
+			}
+
+			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
+			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
+			// currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.CT.Players)
+
+			// Parse projectiles objects
+			allGrenades := gs.GrenadeProjectiles()
+			currentFrame.Projectiles = []GrenadeInfo{}
+			for _, ele := range allGrenades {
+				currentProjectile := GrenadeInfo{}
+				currentProjectile.ProjectileType = ele.WeaponInstance.String()
+				objPos := ele.Trajectory[len(ele.Trajectory)-1]
+
+				currentProjectile.X = objPos.X
+				currentProjectile.Y = objPos.Y
+				currentProjectile.Z = objPos.Z
+				currentFrame.Projectiles = append(currentFrame.Projectiles, currentProjectile)
+			}
+
+			// Parse infernos
+			allInfernos := gs.Infernos()
+			currentFrame.Fires = []Fire{}
+			for _, ele := range allInfernos {
+				currentFire := Fire{}
+				objPos := ele.Entity.Position()
+				currentFire.UniqueID = ele.UniqueID()
+
+				currentFire.X = objPos.X
+				currentFire.Y = objPos.Y
+				currentFire.Z = objPos.Z
+				currentFrame.Fires = append(currentFrame.Fires, currentFire)
+			}
+
+			// Parse smokes
+			currentFrame.Smokes = []Smoke{}
+			currentFrame.Smokes = *smokes
+
+			// Parse bomb
+			bombObj := gs.Bomb()
+			currentBomb := BombInfo{}
+			objPos := bombObj.Position()
+
+			currentBomb.X = objPos.X
+			currentBomb.Y = objPos.Y
+			currentBomb.Z = objPos.Z
+			currentFrame.Bomb = currentBomb
+			if len(currentRound.Bomb) > 0 {
+				for _, b := range currentRound.Bomb {
+					if b.BombAction == plant {
+						currentFrame.BombPlanted = true
+						currentFrame.BombSite = *b.BombSite
+					}
+				}
+			} else {
+				currentFrame.BombPlanted = false
+			}
+
+			// Add frame
+			if (len(currentFrame.CT.Players) > 0) || (len(currentFrame.T.Players) > 0) {
+				if len(currentRound.Frames) > 0 {
+					if currentRound.Frames[len(currentRound.Frames)-1].Tick < currentFrame.Tick {
+						appendFrameToRound(currentRound, &currentFrame, globalFrameIndex)
+					}
+				} else {
+					appendFrameToRound(currentRound, &currentFrame, globalFrameIndex)
+				}
+			}
+
+			if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
+				*currentFrameIdx = 0
+			} else {
+				*currentFrameIdx++
+			}
+		} else {
+			if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
+				*currentFrameIdx = 0
+			} else {
+				*currentFrameIdx++
+			}
+		}
+	})
+}
+
+func cleanAndWriteGame(currentGame *Game, jsonIndentation bool, outpath string) {
+	// Loop through damages and see if there are any multi-damages in a single tick,
+	// and reduce them to one attacker-victim-weapon entry per tick
+	if currentGame.ParsingOpts.DamagesRolled {
+		for i := range currentGame.Rounds {
+			var tempDamages []DamageAction
+			for j := range currentGame.Rounds[i].Damages {
+				if j < len(currentGame.Rounds[i].Damages) && j > 0 {
+					if (len(tempDamages) > 0) &&
+						(currentGame.Rounds[i].Damages[j].Tick == tempDamages[len(tempDamages)-1].Tick) &&
+						(currentGame.Rounds[i].Damages[j].AttackerSteamID == tempDamages[len(tempDamages)-1].AttackerSteamID) &&
+						(currentGame.Rounds[i].Damages[j].VictimSteamID == tempDamages[len(tempDamages)-1].VictimSteamID) &&
+						(currentGame.Rounds[i].Damages[j].Weapon == tempDamages[len(tempDamages)-1].Weapon) {
+						tempDamages[len(tempDamages)-1].HpDamage += currentGame.Rounds[i].Damages[j].HpDamage
+						tempDamages[len(tempDamages)-1].HpDamageTaken += currentGame.Rounds[i].Damages[j].HpDamageTaken
+						tempDamages[len(tempDamages)-1].ArmorDamage += currentGame.Rounds[i].Damages[j].ArmorDamage
+						tempDamages[len(tempDamages)-1].ArmorDamageTaken += currentGame.Rounds[i].Damages[j].ArmorDamageTaken
+					} else {
+						tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
+					}
+				} else {
+					tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
+				}
+			}
+			currentGame.Rounds[i].Damages = tempDamages
+		}
+	}
+
+	// Write the JSON
+	var file []byte
+	var err error
+	if jsonIndentation {
+		file, err = json.MarshalIndent(currentGame, "", " ")
+	} else {
+		file, err = json.Marshal(currentGame)
+	}
+	checkError(err)
+	_ = os.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0600)
+}
+
+// Main.
 func main() {
 	/* Parse the arguments
 
-	Run the parser as follows: go run parse_demo.go -demo /path/to/demo.dem -parserate 1/2/4/8/16/32/64/128 -demoID someDemoIDString
+	Run the parser as follows:
+	go run parse_demo.go -demo /path/to/demo.dem -parserate 1/2/4/8/16/32/64/128 -demoID someDemoIDString
 
-	The parserate should be one of 2^0 to 2^7. The lower the value, the more frames are collected. Indicates spacing between parsed demo frames in ticks.
+	The parserate should be one of 2^0 to 2^7. The lower the value, the more frames are collected.
+	Indicates spacing between parsed demo frames in ticks.
 	*/
-
 	fl := new(flag.FlagSet)
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 128, "Parse rate, indicates spacing between ticks")
@@ -968,7 +2604,7 @@ func main() {
 
 	// Set parsing options
 	parsingOpts := ParserOpts{}
-	parsingOpts.ParseRate = int(parseRate)
+	parsingOpts.ParseRate = parseRate
 	parsingOpts.ParseFrames = parseFrames
 	parsingOpts.ParseKillFrames = parseKillFrames
 	parsingOpts.TradeTime = tradeTime
@@ -982,13 +2618,7 @@ func main() {
 	currentRound := GameRound{}
 
 	// Create empty action lists for first round
-	currentRound.Bomb = []BombAction{}
-	currentRound.Damages = []DamageAction{}
-	currentRound.Flashes = []FlashAction{}
-	currentRound.Frames = []GameFrame{}
-	currentRound.Grenades = []GrenadeAction{}
-	currentRound.Kills = []KillAction{}
-	currentRound.WeaponFires = []WeaponFireAction{}
+	initializeRound(&currentRound)
 
 	RoundRestartDelay := int64(5)
 
@@ -1009,1543 +2639,66 @@ func main() {
 	currentGame.MatchPhases.RoundEndedOfficial = []int64{}
 
 	// Parse rank updates
-	p.RegisterEventHandler(func(e events.RankUpdate) {
-		rankUpdate := MMRank{}
-
-		rankUpdate.SteamID = e.SteamID64()
-		rankUpdate.RankChange = e.RankChange
-		rankUpdate.RankOld = convertRank(e.RankOld)
-		rankUpdate.RankNew = convertRank(e.RankNew)
-		rankUpdate.WinCount = e.WinCount
-
-		currentGame.MMRanks = append(currentGame.MMRanks, rankUpdate)
-	})
+	registerRankUpdateHandler(&p, &currentGame)
 
 	if parseChat {
-		// Register handler for chat messages (ChatMessage)
-		p.RegisterEventHandler(func(e events.ChatMessage) {
-			if e.Sender != nil {
-				gs := p.GameState()
-				chatMessage := Chat{}
-				senderSteamID := int64(e.Sender.SteamID64)
-				chatMessage.SteamID = &senderSteamID
-				chatMessage.Text = e.Text
-				chatMessage.Tick = int64(gs.IngameTick())
-				chatMessage.IsChat = true
-				chatMessage.IsChatAll = e.IsChatAll
-				chatMessage.Type = "ChatMessage"
-
-				currentGame.Chat = append(currentGame.Chat, chatMessage)
-			}
-		})
-
-		// Register handler for chat messages (SayText)
-		p.RegisterEventHandler(func(e events.SayText) {
-			gs := p.GameState()
-			chatMessage := Chat{}
-			chatMessage.Text = e.Text
-			chatMessage.Tick = int64(gs.IngameTick())
-			chatMessage.IsChat = e.IsChat
-			chatMessage.IsChatAll = e.IsChatAll
-			chatMessage.Type = "SayText"
-
-			currentGame.Chat = append(currentGame.Chat, chatMessage)
-		})
-
-		// Register handler for chat messages (SayText2)
-		p.RegisterEventHandler(func(e events.SayText2) {
-			gs := p.GameState()
-			chatMessage := Chat{}
-			chatMessage.Text = e.Params[1]
-			chatMessage.Params = e.Params
-			chatMessage.Tick = int64(gs.IngameTick())
-			chatMessage.IsChat = e.IsChat
-			chatMessage.IsChatAll = e.IsChatAll
-			chatMessage.Type = "SayText2"
-
-			currentGame.Chat = append(currentGame.Chat, chatMessage)
-		})
+		registerChatHandlers(&p, &currentGame)
 	}
+
 	// Parse player connects
-	p.RegisterEventHandler(func(e events.PlayerConnect) {
-		if e.Player != nil {
-			gs := p.GameState()
-			playerConnected := ConnectAction{}
-
-			playerConnected.Tick = int64(gs.IngameTick())
-			playerConnected.ConnectType = "connect"
-			playerConnected.SteamID = e.Player.SteamID64
-
-			currentGame.Connections = append(currentGame.Connections, playerConnected)
-		}
-	})
+	registerConnectHandler(&p, &currentGame)
 
 	// Parse player disconnects
-	p.RegisterEventHandler(func(e events.PlayerDisconnected) {
-		if e.Player != nil {
-			gs := p.GameState()
-			playerConnected := ConnectAction{}
-
-			playerConnected.Tick = int64(gs.IngameTick())
-			playerConnected.ConnectType = "disconnect"
-			playerConnected.SteamID = e.Player.SteamID64
-
-			currentGame.Connections = append(currentGame.Connections, playerConnected)
-		}
-	})
+	registerDisonnectHandler(&p, &currentGame)
 
 	// Parse the match phases
-	p.RegisterEventHandler(func(e events.AnnouncementLastRoundHalf) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.AnnLastRoundHalf = append(currentGame.MatchPhases.AnnLastRoundHalf, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.AnnouncementFinalRound) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.AnnFinalRound = append(currentGame.MatchPhases.AnnFinalRound, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.AnnouncementMatchStarted) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.AnnMatchStarted = append(currentGame.MatchPhases.AnnMatchStarted, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.GameHalfEnded) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.GameHalfEnded = append(currentGame.MatchPhases.GameHalfEnded, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.MatchStart) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.MatchStart = append(currentGame.MatchPhases.MatchStart, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.MatchStartedChanged) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.MatchStartedChanged = append(currentGame.MatchPhases.MatchStartedChanged, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.IsWarmupPeriodChanged) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.WarmupChanged = append(currentGame.MatchPhases.WarmupChanged, int64(gs.IngameTick()))
-	})
-
-	p.RegisterEventHandler(func(e events.TeamSideSwitch) {
-		gs := p.GameState()
-
-		currentGame.MatchPhases.TeamSwitch = append(currentGame.MatchPhases.TeamSwitch, int64(gs.IngameTick()))
-	})
+	registerMatchphases(&p, &currentGame)
 
 	// Parse smokes
-	p.RegisterEventHandler(func(e events.SmokeStart) {
-		gs := p.GameState()
-		s := Smoke{}
-		s.GrenadeEntityID = e.Grenade.UniqueID() // GrenadeEntityID
-		s.StartTick = int64(gs.IngameTick())
-		s.X = float64(e.Position.X)
-		s.Y = float64(e.Position.Y)
-		s.Z = float64(e.Position.Z)
-		foundNade := false
-		for _, ele := range smokes {
-			if ele.GrenadeEntityID == s.GrenadeEntityID {
-				foundNade = true
-			}
-		}
-		if !foundNade {
-			smokes = append(smokes, s)
-		}
-		foundNade = false
-	})
-
-	p.RegisterEventHandler(func(e events.SmokeExpired) {
-		removeID := e.Grenade.UniqueID() // e.GrenadeEntityID
-		for i, ele := range smokes {
-			if ele.GrenadeEntityID == removeID {
-				smokes = removeExpiredSmoke(smokes, i)
-			}
-		}
-	})
+	registerSmokeHandler(&p, &smokes)
 
 	// Parse round starts
-	p.RegisterEventHandler(func(e events.RoundStart) {
-		gs := p.GameState()
-		currentGame.MatchPhases.RoundStarted = append(currentGame.MatchPhases.RoundStarted, int64(gs.IngameTick()))
-
-		if roundStarted == 1 {
-			currentGame.Rounds = append(currentGame.Rounds, currentRound)
-		} else {
-			globalFrameIndex = 0
-		}
-
-		roundStarted = 1
-		roundInFreezetime = 1
-		roundInEndTime = 0
-		currentRound = GameRound{}
-
-		// Reset smokes
-		smokes = []Smoke{}
-
-		// Create empty action lists
-		currentRound.Bomb = []BombAction{}
-		currentRound.Damages = []DamageAction{}
-		currentRound.Flashes = []FlashAction{}
-		currentRound.Frames = []GameFrame{}
-		currentRound.Grenades = []GrenadeAction{}
-		currentRound.Kills = []KillAction{}
-		currentRound.WeaponFires = []WeaponFireAction{}
-
-		// Parse flags
-		currentRound.IsWarmup = gs.IsWarmupPeriod()
-		currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
-		currentRound.StartTick = int64(gs.IngameTick())
-		currentRound.TScore = int64(gs.TeamTerrorists().Score())
-		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-			currentRound.TTeam = &tTeam
-			currentRound.CTTeam = &ctTeam
-		}
-
-		// Parse round money
-		// tPlayers := gs.TeamTerrorists().Members()
-		// currentRound.TBeginMoney = 0
-		// ctPlayers := gs.TeamCounterTerrorists().Members()
-		// currentRound.CTBeginMoney = 0
-		// for _, p := range tPlayers {
-		// 	if p != nil {
-		// 		currentRound.TBeginMoney += int64(p.Money())
-		// 	}
-
-		// }
-		// for _, p := range ctPlayers {
-		// 	if p != nil {
-		// 		currentRound.CTBeginMoney += int64(p.Money())
-		// 	}
-		// }
-
-		// Parse the players
-		teamCT := PlayerTeams{}
-		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
-		for _, player := range gs.TeamCounterTerrorists().Members() {
-			pl := Players{}
-			pl.PlayerName = player.Name
-			pl.SteamID = int64(player.SteamID64)
-			foundPlayer := false
-			for _, p := range teamCT.Players {
-				if p.SteamID == pl.SteamID {
-					foundPlayer = true
-				}
-			}
-			if !foundPlayer {
-				teamCT.Players = append(teamCT.Players, pl)
-			}
-		}
-		currentRound.CTSide = teamCT
-
-		teamT := PlayerTeams{}
-		teamT.TeamName = gs.TeamTerrorists().ClanName()
-		for _, player := range gs.TeamTerrorists().Members() {
-			pl := Players{}
-			pl.PlayerName = player.Name
-			pl.SteamID = int64(player.SteamID64)
-			foundPlayer := false
-			for _, p := range teamT.Players {
-				if p.SteamID == pl.SteamID {
-					foundPlayer = true
-				}
-			}
-			if !foundPlayer {
-				teamT.Players = append(teamT.Players, pl)
-			}
-		}
-		currentRound.TSide = teamT
-	})
-
-	// Parse round freezetime ends
-	p.RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
-		gs := p.GameState()
-		currentGame.MatchPhases.RoundFreezeEnded = append(currentGame.MatchPhases.RoundFreezeEnded, int64(gs.IngameTick()))
-
-		// Reupdate the teams to make sure
-		currentRound.TScore = int64(gs.TeamTerrorists().Score())
-		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-			currentRound.TTeam = &tTeam
-			currentRound.CTTeam = &ctTeam
-		}
-
-		// Reset smokes
-		smokes = []Smoke{}
-
-		// Determine if round is still in warmup mode
-		currentRound.IsWarmup = gs.IsWarmupPeriod()
-
-		// If convars aren't parsed, do so
-		if convParsed == 0 {
-			// If convars are unparsed, record the convars of the server
-			serverConfig := ServerConVar{}
-			conv := gs.Rules().ConVars()
-			serverConfig.CashBombDefused, _ = strconv.ParseInt(conv["cash_player_bomb_defused"], 10, 64)
-			serverConfig.CashBombPlanted, _ = strconv.ParseInt(conv["cash_player_bomb_planted"], 10, 64)
-			serverConfig.CashWinBomb, _ = strconv.ParseInt(conv["cash_team_terrorist_win_bomb"], 10, 64)
-			serverConfig.CashWinDefuse, _ = strconv.ParseInt(conv["cash_team_win_by_defusing_bomb"], 10, 64)
-			serverConfig.CashWinTimeRunOut, _ = strconv.ParseInt(conv["cash_team_win_by_time_running_out_bomb"], 10, 64)
-			serverConfig.CashWinElimination, _ = strconv.ParseInt(conv["cash_team_elimination_bomb_map"], 10, 64)
-			serverConfig.CashPlayerKilledDefault, _ = strconv.ParseInt(conv["cash_player_killed_enemy_default"], 10, 64)
-			serverConfig.CashTeamLoserBonus, _ = strconv.ParseInt(conv["cash_team_loser_bonus"], 10, 64)
-			serverConfig.CashTeamLoserBonusConsecutive, _ = strconv.ParseInt(conv["cash_team_loser_bonus_consecutive_rounds"], 10, 64)
-			serverConfig.MaxRounds, _ = strconv.ParseInt(conv["mp_maxrounds"], 10, 64)
-			serverConfig.RoundTime, _ = strconv.ParseInt(conv["mp_roundtime"], 10, 64)
-			serverConfig.RoundTimeDefuse, _ = strconv.ParseInt(conv["mp_roundtime_defuse"], 10, 64)
-			serverConfig.RoundRestartDelay, _ = strconv.ParseInt(conv["mp_round_restart_delay"], 10, 64)
-			serverConfig.FreezeTime, _ = strconv.ParseInt(conv["mp_freezetime"], 10, 64)
-			serverConfig.BuyTime, _ = strconv.ParseInt(conv["mp_buytime"], 10, 64)
-			serverConfig.BombTimer, _ = strconv.ParseInt(conv["mp_c4timer"], 10, 64)
-			serverConfig.TimeoutsAllowed, _ = strconv.ParseInt(conv["mp_team_timeout_max"], 10, 64)
-			serverConfig.CoachingAllowed, _ = strconv.ParseInt(conv["sv_coaching_enabled"], 10, 64)
-			currentGame.ServerVars = serverConfig
-			convParsed = 1
-
-			// Change so that round restarts are parsed using the server convar
-			if serverConfig.RoundRestartDelay == 0 {
-				RoundRestartDelay = 5 // This is default on many servers, I think
-			} else {
-				RoundRestartDelay = serverConfig.RoundRestartDelay
-			}
-		}
-
-		if roundInFreezetime == 0 {
-			// This means the RoundStart event did not fire, but the FreezeTimeEnd did
-			currentGame.Rounds = append(currentGame.Rounds, currentRound)
-			roundStarted = 1
-			roundInEndTime = 0
-			currentRound = GameRound{}
-
-			// Create empty action lists
-			currentRound.Bomb = []BombAction{}
-			currentRound.Damages = []DamageAction{}
-			currentRound.Flashes = []FlashAction{}
-			currentRound.Frames = []GameFrame{}
-			currentRound.Grenades = []GrenadeAction{}
-			currentRound.Kills = []KillAction{}
-			currentRound.WeaponFires = []WeaponFireAction{}
-
-			currentRound.IsWarmup = gs.IsWarmupPeriod()
-			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
-			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
-			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
-			currentRound.TScore = int64(gs.TeamTerrorists().Score())
-			currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-				tTeam := gs.TeamTerrorists().ClanName()
-				ctTeam := gs.TeamCounterTerrorists().ClanName()
-				currentRound.TTeam = &tTeam
-				currentRound.CTTeam = &ctTeam
-			}
-
-			// See if start tick happened during a team switch. If so, then recalc scores.
-			if len(currentGame.MatchPhases.TeamSwitch) > 0 {
-				if (currentRound.StartTick) == currentGame.MatchPhases.TeamSwitch[len(currentGame.MatchPhases.TeamSwitch)-1] {
-					currentRound.TScore = int64(gs.TeamTerrorists().Score())
-					currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
-				}
-			}
-		}
-
-		// Parse the players
-		teamCT := PlayerTeams{}
-		teamCT.TeamName = gs.TeamCounterTerrorists().ClanName()
-		for _, player := range gs.TeamCounterTerrorists().Members() {
-			pl := Players{}
-			pl.PlayerName = player.Name
-			pl.SteamID = int64(player.SteamID64)
-			foundPlayer := false
-			for _, p := range teamCT.Players {
-				if p.SteamID == pl.SteamID {
-					foundPlayer = true
-				}
-			}
-			if !foundPlayer {
-				teamCT.Players = append(teamCT.Players, pl)
-			}
-		}
-		currentRound.CTSide = teamCT
-
-		teamT := PlayerTeams{}
-		teamT.TeamName = gs.TeamTerrorists().ClanName()
-		for _, player := range gs.TeamTerrorists().Members() {
-			pl := Players{}
-			pl.PlayerName = player.Name
-			pl.SteamID = int64(player.SteamID64)
-			foundPlayer := false
-			for _, p := range teamT.Players {
-				if p.SteamID == pl.SteamID {
-					foundPlayer = true
-				}
-			}
-			if !foundPlayer {
-				teamT.Players = append(teamT.Players, pl)
-			}
-		}
-		currentRound.TSide = teamT
-
-		roundInFreezetime = 0
-		currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
-	})
-
-	p.RegisterEventHandler(func(e events.RoundEndOfficial) {
-		gs := p.GameState()
-		currentGame.MatchPhases.RoundEndedOfficial = append(currentGame.MatchPhases.RoundEndedOfficial, int64(gs.IngameTick()))
-
-		if roundInEndTime == 0 {
-			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
-			currentRound.EndOfficialTick = int64(gs.IngameTick())
-
-			currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-			currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
-			// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-			// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
-
-			// Parse who won the round, not great...but a stopgap measure
-			tPlayers := gs.TeamTerrorists().Members()
-			aliveT := 0
-			ctPlayers := gs.TeamCounterTerrorists().Members()
-			aliveCT := 0
-			for _, p := range tPlayers {
-				if p.IsAlive() && p != nil {
-					aliveT = aliveT + 1
-				}
-			}
-			for _, p := range ctPlayers {
-				if p.IsAlive() && p != nil {
-					aliveCT = aliveCT + 1
-				}
-			}
-			if aliveCT == 0 {
-				currentRound.Reason = "TerroristsWin"
-				currentRound.EndTScore = currentRound.TScore + 1
-				currentRound.EndCTScore = currentRound.CTScore
-				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-					tTeam := gs.TeamTerrorists().ClanName()
-					ctTeam := gs.TeamCounterTerrorists().ClanName()
-					currentRound.WinningTeam = &tTeam
-					currentRound.LosingTeam = &ctTeam
-				}
-				currentRound.WinningSide = "T"
-			} else {
-				currentRound.Reason = "CTWin"
-				currentRound.EndCTScore = currentRound.CTScore + 1
-				currentRound.EndTScore = currentRound.TScore
-				if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-					tTeam := gs.TeamTerrorists().ClanName()
-					ctTeam := gs.TeamCounterTerrorists().ClanName()
-					currentRound.WinningTeam = &ctTeam
-					currentRound.LosingTeam = &tTeam
-				}
-				currentRound.WinningSide = "CT"
-			}
-		} else {
-			currentRound.EndTick = int64(gs.IngameTick()) - (RoundRestartDelay * currentGame.TickRate)
-			currentRound.EndOfficialTick = int64(gs.IngameTick())
-		}
-	})
+	registerRoundStartHandler(&p, &currentGame, &currentRound,
+		&roundStarted, &roundInFreezetime, &roundInEndTime, &smokes, &globalFrameIndex)
+	registerRoundFreezeTimeEndHandler(&p, &currentGame, &currentRound, &convParsed,
+		&RoundRestartDelay, &roundStarted, &roundInFreezetime, &roundInEndTime, &smokes)
 
 	// Parse round ends
-	p.RegisterEventHandler(func(e events.RoundEnd) {
-		gs := p.GameState()
-
-		if roundStarted == 1 {
-			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-				tTeam := gs.TeamTerrorists().ClanName()
-				ctTeam := gs.TeamCounterTerrorists().ClanName()
-				currentRound.TTeam = &tTeam
-				currentRound.CTTeam = &ctTeam
-			}
-		}
-
-		currentGame.MatchPhases.RoundEnded = append(currentGame.MatchPhases.RoundEnded, int64(gs.IngameTick()))
-
-		if roundStarted == 0 {
-			roundStarted = 1
-
-			currentRound.RoundNum = 0
-			currentRound.StartTick = 0
-			currentRound.TScore = 0
-			currentRound.CTScore = 0
-			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-				tTeam := gs.TeamTerrorists().ClanName()
-				ctTeam := gs.TeamCounterTerrorists().ClanName()
-				currentRound.TTeam = &tTeam
-				currentRound.CTTeam = &ctTeam
-			}
-		}
-
-		roundInEndTime = 1
-
-		winningTeam := "CT"
-		switch e.Winner {
-		case common.TeamTerrorists:
-			winningTeam = "T"
-			currentRound.EndTScore = currentRound.TScore + 1
-			currentRound.EndCTScore = currentRound.CTScore
-		case common.TeamCounterTerrorists:
-			winningTeam = "CT"
-			currentRound.EndCTScore = currentRound.CTScore + 1
-			currentRound.EndTScore = currentRound.TScore
-		default:
-			winningTeam = "Unknown"
-		}
-
-		currentRound.EndTick = int64(gs.IngameTick())
-		currentRound.EndOfficialTick = int64(gs.IngameTick()) + (RoundRestartDelay * currentGame.TickRate)
-		currentRound.Reason = convertRoundEndReason(e.Reason)
-		currentRound.WinningSide = winningTeam
-
-		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-			tTeam := gs.TeamTerrorists().ClanName()
-			ctTeam := gs.TeamCounterTerrorists().ClanName()
-
-			if winningTeam == "CT" {
-				currentRound.LosingTeam = &tTeam
-				currentRound.WinningTeam = &ctTeam
-			} else if winningTeam == "T" {
-				currentRound.LosingTeam = &ctTeam
-				currentRound.WinningTeam = &tTeam
-			}
-		}
-
-		currentRound.CTBuyType = parseTeamBuy(currentRound.CTFreezeTimeEndEqVal, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-		currentRound.TBuyType = parseTeamBuy(currentRound.TFreezeTimeEndEqVal, "T", currentGame.ParsingOpts.RoundBuyStyle)
-		// currentRound.CTBuyType = parseTeamBuy(currentRound.CTRoundStartEqVal+currentRound.CTSpend, "CT", currentGame.ParsingOpts.RoundBuyStyle)
-		// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T", currentGame.ParsingOpts.RoundBuyStyle)
-
-	})
+	registerRoundEndOfficialHandler(&p, &currentGame, &currentRound, &roundInEndTime, &RoundRestartDelay)
+	registerRoundEndHandler(&p, &currentGame, &currentRound, &roundStarted, &roundInEndTime, &RoundRestartDelay)
 
 	// Parse bomb defuses
-	p.RegisterEventHandler(func(e events.BombDefused) {
-		gs := p.GameState()
-
-		currentBomb := BombAction{}
-		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.BombAction = "defuse"
-		bombSite := ""
-		if e.Site == 65 {
-			bombSite = "A"
-		} else if e.Site == 66 {
-			bombSite = "B"
-		}
-		currentBomb.BombSite = &bombSite
-
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
-
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
-
-		// add bomb event
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
-	})
-
-	// Parse bomb defuses
-	p.RegisterEventHandler(func(e events.BombDefuseStart) {
-		gs := p.GameState()
-
-		currentBomb := BombAction{}
-		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.BombAction = "defuse_start"
-
-		// Find bombsite where event is planted
-		bombSite := ""
-		bombPlantFound := false
-		for _, b := range currentRound.Bomb {
-			if b.BombAction == "plant" {
-				bombSite = *b.BombSite
-				bombPlantFound = true
-			}
-		}
-		currentBomb.BombSite = &bombSite
-
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
-
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
-
-		// add
-		if bombPlantFound {
-			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
-		}
-	})
-
-	// Parse bomb defuses
-	p.RegisterEventHandler(func(e events.BombDefuseAborted) {
-		gs := p.GameState()
-
-		currentBomb := BombAction{}
-		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.BombAction = "defuse_aborted"
-
-		// Find bombsite where event is planted
-		bombSite := ""
-		bombPlantFound := false
-		for _, b := range currentRound.Bomb {
-			if b.BombAction == "plant" {
-				bombSite = *b.BombSite
-				bombPlantFound = true
-			}
-		}
-		currentBomb.BombSite = &bombSite
-
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
-
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
-
-		// Add Bomb Event
-		if bombPlantFound {
-			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
-		}
-	})
+	registerBombDefusedHandler(&p, &currentGame, &currentRound)
+	registerBombDefuseStartHandler(&p, &currentGame, &currentRound)
+	registerBombDefuseAbortHandler(&p, &currentGame, &currentRound)
 
 	// Parse weapon fires
-	p.RegisterEventHandler(func(e events.WeaponFire) {
-		gs := p.GameState()
-
-		if (e.Weapon != nil) && (e.Weapon.String() != "Knife") && (e.Weapon.String() != "C4") && (e.Shooter != nil) {
-			currentWeaponFire := WeaponFireAction{}
-			currentWeaponFire.Tick = int64(gs.IngameTick())
-			currentWeaponFire.Second = determineSecond(currentWeaponFire.Tick, currentRound, currentGame)
-			currentWeaponFire.ClockTime = calculateClocktime(currentWeaponFire.Tick, currentRound, currentGame)
-			currentWeaponFire.PlayerSteamID = int64(e.Shooter.SteamID64)
-			currentWeaponFire.PlayerName = e.Shooter.Name
-			if e.Shooter.TeamState != nil {
-				currentWeaponFire.PlayerTeam = e.Shooter.TeamState.ClanName()
-			}
-			playerSide := "Unknown"
-			switch e.Shooter.Team {
-			case common.TeamTerrorists:
-				playerSide = "T"
-			case common.TeamCounterTerrorists:
-				playerSide = "CT"
-			case common.TeamSpectators:
-				playerSide = "Spectator"
-			case common.TeamUnassigned:
-				playerSide = "Unassigned"
-			default:
-				playerSide = "Unknown"
-			}
-			currentWeaponFire.PlayerSide = playerSide
-
-			// Player loc
-			playerPos := e.Shooter.LastAlivePosition
-
-			currentWeaponFire.PlayerX = float64(playerPos.X)
-			currentWeaponFire.PlayerY = float64(playerPos.Y)
-			currentWeaponFire.PlayerZ = float64(playerPos.Z)
-			currentWeaponFire.Weapon = e.Weapon.String()
-			currentWeaponFire.WeaponClass = convertWeaponClass(e.Weapon.Class())
-			currentWeaponFire.AmmoInMagazine = int64(e.Weapon.AmmoInMagazine())
-			currentWeaponFire.AmmoInReserve = int64(e.Weapon.AmmoReserve())
-			currentWeaponFire.PlayerViewX = float64(e.Shooter.ViewDirectionX())
-			currentWeaponFire.PlayerViewY = float64(e.Shooter.ViewDirectionY())
-			currentWeaponFire.PlayerStrafe = e.Shooter.IsWalking()
-			currentWeaponFire.ZoomLevel = int64(e.Weapon.ZoomLevel())
-
-			// add
-			currentRound.WeaponFires = append(currentRound.WeaponFires, currentWeaponFire)
-		}
-	})
+	registerWeaponFiresHandler(&p, &currentGame, &currentRound)
 
 	// Parse player flashes
-	p.RegisterEventHandler(func(e events.PlayerFlashed) {
-		gs := p.GameState()
-
-		if e.Attacker != nil {
-			currentFlash := FlashAction{}
-			currentFlash.Tick = int64(gs.IngameTick())
-			currentFlash.Second = determineSecond(currentFlash.Tick, currentRound, currentGame)
-			currentFlash.ClockTime = calculateClocktime(currentFlash.Tick, currentRound, currentGame)
-
-			// Attacker
-			currentFlash.AttackerSteamID = int64(e.Attacker.SteamID64)
-			currentFlash.AttackerName = e.Attacker.Name
-			if e.Attacker.TeamState != nil {
-				currentFlash.AttackerTeam = e.Attacker.TeamState.ClanName()
-			}
-			attackerSide := "Unknown"
-			switch e.Attacker.Team {
-			case common.TeamTerrorists:
-				attackerSide = "T"
-			case common.TeamCounterTerrorists:
-				attackerSide = "CT"
-			case common.TeamSpectators:
-				attackerSide = "Spectator"
-			case common.TeamUnassigned:
-				attackerSide = "Unassigned"
-			default:
-				attackerSide = "Unknown"
-			}
-			currentFlash.AttackerSide = attackerSide
-
-			// Attacker loc
-			attackerPos := e.Attacker.LastAlivePosition
-
-			currentFlash.AttackerX = float64(attackerPos.X)
-			currentFlash.AttackerY = float64(attackerPos.Y)
-			currentFlash.AttackerZ = float64(attackerPos.Z)
-			currentFlash.AttackerViewX = float64(e.Attacker.ViewDirectionX())
-			currentFlash.AttackerViewY = float64(e.Attacker.ViewDirectionY())
-
-			// Player
-			if e.Player != nil {
-				if e.Player.IsAlive() {
-					playerSteamID := int64(e.Player.SteamID64)
-					currentFlash.PlayerSteamID = &playerSteamID
-					currentFlash.PlayerName = &e.Player.Name
-					playerClanName := ""
-
-					if e.Player.TeamState != nil {
-						playerClanName = e.Player.TeamState.ClanName()
-					}
-
-					currentFlash.PlayerTeam = &playerClanName
-					playerSide := "Unknown"
-					switch e.Player.Team {
-					case common.TeamTerrorists:
-						playerSide = "T"
-					case common.TeamCounterTerrorists:
-						playerSide = "CT"
-					case common.TeamSpectators:
-						playerSide = "Spectator"
-					case common.TeamUnassigned:
-						playerSide = "Unassigned"
-					default:
-						playerSide = "Unknown"
-					}
-
-					currentFlash.PlayerSide = &playerSide
-
-					// Player loc
-					playerPos := e.Player.LastAlivePosition
-
-					playerX := float64(playerPos.X)
-					playerY := float64(playerPos.Y)
-					playerZ := float64(playerPos.Z)
-					currentFlash.PlayerX = &playerX
-					currentFlash.PlayerY = &playerY
-					currentFlash.PlayerZ = &playerZ
-					playerViewX := float64(e.Player.ViewDirectionX())
-					playerViewY := float64(e.Player.ViewDirectionY())
-					currentFlash.PlayerViewX = &playerViewX
-					currentFlash.PlayerViewY = &playerViewY
-
-					// Calculate flash duration in seconds
-					flashDuration := float64(e.Player.FlashDurationTimeRemaining()) / 1000000000
-					currentFlash.FlashDuration = &flashDuration
-
-					// Add to list
-					if *currentFlash.PlayerSide != "Spectator" && *currentFlash.PlayerSide != "Unassigned" && *currentFlash.PlayerSide != "Unknown" {
-						currentRound.Flashes = append(currentRound.Flashes, currentFlash)
-					}
-				}
-			}
-		}
-
-	})
+	registerPlayerFlashedHandler(&p, &currentGame, &currentRound)
 
 	// Parse bomb plants
-	p.RegisterEventHandler(func(e events.BombPlanted) {
-		gs := p.GameState()
-
-		currentBomb := BombAction{}
-		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.BombAction = "plant"
-
-		bombSite := ""
-		if e.Site == 65 {
-			bombSite = "A"
-		} else if e.Site == 66 {
-			bombSite = "B"
-		}
-		currentBomb.BombSite = &bombSite
-
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
-
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
-
-		// Bomb event
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
-		plantTick := int64(gs.IngameTick())
-		currentRound.BombPlantTick = &plantTick
-	})
-
-	// Parse bomb plants
-	p.RegisterEventHandler(func(e events.BombPlantBegin) {
-		gs := p.GameState()
-
-		currentBomb := BombAction{}
-		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.BombAction = "plant_begin"
-
-		bombSite := ""
-		if e.Site == 65 {
-			bombSite = "A"
-		} else if e.Site == 66 {
-			bombSite = "B"
-		}
-		currentBomb.BombSite = &bombSite
-
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
-
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
-
-		// Bomb event
-		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
-	})
-
-	// Parse bomb plants
-	p.RegisterEventHandler(func(e events.BombPlantAborted) {
-		gs := p.GameState()
-
-		currentBomb := BombAction{}
-		currentBomb.Tick = int64(gs.IngameTick())
-		currentBomb.Second = determineSecond(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.ClockTime = calculateClocktime(currentBomb.Tick, currentRound, currentGame)
-		currentBomb.BombAction = "plant_abort"
-
-		// Find bombsite where event is planted
-		bombSite := ""
-		bombPlantFound := false
-		for _, b := range currentRound.Bomb {
-			if b.BombAction == "plant_begin" {
-				bombSite = *b.BombSite
-				bombPlantFound = true
-			}
-		}
-		currentBomb.BombSite = &bombSite
-
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
-
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = float64(playerPos.X)
-		currentBomb.PlayerY = float64(playerPos.Y)
-		currentBomb.PlayerZ = float64(playerPos.Z)
-
-		// Add Bomb event
-		if bombPlantFound {
-			currentRound.Bomb = append(currentRound.Bomb, currentBomb)
-		}
-	})
+	registerBombPlantedHandler(&p, &currentGame, &currentRound)
+	registerBombPlantBeginHandler(&p, &currentGame, &currentRound)
+	registerBombPlantAbortedHandler(&p, &currentGame, &currentRound)
 
 	// Parse grenade throws
-	p.RegisterEventHandler(func(e events.GrenadeProjectileThrow) {
-		gs := p.GameState()
-
-		if e.Projectile.Thrower != nil {
-			currentGrenade := GrenadeAction{}
-			currentGrenade.UniqueID = e.Projectile.UniqueID()
-			currentGrenade.ThrowTick = int64(gs.IngameTick())
-			currentGrenade.ThrowSecond = determineSecond(currentGrenade.ThrowTick, currentRound, currentGame)
-			currentGrenade.ThrowClockTime = calculateClocktime(currentGrenade.ThrowTick, currentRound, currentGame)
-
-			currentGrenade.ThrowerSteamID = int64(e.Projectile.Thrower.SteamID64)
-			currentGrenade.ThrowerName = e.Projectile.Thrower.Name
-			currentGrenade.Grenade = e.Projectile.WeaponInstance.String()
-			playerSide := "Unknown"
-
-			tTeam := ""
-			ctTeam := ""
-			if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
-				tTeam = gs.TeamTerrorists().ClanName()
-				ctTeam = gs.TeamCounterTerrorists().ClanName()
-			}
-
-			switch e.Projectile.Thrower.Team {
-			case common.TeamTerrorists:
-				playerSide = "T"
-				currentGrenade.ThrowerTeam = tTeam
-			case common.TeamCounterTerrorists:
-				playerSide = "CT"
-				currentGrenade.ThrowerTeam = ctTeam
-			case common.TeamSpectators:
-				playerSide = "Spectator"
-				currentGrenade.ThrowerTeam = ""
-			case common.TeamUnassigned:
-				playerSide = "Unassigned"
-				currentGrenade.ThrowerTeam = ""
-			default:
-				playerSide = "Unknown"
-				currentGrenade.ThrowerTeam = ""
-			}
-			currentGrenade.ThrowerSide = playerSide
-
-			// Player location (use weaponfire event)
-			playerPos := e.Projectile.Position()
-
-			currentGrenade.ThrowerX = float64(playerPos.X)
-			currentGrenade.ThrowerY = float64(playerPos.Y)
-			currentGrenade.ThrowerZ = float64(playerPos.Z)
-
-			// Add grenade event
-			if playerSide == "CT" || playerSide == "T" {
-				currentRound.Grenades = append(currentRound.Grenades, currentGrenade)
-			}
-		}
-	})
+	registerGrenadeThrowHandler(&p, &currentGame, &currentRound)
 
 	// Parse grenade destroys
-	p.RegisterEventHandler(func(e events.GrenadeProjectileDestroy) {
-		gs := p.GameState()
-
-		if e.Projectile.Thrower != nil {
-			for i, g := range currentRound.Grenades {
-				if g.UniqueID == e.Projectile.UniqueID() {
-					currentRound.Grenades[i].DestroyTick = int64(gs.IngameTick())
-					currentRound.Grenades[i].DestroySecond = determineSecond(currentRound.Grenades[i].DestroyTick, currentRound, currentGame)
-					currentRound.Grenades[i].DestroyClockTime = calculateClocktime(currentRound.Grenades[i].DestroyTick, currentRound, currentGame)
-					// Grenade Location
-					grenadePos := e.Projectile.Position()
-
-					currentRound.Grenades[i].GrenadeX = float64(grenadePos.X)
-					currentRound.Grenades[i].GrenadeY = float64(grenadePos.Y)
-					currentRound.Grenades[i].GrenadeZ = float64(grenadePos.Z)
-				}
-			}
-		}
-	})
+	registerGrenadeDestroyHandler(&p, &currentGame, &currentRound)
 
 	// Parse kill events
-	p.RegisterEventHandler(func(e events.Kill) {
-		gs := p.GameState()
-
-		if (roundInFreezetime == 0) && parseKillFrames {
-			currentFrame := GameFrame{}
-			currentFrame.IsKillFrame = true
-
-			// Create empty player lists
-			currentFrame.CT.Players = []PlayerInfo{}
-			currentFrame.T.Players = []PlayerInfo{}
-
-			currentFrame.Tick = int64(gs.IngameTick())
-			currentFrame.Second = determineSecond(currentFrame.Tick, currentRound, currentGame)
-			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, currentRound, currentGame)
-
-			// Parse T
-			currentFrame.T = TeamFrameInfo{}
-			currentFrame.T.Side = "T"
-			if gs.TeamTerrorists() != nil {
-				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
-			}
-			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
-			tPlayers := gs.TeamTerrorists().Members()
-
-			for _, p := range tPlayers {
-				if p != nil {
-					if !playerInList(p, currentFrame.T.Players) {
-						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(gs, p))
-					}
-				}
-			}
-
-			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
-			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
-			// currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
-
-			// Parse CT
-			currentFrame.CT = TeamFrameInfo{}
-			currentFrame.CT.Side = "CT"
-			if gs.TeamCounterTerrorists() != nil {
-				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
-			}
-			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
-			ctPlayers := gs.TeamCounterTerrorists().Members()
-
-			for _, p := range ctPlayers {
-				if p != nil {
-					if !playerInList(p, currentFrame.CT.Players) {
-						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(gs, p))
-					}
-				}
-			}
-
-			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
-			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
-			// currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.CT.Players)
-
-			// Parse projectiles objects
-			allGrenades := gs.GrenadeProjectiles()
-			currentFrame.Projectiles = []GrenadeInfo{}
-			for _, ele := range allGrenades {
-				currentProjectile := GrenadeInfo{}
-				currentProjectile.ProjectileType = ele.WeaponInstance.String()
-				objPos := ele.Trajectory[len(ele.Trajectory)-1]
-
-				currentProjectile.X = float64(objPos.X)
-				currentProjectile.Y = float64(objPos.Y)
-				currentProjectile.Z = float64(objPos.Z)
-				currentFrame.Projectiles = append(currentFrame.Projectiles, currentProjectile)
-			}
-
-			// Parse infernos
-			allInfernos := gs.Infernos()
-			currentFrame.Fires = []Fire{}
-			for _, ele := range allInfernos {
-				currentFire := Fire{}
-				objPos := ele.Entity.Position()
-				currentFire.UniqueID = ele.UniqueID()
-
-				currentFire.X = float64(objPos.X)
-				currentFire.Y = float64(objPos.Y)
-				currentFire.Z = float64(objPos.Z)
-				currentFrame.Fires = append(currentFrame.Fires, currentFire)
-			}
-
-			// Parse smokes
-			currentFrame.Smokes = []Smoke{}
-			currentFrame.Smokes = smokes
-
-			// Parse bomb
-			bombObj := gs.Bomb()
-			currentBomb := BombInfo{}
-			objPos := bombObj.Position()
-
-			currentBomb.X = float64(objPos.X)
-			currentBomb.Y = float64(objPos.Y)
-			currentBomb.Z = float64(objPos.Z)
-			currentFrame.Bomb = currentBomb
-			if len(currentRound.Bomb) > 0 {
-				for _, b := range currentRound.Bomb {
-					if b.BombAction == "plant" {
-						currentFrame.BombPlanted = true
-						currentFrame.BombSite = *b.BombSite
-					}
-				}
-			} else {
-				currentFrame.BombPlanted = false
-			}
-			appendFrameToRound(&currentRound, &currentFrame, &globalFrameIndex)
-		}
-
-		currentKill := KillAction{}
-		currentKill.Tick = int64(gs.IngameTick())
-		currentKill.Second = determineSecond(currentKill.Tick, currentRound, currentGame)
-		currentKill.ClockTime = calculateClocktime(currentKill.Tick, currentRound, currentGame)
-		if e.Weapon != nil {
-			currentKill.Weapon = e.Weapon.String()
-			currentKill.WeaponClass = convertWeaponClass(e.Weapon.Class())
-		}
-		currentKill.IsWallbang = e.IsWallBang()
-		currentKill.PenetratedObjects = int64(e.PenetratedObjects)
-		currentKill.IsHeadshot = e.IsHeadshot
-		currentKill.AttackerBlinded = e.AttackerBlind
-		currentKill.NoScope = e.NoScope
-		currentKill.ThruSmoke = e.ThroughSmoke
-
-		// Attacker
-		if e.Killer != nil {
-			attackerSteamID := int64(e.Killer.SteamID64)
-			currentKill.AttackerSteamID = &attackerSteamID
-			attackerName := e.Killer.Name
-			currentKill.AttackerName = &attackerName
-			if e.Killer.TeamState != nil {
-				attackerTeamName := e.Killer.TeamState.ClanName()
-				currentKill.AttackerTeam = &attackerTeamName
-			}
-			attackerSide := "Unknown"
-
-			switch e.Killer.Team {
-			case common.TeamTerrorists:
-				attackerSide = "T"
-			case common.TeamCounterTerrorists:
-				attackerSide = "CT"
-			case common.TeamSpectators:
-				attackerSide = "Spectator"
-			case common.TeamUnassigned:
-				attackerSide = "Unassigned"
-			default:
-				attackerSide = "Unknown"
-			}
-
-			currentKill.AttackerSide = &attackerSide
-			attackerPos := e.Killer.LastAlivePosition
-
-			currentKill.AttackerX = &attackerPos.X
-			currentKill.AttackerY = &attackerPos.Y
-			currentKill.AttackerZ = &attackerPos.Z
-			attackerViewX := float64(e.Killer.ViewDirectionX())
-			attackerViewY := float64(e.Killer.ViewDirectionY())
-			currentKill.AttackerViewX = &attackerViewX
-			currentKill.AttackerViewY = &attackerViewY
-		}
-
-		// Victim
-		if e.Victim != nil {
-			victimSteamID := int64(e.Victim.SteamID64)
-			currentKill.VictimSteamID = &victimSteamID
-			victimName := e.Victim.Name
-			currentKill.VictimName = &victimName
-			if e.Victim.TeamState != nil {
-				victimTeamName := e.Victim.TeamState.ClanName()
-				currentKill.VictimTeam = &victimTeamName
-			}
-			victimSide := "Unknown"
-
-			switch e.Victim.Team {
-			case common.TeamTerrorists:
-				victimSide = "T"
-			case common.TeamCounterTerrorists:
-				victimSide = "CT"
-			case common.TeamSpectators:
-				victimSide = "Spectator"
-			case common.TeamUnassigned:
-				victimSide = "Unassigned"
-			default:
-				victimSide = "Unknown"
-			}
-
-			currentKill.VictimSide = &victimSide
-			victimPos := e.Victim.LastAlivePosition
-
-			currentKill.VictimX = &victimPos.X
-			currentKill.VictimY = &victimPos.Y
-			currentKill.VictimZ = &victimPos.Z
-			victimViewX := float64(e.Victim.ViewDirectionX())
-			victimViewY := float64(e.Victim.ViewDirectionY())
-			currentKill.VictimViewX = &victimViewX
-			currentKill.VictimViewY = &victimViewY
-
-			if !currentKill.IsSuicide && e.Killer != nil && e.Victim != nil {
-				X := math.Pow((*currentKill.AttackerX - *currentKill.VictimX), 2)
-				Y := math.Pow((*currentKill.AttackerY - *currentKill.VictimY), 2)
-				Z := math.Pow((*currentKill.AttackerZ - *currentKill.VictimZ), 2)
-				currentKill.Distance = math.Sqrt(X + Y + Z)
-			} else {
-				currentKill.Distance = 0.0
-			}
-
-			// Parse teamkill
-			currentKill.IsTeamkill = false
-			currentKill.IsSuicide = false
-
-			if e.Killer != nil {
-				// Parse TKs
-				if *currentKill.AttackerSide == *currentKill.VictimSide {
-					currentKill.IsTeamkill = true
-				} else {
-					currentKill.IsTeamkill = false
-				}
-
-				// Parse Suicides
-				if *currentKill.AttackerSteamID == *currentKill.VictimSteamID {
-					currentKill.IsSuicide = true
-				} else {
-					currentKill.IsSuicide = false
-				}
-			} else {
-				currentKill.IsTeamkill = true
-				currentKill.IsSuicide = true
-			}
-
-		}
-
-		// Assister
-		if e.Assister != nil {
-			assistSteamID := int64(e.Assister.SteamID64)
-			currentKill.AssisterSteamID = &assistSteamID
-			assisterName := e.Assister.Name
-			currentKill.AssisterName = &assisterName
-			if e.Assister.TeamState != nil {
-				assistTeamName := e.Assister.TeamState.ClanName()
-				currentKill.AssisterTeam = &assistTeamName
-			}
-			assisterSide := "Unknown"
-			switch e.Assister.Team {
-			case common.TeamTerrorists:
-				assisterSide = "T"
-			case common.TeamCounterTerrorists:
-				assisterSide = "CT"
-			case common.TeamSpectators:
-				assisterSide = "Spectator"
-			case common.TeamUnassigned:
-				assisterSide = "Unassigned"
-			default:
-				assisterSide = "Unknown"
-			}
-			currentKill.AssisterSide = &assisterSide
-		}
-
-		// Parse the opening kill info and trade info
-		if len(currentRound.Kills) == 0 {
-			currentKill.IsFirstKill = true
-		} else {
-			currentKill.IsFirstKill = false
-			for i := len(currentRound.Kills) - 1; i >= 0 && inTradeWindow(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime) && !currentKill.IsTrade; i-- {
-				currentKill.IsTrade = isTrade(currentRound.Kills[i], currentKill, currentGame.TickRate, currentGame.ParsingOpts.TradeTime)
-				if len(currentRound.Kills) > 0 && e.Victim != nil && currentKill.IsTrade {
-					currentKill.PlayerTradedName = currentRound.Kills[i].VictimName
-					currentKill.PlayerTradedSteamID = currentRound.Kills[i].VictimSteamID
-					currentKill.PlayerTradedTeam = currentRound.Kills[i].VictimTeam
-					currentKill.PlayerTradedSide = currentRound.Kills[i].VictimSide
-				}
-			}
-		}
-
-		// Parse flash info for kill
-		if e.Victim != nil {
-			currentKill.VictimBlinded = e.Victim.IsBlinded()
-			if e.Victim.IsBlinded() {
-
-				// This will only be true if in the killfeed the assister is the flasher
-				if e.AssistedFlash {
-					currentKill.AssisterSteamID = nil
-					currentKill.AssisterName = nil
-					currentKill.AssisterTeam = nil
-					currentKill.AssisterSide = nil
-				}
-
-				// Find their latest flash event
-				for _, flash := range currentRound.Flashes {
-					if (*flash.PlayerSteamID == *currentKill.VictimSteamID) && (flash.Tick >= currentKill.Tick-5*currentGame.TickRate) && (flash.Tick <= currentKill.Tick) {
-						currentKill.FlashThrowerSteamID = &flash.AttackerSteamID
-						currentKill.FlashThrowerName = &flash.AttackerName
-						currentKill.FlashThrowerTeam = &flash.AttackerTeam
-						currentKill.FlashThrowerSide = &flash.AttackerSide
-					}
-				}
-			}
-		}
-
-		// Add Kill
-		currentRound.Kills = append(currentRound.Kills, currentKill)
-	})
+	registerKillHandler(&p, &currentGame, &currentRound, &smokes, &roundInEndTime, &parseKillFrames, &globalFrameIndex)
 
 	// Parse damage events
-	p.RegisterEventHandler(func(e events.PlayerHurt) {
-		gs := p.GameState()
+	registerDamageHandler(&p, &currentGame, &currentRound)
 
-		currentDamage := DamageAction{}
-		currentDamage.Tick = int64(gs.IngameTick())
-		currentDamage.Second = determineSecond(currentDamage.Tick, currentRound, currentGame)
-		currentDamage.ClockTime = calculateClocktime(currentDamage.Tick, currentRound, currentGame)
-		if e.Weapon != nil {
-			currentDamage.Weapon = e.Weapon.String()
-			currentDamage.WeaponClass = convertWeaponClass(e.Weapon.Class())
-		}
-		currentDamage.HitGroup = convertHitGroup(e.HitGroup)
-		currentDamage.HpDamage = int64(e.HealthDamage)
-		currentDamage.HpDamageTaken = int64(e.HealthDamageTaken)
-		currentDamage.ArmorDamage = int64(e.ArmorDamage)
-		currentDamage.ArmorDamageTaken = int64(e.ArmorDamageTaken)
-
-		// Attacker
-		if e.Attacker != nil {
-			attackerSteamID := int64(e.Attacker.SteamID64)
-			currentDamage.AttackerSteamID = &attackerSteamID
-			attackerName := e.Attacker.Name
-			currentDamage.AttackerName = &attackerName
-			if e.Attacker.TeamState != nil {
-				attackerTeamName := e.Attacker.TeamState.ClanName()
-				currentDamage.AttackerTeam = &attackerTeamName
-			}
-
-			attackerSide := "Unknown"
-			switch e.Attacker.Team {
-			case common.TeamTerrorists:
-				attackerSide = "T"
-			case common.TeamCounterTerrorists:
-				attackerSide = "CT"
-			case common.TeamSpectators:
-				attackerSide = "Spectator"
-			case common.TeamUnassigned:
-				attackerSide = "Unassigned"
-			default:
-				attackerSide = "Unknown"
-			}
-			currentDamage.AttackerSide = &attackerSide
-
-			attackerPos := e.Attacker.LastAlivePosition
-
-			currentDamage.AttackerX = &attackerPos.X
-			currentDamage.AttackerY = &attackerPos.Y
-			currentDamage.AttackerZ = &attackerPos.Z
-			attackerViewX := float64(e.Attacker.ViewDirectionX())
-			attackerViewY := float64(e.Attacker.ViewDirectionY())
-			currentDamage.AttackerViewX = &attackerViewX
-			currentDamage.AttackerViewY = &attackerViewY
-			attackerStrafe := e.Attacker.IsWalking()
-			currentDamage.AttackerStrafe = &attackerStrafe
-
-			if e.Weapon != nil {
-				zoomLevel := int64(e.Weapon.ZoomLevel())
-				currentDamage.ZoomLevel = &zoomLevel
-			}
-		}
-
-		// Victim
-		if e.Player != nil {
-			victimSteamID := int64(e.Player.SteamID64)
-			currentDamage.VictimSteamID = &victimSteamID
-			victimName := e.Player.Name
-			currentDamage.VictimName = &victimName
-			if e.Player.TeamState != nil {
-				victimTeamName := e.Player.TeamState.ClanName()
-				currentDamage.VictimTeam = &victimTeamName
-			}
-
-			victimSide := "Unknown"
-			switch e.Player.Team {
-			case common.TeamTerrorists:
-				victimSide = "T"
-			case common.TeamCounterTerrorists:
-				victimSide = "CT"
-			case common.TeamSpectators:
-				victimSide = "Spectator"
-			case common.TeamUnassigned:
-				victimSide = "Unassigned"
-			default:
-				victimSide = "Unknown"
-			}
-			currentDamage.VictimSide = &victimSide
-
-			victimPos := e.Player.LastAlivePosition
-
-			currentDamage.VictimX = &victimPos.X
-			currentDamage.VictimY = &victimPos.Y
-			currentDamage.VictimZ = &victimPos.Z
-			victimViewX := float64(e.Player.ViewDirectionX())
-			victimViewY := float64(e.Player.ViewDirectionY())
-			currentDamage.VictimViewX = &victimViewX
-			currentDamage.VictimViewY = &victimViewY
-
-			// Parse team damage
-			currentDamage.IsTeamDmg = false
-			if currentDamage.AttackerSide != nil {
-				if currentDamage.VictimSide != nil {
-					if *currentDamage.AttackerSide == *currentDamage.VictimSide {
-						currentDamage.IsTeamDmg = true
-					}
-				}
-			}
-
-			// Parse distance
-			currentDamage.Distance = 0.0
-			if e.Attacker != nil {
-				X := math.Pow((*currentDamage.AttackerX - *currentDamage.VictimX), 2)
-				Y := math.Pow((*currentDamage.AttackerY - *currentDamage.VictimY), 2)
-				Z := math.Pow((*currentDamage.AttackerZ - *currentDamage.VictimZ), 2)
-				currentDamage.Distance = math.Sqrt(X + Y + Z)
-			}
-		}
-
-		// Add damages
-		currentRound.Damages = append(currentRound.Damages, currentDamage)
-	})
-
-	// Parse a demo frame. If parse rate is 1, then every frame is parsed. If parse rate is 2, then every 2 frames is parsed, and so on
-	p.RegisterEventHandler(func(e events.FrameDone) {
-		gs := p.GameState()
-
-		if (roundInFreezetime == 0) && (roundInEndTime == 0) {
-			currentRound.CTRoundStartEqVal = int64(gs.TeamCounterTerrorists().RoundStartEquipmentValue())
-			currentRound.TRoundStartEqVal = int64(gs.TeamTerrorists().RoundStartEquipmentValue())
-			currentRound.CTFreezeTimeEndEqVal = int64(gs.TeamCounterTerrorists().FreezeTimeEndEquipmentValue())
-			currentRound.TFreezeTimeEndEqVal = int64(gs.TeamTerrorists().FreezeTimeEndEquipmentValue())
-			currentRound.CTRoundMoneySpend = int64(gs.TeamCounterTerrorists().MoneySpentThisRound())
-			currentRound.TRoundMoneySpend = int64(gs.TeamTerrorists().MoneySpentThisRound())
-		}
-
-		if (roundInFreezetime == 0) && (currentFrameIdx == 0) && parseFrames {
-			currentFrame := GameFrame{}
-			currentFrame.IsKillFrame = false
-
-			// Create empty player lists
-			currentFrame.CT.Players = []PlayerInfo{}
-			currentFrame.T.Players = []PlayerInfo{}
-
-			currentFrame.Tick = int64(gs.IngameTick())
-			currentFrame.Second = determineSecond(currentFrame.Tick, currentRound, currentGame)
-			currentFrame.ClockTime = calculateClocktime(currentFrame.Tick, currentRound, currentGame)
-
-			// Parse T
-			currentFrame.T = TeamFrameInfo{}
-			currentFrame.T.Side = "T"
-			if gs.TeamTerrorists() != nil {
-				currentFrame.T.Team = gs.TeamTerrorists().ClanName()
-			}
-			currentFrame.T.CurrentEqVal = int64(gs.TeamTerrorists().CurrentEquipmentValue())
-			tPlayers := gs.TeamTerrorists().Members()
-
-			for _, p := range tPlayers {
-				if p != nil {
-					if !playerInList(p, currentFrame.T.Players) {
-						currentFrame.T.Players = append(currentFrame.T.Players, parsePlayer(gs, p))
-					}
-				}
-			}
-
-			currentFrame.T.AlivePlayers = countAlivePlayers(currentFrame.T.Players)
-			currentFrame.T.TotalUtility = countUtility(currentFrame.T.Players)
-			// currentFrame.T.CurrentEqVal = sumPlayerEqVal(currentFrame.T.Players)
-
-			// Parse CT
-			currentFrame.CT = TeamFrameInfo{}
-			currentFrame.CT.Side = "CT"
-			if gs.TeamCounterTerrorists() != nil {
-				currentFrame.CT.Team = gs.TeamCounterTerrorists().ClanName()
-			}
-			currentFrame.CT.CurrentEqVal = int64(gs.TeamCounterTerrorists().CurrentEquipmentValue())
-			ctPlayers := gs.TeamCounterTerrorists().Members()
-
-			for _, p := range ctPlayers {
-				if p != nil {
-					if !playerInList(p, currentFrame.CT.Players) {
-						currentFrame.CT.Players = append(currentFrame.CT.Players, parsePlayer(gs, p))
-					}
-				}
-			}
-
-			currentFrame.CT.AlivePlayers = countAlivePlayers(currentFrame.CT.Players)
-			currentFrame.CT.TotalUtility = countUtility(currentFrame.CT.Players)
-			// currentFrame.CT.CurrentEqVal = sumPlayerEqVal(currentFrame.CT.Players)
-
-			// Parse projectiles objects
-			allGrenades := gs.GrenadeProjectiles()
-			currentFrame.Projectiles = []GrenadeInfo{}
-			for _, ele := range allGrenades {
-				currentProjectile := GrenadeInfo{}
-				currentProjectile.ProjectileType = ele.WeaponInstance.String()
-				objPos := ele.Trajectory[len(ele.Trajectory)-1]
-
-				currentProjectile.X = float64(objPos.X)
-				currentProjectile.Y = float64(objPos.Y)
-				currentProjectile.Z = float64(objPos.Z)
-				currentFrame.Projectiles = append(currentFrame.Projectiles, currentProjectile)
-			}
-
-			// Parse infernos
-			allInfernos := gs.Infernos()
-			currentFrame.Fires = []Fire{}
-			for _, ele := range allInfernos {
-				currentFire := Fire{}
-				objPos := ele.Entity.Position()
-				currentFire.UniqueID = ele.UniqueID()
-
-				currentFire.X = float64(objPos.X)
-				currentFire.Y = float64(objPos.Y)
-				currentFire.Z = float64(objPos.Z)
-				currentFrame.Fires = append(currentFrame.Fires, currentFire)
-			}
-
-			// Parse smokes
-			currentFrame.Smokes = []Smoke{}
-			currentFrame.Smokes = smokes
-
-			// Parse bomb
-			bombObj := gs.Bomb()
-			currentBomb := BombInfo{}
-			objPos := bombObj.Position()
-
-			currentBomb.X = float64(objPos.X)
-			currentBomb.Y = float64(objPos.Y)
-			currentBomb.Z = float64(objPos.Z)
-			currentFrame.Bomb = currentBomb
-			if len(currentRound.Bomb) > 0 {
-				for _, b := range currentRound.Bomb {
-					if b.BombAction == "plant" {
-						currentFrame.BombPlanted = true
-						currentFrame.BombSite = *b.BombSite
-					}
-				}
-			} else {
-				currentFrame.BombPlanted = false
-			}
-
-			// Add frame
-			if (len(currentFrame.CT.Players) > 0) || (len(currentFrame.T.Players) > 0) {
-				if len(currentRound.Frames) > 0 {
-					if currentRound.Frames[len(currentRound.Frames)-1].Tick < currentFrame.Tick {
-						appendFrameToRound(&currentRound, &currentFrame, &globalFrameIndex)
-					}
-				} else {
-					appendFrameToRound(&currentRound, &currentFrame, &globalFrameIndex)
-				}
-			}
-
-			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
-				currentFrameIdx = 0
-			} else {
-				currentFrameIdx = currentFrameIdx + 1
-			}
-
-		} else {
-			if currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
-				currentFrameIdx = 0
-			} else {
-				currentFrameIdx = currentFrameIdx + 1
-			}
-		}
-	})
-
+	// Parse a demo frame. If parse rate is 1, then every frame is parsed.
+	// If parse rate is 2, then every 2 frames is parsed, and so on
+	registerFrameHandler(&p, &currentGame, &currentRound, &smokes, &roundInFreezetime,
+		&roundInEndTime, &currentFrameIdx, &parseFrames, &globalFrameIndex)
 	// Parse demofile to end
 	err = p.ParseToEnd()
 	currentGame.ParsedToFrame = int64(p.CurrentFrame())
@@ -2555,47 +2708,14 @@ func main() {
 
 	// Clean rounds
 	if len(currentGame.Rounds) > 0 {
-		// Loop through damages and see if there are any multi-damages in a single tick, and reduce them to one attacker-victim-weapon entry per tick
-		if currentGame.ParsingOpts.DamagesRolled {
-			for i := range currentGame.Rounds {
-				var tempDamages []DamageAction
-				for j := range currentGame.Rounds[i].Damages {
-					if j < len(currentGame.Rounds[i].Damages) && j > 0 {
-						if (len(tempDamages) > 0) &&
-							(currentGame.Rounds[i].Damages[j].Tick == tempDamages[len(tempDamages)-1].Tick) &&
-							(currentGame.Rounds[i].Damages[j].AttackerSteamID == tempDamages[len(tempDamages)-1].AttackerSteamID) &&
-							(currentGame.Rounds[i].Damages[j].VictimSteamID == tempDamages[len(tempDamages)-1].VictimSteamID) &&
-							(currentGame.Rounds[i].Damages[j].Weapon == tempDamages[len(tempDamages)-1].Weapon) {
-							tempDamages[len(tempDamages)].HpDamage = tempDamages[len(tempDamages)-1].HpDamage + currentGame.Rounds[i].Damages[j].HpDamage
-							tempDamages[len(tempDamages)].HpDamageTaken = tempDamages[len(tempDamages)-1].HpDamageTaken + currentGame.Rounds[i].Damages[j].HpDamageTaken
-							tempDamages[len(tempDamages)].ArmorDamage = tempDamages[len(tempDamages)-1].ArmorDamage + currentGame.Rounds[i].Damages[j].ArmorDamage
-							tempDamages[len(tempDamages)].ArmorDamageTaken = tempDamages[len(tempDamages)-1].ArmorDamageTaken + currentGame.Rounds[i].Damages[j].ArmorDamageTaken
-						} else {
-							tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
-						}
-					} else {
-						tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
-					}
-				}
-				currentGame.Rounds[i].Damages = tempDamages
-			}
-		}
-
-		// Write the JSON
-		var file []byte
-		if jsonIndentation {
-			file, _ = json.MarshalIndent(currentGame, "", " ")
-		} else {
-			file, _ = json.Marshal(currentGame)
-		}
-		_ = os.WriteFile(outpath+"/"+currentGame.MatchName+".json", file, 0644)
+		cleanAndWriteGame(&currentGame, jsonIndentation, outpath)
 	}
 
 	// Check error
 	checkError(err)
 }
 
-// Function to handle errors
+// Function to handle errors.
 func checkError(err error) {
 	if err != nil {
 		panic(err)

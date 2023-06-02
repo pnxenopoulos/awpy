@@ -4,11 +4,11 @@ import re
 import pytest
 
 from awpy.types import (
-    int_to_string_kills,
+    int_to_string_n_players,
     is_valid_side,
     lower_side,
     other_side,
-    proper_kills,
+    proper_player_number,
     upper_side,
 )
 
@@ -43,21 +43,27 @@ class TestTypess:
         assert is_valid_side("T")
         assert not is_valid_side("anything_else")
 
-    def test_proper_kills(self):
-        """Tests proper_kills."""
-        for kill in range(6):
-            assert proper_kills(kill)
-        assert not proper_kills(-1)
-        assert not proper_kills(6)
-        assert not proper_kills("A")
+    def test_proper_player_numbers(self):
+        """Tests proper_player_numbers."""
+        for n in range(6):
+            assert proper_player_number(n)
+        assert not proper_player_number(-1)
+        assert not proper_player_number(6)
+        assert not proper_player_number("A")
 
-    def test_int_to_string_kills(self):
-        """Tests int_to_string_kills."""
-        for kill in range(6):
-            assert int_to_string_kills(kill) == str(kill)
-        with pytest.raises(ValueError, match=re.escape("kills has to be in range(6)")):
-            int_to_string_kills(-1)
-        with pytest.raises(ValueError, match=re.escape("kills has to be in range(6)")):
-            int_to_string_kills(6)
-        with pytest.raises(ValueError, match=re.escape("kills has to be in range(6)")):
-            int_to_string_kills("A")
+    def test_int_to_string_n_players(self):
+        """Tests int_to_string_n_players."""
+        for n in range(6):
+            assert int_to_string_n_players(n) == str(n)
+        with pytest.raises(
+            ValueError, match=re.escape("n_players has to be in range(6)")
+        ):
+            int_to_string_n_players(-1)
+        with pytest.raises(
+            ValueError, match=re.escape("n_players has to be in range(6)")
+        ):
+            int_to_string_n_players(6)
+        with pytest.raises(
+            ValueError, match=re.escape("n_players has to be in range(6)")
+        ):
+            int_to_string_n_players("A")

@@ -5,6 +5,7 @@ numpy>=1.18.1
 pandas>=0.25.3
 scipy>=1.7.3
 Shapely>=1.8.2
+sphinx-rtd-theme>=1.0.0
 sympy>=1.10.1
 textdistance>=4.2.0
 tqdm>=4.55.2
