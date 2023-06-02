@@ -8,7 +8,7 @@ linters:
     - contextcheck
     # - cyclop
     - decorder
-    - depguard
+    # - depguard
     - dogsled
     # - dupl   # Probably useful in principle. But did not find an easy way.
     - dupword
