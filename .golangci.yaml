@@ -90,6 +90,24 @@ linters:
     - whitespace
     - wrapcheck
     # - wsl
+    - zerologlint
+  disable:
+    - cyclop
+    - depguard
+    - dupl   # Probably useful in principle. But did not find an easy way.
+    - exhaustruct   # Should be useful in the future. No time now
+    - funlen  # Should be usefull in the future. No time atm
+    - gci  # Broken for me
+    - gocognit  # Similar to cyclop. Could be usefull
+    - gocyclo
+    - gofmt
+    - gofumpt
+    - goimports
+    - gomnd
+    - nestif
+    - tagliatelle
+    - varnamelen  # Usefull for the future
+    - wsl
 linters-settings:
   maintidx:
     # Show functions with maintainability index lower than N.
