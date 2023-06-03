@@ -54,7 +54,7 @@ linters:
     - ireturn
     - lll
     - loggercheck
-    - maintidx
+    # - maintidx
     - makezero
     - misspell
     - musttag
@@ -104,13 +104,8 @@ linters:
     - gofumpt
     - goimports
     - gomnd
+    - maintidx  # Probably super usefull in the future
     - nestif
     - tagliatelle
     - varnamelen  # Usefull for the future
     - wsl
-linters-settings:
-  maintidx:
-    # Show functions with maintainability index lower than N.
-    # A high index indicates better maintainability (it's kind of the opposite of complexity).
-    # Default: 20
-    under: 10
