@@ -103,7 +103,9 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
     return contains_x and contains_y
 
 
-def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
+def find_closest_area(
+    map_name: str, point: list[float], *, flat: bool = False
+) -> ClosestArea:
     """Finds the closest area in the nav mesh.
 
     Searches through all the areas by comparing point to area centerpoint.
@@ -111,6 +113,7 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     Args:
         map_name (string): Map to search
         point (list): Point as a list [x,y,z]
+        flat (Boolean): Whether z should be ignored.
 
     Returns:
         A dict containing info on the closest area
@@ -122,8 +125,11 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-    # Three dimensional space. Unlikely to change anytime soon
-    if len(point) != 3:  # noqa: PLR2004
+    if flat:
+        if len(point) != 2:  # noqa: PLR2004
+            msg = "Point must be a list [X,Y] when flat is True"
+            raise ValueError(msg)
+    elif len(point) != 3:  # noqa: PLR2004
         msg = "Point must be a list [X,Y,Z]"
         raise ValueError(msg)
     closest_area: ClosestArea = {
@@ -135,9 +141,14 @@ def find_closest_area(map_name: str, point: list[float]) -> ClosestArea:
     }
     for area in NAV[map_name]:
         avg_x, avg_y, avg_z = _get_area_center(map_name, area)
-        dist = np.sqrt(
-            (point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2 + (point[2] - avg_z) ** 2
-        )
+        if flat:
+            dist = np.sqrt((point[0] - avg_x) ** 2 + (point[1] - avg_y) ** 2)
+        else:
+            dist = np.sqrt(
+                (point[0] - avg_x) ** 2
+                + (point[1] - avg_y) ** 2
+                + (point[2] - avg_z) ** 2
+            )
         if dist < closest_area["distance"]:
             closest_area["areaId"] = area
             closest_area["distance"] = dist
