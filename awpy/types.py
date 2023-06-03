@@ -1,7 +1,7 @@
 """This module contains the type definitions for the parsed json structure."""
 
 from dataclasses import dataclass
-from typing import Literal, NotRequired, TypedDict, TypeGuard, overload
+from typing import Literal, NotRequired, TypedDict, TypeGuard, final, overload
 
 
 @dataclass
@@ -125,9 +125,44 @@ class ParserOpts(TypedDict):
     parseFrames: bool
     parseKillFrames: bool
     tradeTime: int
-    roundBuyStyle: str
+    roundBuyStyle: Literal["hltv", "csgo"]
     damagesRolledUp: bool
     parseChat: bool
+
+
+ParseRate = Literal[128, 64, 32, 16, 8, 4, 2, 1]
+
+BuyStyle = Literal["hltv", "csgo"]
+
+RoundReturnType = Literal["json", "df"]
+
+
+@final
+class FullParserArgs(TypedDict):
+    """TypedDict for total parser **kwargs."""
+
+    parse_rate: ParseRate
+    parse_frames: bool
+    parse_kill_frames: bool
+    trade_time: int
+    dmg_rolled: bool
+    parse_chat: bool
+    buy_style: BuyStyle
+    json_indentation: bool
+
+
+@final
+class ParserArgs(TypedDict, total=False):
+    """Non total parser **kwargs."""
+
+    parse_rate: ParseRate
+    parse_frames: bool
+    parse_kill_frames: bool
+    trade_time: int
+    dmg_rolled: bool
+    parse_chat: bool
+    buy_style: BuyStyle
+    json_indentation: bool
 
 
 class MMRank(TypedDict):

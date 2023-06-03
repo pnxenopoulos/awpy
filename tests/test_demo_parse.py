@@ -78,7 +78,7 @@ class TestDemoParser:
     def test_outpath(self):
         """Tests if the outpath is correctly recorded."""
         self.parser_outpath = DemoParser(demofile="default.dem", log=False, outpath=".")
-        assert self.parser_outpath.outpath == os.getcwd()
+        assert os.path.dirname(self.parser_outpath.output_file) == os.getcwd()
 
     def test_demo_id_given(self):
         """Tests if a demo_id is correctly set."""
@@ -203,7 +203,10 @@ class TestDemoParser:
         output_json = self.parser.parse()
         assert isinstance(output_json, dict)
         assert os.path.exists("default.json")
-        assert self.parser.output_file == "default.json"
+        assert (
+            os.path.basename(self.parser.output_file.replace("\\", "/"))
+            == "default.json"
+        )
         assert self.parser.parse_error is False
 
     def test_parse_valve_matchmaking(self):
@@ -543,6 +546,22 @@ class TestDemoParser:
             reference for reference in references if not pd.isna(reference)
         }
 
+    def test_falsy_game_rounds(self):
+        """Check that cleaning does not throw when gameRounds is falsy."""
+        falsy_game_rounds_parser = DemoParser(
+            demofile="default.dem", log=False, parse_rate=256
+        )
+        falsy_game_rounds_parser.json = {
+            "gameRounds": None,
+            "matchPhases": {"warmupChanged": []},
+        }
+        falsy_game_rounds_parser.clean_rounds()
+        falsy_game_rounds_parser.json = {
+            "gameRounds": [],
+            "matchPhases": {"warmupChanged": []},
+        }
+        falsy_game_rounds_parser.clean_rounds()
+
     def test_no_json(self):
         """Tests if parser raises an AttributeError for missing json attribute."""
         no_json_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
@@ -572,9 +591,6 @@ class TestDemoParser:
             no_json_parser.remove_excess_kill_rounds()
         with pytest.raises(AttributeError):
             no_json_parser.remove_time_rounds()
-        no_json_parser.json = {"gameRounds": None}
-        with pytest.raises(AttributeError):
-            no_json_parser.renumber_rounds()
 
     def test_frame_indices(self):
         """Tests that frame indices work as expected.

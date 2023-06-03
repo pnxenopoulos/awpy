@@ -27,11 +27,21 @@ import logging
 import os
 import subprocess
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, Unpack, get_args, overload
 
 import pandas as pd
 
-from awpy.types import Game, GameActionKey, GameRound, PlayerInfo
+from awpy.types import (
+    BuyStyle,
+    FullParserArgs,
+    Game,
+    GameActionKey,
+    GameRound,
+    ParserArgs,
+    ParseRate,
+    PlayerInfo,
+    RoundReturnType,
+)
 from awpy.utils import check_go_version
 
 if TYPE_CHECKING:
@@ -85,14 +95,7 @@ class DemoParser:
         outpath: str | None = None,
         demo_id: str | None = None,
         log: bool = False,
-        parse_rate: int = 128,
-        parse_frames: bool = True,
-        parse_kill_frames: bool = False,
-        trade_time: int = 5,
-        dmg_rolled: bool = False,
-        parse_chat: bool = False,
-        buy_style: str = "hltv",
-        json_indentation: bool = False,
+        **parser_args: Unpack[ParserArgs],
     ) -> None:
         """Instatiate a DemoParser.
 
@@ -109,32 +112,34 @@ class DemoParser:
             log (bool, optional):
                 A boolean indicating if the log should print to stdout.
                 Default is False
-            parse_rate (int, optional):
-                One of 128, 64, 32, 16, 8, 4, 2, or 1.
-                The lower the value, the more frames are collected.
-                Indicates spacing between parsed demo frames in ticks. Default is 128.
-            parse_frames (bool, optional):
-                Flag if you want to parse frames (trajectory data) or not.
-                Default is True
-            parse_kill_frames (bool, optional):
-                Flag if you want to parse frames on kills.
-                Default is False
-            trade_time (int, optional):
-                Length of the window for a trade (in seconds).
-                Default is 5.
-            dmg_rolled (bool, optional):
-                Boolean if you want damages rolled up.
-                Default is False
-            parse_chat (bool, optional):
-                Flag if you want to parse chat messages. Default is False
-            buy_style (str, optional):
-                Buy style string, one of "hltv" or "csgo"
-                Default is "hltv"
-            json_indentation (bool, optional):
-                Whether the json file should be pretty printed
-                with indentation (larger, more readable)
-                or not (smaller, less human readable)
-                Default is False
+            **parser_args (ParserArgs): Further keyword args:
+                parse_rate (int, optional):
+                    One of 128, 64, 32, 16, 8, 4, 2, or 1.
+                    The lower the value, the more frames are collected.
+                    Indicates spacing between parsed demo frames in ticks.
+                    Default is 128.
+                parse_frames (bool, optional):
+                    Flag if you want to parse frames (trajectory data) or not.
+                    Default is True
+                parse_kill_frames (bool, optional):
+                    Flag if you want to parse frames on kills.
+                    Default is False
+                trade_time (int, optional):
+                    Length of the window for a trade (in seconds).
+                    Default is 5.
+                dmg_rolled (bool, optional):
+                    Boolean if you want damages rolled up.
+                    Default is False
+                parse_chat (bool, optional):
+                    Flag if you want to parse chat messages. Default is False
+                buy_style (str, optional):
+                    Buy style string, one of "hltv" or "csgo"
+                    Default is "hltv"
+                json_indentation (bool, optional):
+                    Whether the json file should be pretty printed
+                    with indentation (larger, more readable)
+                    or not (smaller, less human readable)
+                    Default is False
         """
         # Set up logger
         logging.basicConfig(
@@ -150,40 +155,32 @@ class DemoParser:
         self.demofile = os.path.abspath(demofile)
         self.logger.info("Initialized awpy DemoParser with demofile %s", self.demofile)
 
-        self.set_demo_id(demo_id, demofile)
+        self._set_demo_id(demo_id, demofile)
 
         self.logger.info("Setting demo id to %s", self.demo_id)
 
-        self.output_file = self.demo_id + ".json"
-
         if outpath is None:
-            self.outpath = os.path.abspath(os.getcwd())
+            outpath = os.path.abspath(os.getcwd())
         else:
-            self.outpath = os.path.abspath(outpath)
+            outpath = os.path.abspath(outpath)
+        self.output_file = os.path.join(outpath, self.demo_id + ".json")
 
-        self._parse_rate = 128
-        self.parse_rate = parse_rate
-        self._trade_time = 5
-        self.trade_time = trade_time
+        self.parser_args: FullParserArgs = {
+            "parse_rate": 128,
+            "trade_time": 5,
+            "parse_frames": True,
+            "parse_kill_frames": False,
+            "dmg_rolled": False,
+            "parse_chat": False,
+            "json_indentation": False,
+            "buy_style": "hltv",
+        }
 
-        self.logger.info("Setting trade time to %d", self.trade_time)
+        self.parser_args.update(parser_args)
 
-        # Handle buy style
-        if buy_style in {"hltv", "csgo"}:
-            self.buy_style = buy_style
-        else:
-            self.logger.warning(
-                "Buy style specified is not one of hltv, csgo, "
-                "will be set to hltv by default"
-            )
-            self.buy_style = "hltv"
-        self.logger.info("Setting buy style to %s", self.buy_style)
-
-        self.dmg_rolled = dmg_rolled
-        self.parse_chat = parse_chat
-        self.parse_frames = parse_frames
-        self.parse_kill_frames = parse_kill_frames
-        self.json_indentation = json_indentation
+        self._check_trade_time()
+        self._check_parse_rate()
+        self._check_buy_style()
 
         self.log_settings()
 
@@ -200,8 +197,119 @@ class DemoParser:
         self.logger.info("Parse frames set to %s", str(self.parse_frames))
         self.logger.info("Parse kill frames set to %s", str(self.parse_kill_frames))
         self.logger.info(
-            "Output json indentation set to %s", str(self.json_indentation)
+            "Output json indentation set to %s",
+            str(self.json_indentation),
         )
+        self.logger.info("Setting trade time to %d", self.trade_time)
+        self.logger.info("Setting buy style to %s", str(self.buy_style))
+
+    @property
+    def buy_style(self) -> BuyStyle:
+        """buy_style getter.
+
+        Returns:
+            BuyStyle: Current buy_style.
+        """
+        return self.parser_args["buy_style"]
+
+    @buy_style.setter
+    def buy_style(self, buy_style: BuyStyle) -> None:
+        """buy_style setter.
+
+        Args:
+            buy_style (BuyStyle): buy_style to use.
+        """
+        self.parser_args["buy_style"] = buy_style
+
+    @property
+    def json_indentation(self) -> bool:
+        """json_indentation getter.
+
+        Returns:
+            bool: Current json_indentation.
+        """
+        return self.parser_args["json_indentation"]
+
+    @json_indentation.setter
+    def json_indentation(self, json_indentation: bool) -> None:
+        """json_indentation setter.
+
+        Args:
+            json_indentation (bool): json_indentation to use.
+        """
+        self.parser_args["json_indentation"] = json_indentation
+
+    @property
+    def parse_kill_frames(self) -> bool:
+        """parse_kill_frames getter.
+
+        Returns:
+            bool: Current parse_kill_frames.
+        """
+        return self.parser_args["parse_kill_frames"]
+
+    @parse_kill_frames.setter
+    def parse_kill_frames(self, parse_kill_frames: bool) -> None:
+        """parse_kill_frames setter.
+
+        Args:
+            parse_kill_frames (bool): parse_kill_frames to use.
+        """
+        self.parser_args["parse_kill_frames"] = parse_kill_frames
+
+    @property
+    def parse_frames(self) -> bool:
+        """parse_frames getter.
+
+        Returns:
+            bool: Current parse_frames.
+        """
+        return self.parser_args["parse_frames"]
+
+    @parse_frames.setter
+    def parse_frames(self, parse_frames: bool) -> None:
+        """parse_frames setter.
+
+        Args:
+            parse_frames (bool): parse_frames to use.
+        """
+        self.parser_args["parse_frames"] = parse_frames
+
+    @property
+    def parse_chat(self) -> bool:
+        """parse_chat getter.
+
+        Returns:
+            bool: Current parse_chat.
+        """
+        return self.parser_args["parse_chat"]
+
+    @parse_chat.setter
+    def parse_chat(self, parse_chat: bool) -> None:
+        """parse_chat setter.
+
+        Args:
+            parse_chat (bool): parse_chat to use.
+        """
+        self.parser_args["parse_chat"] = parse_chat
+
+    @property
+    def dmg_rolled(self) -> bool:
+        """dmg_rolled getter.
+
+        Returns:
+            bool: Current dmg_rolled.
+        """
+        return self.parser_args["dmg_rolled"]
+
+    @dmg_rolled.setter
+    def dmg_rolled(self, dmg_rolled: bool) -> None:
+        """dmg_rolled setter.
+
+        Args:
+            dmg_rolled (bool): dmg_rolled to use.
+        """
+        self.parser_args["dmg_rolled"] = dmg_rolled
 
     @property
     def trade_time(self) -> int:
@@ -210,90 +318,91 @@ class DemoParser:
         Returns:
             int: Current trade time.
         """
-        return self._trade_time
+        return self.parser_args["trade_time"]
 
     @trade_time.setter
     def trade_time(self, trade_time: int) -> None:
-        """Set trade time of the parser.
-
-        User will be warned about unusual values.
+        """Trade time setter.
 
         Args:
-            trade_time (int): Trade time to user.
+            trade_time (int): Trade time to use.
         """
+        self.parser_args["trade_time"] = trade_time
+
+    def _check_trade_time(self) -> None:
+        """Check that trade time is positive and not too large."""
         trade_time_upper_bound = 7
-        self._trade_time = trade_time
-        if trade_time <= 0:
+        if self.trade_time <= 0:
             # Handle trade time
             trade_time_default = 5
             self.logger.warning(
                 "Trade time can't be negative, setting to default value of %d seconds.",
                 trade_time_default,
             )
-            self._trade_time = trade_time_default
-        elif trade_time > trade_time_upper_bound:
+            self.parser_args["trade_time"] = trade_time_default
+        elif self.trade_time > trade_time_upper_bound:
             self.logger.warning(
                 "Trade time of %d is rather long. Consider a value between 4-%d.",
-                trade_time,
+                self.trade_time,
                 trade_time_upper_bound,
             )
 
-    @trade_time.deleter
-    def trade_time(self) -> None:
-        """Trade time deleter."""
-        del self._trade_time
-
     @property
-    def parse_rate(self) -> int:
+    def parse_rate(self) -> ParseRate:
         """Parse rate getter.
 
         Returns:
             int: Current parse rate.
         """
-        return self._parse_rate
+        return self.parser_args["parse_rate"]
 
     @parse_rate.setter
-    def parse_rate(self, parse_rate: int) -> None:
-        """Set the parse rate of the parser.
-
-        Should be a positive integer.
-        User will be warned about values that are unusually
-        high or low.
+    def parse_rate(self, parse_rate: ParseRate) -> None:
+        """Parse rate setter.
 
         Args:
             parse_rate (int): Parse rate to use.
         """
+        self.parser_args["parse_rate"] = parse_rate
+
+    def _check_parse_rate(self) -> None:
+        """Check that parse rate is not too high or low."""
         # Handle parse rate. If the parse rate is less than 64, likely to be slow
-        if parse_rate < 1:
+        parse_rate_lower_bound = 64
+        parse_rate_upper_bound = 256
+        if not isinstance(self.parse_rate, int) or self.parse_rate < 1:
             self.logger.warning(
                 "Parse rate of %s not acceptable! "
                 "Parse rate must be an integer greater than 0.",
-                str(parse_rate),
+                str(self.parse_rate),
             )
-            parse_rate = 128
-            self._parse_rate = parse_rate
-        parse_rate_lower_bound = 64
-        parse_rate_upper_bound = 256
-        if 1 < parse_rate < parse_rate_lower_bound:
+            self.parser_args["parse_rate"] = 128
+        elif 1 < self.parse_rate < parse_rate_lower_bound:
             self.logger.warning(
                 "A parse rate lower than %s may be slow depending on the tickrate "
                 "of the demo, which is usually 64 for MM and 128 for pro demos.",
                 parse_rate_lower_bound,
             )
-        elif parse_rate >= parse_rate_upper_bound:
+        elif self.parse_rate >= parse_rate_upper_bound:
             self.logger.warning(
                 "A high parse rate means very few frames. "
                 "Only use for testing purposes."
             )
-        self._parse_rate = parse_rate
         self.logger.info("Setting parse rate to %s", str(self.parse_rate))
 
-    @parse_rate.deleter
-    def parse_rate(self) -> None:
-        """Parse rate deleter."""
-        del self._parse_rate
+    def _check_buy_style(self) -> None:
+        """Check that buy style is valid."""
+        # Handle parse rate. If the parse rate is less than 64, likely to be slow
+        if self.buy_style not in get_args(BuyStyle):
+            self.logger.warning(
+                "Buy style specified is not one of %s, "
+                "will be set to hltv by default",
+                get_args(BuyStyle),
+            )
+            self.parser_args["buy_style"] = "hltv"
+        self.logger.info("Setting buy style to %s", str(self.buy_style))
 
-    def set_demo_id(self, demo_id: str | None, demofile: str) -> None:
+    def _set_demo_id(self, demo_id: str | None, demofile: str) -> None:
         """Set demo_id.
 
         If a demo_id was passed in that is used directly.
@@ -301,7 +410,7 @@ class DemoParser:
 
         Args:
             demo_id (str | None): Optionally demo_id passed to __init__
-            demofile (str | None): Name of the demofile
+            demofile (str): Name of the demofile
         """
         if not demo_id:
             self.demo_id = os.path.splitext(
@@ -360,7 +469,7 @@ class DemoParser:
             "-demoid",
             str(self.demo_id),
             "-out",
-            self.outpath,
+            os.path.dirname(self.output_file),
         ]
         if self.dmg_rolled:
             parser_cmd.append("--dmgrolled")
@@ -372,6 +481,7 @@ class DemoParser:
             parser_cmd.append("--jsonindentation")
         if self.parse_chat:
             parser_cmd.append("--parsechat")
+        self.logger.debug(parser_cmd)
         with subprocess.Popen(
             parser_cmd,  # noqa: S603
             stdout=subprocess.PIPE,
@@ -380,8 +490,7 @@ class DemoParser:
             stdout = (
                 proc.stdout.read().splitlines() if proc.stdout is not None else None
             )
-        self.output_file = self.demo_id + ".json"
-        if os.path.isfile(self.outpath + "/" + self.output_file):
+        if os.path.isfile(self.output_file):
             self.logger.info("Wrote demo parse output to %s", self.output_file)
             self.parse_error = False
         else:
@@ -419,8 +528,18 @@ class DemoParser:
         )
         return demo_data
 
+    @overload
     def parse(
-        self, *, return_type: str = "json", clean: bool = True
+        self, *, return_type: Literal["json"] = "json", clean: bool = ...
+    ) -> Game:
+        ...
+
+    @overload
+    def parse(self, *, return_type: Literal["df"], clean: bool = ...) -> dict[str, Any]:
+        ...
+
+    def parse(
+        self, *, return_type: RoundReturnType = "json", clean: bool = True
     ) -> Game | dict[str, Any]:
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
@@ -438,7 +557,7 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         self.parse_demo()
-        self.read_json(json_path=self.outpath + "/" + self.output_file)
+        self.read_json(json_path=self.output_file)
         if clean:
             self.clean_rounds()
         if self.json:
@@ -663,6 +782,40 @@ class DemoParser:
         self.logger.error(msg)
         raise AttributeError(msg)
 
+    @overload
+    def clean_rounds(
+        self,
+        *,
+        remove_no_frames: bool = ...,
+        remove_warmups: bool = ...,
+        remove_knifes: bool = ...,
+        remove_bad_timings: bool = ...,
+        remove_excess_players: bool = ...,
+        remove_excess_kills: bool = ...,
+        remove_bad_endings: bool = ...,
+        remove_bad_scoring: bool = ...,
+        return_type: Literal["json"] = "json",
+        save_to_json: bool = ...,
+    ) -> Game:
+        ...
+
+    @overload
+    def clean_rounds(
+        self,
+        *,
+        remove_no_frames: bool = ...,
+        remove_warmups: bool = ...,
+        remove_knifes: bool = ...,
+        remove_bad_timings: bool = ...,
+        remove_excess_players: bool = ...,
+        remove_excess_kills: bool = ...,
+        remove_bad_endings: bool = ...,
+        remove_bad_scoring: bool = ...,
+        return_type: Literal["df"] = ...,
+        save_to_json: bool = ...,
+    ) -> dict[str, Any]:
+        ...
+
     def clean_rounds(
         self,
         *,
@@ -674,7 +827,7 @@ class DemoParser:
         remove_excess_kills: bool = True,
         remove_bad_endings: bool = True,
         remove_bad_scoring: bool = True,
-        return_type: str = "json",
+        return_type: RoundReturnType = "json",
         save_to_json: bool = True,
     ) -> Game | dict[str, Any]:
         """Cleans a parsed demofile JSON.
@@ -741,9 +894,7 @@ class DemoParser:
 
     def write_json(self) -> None:
         """Rewrite the JSON file."""
-        with open(
-            self.outpath + "/" + self.output_file, "w", encoding="utf8"
-        ) as file_path:
+        with open(self.output_file, "w", encoding="utf8") as file_path:
             json.dump(
                 self.json, file_path, indent=(1 if self.json_indentation else None)
             )
@@ -755,7 +906,9 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute
                 has no "gameRounds" key.
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json:
+            if self.json["gameRounds"] is None:
+                return
             for i, _r in enumerate(self.json["gameRounds"]):
                 self.json["gameRounds"][i]["roundNum"] = i + 1
         else:
@@ -773,7 +926,9 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute
                 has no "gameRounds" key.
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json:
+            if self.json["gameRounds"] is None:
+                return
             for index, frame in enumerate(
                 frame
                 for game_round in self.json["gameRounds"]
@@ -792,7 +947,9 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute
                 has no "gameRounds" key.
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json:
+            if self.json["gameRounds"] is None:
+                return
             for i, _r in enumerate(self.json["gameRounds"]):
                 if i == 0:
                     self.json["gameRounds"][i]["tScore"] = 0
@@ -867,7 +1024,9 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        if self.json and self.json["gameRounds"]:
+        if self.json:
+            if self.json["gameRounds"] is None:
+                return
             cleaned_rounds = []
             for i, game_round in enumerate(self.json["gameRounds"]):
                 current_round_total = (
@@ -1019,7 +1178,9 @@ class DemoParser:
         """
         if bad_endings is None:
             bad_endings = ["Draw", "Unknown", ""]
-        if self.json and (game_rounds := self.json["gameRounds"]):
+        if self.json:
+            if (game_rounds := self.json["gameRounds"]) is None:
+                return
             cleaned_rounds = [
                 game_round
                 for game_round in game_rounds
@@ -1037,7 +1198,9 @@ class DemoParser:
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
-        if self.json and (game_rounds := self.json["gameRounds"]):
+        if self.json:
+            if (game_rounds := self.json["gameRounds"]) is None:
+                return
             cleaned_rounds = []
             for game_round in game_rounds:
                 if game_round["isWarmup"]:
