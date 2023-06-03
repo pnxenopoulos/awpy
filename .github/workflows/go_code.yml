@@ -21,6 +21,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           working-directory: ./awpy/parser
+          version: v1.53
       - name: Build
         working-directory: ./awpy/parser
         run: go build

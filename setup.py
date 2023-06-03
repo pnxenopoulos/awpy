@@ -12,16 +12,16 @@ setup(
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires=[
-        "pandas>=0.25.3",
-        "numpy>=1.18.1",
-        "scipy>=1.7.3",
-        "matplotlib>=3.1.2",
-        "networkx>=2.6.3",
-        "textdistance>=4.2.0",
-        "imageio>=2.9.0",
-        "tqdm>=4.55.2",
-        "Shapely>=1.8.2",
-        "sympy>=1.10.1",
+        "pandas>=2.0.1, <=2.1",
+        "numpy>=1.20,<=1.25",
+        "scipy==1.7",
+        "matplotlib==3.1.2",
+        "networkx==2.6",
+        "textdistance==4.2",
+        "imageio==2.9",
+        "tqdm==4.55",
+        "Shapely==1.8",
+        "sympy==1.10",
     ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
