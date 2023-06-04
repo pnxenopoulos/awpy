@@ -291,6 +291,9 @@ def _is_clutch(
     total_players_victim_side = game_round[lower_side(victim_side) + "Side"]["players"]
     if total_players_victim_side is None:
         return False
+    # This gets messed up when a player disconnects (dies) in freeze time but
+    # reconnects in time to play the round.
+    # Then this triggers at only 3 "real" deaths.
     player_killed_victim_side = len(round_statistics["players_killed"][victim_side])
     return len(total_players_victim_side) - player_killed_victim_side == 1
 
@@ -299,7 +302,7 @@ def _find_clutcher(
     victim_side_players: list[Players],
     victim_side: Literal["CT", "T"],
     round_statistics: RoundStatistics,
-) -> str:
+) -> str | None:
     for player in victim_side_players:
         clutcher_key = (
             str(player["playerName"])
@@ -312,7 +315,7 @@ def _find_clutcher(
             and clutcher_key in round_statistics["active_players"]
         ):
             return clutcher_key
-    return ""
+    return None
 
 
 def _handle_clutching(
@@ -332,6 +335,8 @@ def _handle_clutching(
     if victim_side_players is None:
         return
     clutcher_key = _find_clutcher(victim_side_players, victim_side, round_statistics)
+    if clutcher_key is None:
+        return
     round_statistics["is_clutching"].add(clutcher_key)
 
     swapped_side = other_side(victim_side)
