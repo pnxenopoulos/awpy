@@ -1,12 +1,10 @@
 """Tests DemoParser functionality."""
-import json
 import logging
 import os
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
-import requests
 
 from awpy.parser import DemoParser
 from awpy.types import GameRound
@@ -20,33 +18,11 @@ class TestDemoParser:
 
     def setup_class(self):
         """Setup class by defining loading dictionary of test demo files."""
-        with open("tests/test_data.json", encoding="utf-8") as f:
-            self.demo_data = json.load(f)
-        for file in self.demo_data:
-            self._get_demofile(demo_link=self.demo_data[file]["url"], demo_name=file)
         self.parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
 
     def teardown_class(self):
         """Set parser to none, deletes all demofiles and JSON."""
         self.parser = None
-        files_in_directory = os.listdir()
-        if filtered_files := [
-            file for file in files_in_directory if file.endswith((".dem", ".json"))
-        ]:
-            for f in filtered_files:
-                os.remove(f)
-
-    @staticmethod
-    def _get_demofile(demo_link: str, demo_name: str) -> None:
-        print(f"Requesting {demo_link}")
-        r = requests.get(demo_link, timeout=100)
-        with open(f"{demo_name}.dem", "wb") as demo_file:
-            demo_file.write(r.content)
-
-    @staticmethod
-    def _delete_demofile(demo_name: str) -> None:
-        print(f"Removing {demo_name}")
-        os.remove(f"{demo_name}.dem")
 
     @staticmethod
     def _check_round_scores(rounds: list[GameRound]) -> None:
