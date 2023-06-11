@@ -6,7 +6,7 @@ import pytest
 import requests
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="module", autouse=True)
 def setup() -> None:  # noqa: PT004
     """Sets up testing environment by downloading demofiles."""
     with open("tests/test_data.json", encoding="utf-8") as f:
