@@ -35,5 +35,5 @@ def _get_demofile(demo_link: str, demo_name: str) -> None:
     """
     print(f"Requesting {demo_link}")
     r = requests.get(demo_link, timeout=100)
-    with open(f"{demo_name}.dem", "wb") as demo_file:
+    with open(f"tests/{demo_name}.dem", "wb") as demo_file:
         demo_file.write(r.content)

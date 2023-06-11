@@ -32,7 +32,7 @@ class TestStats:
     def setup_class(self):
         """Sets up class by defining the parser, filters, and dataframes."""
         self.parser = DemoParser(
-            demofile="astralis-vs-liquid-m2-nuke.dem",
+            demofile="tests/astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
             parse_rate=128,
             parse_frames=True,

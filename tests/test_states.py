@@ -16,7 +16,7 @@ class TestStates:
 
     def setup_class(self):
         """Setup class by instantiating parser."""
-        self.parser = DemoParser(demofile="default.dem", log=True, parse_rate=256)
+        self.parser = DemoParser(demofile="tests/default.dem", log=True, parse_rate=256)
         self.data = self.parser.parse()
 
     def teardown_class(self):
