@@ -6,7 +6,7 @@ import pytest
 import requests
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def setup() -> None:  # noqa: PT004
     """Sets up testing environment by downloading demofiles."""
     with open("tests/test_data.json", encoding="utf-8") as f:
@@ -15,7 +15,7 @@ def setup() -> None:  # noqa: PT004
         _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def teardown() -> None:  # noqa: PT004
     """Cleans testing environment by deleting all .dem and .json files."""
     files_in_directory = os.listdir()
