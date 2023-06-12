@@ -6,17 +6,7 @@ import pytest
 import requests
 
 
-def pytest_sessionstart(session) -> None:  # noqa: ARG001, ANN001
-    """Runs before the start of the test session."""
-    setup()
-
-
-def pytest_sessionfinish(session, exitstatus) -> None:  # noqa: ARG001, ANN001
-    """Runs after the completion of the test session."""
-    teardown()
-
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def setup() -> None:  # noqa: PT004
     """Sets up testing environment by downloading demofiles."""
     with open("tests/test_data.json", encoding="utf-8") as f:
