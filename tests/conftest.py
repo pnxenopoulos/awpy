@@ -6,7 +6,17 @@ import pytest
 import requests
 
 
-@pytest.fixture(scope="module", autouse=True)
+def pytest_sessionstart(session) -> None:  # noqa: ARG001, ANN001
+    """Runs before the start of the test session."""
+    setup()
+
+
+def pytest_sessionfinish(session, exitstatus) -> None:  # noqa: ARG001, ANN001
+    """Runs after the completion of the test session."""
+    teardown()
+
+
+@pytest.fixture(scope="session")
 def setup() -> None:  # noqa: PT004
     """Sets up testing environment by downloading demofiles."""
     with open("tests/test_data.json", encoding="utf-8") as f:
@@ -15,7 +25,7 @@ def setup() -> None:  # noqa: PT004
         _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="session")
 def teardown() -> None:  # noqa: PT004
     """Cleans testing environment by deleting all .dem and .json files."""
     files_in_directory = os.listdir()
