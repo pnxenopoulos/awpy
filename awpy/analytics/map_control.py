@@ -329,7 +329,7 @@ def _map_control_metric_helper(
     """
     current_map_control_value: list[float] = []
     tile_areas: list[float] = []
-    for tile in set(mc_values.ct_values.keys() | set(mc_values.t_values.keys())):
+    for tile in set(mc_values.ct_values.keys()) | set(mc_values.t_values.keys()):
         ct_val, t_val = mc_values.ct_values[tile], mc_values.t_values[tile]
 
         current_map_control_value.append(sum(ct_val) / (sum(ct_val) + sum(t_val)))

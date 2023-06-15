@@ -1,9 +1,22 @@
 """This module contains the type definitions for the parsed json structure."""
 
 from dataclasses import dataclass
+<<<<<<< HEAD
 from typing import Literal, NewType, NotRequired, TypeGuard, TypeAlias, final, overload
 
 from typing_extensions import TypedDict
+=======
+from typing import (
+    Literal,
+    NotRequired,
+    TypeAlias,
+    TypedDict,
+    TypeGuard,
+    final,
+    overload,
+)
+
+>>>>>>> 8194355 (Changes to types.py after rebasing main branch updates)
 
 @dataclass
 class PlotPosition:
@@ -700,6 +713,9 @@ class RoundStatistics(TypedDict):
     active_players: set[str]
     players_killed: dict[Literal["CT", "T"], set[str]]
 
+
+# Type to represent different options for map control minimap plot
+MapControlPlotType = Literal["default", "players"]
 
 # Type to represent tile id for navigation tiles.
 TileId: TypeAlias = int

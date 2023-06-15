@@ -17,7 +17,7 @@ https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualizat
 import logging
 import os
 import shutil
-from typing import Literal
+from typing import Literal, get_args
 
 import cv2
 import imageio.v3 as imageio
@@ -40,6 +40,7 @@ from awpy.types import (
     FrameTeamMetadata,
     GameFrame,
     GameRound,
+    MapControlPlotType,
     PlayerInfo,
     PlotPosition,
     TeamMetadata,
@@ -490,7 +491,7 @@ def plot_map_control_snapshot(
 def plot_frame_map_control(
     map_name: str,
     frame: GameFrame,
-    plot_type: str = "",
+    plot_type: MapControlPlotType = "default",
     given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
     save_filepath: str = "",
 ) -> None:
@@ -499,8 +500,8 @@ def plot_frame_map_control(
     Args:
         map_name (str): Map used position_transform call
         frame (GameFrame): awpy frame to calculate map control for
-        plot_type (str): Determines which type of plot is created
-            (either with or without players)
+        plot_type (MapControlPlotType): Determines which type of plot is created
+            (either default or with players)
         given_fig_ax: Optional tuple containing figure and ax objects for plotting
         save_filepath (str): Filepath to save the figure to file if required
 
@@ -512,21 +513,24 @@ def plot_frame_map_control(
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
+    if plot_type not in get_args(MapControlPlotType):
+        msg = "dist_type can only be default or players"
+        raise ValueError(msg)
 
     player_positions = extract_teams_metadata(frame)
     map_control_dict = calc_parsed_frame_map_control_values(map_name, player_positions)
-    if plot_type == "players":
+    if plot_type == "default":
+        plot_map_control_snapshot(
+            map_name,
+            map_control_dict,
+            given_fig_ax=given_fig_ax,
+            save_filepath=save_filepath,
+        )
+    elif plot_type == "players":
         plot_map_control_snapshot(
             map_name,
             map_control_dict,
             player_pos=player_positions,
-            given_fig_ax=given_fig_ax,
-            save_filepath=save_filepath,
-        )
-    else:
-        plot_map_control_snapshot(
-            map_name,
-            map_control_dict,
             given_fig_ax=given_fig_ax,
             save_filepath=save_filepath,
         )
@@ -535,7 +539,7 @@ def plot_frame_map_control(
 def create_round_map_control_gif(
     map_name: str,
     round_data: GameRound,
-    plot_type: str = "",
+    plot_type: MapControlPlotType = "default",
     gif_filepath: str = "./results/round_mc.gif",
 ) -> None:
     """Create gif summarizing map control for round.
@@ -544,7 +548,7 @@ def create_round_map_control_gif(
         map_name (str): Map used in plot_frame_map_control call
         round_data (GameRound): Round whose map control will be animated.
             Expected format that of awpy round
-        plot_type (str): Determines which type of plot is created
+        plot_type (MapControlPlotType): Determines which type of plot is created
             (either with or without players)
         gif_filepath (str): Filepath to save the gif to file
 
@@ -570,7 +574,7 @@ def create_round_map_control_gif(
         filename = f"{AWPY_TMP_FOLDER}/frame_{i}.png"
 
         # Save current frame map control viz to file
-        # All frames are saved to './tmp/ folder '
+        # All frames are saved to './csgo_tmp/ folder '
         plot_frame_map_control(
             map_name,
             frame,

@@ -1613,11 +1613,12 @@ def calculate_tile_area(
         map_name (string): Map for tile
         tile_id (TileId): Id for tile
 
-    ValueError: If map_name is not in awpy.data.NAV
-                If area_id is not in awpy.data.NAV[map_name]
-
     Returns:
         A float representing the area of the tile
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV
+                    If area_id is not in awpy.data.NAV[map_name]
     """
     if map_name not in NAV:
         msg = "Map not found."
