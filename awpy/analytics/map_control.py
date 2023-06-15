@@ -5,7 +5,8 @@
 
     Example notebook:
 
-    _path_to_awpy_repo/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
+    # pylint: disable=line-too-long
+    github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
 """
 
 from collections import defaultdict, deque
@@ -20,6 +21,7 @@ from awpy.types import (
     FrameTeamMetadata,
     GameFrame,
     GameRound,
+    PlayerPosition,
     TeamFrameInfo,
     TeamMapControlValues,
     TeamMetadata,
@@ -103,7 +105,7 @@ def _bfs_helper(
         msg = "Invalid max_depth value. Must be > 0."
         raise ValueError(msg)
 
-    map_control_values = TeamMapControlValues(defaultdict(list))
+    map_control_values: TeamMapControlValues = defaultdict(list)
     for cur_start_tile in current_tiles:
         tiles_seen: set[TileId] = set()
 
@@ -180,7 +182,7 @@ def graph_to_tile_neighbors(
 
     Returns: TileNeighbors object with tile to neighbor mapping
     """
-    tile_to_neighbors = TileNeighbors(defaultdict(set))
+    tile_to_neighbors: TileNeighbors = defaultdict(set)
 
     for tile_1, tile_2 in neighbor_pairs:
         tile_to_neighbors[tile_1].add(tile_2)
@@ -275,7 +277,7 @@ def _extract_team_metadata_helper(
     Returns: TeamMetadata with metadata on team's players
     """
     coords = ("x", "y", "z")
-    alive_players: list[list[float]] | list = [
+    alive_players: list[PlayerPosition] = [
         [player[dim] for dim in coords]
         for player in side_data["players"] or []
         if player["isAlive"]
@@ -309,12 +311,13 @@ def _map_control_metric_helper(
     """Return map control metric given FrameMapControlValues object.
 
     Map Control metric is used to quantify how much of the map is controlled
-    by T/CT. Each tile is given a value between 0 (complete T control) and 1
+    by T/CT. Each tile is given a value between -1 (complete T control) and 1
     (complete CT control). If a tile is controlled by both teams, a value is
     found by taking the ratio between the sum of CT values and sum of CT and
     T values. Once all of the tiles' values are calculated, a weighted sum
     is done on the tiles' values where the tiles' area is the weights.
-    This weighted sum is the map control metric returned at the end of the function.
+    This weighted sum is transformed to fit the range [-1, 1] and then
+    returned as the map control metric.
 
     Args:
         map_name (str): Map used in calculate_tile_area
@@ -335,7 +338,9 @@ def _map_control_metric_helper(
     np_current_map_control_value = np.array(current_map_control_value)
     np_tile_areas = np.array(tile_areas)
 
-    return sum(np_current_map_control_value * np_tile_areas) / sum(np_tile_areas)
+    return (
+        (sum(np_current_map_control_value * np_tile_areas) / sum(np_tile_areas)) * 2
+    ) - 1
 
 
 def calc_frame_map_control_metric(
@@ -345,12 +350,13 @@ def calc_frame_map_control_metric(
     """Return map control metric for given awpy frame.
 
     Map Control metric is used to quantify how much of the map is controlled
-    by T/CT. Each tile is given a value between 0 (complete T control) and 1
+    by T/CT. Each tile is given a value between -1 (complete T control) and 1
     (complete CT control). If a tile is controlled by both teams, a value is
     found by taking the ratio between the sum of CT values and sum of CT and
     T values. Once all of the tiles' values are calculated, a weighted sum
     is done on the tiles' values where the tiles' area is the weights.
-    This weighted sum is the map control metric returned at the end of the function.
+    This weighted sum is transformed to fit the range [-1, 1] and then
+    returned as the map control metric.
 
     Args:
         map_name (str): Map used position_transform call
@@ -366,6 +372,7 @@ def calc_frame_map_control_metric(
         raise ValueError(msg)
 
     map_control_values = calc_frame_map_control_values(map_name, frame)
+
     return _map_control_metric_helper(map_name, map_control_values)
 
 

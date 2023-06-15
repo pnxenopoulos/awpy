@@ -23,7 +23,7 @@ import cv2
 import imageio.v3 as imageio
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import patches
+from matplotlib import gridspec, patches
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from tqdm import tqdm
@@ -396,11 +396,9 @@ def _plot_map_control_snapshot_helper(
     Returns: Nothing, all plotting is done on ax object
     """
     ct_tiles, t_tiles = occupied_tiles.ct_values, occupied_tiles.t_values
-    ct_tile_set, t_tile_set = set(ct_tiles.keys()), set(t_tiles.keys())
-    all_tiles = ct_tile_set.union(t_tile_set)
 
     # Iterate through the tiles that have a value
-    for tile in all_tiles:
+    for tile in set(ct_tiles.keys()).union(set(t_tiles.keys())):
         if tile in NAV[map_name]:
             area = NAV[map_name][tile]
 
@@ -602,15 +600,35 @@ def _plot_map_control_metrics_helper(
     """
     x = list(range(1, len(metrics) + 1))
     axes.plot(x, metrics)
-    axes.set_ylim(0, 1)
-    axes.axhline(y=0.5, linestyle="--", c="k")
-    axes.set_ylabel("Map Control Metric Value")
-    axes.set_xlabel("Frame Number")
-    axes.set_title("Map Control Metric Progress")
-    x_tick_threshold = 10
-    if len(metrics) > x_tick_threshold:
-        step_size = int(len(metrics) // x_tick_threshold)
-        axes.set_xticks(list(range(1, len(metrics) + 1, step_size)))
+    axes.set_ylim(-1, 1)
+    axes.set_xlim(1, len(metrics) + 1)
+    axes.axhline(y=0, linestyle="--", c="k")
+    axes.set_ylabel("Map Control Metric Value", fontdict={"fontsize": 8})
+    yticks = [-1, -0.5, 0, 0.5, 1]
+    yticklabels = [str(abs(tick)) for tick in yticks]
+    axes.set_yticks(yticks)
+    axes.set_yticklabels(yticklabels)
+
+    axes.set_xlabel("Frame Number", fontdict={"fontsize": 8})
+    axes.set_title("Map Control Metric Progress", fontdict={"fontsize": 10})
+    axes.set_xticks([int(i) for i in axes.get_xticks()])
+
+    axes.text(
+        0.025,
+        0.05,
+        "More T Control",
+        fontsize=6,
+        transform=axes.transAxes,
+        verticalalignment="center",
+    )
+    axes.text(
+        0.025,
+        0.95,
+        "More CT Control",
+        fontsize=6,
+        transform=axes.transAxes,
+        verticalalignment="center",
+    )
 
 
 def plot_map_control_metrics(
@@ -654,18 +672,29 @@ def _save_map_control_graphic_helper(
         metrics  (list): List containing map control values to plot
         save_path (str): Location where graphic should be saved on file
     """
-    fig, axs = plt.subplots(1, 2, figsize=(12, 12))
+    fig = plt.figure()
+
+    # Set up subplots such that minimap viz
+    # And line plot have similar size
+    grid = gridspec.GridSpec(10, 2, figure=fig)
+    ax1 = fig.add_subplot(grid[:, 0])
+    ax2 = fig.add_subplot(grid[2:-2, 1])
+
     map_bg = plt.imread(f"../awpy/data/map/{map_name}_dark.png")
-    axs[0].imshow(map_bg, zorder=0)
+    ax1.imshow(map_bg, aspect="auto", zorder=0)
+    ax1.set_aspect("equal")  # Set aspect ratio to equal
+    ax1.set_adjustable("box")  # Fix the box aspect ratio
     plot_frame_map_control(
-        map_name, frame, plot_type="players", given_fig_ax=(fig, axs[0])
+        map_name, frame, plot_type="players", given_fig_ax=(fig, ax1)
     )
-    _plot_map_control_metrics_helper(metrics, axs[1])
-    plt.tight_layout()
+    _plot_map_control_metrics_helper(metrics, ax2)
+    ax2.set_adjustable("box")
+    fig.tight_layout(h_pad=0.1)
+
     if save_path:
-        fig.savefig(fname=save_path, bbox_inches="tight", dpi=400)
+        fig.savefig(fname=save_path, bbox_inches="tight", dpi=600)
     else:
-        plt.show(fig)
+        plt.show()
     plt.close(fig)
 
 
@@ -673,7 +702,7 @@ def save_map_control_graphic(
     map_name: str,
     frames: list[GameFrame],
     save_path: str = "",
-    gif_size: tuple[int, int] = (4760, 4760),
+    gif_size: tuple[int, int] = (6300, 3300),
 ) -> None:
     """Function to generate map control gif for awpy round.
 
@@ -697,16 +726,17 @@ def save_map_control_graphic(
     metrics: list[float] = []
     images: list[np.ndarray] = []
 
+    metrics.append(calc_frame_map_control_metric(map_name, frames[0]))
     print("Saving/loading frames!")
-    for i, frame in enumerate(frames):
+    for i, frame in tqdm(enumerate(frames[1:])):
         metrics.append(calc_frame_map_control_metric(map_name, frame))
         temp_filename = f"{AWPY_TMP_FOLDER}/frame_{i}.png"
         _save_map_control_graphic_helper(
             map_name, frame, metrics, save_path=temp_filename
         )
         if save_path:
-            # sometime second dimension has an extra entry
-            # so resize to expected size
+            # sometimes image has slightly different size than
+            # expected so resize to expected size
             cur_img = cv2.resize(imageio.imread(temp_filename), gif_size)
             images.append(cur_img)
     if save_path:

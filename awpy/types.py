@@ -710,11 +710,11 @@ PlayerPosition: TypeAlias = list[float]
 # Return type for awpy.analytics.map_control._bfs_helper.
 # Contains map control values for one team.
 # Maps TileId to list of tile map control values.
-TeamMapControlValues = NewType("TeamMapControlValues", dict[TileId, list[float]])
+TeamMapControlValues: TypeAlias = dict[TileId, list[float]]
 
 # Return type for awpy.analytics.map_control.graph_to_tile_neighbors
 # Maps TileId to set of neighboring tiles.
-TileNeighbors = NewType("TileNeighbors", dict[TileId, set[int]])
+TileNeighbors: TypeAlias = dict[TileId, set[int]]
 
 
 @dataclass

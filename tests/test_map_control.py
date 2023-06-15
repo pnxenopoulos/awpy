@@ -60,7 +60,7 @@ class TestMapControl:
             map_name="de_inferno",
             frame=self.fake_frames["map_control_sanity_t_control"],
         )
-        assert test_map_control_metric < 0.5  # Map Control is T sided
+        assert test_map_control_metric < 0  # Map Control is T sided
 
     def test_calc_frame_map_control_metric_sanity_ct_control(self):
         """Tests calc_frame_map_control_metric with CT 5v1 scenario."""
@@ -73,7 +73,7 @@ class TestMapControl:
             map_name="de_inferno",
             frame=self.fake_frames["map_control_sanity_ct_control"],
         )
-        assert test_map_control_metric > 0.5  # Map Control is CT sided
+        assert test_map_control_metric > 0  # Map Control is CT sided
 
     def test_calc_frame_map_control_metric_null_5v0(self):
         """Tests calc_frame_map_control_metric with T 5v0 scenario."""
@@ -84,7 +84,7 @@ class TestMapControl:
         test_mc_metric = calc_frame_map_control_metric(
             map_name="de_inferno", frame=self.fake_frames["map_control_null_5v0"]
         )
-        assert test_mc_metric == 0  # Map Control is complete T
+        assert test_mc_metric == -1  # Map Control is complete T
 
     def test_calc_frame_map_control_metric_null_1v0(self):
         """Tests calc_frame_map_control_metric with T 1v0 scenario."""
@@ -95,14 +95,14 @@ class TestMapControl:
         test_mc_metric = calc_frame_map_control_metric(
             map_name="de_inferno", frame=self.fake_frames["map_control_null_1v0"]
         )
-        assert test_mc_metric == 0  # Map Control is complete T
+        assert test_mc_metric == -1  # Map Control is complete T
 
     def test_approx_neighbors(self):
         """Tests _approx_neighbors.
 
         Simple sanity check to ensure function runs - Doesn't check
         on neighbors individually but instead asserts on
-        size on TileNeighbors object
+        size of TileNeighbors object
         """
         with pytest.raises(ValueError, match="Tile ID not found."):
             _approx_neighbors(map_name="de_inferno", source_tile_id=0)
@@ -129,7 +129,7 @@ class TestMapControl:
         """Tests _bfs_helper with a couple isolated CT positions.
 
         Simple sanity check to ensure function runs - Doesn't check
-        on assert map control values idnividually and instead asserts on
+        on assert map control values individually and instead asserts on
         size on MapControlValues object
         """
         with pytest.raises(ValueError, match="Invalid max_depth value. Must be > 0."):
@@ -161,11 +161,11 @@ class TestMapControl:
                 map_name="de_mock",
                 round_data=test_round,
             )
-        test_map_control_metric = calculate_round_map_control_metrics(
+        test_map_control_metric_values = calculate_round_map_control_metrics(
             map_name="de_inferno",
             round_data=test_round,
         )
-        assert len(test_map_control_metric) == round_length
+        assert len(test_map_control_metric_values) == round_length
 
-        for frame_metric in test_map_control_metric:
-            assert frame_metric < 0.5  # Map Control is T sided
+        for frame_metric in test_map_control_metric_values:
+            assert frame_metric < 0  # Map Control is T sided
