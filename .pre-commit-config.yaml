@@ -1,0 +1,55 @@
+exclude: docs/
+repos:
+  - repo: 'https://github.com/pre-commit/pre-commit-hooks'
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+        language: python
+      - id: check-json
+        language: python
+      - id: end-of-file-fixer
+        language: python
+      - id: trailing-whitespace
+        language: python
+      - id: check-docstring-first
+        language: python
+      - id: requirements-txt-fixer
+        language: python
+      - id: check-merge-conflict
+        language: python
+      - id: check-toml
+        language: python
+      - id: check-xml
+        language: python
+      - id: check-ast
+        language: python
+      - id: check-builtin-literals
+        language: python
+  - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
+    rev: v0.0.267
+    hooks:
+      - id: ruff
+        args:
+          - '--fix'
+          - '--exit-non-zero-on-fix'
+  - repo: 'https://github.com/psf/black'
+    rev: 23.3.0
+    hooks:
+      - id: black
+        language: python
+  # - repo: 'https://github.com/RobertCraigie/pyright-python'
+  #   rev: v1.1.305
+  #   hooks:
+  #     - id: pyright
+  #       additional_dependencies:
+  #         - imageio>=2.9.0
+  #         - matplotlib>=3.1.2
+  #         - networkx>=2.6.3
+  #         - numpy>=1.18.1
+  #         - pandas>=0.25.3
+  #         - scipy>=1.7.3
+  #         - Shapely>=1.8.2
+  #         - sympy>=1.10.1
+  #         - textdistance>=4.2.0
+  #         - tqdm>=4.55.2
+  #         - pandas-stubs==2.0.0.230412

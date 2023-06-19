@@ -1,25 +1,48 @@
-"""This module contains the type definitions for the parsed json structure"""
+"""This module contains the type definitions for the parsed json structure."""
 
-from typing import Optional, TypedDict, Literal
+from dataclasses import dataclass
+from typing import Literal, NotRequired, TypedDict, TypeGuard, final, overload
+
+
+@dataclass
+class PlotPosition:
+    """Class to store information needed for plotting a position."""
+
+    position: tuple[float, float]
+    color: str
+    marker: str
+    alpha: float | None = None
+    size: float | None = None
+
+
+class MapData(TypedDict):
+    """TypedDict that hold information about a map."""
+
+    pos_x: float
+    pos_y: float
+    scale: float
+    z_cutoff: NotRequired[float]
 
 
 class Chat(TypedDict):
     """Chat holds the matchmaking ranks. Only for MM demos."""
 
-    steamID: Optional[int]
+    steamID: int | None
     text: str
     tick: int
-    params: Optional[list[str]]  # params for SayText2
+    params: list[str] | None  # params for SayText2
     isChat: bool  # true for Chat and variable for SayText(2)
     # Unclear: Seems true for ChatMessages to allchat
     # but false for SayText admin commands to all chat
     isChatAll: bool
-    type: str
+    type: str  # noqa: A003
 
 
 class Token(TypedDict):
-    """TypedDict for token object collection information about player positions
-    into tokenized strings."""
+    """TypedDict for token object collection.
+
+    Holding information about player positions in tokenized strings.
+    """
 
     tToken: str
     ctToken: str
@@ -27,7 +50,7 @@ class Token(TypedDict):
 
 
 class Area(TypedDict):
-    """TypedDict for area entries in NAV"""
+    """TypedDict for area entries in NAV."""
 
     areaName: str
     northWestX: float
@@ -53,24 +76,27 @@ PlaceMatrix = dict[
 
 
 class MatchPhases(TypedDict):
-    """MatchPhases holds lists of when match events occurred"""
+    """MatchPhases holds lists of when match events occurred."""
 
-    announcementLastRoundHalf: Optional[list[int]]
-    announcementFinalRound: Optional[list[int]]
-    announcementMatchStarted: Optional[list[int]]
-    roundStarted: Optional[list[int]]
-    roundEnded: Optional[list[int]]
-    roundFreezetimeEnded: Optional[list[int]]
-    roundEndedOfficial: Optional[list[int]]
-    gameHalfEnded: Optional[list[int]]
-    matchStart: Optional[list[int]]
-    matchStartedChanged: Optional[list[int]]
-    warmupChanged: Optional[list[int]]
-    teamSwitch: Optional[list[int]]
+    announcementLastRoundHalf: list[int] | None
+    announcementFinalRound: list[int] | None
+    announcementMatchStarted: list[int] | None
+    roundStarted: list[int] | None
+    roundEnded: list[int] | None
+    roundFreezetimeEnded: list[int] | None
+    roundEndedOfficial: list[int] | None
+    gameHalfEnded: list[int] | None
+    matchStart: list[int] | None
+    matchStartedChanged: list[int] | None
+    warmupChanged: list[int] | None
+    teamSwitch: list[int] | None
 
 
 class ServerConVar(TypedDict):
-    """ServerConVar holds server convars, like round timers and timeouts, etc. Not always accurate."""
+    """ServerConVar holds server convars, like round timers and timeouts, etc.
+
+    Not always accurate.
+    """
 
     cashBombDefused: int  # cash_player_bomb_defused
     cashBombPlanted: int  # cash_player_bomb_planted
@@ -93,15 +119,50 @@ class ServerConVar(TypedDict):
 
 
 class ParserOpts(TypedDict):
-    """ParserOpts holds the parameters passed to the parser"""
+    """ParserOpts holds the parameters passed to the parser."""
 
     parseRate: int
     parseFrames: bool
     parseKillFrames: bool
     tradeTime: int
-    roundBuyStyle: str
+    roundBuyStyle: Literal["hltv", "csgo"]
     damagesRolledUp: bool
     parseChat: bool
+
+
+ParseRate = Literal[128, 64, 32, 16, 8, 4, 2, 1]
+
+BuyStyle = Literal["hltv", "csgo"]
+
+RoundReturnType = Literal["json", "df"]
+
+
+@final
+class FullParserArgs(TypedDict):
+    """TypedDict for total parser **kwargs."""
+
+    parse_rate: ParseRate
+    parse_frames: bool
+    parse_kill_frames: bool
+    trade_time: int
+    dmg_rolled: bool
+    parse_chat: bool
+    buy_style: BuyStyle
+    json_indentation: bool
+
+
+@final
+class ParserArgs(TypedDict, total=False):
+    """Non total parser **kwargs."""
+
+    parse_rate: ParseRate
+    parse_frames: bool
+    parse_kill_frames: bool
+    trade_time: int
+    dmg_rolled: bool
+    parse_chat: bool
+    buy_style: BuyStyle
+    json_indentation: bool
 
 
 class MMRank(TypedDict):
@@ -115,7 +176,7 @@ class MMRank(TypedDict):
 
 
 class ConnectAction(TypedDict):
-    """ConnectAction is the act of connecting or disconnecting to the server"""
+    """ConnectAction is the act of connecting or disconnecting to the server."""
 
     tick: int
     action: str
@@ -123,21 +184,21 @@ class ConnectAction(TypedDict):
 
 
 class Players(TypedDict):
-    """Players"""
+    """Players."""
 
     playerName: str
     steamID: int
 
 
 class PlayerTeams(TypedDict):
-    """PlayerTeam"""
+    """PlayerTeam."""
 
     teamName: str
-    players: Optional[list[Players]]
+    players: list[Players] | None
 
 
 class GrenadeAction(TypedDict):
-    """GrenadeAction events"""
+    """GrenadeAction events."""
 
     throwTick: int
     destroyTick: int
@@ -160,7 +221,7 @@ class GrenadeAction(TypedDict):
 
 
 class BombAction(TypedDict):
-    """BombAction events"""
+    """BombAction events."""
 
     tick: int
     seconds: float
@@ -172,34 +233,34 @@ class BombAction(TypedDict):
     playerY: float
     playerZ: float
     bombAction: str
-    bombSite: Optional[str]
+    bombSite: str | None
 
 
 class DamageAction(TypedDict):
-    """DamageAction events"""
+    """DamageAction events."""
 
     tick: int
     seconds: float
     clockTime: str
-    attackerSteamID: Optional[int]
-    attackerName: Optional[str]
-    attackerTeam: Optional[str]
-    attackerSide: Optional[str]
-    attackerX: Optional[float]
-    attackerY: Optional[float]
-    attackerZ: Optional[float]
-    attackerViewX: Optional[float]
-    attackerViewY: Optional[float]
-    attackerStrafe: Optional[bool]
-    victimSteamID: Optional[int]
-    victimName: Optional[str]
-    victimTeam: Optional[str]
-    victimSide: Optional[str]
-    victimX: Optional[float]
-    victimY: Optional[float]
-    victimZ: Optional[float]
-    victimViewX: Optional[float]
-    victimViewY: Optional[float]
+    attackerSteamID: int | None
+    attackerName: str | None
+    attackerTeam: str | None
+    attackerSide: str | None
+    attackerX: float | None
+    attackerY: float | None
+    attackerZ: float | None
+    attackerViewX: float | None
+    attackerViewY: float | None
+    attackerStrafe: bool | None
+    victimSteamID: int | None
+    victimName: str | None
+    victimTeam: str | None
+    victimSide: str | None
+    victimX: float | None
+    victimY: float | None
+    victimZ: float | None
+    victimViewX: float | None
+    victimViewY: float | None
     weapon: str
     weaponClass: str
     hpDamage: int
@@ -209,37 +270,37 @@ class DamageAction(TypedDict):
     hitGroup: str
     isFriendlyFire: bool
     distance: float
-    zoomLevel: Optional[int]
+    zoomLevel: int | None
 
 
 class KillAction(TypedDict):
-    """KillAction events"""
+    """KillAction events."""
 
     tick: int
     seconds: float
     clockTime: str
-    attackerSteamID: Optional[int]
-    attackerName: Optional[str]
-    attackerTeam: Optional[str]
-    attackerSide: Optional[str]
-    attackerX: Optional[float]
-    attackerY: Optional[float]
-    attackerZ: Optional[float]
-    attackerViewX: Optional[float]
-    attackerViewY: Optional[float]
-    victimSteamID: Optional[int]
-    victimName: Optional[str]
-    victimTeam: Optional[str]
-    victimSide: Optional[str]
-    victimX: Optional[float]
-    victimY: Optional[float]
-    victimZ: Optional[float]
-    victimViewX: Optional[float]
-    victimViewY: Optional[float]
-    assisterSteamID: Optional[int]
-    assisterName: Optional[str]
-    assisterTeam: Optional[str]
-    assisterSide: Optional[str]
+    attackerSteamID: int | None
+    attackerName: str | None
+    attackerTeam: str | None
+    attackerSide: str | None
+    attackerX: float | None
+    attackerY: float | None
+    attackerZ: float | None
+    attackerViewX: float | None
+    attackerViewY: float | None
+    victimSteamID: int | None
+    victimName: str | None
+    victimTeam: str | None
+    victimSide: str | None
+    victimX: float | None
+    victimY: float | None
+    victimZ: float | None
+    victimViewX: float | None
+    victimViewY: float | None
+    assisterSteamID: int | None
+    assisterName: str | None
+    assisterTeam: str | None
+    assisterSide: str | None
     isSuicide: bool
     isTeamkill: bool
     isWallbang: bool
@@ -248,24 +309,24 @@ class KillAction(TypedDict):
     isHeadshot: bool
     victimBlinded: bool
     attackerBlinded: bool
-    flashThrowerSteamID: Optional[int]
-    flashThrowerName: Optional[str]
-    flashThrowerTeam: Optional[str]
-    flashThrowerSide: Optional[str]
+    flashThrowerSteamID: int | None
+    flashThrowerName: str | None
+    flashThrowerTeam: str | None
+    flashThrowerSide: str | None
     noScope: bool
     thruSmoke: bool
     distance: float
     isTrade: bool
-    playerTradedName: Optional[str]
-    playerTradedTeam: Optional[str]
-    playerTradedSteamID: Optional[int]
-    playerTradedSide: Optional[str]
+    playerTradedName: str | None
+    playerTradedTeam: str | None
+    playerTradedSteamID: int | None
+    playerTradedSide: str | None
     weapon: str
     weaponClass: str
 
 
 class WeaponFireAction(TypedDict):
-    """WeaponFireAction events"""
+    """WeaponFireAction events."""
 
     tick: int
     seconds: float
@@ -288,7 +349,7 @@ class WeaponFireAction(TypedDict):
 
 
 class FlashAction(TypedDict):
-    """FlashAction events"""
+    """FlashAction events."""
 
     tick: int
     seconds: float
@@ -302,20 +363,40 @@ class FlashAction(TypedDict):
     attackerZ: float
     attackerViewX: float
     attackerViewY: float
-    playerSteamID: Optional[int]
-    playerName: Optional[str]
-    playerTeam: Optional[str]
-    playerSide: Optional[str]
-    playerX: Optional[float]
-    playerY: Optional[float]
-    playerZ: Optional[float]
-    playerViewX: Optional[float]
-    playerViewY: Optional[float]
-    flashDuration: Optional[float]
+    playerSteamID: int | None
+    playerName: str | None
+    playerTeam: str | None
+    playerSide: str | None
+    playerX: float | None
+    playerY: float | None
+    playerZ: float | None
+    playerViewX: float | None
+    playerViewY: float | None
+    flashDuration: float | None
+
+
+GameAction = (
+    KillAction
+    | DamageAction
+    | GrenadeAction
+    | BombAction
+    | WeaponFireAction
+    | FlashAction
+)
+
+GameActionPlayers = Literal[
+    "attacker",
+    "victim",
+    "assister",
+    "flashThrower",
+    "playerTraded",
+    "player",
+    "thrower",
+]
 
 
 class BombInfo(TypedDict):
-    """Bomb location"""
+    """Bomb location."""
 
     x: float
     y: float
@@ -323,7 +404,7 @@ class BombInfo(TypedDict):
 
 
 class GrenadeInfo(TypedDict):
-    """Projectile"""
+    """Projectile."""
 
     projectileType: str
     x: float
@@ -332,7 +413,7 @@ class GrenadeInfo(TypedDict):
 
 
 class Fire(TypedDict):
-    """Inferno from molly or incend. grenade"""
+    """Inferno from molly or incend. grenade."""
 
     uniqueID: int
     x: float
@@ -341,7 +422,7 @@ class Fire(TypedDict):
 
 
 class WeaponInfo(TypedDict):
-    """WeaponInfo contains data on an inventory weapon"""
+    """WeaponInfo contains data on an inventory weapon."""
 
     weaponName: str
     weaponClass: str
@@ -350,7 +431,7 @@ class WeaponInfo(TypedDict):
 
 
 class PlayerInfo(TypedDict):
-    """PlayerInfo at time t"""
+    """PlayerInfo at time t."""
 
     steamID: int
     name: str
@@ -392,8 +473,8 @@ class PlayerInfo(TypedDict):
     isScoped: bool
     isWalk: bool
     isUnknown: bool
-    inventory: Optional[list[WeaponInfo]]
-    spotters: Optional[list[int]]
+    inventory: list[WeaponInfo] | None
+    spotters: list[int] | None
     equipmentValue: int
     equipmentValueFreezetimeEnd: int
     equipmentValueRoundStart: int
@@ -408,18 +489,18 @@ class PlayerInfo(TypedDict):
 
 
 class TeamFrameInfo(TypedDict):
-    """TeamFrameInfo at time t"""
+    """TeamFrameInfo at time t."""
 
     side: str
     teamName: str
     teamEqVal: int
     alivePlayers: int
     totalUtility: int
-    players: Optional[list[PlayerInfo]]
+    players: list[PlayerInfo] | None
 
 
 class Smoke(TypedDict):
-    """Smoke holds current smoke info"""
+    """Smoke holds current smoke info."""
 
     grenadeEntityID: int
     startTick: int
@@ -429,8 +510,10 @@ class Smoke(TypedDict):
 
 
 class GameFrame(TypedDict):
-    """GameFrame (game state at time t)"""
+    """GameFrame (game state at time t)."""
 
+    frameId: int
+    globalFrameID: int
     isKillFrame: bool
     tick: int
     seconds: float
@@ -440,13 +523,13 @@ class GameFrame(TypedDict):
     bombPlanted: bool
     bombsite: str
     bomb: BombInfo
-    projectiles: Optional[list[GrenadeInfo]]
-    smokes: Optional[list[Smoke]]
-    fires: Optional[list[Fire]]
+    projectiles: list[GrenadeInfo] | None
+    smokes: list[Smoke] | None
+    fires: list[Fire] | None
 
 
 class GameRound(TypedDict):
-    """GameRound contains round info and events"""
+    """GameRound contains round info and events."""
 
     roundNum: int
     isWarmup: bool
@@ -454,16 +537,16 @@ class GameRound(TypedDict):
     freezeTimeEndTick: int
     endTick: int
     endOfficialTick: int
-    bombPlantTick: Optional[int]
+    bombPlantTick: int | None
     tScore: int
     ctScore: int
     endTScore: int
     endCTScore: int
-    ctTeam: Optional[str]
-    tTeam: Optional[str]
+    ctTeam: str | None
+    tTeam: str | None
     winningSide: str
-    winningTeam: Optional[str]
-    losingTeam: Optional[str]
+    winningTeam: str | None
+    losingTeam: str | None
     roundEndReason: str
     ctFreezeTimeEndEqVal: int
     ctRoundStartEqVal: int
@@ -475,19 +558,31 @@ class GameRound(TypedDict):
     tBuyType: str
     ctSide: PlayerTeams
     tSide: PlayerTeams
-    kills: Optional[list[KillAction]]
-    damages: Optional[list[DamageAction]]
-    grenades: Optional[list[GrenadeAction]]
-    bombEvents: Optional[list[BombAction]]
-    weaponFires: Optional[list[WeaponFireAction]]
-    flashes: Optional[list[FlashAction]]
-    frames: Optional[list[GameFrame]]
-    mvp: Players
-    mvp_reason: str
+    kills: list[KillAction] | None
+    damages: list[DamageAction] | None
+    grenades: list[GrenadeAction] | None
+    bombEvents: list[BombAction] | None
+    weaponFires: list[WeaponFireAction] | None
+    flashes: list[FlashAction] | None
+    frames: list[GameFrame] | None
+
+
+GameAction = (
+    KillAction
+    | DamageAction
+    | GrenadeAction
+    | BombAction
+    | WeaponFireAction
+    | FlashAction
+    | BombAction
+)
+GameActionKey = Literal[
+    "kills", "damages", "grenades", "bombEvents", "weaponFires", "flashes"
+]
 
 
 class Game(TypedDict):
-    """Game is the overall struct that holds the parsed demo data"""
+    """Game is the overall struct that holds the parsed demo data."""
 
     matchID: str
     clientName: str
@@ -499,14 +594,14 @@ class Game(TypedDict):
     parserParameters: ParserOpts
     serverVars: ServerConVar
     matchPhases: MatchPhases
-    matchmakingRanks: Optional[list[MMRank]]
-    chatMessages: Optional[list[Chat]]
-    playerConnections: Optional[list[ConnectAction]]
-    gameRounds: Optional[list[GameRound]]
+    matchmakingRanks: list[MMRank] | None
+    chatMessages: list[Chat] | None
+    playerConnections: list[ConnectAction] | None
+    gameRounds: list[GameRound] | None
 
 
 class PlayerStatistics(TypedDict):
-    """Type for the result of awpy.analytics.stats.player_stats"""
+    """Type for the result of awpy.analytics.stats.player_stats."""
 
     steamID: int
     playerName: str
@@ -561,3 +656,219 @@ class PlayerStatistics(TypedDict):
     success1v4: int
     attempts1v5: int
     success1v5: int
+
+
+class KAST(TypedDict):
+    """Type for storing kast information."""
+
+    k: bool
+    a: bool
+    s: bool
+    t: bool
+
+
+class ClosestArea(TypedDict):
+    """TypedDict for closest area object.
+
+    Holding information about the map, the closest area and the distance to that area.
+    """
+
+    mapName: str
+    areaId: int
+    distance: float
+
+
+class DistanceObject(TypedDict):
+    """TypedDict for distance object.
+
+    Holding information about distance type,
+    distance and the areas in the path between two points/areas.
+    """
+
+    distanceType: str
+    distance: float
+    areas: list[int]
+
+
+class RoundStatistics(TypedDict):
+    """TypedDict for per round statistics."""
+
+    kast: dict[str, KAST]
+    round_kills: dict[str, int]
+    is_clutching: set[str | None]
+    active_players: set[str]
+    players_killed: dict[Literal["CT", "T"], set[str]]
+
+
+@overload
+def other_side(side: Literal["CT"]) -> Literal["T"]:
+    ...
+
+
+@overload
+def other_side(side: Literal["T"]) -> Literal["CT"]:
+    ...
+
+
+def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
+    """Takes a csgo side as input and returns the opposite side in the same formatting.
+
+    Args:
+        side (string): A csgo team side (t or ct all upper or all lower case)
+
+    Returns:
+        A string of the opposite team side in the same formatting as the input
+
+    Raises:
+        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
+    """
+    if side == "CT":
+        return "T"
+    if side == "T":
+        return "CT"
+    msg = "side has to be either 'CT' or 'T'"
+    raise ValueError(msg)
+
+
+@overload
+def lower_side(side: Literal["CT"]) -> Literal["ct"]:
+    ...
+
+
+@overload
+def lower_side(side: Literal["T"]) -> Literal["t"]:
+    ...
+
+
+def lower_side(side: Literal["CT", "T"]) -> Literal["ct", "t"]:
+    """Takes a csgo side as input and returns lower cased version.
+
+    Args:
+        side (string): A csgo team side (T or CT )
+
+    Returns:
+        The lower cased string.
+
+    Raises:
+        ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
+    """
+    if side == "CT":
+        return "ct"
+    if side == "T":
+        return "t"
+    msg = "side has to be either 'CT' or 'T'"
+    raise ValueError(msg)
+
+
+@overload
+def upper_side(side: Literal["ct"]) -> Literal["CT"]:
+    ...
+
+
+@overload
+def upper_side(side: Literal["t"]) -> Literal["T"]:
+    ...
+
+
+def upper_side(side: Literal["ct", "t"]) -> Literal["CT", "T"]:
+    """Takes a csgo side as input and returns upper cased version.
+
+    Args:
+        side (string): A csgo team side (t or ct )
+
+    Returns:
+        The upper cased string.
+
+    Raises:
+        ValueError: Raises a ValueError if side not neither 'ct' nor 't'
+    """
+    if side == "ct":
+        return "CT"
+    if side == "t":
+        return "T"
+    msg = "side has to be either 'ct' or 't'"
+    raise ValueError(msg)
+
+
+def is_valid_side(side: str) -> TypeGuard[Literal["CT", "T"]]:
+    """TypeGuard for string being CT or T.
+
+    Args:
+        side (str): String to type guard
+
+    Returns:
+        Whether it is CT or T
+    """
+    return side in {"CT", "T"}
+
+
+def proper_player_number(n_players: int, /) -> TypeGuard[Literal[0, 1, 2, 3, 4, 5]]:
+    """TypeGuard for int being in range(6).
+
+    Args:
+        n_players (int): Int to type guard
+
+    Returns:
+        Whether the int is in range(6)
+    """
+    return n_players in range(6)
+
+
+@overload
+def int_to_string_n_players(n_players: Literal[0]) -> Literal["0"]:
+    ...
+
+
+@overload
+def int_to_string_n_players(n_players: Literal[1]) -> Literal["1"]:
+    ...
+
+
+@overload
+def int_to_string_n_players(n_players: Literal[2]) -> Literal["2"]:
+    ...
+
+
+@overload
+def int_to_string_n_players(n_players: Literal[3]) -> Literal["3"]:
+    ...
+
+
+@overload
+def int_to_string_n_players(n_players: Literal[4]) -> Literal["4"]:
+    ...
+
+
+@overload
+def int_to_string_n_players(n_players: Literal[5]) -> Literal["5"]:
+    ...
+
+
+def int_to_string_n_players(
+    n_players: Literal[0, 1, 2, 3, 4, 5]
+) -> Literal["0", "1", "2", "3", "4", "5"]:
+    """_Typeguarded conversion from int in range(6) to str.
+
+    Args:
+        n_players (Literal[0, 1, 2, 3, 4, 5]): Int to convert to string.
+
+    Raises:
+        ValueError: If the int is not in range(6)
+
+    Returns:
+        str(n_players)
+    """
+    if n_players == 0:
+        return "0"
+    if n_players == 1:
+        return "1"
+    if n_players == 2:  # noqa: Ruff(PLR2004)
+        return "2"
+    if n_players == 3:  # noqa: Ruff(PLR2004)
+        return "3"
+    if n_players == 4:  # noqa: Ruff(PLR2004)
+        return "4"
+    if n_players == 5:  # noqa: Ruff(PLR2004)
+        return "5"
+    msg = "n_players has to be in range(6)"
+    raise ValueError(msg)

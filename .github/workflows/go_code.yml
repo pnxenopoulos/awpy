@@ -1,0 +1,43 @@
+# This workflow will run lints and tests on the go code.
+
+name: check_go
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v4
+      - name: Checkout csgo library
+        uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          working-directory: ./awpy/parser
+          version: v1.53
+      - name: Build
+        working-directory: ./awpy/parser
+        run: go build
+      - name: Test
+        working-directory: ./awpy/parser
+        run: |
+          go test -covermode=count -coverprofile=coverage.out
+          go tool cover -html=coverage.out -o coverage.html
+      - name: Fuzz
+        working-directory: ./awpy/parser
+        run: |
+          go test -fuzz=FuzzConvertRank -fuzztime 30s
+          go test -fuzz=FuzzDetermineSecond -fuzztime 30s
+          go test -fuzz=FuzzParseTeamBuy -fuzztime 30s
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: ./awpy/parser/coverage.html
