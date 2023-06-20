@@ -559,14 +559,14 @@ func convertRoundEndReason(r events.RoundEndReason) string {
 
 func convertRoundMVPReason(r events.RoundMVPReason) string {
 	switch reason := r; reason {
-	case 1:
+	case events.MVPReasonMostEliminations:
 		return "MVPReasonMostEliminations"
-	case 2:
+	case events.MVPReasonBombDefused:
 		return "MVPReasonBombDefused"
-	case 3:
+	case events.MVPReasonBombPlanted:
 		return "MVPReasonBombPlanted"
 	default:
-		return "Unknown"
+		return unknown
 	}
 }
 
@@ -1474,6 +1474,14 @@ func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentR
 		// 	currentGame.ParsingOpts.RoundBuyStyle)
 		// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T",
 		// 	currentGame.ParsingOpts.RoundBuyStyle)
+	})
+}
+
+func registerRoundMVPHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.RoundMVPAnnouncement) {
+	    currentRound.MVPName = e.Player.Name
+	    currentRound.MVPSteamID = int64(e.Player.SteamID64)
+	    currentRound.MVPReason = convertRoundMVPReason(e.Reason)
 	})
 }
 
@@ -2695,6 +2703,9 @@ func main() {
 	// Parse round ends
 	registerRoundEndOfficialHandler(&p, &currentGame, &currentRound, &roundInEndTime, &RoundRestartDelay)
 	registerRoundEndHandler(&p, &currentGame, &currentRound, &roundStarted, &roundInEndTime, &RoundRestartDelay)
+
+    // Parse MVP announcements
+	registerRoundMVPHandler(&p, &currentGame, &currentRound)
 
 	// Parse bomb defuses
 	registerBombDefusedHandler(&p, &currentGame, &currentRound)

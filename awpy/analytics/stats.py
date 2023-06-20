@@ -136,6 +136,7 @@ def initialize_round(
                     "success1v4": 0,
                     "attempts1v5": 0,
                     "success1v5": 0,
+                    "mvp": 0,
                 }
             player_statistics[player_key]["totalRounds"] += 1
     for player_key in active_players:
@@ -619,6 +620,20 @@ def _handle_multi_kills(
         if player in round_statistics["active_players"]:
             _increment_statistic(player_statistics, player, n_kills)
 
+def _handle_mvps(
+    game_round: GameRound,
+    player_statistics: dict[str, PlayerStatistics],
+    round_statistics: RoundStatistics,
+) -> None:
+    if "MVPName" in game_round:
+        player_key = (
+            game_round["MVPName"]
+            if game_round["MVPSteamID"] == 0
+            else str(game_round["MVPSteamID"])
+        )
+        if player_key in round_statistics["active_players"]:
+            player_statistics[player_key]["mvp"] += 1
+
 
 def _increment_statistic(
     player_statistics: dict[str, PlayerStatistics], player: str, n_kills: int
@@ -665,6 +680,7 @@ def player_stats(
         _handle_bomb(game_round, player_statistics, round_statistics)
         _handle_kast(player_statistics, round_statistics)
         _handle_multi_kills(player_statistics, round_statistics)
+        _handle_mvps(game_round, player_statistics, round_statistics)
 
     _finalize_statistics(player_statistics)
 

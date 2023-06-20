@@ -77,6 +77,7 @@ class TestStats:
         assert stats["76561197995889730"]["firstDeaths"] == 2
         assert stats["76561197995889730"]["teamName"] == "Team Liquid"
         assert stats["76561197995889730"]["playerName"] == "nitr0"
+        assert stats["76561197995889730"]["mvp"] == 3
 
         assert stats["76561197990682262"]["playerName"] == "Xyp9x"
         assert stats["76561197990682262"]["attempts1v5"] == 5
@@ -84,11 +85,13 @@ class TestStats:
         assert stats["76561197990682262"]["attempts1v1"] == 2
         assert stats["76561197990682262"]["success1v1"] == 2
         assert stats["76561197990682262"]["kills5"] == 0
+        assert stats["76561197990682262"]["mvp"] == 4
 
         assert stats["76561197987713664"]["playerName"] == "device"
         assert stats["76561197987713664"]["kills5"] == 1
         assert stats["76561197987713664"]["tradeKills"] == 5
         assert stats["76561197987713664"]["tradedDeaths"] == 5
+        assert stats["76561197987713664"]["mvp"] == 4
 
     def test_player_stats_both_df(self):
         """Tests player stats generation for df."""
@@ -111,6 +114,7 @@ class TestStats:
         assert stats_ct["76561197995889730"]["firstDeaths"] == 0
         assert stats_ct["76561197995889730"]["teamName"] == "Team Liquid"
         assert stats_ct["76561197995889730"]["playerName"] == "nitr0"
+        assert stats_ct["76561197995889730"]["mvp"] == 3
 
     def test_player_stats_t(self):
         """Tests json generation of player stats for t."""
@@ -128,6 +132,7 @@ class TestStats:
         assert stats_t["76561197995889730"]["firstDeaths"] == 2
         assert stats_t["76561197995889730"]["teamName"] == "Team Liquid"
         assert stats_t["76561197995889730"]["playerName"] == "nitr0"
+        assert stats_t["76561197995889730"]["mvp"] == 0
 
     def test_player_stats_sum(self):
         """Tests that ct and t stats sum to total."""
