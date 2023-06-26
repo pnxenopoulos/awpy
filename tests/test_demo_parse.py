@@ -251,23 +251,62 @@ class TestDemoParser:
     def test_mvp(self):
         """Tests mvp."""
         self.default_data = self.parser.parse()
-        expected = {1: {'MVPName': 'tiziaN', 'MVPSteamID': 76561197997556936, 'MVPReason': 'MVPReasonMostEliminations'},
-                    3: {'MVPName': 'syrsoNR', 'MVPSteamID': 76561197980122997, 'MVPReason': 'MVPReasonBombPlanted'},
-                    8: {'MVPName': 'Ex6TenZ-BALLISTIX', 'MVPSteamID': 76561197972003061,
-                        'MVPReason': 'MVPReasonBombDefused'},
-                    11: {'MVPName': 'keev', 'MVPSteamID': 76561198011536764, 'MVPReason': 'MVPReasonMostEliminations'},
-                    22: {'MVPName': 'crisby', 'MVPSteamID': 76561197973392984, 'MVPReason': 'MVPReasonBombDefused'},
-                    23: {'MVPName': '', 'MVPSteamID': 0, 'MVPReason': ''},
-                    24: {'MVPName': 'keev', 'MVPSteamID': 76561198011536764, 'MVPReason': 'MVPReasonBombDefused'},
-                    27: {'MVPName': 'ALEX * Intel', 'MVPSteamID': 76561198004871434,
-                         'MVPReason': 'MVPReasonMostEliminations'},
-                    29: {'MVPName': 'crisby', 'MVPSteamID': 76561197973392984,
-                         'MVPReason': 'MVPReasonMostEliminations'}}
-        for round in self.default_data["gameRounds"]:
-            if round["roundNum"] in expected:
-                assert round["MVPName"] == expected[round["roundNum"]]["MVPName"]
-                assert round["MVPSteamID"] == expected[round["roundNum"]]["MVPSteamID"]
-                assert round["MVPReason"] == expected[round["roundNum"]]["MVPReason"]
+        expected = {
+            1: {
+                "MVPName": "tiziaN",
+                "MVPSteamID": 76561197997556936,
+                "MVPReason": "MVPReasonMostEliminations",
+            },
+            3: {
+                "MVPName": "syrsoNR",
+                "MVPSteamID": 76561197980122997,
+                "MVPReason": "MVPReasonBombPlanted",
+            },
+            8: {
+                "MVPName": "Ex6TenZ-BALLISTIX",
+                "MVPSteamID": 76561197972003061,
+                "MVPReason": "MVPReasonBombDefused",
+            },
+            11: {
+                "MVPName": "keev",
+                "MVPSteamID": 76561198011536764,
+                "MVPReason": "MVPReasonMostEliminations",
+            },
+            22: {
+                "MVPName": "crisby",
+                "MVPSteamID": 76561197973392984,
+                "MVPReason": "MVPReasonBombDefused",
+            },
+            23: {"MVPName": "", "MVPSteamID": 0, "MVPReason": ""},
+            24: {
+                "MVPName": "keev",
+                "MVPSteamID": 76561198011536764,
+                "MVPReason": "MVPReasonBombDefused",
+            },
+            27: {
+                "MVPName": "ALEX * Intel",
+                "MVPSteamID": 76561198004871434,
+                "MVPReason": "MVPReasonMostEliminations",
+            },
+            29: {
+                "MVPName": "crisby",
+                "MVPSteamID": 76561197973392984,
+                "MVPReason": "MVPReasonMostEliminations",
+            },
+        }
+        for game_round in self.default_data["gameRounds"]:
+            if game_round["roundNum"] in expected:
+                assert (
+                    game_round["MVPName"] == expected[game_round["roundNum"]]["MVPName"]
+                )
+                assert (
+                    game_round["MVPSteamID"]
+                    == expected[game_round["roundNum"]]["MVPSteamID"]
+                )
+                assert (
+                    game_round["MVPReason"]
+                    == expected[game_round["roundNum"]]["MVPReason"]
+                )
 
     def test_parse_kill_frames(self):
         """Tests parse kill frames."""

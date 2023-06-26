@@ -620,6 +620,7 @@ def _handle_multi_kills(
         if player in round_statistics["active_players"]:
             _increment_statistic(player_statistics, player, n_kills)
 
+
 def _handle_mvps(
     game_round: GameRound,
     player_statistics: dict[str, PlayerStatistics],
