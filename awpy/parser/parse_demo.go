@@ -1135,8 +1135,12 @@ func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, curren
 		currentRound.IsWarmup = gs.IsWarmupPeriod()
 		currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
 		currentRound.StartTick = int64(gs.IngameTick())
-		currentRound.TScore = int64(gs.TeamTerrorists().Score())
-		currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+		if (gs.TeamTerrorists() != nil) {
+		    currentRound.TScore = int64(gs.TeamTerrorists().Score())
+		}
+		if (gs.TeamCounterTerrorists() != nil) {
+		    currentRound.CTScore = int64(gs.TeamCounterTerrorists().Score())
+		}
 		if (gs.TeamTerrorists() != nil) && (gs.TeamCounterTerrorists() != nil) {
 			tTeam := gs.TeamTerrorists().ClanName()
 			ctTeam := gs.TeamCounterTerrorists().ClanName()
@@ -1484,17 +1488,19 @@ func registerBombDefusedHandler(demoParser *dem.Parser, currentGame *Game, curre
 		bombSite := getBombSite(rune(e.Site))
 		currentBomb.BombSite = &bombSite
 
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
+        if e.Player != nil {
+		    currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		    currentBomb.PlayerName = e.Player.Name
+		    if e.Player.TeamState != nil {
+		    	currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		    }
 
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = playerPos.X
-		currentBomb.PlayerY = playerPos.Y
-		currentBomb.PlayerZ = playerPos.Z
+		    // Player loc
+		    playerPos := e.Player.LastAlivePosition
+		    currentBomb.PlayerX = playerPos.X
+		    currentBomb.PlayerY = playerPos.Y
+		    currentBomb.PlayerZ = playerPos.Z
+        }
 
 		// add bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)
@@ -1743,18 +1749,19 @@ func registerBombPlantedHandler(demoParser *dem.Parser, currentGame *Game, curre
 
 		bombSite := getBombSite(rune(e.Site))
 		currentBomb.BombSite = &bombSite
+        if e.Player != nil {
+		    currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
+		    currentBomb.PlayerName = e.Player.Name
+		    if e.Player.TeamState != nil {
+			    currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
+		    }
 
-		currentBomb.PlayerSteamID = int64(e.Player.SteamID64)
-		currentBomb.PlayerName = e.Player.Name
-		if e.Player.TeamState != nil {
-			currentBomb.PlayerTeam = e.Player.TeamState.ClanName()
-		}
-
-		// Player loc
-		playerPos := e.Player.LastAlivePosition
-		currentBomb.PlayerX = playerPos.X
-		currentBomb.PlayerY = playerPos.Y
-		currentBomb.PlayerZ = playerPos.Z
+		    // Player loc
+		    playerPos := e.Player.LastAlivePosition
+		    currentBomb.PlayerX = playerPos.X
+		    currentBomb.PlayerY = playerPos.Y
+		    currentBomb.PlayerZ = playerPos.Z
+        }
 
 		// Bomb event
 		currentRound.Bomb = append(currentRound.Bomb, currentBomb)

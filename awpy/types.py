@@ -226,12 +226,12 @@ class BombAction(TypedDict):
     tick: int
     seconds: float
     clockTime: str
-    playerSteamID: int
-    playerName: str
-    playerTeam: str
-    playerX: float
-    playerY: float
-    playerZ: float
+    playerSteamID: int | None
+    playerName: str | None
+    playerTeam: str | None
+    playerX: float | None
+    playerY: float | None
+    playerZ: float | None
     bombAction: str
     bombSite: str | None
 
@@ -538,8 +538,8 @@ class GameRound(TypedDict):
     endTick: int
     endOfficialTick: int
     bombPlantTick: int | None
-    tScore: int
-    ctScore: int
+    tScore: int | None
+    ctScore: int | None
     endTScore: int
     endCTScore: int
     ctTeam: str | None
