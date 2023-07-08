@@ -538,8 +538,8 @@ class GameRound(TypedDict):
     endTick: int
     endOfficialTick: int
     bombPlantTick: int | None
-    tScore: int | None
-    ctScore: int | None
+    tScore: int
+    ctScore: int
     endTScore: int
     endCTScore: int
     ctTeam: str | None
