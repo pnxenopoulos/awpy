@@ -18,6 +18,7 @@ def setup() -> None:  # noqa: PT004
 @pytest.fixture(scope="session")
 def teardown() -> None:  # noqa: PT004
     """Cleans testing environment by deleting all .dem and .json files."""
+    yield
     files_in_directory = os.listdir()
     if filtered_files := [
         file for file in files_in_directory if file.endswith((".dem", ".json"))
@@ -33,7 +34,9 @@ def _get_demofile(demo_link: str, demo_name: str) -> None:
         demo_link (str): Link to demo.
         demo_name (str): `<file>.dem` styled filename.
     """
-    print(f"Requesting {demo_link}")
-    r = requests.get(demo_link, timeout=100)
-    with open(f"tests/{demo_name}.dem", "wb") as demo_file:
-        demo_file.write(r.content)
+    if os.path.exists(f"tests/{demo_name.dem}"):
+        pass
+    else:
+        r = requests.get(demo_link, timeout=100)
+        with open(f"tests/{demo_name}.dem", "wb") as demo_file:
+            demo_file.write(r.content)
