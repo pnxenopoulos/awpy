@@ -214,21 +214,21 @@ class DemoParser:
         return self._json
 
     @json.setter
-    def json(self, json: Game | None) -> None:
+    def json(self, new_json: Game | None) -> None:
         """Validate json shape via pydantic.
 
         Args:
-            json (Game | None): Game dict to use.
+            new_json (Game | None): Game dict to use.
         """
-        if json is not None:
+        if new_json is not None:
             try:
-                TypeAdapter(Game).validate_python(json)
+                TypeAdapter(Game).validate_python(new_json)
             except ValidationError:
                 self.logger.exception(
                     "Loaded json file does not have correct fields."
                     " This may cause issues later."
                 )
-        self._json = json
+        self._json = new_json
 
     @property
     def buy_style(self) -> BuyStyle:
