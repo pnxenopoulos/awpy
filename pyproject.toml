@@ -88,6 +88,7 @@ select = [
     "ARG",
     "ERA",
     "PD",
+    "PERF",
     "PGH",
     "PLC",
     "PLE",

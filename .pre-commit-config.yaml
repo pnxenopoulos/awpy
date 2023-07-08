@@ -26,7 +26,7 @@ repos:
       - id: check-builtin-literals
         language: python
   - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.0.267
+    rev: v0.0.277
     hooks:
       - id: ruff
         args:
@@ -38,7 +38,7 @@ repos:
       - id: black
         language: python
   # - repo: 'https://github.com/RobertCraigie/pyright-python'
-  #   rev: v1.1.305
+  #   rev: v1.1.316
   #   hooks:
   #     - id: pyright
   #       additional_dependencies:
@@ -52,4 +52,3 @@ repos:
   #         - sympy>=1.10.1
   #         - textdistance>=4.2.0
   #         - tqdm>=4.55.2
-  #         - pandas-stubs==2.0.0.230412
