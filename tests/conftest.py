@@ -34,9 +34,7 @@ def _get_demofile(demo_link: str, demo_name: str) -> None:
         demo_link (str): Link to demo.
         demo_name (str): `<file>.dem` styled filename.
     """
-    if os.path.exists(f"tests/{demo_name}.dem"):
-        pass
-    else:
+    if not os.path.exists(demo_path := f"tests/{demo_name}.dem"):
         r = requests.get(demo_link, timeout=100)
-        with open(f"tests/{demo_name}.dem", "wb") as demo_file:
+        with open(demo_path, "wb") as demo_file:
             demo_file.write(r.content)
