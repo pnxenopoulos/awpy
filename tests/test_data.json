@@ -1,50 +1,47 @@
 {
     "unexpected_end_of_demo": {
-        "url": "https://storage.googleapis.com/csgo-tests/unexpected_end_of_demo.dem"
+        "url": "https://figshare.com/ndownloader/files/41207930"
     },
     "valve_matchmaking": {
-        "url": "https://storage.googleapis.com/csgo-tests/valve_matchmaking.dem"
+        "url": "https://figshare.com/ndownloader/files/41207933"
     },
     "default": {
-        "url": "https://storage.googleapis.com/csgo-tests/default.dem"
-    },
-    "esea_mdl_ot": {
-        "url": "https://storage.googleapis.com/csgo-tests/esea_mdl_ot.dem"
+        "url": "https://figshare.com/ndownloader/files/41207780"
     },
     "faceit_ecs_ot": {
-        "url": "https://storage.googleapis.com/csgo-tests/faceit_ecs_ot.dem"
+        "url": "https://figshare.com/ndownloader/files/41207789"
     },
     "bot_name_test": {
-        "url": "https://storage.googleapis.com/csgo-tests/bot_name_test.dem"
+        "url": "https://figshare.com/ndownloader/files/41207777"
     },
     "warmup_test": {
-        "url": "https://storage.googleapis.com/csgo-tests/warmup_test.dem"
+        "url": "https://figshare.com/ndownloader/files/41207942"
     },
     "bombsite_test": {
-        "url": "https://storage.googleapis.com/csgo-tests/esea_match_16807861.dem"
+        "url": "https://figshare.com/ndownloader/files/41207783"
     },
     "round_clean_test": {
-        "url": "https://storage.googleapis.com/csgo-tests/003485491058068947013_0999056837.dem"
+        "url": "https://figshare.com/ndownloader/files/41207759"
     },
     "astralis-vs-liquid-m2-nuke": {
-        "url": "https://storage.googleapis.com/csgo-tests/astralis-vs-liquid-m2-nuke.dem"
+        "url": "https://figshare.com/ndownloader/files/41207771"
     },
     "vitality-vs-g2-m2-mirage": {
-        "url": "https://storage.googleapis.com/csgo-tests/vitality-vs-g2-m2-mirage.dem"
+        "url": "https://figshare.com/ndownloader/files/41207939"
     },
     "pov-clean": {
-        "url": "https://storage.googleapis.com/csgo-tests/041.dem"
+        "url": "https://figshare.com/ndownloader/files/41207765"
     },
     "anonymo-vs-ldlc-m1-nuke": {
-        "url": "https://storage.googleapis.com/csgo-tests/anonymo-vs-ldlc-m1-nuke.dem"
+        "url": "https://figshare.com/ndownloader/files/41207768"
     },
     "nip-vs-gambit-m2-inferno": {
-        "url": "https://storage.googleapis.com/csgo-tests/nip-vs-gambit-m2-inferno.dem"
+        "url": "https://figshare.com/ndownloader/files/41207792"
     },
     "vitality-vs-ence-m1-mirage": {
-        "url": "https://storage.googleapis.com/csgo-tests/vitality-vs-ence-m1-mirage.dem"
+        "url": "https://figshare.com/ndownloader/files/41207936"
     },
     "esea_match_16902209": {
-        "url": "https://storage.googleapis.com/csgo-tests/esea_match_16902209.dem"
+        "url": "https://figshare.com/ndownloader/files/41207786"
     }
 }
