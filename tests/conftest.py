@@ -22,9 +22,6 @@ def teardown() -> None:  # noqa: PT004
     for file in os.listdir():
         if file.endswith(".json"):
             os.remove(file)
-    for file in os.listdir("tests"):
-        if file.endswith(".dem"):
-            os.remove(os.path.join("tests", file))
 
 
 def _get_demofile(demo_link: str, demo_name: str) -> None:
