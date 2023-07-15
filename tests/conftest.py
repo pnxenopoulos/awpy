@@ -15,16 +15,13 @@ def setup() -> None:  # noqa: PT004
         _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def teardown() -> None:  # noqa: PT004
     """Cleans testing environment by deleting all .dem and .json files."""
     yield
-    files_in_directory = os.listdir()
-    if filtered_files := [
-        file for file in files_in_directory if file.endswith((".dem", ".json"))
-    ]:
-        for f in filtered_files:
-            os.remove(f)
+    for file in os.listdir():
+        if file.endswith(".json"):
+            os.remove(file)
 
 
 def _get_demofile(demo_link: str, demo_name: str) -> None:

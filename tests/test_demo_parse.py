@@ -199,6 +199,19 @@ class TestDemoParser:
         self.valve_mm_data = self.valve_mm.parse()
         assert len(self.valve_mm_data["gameRounds"]) == 25  # 26
 
+    def test_parse_pov_demo(self):
+        """Tests if POV demos are parsed correctly."""
+        self.pov_parser = DemoParser(
+            demofile="tests/2903_3.dem", log=False, parse_rate=256
+        )
+        self.pov_demo_data = self.pov_parser.parse()
+        assert len(self.pov_demo_data["gameRounds"]) == 30
+        last_round = self.pov_demo_data["gameRounds"][-1]
+        assert last_round["endCTScore"] == 20
+        assert last_round["endTScore"] == 10
+        assert last_round["tTeam"] == "Pepsilon"
+        assert last_round["ctTeam"].startswith("PGE")
+
     def test_ot_demos(self):
         """Test overtime demos."""
         self.faceit_ot = DemoParser(
