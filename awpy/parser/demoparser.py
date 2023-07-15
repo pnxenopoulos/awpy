@@ -30,6 +30,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Literal, Unpack, get_args, overload
 
 import pandas as pd
+from pydantic import TypeAdapter, ValidationError
 
 from awpy.types import (
     BuyStyle,
@@ -188,7 +189,7 @@ class DemoParser:
         self.parse_error = False
 
         # Initialize json attribute as None
-        self.json: Game | None = None
+        self._json: Game | None = None
 
     def log_settings(self) -> None:
         """Log the settings produced in the cosntructor."""
@@ -202,6 +203,32 @@ class DemoParser:
         )
         self.logger.info("Setting trade time to %d", self.trade_time)
         self.logger.info("Setting buy style to %s", str(self.buy_style))
+
+    @property
+    def json(self) -> Game | None:
+        """Json getter.
+
+        Returns:
+            Game: Parsed demo information in json format
+        """
+        return self._json
+
+    @json.setter
+    def json(self, new_json: Game | None) -> None:
+        """Validate json shape via pydantic.
+
+        Args:
+            new_json (Game | None): Game dict to use.
+        """
+        if new_json is not None:
+            try:
+                TypeAdapter(Game).validate_python(new_json)
+            except ValidationError:
+                self.logger.exception(
+                    "Loaded json file does not have correct fields."
+                    " This may cause issues later."
+                )
+        self._json = new_json
 
     @property
     def buy_style(self) -> BuyStyle:

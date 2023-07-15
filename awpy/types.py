@@ -1,7 +1,9 @@
 """This module contains the type definitions for the parsed json structure."""
 
 from dataclasses import dataclass
-from typing import Literal, NotRequired, TypedDict, TypeGuard, final, overload
+from typing import Literal, NotRequired, TypeGuard, final, overload
+
+from typing_extensions import TypedDict  # noqa: UP035
 
 
 @dataclass
@@ -461,17 +463,17 @@ class PlayerInfo(TypedDict):
     isBot: bool
     isBlinded: bool
     isAirborne: bool
-    isDuck: bool
-    isDuckInProgress: bool
-    isUnDuckInProgress: bool
-    isDefus: bool
-    isPlant: bool
-    isReload: bool
+    isDucking: bool
+    isDuckingInProgress: bool
+    isUnDuckingInProgress: bool
+    isDefusing: bool
+    isPlanting: bool
+    isReloading: bool
     isInBombZone: bool
     isInBuyZone: bool
-    isStand: bool
+    isStanding: bool
     isScoped: bool
-    isWalk: bool
+    isWalking: bool
     isUnknown: bool
     inventory: list[WeaponInfo] | None
     spotters: list[int] | None
@@ -484,7 +486,7 @@ class PlayerInfo(TypedDict):
     hasHelmet: bool
     hasDefuse: bool
     hasBomb: bool
-    p: int
+    ping: int
     zoomLevel: int
 
 
@@ -512,7 +514,7 @@ class Smoke(TypedDict):
 class GameFrame(TypedDict):
     """GameFrame (game state at time t)."""
 
-    frameId: int
+    frameID: int
     globalFrameID: int
     isKillFrame: bool
     tick: int
