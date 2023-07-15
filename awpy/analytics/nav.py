@@ -431,11 +431,9 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
         msg = "CT or T players has length of 0"
         raise ValueError(msg)
     # Create map area list
-    map_area_names = []
-    for area_id in NAV[map_name]:
-        if NAV[map_name][area_id]["areaName"] not in map_area_names:
-            map_area_names.append(NAV[map_name][area_id]["areaName"])
-    map_area_names.sort()
+    map_area_names = sorted(
+        {NAV[map_name][area_id]["areaName"] for area_id in NAV[map_name]}
+    )
     # Create token
     ct_token = np.zeros(len(map_area_names), dtype=np.int8)
     # We know this is not None because otherwise we would have already
