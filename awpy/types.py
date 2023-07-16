@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Literal, NotRequired, TypeGuard, final, overload
 
-from typing_extensions import TypedDict  # noqa: UP035
+from typing_extensions import TypedDict
 
 
 @dataclass
