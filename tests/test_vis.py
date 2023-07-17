@@ -225,3 +225,19 @@ class TestVis:
                 position_transform("de_ancient", -163.84375, "y"),
                 color="red",
             )
+
+    """
+    def test_plot_frame_map_control():
+        fake_alive_player = {
+            "x": -42.51047897338867,
+            "y": 868.4791870117188,
+            "z": 54.92256546020508,
+            "isAlive": True,
+        }
+        fake_frame = {
+            "t": {"players": [fake_alive_player.copy()] * 5},
+            "ct": {"players": [fake_alive_player.copy()]},
+        }
+
+        plot_frame_map_control("de_inferno", fake_frame)
+    """

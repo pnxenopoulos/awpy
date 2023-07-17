@@ -31,7 +31,7 @@ from awpy.types import (
 )
 
 
-def _approx_neighbors(
+def _approximate_neighbors(
     map_name: str,
     source_tile_id: TileId,
     n_neighbors: int = 5,
@@ -74,7 +74,7 @@ def _approx_neighbors(
     return sorted(possible_neighbors_arr, key=lambda d: d.distance)[:n_neighbors]
 
 
-def _bfs_helper(
+def _bfs(
     map_name: str,
     current_tiles: list[TileId],
     neighbor_info: TileNeighbors,
@@ -125,7 +125,8 @@ def _bfs_helper(
                 neighbors = list(neighbor_info[cur_id])
                 if len(neighbors) == 0:
                     neighbors = [
-                        tile.tile_id for tile in _approx_neighbors(map_name, cur_id)
+                        tile.tile_id
+                        for tile in _approximate_neighbors(map_name, cur_id)
                     ]
 
                 queue.extend(
@@ -142,7 +143,7 @@ def _bfs_helper(
     return map_control_values
 
 
-def _frame_tile_map_control_values(
+def _calc_frame_map_control_tile_values(
     map_name: str,
     ct_tiles: list[TileId],
     t_tiles: list[TileId],
@@ -167,8 +168,8 @@ def _frame_tile_map_control_values(
         FrameMapControlValues object containing each team's map control values
     """
     return FrameMapControlValues(
-        t_values=_bfs_helper(map_name, t_tiles, neighbor_info),
-        ct_values=_bfs_helper(map_name, ct_tiles, neighbor_info),
+        t_values=_bfs(map_name, t_tiles, neighbor_info),
+        ct_values=_bfs(map_name, ct_tiles, neighbor_info),
     )
 
 
@@ -230,14 +231,16 @@ def calc_parsed_frame_map_control_values(
         for i in current_player_data.ct_metadata.alive_player_locations
     ]
 
-    return _frame_tile_map_control_values(map_name, ct_tiles, t_tiles, neighbors_dict)
+    return _calc_frame_map_control_tile_values(
+        map_name, ct_tiles, t_tiles, neighbors_dict
+    )
 
 
 def calc_frame_map_control_values(
     map_name: str,
     frame: GameFrame,
 ) -> FrameMapControlValues:
-    """Calculate tile map control values for each team given frame object.
+    """Calculate tile map control values for each team given awpy frame object.
 
     Values are allocated to tiles depending on how many tiles are between it
     and the source tile (aka tile distance). The smaller the tile distance,
@@ -266,7 +269,7 @@ def calc_frame_map_control_values(
     )
 
 
-def _extract_team_metadata_helper(
+def _extract_team_metadata(
     side_data: TeamFrameInfo,
 ) -> TeamMetadata:
     """Helper function to parse player locations in given side_data.
@@ -299,12 +302,12 @@ def extract_teams_metadata(
         positions, etc.)
     """
     return FrameTeamMetadata(
-        t_metadata=_extract_team_metadata_helper(frame["t"]),
-        ct_metadata=_extract_team_metadata_helper(frame["ct"]),
+        t_metadata=_extract_team_metadata(frame["t"]),
+        ct_metadata=_extract_team_metadata(frame["ct"]),
     )
 
 
-def _map_control_metric_helper(
+def _calc_map_control_metric_from_dict(
     map_name: str,
     mc_values: FrameMapControlValues,
 ) -> float:
@@ -329,7 +332,7 @@ def _map_control_metric_helper(
     """
     current_map_control_value: list[float] = []
     tile_areas: list[float] = []
-    for tile in set(mc_values.ct_values.keys()) | set(mc_values.t_values.keys()):
+    for tile in set(mc_values.ct_values) | set(mc_values.t_values):
         ct_val, t_val = mc_values.ct_values[tile], mc_values.t_values[tile]
 
         current_map_control_value.append(sum(ct_val) / (sum(ct_val) + sum(t_val)))
@@ -373,7 +376,7 @@ def calc_frame_map_control_metric(
 
     map_control_values = calc_frame_map_control_values(map_name, frame)
 
-    return _map_control_metric_helper(map_name, map_control_values)
+    return _calc_map_control_metric_from_dict(map_name, map_control_values)
 
 
 def calculate_round_map_control_metrics(

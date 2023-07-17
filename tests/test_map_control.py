@@ -2,8 +2,8 @@
 import pytest
 
 from awpy.analytics.map_control import (
-    _approx_neighbors,
-    _bfs_helper,
+    _approximate_neighbors,
+    _bfs,
     calc_frame_map_control_metric,
     calculate_round_map_control_metrics,
     graph_to_tile_neighbors,
@@ -97,43 +97,43 @@ class TestMapControl:
         )
         assert test_mc_metric == -1  # Map Control is complete T
 
-    def test_approx_neighbors(self):
-        """Tests _approx_neighbors.
+    def test_approximate_neighbors(self):
+        """Tests _approximate_neighbors.
 
-        Simple sanity check to ensure function runs - Doesn't check
+        Simple sanity checks to ensure function runs - Doesn't check
         on neighbors individually but instead asserts on
         size of TileNeighbors object
         """
         with pytest.raises(ValueError, match="Tile ID not found."):
-            _approx_neighbors(map_name="de_inferno", source_tile_id=0)
+            _approximate_neighbors(map_name="de_inferno", source_tile_id=0)
         with pytest.raises(ValueError, match="Invalid n_neighbors value. Must be > 0."):
-            _approx_neighbors(
+            _approximate_neighbors(
                 map_name="de_inferno",
                 source_tile_id=self.connected_tiles_inferno[0],
                 n_neighbors=0,
             )
 
         for tile in self.isolated_tiles_inferno + self.connected_tiles_inferno:
-            cur_neighbors = _approx_neighbors(
+            cur_neighbors = _approximate_neighbors(
                 map_name="de_inferno", source_tile_id=tile
             )
             assert len(cur_neighbors) == 5
 
         for tile in self.isolated_tiles_inferno + self.connected_tiles_inferno:
-            cur_neighbors = _approx_neighbors(
+            cur_neighbors = _approximate_neighbors(
                 map_name="de_inferno", source_tile_id=tile, n_neighbors=10
             )
             assert len(cur_neighbors) == 10
 
-    def test_bfs_helper(self):
-        """Tests _bfs_helper with a couple isolated CT positions.
+    def test_bfs(self):
+        """Tests _bfs with a couple isolated CT positions.
 
         Simple sanity check to ensure function runs - Doesn't check
         on assert map control values individually and instead asserts on
         size on MapControlValues object
         """
         with pytest.raises(ValueError, match="Invalid max_depth value. Must be > 0."):
-            _bfs_helper(
+            _bfs(
                 map_name="de_inferno",
                 current_tiles=self.isolated_tiles_inferno
                 + self.connected_tiles_inferno,
@@ -143,7 +143,7 @@ class TestMapControl:
                 max_depth=0,
             )
 
-        sanity_bfs_return = _bfs_helper(
+        sanity_bfs_return = _bfs(
             map_name="de_inferno",
             current_tiles=self.isolated_tiles_inferno + self.connected_tiles_inferno,
             neighbor_info=graph_to_tile_neighbors(list(NAV_GRAPHS["de_inferno"].edges)),
