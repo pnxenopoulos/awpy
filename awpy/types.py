@@ -1,22 +1,10 @@
 """This module contains the type definitions for the parsed json structure."""
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-from typing import Literal, NewType, NotRequired, TypeGuard, TypeAlias, final, overload
+from typing import Literal, NotRequired, TypeAlias, TypeGuard, final, overload
 
 from typing_extensions import TypedDict
-=======
-from typing import (
-    Literal,
-    NotRequired,
-    TypeAlias,
-    TypedDict,
-    TypeGuard,
-    final,
-    overload,
-)
 
->>>>>>> 8194355 (Changes to types.py after rebasing main branch updates)
 
 @dataclass
 class PlotPosition:

@@ -19,17 +19,15 @@ import os
 import shutil
 from typing import Literal, get_args
 
-import cv2
 import imageio.v3 as imageio
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import gridspec, patches
+from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from tqdm import tqdm
 
 from awpy.analytics.map_control import (
-    calc_frame_map_control_metric,
     calc_parsed_frame_map_control_values,
     extract_teams_metadata,
 )
@@ -446,59 +444,17 @@ def _plot_map_control_from_dict(
     axes.axis("off")
 
 
-def plot_map_control_from_dict(
-    map_name: str,
-    tile_values: FrameMapControlValues,
-    player_pos: FrameTeamMetadata | None = None,
-    given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
-    filename: str = "",
-) -> None:
-    """Visualize map control for given ct/t map control value dictionaries.
-
-    Args:
-        map_name (str): Map used position_transform call
-        tile_values (FrameMapControlValues): Object contain map control values
-            for both sides
-        player_pos (FrameTeamMetadata): Object with metadata (player
-            positions, etc.) for each team.
-            Expected format same as output of extract_player_positions
-        given_fig_ax: Optional tuple containing figure and ax objects for plotting
-        filename (str) : Filepath to save the figure to file if required
-
-    Returns: Nothing, all plotting is done on ax object
-
-    Raises:
-        ValueError: If map_name is not in awpy.data.NAV
-    """
-    if map_name not in NAV:
-        msg = "Map not found."
-        raise ValueError(msg)
-
-    figure, base_ax = given_fig_ax
-    if figure is None:
-        figure, base_ax = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
-    _plot_map_control_from_dict(map_name, tile_values, base_ax, player_data=player_pos)
-    if filename:
-        figure.savefig(fname=filename, bbox_inches="tight", dpi=400)
-        plt.close(figure)
-    elif not given_fig_ax[0]:
-        plt.show()
-        plt.close(figure)
-
-
 def plot_frame_map_control(
     map_name: str,
     frame: GameFrame,
-    filename: str = "",
     plot_type: MapControlPlotType = "default",
     given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
-) -> None:
+) -> tuple[Figure, Axes]:
     """Visualize map control for awpy frame.
 
     Args:
         map_name (str): Map used position_transform call
         frame (GameFrame): awpy frame to calculate map control for
-        filename (str): Filepath to save the figure to file if required
         plot_type (MapControlPlotType): Determines which type of plot is created
             (either default or with players)
         given_fig_ax: Optional tuple containing figure and ax objects for plotting
@@ -514,24 +470,27 @@ def plot_frame_map_control(
     if plot_type not in get_args(MapControlPlotType):
         msg = "dist_type can only be default or players"
         raise ValueError(msg)
+    if given_fig_ax[0] is None:
+        given_fig_ax = plot_map(map_name=map_name, map_type="simpleradar", dark=True)
 
+    figure, axes = given_fig_ax
     player_positions = extract_teams_metadata(frame)
     map_control_dict = calc_parsed_frame_map_control_values(map_name, player_positions)
-    if plot_type == "default":
-        plot_map_control_from_dict(
+    if plot_type == "players":
+        _plot_map_control_from_dict(
             map_name,
             map_control_dict,
-            given_fig_ax=given_fig_ax,
-            filename=filename,
+            axes,
+            player_data=player_positions,
         )
-    elif plot_type == "players":
-        plot_map_control_from_dict(
+    else:  # default
+        _plot_map_control_from_dict(
             map_name,
             map_control_dict,
-            player_pos=player_positions,
-            given_fig_ax=given_fig_ax,
-            filename=filename,
+            axes,
         )
+
+    return figure, axes
 
 
 def plot_round_map_control(
@@ -539,7 +498,7 @@ def plot_round_map_control(
     map_name: str,
     round_data: GameRound,
     plot_type: MapControlPlotType = "default",
-) -> None:
+) -> Literal[True]:
     """Create gif summarizing map control for round.
 
     Args:
@@ -550,7 +509,7 @@ def plot_round_map_control(
         plot_type (MapControlPlotType): Determines which type of plot is created
             (either with or without players)
 
-    Returns: Nothing, all plotting is done on ax object
+    Returns: True, ensuring function has completed
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -573,16 +532,16 @@ def plot_round_map_control(
 
         # Save current frame map control viz to file
         # All frames are saved to './csgo_tmp/ folder '
-        plot_frame_map_control(
-            map_name, frame, filename=tmp_frame_filename, plot_type=plot_type
-        )
-
+        tmp_fig, tmp_ax = plot_frame_map_control(map_name, frame, plot_type=plot_type)
+        tmp_fig.savefig(fname=tmp_frame_filename, bbox_inches="tight", dpi=400)
+        plt.close()
         # Load image back as frame of gif that will
         # be created at the end of this function
         images.append(imageio.imread(tmp_frame_filename))
 
     print("Creating gif!")
     imageio.imwrite(filename, images)
+    return True
 
 
 def _plot_map_control_metrics(
@@ -655,86 +614,3 @@ def plot_map_control_metrics(
         _, curr_ax = plt.subplots()
         _plot_map_control_metrics(metric_arr, curr_ax)
         plt.show()
-
-
-def _plot_map_control_graphic(
-    map_name: str,
-    frame: GameFrame,
-    metrics: list[float],
-    save_path: str = "",
-) -> None:
-    """Helper function to generate map control graphic for awpy round.
-
-    Args:
-        map_name (str): Map used in frame_map_control_metric call
-        frame (GameFrame): awpy frame to create map control graphic
-        metrics  (list): List containing map control values to plot
-        save_path (str): Location where graphic should be saved on file
-    """
-    fig = plt.figure()
-
-    # Set up subplots such that minimap viz
-    # And line plot have similar size
-    grid = gridspec.GridSpec(10, 2, figure=fig)
-    ax1 = fig.add_subplot(grid[:, 0])
-    ax2 = fig.add_subplot(grid[2:-2, 1])
-
-    map_bg = plt.imread(f"../awpy/data/map/{map_name}_dark.png")
-    ax1.imshow(map_bg, aspect="auto", zorder=0)
-    ax1.set_aspect("equal")  # Set aspect ratio to equal
-    ax1.set_adjustable("box")  # Fix the box aspect ratio
-    plot_frame_map_control(
-        map_name, frame, plot_type="players", given_fig_ax=(fig, ax1)
-    )
-    _plot_map_control_metrics(metrics, ax2)
-    ax2.set_adjustable("box")
-    fig.tight_layout(h_pad=0.1)
-
-    if save_path:
-        fig.savefig(fname=save_path, bbox_inches="tight", dpi=600)
-    else:
-        plt.show()
-    plt.close(fig)
-
-
-def plot_map_control_graphic(
-    filename: str,
-    map_name: str,
-    frames: list[GameFrame],
-    gif_size: tuple[int, int] = (6300, 3300),
-) -> None:
-    """Function to generate map control gif for awpy round.
-
-    Gif includes minimap visualization and map control metric
-    plot for each frame in the round.
-
-    Args:
-        filename (str): Location where graphic should be saved on file
-        map_name (str): Map used inframe_map_control_metric call
-        frames (list): List of GameFrame for map control graphic
-        gif_size (tuple): Size of generated gif. Default is
-            default plot size
-
-    Raises:
-        ValueError: If map_name is not in awpy.data.NAV
-    """
-    if map_name not in NAV:
-        msg = "Map not found."
-        raise ValueError(msg)
-
-    metrics: list[float] = []
-    images: list[np.ndarray] = []
-
-    metrics.append(calc_frame_map_control_metric(map_name, frames[0]))
-    print("Saving/loading frames!")
-    for i, frame in tqdm(enumerate(frames[1:])):
-        metrics.append(calc_frame_map_control_metric(map_name, frame))
-        temp_filename = f"{AWPY_TMP_FOLDER}/frame_{i}.png"
-        _plot_map_control_graphic(map_name, frame, metrics, save_path=temp_filename)
-        if filename:
-            # sometimes image has slightly different size than
-            # expected so resize to expected size
-            cur_img = cv2.resize(imageio.imread(temp_filename), gif_size)
-            images.append(cur_img)
-    print("Saving map control graphic gif")
-    imageio.imwrite(filename, images)

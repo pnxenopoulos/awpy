@@ -9,11 +9,13 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from awpy.types import PlotPosition
+from awpy.visualization import AWPY_TMP_FOLDER
 from awpy.visualization.plot import (
     plot_map,
     plot_nades,
     plot_positions,
     plot_round,
+    plot_round_map_control,
     position_transform,
     position_transform_all,
 )
@@ -226,8 +228,8 @@ class TestVis:
                 color="red",
             )
 
-    """
-    def test_plot_frame_map_control():
+    def test_plot_round_map_control():
+        """Test plot_round_map_control."""
         fake_alive_player = {
             "x": -42.51047897338867,
             "y": 868.4791870117188,
@@ -239,5 +241,14 @@ class TestVis:
             "ct": {"players": [fake_alive_player.copy()]},
         }
 
-        plot_frame_map_control("de_inferno", fake_frame)
-    """
+        round_length = 50
+        test_round = {"frames": [fake_frame] * round_length}
+
+        test_filename = "map_control_test.gif"
+
+        bool_returned = plot_round_map_control(
+            test_filename, "de_inferno", test_round, plot_type="players"
+        )
+
+        assert bool_returned
+        assert os.path.isdir(AWPY_TMP_FOLDER)
