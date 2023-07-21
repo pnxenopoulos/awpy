@@ -532,7 +532,7 @@ def plot_round_map_control(
 
         # Save current frame map control viz to file
         # All frames are saved to './csgo_tmp/ folder '
-        tmp_fig, tmp_ax = plot_frame_map_control(map_name, frame, plot_type=plot_type)
+        tmp_fig, _ = plot_frame_map_control(map_name, frame, plot_type=plot_type)
         tmp_fig.savefig(fname=tmp_frame_filename, bbox_inches="tight", dpi=400)
         plt.close()
         # Load image back as frame of gif that will
