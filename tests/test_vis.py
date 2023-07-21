@@ -228,7 +228,7 @@ class TestVis:
                 color="red",
             )
 
-    def test_plot_round_map_control():
+    def test_plot_round_map_control(self):
         """Test plot_round_map_control."""
         fake_alive_player = {
             "x": -42.51047897338867,
@@ -252,3 +252,4 @@ class TestVis:
 
         assert bool_returned
         assert os.path.isdir(AWPY_TMP_FOLDER)
+        assert len(os.listdir(AWPY_TMP_FOLDER)) > 0
