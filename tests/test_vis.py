@@ -253,3 +253,16 @@ class TestVis:
         assert bool_returned
         assert os.path.isdir(AWPY_TMP_FOLDER)
         assert len(os.listdir(AWPY_TMP_FOLDER)) > 0
+
+        awpy_tmp_files = set(os.listdir(AWPY_TMP_FOLDER))
+
+        for i in range(round_length):
+            filename = "frame_" + str(i)
+            filepath = f"{AWPY_TMP_FOLDER}/{filename}.png"
+
+            # Assert temp frame file exists and size > 0 bytes
+            assert filename in awpy_tmp_files
+            assert os.stat(filepath).st_size > 0
+
+        # Assert gif is created and size > 0 bytes
+        assert os.stat(test_filename).st_size > 0

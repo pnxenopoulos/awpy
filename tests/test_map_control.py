@@ -5,7 +5,9 @@ from awpy.analytics.map_control import (
     _approximate_neighbors,
     _bfs,
     calc_frame_map_control_metric,
+    calc_parsed_frame_map_control_values,
     calculate_round_map_control_metrics,
+    extract_teams_metadata,
     graph_to_tile_neighbors,
 )
 from awpy.data import NAV_GRAPHS
@@ -96,6 +98,57 @@ class TestMapControl:
             map_name="de_inferno", frame=self.fake_frames["map_control_null_1v0"]
         )
         assert test_mc_metric == -1  # Map Control is complete T
+
+    def test_calc_frame_map_control_values(self):
+        """Tests calc_frame_map_control_metric with T 5v1 scenario.
+
+        Simple sanity checks to ensure function runs - Doesn't check
+        on FrameMapControlValues object individually but instead asserts on
+        size of the keys of the TeamMapControlValues object for each side
+        """
+        with pytest.raises(ValueError, match="Map not found."):
+            calc_frame_map_control_metric(
+                map_name="de_mock",
+                frame=self.fake_frames["map_control_sanity_t_control"],
+            )
+        test_mc_values = calc_frame_map_control_metric(
+            map_name="de_inferno",
+            frame=self.fake_frames["map_control_sanity_t_control"],
+        )
+
+        # Sanity check for existence of mc values for t side
+        assert len(test_mc_values.t_values.keys()) > 0
+
+        # Sanity check for existence of mc values for ct side
+        assert len(test_mc_values.ct_values.keys()) > 0
+
+    def test_calc_parsed_frame_map_control_values(self):
+        """Tests calc_parsed_frame_map_control_values with T 5v1 scenario.
+
+        Simple sanity checks to ensure function runs - Doesn't check
+        on FrameMapControlValues object individually but instead asserts on
+        size of the keys of the TeamMapControlValues object for each side
+        """
+        test_team_metadata = extract_teams_metadata(
+            self.fake_frames["map_control_sanity_t_control"]
+        )
+
+        with pytest.raises(ValueError, match="Map not found."):
+            calc_parsed_frame_map_control_values(
+                map_name="de_mock",
+                current_player_data=test_team_metadata,
+            )
+
+        test_mc_values = calc_parsed_frame_map_control_values(
+            map_name="de_inferno",
+            current_player_data=test_team_metadata,
+        )
+
+        # Sanity check for existence of mc values for t side
+        assert len(test_mc_values.t_values.keys()) > 0
+
+        # Sanity check for existence of mc values for ct side
+        assert len(test_mc_values.ct_values.keys()) > 0
 
     def test_approximate_neighbors(self):
         """Tests _approximate_neighbors.
