@@ -1,4 +1,5 @@
 """This module defines the DemoParser class that handles the core functionality.
+
 Core functionality is parsing and cleaning a csgo demo file.
 
 Example::
