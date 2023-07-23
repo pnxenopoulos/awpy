@@ -261,7 +261,7 @@ class TestVis:
             filepath = f"{AWPY_TMP_FOLDER}/{filename}.png"
 
             # Assert temp frame file exists and size > 0 bytes
-            assert filename in awpy_tmp_files
+            assert filename + ".png" in awpy_tmp_files
             assert os.stat(filepath).st_size > 0
 
         # Assert gif is created and size > 0 bytes

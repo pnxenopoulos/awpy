@@ -5,6 +5,7 @@ from awpy.analytics.map_control import (
     _approximate_neighbors,
     _bfs,
     calc_frame_map_control_metric,
+    calc_frame_map_control_values,
     calc_parsed_frame_map_control_values,
     calculate_round_map_control_metrics,
     extract_teams_metadata,
@@ -107,19 +108,19 @@ class TestMapControl:
         size of the keys of the TeamMapControlValues object for each side
         """
         with pytest.raises(ValueError, match="Map not found."):
-            calc_frame_map_control_metric(
+            calc_frame_map_control_values(
                 map_name="de_mock",
                 frame=self.fake_frames["map_control_sanity_t_control"],
             )
-        test_mc_values = calc_frame_map_control_metric(
+        test_mc_values = calc_frame_map_control_values(
             map_name="de_inferno",
             frame=self.fake_frames["map_control_sanity_t_control"],
         )
 
-        # Sanity check for existence of mc values for t side
+        # Sanity check for existence of mc values for T side
         assert len(test_mc_values.t_values.keys()) > 0
 
-        # Sanity check for existence of mc values for ct side
+        # Sanity check for existence of mc values for CT side
         assert len(test_mc_values.ct_values.keys()) > 0
 
     def test_calc_parsed_frame_map_control_values(self):
@@ -144,10 +145,10 @@ class TestMapControl:
             current_player_data=test_team_metadata,
         )
 
-        # Sanity check for existence of mc values for t side
+        # Sanity check for existence of mc values for T side
         assert len(test_mc_values.t_values.keys()) > 0
 
-        # Sanity check for existence of mc values for ct side
+        # Sanity check for existence of mc values for CT side
         assert len(test_mc_values.ct_values.keys()) > 0
 
     def test_approximate_neighbors(self):
