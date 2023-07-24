@@ -1,8 +1,9 @@
 """This module defines the DemoParser class that handles the core functionality.
 
-    Core functionality is parsing and cleaning a csgo demo file.
+Core functionality is parsing and cleaning a csgo demo file.
 
 Example::
+
     from awpy.parser import DemoParser
 
     # Create parser object
@@ -14,7 +15,6 @@ Example::
         trade_time=5,
         buy_style="hltv"
     )
-
 
     # Parse the demofile, output results to dictionary
     data = demo_parser.parse()
