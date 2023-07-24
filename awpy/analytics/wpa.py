@@ -46,7 +46,9 @@ def _get_matrix_data(url, save_path):
     """Helper to get the latest data.
     
     """
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
+                 "AppleWebKit/537.36 (KHTML, like Gecko) " \
+                 "Chrome/58.0.3029.110 Safari/537.3"
     headers = {"User-Agent": user_agent}
 
     try:
@@ -88,8 +90,11 @@ def _clean_matrix_data(save_path):
     end_index = js_code.find("},{}],541:[function(e,t,n)")
     n_win_probabilities = js_code[start_index:end_index]
 
-    cleaned_string = n_win_probabilities.replace("n.winProbabilities=", "").replace("CT", "\'CT\'").replace("TERRORIST", "\'TERRORIST\'")
-
+    cleaned_string = n_win_probabilities \
+        .replace("n.winProbabilities=", "") \
+        .replace("CT", "\'CT\'") \
+        .replace("TERRORIST", "\'TERRORIST\'")
+        
     winprobabilities = ast.literal_eval(cleaned_string)
 
     return winprobabilities
@@ -103,15 +108,15 @@ def _get_mapname(map_id):
         
         """
     map_dict = {
-                29: "de_cache", 
-                32: "de_mirage", 
-                33: "de_inferno", 
-                34: "de_nuke", 
-                35: "de_train", 
-                39: "de_cbble", 
-                40: "de_overpass", 
-                46: "de_vertigo",
-                47: "de_ancient",
+                29: "de_cache", \
+                32: "de_mirage", \
+                33: "de_inferno", \
+                34: "de_nuke", \
+                35: "de_train", \
+                39: "de_cbble", \
+                40: "de_overpass", \
+                46: "de_vertigo", \
+                47: "de_ancient", \
                 48: "de_anubis" }
 
     if map_id in map_dict:
