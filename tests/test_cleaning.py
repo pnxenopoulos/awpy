@@ -8,85 +8,90 @@ from awpy.parser.cleaning import associate_entities, replace_entities
 class TestCleaning:
     """Class to test CSGO data cleaning functions."""
 
+    def setup_class(self):
+        """Setup class by defining loading dictionary of test demo files."""
+        self.game_names = ["misutaaa-", "ZyW0o//", "peeter"]
+        self.entity_names = ["misuta", "Zywoo", "peter"]
+
     def test_association(self):
         """Test entity association."""
-        a = ["misutaaa-", "ZyW0o//", "peeter"]
-        b = ["misuta", "Zywoo", "peter"]
-        c = associate_entities(a, b)
-        assert c["misutaaa-"] == "misuta"
+        associated_entities = associate_entities(
+            self.game_names, self.entity_names.copy()
+        )
+        assert associated_entities["misutaaa-"] == "misuta"
 
     def test_lcss_metric(self):
         """Test LCSS metric."""
-        a = ["misutaaa-", "ZyW0o//", "peeter"]
-        b = ["misuta", "Zywoo", "peter"]
-        c = associate_entities(a, b, metric="lcss")
-        assert c["misutaaa-"] == "misuta"
+        associated_entities = associate_entities(
+            self.game_names, self.entity_names.copy(), metric="lcss"
+        )
+        assert associated_entities["misutaaa-"] == "misuta"
 
     def test_hamming_metric(self):
         """Test Hamming metric."""
-        a = ["misutaaa-", "ZyW0o//", "peeter"]
-        b = ["misuta", "Zywoo", "peter"]
-        c = associate_entities(a, b, metric="hamming")
-        assert c["misutaaa-"] == "misuta"
+        associated_entities = associate_entities(
+            self.game_names, self.entity_names.copy(), metric="hamming"
+        )
+        assert associated_entities["misutaaa-"] == "misuta"
 
     def test_levenshtein_metric(self):
         """Test Levenshtein metric."""
-        a = ["misutaaa-", "ZyW0o//", "peeter"]
-        b = ["misuta", "Zywoo", "peter"]
-        c = associate_entities(a, b, metric="levenshtein")
-        assert c["misutaaa-"] == "misuta"
+        associated_entities = associate_entities(
+            self.game_names, self.entity_names.copy(), metric="levenshtein"
+        )
+        assert associated_entities["misutaaa-"] == "misuta"
 
     def test_jaro_metric(self):
         """Test Jaro-Winkler metric."""
-        a = ["misutaaa-", "ZyW0o//", "peeter"]
-        b = ["misuta", "Zywoo", "peter"]
-        c = associate_entities(a, b, metric="jaro")
-        assert c["misutaaa-"] == "misuta"
+        associated_entities = associate_entities(
+            self.game_names, self.entity_names.copy(), metric="jaro"
+        )
+        assert associated_entities["misutaaa-"] == "misuta"
 
     def test_difflib(self):
         """Test difflib."""
-        a = ["misutaaa-", "ZyW0o//", "peeter"]
-        b = ["misuta", "Zywoo", "peter"]
-        c = associate_entities(a, b, metric="difflib")
-        assert c["misutaaa-"] == "misuta"
+        associated_entities = associate_entities(
+            self.game_names, self.entity_names.copy(), metric="difflib"
+        )
+        assert associated_entities["misutaaa-"] == "misuta"
 
     def test_wrong_metric(self):
         """Tests if submitting a wrong metric raises an error."""
-        a = ["misutaaa-", "ZyW0o//"]
-        b = ["misuta", "Zywoo", "peter"]
         with pytest.raises(
             ValueError,
             match="Metric can only be",
         ):
-            associate_entities(a, b, metric="bad_metric")
+            associate_entities(
+                self.game_names, self.entity_names.copy(), metric="bad_metric"
+            )
 
     def test_empty_input(self):
         """Tests empty input."""
         a = None
         b = None
-        c = associate_entities(a, b, "difflib")
-        assert len(c) == 1
-        assert c[None] is None
+        associated_entities = associate_entities(a, b, "difflib")
+        assert len(associated_entities) == 1
+        assert associated_entities[None] is None
         a = [None]
         b = [None]
-        c = associate_entities(a, b, "difflib")
-        assert len(c) == 1
-        assert c[None] is None
+        associated_entities = associate_entities(a, b, "difflib")
+        assert len(associated_entities) == 1
+        assert associated_entities[None] is None
         a = ["Test"]
         b = []
-        c = associate_entities(a, b, "difflib")
-        assert len(c) == 2
-        assert c["Test"] is None
+        associated_entities = associate_entities(a, b, "difflib")
+        assert len(associated_entities) == 2
+        assert associated_entities["Test"] is None
         a = [None]
         b = [None]
-        c = associate_entities(a, b, "hamming")
-        assert len(c) == 1
-        assert c[None] is None
+        associated_entities = associate_entities(a, b, "hamming")
+        assert len(associated_entities) == 1
+        assert associated_entities[None] is None
         a = ["", "Test"]
         b = []
-        c = associate_entities(a, b, "hamming")
-        assert len(c) == 2
-        assert c[""] is None
+        associated_entities = associate_entities(a, b, "hamming")
+        assert len(associated_entities) == 2
+        assert associated_entities[""] is None
 
     def test_entity_replace(self):
         """Tests if entity replacement works for a dataframe."""
