@@ -1003,7 +1003,7 @@ func registerConnectHandler(demoParser *dem.Parser, currentGame *Game) {
 		}
 	})
 }
-func registerDisonnectHandler(demoParser *dem.Parser, currentGame *Game) {
+func registerDisconnectHandler(demoParser *dem.Parser, currentGame *Game) {
 	(*demoParser).RegisterEventHandler(func(e events.PlayerDisconnected) {
 		if e.Player != nil {
 			gs := (*demoParser).GameState()
@@ -2709,7 +2709,7 @@ func main() {
 	registerConnectHandler(&p, &currentGame)
 
 	// Parse player disconnects
-	registerDisonnectHandler(&p, &currentGame)
+	registerDisconnectHandler(&p, &currentGame)
 
 	// Parse the match phases
 	registerMatchphases(&p, &currentGame)

@@ -617,7 +617,7 @@ class TestDemoParser:
         no_json_parser = DemoParser(
             demofile="tests/default.dem", log=False, parse_rate=256
         )
-        # Json ist set but falsy
+        # Json is set but falsy
         no_json_parser.json = None
         with pytest.raises(AttributeError):
             no_json_parser._parse_frames()

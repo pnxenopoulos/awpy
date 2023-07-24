@@ -113,7 +113,7 @@ class TestNav:
         else:
             msg = (
                 "This test needs to be executed in a directory where "
-                "it can savely create and delete a 'nav' subdir!"
+                "it can safely create and delete a 'nav' subdir!"
             )
             raise AssertionError(msg)
         self.map_name = "de_mock"

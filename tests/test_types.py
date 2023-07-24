@@ -13,7 +13,7 @@ from awpy.types import (
 )
 
 
-class TestTypess:
+class TestTypes:
     """Class to test the awpy package types functions."""
 
     def test_other_side(self):

@@ -37,6 +37,11 @@ repos:
     hooks:
       - id: black
         language: python
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.16.1
+    hooks:
+      - id: typos
+        args: []
   # - repo: 'https://github.com/RobertCraigie/pyright-python'
   #   rev: v1.1.316
   #   hooks:
