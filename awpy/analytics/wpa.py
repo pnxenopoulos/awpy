@@ -3,6 +3,7 @@
 WPA stands for Win Probability Added and is described in this paper:
 https://arxiv.org/pdf/2011.01324.pdf.
 """
+import json
 from typing import Any
 
 from awpy.types import GameFrame
@@ -30,34 +31,61 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
     Args:
         ct_score (int): CT Score
         t_score (int): T Score
-        map_name (str): Map the demo is from
+        map_name (str): Map name the demo is from
 
     Returns:
-        A dictionary containing the CT game win, T game win and Draw probabilities
+        A dictionary containing the game win probability
     """
-    raise NotImplementedError
+    # Load the data from the json file
+    wpa_data = json.loads("wpa.json")
+
+    # Get the map id from the map name
+    map_id = _get_mapid(map_name)
+
+    # If map_id is invalid, return error
+    if map_id == "Invalid map name.":
+        return {"error": "Invalid map name"}
+
+    # Determine the team based on the scores
+    team = "CT" if ct_score > t_score else "TERRORIST"
+
+    # If the map_id, team, ct_score, or t_score is not in the data, return an error message
+    if (
+        str(map_id) not in wpa_data
+        or team not in wpa_data[str(map_id)]
+        or str(ct_score) not in wpa_data[str(map_id)][team]
+        or str(t_score) not in wpa_data[str(map_id)][team][str(ct_score)]
+    ):
+        return {"error": "Invalid input"}
+
+    # Get the win probability
+    win_prob = wpa_data[str(map_id)][team][str(ct_score)][str(t_score)]
+
+    return {
+        "win_probability": win_prob,
+    }
 
 
-def _get_mapname(map_id: int) -> str:
-    """Helper to get the map_name from map_id.
+def _get_mapid(map_name: str) -> int:
+    """Helper to get the map_id from map_name.
 
     Returns:
-            str with the map_name
+            int with the map_id
 
     """
     map_dict = {
-        29: "de_cache",
-        32: "de_mirage",
-        33: "de_inferno",
-        34: "de_nuke",
-        35: "de_train",
-        39: "de_cbble",
-        40: "de_overpass",
-        46: "de_vertigo",
-        47: "de_ancient",
-        48: "de_anubis",
+        "de_cache": 29,
+        "de_mirage": 32,
+        "de_inferno": 33,
+        "de_nuke": 34,
+        "de_train": 35,
+        "de_cbble": 39,
+        "de_overpass": 40,
+        "de_vertigo": 46,
+        "de_ancient": 47,
+        "de_anubis": 48,
     }
 
-    if map_id in map_dict:
-        return map_dict[map_id]
-    return "Invalid mapid."
+    if map_name in map_dict:
+        return map_dict[map_name]
+    return "Invalid map name."
