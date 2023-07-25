@@ -42,10 +42,6 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
     # Get the map id from the map name
     map_id = _get_mapid(map_name)
 
-    # If map_id is invalid, return error
-    if map_id == "Invalid map name.":
-        return {"error": "Invalid map name"}
-
     # Determine the team based on the scores
     team = "CT" if ct_score > t_score else "TERRORIST"
 
