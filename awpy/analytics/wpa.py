@@ -45,7 +45,7 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
     # Determine the team based on the scores
     team = "CT" if ct_score > t_score else "TERRORIST"
 
-    # If the map_id, team, ct_score, or t_score is not in the data, return an error message
+    # If the map_id, team, ct_score, or t_score is not in the data, return
     if (
         str(map_id) not in wpa_data
         or team not in wpa_data[str(map_id)]
