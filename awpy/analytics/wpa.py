@@ -84,4 +84,4 @@ def _get_mapid(map_name: str) -> int:
 
     if map_name in map_dict:
         return map_dict[map_name]
-    return "Invalid map name."
+    raise ValueError
