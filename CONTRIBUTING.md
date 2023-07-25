@@ -4,10 +4,9 @@ Hi! We're happy to have you here. Thank you in advance for your contribution to 
 
 ## Python code
 
-To make sure that awpy code stays readeable and works correctly we are making use of
-a variaty of helpfull tools.
+To make sure that awpy code stays readable and works correctly, we are making use of a variety of helpful tools.
 
-At the time of writing these are:
+We use the following tools:
 
 - [black](https://github.com/psf/black): An uncompromising Python code formatter.
 - [ruff](https://github.com/astral-sh/ruff): An extremely fast Python linter, written in Rust.
@@ -16,45 +15,40 @@ At the time of writing these are:
 - [pytest](https://docs.pytest.org/en/7.4.x/): A mature full-featured Python testing tool.
 - [pre-commit](https://pre-commit.com/): A framework for managing and maintaining multi-language pre-commit hooks.
 
-To make sure that you pull request is easy to review and can be merged quickly please
-please install these after cloning the repo.
+Please install these tools before you open a pull request to ensure that your contributions are easy to review.
 
-For that simply run the following commands:
+To install the aforementioned tools, simply run the following:
 ```shell
 pip install -r tests/requirements.txt
 pre-commit install --install-hooks
 ```
 
-After you have made your changes locally run these tools to make sure there are no
-bugs or code smells have snook in. This can be done by running:
+After you have made your changes locally, use these tools to surface bugs or code smells by running the following:
 
 ```shell
 pre-commit run --all-files --show-diff-on-failure  # black formatting, ruff linting
 pyright  # type checking
 pylint awpy  # more linting
 coverage run -m pytest --durations=10  # python tests
-coverage report -m
+coverage report -m  # produces text-based coverage report
 ```
 
-The test part can take a while as it has to download a handful of demos to make sure
-that the parser is working correctly for all kinds of platforms and edge cases.
+The coverage run -m pytest --durations=10 command, which runs the Python tests, can take a while as it has to not only download a handful of demos but also parse them. These tests must pass for a pull request to be merged into the main branch.
 
-If you do not have the time or bandwidth you can omit this part if absolutely necessary.
-The continous integration setup on GitHub will then run these for you.
+If you do not have the time or bandwidth, you can omit running the test command locally, since Github actions will run them, as well.
 
 ### Testing/Coverage
 
 If you are fixing a bug or adding a new feature make sure to also add [unit tests](https://en.wikipedia.org/wiki/Unit_testing)
-that cover the original bug or your new functionality. If you are new to that have a
-look at the pytest documentation linked above. You can also check out the [tests](tests)
-directory in awpy to see how the existing code is being tested.
+that cover the original bug or your new functionality.
+If you are new to writing unit tests, look at the aforementioned link, or check out the [tests](tests) directory in awpy to see how our existing tests are built.
 
 ## Go code
 
 If you are making changes or additions to the Go code then a look at and run
 [golangci-lint](https://github.com/golangci/golangci-lint).
 
-To install it simply follow the [instructions](https://golangci-lint.run/usage/install/#local-installation) on their website.
+To install it, simply follow the [instructions](https://golangci-lint.run/usage/install/#local-installation) on their website.
 To run it do the following:
 
 ```
@@ -62,7 +56,7 @@ cd awpy/parser  # Change into the directory containing the go files
 golangci-lint run  # Run the linters
 ```
 
-Additionally run the tests of the go code via:
+Additionally, run the Go code tests with:
 ```
 go test -covermode=count -coverprofile=coverage.out
 go tool cover -html=coverage.out -o coverage.html
@@ -71,17 +65,12 @@ go test -fuzz=FuzzDetermineSecond -fuzztime 30s
 go test -fuzz=FuzzParseTeamBuy -fuzztime 30s
 ```
 
-Do not forget to also run the python tests as explained above.
+Don't forget to run the Python tests as explained above -- changes in the Go code likely change the JSON output!
 
 If you are adding functionality aim to also add go tests to avoid bug and future regressions.
-In case changes to the go code were required to make sure it does not crash on certain
-kinds of demos please also add unit tests for these demos in the python tests.
 
-For us to run these tests ourselves to verify the results and make sure no future changes
-break you fix again please also upload the demo(s) to a file sharing service so that
-we can include them in our [set of testing demos](/tests/test_data.json).
-You can also already prefill this file and use the link to your file hoster as a
-temporary place holder.
+If you are adding a test that requires a specific demo, please let us know so that we can include them in our set of testing demos.
+While developing, you can also edit the [test_data.json](/tests/test_data.json) file to include wherever you are hosting the test demo file.
 
 
 ## Thanks
