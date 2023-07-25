@@ -3,15 +3,13 @@
 WPA stands for Win Probability Added and is described in this paper:
 https://arxiv.org/pdf/2011.01324.pdf.
 """
-import ast
 from typing import Any
-
-import requests
 
 from awpy.types import GameFrame
 
 SIMPLE_WP_MODEL = None
 ADV_WP_MODEL = None
+
 
 def state_win_probability(frame: GameFrame, model: Any) -> dict:  # noqa: ANN401
     """Predicts the win probability of a given frame.
@@ -46,17 +44,19 @@ def _get_mapname(map_id: int) -> str:
     Returns:
             str with the map_name
 
-        """
-    map_dict = {29: "de_cache", \
-                32: "de_mirage", \
-                33: "de_inferno", \
-                34: "de_nuke", \
-                35: "de_train", \
-                39: "de_cbble", \
-                40: "de_overpass", \
-                46: "de_vertigo", \
-                47: "de_ancient", \
-                48: "de_anubis"}
+    """
+    map_dict = {
+        29: "de_cache",
+        32: "de_mirage",
+        33: "de_inferno",
+        34: "de_nuke",
+        35: "de_train",
+        39: "de_cbble",
+        40: "de_overpass",
+        46: "de_vertigo",
+        47: "de_ancient",
+        48: "de_anubis",
+    }
 
     if map_id in map_dict:
         return map_dict[map_id]
