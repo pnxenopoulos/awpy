@@ -53,5 +53,6 @@ def fetch_matrix_data() -> dict:
                 print(f"Other request error occurred: {req_err}")
         return {}  # return an empty dict in case of error
 
+
 if __name__ == "__main__":
     fetch_matrix_data()
