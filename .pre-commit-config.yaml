@@ -42,6 +42,11 @@ repos:
     hooks:
       - id: typos
         args: []
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.53.3
+    hooks:
+      - id: golangci-lint
+        entry: bash -c 'cd awpy/parser && golangci-lint run --new-from-rev HEAD --fix'
   # - repo: 'https://github.com/RobertCraigie/pyright-python'
   #   rev: v1.1.316
   #   hooks:
