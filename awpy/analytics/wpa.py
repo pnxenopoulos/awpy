@@ -36,30 +36,17 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
     Returns:
         A dictionary containing the game win probability
     """
-    # Load the data from the json file
+    # Load the data from the json file <-- will be moved
     wpa_data = json.loads("../data/wpa/wpa.json")
 
     # Get the map id from the map name
     map_id = _get_mapid(map_name)
 
-    # Determine the team based on the scores
-    team = "CT" if ct_score > t_score else "TERRORIST"
+    # Get the win probability from the loaded data
+    ct_win_probability = wpa_data[str(map_id)]["CT"][str(ct_score)][str(t_score)]
+    t_win_probability = wpa_data[str(map_id)]["T"][str(ct_score)][str(t_score)]
 
-    # If the map_id, team, ct_score, or t_score is not in the data, return
-    if (
-        str(map_id) not in wpa_data
-        or team not in wpa_data[str(map_id)]
-        or str(ct_score) not in wpa_data[str(map_id)][team]
-        or str(t_score) not in wpa_data[str(map_id)][team][str(ct_score)]
-    ):
-        return {"error": "Invalid input"}
-
-    # Get the win probability
-    win_prob = wpa_data[str(map_id)][team][str(ct_score)][str(t_score)]
-
-    return {
-        "win_probability": win_prob,
-    }
+    return {"CT": ct_win_probability, "T": t_win_probability}
 
 
 def _get_mapid(map_name: str) -> int:
