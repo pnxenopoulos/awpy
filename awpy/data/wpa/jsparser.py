@@ -9,7 +9,7 @@ URL = "https://www.hltv.org/scripts/hltv.js"
 
 
 def fetch_matrix_data() -> dict:
-    """Function to get the latest matrix data from the HLTV.
+    """Function to get the latest matrix data from HLTV.
 
     Returns:
         Saves the matrix to wpa.json
