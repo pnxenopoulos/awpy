@@ -36,21 +36,36 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
     Returns:
         A dictionary containing the game win probability
     """
-    # Load the data from the json file <-- will be moved
+    # Load the data from the json file <-- will be moved to data _init_
     wpa_data = json.loads("../data/wpa/wpa.json")
 
     # Get the map id from the map name
     map_id = _get_mapid(map_name)
 
-    # Get the win probability from the loaded data
-    ct_win_probability = wpa_data[str(map_id)]["CT"][str(ct_score)][str(t_score)]
-    t_win_probability = wpa_data[str(map_id)]["T"][str(ct_score)][str(t_score)]
+    if map_id in wpa_data:
+        map_data = wpa_data[map_id]
 
-    return {"CT": ct_win_probability, "T": t_win_probability}
+        # Get the win probabilities for the CT and T scores
+        ct_win_prob = map_data["CT"].get(str(ct_score), {}).get(str(t_score))
+        t_win_prob = map_data["TERRORIST"].get(str(t_score), {}).get(str(ct_score))
+
+        # Check if the win probabilities were found
+        if ct_win_prob is None:
+            print(f"CT score {ct_score} not found in data for map {map_id}")
+
+        if t_win_prob is None:
+            print(f"T score {t_score} not found in data for map {map_id}")
+
+        # Return the win probabilities
+        return {"CT": ct_win_prob, "TERRORIST": t_win_prob}
+
+    return {"Map ID not found in data": map_id}
 
 
 def _get_mapid(map_name: str) -> int:
     """Helper to get the map_id from map_name.
+
+    disabled for now "de_ancient": 47,
 
     Returns:
             int with the map_id
@@ -58,6 +73,7 @@ def _get_mapid(map_name: str) -> int:
     """
     map_dict = {
         "de_cache": 29,
+        "de_dust2": 31,
         "de_mirage": 32,
         "de_inferno": 33,
         "de_nuke": 34,
@@ -65,7 +81,6 @@ def _get_mapid(map_name: str) -> int:
         "de_cbble": 39,
         "de_overpass": 40,
         "de_vertigo": 46,
-        "de_ancient": 47,
         "de_anubis": 48,
     }
 
