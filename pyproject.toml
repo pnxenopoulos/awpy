@@ -145,7 +145,7 @@ target-version = "py311"
 "awpy/analytics/states.py" = ["ARG001"]
 "awpy/analytics/wpa.py"    = ["ARG001"]
 "awpy/parser/cleaning.py"  = ["PLC1901"]
-"awpy/data/wpa/jsparser.py = ["INP001"]
+"awpy/data/wpa/jsparser.py" = ["INP001"]
 
 [tool.ruff.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
