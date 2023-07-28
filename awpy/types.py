@@ -86,6 +86,7 @@ class Area(TypedDict):
 
 
 DistanceType = Literal["graph", "geodesic", "euclidean"]
+PointDistanceType = Literal[DistanceType, "manhattan", "canberra", "cosine"]
 AreaMatrix = dict[str, dict[str, dict[DistanceType, float]]]
 PlaceMatrix = dict[
     str,
@@ -709,7 +710,7 @@ class DistanceObject(TypedDict):
     distance and the areas in the path between two points/areas.
     """
 
-    distanceType: str
+    distanceType: PointDistanceType
     distance: float
     areas: list[TileId]
 
@@ -722,18 +723,6 @@ class RoundStatistics(TypedDict):
     is_clutching: set[str | None]
     active_players: set[str]
     players_killed: dict[Literal["CT", "T"], set[str]]
-
-
-@dataclass
-class TileDistanceObject:
-    """Dataclass with data for map control tile distance calculations.
-
-    Holds information for distance to source tile and tile_id
-    distance is associated with.
-    """
-
-    tile_id: TileId
-    distance: float
 
 
 @dataclass

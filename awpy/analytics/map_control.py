@@ -21,6 +21,7 @@ from awpy.analytics.nav import (
 from awpy.data import NAV, NAV_GRAPHS
 from awpy.types import (
     BFSTileData,
+    DistanceObject,
     FrameMapControlValues,
     FrameTeamMetadata,
     GameFrame,
@@ -29,7 +30,6 @@ from awpy.types import (
     TeamFrameInfo,
     TeamMapControlValues,
     TeamMetadata,
-    TileDistanceObject,
     TileId,
     TileNeighbors,
 )
@@ -39,7 +39,7 @@ def _approximate_neighbors(
     map_name: str,
     source_tile_id: TileId,
     n_neighbors: int = 5,
-) -> list[TileDistanceObject]:
+) -> list[DistanceObject]:
     """Approximates neighbors for isolated tiles by finding n closest tiles.
 
     Args:
@@ -62,20 +62,12 @@ def _approximate_neighbors(
         raise ValueError(msg)
 
     current_map_info = NAV[map_name]
-    possible_neighbors_arr: list[TileDistanceObject] = []
-
-    for tile in current_map_info:
-        if tile != source_tile_id:
-            current_tile_distance_obj = TileDistanceObject(
-                tile_id=tile,
-                distance=area_distance(
-                    map_name, tile, source_tile_id, dist_type="euclidean"
-                )["distance"],
-            )
-
-            possible_neighbors_arr.append(current_tile_distance_obj)
-
-    return sorted(possible_neighbors_arr, key=lambda d: d.distance)[:n_neighbors]
+    possible_neighbors_arr: list[DistanceObject] = [
+        area_distance(map_name, tile, source_tile_id, dist_type="euclidean")
+        for tile in current_map_info
+        if tile != source_tile_id
+    ]
+    return sorted(possible_neighbors_arr, key=lambda d: d["distance"])[:n_neighbors]
 
 
 def _bfs(
@@ -135,7 +127,7 @@ def _bfs(
                 neighbors = list(neighbor_info[cur_id])
                 if len(neighbors) == 0:
                     neighbors = [
-                        tile.tile_id
+                        tile["areas"][-1]
                         for tile in _approximate_neighbors(map_name, cur_id)
                     ]
 

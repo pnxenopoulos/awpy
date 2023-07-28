@@ -58,6 +58,7 @@ from awpy.types import (
     PlaceMatrix,
     PlayerPosition,
     PlayerPosition2D,
+    PointDistanceType,
     TileId,
     Token,
 )
@@ -320,8 +321,8 @@ def area_distance(
 
     Args:
         map_name (string): Map to consider
-        area_a (TileId): Area id
-        area_b (TileId): Area id
+        area_a (TileId): Source area id
+        area_b (TileId): Destination area id
         dist_type (string, optional): String indicating the type of distance to use
             (graph, geodesic or euclidean). Defaults to 'graph'
 
@@ -350,11 +351,9 @@ def area_distance(
             map_graph, area_a, area_b
         )
         return distance_obj
+    distance_obj["areas"] = [area_a, area_b]
     distance_obj["distance"] = _get_euclidean_area_distance(map_name, area_a, area_b)
     return distance_obj
-
-
-PointDistanceType = Literal[DistanceType, "manhattan", "canberra", "cosine"]
 
 
 def point_distance(
