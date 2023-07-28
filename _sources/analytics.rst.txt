@@ -1,7 +1,15 @@
 Analytics
 ================
 
-This is the analytics module. You can use it to calculate statistics on your parsed demos, such as Rating, ADR, and so on.
+This is the analytics module. You can use it to calculate statistics on your parsed demos, such as Rating, ADR, and so on. It also provides awpy-exclusive statistics, like map control.
+
+awpy.analytics.map_control
+-------------------------
+
+.. automodule:: awpy.analytics.map_control
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 awpy.analytics.nav
 -------------------------
