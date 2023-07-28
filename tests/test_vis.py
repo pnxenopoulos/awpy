@@ -9,11 +9,13 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from awpy.types import PlotPosition
+from awpy.visualization import AWPY_TMP_FOLDER
 from awpy.visualization.plot import (
     plot_map,
     plot_nades,
     plot_positions,
     plot_round,
+    plot_round_map_control,
     position_transform,
     position_transform_all,
 )
@@ -225,3 +227,42 @@ class TestVis:
                 position_transform("de_ancient", -163.84375, "y"),
                 color="red",
             )
+
+    def test_plot_round_map_control(self):
+        """Test plot_round_map_control."""
+        fake_alive_player = {
+            "x": -42.51047897338867,
+            "y": 868.4791870117188,
+            "z": 54.92256546020508,
+            "isAlive": True,
+        }
+        fake_frame = {
+            "t": {"players": [fake_alive_player.copy()] * 5},
+            "ct": {"players": [fake_alive_player.copy()]},
+        }
+
+        round_length = 50
+        test_round = {"frames": [fake_frame] * round_length}
+
+        test_filename = "map_control_test.gif"
+
+        bool_returned = plot_round_map_control(
+            test_filename, "de_inferno", test_round, plot_type="players"
+        )
+
+        assert bool_returned
+        assert os.path.isdir(AWPY_TMP_FOLDER)
+        assert len(os.listdir(AWPY_TMP_FOLDER)) > 0
+
+        awpy_tmp_files = set(os.listdir(AWPY_TMP_FOLDER))
+
+        for i in range(round_length):
+            filename = "frame_" + str(i)
+            filepath = f"{AWPY_TMP_FOLDER}/{filename}.png"
+
+            # Assert temp frame file exists and size > 0 bytes
+            assert filename + ".png" in awpy_tmp_files
+            assert os.stat(filepath).st_size > 0
+
+        # Assert gif is created and size > 0 bytes
+        assert os.stat(test_filename).st_size > 0

@@ -56,6 +56,7 @@ from awpy.types import (
     DistanceType,
     GameFrame,
     PlaceMatrix,
+    TileId,
     Token,
 )
 
@@ -1600,3 +1601,60 @@ def token_distance(
         distance_type,
         reference_point,
     )
+
+
+def calculate_tile_area(
+    map_name: str,
+    tile_id: TileId,
+) -> float:
+    """Calculates area of a given tile in a given map.
+
+    Args:
+        map_name (string): Map for tile
+        tile_id (TileId): Id for tile
+
+    Returns:
+        A float representing the area of the tile
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV
+                    If area_id is not in awpy.data.NAV[map_name]
+    """
+    if map_name not in NAV:
+        msg = "Map not found."
+        raise ValueError(msg)
+    if tile_id not in NAV[map_name]:
+        msg = "Tile ID not found."
+        raise ValueError(msg)
+
+    tile_info = NAV[map_name][tile_id]
+
+    tile_width = tile_info["northWestX"] - tile_info["southEastX"]
+    tile_height = tile_info["northWestY"] - tile_info["southEastY"]
+
+    return tile_width * tile_height
+
+
+def calculate_map_area(
+    map_name: str,
+) -> float:
+    """Calculates total area of all nav tiles in a given map.
+
+    Args:
+        map_name (string): Map for area calculations
+
+    Returns:
+        A float representing the area of the map
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV
+    """
+    if map_name not in NAV:
+        msg = "Map not found."
+        raise ValueError(msg)
+
+    total_area = 0
+    for tile in NAV[map_name]:
+        total_area += calculate_tile_area(map_name, tile)
+
+    return total_area

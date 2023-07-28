@@ -189,7 +189,8 @@ testpaths = ["tests"]
 
 [tool.pylint.main]
 # Specify a score threshold under which the program will exit with error.
-fail-under = 9.99
+fail-under              = 9.99
+extension-pkg-allow-list = ["cv2"]
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
@@ -280,3 +281,6 @@ min-similarity-lines = 4
 [tool.pylint.spelling]
 # Limits count of emitted suggestions for spelling mistakes.
 max-spelling-suggestions = 4
+
+[tool.pylint.typecheck]
+generated-members = ["cv2.*"]
