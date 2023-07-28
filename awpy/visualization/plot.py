@@ -17,6 +17,8 @@ https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualizat
 import logging
 import os
 import shutil
+from collections.abc import Generator
+from contextlib import contextmanager
 from typing import Literal, get_args
 
 import imageio.v3 as imageio
@@ -45,6 +47,19 @@ from awpy.types import (
     lower_side,
 )
 from awpy.visualization import AWPY_TMP_FOLDER, SIDE_COLORS
+
+
+@contextmanager
+def with_tmp_dir() -> Generator[None, None, None]:
+    """Create and finally delete tmp dir."""
+    # Raises an exception if the folder already exists.
+    # This is intended. We do not want to delete this folder if the user
+    # already has one with that name.
+    os.mkdir(AWPY_TMP_FOLDER)
+    try:
+        yield
+    finally:
+        shutil.rmtree(AWPY_TMP_FOLDER)
 
 
 def plot_map(
@@ -236,6 +251,7 @@ def _get_plot_position_for_bomb(bomb: BombInfo, map_name: str) -> PlotPosition:
     return PlotPosition(position=pos, color=color, marker=marker)
 
 
+@with_tmp_dir()
 def plot_round(
     filename: str,
     frames: list[GameFrame],
@@ -264,9 +280,6 @@ def plot_round(
     Returns:
         True, saves .gif
     """
-    if os.path.isdir(AWPY_TMP_FOLDER):
-        shutil.rmtree(f"{AWPY_TMP_FOLDER}/")
-    os.mkdir(AWPY_TMP_FOLDER)
     image_files: list[str] = []
     for i, game_frame in tqdm(enumerate(frames)):
         positions = [_get_plot_position_for_bomb(game_frame["bomb"], map_name)]
@@ -287,7 +300,6 @@ def plot_round(
         plt.close()
     images = [imageio.imread(file) for file in image_files]
     imageio.imwrite(filename, images, duration=1000 / fps)
-    shutil.rmtree(f"{AWPY_TMP_FOLDER}/")
     return True
 
 
@@ -493,6 +505,7 @@ def plot_frame_map_control(
     return figure, axes
 
 
+@with_tmp_dir()
 def plot_round_map_control(
     filename: str,
     map_name: str,
@@ -518,10 +531,6 @@ def plot_round_map_control(
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-
-    if os.path.isdir(AWPY_TMP_FOLDER):
-        shutil.rmtree(f"{AWPY_TMP_FOLDER}/")
-    os.mkdir(AWPY_TMP_FOLDER)
 
     images: list[np.ndarray] = []
     print("Saving/loading frames")
