@@ -51,6 +51,28 @@ class Token(TypedDict):
     token: str
 
 
+# Type to represent different options for map control minimap plot
+MapControlPlotType = Literal["default", "players"]
+
+# Type to represent tile id for navigation tiles.
+TileId: TypeAlias = int
+
+# Type to represent player position (list of floats [x, y, z])
+PlayerPosition: TypeAlias = list[float]
+
+# Type to represent player position (tuple of floats [x, y, z])
+PlayerPosition2D: TypeAlias = tuple[float, float]
+
+# Return type for awpy.analytics.map_control._bfs_helper.
+# Contains map control values for one team.
+# Maps TileId to list of tile map control values.
+TeamMapControlValues: TypeAlias = dict[TileId, list[float]]
+
+# Return type for awpy.analytics.map_control.graph_to_tile_neighbors
+# Maps TileId to set of neighboring tiles.
+TileNeighbors: TypeAlias = dict[TileId, set[int]]
+
+
 class Area(TypedDict):
     """TypedDict for area entries in NAV."""
 
@@ -676,7 +698,7 @@ class ClosestArea(TypedDict):
     """
 
     mapName: str
-    areaId: int
+    areaId: TileId
     distance: float
 
 
@@ -689,7 +711,7 @@ class DistanceObject(TypedDict):
 
     distanceType: str
     distance: float
-    areas: list[int]
+    areas: list[TileId]
 
 
 class RoundStatistics(TypedDict):
@@ -700,28 +722,6 @@ class RoundStatistics(TypedDict):
     is_clutching: set[str | None]
     active_players: set[str]
     players_killed: dict[Literal["CT", "T"], set[str]]
-
-
-# Type to represent different options for map control minimap plot
-MapControlPlotType = Literal["default", "players"]
-
-# Type to represent tile id for navigation tiles.
-TileId: TypeAlias = int
-
-# Type to represent player position (tuple of floats [x, y, z])
-PlayerPosition: TypeAlias = tuple[float, float, float]
-
-# Type to represent player position (tuple of floats [x, y, z])
-PlayerPosition2D: TypeAlias = tuple[float, float]
-
-# Return type for awpy.analytics.map_control._bfs_helper.
-# Contains map control values for one team.
-# Maps TileId to list of tile map control values.
-TeamMapControlValues: TypeAlias = dict[TileId, list[float]]
-
-# Return type for awpy.analytics.map_control.graph_to_tile_neighbors
-# Maps TileId to set of neighboring tiles.
-TileNeighbors: TypeAlias = dict[TileId, set[int]]
 
 
 @dataclass

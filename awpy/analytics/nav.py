@@ -63,12 +63,12 @@ from awpy.types import (
 )
 
 
-def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
+def point_in_area(map_name: str, area_id: TileId, point: list[float]) -> bool:
     """Returns if the point is within a nav area for a map.
 
     Args:
         map_name (string): Map to consider
-        area_id (int): Area ID as an integer
+        area_id (TileId): Area ID as an integer
         point (list): Point as a list [x,y,z]
 
     Returns:
@@ -175,8 +175,8 @@ def find_closest_area(
 
 def _check_arguments_area_distance(
     map_name: str,
-    area_a: int,
-    area_b: int,
+    area_a: TileId,
+    area_b: TileId,
     dist_type: DistanceType = "graph",
 ) -> None:
     """Returns the distance between two areas.
@@ -185,8 +185,8 @@ def _check_arguments_area_distance(
 
     Args:
         map_name (string): Map to consider
-        area_a (int): Area id
-        area_b (int): Area id
+        area_a (TileId): Area id
+        area_b (TileId): Area id
         dist_type (string, optional): String indicating the type of distance to use
             (graph, geodesic or euclidean). Defaults to 'graph'
 
@@ -209,12 +209,12 @@ def _check_arguments_area_distance(
         raise ValueError(msg)
 
 
-def _get_area_center(map_name: str, area: int) -> tuple[float, float, float]:
+def _get_area_center(map_name: str, area: TileId) -> tuple[float, float, float]:
     """Get the coordinates of the center of an area.
 
     Args:
         map_name (string): Map to consider
-        area (int): Area id
+        area (TileId): Area id
 
     Returns:
         Tuple of x, y, z coordinates of the area center.
@@ -227,15 +227,15 @@ def _get_area_center(map_name: str, area: int) -> tuple[float, float, float]:
 
 def _get_euclidean_area_distance(
     map_name: str,
-    area_a: int,
-    area_b: int,
+    area_a: TileId,
+    area_b: TileId,
 ) -> float:
     """Returns the euclidean distance the centers of two areas.
 
     Args:
         map_name (string): Map to search
-        area_a (int): Area id
-        area_b (int): Area id
+        area_a (TileId): Area id
+        area_b (TileId): Area id
 
     Returns:
         Distance between the centers of the two areas.
@@ -251,20 +251,20 @@ def _get_euclidean_area_distance(
 
 def _get_graph_area_distance(
     map_graph: nx.DiGraph,
-    area_a: int,
-    area_b: int,
-) -> tuple[float, list[int]]:
+    area_a: TileId,
+    area_b: TileId,
+) -> tuple[float, list[TileId]]:
     """Returns the graph distance between two areas.
 
     Args:
         map_graph (nx.DiGraph): DiGraph for the considered map
-        area_a (int): Area id
-        area_b (int): Area id
+        area_a (TileId): Area id
+        area_b (TileId): Area id
 
     Returns:
         tuple containing
         - Distance between two areas as length of the path
-        - Path between the two areas as list of (int) nodes
+        - Path between the two areas as list of (TileId) nodes
     """
     try:
         discovered_path = nx.bidirectional_shortest_path(map_graph, area_a, area_b)
@@ -275,9 +275,9 @@ def _get_graph_area_distance(
 
 def _get_geodesic_area_distance(
     map_graph: nx.DiGraph,
-    area_a: int,
-    area_b: int,
-) -> tuple[float, list[int]]:
+    area_a: TileId,
+    area_b: TileId,
+) -> tuple[float, list[TileId]]:
     """Returns the geodesic distance between two areas.
 
     Args:
@@ -288,10 +288,10 @@ def _get_geodesic_area_distance(
     Returns:
         tuple containing
         - Distance between two areas as geodesic cost
-        - Path between the two areas as list of (int) nodes
+        - Path between the two areas as list of (TileId) nodes
     """
 
-    def dist_heuristic(node_a: int, node_b: int) -> float:
+    def dist_heuristic(node_a: TileId, node_b: TileId) -> float:
         return distance.euclidean(
             map_graph.nodes[node_a]["center"], map_graph.nodes[node_b]["center"]
         )
@@ -310,8 +310,8 @@ def _get_geodesic_area_distance(
 
 def area_distance(
     map_name: str,
-    area_a: int,
-    area_b: int,
+    area_a: TileId,
+    area_b: TileId,
     dist_type: DistanceType = "graph",
 ) -> DistanceObject:
     """Returns the distance between two areas.
@@ -320,8 +320,8 @@ def area_distance(
 
     Args:
         map_name (string): Map to consider
-        area_a (int): Area id
-        area_b (int): Area id
+        area_a (TileId): Area id
+        area_b (TileId): Area id
         dist_type (string, optional): String indicating the type of distance to use
             (graph, geodesic or euclidean). Defaults to 'graph'
 
@@ -614,7 +614,7 @@ If you want to have those included run `generate_area_distance_matrix` first!"""
         )
 
 
-def _get_area_place_mapping(map_name: str) -> dict[str, list[int]]:
+def _get_area_place_mapping(map_name: str) -> dict[str, list[TileId]]:
     """Get the mapping of a named place to all areas that it contains.
 
     Get the mapping "areaName": [areas that have this area name]
@@ -636,7 +636,7 @@ def _get_median_place_distance(
     map_name: str,
     place1: str,
     place2: str,
-    area_mapping: dict[str, list[int]],
+    area_mapping: dict[str, list[TileId]],
     dist_type: DistanceType,
 ) -> float:
     """Get the median distance between the areas of two places.
@@ -645,7 +645,7 @@ def _get_median_place_distance(
         map_name (str): Name of the map to get the distances for
         place1 (str): First place in the pair
         place2 (str): Second place in the pair
-        area_mapping (dict[str, list[int]]): Mapping of each place to all area it
+        area_mapping (dict[str, list[TileId]]): Mapping of each place to all area it
             contains
         dist_type (DistanceType): Distance type to consider.
 
@@ -792,8 +792,8 @@ def generate_centroids(
         msg = "Map not found."
         raise ValueError(msg)
     area_points, z_s = _get_area_points_z_s(map_name)
-    area_ids_cent: dict[str, int] = {}
-    area_ids_rep: dict[str, int] = {}
+    area_ids_cent: dict[str, TileId] = {}
+    area_ids_rep: dict[str, TileId] = {}
     # For each named area
     for area_name in area_points:
         # Get the (approximate) orthogonal convex hull
@@ -999,7 +999,7 @@ def _check_arguments_position_distance(
 
 def _precompute_area_names(
     map_name: str, position_array_1: npt.NDArray, position_array_2: npt.NDArray
-) -> dict[int, dict[int, dict]]:
+) -> dict[int, dict[int, dict[int, TileId]]]:
     """Precompute the area names for each player position.
 
     Args:
@@ -1019,7 +1019,7 @@ def _precompute_area_names(
         dict[int, defaultdict[int, dict]]: Mapping for each team
             containing the areaId for each player.
     """
-    areas: dict[int, dict[int, dict[int, int]]] = {
+    areas: dict[int, dict[int, dict[int, TileId]]] = {
         1: defaultdict(dict),
         2: defaultdict(dict),
     }
@@ -1085,8 +1085,8 @@ def _euclidean_position_distance(
 
 def _graph_based_position_distance(
     map_name: str,
-    area1: int,
-    area2: int,
+    area1: TileId,
+    area2: TileId,
     distance_type: DistanceType,
 ) -> float:
     """Calculate graph based distance between two areas.
@@ -1175,7 +1175,7 @@ def position_state_distance(
     # Pre compute the area names for each player's position
     # If the x,y and z coordinate are given
     # Three dimensional space. Unlikely to change anytime soon
-    areas: dict[int, dict[int, dict]] = {}
+    areas: dict[int, dict[int, dict[int, TileId]]] = {}
     if distance_type in ["geodesic", "graph"]:
         areas = _precompute_area_names(map_name, position_array_1, position_array_2)
     # Get the minimum mapping distance for each side separately
