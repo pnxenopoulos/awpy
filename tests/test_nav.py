@@ -10,6 +10,7 @@ import pytest
 
 from awpy.analytics.nav import (
     area_distance,
+    calculate_map_area,
     calculate_tile_area,
     find_closest_area,
     frame_distance,
@@ -2007,3 +2008,14 @@ class TestNav:
             tile_id=1933,
         )
         assert test_map_control_metric == 625
+
+    def test_calculate_map_area(self):
+        """Tests calculate_map_area with inferno."""
+        with pytest.raises(ValueError, match="Map not found."):
+            calculate_map_area(
+                map_name="de_na",
+            )
+        test_map_area = calculate_map_area(
+            map_name="de_inferno",
+        )
+        assert int(test_map_area) == 5924563

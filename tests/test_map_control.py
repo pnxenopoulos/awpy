@@ -186,7 +186,9 @@ class TestMapControl:
         on assert map control values individually and instead asserts on
         size on MapControlValues object
         """
-        with pytest.raises(ValueError, match="Invalid max_depth value. Must be > 0."):
+        with pytest.raises(
+            ValueError, match="Invalid area_threshold value. Must be > 0."
+        ):
             _bfs(
                 map_name="de_inferno",
                 current_tiles=self.isolated_tiles_inferno
@@ -194,7 +196,7 @@ class TestMapControl:
                 neighbor_info=graph_to_tile_neighbors(
                     list(NAV_GRAPHS["de_inferno"].edges)
                 ),
-                max_depth=0,
+                area_threshold=0,
             )
 
         sanity_bfs_return = _bfs(

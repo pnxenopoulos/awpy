@@ -1633,3 +1633,28 @@ def calculate_tile_area(
     tile_height = tile_info["northWestY"] - tile_info["southEastY"]
 
     return tile_width * tile_height
+
+
+def calculate_map_area(
+    map_name: str,
+) -> float:
+    """Calculates total area of all nav tiles in a given map.
+
+    Args:
+        map_name (string): Map for area calculations
+
+    Returns:
+        A float representing the area of the map
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV
+    """
+    if map_name not in NAV:
+        msg = "Map not found."
+        raise ValueError(msg)
+
+    total_area = 0
+    for tile in NAV[map_name]:
+        total_area += calculate_tile_area(map_name, tile)
+
+    return total_area

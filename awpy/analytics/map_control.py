@@ -13,7 +13,12 @@ from collections import defaultdict, deque
 
 import numpy as np
 
-from awpy.analytics.nav import area_distance, calculate_tile_area, find_closest_area
+from awpy.analytics.nav import (
+    area_distance,
+    calculate_map_area,
+    calculate_tile_area,
+    find_closest_area,
+)
 from awpy.data import NAV, NAV_GRAPHS
 from awpy.types import (
     BFSTileData,
@@ -78,44 +83,50 @@ def _bfs(
     map_name: str,
     current_tiles: list[TileId],
     neighbor_info: TileNeighbors,
-    max_depth: int = 10,
+    area_threshold: float = 1 / 20,
 ) -> TeamMapControlValues:
     """Helper function to run bfs from given tiles to generate map_control values dict.
 
     Values are allocated to tiles depending on how many tiles are between it
     and the source tile (aka tile distance). The smaller the tile distance,
-    the close the tile's value is to 1. The tile distance can get as high as
-    the max_depth argument, which is 10 as default. If the max_depth is kept
-    as default 10, this means the BFS search will stop once a tile
-    distance of 10 is reached.
+    the close the tile's value is to 1. Tiles are considered until the cumulative
+    tile area reaches the current map's navigable area * area_threshold, which is
+    1/20 as a default. This means the BFS search will stop once the cumulative tile
+    area reaches this threshold.
 
     Args:
         map_name (str): Map for current_tiles
         current_tiles (TileId): List of source tiles for bfs iteration(s)
         neighbor_info (dict): Dictionary mapping tile to its navigable neighbors
-        max_depth (int): Max tile distance from source tile to be considered
+        area_threshold (float): Percentage representing amount of map's total
+                                navigable area which is the max cumulative tile
+                                area for each bfs algorithm
 
     Returns:
         TeamMapControlValues containing map control values
 
     Raises:
-        ValueError: If max_depth <= 0
+        ValueError: If area_threshold <= 0
     """
-    if max_depth <= 0:
-        msg = "Invalid max_depth value. Must be > 0."
+    if area_threshold <= 0:
+        msg = "Invalid area_threshold value. Must be > 0."
         raise ValueError(msg)
+
+    total_map_area = calculate_map_area(map_name)
 
     map_control_values: TeamMapControlValues = defaultdict(list)
     for cur_start_tile in current_tiles:
         tiles_seen: set[TileId] = set()
 
         start_tile = BFSTileData(
-            tile_id=cur_start_tile, map_control_value=1.0, steps_left=max_depth
+            tile_id=cur_start_tile, map_control_value=1.0, steps_left=10
         )
 
         queue: deque[BFSTileData] = deque([start_tile])
 
-        while queue and queue[0].steps_left > 0:
+        current_player_area = 0
+
+        while queue and current_player_area < total_map_area * area_threshold:
             cur_tile = queue.popleft()
             cur_id = cur_tile.tile_id
             if cur_id not in tiles_seen:
@@ -133,12 +144,15 @@ def _bfs(
                     [
                         BFSTileData(
                             tile_id=neighbor,
-                            map_control_value=(cur_tile.steps_left - 1) / max_depth,
+                            map_control_value=max((cur_tile.steps_left - 1) / 10, 0.1),
                             steps_left=cur_tile.steps_left - 1,
                         )
                         for neighbor in neighbors
                     ]
                 )
+
+                cur_tile_area = calculate_tile_area(map_name, cur_id)
+                current_player_area += cur_tile_area
 
     return map_control_values
 
@@ -153,10 +167,9 @@ def _calc_frame_map_control_tile_values(
 
     Values are allocated to tiles depending on how many tiles are between it
     and the source tile (aka tile distance). The smaller the tile distance,
-    the close the tile's value is to 1. The tile distance can get as high as
-    the max_depth argument, which is 10 as default. If the max_depth is kept
-    as default 10, this means the BFS search will stop once a tile
-    distance of 10 is reached.
+    the close the tile's value is to 1. Tiles are considered until a player's
+    tiles' total area reach the area_threshold. The area threshold is a float
+    between 0 and 1, representing the percentage of the current map's total area.
 
     Args:
         map_name (str): Map for other arguments
@@ -200,10 +213,9 @@ def calc_parsed_frame_map_control_values(
 
     Values are allocated to tiles depending on how many tiles are between it
     and the source tile (aka tile distance). The smaller the tile distance,
-    the close the tile's value is to 1. The tile distance can get as high as
-    the max_depth argument, which is 10 as default. If the max_depth is kept
-    as default 10, this means the BFS search will stop once a tile
-    distance of 10 is reached.
+    the close the tile's value is to 1. Tiles are considered until a player's
+    tiles' total area reach the area_threshold. The area threshold is a float
+    between 0 and 1, representing the percentage of the current map's total area.
 
     Args:
         map_name (str): Map used for find_closest_area and
@@ -244,10 +256,9 @@ def calc_frame_map_control_values(
 
     Values are allocated to tiles depending on how many tiles are between it
     and the source tile (aka tile distance). The smaller the tile distance,
-    the close the tile's value is to 1. The tile distance can get as high as
-    the max_depth argument, which is 10 as default. If the max_depth is kept
-    as default 10, this means the BFS search will stop once a tile
-    distance of 10 is reached.
+    the close the tile's value is to 1. Tiles are considered until a player's
+    tiles' total area reach the area_threshold. The area threshold is a float
+    between 0 and 1, representing the percentage of the current map's total area.
 
     Args:
         map_name (str): Map used for find_closest_area and
