@@ -517,11 +517,13 @@ class TestNav:
     def test_find_area(self):
         """Tests find_area."""
         with pytest.raises(ValueError, match="Map not found."):
-            find_closest_area(map_name="test", point=[0, 0, 0])
-        with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
+            find_closest_area(map_name="test", point=(0, 0, 0))
+        with pytest.raises(
+            ValueError, match=re.escape("Point must be a tuple (X,Y,Z)")
+        ):
             find_closest_area(map_name="de_dust2", point=[0, 0])
         with pytest.raises(
-            ValueError, match=re.escape("Point must be a list [X,Y] when flat is True")
+            ValueError, match=re.escape("Point must be a tuple (X,Y) when flat is True")
         ):
             find_closest_area(map_name="de_dust2", point=[0, 0, 0], flat=True)
         example_area = NAV["de_dust2"][152]

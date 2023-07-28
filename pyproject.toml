@@ -194,7 +194,8 @@ extension-pkg-allow-list = ["cv2"]
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
-good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e"]
+good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e", "PlayerPosition2D"]
+include-naming-hint = true
 
 [tool.pylint.design]
 # Maximum number of arguments for function / method.

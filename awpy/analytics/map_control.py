@@ -292,7 +292,7 @@ def _extract_team_metadata(
     """
     coords = ("x", "y", "z")
     alive_players: list[PlayerPosition] = [
-        [player[dim] for dim in coords]
+        tuple(player[dim] for dim in coords)
         for player in side_data["players"] or []
         if player["isAlive"]
     ]
