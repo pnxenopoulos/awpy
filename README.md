@@ -89,13 +89,12 @@ Take a look at the following Jupyter notebooks provided in our `examples/` direc
 - [Basic CSGO visualization](https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
 - [Working with navigation meshes](https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb)
 - [Advanced navigation functionality](https://github.com/pnxenopoulos/awpy/blob/main/examples/04_Advanced_Navigation_Functionality.ipynb)
+- [Map control](https://github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb)
 
-If you use the parser for any analysis on Twitter, we kindly ask you to link to this repository, so that others may know how you parsed your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it!
+If you use the parser for any public analysis, we kindly ask you to link to this repository, so that others may know how you parsed, analyzed or visualized your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it!
 
 ## Contributing
-We welcome any contributions from the community. You can visit the [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, or you can message on Discord. We will always have a need for writing tests, quality assurance and expanding functionality. We also seek contributors to produce interesting content (such as tweets, analyses, papers, etc.) -- you can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html).
-
-When contributing code, be sure to lint your code using `black`, run the tests using `pytest`, and add any documentation (main modules are automatically covered, just make sure you write the documentation in the function).
+We welcome any contributions from the community. You can visit the [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, or you can message on Discord. We will always have a need for writing tests, quality assurance and expanding functionality. We also seek contributors to produce interesting content (such as tweets, analyses, papers, etc.) -- you can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html). If you are interested in contributing to Awpy, learn more [here](https://github.com/pnxenopoulos/awpy/blob/main/CONTRIBUTING.md).
 
 ## Structure
 `awpy` is structured as follows:
