@@ -31,7 +31,6 @@ from awpy.types import (
     TeamMapControlValues,
     TeamMetadata,
     TileId,
-    TileNeighbors,
 )
 
 
@@ -73,7 +72,6 @@ def _approximate_neighbors(
 def _bfs(
     map_name: str,
     current_tiles: list[TileId],
-    neighbor_info: TileNeighbors,
     area_threshold: float = 1 / 20,
 ) -> TeamMapControlValues:
     """Helper function to run bfs from given tiles to generate map_control values dict.
@@ -124,7 +122,7 @@ def _bfs(
                 tiles_seen.add(cur_id)
                 map_control_values[cur_id].append(cur_tile.map_control_value)
 
-                neighbors = list(neighbor_info[cur_id])
+                neighbors: list[TileId] = list(NAV_GRAPHS[map_name].neighbors(cur_id))
                 if len(neighbors) == 0:
                     neighbors = [
                         tile["areas"][-1]
@@ -152,7 +150,6 @@ def _calc_frame_map_control_tile_values(
     map_name: str,
     ct_tiles: list[TileId],
     t_tiles: list[TileId],
-    neighbor_info: TileNeighbors,
 ) -> FrameMapControlValues:
     """Calculate a frame's map control values for each side.
 
@@ -172,28 +169,9 @@ def _calc_frame_map_control_tile_values(
         FrameMapControlValues object containing each team's map control values
     """
     return FrameMapControlValues(
-        t_values=_bfs(map_name, t_tiles, neighbor_info),
-        ct_values=_bfs(map_name, ct_tiles, neighbor_info),
+        t_values=_bfs(map_name, t_tiles),
+        ct_values=_bfs(map_name, ct_tiles),
     )
-
-
-def graph_to_tile_neighbors(
-    neighbor_pairs: list[tuple[TileId, TileId]],
-) -> TileNeighbors:
-    """Convert list of neighboring tiles to TileNeighbors object.
-
-    Args:
-        neighbor_pairs (list): List of tuples (pairs of TileId)
-
-    Returns: TileNeighbors object with tile to neighbor mapping
-    """
-    tile_to_neighbors: TileNeighbors = defaultdict(set)
-
-    for tile_1, tile_2 in neighbor_pairs:
-        tile_to_neighbors[tile_1].add(tile_2)
-        tile_to_neighbors[tile_2].add(tile_1)
-
-    return tile_to_neighbors
 
 
 def calc_parsed_frame_map_control_values(
@@ -223,8 +201,6 @@ def calc_parsed_frame_map_control_values(
         msg = "Map not found."
         raise ValueError(msg)
 
-    neighbors_dict = graph_to_tile_neighbors(list(NAV_GRAPHS[map_name].edges))
-
     t_tiles = [
         find_closest_area(map_name, i)["areaId"]
         for i in current_player_data.t_metadata.alive_player_locations
@@ -234,9 +210,7 @@ def calc_parsed_frame_map_control_values(
         for i in current_player_data.ct_metadata.alive_player_locations
     ]
 
-    return _calc_frame_map_control_tile_values(
-        map_name, ct_tiles, t_tiles, neighbors_dict
-    )
+    return _calc_frame_map_control_tile_values(map_name, ct_tiles, t_tiles)
 
 
 def calc_frame_map_control_values(

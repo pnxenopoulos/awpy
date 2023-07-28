@@ -68,10 +68,6 @@ PlayerPosition2D: TypeAlias = tuple[float, float]
 # Maps TileId to list of tile map control values.
 TeamMapControlValues: TypeAlias = dict[TileId, list[float]]
 
-# Return type for awpy.analytics.map_control.graph_to_tile_neighbors
-# Maps TileId to set of neighboring tiles.
-TileNeighbors: TypeAlias = dict[TileId, set[int]]
-
 
 class Area(TypedDict):
     """TypedDict for area entries in NAV."""
