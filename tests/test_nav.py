@@ -27,7 +27,7 @@ from awpy.analytics.nav import (
     token_state_distance,
     tree,
 )
-from awpy.data import NAV, create_nav_graphs
+from awpy.data import NAV, PLACE_DIST_MATRIX, create_nav_graphs
 
 
 class TestNav:
@@ -128,28 +128,28 @@ class TestNav:
         )
 
         self.expected_area_matrix = {
-            "1": {
-                "1": {"euclidean": 0, "graph": 0, "geodesic": 0},
-                "2": {"euclidean": 1.0, "graph": 1.0, "geodesic": 1.0},
-                "3": {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
+            1: {
+                1: {"euclidean": 0, "graph": 0, "geodesic": 0},
+                2: {"euclidean": 1.0, "graph": 1.0, "geodesic": 1.0},
+                3: {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
             },
-            "2": {
-                "1": {
+            2: {
+                1: {
                     "euclidean": 1.0,
                     "graph": float("inf"),
                     "geodesic": float("inf"),
                 },
-                "2": {"euclidean": 0, "graph": 0, "geodesic": 0},
-                "3": {
+                2: {"euclidean": 0, "graph": 0, "geodesic": 0},
+                3: {
                     "euclidean": math.sqrt(5),
                     "graph": float("inf"),
                     "geodesic": float("inf"),
                 },
             },
-            "3": {
-                "1": {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
-                "2": {"euclidean": math.sqrt(5), "graph": 2.0, "geodesic": 3.0},
-                "3": {"euclidean": 0, "graph": 0, "geodesic": 0},
+            3: {
+                1: {"euclidean": 2.0, "graph": 1.0, "geodesic": 2.0},
+                2: {"euclidean": math.sqrt(5), "graph": 2.0, "geodesic": 3.0},
+                3: {"euclidean": 0, "graph": 0, "geodesic": 0},
             },
         }
         self.expected_place_matrix_1 = {
@@ -776,11 +776,9 @@ class TestNav:
 
         assert isinstance(result_matrix, dict)
         for area1_id in result_matrix:
-            assert isinstance(area1_id, str)
-            assert str(int(area1_id)) == area1_id
+            assert isinstance(area1_id, int)
             for area2_id in result_matrix[area1_id]:
-                assert isinstance(area2_id, str)
-                assert str(int(area2_id)) == area2_id
+                assert isinstance(area2_id, int)
                 for dist_type in result_matrix[area1_id][area2_id]:
                     assert dist_type in {"geodesic", "euclidean", "graph"}
                     assert isinstance(
@@ -843,6 +841,29 @@ class TestNav:
         assert self.expected_place_matrix_2 == result_matrix_2
         with pytest.raises(ValueError, match="Map not found."):
             _ = generate_place_distance_matrix("de_does_not_exist")
+
+        with patch("awpy.analytics.nav.AREA_DIST_MATRIX", {}):
+            for map_name in PLACE_DIST_MATRIX:
+                result_matrix = generate_place_distance_matrix(
+                    map_name=map_name, save=False
+                )
+                for place1_name in PLACE_DIST_MATRIX[map_name]:
+                    for place2_name in PLACE_DIST_MATRIX[map_name][place1_name]:
+                        for dist_type in PLACE_DIST_MATRIX[map_name][place1_name][
+                            place2_name
+                        ]:
+                            for ref_point in ["centroid", "representative_point"]:
+                                assert (
+                                    PLACE_DIST_MATRIX[map_name][place1_name][
+                                        place2_name
+                                    ][dist_type][ref_point]
+                                    == result_matrix[place1_name][place2_name][
+                                        dist_type
+                                    ][ref_point]
+                                ), (
+                                    f"{map_name}, {place1_name}, {place2_name},"
+                                    f" {dist_type}, {ref_point}"
+                                )
 
     def test_generate_centroids(self):
         """Tests generate centroids."""
