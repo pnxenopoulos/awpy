@@ -147,7 +147,7 @@ def find_closest_area(
             msg = "Point must be a tuple (X,Y) when flat is True"
             raise ValueError(msg)
     elif len(point) != 3:  # noqa: PLR2004
-        msg = "Point must be a list (X,Y,Z)"
+        msg = "Point must be a tuple (X,Y,Z)"
         raise ValueError(msg)
     closest_area: ClosestArea = {
         "mapName": map_name,
