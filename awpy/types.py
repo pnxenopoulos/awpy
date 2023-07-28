@@ -753,7 +753,7 @@ class BFSTileData:
 class TeamMetadata:
     """Dataclass containing metadata for one team.
 
-    Holds information for aliver player locations. Can include
+    Holds information for alive player locations. Can include
     more metadata (utility, bomb location, etc.) in the future
     """
 

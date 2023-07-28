@@ -1670,8 +1670,4 @@ def calculate_map_area(
         msg = "Map not found."
         raise ValueError(msg)
 
-    total_area = 0
-    for tile in NAV[map_name]:
-        total_area += calculate_tile_area(map_name, tile)
-
-    return total_area
+    return sum(calculate_tile_area(map_name, tile) for tile in NAV[map_name])

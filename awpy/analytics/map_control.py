@@ -117,11 +117,9 @@ def _bfs(
     for cur_start_tile in current_tiles:
         tiles_seen: set[TileId] = set()
 
-        start_tile = BFSTileData(
-            tile_id=cur_start_tile, map_control_value=1.0, steps_left=10
+        queue: deque[BFSTileData] = deque(
+            [BFSTileData(tile_id=cur_start_tile, map_control_value=1.0, steps_left=10)]
         )
-
-        queue: deque[BFSTileData] = deque([start_tile])
 
         current_player_area = 0
 
@@ -132,12 +130,9 @@ def _bfs(
                 tiles_seen.add(cur_id)
                 map_control_values[cur_id].append(cur_tile.map_control_value)
 
-                neighbors = list(neighbor_info[cur_id])
-                if len(neighbors) == 0:
-                    neighbors = [
-                        tile.tile_id
-                        for tile in _approximate_neighbors(map_name, cur_id)
-                    ]
+                neighbors = list(neighbor_info[cur_id]) or [
+                    tile.tile_id for tile in _approximate_neighbors(map_name, cur_id)
+                ]
 
                 queue.extend(
                     [
