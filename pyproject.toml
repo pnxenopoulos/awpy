@@ -278,6 +278,3 @@ min-similarity-lines = 4
 [tool.pylint.spelling]
 # Limits count of emitted suggestions for spelling mistakes.
 max-spelling-suggestions = 4
-
-[tool.pylint.typecheck]
-generated-members = ["cv2.*"]
