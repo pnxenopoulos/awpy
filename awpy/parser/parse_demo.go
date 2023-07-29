@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"strconv"
@@ -2514,18 +2516,11 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 					appendFrameToRound(currentRound, &currentFrame, globalFrameIndex)
 				}
 			}
-
-			if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
-				*currentFrameIdx = 0
-			} else {
-				*currentFrameIdx++
-			}
+		}
+		if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
+			*currentFrameIdx = 0
 		} else {
-			if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
-				*currentFrameIdx = 0
-			} else {
-				*currentFrameIdx++
-			}
+			*currentFrameIdx++
 		}
 	})
 }
@@ -2580,6 +2575,9 @@ func main() {
 	The parserate should be one of 2^0 to 2^7. The lower the value, the more frames are collected.
 	Indicates spacing between parsed demo frames in ticks.
 	*/
+
+	logger := log.New(os.Stderr, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
+
 	fl := new(flag.FlagSet)
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 128, "Parse rate, indicates spacing between ticks")
@@ -2757,7 +2755,14 @@ func main() {
 	}
 
 	// Check error
-	checkError(err)
+	if err != nil {
+		if errors.Is(err, dem.ErrUnexpectedEndOfDemo) {
+			logger.Println(err)
+			logger.Println("ErrUnexpectedEndOfDemo signals that the demo" +
+				" is incomplete / corrupt - these demos may still be useful," +
+				" check how far the parser got.")
+		}
+	}
 }
 
 // Function to handle errors.
