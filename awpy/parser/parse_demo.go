@@ -1268,7 +1268,6 @@ func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game
 			currentRound.RoundNum = int64(len(currentGame.Rounds) + 1)
 			currentRound.StartTick = int64(gs.IngameTick() - int(currentGame.TickRate)*int(currentGame.ServerVars.FreezeTime))
 			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
-
 			setTeamValuesInRound(currentRound, &gs)
 		}
 
@@ -2382,10 +2381,29 @@ func registerDamageHandler(demoParser *dem.Parser, currentGame *Game, currentRou
 	})
 }
 
+func inFreezeTimeFromGameRules(gameState *dem.GameState) bool {
+	entity := (*gameState).Rules().Entity()
+	if entity != nil {
+		property, found := entity.PropertyValue("cs_gamerules_data.m_bFreezePeriod")
+		if found {
+			return property.BoolVal()
+		}
+	}
+
+	return false
+}
+
 func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, smokes *[]Smoke,
 	roundInFreezetime *int, roundInEndTime *int, currentFrameIdx *int, parseFrames *bool, globalFrameIndex *int64) {
 	(*demoParser).RegisterEventHandler(func(e events.FrameDone) {
 		gs := (*demoParser).GameState()
+
+		// If the game says we are not in freeze time anymore
+		// but the toggle still thinks we are then correct the toggle
+		if !inFreezeTimeFromGameRules(&gs) && (*roundInFreezetime != 0) {
+			*roundInFreezetime = 0
+			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
+		}
 
 		if (*roundInFreezetime == 0) && (*roundInEndTime == 0) {
 			if gs.TeamCounterTerrorists() != nil {
@@ -2545,7 +2563,6 @@ func cleanAndWriteGame(currentGame *Game, jsonIndentation bool, outpath string) 
 					} else {
 						tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
 					}
-				} else {
 					tempDamages = append(tempDamages, currentGame.Rounds[i].Damages[j])
 				}
 			}
