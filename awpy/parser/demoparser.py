@@ -1037,6 +1037,9 @@ class DemoParser:
         # the number is divisible by 3
         ot_valid_ct_win = (
             (game_round["endCTScore"] - tie_score - 1) % ot_tie_score == 0
+            # Difference of two needed for a win. e.g 19-17
+            # Difference of one means that it was 18-18 and went to another
+            # overtime e.g. 19-18 and thus is not a win for one side yet.
             and game_round["endTScore"] < (game_round["endCTScore"] - 1)
             and game_round["endCTScore"] > tie_score
         )
