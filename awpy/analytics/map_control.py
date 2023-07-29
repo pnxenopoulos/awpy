@@ -5,8 +5,7 @@
 
     Example notebook:
 
-    # pylint: disable=line-too-long
-    github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
+    https://github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
 """
 
 from collections import defaultdict, deque
