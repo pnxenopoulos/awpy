@@ -1028,18 +1028,20 @@ class DemoParser:
             game_round["endCTScore"] == tie_score + 1
             and game_round["endTScore"] < tie_score
         )
-        # OT win scores are of the type:
-        # 15 + (4xN) with N a natural numbers (1, 2, 3, ...)
-        # So 19, 23, 27, ...
-        # So if you substract 15 from an OT winning round
-        # the number is divisible by 4
+        # OT draw scores are of the type
+        # 15 + 3xN with N a natural number(1, 2, 3, ...)
+        # So 18, 21, 24, 27
+        # Wins are 1 higher
+        # So 19, 22, 25, 28
+        # So if you substract 15 + 1 from an OT winning round
+        # the number is divisible by 3
         ot_valid_ct_win = (
-            (game_round["endCTScore"] - tie_score) % (ot_tie_score + 1) == 0
+            (game_round["endCTScore"] - tie_score - 1) % ot_tie_score == 0
             and game_round["endTScore"] < game_round["endCTScore"]
             and game_round["endCTScore"] > tie_score
         )
         ot_valid_t_win = (
-            (game_round["endTScore"] - tie_score) % (ot_tie_score + 1) == 0
+            (game_round["endTScore"] - tie_score - 1) % ot_tie_score == 0
             and game_round["endCTScore"] < game_round["endTScore"]
             and game_round["endTScore"] > tie_score
         )
