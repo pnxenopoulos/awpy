@@ -62,8 +62,6 @@ class DemoParser:
         demo_id (string): A unique demo name/game id.
             Default is inferred from demofile name
         output_file (str): The output file name. Default is 'demoid'+".json"
-        log (bool): A boolean indicating if the log should print to stdout.
-            Default is False
         parse_rate (int, optional): One of 128, 64, 32, 16, 8, 4, 2, or 1.
             The lower the value, the more frames are collected.
             Indicates spacing between parsed demo frames in ticks. Default is 128.
@@ -96,6 +94,7 @@ class DemoParser:
         outpath: str | None = None,
         demo_id: str | None = None,
         log: bool = False,
+        debug: bool = False,
         **parser_args: Unpack[ParserArgs],
     ) -> None:
         """Instatiate a DemoParser.
@@ -112,6 +111,9 @@ class DemoParser:
                 Default is inferred from demofile name
             log (bool, optional):
                 A boolean indicating if the log should print to stdout.
+                Default is False
+            debug (bool, optional):
+                A boolean indicating if debug output should be used.
                 Default is False
             **parser_args (ParserArgs): Further keyword args:
                 parse_rate (int, optional):
@@ -144,7 +146,7 @@ class DemoParser:
         """
         # Set up logger
         logging.basicConfig(
-            level=logging.INFO,
+            level=logging.DEBUG if debug else logging.INFO,
             format="%(asctime)s [%(levelname)s] %(message)s",
             datefmt="%H:%M:%S",
         )
@@ -223,11 +225,14 @@ class DemoParser:
         if new_json is not None:
             try:
                 TypeAdapter(Game).validate_python(new_json)
-            except ValidationError:
-                self.logger.exception(
+            except ValidationError as e:
+                # Do not always want to log the whole exception.
+                self.logger.error(  # noqa: TRY400
                     "Loaded json file does not have correct fields."
                     " This may cause issues later."
+                    " Enable debug output to see the differences."
                 )
+                self.logger.debug(e)
         self._json = new_json
 
     @property
@@ -1028,12 +1033,16 @@ class DemoParser:
         # So 19, 23, 27, ...
         # So if you substract 15 from an OT winning round
         # the number is divisible by 4
-        ot_valid_ct_win = (game_round["endCTScore"] - tie_score) % (
-            ot_tie_score + 1
-        ) == 0 and game_round["endTScore"] < game_round["endCTScore"]
-        ot_valid_t_win = (game_round["endTScore"] - tie_score) % (
-            ot_tie_score + 1
-        ) == 0 and game_round["endCTScore"] < game_round["endTScore"]
+        ot_valid_ct_win = (
+            (game_round["endCTScore"] - tie_score) % (ot_tie_score + 1) == 0
+            and game_round["endTScore"] < game_round["endCTScore"]
+            and game_round["endCTScore"] > tie_score
+        )
+        ot_valid_t_win = (
+            (game_round["endTScore"] - tie_score) % (ot_tie_score + 1) == 0
+            and game_round["endCTScore"] < game_round["endTScore"]
+            and game_round["endTScore"] > tie_score
+        )
         return (
             regular_valid_ct_win
             or regular_valid_t_win
@@ -1071,12 +1080,11 @@ class DemoParser:
                         + lookahead_round["ctScore"]
                         + lookahead_round["endCTScore"]
                     )
-
                     if (
                         # Next round should have higher score than current
                         (lookahead_round_total > current_round_total)
                         # Valid rounds have a winner and a not winner
-                        or self._has_winner_and_not_winner(game_round=game_round)
+                        or self._has_winner_and_not_winner(game_round)
                     ):
                         cleaned_rounds.append(game_round)
                 else:
