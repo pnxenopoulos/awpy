@@ -18,6 +18,7 @@ from awpy.visualization.plot import (
     plot_round_map_control,
     position_transform,
     position_transform_all,
+    with_tmp_dir,
 )
 
 
@@ -26,11 +27,13 @@ class TestVis:
 
     def setup_class(self):
         """Sets up class by defining test image name."""
-        self.filename = "test.gif"
+        self.plot_round_filename = "test.gif"
+        self.plot_map_control_filename = "map_control_test.gif"
 
     def teardown_class(self):
         """Set parser to none."""
-        os.remove(self.filename)
+        os.remove(self.plot_round_filename)
+        os.remove(self.plot_map_control_filename)
 
     def test_position_scale(self):
         """Test position transforms."""
@@ -104,12 +107,12 @@ class TestVis:
                 "ct": {"players": []},
             },
         ]
-        assert not os.path.exists(self.filename)
-        assert plot_round(self.filename, frames)
-        assert os.path.exists(self.filename)
+        assert not os.path.exists(self.plot_round_filename)
+        assert plot_round(self.plot_round_filename, frames)
+        assert os.path.exists(self.plot_round_filename)
         with patch("awpy.visualization.plot.plot_positions") as plot_positions_mock:
             plot_positions_mock.return_value = plt.subplots()
-            plot_round(self.filename, frames)
+            plot_round(self.plot_round_filename, frames)
             assert plot_positions_mock.call_count == 2
             plot_positions_mock.assert_called_with(
                 positions=[
@@ -244,25 +247,24 @@ class TestVis:
         round_length = 50
         test_round = {"frames": [fake_frame] * round_length}
 
-        test_filename = "map_control_test.gif"
-
         bool_returned = plot_round_map_control(
-            test_filename, "de_inferno", test_round, plot_type="players"
+            self.plot_map_control_filename,
+            "de_inferno",
+            test_round,
+            plot_type="players",
         )
 
         assert bool_returned
-        assert os.path.isdir(AWPY_TMP_FOLDER)
-        assert len(os.listdir(AWPY_TMP_FOLDER)) > 0
-
-        awpy_tmp_files = set(os.listdir(AWPY_TMP_FOLDER))
-
-        for i in range(round_length):
-            filename = "frame_" + str(i)
-            filepath = f"{AWPY_TMP_FOLDER}/{filename}.png"
-
-            # Assert temp frame file exists and size > 0 bytes
-            assert filename + ".png" in awpy_tmp_files
-            assert os.stat(filepath).st_size > 0
 
         # Assert gif is created and size > 0 bytes
-        assert os.stat(test_filename).st_size > 0
+        assert os.stat(self.plot_map_control_filename).st_size > 0
+
+    def test_with_temp_dir(self):
+        """Tests behaviour of with_tmp_dir."""
+        assert not os.path.exists(AWPY_TMP_FOLDER)
+        with with_tmp_dir():
+            assert os.path.exists(AWPY_TMP_FOLDER)
+        assert not os.path.exists(AWPY_TMP_FOLDER)
+        os.mkdir(AWPY_TMP_FOLDER)
+        with pytest.raises(FileExistsError), with_tmp_dir():
+            pass
