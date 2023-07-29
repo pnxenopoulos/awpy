@@ -2516,14 +2516,12 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 					appendFrameToRound(currentRound, &currentFrame, globalFrameIndex)
 				}
 			}
-
 		}
 		if *currentFrameIdx == (currentGame.ParsingOpts.ParseRate - 1) {
 			*currentFrameIdx = 0
 		} else {
 			*currentFrameIdx++
 		}
-
 	})
 }
 
