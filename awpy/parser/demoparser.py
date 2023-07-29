@@ -1037,12 +1037,12 @@ class DemoParser:
         # the number is divisible by 3
         ot_valid_ct_win = (
             (game_round["endCTScore"] - tie_score - 1) % ot_tie_score == 0
-            and game_round["endTScore"] < game_round["endCTScore"]
+            and game_round["endTScore"] < (game_round["endCTScore"] - 1)
             and game_round["endCTScore"] > tie_score
         )
         ot_valid_t_win = (
             (game_round["endTScore"] - tie_score - 1) % ot_tie_score == 0
-            and game_round["endCTScore"] < game_round["endTScore"]
+            and game_round["endCTScore"] < (game_round["endTScore"] - 1)
             and game_round["endTScore"] > tie_score
         )
         return (
@@ -1074,7 +1074,6 @@ class DemoParser:
                     + game_round["endCTScore"]
                 )
                 if i < len(self.json["gameRounds"]) - 1:
-                    # Non-OT rounds
                     lookahead_round = self.json["gameRounds"][i + 1]
                     lookahead_round_total = (
                         lookahead_round["tScore"]
@@ -1085,7 +1084,8 @@ class DemoParser:
                     if (
                         # Next round should have higher score than current
                         (lookahead_round_total > current_round_total)
-                        # Valid rounds have a winner and a not winner
+                        # Or the round is the final real round
+                        # with a winner and a loser
                         or self._has_winner_and_not_winner(game_round)
                     ):
                         cleaned_rounds.append(game_round)
