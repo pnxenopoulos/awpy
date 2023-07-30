@@ -57,10 +57,10 @@ MapControlPlotType = Literal["default", "players"]
 # Type to represent tile id for navigation tiles.
 TileId: TypeAlias = int
 
-# Type to represent player position (list of floats [x, y, z])
-PlayerPosition: TypeAlias = list[float]
+# Type to represent player position (tuple of floats (x, y, z))
+PlayerPosition: TypeAlias = tuple[float, float, float]
 
-# Type to represent player position (tuple of floats [x, y, z])
+# Type to represent player position (tuple of floats (x, y, z))
 PlayerPosition2D: TypeAlias = tuple[float, float]
 
 # Return type for awpy.analytics.map_control._bfs_helper.
