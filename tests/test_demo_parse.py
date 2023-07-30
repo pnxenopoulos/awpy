@@ -312,6 +312,14 @@ class TestDemoParser:
         )
         assert len(self.bad_scoring_parser_data["gameRounds"]) == 26
 
+    def test_handle_skipped_round_freezetime_end_event(self):
+        """Tests that missing RoundFreezetimeEnd does not break the parser."""
+        missing_round_freezetime_end_event_parser = DemoParser(
+            demofile="tests/mibr-vs-fluxo-m2-vertigo.dem", log=False, parse_frames=False
+        )
+        missing_freezetime_end_data = missing_round_freezetime_end_event_parser.parse()
+        assert len(missing_freezetime_end_data["gameRounds"]) == 21
+
     def test_warmup(self):
         """Tests if warmup rounds are properly parsing."""
         self.warmup_parser = DemoParser(

@@ -39,7 +39,7 @@ import sys
 from collections import defaultdict
 from itertools import pairwise
 from statistics import mean, median
-from typing import Literal, get_args
+from typing import Literal, get_args, overload
 
 import networkx as nx
 import numpy as np
@@ -56,6 +56,9 @@ from awpy.types import (
     DistanceType,
     GameFrame,
     PlaceMatrix,
+    PlayerPosition,
+    PlayerPosition2D,
+    TileId,
     Token,
 )
 
@@ -103,8 +106,22 @@ def point_in_area(map_name: str, area_id: int, point: list[float]) -> bool:
     return contains_x and contains_y
 
 
+@overload
 def find_closest_area(
-    map_name: str, point: list[float], *, flat: bool = False
+    map_name: str, point: PlayerPosition, *, flat: Literal[False] = ...
+) -> ClosestArea:
+    ...
+
+
+@overload
+def find_closest_area(
+    map_name: str, point: PlayerPosition2D, *, flat: Literal[True] = ...
+) -> ClosestArea:
+    ...
+
+
+def find_closest_area(
+    map_name: str, point: PlayerPosition | PlayerPosition2D, *, flat: bool = False
 ) -> ClosestArea:
     """Finds the closest area in the nav mesh.
 
@@ -112,7 +129,7 @@ def find_closest_area(
 
     Args:
         map_name (string): Map to search
-        point (list): Point as a list [x,y,z]
+        point (tuple): Point as a tuple (x,y,z) or (x, y)
         flat (Boolean): Whether z should be ignored.
 
     Returns:
@@ -127,10 +144,10 @@ def find_closest_area(
         raise ValueError(msg)
     if flat:
         if len(point) != 2:  # noqa: PLR2004
-            msg = "Point must be a list [X,Y] when flat is True"
+            msg = "Point must be a tuple (X,Y) when flat is True"
             raise ValueError(msg)
     elif len(point) != 3:  # noqa: PLR2004
-        msg = "Point must be a list [X,Y,Z]"
+        msg = "Point must be a tuple (X,Y,Z)"
         raise ValueError(msg)
     closest_area: ClosestArea = {
         "mapName": map_name,
@@ -147,7 +164,8 @@ def find_closest_area(
             dist = np.sqrt(
                 (point[0] - avg_x) ** 2
                 + (point[1] - avg_y) ** 2
-                + (point[2] - avg_z) ** 2
+                # If flat is false we have a 3D PlayerPosition
+                + (point[2] - avg_z) ** 2  # pyright: ignore [reportGeneralTypeIssues]
             )
         if dist < closest_area["distance"]:
             closest_area["areaId"] = area
@@ -183,7 +201,7 @@ def _check_arguments_area_distance(
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-    if (area_a not in NAV[map_name].keys()) or (area_b not in NAV[map_name].keys()):
+    if (area_a not in NAV[map_name]) or (area_b not in NAV[map_name]):
         msg = "Area ID not found."
         raise ValueError(msg)
     if dist_type not in get_args(DistanceType):
@@ -341,8 +359,8 @@ PointDistanceType = Literal[DistanceType, "manhattan", "canberra", "cosine"]
 
 def point_distance(
     map_name: str,
-    point_a: list[float],
-    point_b: list[float],
+    point_a: PlayerPosition,
+    point_b: PlayerPosition,
     dist_type: PointDistanceType = "graph",
 ) -> DistanceObject:
     """Returns the distance between two points.
@@ -441,7 +459,7 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     for player in ct_players:
         if player["isAlive"]:
             closest_area = find_closest_area(
-                map_name, [player["x"], player["y"], player["z"]]
+                map_name, (player["x"], player["y"], player["z"])
             )
             ct_token[
                 map_area_names.index(NAV[map_name][closest_area["areaId"]]["areaName"])
@@ -451,7 +469,7 @@ def generate_position_token(map_name: str, frame: GameFrame) -> Token:
     for player in t_players:
         if player["isAlive"]:
             closest_area = find_closest_area(
-                map_name, [player["x"], player["y"], player["z"]]
+                map_name, (player["x"], player["y"], player["z"])
             )
             t_token[
                 map_area_names.index(NAV[map_name][closest_area["areaId"]]["areaName"])
@@ -783,20 +801,20 @@ def generate_centroids(
         # Get the centroids and rep. point of the hull
         try:
             my_polygon = Polygon(hull)
-            my_centroid = [
+            my_centroid = (
                 *list(np.array(my_polygon.centroid.coords)[0]),
                 mean(z_s[area_name]),
-            ]
-            rep_point = [
+            )
+            rep_point = (
                 *list(np.array(my_polygon.representative_point().coords)[0]),
                 mean(z_s[area_name]),
-            ]
+            )
         except ValueError:  # A LinearRing must have at least 3 coordinate tuples
-            my_centroid = [
+            my_centroid = (
                 mean([x for (x, _) in hull]),
                 mean([y for (_, y) in hull]),
                 mean(z_s[area_name]),
-            ]
+            )
             rep_point = my_centroid
 
         # Find the closest tile for these points
@@ -1600,3 +1618,60 @@ def token_distance(
         distance_type,
         reference_point,
     )
+
+
+def calculate_tile_area(
+    map_name: str,
+    tile_id: TileId,
+) -> float:
+    """Calculates area of a given tile in a given map.
+
+    Args:
+        map_name (string): Map for tile
+        tile_id (TileId): Id for tile
+
+    Returns:
+        A float representing the area of the tile
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV
+                    If area_id is not in awpy.data.NAV[map_name]
+    """
+    if map_name not in NAV:
+        msg = "Map not found."
+        raise ValueError(msg)
+    if tile_id not in NAV[map_name]:
+        msg = "Tile ID not found."
+        raise ValueError(msg)
+
+    tile_info = NAV[map_name][tile_id]
+
+    tile_width = tile_info["northWestX"] - tile_info["southEastX"]
+    tile_height = tile_info["northWestY"] - tile_info["southEastY"]
+
+    return tile_width * tile_height
+
+
+def calculate_map_area(
+    map_name: str,
+) -> float:
+    """Calculates total area of all nav tiles in a given map.
+
+    Args:
+        map_name (string): Map for area calculations
+
+    Returns:
+        A float representing the area of the map
+
+    Raises:
+        ValueError: If map_name is not in awpy.data.NAV
+    """
+    if map_name not in NAV:
+        msg = "Map not found."
+        raise ValueError(msg)
+
+    total_area = 0
+    for tile in NAV[map_name]:
+        total_area += calculate_tile_area(map_name, tile)
+
+    return total_area

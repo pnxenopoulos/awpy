@@ -36,9 +36,6 @@ dynamic = ["version"]
 [tool.setuptools]
 include-package-data = true
 
-[tool.setuptools.packages.find]
-where = ["awpy"]
-
 [tool.setuptools.package-data]
 "*" = [
     "*.go",
@@ -189,11 +186,13 @@ testpaths = ["tests"]
 
 [tool.pylint.main]
 # Specify a score threshold under which the program will exit with error.
-fail-under = 9.99
+fail-under              = 9.99
+extension-pkg-allow-list = ["cv2"]
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
-good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e"]
+good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e", "PlayerPosition2D"]
+include-naming-hint = true
 
 [tool.pylint.design]
 # Maximum number of arguments for function / method.
@@ -280,3 +279,6 @@ min-similarity-lines = 4
 [tool.pylint.spelling]
 # Limits count of emitted suggestions for spelling mistakes.
 max-spelling-suggestions = 4
+
+[tool.pylint.typecheck]
+generated-members = ["cv2.*"]

@@ -1,7 +1,7 @@
 """This module contains the type definitions for the parsed json structure."""
 
 from dataclasses import dataclass
-from typing import Literal, NotRequired, TypeGuard, final, overload
+from typing import Literal, NotRequired, TypeAlias, TypeGuard, final, overload
 
 from typing_extensions import TypedDict
 
@@ -700,6 +700,88 @@ class RoundStatistics(TypedDict):
     is_clutching: set[str | None]
     active_players: set[str]
     players_killed: dict[Literal["CT", "T"], set[str]]
+
+
+# Type to represent different options for map control minimap plot
+MapControlPlotType = Literal["default", "players"]
+
+# Type to represent tile id for navigation tiles.
+TileId: TypeAlias = int
+
+# Type to represent player position (tuple of floats [x, y, z])
+PlayerPosition: TypeAlias = tuple[float, float, float]
+
+# Type to represent player position (tuple of floats [x, y, z])
+PlayerPosition2D: TypeAlias = tuple[float, float]
+
+# Return type for awpy.analytics.map_control._bfs_helper.
+# Contains map control values for one team.
+# Maps TileId to list of tile map control values.
+TeamMapControlValues: TypeAlias = dict[TileId, list[float]]
+
+# Return type for awpy.analytics.map_control.graph_to_tile_neighbors
+# Maps TileId to set of neighboring tiles.
+TileNeighbors: TypeAlias = dict[TileId, set[int]]
+
+
+@dataclass
+class TileDistanceObject:
+    """Dataclass with data for map control tile distance calculations.
+
+    Holds information for distance to source tile and tile_id
+    distance is associated with.
+    """
+
+    tile_id: TileId
+    distance: float
+
+
+@dataclass
+class BFSTileData:
+    """Dataclass containing data for tiles during bfs algorithm.
+
+    Holds information for tile_id for tile, current map control
+    value, and steps remaining for bfs algorithm
+    """
+
+    tile_id: TileId
+    map_control_value: float
+    steps_left: int
+
+
+@dataclass
+class TeamMetadata:
+    """Dataclass containing metadata for one team.
+
+    Holds information for aliver player locations. Can include
+    more metadata (utility, bomb location, etc.) in the future
+    """
+
+    alive_player_locations: list[PlayerPosition]
+
+
+@dataclass
+class FrameTeamMetadata:
+    """Dataclass with metadata on both teams in frame.
+
+    Return type for awpy.analytics.map_control.extract_teams_metadata.
+    Holds parsed metadata object (TeamMetadata) for both teams
+    """
+
+    t_metadata: TeamMetadata
+    ct_metadata: TeamMetadata
+
+
+@dataclass
+class FrameMapControlValues:
+    """Dataclass with map control values for both teams in frame.
+
+    Return type for awpy.analytics.map_control.calc_map_control.
+    Holds TeamMapControlValues for each team for a certain frame.
+    """
+
+    t_values: TeamMapControlValues
+    ct_values: TeamMapControlValues
 
 
 @overload

@@ -10,6 +10,8 @@ import pytest
 
 from awpy.analytics.nav import (
     area_distance,
+    calculate_map_area,
+    calculate_tile_area,
     find_closest_area,
     frame_distance,
     generate_area_distance_matrix,
@@ -68,6 +70,38 @@ class TestNav:
                     "northWestZ": 0,
                     "southEastX": 2,
                     "southEastY": -2,
+                    "southEastZ": 0,
+                },
+            }
+        }
+
+        self.fake_tile_area_nav = {
+            "de_mock": {
+                1: {
+                    "areaName": "Place1",
+                    "northWestX": 2,
+                    "northWestY": 2,
+                    "northWestZ": 0,
+                    "southEastX": 0,
+                    "southEastY": 0,
+                    "southEastZ": 0,
+                },
+                2: {
+                    "areaName": "Place2",
+                    "northWestX": 2,
+                    "northWestY": 0,
+                    "northWestZ": 0,
+                    "southEastX": 6,
+                    "southEastY": 2,
+                    "southEastZ": 0,
+                },
+                3: {
+                    "areaName": "Place3",
+                    "northWestX": 6,
+                    "northWestY": 6,
+                    "northWestZ": 0,
+                    "southEastX": 0,
+                    "southEastY": 2,
                     "southEastZ": 0,
                 },
             }
@@ -483,11 +517,13 @@ class TestNav:
     def test_find_area(self):
         """Tests find_area."""
         with pytest.raises(ValueError, match="Map not found."):
-            find_closest_area(map_name="test", point=[0, 0, 0])
-        with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
+            find_closest_area(map_name="test", point=(0, 0, 0))
+        with pytest.raises(
+            ValueError, match=re.escape("Point must be a tuple (X,Y,Z)")
+        ):
             find_closest_area(map_name="de_dust2", point=[0, 0])
         with pytest.raises(
-            ValueError, match=re.escape("Point must be a list [X,Y] when flat is True")
+            ValueError, match=re.escape("Point must be a tuple (X,Y) when flat is True")
         ):
             find_closest_area(map_name="de_dust2", point=[0, 0, 0], flat=True)
         example_area = NAV["de_dust2"][152]
@@ -1956,3 +1992,32 @@ class TestNav:
         assert token_distance(map_name, token1, token2) == token_state_distance(
             map_name, array1, array2
         )
+
+    def test_calculate_tile_area(self):
+        """Tests calculate_tile_area with known inferno tile."""
+        with pytest.raises(ValueError, match="Map not found."):
+            calculate_tile_area(
+                map_name="de_na",
+                tile_id=1,
+            )
+        with pytest.raises(ValueError, match="Tile ID not found."):
+            calculate_tile_area(
+                map_name="de_inferno",
+                tile_id=1234,
+            )
+        test_map_control_metric = calculate_tile_area(
+            map_name="de_inferno",
+            tile_id=1933,
+        )
+        assert test_map_control_metric == 625
+
+    def test_calculate_map_area(self):
+        """Tests calculate_map_area with inferno."""
+        with pytest.raises(ValueError, match="Map not found."):
+            calculate_map_area(
+                map_name="de_na",
+            )
+        test_map_area = calculate_map_area(
+            map_name="de_inferno",
+        )
+        assert int(test_map_area) == 5924563

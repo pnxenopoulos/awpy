@@ -135,7 +135,7 @@ dmypy.json
 .pytype/
 
 # csgo demofiles
-.dem
+*.dem
 
 # vscode
 *code-workspace
