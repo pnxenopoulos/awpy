@@ -600,15 +600,14 @@ def _plot_map_control_metrics(
 
 def plot_map_control_metrics(
     metric_arr: list[float],
-    given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
-) -> None:
+) -> tuple[Figure, Axes]:
     """Function to plot given map control metrics.
 
     Args:
         metric_arr (list): List containing map control values to plot
-        given_fig_ax (tuple): Fig and ax objects if given
 
-    Returns: Plot given map control metric values onto axes object
+    Returns:
+        matplotlib fig and ax with map control metric plot
 
     Raises:
         ValueError: If metrics is empty
@@ -617,9 +616,8 @@ def plot_map_control_metrics(
         msg = "Metrics is empty."
         raise ValueError(msg)
 
-    if given_fig_ax[0] is not None:
-        _plot_map_control_metrics(metric_arr, given_fig_ax[1])
-    else:
-        _, curr_ax = plt.subplots()
-        _plot_map_control_metrics(metric_arr, curr_ax)
-        plt.show()
+    fig, ax = plt.subplots()
+
+    _plot_map_control_metrics(metric_arr, ax)
+
+    return fig, ax
