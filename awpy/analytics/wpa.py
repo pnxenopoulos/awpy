@@ -38,7 +38,7 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
     """
     # Load the data from the json file
     try:
-        with open("wpa.json", encoding="utf-8") as file:
+        with open("../data/wpa/wpa.json", encoding="utf-8") as file:
             wpa_data = json.load(file)
     except FileNotFoundError:
         return {"File wpa.json not found."}
