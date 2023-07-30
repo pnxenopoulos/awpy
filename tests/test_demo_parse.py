@@ -320,6 +320,53 @@ class TestDemoParser:
         missing_freezetime_end_data = missing_round_freezetime_end_event_parser.parse()
         assert len(missing_freezetime_end_data["gameRounds"]) == 21
 
+    def test_remove_bad_scoring_no_ot_ot_value(self):
+        """Tests that remove bad scoring works for the score 11-5.
+
+        Issue 220 raised by ozanhagen.
+        """
+        scoring_parser = DemoParser()
+        scoring_parser.json = {
+            "gameRounds": [
+                {"tScore": 0, "ctScore": 0, "endTScore": 1, "endCTScore": 0},
+                {"tScore": 0, "ctScore": 0, "endTScore": 1, "endCTScore": 0},
+                {"tScore": 1, "ctScore": 0, "endTScore": 2, "endCTScore": 0},
+                {"tScore": 2, "ctScore": 0, "endTScore": 3, "endCTScore": 0},
+                {"tScore": 3, "ctScore": 0, "endTScore": 4, "endCTScore": 0},
+                {"tScore": 4, "ctScore": 0, "endTScore": 4, "endCTScore": 1},
+                {"tScore": 4, "ctScore": 1, "endTScore": 5, "endCTScore": 1},
+                {"tScore": 5, "ctScore": 1, "endTScore": 6, "endCTScore": 1},
+                {"tScore": 6, "ctScore": 1, "endTScore": 6, "endCTScore": 2},
+                {"tScore": 6, "ctScore": 2, "endTScore": 7, "endCTScore": 2},
+                {"tScore": 7, "ctScore": 2, "endTScore": 8, "endCTScore": 2},
+                {"tScore": 8, "ctScore": 2, "endTScore": 9, "endCTScore": 2},
+                {"tScore": 9, "ctScore": 2, "endTScore": 10, "endCTScore": 2},
+                {"tScore": 10, "ctScore": 2, "endTScore": 10, "endCTScore": 3},
+                {"tScore": 10, "ctScore": 3, "endTScore": 10, "endCTScore": 4},
+                {"tScore": 10, "ctScore": 4, "endTScore": 10, "endCTScore": 5},
+                {"tScore": 5, "ctScore": 10, "endTScore": 5, "endCTScore": 11},
+                {"tScore": 5, "ctScore": 10, "endTScore": 5, "endCTScore": 11},
+                {"tScore": 5, "ctScore": 10, "endTScore": 6, "endCTScore": 10},
+                {"tScore": 5, "ctScore": 10, "endTScore": 5, "endCTScore": 11},
+                {"tScore": 5, "ctScore": 10, "endTScore": 6, "endCTScore": 10},
+                {"tScore": 6, "ctScore": 10, "endTScore": 7, "endCTScore": 10},
+                {"tScore": 7, "ctScore": 10, "endTScore": 8, "endCTScore": 10},
+                {"tScore": 8, "ctScore": 10, "endTScore": 9, "endCTScore": 10},
+                {"tScore": 9, "ctScore": 10, "endTScore": 10, "endCTScore": 10},
+                {"tScore": 10, "ctScore": 10, "endTScore": 10, "endCTScore": 11},
+                {"tScore": 10, "ctScore": 11, "endTScore": 11, "endCTScore": 11},
+                {"tScore": 11, "ctScore": 11, "endTScore": 11, "endCTScore": 12},
+                {"tScore": 11, "ctScore": 12, "endTScore": 11, "endCTScore": 13},
+                {"tScore": 11, "ctScore": 13, "endTScore": 12, "endCTScore": 13},
+                {"tScore": 12, "ctScore": 13, "endTScore": 12, "endCTScore": 14},
+                {"tScore": 12, "ctScore": 14, "endTScore": 12, "endCTScore": 15},
+                {"tScore": 12, "ctScore": 15, "endTScore": 12, "endCTScore": 16},
+                {"tScore": 0, "ctScore": 0, "endTScore": 0, "endCTScore": 1},
+            ]
+        }
+        scoring_parser.remove_bad_scoring()
+        assert len(scoring_parser.json["gameRounds"]) == 28
+
     def test_warmup(self):
         """Tests if warmup rounds are properly parsing."""
         self.warmup_parser = DemoParser(
