@@ -38,7 +38,10 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
     """
     # Load the data from the json file <-- will be moved to data _init_
     wpa_data = json.loads("../data/wpa/wpa.json")
-
+    
+    # Convert the keys back to integers
+    wpa_data = {int(k): v for k, v in wpa_data.items()}
+    
     # Get the map id from the map name
     map_id = _get_mapid(map_name)
 
