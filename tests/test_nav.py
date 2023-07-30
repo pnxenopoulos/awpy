@@ -496,7 +496,9 @@ class TestNav:
             point_in_area(map_name="test", area_id=3814, point=[0, 0, 0])
         with pytest.raises(ValueError, match="Area ID not found."):
             point_in_area(map_name="de_dust2", area_id=0, point=[0, 0, 0])
-        with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
+        with pytest.raises(
+            ValueError, match=re.escape("Point must be a tuple (X,Y,Z)")
+        ):
             point_in_area(map_name="de_dust2", area_id=3814, point=[0])
         avg_x = (
             NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"]

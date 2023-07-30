@@ -88,7 +88,7 @@ def point_in_area(map_name: str, area_id: TileId, point: PlayerPosition) -> bool
         raise ValueError(msg)
     # Three dimensional space. Unlikely to change anytime soon
     if len(point) != 3:  # noqa: PLR2004
-        msg = "Point must be a list (X,Y,Z)"
+        msg = "Point must be a tuple (X,Y,Z)"
         raise ValueError(msg)
     contains_x = (
         min(NAV[map_name][area_id]["northWestX"], NAV[map_name][area_id]["southEastX"])
