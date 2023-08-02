@@ -7,6 +7,7 @@ import json
 from typing import Any
 
 from awpy.types import GameFrame
+from awpy.data import PATH
 
 SIMPLE_WP_MODEL = None
 ADV_WP_MODEL = None
@@ -37,7 +38,7 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
         A dictionary containing the game win probability
     """
     # Load the data from the json file
-    with open("../data/wpa/wpa.json", encoding="utf-8") as file:
+    with open(PATH + "wpa/wpa.json", encoding="utf-8") as file:
         wpa_data = json.load(file)
 
     # Convert the keys back to integers
