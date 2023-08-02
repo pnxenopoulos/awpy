@@ -6,8 +6,8 @@ https://arxiv.org/pdf/2011.01324.pdf.
 import json
 from typing import Any
 
-from awpy.types import GameFrame
 from awpy.data import PATH
+from awpy.types import GameFrame
 
 SIMPLE_WP_MODEL = None
 ADV_WP_MODEL = None
