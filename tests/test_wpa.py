@@ -30,5 +30,4 @@ class TestWPA:
 
     def test_round_win_probability(self):
         """Tests round_win_probability."""
-        with pytest.raises(NotImplementedError):
-            round_win_probability(5, 2, "de_inferno")
+        round_win_probability(5, 2, "de_inferno")
