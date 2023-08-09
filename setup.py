@@ -36,6 +36,7 @@ setup(
             "data/nav/*.txt",
             "data/nav/*.csv",
             "data/nav/*.json",
+            "data/wpa/*.json",
             "*.mod",
             "*.sum",
         ]
