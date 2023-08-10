@@ -751,7 +751,7 @@ def _get_area_points_z_s(
 
     Returns:
         area_points (dict[str, list[tuple[float, float]]]): Dict mapping each place
-            to the x and y coordiantes of each area inside it.
+            to the x and y coordinates of each area inside it.
         z_s  (dict[str, list]): Dict mapping each place to the z coordinates of each
             area inside it.
     """
@@ -1572,7 +1572,7 @@ def frame_distance(
     # Only need to look at one frame here because
     # `position_state_distance` will throw an error
     # anyway if the number of teams does not match between the frames
-    team_number_multipler = (
+    team_number_multiplier = (
         1
         if (len(frame2["ct"]["players"] or []) > 0)
         and (len(frame2["t"]["players"] or []) > 0)
@@ -1581,7 +1581,7 @@ def frame_distance(
 
     return (
         position_state_distance(map_name, pos_array1, pos_array2, distance_type)
-        * team_number_multipler
+        * team_number_multiplier
     )
 
 
@@ -1669,8 +1669,4 @@ def calculate_map_area(
         msg = "Map not found."
         raise ValueError(msg)
 
-    total_area = 0
-    for tile in NAV[map_name]:
-        total_area += calculate_tile_area(map_name, tile)
-
-    return total_area
+    return sum(calculate_tile_area(map_name, tile) for tile in NAV[map_name])

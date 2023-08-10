@@ -10,7 +10,7 @@ import textdistance
 
 
 class DistMetricCallable(Protocol):
-    """Class to define valid FOM callables."""
+    """Class to define valid text dist callables."""
 
     def __call__(self, *sequences: Sequence[object]) -> float:
         """Protocol for dist metric callables.
@@ -100,7 +100,7 @@ def replace_entities(
 ) -> pd.DataFrame:
     """A function to replace values in a Pandas df column given an entity dict.
 
-    entitiy_dict as created in associate_entities().
+    entity_dict as created in associate_entities().
 
     Args:
         dataframe (DataFrame) : A Pandas DataFrame

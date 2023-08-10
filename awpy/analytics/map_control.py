@@ -107,11 +107,9 @@ def _bfs(
     for cur_start_tile in current_tiles:
         tiles_seen: set[TileId] = set()
 
-        start_tile = BFSTileData(
-            tile_id=cur_start_tile, map_control_value=1.0, steps_left=10
+        queue: deque[BFSTileData] = deque(
+            [BFSTileData(tile_id=cur_start_tile, map_control_value=1.0, steps_left=10)]
         )
-
-        queue: deque[BFSTileData] = deque([start_tile])
 
         current_player_area = 0
 
