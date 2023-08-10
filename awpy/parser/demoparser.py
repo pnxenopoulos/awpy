@@ -97,7 +97,7 @@ class DemoParser:
         debug: bool = False,
         **parser_args: Unpack[ParserArgs],
     ) -> None:
-        """Instatiate a DemoParser.
+        """Instantiate a DemoParser.
 
         Args:
             demofile (string):
@@ -194,7 +194,7 @@ class DemoParser:
         self._json: Game | None = None
 
     def log_settings(self) -> None:
-        """Log the settings produced in the cosntructor."""
+        """Log the settings produced in the constructor."""
         self.logger.info("Rollup damages set to %s", str(self.dmg_rolled))
         self.logger.info("Parse chat set to %s", str(self.parse_chat))
         self.logger.info("Parse frames set to %s", str(self.parse_frames))
@@ -1033,7 +1033,7 @@ class DemoParser:
         # So 18, 21, 24, 27
         # Wins are 1 higher
         # So 19, 22, 25, 28
-        # So if you substract 15 + 1 from an OT winning round
+        # So if you subtract 15 + 1 from an OT winning round
         # the number is divisible by 3
         ot_valid_ct_win = (
             (game_round["endCTScore"] - tie_score - 1) % ot_tie_score == 0

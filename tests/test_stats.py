@@ -123,7 +123,7 @@ class TestStats:
                 total_value = stats[player][metric]
                 t_value = stats_t[player][metric]
                 ct_value = stats_ct[player][metric]
-                # All numerical purely cummulative values should add up
+                # All numerical purely cumulative values should add up
                 if isinstance(total_value, numbers.Number) and metric not in {
                     "kast",
                     "rating",

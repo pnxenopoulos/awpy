@@ -753,7 +753,7 @@ class BFSTileData:
 class TeamMetadata:
     """Dataclass containing metadata for one team.
 
-    Holds information for aliver player locations. Can include
+    Holds information for alive player locations. Can include
     more metadata (utility, bomb location, etc.) in the future
     """
 
@@ -946,13 +946,13 @@ def int_to_string_n_players(
         return "0"
     if n_players == 1:
         return "1"
-    if n_players == 2:  # noqa: Ruff(PLR2004)
+    if n_players == 2:  # noqa: PLR2004
         return "2"
-    if n_players == 3:  # noqa: Ruff(PLR2004)
+    if n_players == 3:  # noqa: PLR2004
         return "3"
-    if n_players == 4:  # noqa: Ruff(PLR2004)
+    if n_players == 4:  # noqa: PLR2004
         return "4"
-    if n_players == 5:  # noqa: Ruff(PLR2004)
+    if n_players == 5:  # noqa: PLR2004
         return "5"
     msg = "n_players has to be in range(6)"
     raise ValueError(msg)

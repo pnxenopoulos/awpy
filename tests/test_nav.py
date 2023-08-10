@@ -113,15 +113,15 @@ class TestNav:
         else:
             msg = (
                 "This test needs to be executed in a directory where "
-                "it can savely create and delete a 'nav' subdir!"
+                "it can safely create and delete a 'nav' subdir!"
             )
             raise AssertionError(msg)
         self.map_name = "de_mock"
         self.file_name = f"{self.map_name}.txt"
-        with open(os.path.join(self.dir, self.file_name), "w", encoding="utf8") as f:
-            f.write("1,2\n")
-            f.write("1,3\n")
-            f.write("3,1\n")
+        with open(os.path.join(self.dir, self.file_name), "w", encoding="utf8") as file:
+            file.write("1,2\n")
+            file.write("1,3\n")
+            file.write("3,1\n")
 
         self.fake_graph = create_nav_graphs(
             self.fake_nav, os.path.join(os.getcwd(), "")
@@ -776,6 +776,7 @@ class TestNav:
         ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
             result_matrix = generate_area_distance_matrix(map_name="de_mock", save=True)
 
+        # Check that the matrix has the correct structure
         assert isinstance(result_matrix, dict)
         for area1_id in result_matrix:
             assert isinstance(area1_id, str)
@@ -798,7 +799,6 @@ class TestNav:
 
     def test_generate_place_distance_matrix(self):
         """Tests generate_place_distance_matrix."""
-        # Need to mock awpy.data.NAV to properly test this
         with patch("awpy.analytics.nav.NAV", self.fake_nav), patch(
             "awpy.analytics.nav.NAV_GRAPHS", self.fake_graph
         ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
@@ -813,7 +813,7 @@ class TestNav:
                 result_matrix_2 = generate_place_distance_matrix(
                     map_name=self.map_name, save=False
                 )
-
+        # Check that the nested dict representing the matrix has the correct structure
         assert isinstance(result_matrix_1, dict)
         for place1_name in result_matrix_1:
             assert isinstance(place1_name, str)

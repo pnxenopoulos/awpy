@@ -9,8 +9,8 @@ import requests
 @pytest.fixture(scope="session", autouse=True)
 def setup() -> None:  # noqa: PT004
     """Sets up testing environment by downloading demofiles."""
-    with open("tests/test_data.json", encoding="utf-8") as f:
-        demo_data = json.load(f)
+    with open("tests/test_data.json", encoding="utf-8") as file:
+        demo_data = json.load(file)
     for file in demo_data:
         _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
 
@@ -32,6 +32,6 @@ def _get_demofile(demo_link: str, demo_name: str) -> None:
         demo_name (str): `<file>.dem` styled filename.
     """
     if not os.path.exists(demo_path := f"tests/{demo_name}.dem"):
-        r = requests.get(demo_link, timeout=100)
+        request = requests.get(demo_link, timeout=100)
         with open(demo_path, "wb") as demo_file:
-            demo_file.write(r.content)
+            demo_file.write(request.content)
