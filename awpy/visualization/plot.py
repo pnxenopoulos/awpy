@@ -616,8 +616,8 @@ def plot_map_control_metrics(
         msg = "Metrics is empty."
         raise ValueError(msg)
 
-    fig, ax = plt.subplots()
+    figure, axes = plt.subplots()
 
-    _plot_map_control_metrics(metric_arr, ax)
+    _plot_map_control_metrics(metric_arr, axes)
 
-    return fig, ax
+    return figure, axes

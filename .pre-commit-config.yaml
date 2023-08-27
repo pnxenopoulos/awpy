@@ -26,7 +26,7 @@ repos:
       - id: check-builtin-literals
         language: python
   - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.0.282
+    rev: v0.0.286
     hooks:
       - id: ruff
         args:
@@ -38,7 +38,7 @@ repos:
       - id: black
         language: python
   - repo: https://github.com/crate-ci/typos
-    rev: v1.16.2
+    rev: v1.16.8
     hooks:
       - id: typos
         args: []
@@ -64,7 +64,7 @@ repos:
             "-sn", # Don't display the score
           ]
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.53.3
+    rev: v1.54.2
     hooks:
       - id: golangci-lint
         entry: bash -c 'cd awpy/parser && golangci-lint run --new-from-rev HEAD --fix'
