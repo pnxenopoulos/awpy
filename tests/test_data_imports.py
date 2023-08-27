@@ -1,5 +1,5 @@
 """Tests correct importing of data in data module."""
-import networkx
+import networkx as nx
 
 from awpy.data import MAP_DATA, NAV, NAV_CSV, NAV_GRAPHS, PLACE_DIST_MATRIX
 
@@ -20,7 +20,7 @@ class TestDataImports:
     def test_nav_graphs(self):
         """Test NAV_GRAPHS structures."""
         assert isinstance(NAV_GRAPHS, dict)
-        assert isinstance(NAV_GRAPHS["de_dust2"], networkx.DiGraph)
+        assert isinstance(NAV_GRAPHS["de_dust2"], nx.DiGraph)
 
     def test_map_data(self):
         """Tests the nav data."""
