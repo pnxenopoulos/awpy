@@ -9,9 +9,7 @@ from awpy.analytics.map_control import (
     calc_parsed_frame_map_control_values,
     calculate_round_map_control_metrics,
     extract_teams_metadata,
-    graph_to_tile_neighbors,
 )
-from awpy.data import NAV_GRAPHS
 
 
 class TestMapControl:
@@ -193,16 +191,12 @@ class TestMapControl:
                 map_name="de_inferno",
                 current_tiles=self.isolated_tiles_inferno
                 + self.connected_tiles_inferno,
-                neighbor_info=graph_to_tile_neighbors(
-                    list(NAV_GRAPHS["de_inferno"].edges)
-                ),
                 area_threshold=0,
             )
 
         sanity_bfs_return = _bfs(
             map_name="de_inferno",
             current_tiles=self.isolated_tiles_inferno + self.connected_tiles_inferno,
-            neighbor_info=graph_to_tile_neighbors(list(NAV_GRAPHS["de_inferno"].edges)),
         )
         assert len(sanity_bfs_return.keys()) > 0
 

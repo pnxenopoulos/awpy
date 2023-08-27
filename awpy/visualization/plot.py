@@ -409,7 +409,7 @@ def _plot_map_control_from_dict(
     ct_tiles, t_tiles = occupied_tiles.ct_values, occupied_tiles.t_values
 
     # Iterate through the tiles that have a value
-    for tile in set(ct_tiles.keys()).union(set(t_tiles.keys())):
+    for tile in set(ct_tiles).union(set(t_tiles)):
         if tile in NAV[map_name]:
             area = NAV[map_name][tile]
 
