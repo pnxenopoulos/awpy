@@ -49,7 +49,6 @@ repos:
         entry: pyright
         language: system
         types: [python]
-        pass_filenames: false
   - repo: local
     hooks:
       - id: pylint
@@ -57,7 +56,6 @@ repos:
         entry: pylint awpy
         language: system
         types: [python]
-        pass_filenames: false
         args:
           [
             "-rn", # Only display messages
