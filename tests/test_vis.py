@@ -1,5 +1,6 @@
 """Tests visualization module."""
 import os
+import shutil
 from unittest.mock import MagicMock, patch
 
 import matplotlib as mpl
@@ -268,3 +269,4 @@ class TestVis:
         os.mkdir(AWPY_TMP_FOLDER)
         with pytest.raises(FileExistsError), with_tmp_dir():
             pass
+        shutil.rmtree(AWPY_TMP_FOLDER)
