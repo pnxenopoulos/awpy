@@ -29,6 +29,7 @@ type Game struct {
 	ClientName     string          `json:"clientName"`
 	Map            string          `json:"mapName"`
 	TickRate       int64           `json:"tickRate"`
+	FrameRate      int64           `json:"frameRate"`
 	PlaybackTicks  int64           `json:"playbackTicks"`
 	PlaybackFrames int64           `json:"playbackFramesCount"`
 	ParsedToFrame  int64           `json:"parsedToFrameIdx"`
@@ -44,6 +45,7 @@ type Game struct {
 // ParserOpts holds the parameters passed to the parser.
 type ParserOpts struct {
 	ParseRate       int    `json:"parseRate"`
+	ParseRelative   bool   `json:"parseRelative"`
 	ParseFrames     bool   `json:"parseFrames"`
 	ParseKillFrames bool   `json:"parseKillFrames"`
 	TradeTime       int64  `json:"tradeTime"`
@@ -2598,6 +2600,7 @@ func main() {
 	fl := new(flag.FlagSet)
 	demoPathPtr := fl.String("demo", "", "Demo file `path`")
 	parseRatePtr := fl.Int("parserate", 128, "Parse rate, indicates spacing between ticks")
+	parseRelativePtr := fl.Bool("parserelative", false, "Parse frames relative to a tickrate of 128")
 	parseFramesPtr := fl.Bool("parseframes", false, "Parse frames")
 	parseKillFramesPtr := fl.Bool("parsekillframes", false, "Parse kill frames")
 	tradeTimePtr := fl.Int("tradetime", 5, "Trade time frame (in seconds)")
@@ -2613,6 +2616,7 @@ func main() {
 
 	demPath := *demoPathPtr
 	parseRate := *parseRatePtr
+	parseRelative := *parseRelativePtr
 	parseFrames := *parseFramesPtr
 	parseKillFrames := *parseKillFramesPtr
 	tradeTime := int64(*tradeTimePtr)
@@ -2655,6 +2659,12 @@ func main() {
 	} else {
 		currentGame.TickRate = int64(math.Round(p.TickRate())) // Rounds to 127 instead
 	}
+	currentGame.FrameRate = int64(math.Round(header.FrameRate()))
+
+	parseRate *= int(math.Round(float64(currentGame.FrameRate) / 128))
+	if parseRate < 1 {
+		parseRate = 1
+	}
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
 	currentGame.PlaybackFrames = int64(header.PlaybackFrames)
 	currentGame.ClientName = header.ClientName
@@ -2665,6 +2675,7 @@ func main() {
 	// Set parsing options
 	parsingOpts := ParserOpts{}
 	parsingOpts.ParseRate = parseRate
+	parsingOpts.ParseRelative = parseRelative
 	parsingOpts.ParseFrames = parseFrames
 	parsingOpts.ParseKillFrames = parseKillFrames
 	parsingOpts.TradeTime = tradeTime
