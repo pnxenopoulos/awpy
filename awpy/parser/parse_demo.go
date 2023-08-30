@@ -2661,9 +2661,11 @@ func main() {
 	}
 	currentGame.FrameRate = int64(math.Round(header.FrameRate()))
 
-	parseRate *= int(math.Round(float64(currentGame.FrameRate) / 128))
-	if parseRate < 1 {
-		parseRate = 1
+	if parseRelative {
+		parseRate *= int(math.Round(float64(currentGame.FrameRate) / 128))
+		if parseRate < 1 {
+			parseRate = 1
+		}
 	}
 	currentGame.PlaybackTicks = int64(header.PlaybackTicks)
 	currentGame.PlaybackFrames = int64(header.PlaybackFrames)
