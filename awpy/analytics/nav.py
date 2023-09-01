@@ -800,12 +800,16 @@ def generate_centroids(
         # Get the centroids and rep. point of the hull
         try:
             my_polygon = Polygon(hull)
+            centroid_coords = np.array(my_polygon.centroid.coords)[0]
             my_centroid = (
-                *list(np.array(my_polygon.centroid.coords)[0]),
+                centroid_coords[0],
+                centroid_coords[1],
                 mean(z_s[area_name]),
             )
+            rep_coords = np.array(my_polygon.representative_point().coords)[0]
             rep_point = (
-                *list(np.array(my_polygon.representative_point().coords)[0]),
+                rep_coords[0],
+                rep_coords[1],
                 mean(z_s[area_name]),
             )
         except ValueError:  # A LinearRing must have at least 3 coordinate tuples
