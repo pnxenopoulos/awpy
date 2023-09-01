@@ -86,7 +86,6 @@ def _bfs(
     Args:
         map_name (str): Map for current_tiles
         current_tiles (TileId): List of source tiles for bfs iteration(s)
-        neighbor_info (dict): Dictionary mapping tile to its navigable neighbors
         area_threshold (float): Percentage representing amount of map's total
                                 navigable area which is the max cumulative tile
                                 area for each bfs algorithm
@@ -161,7 +160,6 @@ def _calc_frame_map_control_tile_values(
         map_name (str): Map for other arguments
         ct_tiles (list): List of CT-occupied tiles
         t_tiles (list): List of T-occupied tiles
-        neighbor_info (TileNeighbors): Object with tile to neighbor mapping
 
     Returns:
         FrameMapControlValues object containing each team's map control values
@@ -256,9 +254,8 @@ def _extract_team_metadata(
     Returns:
         TeamMetadata with metadata on team's players
     """
-    coords = ("x", "y", "z")
     alive_players: list[PlayerPosition] = [
-        tuple(player[dim] for dim in coords)
+        (player["x"], player["y"], player["z"])
         for player in side_data["players"] or []
         if player["isAlive"]
     ]
