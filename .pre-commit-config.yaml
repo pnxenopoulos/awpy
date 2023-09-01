@@ -26,7 +26,7 @@ repos:
       - id: check-builtin-literals
         language: python
   - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.0.286
+    rev: v0.0.287
     hooks:
       - id: ruff
         args:
@@ -38,7 +38,7 @@ repos:
       - id: black
         language: python
   - repo: https://github.com/crate-ci/typos
-    rev: v1.16.8
+    rev: v1.16.9
     hooks:
       - id: typos
         args: []
