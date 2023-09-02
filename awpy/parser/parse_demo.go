@@ -1485,11 +1485,11 @@ func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentR
 
 func registerRoundMVPHandler(demoParser *dem.Parser, currentRound *GameRound) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundMVPAnnouncement) {
-	    if e.Player != nil {
-            currentRound.MVPName = e.Player.Name
-            currentRound.MVPSteamID = int64(e.Player.SteamID64)
-            currentRound.MVPReason = convertRoundMVPReason(e.Reason)
-        }
+		if e.Player != nil {
+			currentRound.MVPName = e.Player.Name
+			currentRound.MVPSteamID = int64(e.Player.SteamID64)
+			currentRound.MVPReason = convertRoundMVPReason(e.Reason)
+		}
 	})
 }
 
@@ -2753,7 +2753,7 @@ func main() {
 	registerRoundEndOfficialHandler(&p, &currentGame, &currentRound, &roundInEndTime, &RoundRestartDelay)
 	registerRoundEndHandler(&p, &currentGame, &currentRound, &roundStarted, &roundInEndTime, &RoundRestartDelay)
 
-    // Parse MVP announcements
+	// Parse MVP announcements
 	registerRoundMVPHandler(&p, &currentRound)
 
 	// Parse bomb defuses
