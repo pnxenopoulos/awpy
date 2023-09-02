@@ -388,6 +388,19 @@ class TestDemoParser:
         assert len(self.warmup_sneem_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_sneem_data["gameRounds"])
 
+    def test_284(self):
+        """Test new warmup logic and freezetime workaround.
+
+        See https://github.com/pnxenopoulos/awpy/issues/284
+        """
+        cevo_pov_parser = DemoParser(demofile="tests/cevo-pov.dem", log=False)
+        data = cevo_pov_parser.parse(clean=False)
+        # No extra rounds from freezetime workaround
+        assert len(data["gameRounds"]) == 28
+        data = cevo_pov_parser.clean_rounds()
+        # Cleans correct number of rounds.
+        assert len(data["gameRounds"]) == 21
+
     def test_bomb_sites(self):
         """Tests that both bombsite A and B show up."""
         self.bombsite_parser = DemoParser(

@@ -1129,7 +1129,8 @@ func setTeamValuesInRound(currentRound *GameRound, gameState *dem.GameState) {
 }
 
 func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
-	roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke, globalFrameIndex *int64) {
+	roundStarted *int, roundInFreezetime *int, roundInEndTime *int, freezeTimeSetFromGameState *bool,
+	smokes *[]Smoke, globalFrameIndex *int64) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundStart) {
 		gs := (*demoParser).GameState()
 		currentGame.MatchPhases.RoundStarted = append(currentGame.MatchPhases.RoundStarted, int64(gs.IngameTick()))
@@ -1142,6 +1143,7 @@ func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, curren
 
 		*roundStarted = 1
 		*roundInFreezetime = 1
+		*freezeTimeSetFromGameState = false
 		*roundInEndTime = 0
 		*currentRound = GameRound{}
 
@@ -1203,7 +1205,8 @@ func registerRoundStartHandler(demoParser *dem.Parser, currentGame *Game, curren
 
 func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound,
 	convParsed *int, roundRestartDelay *int64,
-	roundStarted *int, roundInFreezetime *int, roundInEndTime *int, smokes *[]Smoke) {
+	roundStarted *int, roundInFreezetime *int, roundInEndTime *int, freezeTimeSetFromGameState *bool,
+	smokes *[]Smoke) {
 	// Parse round freezetime ends
 	(*demoParser).RegisterEventHandler(func(e events.RoundFreezetimeEnd) {
 		gs := (*demoParser).GameState()
@@ -1254,7 +1257,7 @@ func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game
 			}
 		}
 
-		if *roundInFreezetime == 0 {
+		if *roundInFreezetime == 0 && !(*freezeTimeSetFromGameState) {
 			// This means the RoundStart event did not fire, but the FreezeTimeEnd did
 			currentGame.Rounds = append(currentGame.Rounds, *currentRound)
 			*roundStarted = 1
@@ -1313,6 +1316,7 @@ func registerRoundFreezeTimeEndHandler(demoParser *dem.Parser, currentGame *Game
 		currentRound.TSide = teamT
 
 		*roundInFreezetime = 0
+		*freezeTimeSetFromGameState = false
 		currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
 	})
 }
@@ -2394,7 +2398,8 @@ func inFreezeTimeFromGameRules(gameState *dem.GameState) bool {
 }
 
 func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRound *GameRound, smokes *[]Smoke,
-	roundInFreezetime *int, roundInEndTime *int, currentFrameIdx *int, parseFrames *bool, globalFrameIndex *int64) {
+	roundInFreezetime *int, roundInEndTime *int, freezeTimeSetFromGameState *bool,
+	currentFrameIdx *int, parseFrames *bool, globalFrameIndex *int64) {
 	(*demoParser).RegisterEventHandler(func(e events.FrameDone) {
 		gs := (*demoParser).GameState()
 
@@ -2402,6 +2407,7 @@ func registerFrameHandler(demoParser *dem.Parser, currentGame *Game, currentRoun
 		// but the toggle still thinks we are then correct the toggle
 		if !inFreezeTimeFromGameRules(&gs) && (*roundInFreezetime != 0) {
 			*roundInFreezetime = 0
+			*freezeTimeSetFromGameState = true
 			currentRound.FreezeTimeEndTick = int64(gs.IngameTick())
 		}
 
@@ -2592,7 +2598,6 @@ func main() {
 	The parserate should be one of 2^0 to 2^7. The lower the value, the more frames are collected.
 	Indicates spacing between parsed demo frames in ticks.
 	*/
-
 	logger := log.New(os.Stderr, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	fl := new(flag.FlagSet)
@@ -2643,6 +2648,7 @@ func main() {
 	roundStarted := 0
 	roundInEndTime := 0
 	roundInFreezetime := 0
+	freezeTimeSetFromGameState := false
 	currentFrameIdx := 0
 	convParsed := 0
 
@@ -2719,9 +2725,11 @@ func main() {
 
 	// Parse round starts
 	registerRoundStartHandler(&p, &currentGame, &currentRound,
-		&roundStarted, &roundInFreezetime, &roundInEndTime, &smokes, &globalFrameIndex)
+		&roundStarted, &roundInFreezetime, &roundInEndTime, &freezeTimeSetFromGameState,
+		&smokes, &globalFrameIndex)
 	registerRoundFreezeTimeEndHandler(&p, &currentGame, &currentRound, &convParsed,
-		&RoundRestartDelay, &roundStarted, &roundInFreezetime, &roundInEndTime, &smokes)
+		&RoundRestartDelay, &roundStarted, &roundInFreezetime, &roundInEndTime, &freezeTimeSetFromGameState,
+		&smokes)
 
 	// Parse round ends
 	registerRoundEndOfficialHandler(&p, &currentGame, &currentRound, &roundInEndTime, &RoundRestartDelay)
@@ -2758,7 +2766,7 @@ func main() {
 	// Parse a demo frame. If parse rate is 1, then every frame is parsed.
 	// If parse rate is 2, then every 2 frames is parsed, and so on
 	registerFrameHandler(&p, &currentGame, &currentRound, &smokes, &roundInFreezetime,
-		&roundInEndTime, &currentFrameIdx, &parseFrames, &globalFrameIndex)
+		&roundInEndTime, &freezeTimeSetFromGameState, &currentFrameIdx, &parseFrames, &globalFrameIndex)
 	// Parse demofile to end
 	err = p.ParseToEnd()
 	currentGame.ParsedToFrame = int64(p.CurrentFrame())

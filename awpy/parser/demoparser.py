@@ -1076,7 +1076,25 @@ class DemoParser:
                     + game_round["ctScore"]
                     + game_round["endCTScore"]
                 )
-                if i < len(self.json["gameRounds"]) - 1:
+                lookback_round = self.json["gameRounds"][i - 1]
+                lookback_round_total = (
+                    lookback_round["tScore"]
+                    + lookback_round["endTScore"]
+                    + lookback_round["ctScore"]
+                    + lookback_round["endCTScore"]
+                )
+                # Last round just have to have a higher score than the previous
+                if (
+                    i == (len(self.json["gameRounds"]) - 1)
+                    and current_round_total > lookback_round_total
+                ):
+                    cleaned_rounds.append(game_round)
+                # Other rounds have more criteria
+                # They need to have a lower score than the next round
+                # Or when they are the round that causes the game to end in a win
+                # Then they just need more rounds than the previous.
+                # Rounds after are likely not real anymore.
+                elif i < (len(self.json["gameRounds"]) - 1):
                     lookahead_round = self.json["gameRounds"][i + 1]
                     lookahead_round_total = (
                         lookahead_round["tScore"]
@@ -1084,24 +1102,12 @@ class DemoParser:
                         + lookahead_round["ctScore"]
                         + lookahead_round["endCTScore"]
                     )
-                    if (
-                        # Next round should have higher score than current
-                        (lookahead_round_total > current_round_total)
-                        # Or the round is the final real round
-                        # with a winner and a loser
-                        or self._has_winner_and_not_winner(game_round)
+                    if (lookahead_round_total > current_round_total) or (
+                        self._has_winner_and_not_winner(game_round)
+                        and current_round_total > lookback_round_total
                     ):
                         cleaned_rounds.append(game_round)
-                else:
-                    lookback_round = self.json["gameRounds"][i - 1]
-                    lookback_round_total = (
-                        lookback_round["tScore"]
-                        + lookback_round["endTScore"]
-                        + lookback_round["ctScore"]
-                        + lookback_round["endCTScore"]
-                    )
-                    if current_round_total > lookback_round_total:
-                        cleaned_rounds.append(game_round)
+
             self.json["gameRounds"] = cleaned_rounds
         else:
             msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
@@ -1178,28 +1184,11 @@ class DemoParser:
             AttributeError: Raises an AttributeError if the .json attribute is None
         """
         if self.json:
-            cleaned_rounds = []
-            # Remove warmups where the demo may have started recording
-            # in the middle of a warmup round
-            if "warmupChanged" in self.json["matchPhases"]:
-                if (
-                    self.json["matchPhases"]["warmupChanged"] is not None
-                    and len(self.json["matchPhases"]["warmupChanged"]) > 1
-                ):
-                    last_warmup_changed = self.json["matchPhases"]["warmupChanged"][1]
-                    for game_round in self.json["gameRounds"] or []:
-                        if (game_round["startTick"] > last_warmup_changed) and (
-                            not game_round["isWarmup"]
-                        ):
-                            cleaned_rounds.append(game_round)
-                        if game_round["startTick"] == last_warmup_changed:
-                            cleaned_rounds.append(game_round)
-                else:
-                    cleaned_rounds.extend(
-                        game_round
-                        for game_round in self.json["gameRounds"] or []
-                        if not game_round["isWarmup"]
-                    )
+            cleaned_rounds = [
+                game_round
+                for game_round in self.json["gameRounds"] or []
+                if not game_round["isWarmup"]
+            ]
             self.json["gameRounds"] = cleaned_rounds
         else:
             msg = "JSON not found. Run .parse() or .read_json() if JSON already exists"
