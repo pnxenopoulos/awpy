@@ -568,7 +568,7 @@ func convertRoundMVPReason(r events.RoundMVPReason) string {
 	case events.MVPReasonBombPlanted:
 		return "MVPReasonBombPlanted"
 	default:
-		return "Unknown"
+		return unknown
 	}
 }
 
@@ -1487,8 +1487,10 @@ func registerRoundMVPHandler(demoParser *dem.Parser, currentRound *GameRound) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundMVPAnnouncement) {
 		if e.Player != nil {
 			currentRound.MVPName = &e.Player.Name
-			currentRound.MVPSteamID = &int64(e.Player.SteamID64)
-			currentRound.MVPReason = &convertRoundMVPReason(e.Reason)
+			playerSteamID := int64(e.Player.SteamID64)
+			mvpReason := convertRoundMVPReason(e.Reason)
+			currentRound.MVPSteamID = &playerSteamID
+			currentRound.MVPReason = &mvpReason
 		}
 	})
 }
