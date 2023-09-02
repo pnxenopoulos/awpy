@@ -270,7 +270,7 @@ class TestDemoParser:
                 "mvpSteamID": 76561197973392984,
                 "mvpReason": "MVPReasonBombDefused",
             },
-            23: {"mvpName": "", "mvpSteamID": 0, "mvpReason": ""},
+            23: {"mvpName": None, "mvpSteamID": None, "mvpReason": None},
             24: {
                 "mvpName": "keev",
                 "mvpSteamID": 76561198011536764,

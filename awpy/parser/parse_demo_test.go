@@ -9,7 +9,7 @@ import (
 
 func TestConvertRoundMVPReason(t *testing.T) {
 	t.Parallel()
-	enumReasons := [3]events.MVPReason{events.MVPReasonMostEliminations, events.MVPReasonBombDefused, events.MVPReasonBombPlanted}
+	enumReasons := [3]events.RoundMVPReason{events.MVPReasonMostEliminations, events.MVPReasonBombDefused, events.MVPReasonBombPlanted}
 	textReasons := []string{"MVPReasonMostEliminations", "MVPReasonBombDefused", "MVPReasonBombPlanted"}
 	for index, reason := range enumReasons {
 		is := convertRoundMVPReason(reason)
