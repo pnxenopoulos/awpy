@@ -1486,9 +1486,9 @@ func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentR
 func registerRoundMVPHandler(demoParser *dem.Parser, currentRound *GameRound) {
 	(*demoParser).RegisterEventHandler(func(e events.RoundMVPAnnouncement) {
 		if e.Player != nil {
-			currentRound.MVPName = *e.Player.Name
-			currentRound.MVPSteamID = *int64(e.Player.SteamID64)
-			currentRound.MVPReason = *convertRoundMVPReason(e.Reason)
+			currentRound.MVPName = &e.Player.Name
+			currentRound.MVPSteamID = &int64(e.Player.SteamID64)
+			currentRound.MVPReason = &convertRoundMVPReason(e.Reason)
 		}
 	})
 }
