@@ -569,9 +569,9 @@ class GameRound(TypedDict):
     winningTeam: str | None
     losingTeam: str | None
     roundEndReason: str
-    MVPName: str | None
-    MVPSteamID: int | None
-    MVPReason: str | None
+    mvpName: str | None
+    mvpSteamID: int | None
+    mvpReason: str | None
     ctFreezeTimeEndEqVal: int
     ctRoundStartEqVal: int
     ctRoundSpendMoney: int

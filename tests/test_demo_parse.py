@@ -246,59 +246,59 @@ class TestDemoParser:
         self.default_data = self.parser.parse()
         expected = {
             1: {
-                "MVPName": "tiziaN",
-                "MVPSteamID": 76561197997556936,
-                "MVPReason": "MVPReasonMostEliminations",
+                "mvpName": "tiziaN",
+                "mvpSteamID": 76561197997556936,
+                "mvpReason": "MVPReasonMostEliminations",
             },
             3: {
-                "MVPName": "syrsoNR",
-                "MVPSteamID": 76561197980122997,
-                "MVPReason": "MVPReasonBombPlanted",
+                "mvpName": "syrsoNR",
+                "mvpSteamID": 76561197980122997,
+                "mvpReason": "MVPReasonBombPlanted",
             },
             8: {
-                "MVPName": "Ex6TenZ-BALLISTIX",
-                "MVPSteamID": 76561197972003061,
-                "MVPReason": "MVPReasonBombDefused",
+                "mvpName": "Ex6TenZ-BALLISTIX",
+                "mvpSteamID": 76561197972003061,
+                "mvpReason": "MVPReasonBombDefused",
             },
             11: {
-                "MVPName": "keev",
-                "MVPSteamID": 76561198011536764,
-                "MVPReason": "MVPReasonMostEliminations",
+                "mvpName": "keev",
+                "mvpSteamID": 76561198011536764,
+                "mvpReason": "MVPReasonMostEliminations",
             },
             22: {
-                "MVPName": "crisby",
-                "MVPSteamID": 76561197973392984,
-                "MVPReason": "MVPReasonBombDefused",
+                "mvpName": "crisby",
+                "mvpSteamID": 76561197973392984,
+                "mvpReason": "MVPReasonBombDefused",
             },
-            23: {"MVPName": "", "MVPSteamID": 0, "MVPReason": ""},
+            23: {"mvpName": "", "mvpSteamID": 0, "mvpReason": ""},
             24: {
-                "MVPName": "keev",
-                "MVPSteamID": 76561198011536764,
-                "MVPReason": "MVPReasonBombDefused",
+                "mvpName": "keev",
+                "mvpSteamID": 76561198011536764,
+                "mvpReason": "MVPReasonBombDefused",
             },
             27: {
-                "MVPName": "ALEX * Intel",
-                "MVPSteamID": 76561198004871434,
-                "MVPReason": "MVPReasonMostEliminations",
+                "mvpName": "ALEX * Intel",
+                "mvpSteamID": 76561198004871434,
+                "mvpReason": "MVPReasonMostEliminations",
             },
             29: {
-                "MVPName": "crisby",
-                "MVPSteamID": 76561197973392984,
-                "MVPReason": "MVPReasonMostEliminations",
+                "mvpName": "crisby",
+                "mvpSteamID": 76561197973392984,
+                "mvpReason": "MVPReasonMostEliminations",
             },
         }
         for game_round in self.default_data["gameRounds"]:
             if game_round["roundNum"] in expected:
                 assert (
-                    game_round["MVPName"] == expected[game_round["roundNum"]]["MVPName"]
+                    game_round["mvpName"] == expected[game_round["roundNum"]]["mvpName"]
                 )
                 assert (
-                    game_round["MVPSteamID"]
-                    == expected[game_round["roundNum"]]["MVPSteamID"]
+                    game_round["mvpSteamID"]
+                    == expected[game_round["roundNum"]]["mvpSteamID"]
                 )
                 assert (
-                    game_round["MVPReason"]
-                    == expected[game_round["roundNum"]]["MVPReason"]
+                    game_round["mvpReason"]
+                    == expected[game_round["roundNum"]]["mvpReason"]
                 )
 
     def test_parse_kill_frames(self):

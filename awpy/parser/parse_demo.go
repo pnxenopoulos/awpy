@@ -138,9 +138,9 @@ type GameRound struct {
 	WinningTeam          *string            `json:"winningTeam"`
 	LosingTeam           *string            `json:"losingTeam"`
 	Reason               string             `json:"roundEndReason"`
-	MVPName              string             `json:"MVPName"`
-	MVPSteamID           int64              `json:"MVPSteamID"`
-	MVPReason            string             `json:"MVPReason"`
+	MVPName              *string            `json:"mvpName"`
+	MVPSteamID           *int64             `json:"mvpSteamID"`
+	MVPReason            *string            `json:"mvpReason"`
 	CTFreezeTimeEndEqVal int64              `json:"ctFreezeTimeEndEqVal"`
 	CTRoundStartEqVal    int64              `json:"ctRoundStartEqVal"`
 	CTRoundMoneySpend    int64              `json:"ctRoundSpendMoney"`

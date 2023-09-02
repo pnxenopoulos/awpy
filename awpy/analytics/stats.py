@@ -626,11 +626,11 @@ def _handle_mvps(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
-    if "MVPName" in game_round:
+    if "mvpName" in game_round:
         player_key = (
-            game_round["MVPName"]
-            if game_round["MVPSteamID"] == 0
-            else str(game_round["MVPSteamID"])
+            game_round["mvpName"]
+            if game_round["mvpSteamID"] == 0
+            else str(game_round["mvpSteamID"])
         )
         if player_key in round_statistics["active_players"]:
             player_statistics[player_key]["mvp"] += 1
