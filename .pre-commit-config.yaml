@@ -26,30 +26,45 @@ repos:
       - id: check-builtin-literals
         language: python
   - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.0.267
+    rev: v0.0.286
     hooks:
       - id: ruff
         args:
           - '--fix'
           - '--exit-non-zero-on-fix'
   - repo: 'https://github.com/psf/black'
-    rev: 23.3.0
+    rev: 23.7.0
     hooks:
       - id: black
         language: python
-  # - repo: 'https://github.com/RobertCraigie/pyright-python'
-  #   rev: v1.1.305
-  #   hooks:
-  #     - id: pyright
-  #       additional_dependencies:
-  #         - imageio>=2.9.0
-  #         - matplotlib>=3.1.2
-  #         - networkx>=2.6.3
-  #         - numpy>=1.18.1
-  #         - pandas>=0.25.3
-  #         - scipy>=1.7.3
-  #         - Shapely>=1.8.2
-  #         - sympy>=1.10.1
-  #         - textdistance>=4.2.0
-  #         - tqdm>=4.55.2
-  #         - pandas-stubs==2.0.0.230412
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.16.8
+    hooks:
+      - id: typos
+        args: []
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: pyright
+        language: system
+        types: [python]
+        pass_filenames: false
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint awpy
+        language: system
+        types: [python]
+        pass_filenames: false
+        args:
+          [
+            "-rn", # Only display messages
+            "-sn", # Don't display the score
+          ]
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.54.2
+    hooks:
+      - id: golangci-lint
+        entry: bash -c 'cd awpy/parser && golangci-lint run --new-from-rev HEAD --fix'

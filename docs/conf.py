@@ -23,13 +23,13 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = "awpy"
-copyright = "2022, Peter Xenopoulos"
+copyright = "2023, Peter Xenopoulos"
 author = "Peter Xenopoulos"
 
 # The short X.Y version
 version = ""
 # The full version, including alpha/beta/rc tags
-release = "1.2.3"
+release = "1.3.1"
 
 
 # -- General configuration ---------------------------------------------------

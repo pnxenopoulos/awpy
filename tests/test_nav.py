@@ -10,6 +10,8 @@ import pytest
 
 from awpy.analytics.nav import (
     area_distance,
+    calculate_map_area,
+    calculate_tile_area,
     find_closest_area,
     frame_distance,
     generate_area_distance_matrix,
@@ -73,21 +75,53 @@ class TestNav:
             }
         }
 
+        self.fake_tile_area_nav = {
+            "de_mock": {
+                1: {
+                    "areaName": "Place1",
+                    "northWestX": 2,
+                    "northWestY": 2,
+                    "northWestZ": 0,
+                    "southEastX": 0,
+                    "southEastY": 0,
+                    "southEastZ": 0,
+                },
+                2: {
+                    "areaName": "Place2",
+                    "northWestX": 2,
+                    "northWestY": 0,
+                    "northWestZ": 0,
+                    "southEastX": 6,
+                    "southEastY": 2,
+                    "southEastZ": 0,
+                },
+                3: {
+                    "areaName": "Place3",
+                    "northWestX": 6,
+                    "northWestY": 6,
+                    "northWestZ": 0,
+                    "southEastX": 0,
+                    "southEastY": 2,
+                    "southEastZ": 0,
+                },
+            }
+        }
+
         self.dir = os.path.join(os.getcwd(), "nav")
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
         else:
             msg = (
                 "This test needs to be executed in a directory where "
-                "it can savely create and delete a 'nav' subdir!"
+                "it can safely create and delete a 'nav' subdir!"
             )
             raise AssertionError(msg)
         self.map_name = "de_mock"
         self.file_name = f"{self.map_name}.txt"
-        with open(os.path.join(self.dir, self.file_name), "w", encoding="utf8") as f:
-            f.write("1,2\n")
-            f.write("1,3\n")
-            f.write("3,1\n")
+        with open(os.path.join(self.dir, self.file_name), "w", encoding="utf8") as file:
+            file.write("1,2\n")
+            file.write("1,3\n")
+            file.write("3,1\n")
 
         self.fake_graph = create_nav_graphs(
             self.fake_nav, os.path.join(os.getcwd(), "")
@@ -462,7 +496,9 @@ class TestNav:
             point_in_area(map_name="test", area_id=3814, point=[0, 0, 0])
         with pytest.raises(ValueError, match="Area ID not found."):
             point_in_area(map_name="de_dust2", area_id=0, point=[0, 0, 0])
-        with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
+        with pytest.raises(
+            ValueError, match=re.escape("Point must be a tuple (X,Y,Z)")
+        ):
             point_in_area(map_name="de_dust2", area_id=3814, point=[0])
         avg_x = (
             NAV["de_dust2"][152]["northWestX"] + NAV["de_dust2"][152]["southEastX"]
@@ -483,11 +519,13 @@ class TestNav:
     def test_find_area(self):
         """Tests find_area."""
         with pytest.raises(ValueError, match="Map not found."):
-            find_closest_area(map_name="test", point=[0, 0, 0])
-        with pytest.raises(ValueError, match=re.escape("Point must be a list [X,Y,Z]")):
+            find_closest_area(map_name="test", point=(0, 0, 0))
+        with pytest.raises(
+            ValueError, match=re.escape("Point must be a tuple (X,Y,Z)")
+        ):
             find_closest_area(map_name="de_dust2", point=[0, 0])
         with pytest.raises(
-            ValueError, match=re.escape("Point must be a list [X,Y] when flat is True")
+            ValueError, match=re.escape("Point must be a tuple (X,Y) when flat is True")
         ):
             find_closest_area(map_name="de_dust2", point=[0, 0, 0], flat=True)
         example_area = NAV["de_dust2"][152]
@@ -510,14 +548,18 @@ class TestNav:
         assert isinstance(area_found_flat, dict)
         assert area_found_flat["areaId"] == 1290
 
-    def test_area_distance(self):  # sourcery skip: extract-duplicate-method
-        """Tests area distance."""
+    def test_area_distance_invalid_parameters(self):
+        """Tests area distance raises correct errors."""
         with pytest.raises(ValueError, match="Map not found."):
             area_distance(map_name="test", area_a=152, area_b=152, dist_type="graph")
         with pytest.raises(ValueError, match="Area ID not found."):
             area_distance(map_name="de_dust2", area_a=0, area_b=0, dist_type="graph")
         with pytest.raises(ValueError, match="dist_type can only be "):
             area_distance(map_name="de_dust2", area_a=152, area_b=152, dist_type="test")
+
+    def test_area_distance_anomalous_graph_based_distances(self):
+        """Tests that area distance gives correct results for edge cases."""
+        # Identical start and end tile
         graph_dist = area_distance(
             map_name="de_dust2", area_a=152, area_b=152, dist_type="graph"
         )
@@ -527,9 +569,12 @@ class TestNav:
         assert isinstance(graph_dist, dict)
         assert graph_dist["distanceType"] == "graph"
         assert graph_dist["distance"] == 0
+        assert len(graph_dist["areas"]) == 1
         assert isinstance(geo_dist, dict)
         assert geo_dist["distanceType"] == "geodesic"
         assert geo_dist["distance"] == 0
+        assert len(geo_dist["areas"]) == 1
+        # No path between start and end tile
         graph_dist = area_distance(
             map_name="de_dust2", area_a=8251, area_b=8773, dist_type="graph"
         )
@@ -540,11 +585,14 @@ class TestNav:
         assert geo_dist["distance"] == float("inf")
         assert len(graph_dist["areas"]) == 0
         assert len(geo_dist["areas"]) == 0
+
+    def test_area_distance_euclidean(self):
+        """Tests that euclidean version of area distance gives expected shape."""
         euc_dist = area_distance(
             map_name="de_dust2", area_a=8251, area_b=8773, dist_type="euclidean"
         )
         assert isinstance(euc_dist, dict)
-        assert len(euc_dist["areas"]) == 0
+        assert len(euc_dist["areas"]) == 2
 
     def test_point_distance(self):
         """Tests point distance."""
@@ -740,6 +788,7 @@ class TestNav:
         ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
             result_matrix = generate_area_distance_matrix(map_name="de_mock", save=True)
 
+        # Check that the matrix has the correct structure
         assert isinstance(result_matrix, dict)
         for area1_id in result_matrix:
             assert isinstance(area1_id, str)
@@ -762,7 +811,6 @@ class TestNav:
 
     def test_generate_place_distance_matrix(self):
         """Tests generate_place_distance_matrix."""
-        # Need to mock awpy.data.NAV to properly test this
         with patch("awpy.analytics.nav.NAV", self.fake_nav), patch(
             "awpy.analytics.nav.NAV_GRAPHS", self.fake_graph
         ), patch("awpy.analytics.nav.PATH", os.path.join(os.getcwd(), "")):
@@ -777,7 +825,7 @@ class TestNav:
                 result_matrix_2 = generate_place_distance_matrix(
                     map_name=self.map_name, save=False
                 )
-
+        # Check that the nested dict representing the matrix has the correct structure
         assert isinstance(result_matrix_1, dict)
         for place1_name in result_matrix_1:
             assert isinstance(place1_name, str)
@@ -1956,3 +2004,32 @@ class TestNav:
         assert token_distance(map_name, token1, token2) == token_state_distance(
             map_name, array1, array2
         )
+
+    def test_calculate_tile_area(self):
+        """Tests calculate_tile_area with known inferno tile."""
+        with pytest.raises(ValueError, match="Map not found."):
+            calculate_tile_area(
+                map_name="de_na",
+                tile_id=1,
+            )
+        with pytest.raises(ValueError, match="Tile ID not found."):
+            calculate_tile_area(
+                map_name="de_inferno",
+                tile_id=1234,
+            )
+        test_map_control_metric = calculate_tile_area(
+            map_name="de_inferno",
+            tile_id=1933,
+        )
+        assert test_map_control_metric == 625
+
+    def test_calculate_map_area(self):
+        """Tests calculate_map_area with inferno."""
+        with pytest.raises(ValueError, match="Map not found."):
+            calculate_map_area(
+                map_name="de_na",
+            )
+        test_map_area = calculate_map_area(
+            map_name="de_inferno",
+        )
+        assert int(test_map_area) == 5924563

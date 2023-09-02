@@ -1,11 +1,8 @@
 """Tests stats module."""
-import json
 import numbers
-import os
 from math import isclose
 
 import pandas as pd
-import requests
 
 from awpy.analytics.stats import player_stats
 from awpy.parser import DemoParser
@@ -34,15 +31,8 @@ class TestStats:
 
     def setup_class(self):
         """Sets up class by defining the parser, filters, and dataframes."""
-        with open("tests/test_data.json", encoding="utf-8") as f:
-            self.demo_data = json.load(f)
-        r = requests.get(
-            self.demo_data["astralis-vs-liquid-m2-nuke"]["url"], timeout=100
-        )
-        with open("astralis-vs-liquid-m2-nuke.dem", "wb") as demo_file:
-            demo_file.write(r.content)
         self.parser = DemoParser(
-            demofile="astralis-vs-liquid-m2-nuke.dem",
+            demofile="tests/astralis-vs-liquid-m2-nuke.dem",
             demo_id="test",
             parse_rate=128,
             parse_frames=True,
@@ -53,12 +43,6 @@ class TestStats:
         """Set parser to none."""
         self.parser = None
         self.data = None
-        files_in_directory = os.listdir()
-        if filtered_files := [
-            file for file in files_in_directory if file.endswith((".dem", ".json"))
-        ]:
-            for f in filtered_files:
-                os.remove(f)
 
     def test_player_stats_both_json(self):
         """Tests json generation of player stats for both sides."""
@@ -144,7 +128,7 @@ class TestStats:
                 total_value = stats[player][metric]
                 t_value = stats_t[player][metric]
                 ct_value = stats_ct[player][metric]
-                # All numerical purely cummulative values should add up
+                # All numerical purely cumulative values should add up
                 if isinstance(total_value, numbers.Number) and metric not in {
                     "kast",
                     "rating",

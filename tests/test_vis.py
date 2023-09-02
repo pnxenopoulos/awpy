@@ -9,13 +9,16 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from awpy.types import PlotPosition
+from awpy.visualization import AWPY_TMP_FOLDER
 from awpy.visualization.plot import (
     plot_map,
     plot_nades,
     plot_positions,
     plot_round,
+    plot_round_map_control,
     position_transform,
     position_transform_all,
+    with_tmp_dir,
 )
 
 
@@ -24,11 +27,13 @@ class TestVis:
 
     def setup_class(self):
         """Sets up class by defining test image name."""
-        self.filename = "test.gif"
+        self.plot_round_filename = "test.gif"
+        self.plot_map_control_filename = "map_control_test.gif"
 
     def teardown_class(self):
         """Set parser to none."""
-        os.remove(self.filename)
+        os.remove(self.plot_round_filename)
+        os.remove(self.plot_map_control_filename)
 
     def test_position_scale(self):
         """Test position transforms."""
@@ -102,12 +107,12 @@ class TestVis:
                 "ct": {"players": []},
             },
         ]
-        assert not os.path.exists(self.filename)
-        assert plot_round(self.filename, frames)
-        assert os.path.exists(self.filename)
+        assert not os.path.exists(self.plot_round_filename)
+        assert plot_round(self.plot_round_filename, frames)
+        assert os.path.exists(self.plot_round_filename)
         with patch("awpy.visualization.plot.plot_positions") as plot_positions_mock:
             plot_positions_mock.return_value = plt.subplots()
-            plot_round(self.filename, frames)
+            plot_round(self.plot_round_filename, frames)
             assert plot_positions_mock.call_count == 2
             plot_positions_mock.assert_called_with(
                 positions=[
@@ -225,3 +230,41 @@ class TestVis:
                 position_transform("de_ancient", -163.84375, "y"),
                 color="red",
             )
+
+    def test_plot_round_map_control(self):
+        """Test plot_round_map_control."""
+        fake_alive_player = {
+            "x": -42.51047897338867,
+            "y": 868.4791870117188,
+            "z": 54.92256546020508,
+            "isAlive": True,
+        }
+        fake_frame = {
+            "t": {"players": [fake_alive_player.copy()] * 5},
+            "ct": {"players": [fake_alive_player.copy()]},
+        }
+
+        round_length = 50
+        test_round = {"frames": [fake_frame] * round_length}
+
+        bool_returned = plot_round_map_control(
+            self.plot_map_control_filename,
+            "de_inferno",
+            test_round,
+            plot_type="players",
+        )
+
+        assert bool_returned
+
+        # Assert gif is created and size > 0 bytes
+        assert os.stat(self.plot_map_control_filename).st_size > 0
+
+    def test_with_temp_dir(self):
+        """Tests behaviour of with_tmp_dir."""
+        assert not os.path.exists(AWPY_TMP_FOLDER)
+        with with_tmp_dir():
+            assert os.path.exists(AWPY_TMP_FOLDER)
+        assert not os.path.exists(AWPY_TMP_FOLDER)
+        os.mkdir(AWPY_TMP_FOLDER)
+        with pytest.raises(FileExistsError), with_tmp_dir():
+            pass

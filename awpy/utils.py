@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from awpy.types import Area
+from awpy.types import Area, TileId
 
 
 class AutoVivification(dict):
@@ -78,7 +78,7 @@ def is_in_range(value: float, minimum: float, maximum: float) -> bool:
     return minimum <= value <= maximum
 
 
-def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[int, Area]]:
+def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[TileId, Area]]:
     """From Adi. Used to transform a nav file CSV to JSON.
 
     Args:
@@ -88,9 +88,9 @@ def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[int, Area]
     Returns:
         dict[str, dict[int, Area]] containing information about each area of each map
     """
-    final_dic: dict[str, dict[int, Area]] = {}
+    final_dic: dict[str, dict[TileId, Area]] = {}
     for cur_map in sample_csv["mapName"].unique():
-        map_dic: dict[int, Area] = {}
+        map_dic: dict[TileId, Area] = {}
         for i in sample_csv[sample_csv["mapName"] == cur_map].index:
             cur_tile = sample_csv.iloc[i]
             cur_dic = {

@@ -1,8 +1,9 @@
 """This module defines the DemoParser class that handles the core functionality.
 
-    Core functionality is parsing and cleaning a csgo demo file.
+Core functionality is parsing and cleaning a csgo demo file.
 
 Example::
+
     from awpy.parser import DemoParser
 
     # Create parser object
@@ -14,7 +15,6 @@ Example::
         trade_time=5,
         buy_style="hltv"
     )
-
 
     # Parse the demofile, output results to dictionary
     data = demo_parser.parse()
@@ -30,6 +30,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Literal, Unpack, get_args, overload
 
 import pandas as pd
+from pydantic import TypeAdapter, ValidationError
 
 from awpy.types import (
     BuyStyle,
@@ -61,8 +62,6 @@ class DemoParser:
         demo_id (string): A unique demo name/game id.
             Default is inferred from demofile name
         output_file (str): The output file name. Default is 'demoid'+".json"
-        log (bool): A boolean indicating if the log should print to stdout.
-            Default is False
         parse_rate (int, optional): One of 128, 64, 32, 16, 8, 4, 2, or 1.
             The lower the value, the more frames are collected.
             Indicates spacing between parsed demo frames in ticks. Default is 128.
@@ -95,9 +94,10 @@ class DemoParser:
         outpath: str | None = None,
         demo_id: str | None = None,
         log: bool = False,
+        debug: bool = False,
         **parser_args: Unpack[ParserArgs],
     ) -> None:
-        """Instatiate a DemoParser.
+        """Instantiate a DemoParser.
 
         Args:
             demofile (string):
@@ -111,6 +111,9 @@ class DemoParser:
                 Default is inferred from demofile name
             log (bool, optional):
                 A boolean indicating if the log should print to stdout.
+                Default is False
+            debug (bool, optional):
+                A boolean indicating if debug output should be used.
                 Default is False
             **parser_args (ParserArgs): Further keyword args:
                 parse_rate (int, optional):
@@ -143,7 +146,7 @@ class DemoParser:
         """
         # Set up logger
         logging.basicConfig(
-            level=logging.INFO,
+            level=logging.DEBUG if debug else logging.INFO,
             format="%(asctime)s [%(levelname)s] %(message)s",
             datefmt="%H:%M:%S",
         )
@@ -188,10 +191,10 @@ class DemoParser:
         self.parse_error = False
 
         # Initialize json attribute as None
-        self.json: Game | None = None
+        self._json: Game | None = None
 
     def log_settings(self) -> None:
-        """Log the settings produced in the cosntructor."""
+        """Log the settings produced in the constructor."""
         self.logger.info("Rollup damages set to %s", str(self.dmg_rolled))
         self.logger.info("Parse chat set to %s", str(self.parse_chat))
         self.logger.info("Parse frames set to %s", str(self.parse_frames))
@@ -202,6 +205,35 @@ class DemoParser:
         )
         self.logger.info("Setting trade time to %d", self.trade_time)
         self.logger.info("Setting buy style to %s", str(self.buy_style))
+
+    @property
+    def json(self) -> Game | None:
+        """Json getter.
+
+        Returns:
+            Game: Parsed demo information in json format
+        """
+        return self._json
+
+    @json.setter
+    def json(self, new_json: Game | None) -> None:
+        """Validate json shape via pydantic.
+
+        Args:
+            new_json (Game | None): Game dict to use.
+        """
+        if new_json is not None:
+            try:
+                TypeAdapter(Game).validate_python(new_json)
+            except ValidationError as e:
+                # Do not always want to log the whole exception.
+                self.logger.error(  # noqa: TRY400
+                    "Loaded json file does not have correct fields."
+                    " This may cause issues later."
+                    " Enable debug output to see the differences."
+                )
+                self.logger.debug(e)
+        self._json = new_json
 
     @property
     def buy_style(self) -> BuyStyle:
@@ -999,17 +1031,26 @@ class DemoParser:
             game_round["endCTScore"] == tie_score + 1
             and game_round["endTScore"] < tie_score
         )
-        # OT win scores are of the type:
-        # 15 + (4xN) with N a natural numbers (1, 2, 3, ...)
-        # So 19, 23, 27, ...
-        # So if you substract 15 from an OT winning round
-        # the number is divisible by 4
-        ot_valid_ct_win = (game_round["endCTScore"] - tie_score) % (
-            ot_tie_score + 1
-        ) == 0 and game_round["endTScore"] < game_round["endCTScore"]
-        ot_valid_t_win = (game_round["endTScore"] - tie_score) % (
-            ot_tie_score + 1
-        ) == 0 and game_round["endCTScore"] < game_round["endTScore"]
+        # OT draw scores are of the type
+        # 15 + 3xN with N a natural number(1, 2, 3, ...)
+        # So 18, 21, 24, 27
+        # Wins are 1 higher
+        # So 19, 22, 25, 28
+        # So if you subtract 15 + 1 from an OT winning round
+        # the number is divisible by 3
+        ot_valid_ct_win = (
+            (game_round["endCTScore"] - tie_score - 1) % ot_tie_score == 0
+            # Difference of two needed for a win. e.g 19-17
+            # Difference of one means that it was 18-18 and went to another
+            # overtime e.g. 19-18 and thus is not a win for one side yet.
+            and game_round["endTScore"] < (game_round["endCTScore"] - 1)
+            and game_round["endCTScore"] > tie_score
+        )
+        ot_valid_t_win = (
+            (game_round["endTScore"] - tie_score - 1) % ot_tie_score == 0
+            and game_round["endCTScore"] < (game_round["endTScore"] - 1)
+            and game_round["endTScore"] > tie_score
+        )
         return (
             regular_valid_ct_win
             or regular_valid_t_win
@@ -1039,7 +1080,6 @@ class DemoParser:
                     + game_round["endCTScore"]
                 )
                 if i < len(self.json["gameRounds"]) - 1:
-                    # Non-OT rounds
                     lookahead_round = self.json["gameRounds"][i + 1]
                     lookahead_round_total = (
                         lookahead_round["tScore"]
@@ -1047,12 +1087,12 @@ class DemoParser:
                         + lookahead_round["ctScore"]
                         + lookahead_round["endCTScore"]
                     )
-
                     if (
                         # Next round should have higher score than current
                         (lookahead_round_total > current_round_total)
-                        # Valid rounds have a winner and a not winner
-                        or self._has_winner_and_not_winner(game_round=game_round)
+                        # Or the round is the final real round
+                        # with a winner and a loser
+                        or self._has_winner_and_not_winner(game_round)
                     ):
                         cleaned_rounds.append(game_round)
                 else:

@@ -1,12 +1,10 @@
 """Tests DemoParser functionality."""
-import json
 import logging
 import os
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
-import requests
 
 from awpy.parser import DemoParser
 from awpy.types import GameRound
@@ -20,53 +18,33 @@ class TestDemoParser:
 
     def setup_class(self):
         """Setup class by defining loading dictionary of test demo files."""
-        with open("tests/test_data.json", encoding="utf-8") as f:
-            self.demo_data = json.load(f)
-        for file in self.demo_data:
-            self._get_demofile(demo_link=self.demo_data[file]["url"], demo_name=file)
-        self.parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
+        self.parser = DemoParser(
+            demofile="tests/default.dem", log=False, parse_rate=256
+        )
 
     def teardown_class(self):
         """Set parser to none, deletes all demofiles and JSON."""
         self.parser = None
-        files_in_directory = os.listdir()
-        if filtered_files := [
-            file for file in files_in_directory if file.endswith((".dem", ".json"))
-        ]:
-            for f in filtered_files:
-                os.remove(f)
-
-    @staticmethod
-    def _get_demofile(demo_link: str, demo_name: str) -> None:
-        print(f"Requesting {demo_link}")
-        r = requests.get(demo_link, timeout=100)
-        with open(f"{demo_name}.dem", "wb") as demo_file:
-            demo_file.write(r.content)
-
-    @staticmethod
-    def _delete_demofile(demo_name: str) -> None:
-        print(f"Removing {demo_name}")
-        os.remove(f"{demo_name}.dem")
 
     @staticmethod
     def _check_round_scores(rounds: list[GameRound]) -> None:
-        for i, r in enumerate(rounds):
+        for i, game_round in enumerate(rounds):
             if i == 0:
-                assert r["tScore"] == 0
-                assert r["ctScore"] == 0
+                assert game_round["tScore"] == 0
+                assert game_round["ctScore"] == 0
             if i > 0 and i != len(rounds):
                 winning_side = rounds[i - 1]["winningSide"]
                 if winning_side == "ct":
-                    assert r["ctScore"] > rounds[i - 1]["ctScore"]
-                    assert r["tScore"] == rounds[i - 1]["tScore"]
+                    assert game_round["ctScore"] > rounds[i - 1]["ctScore"]
+                    assert game_round["tScore"] == rounds[i - 1]["tScore"]
                 elif winning_side == "t":
-                    assert r["ctScore"] == rounds[i - 1]["ctScore"]
-                    assert r["tScore"] > rounds[i - 1]["tScore"]
+                    assert game_round["ctScore"] == rounds[i - 1]["ctScore"]
+                    assert game_round["tScore"] > rounds[i - 1]["tScore"]
 
     def test_demo_id_inferred(self):
         """Tests if a demo_id is correctly inferred."""
         self.parser_inferred = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             log=False,
         )
         assert self.parser_inferred.demo_id == "default"
@@ -77,13 +55,15 @@ class TestDemoParser:
 
     def test_outpath(self):
         """Tests if the outpath is correctly recorded."""
-        self.parser_outpath = DemoParser(demofile="default.dem", log=False, outpath=".")
+        self.parser_outpath = DemoParser(
+            demofile="tests/default.dem", log=False, outpath="."
+        )
         assert os.path.dirname(self.parser_outpath.output_file) == os.getcwd()
 
     def test_demo_id_given(self):
         """Tests if a demo_id is correctly set."""
         self.parser_inferred = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             demo_id="test",
             log=False,
         )
@@ -92,7 +72,7 @@ class TestDemoParser:
     def test_wrong_demo_path(self):
         """Tests if failure on wrong demofile path."""
         self.parser_wrong_demo_path = DemoParser(
-            demofile="bad.dem",
+            demofile="tests/bad.dem",
             log=False,
             demo_id="test",
             parse_rate=128,
@@ -103,21 +83,21 @@ class TestDemoParser:
     def test_parse_rate(self):
         """Tests if bad parse rates fail."""
         self.parser_neg_parse_rate = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             log=False,
             demo_id="test",
             parse_rate=-1,
         )
         assert self.parser_neg_parse_rate.parse_rate == 128
         self.parser_good_parse_rate = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             log=False,
             demo_id="test",
             parse_rate=16,
         )
         assert self.parser_good_parse_rate.parse_rate == 16
         self.parser_inferred_parse_rate = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             log=False,
             demo_id="test",
         )
@@ -131,7 +111,7 @@ class TestDemoParser:
         """Tests parsing options."""
         caplog.set_level(logging.WARNING)
         self.parser_opts = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             log=True,
             demo_id="test",
             trade_time=8,
@@ -163,7 +143,7 @@ class TestDemoParser:
         assert parser_parameters["damagesRolledUp"] is True
         assert parser_parameters["parseChat"] is True
         self.bad_parser_opts = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             log=True,
             demo_id="test",
             trade_time=-2,
@@ -180,7 +160,7 @@ class TestDemoParser:
     def test_parse_chat(self):
         """Tests whether parse chat works."""
         self.test_chat = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             parse_chat=True,
         )
         self.test_chat.parse()
@@ -194,9 +174,9 @@ class TestDemoParser:
 
     def test_read_json_bad_path(self):
         """Tests if the read_json fails on bad path."""
-        p = DemoParser()
+        bad_path_parser = DemoParser()
         with pytest.raises(FileNotFoundError):
-            p.read_json("bad_json.json")
+            bad_path_parser.read_json("bad_json.json")
 
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict."""
@@ -212,17 +192,30 @@ class TestDemoParser:
     def test_parse_valve_matchmaking(self):
         """Tests if demos parse correctly."""
         self.valve_mm = DemoParser(
-            demofile="valve_matchmaking.dem",
+            demofile="tests/valve_matchmaking.dem",
             log=False,
             parse_rate=256,
         )
         self.valve_mm_data = self.valve_mm.parse()
         assert len(self.valve_mm_data["gameRounds"]) == 25  # 26
 
+    def test_parse_pov_demo(self):
+        """Tests if POV demos are parsed correctly."""
+        self.pov_parser = DemoParser(
+            demofile="tests/2903_3.dem", log=False, parse_rate=256
+        )
+        self.pov_demo_data = self.pov_parser.parse()
+        assert len(self.pov_demo_data["gameRounds"]) == 30
+        last_round = self.pov_demo_data["gameRounds"][-1]
+        assert last_round["endCTScore"] == 20
+        assert last_round["endTScore"] == 10
+        assert last_round["tTeam"] == "Pepsilon"
+        assert last_round["ctTeam"].startswith("PGE")
+
     def test_ot_demos(self):
         """Test overtime demos."""
         self.faceit_ot = DemoParser(
-            demofile="faceit_ecs_ot.dem", log=False, parse_rate=256
+            demofile="tests/faceit_ecs_ot.dem", log=False, parse_rate=256
         )
         self.faceit_ot_data = self.faceit_ot.parse()
         assert len(self.faceit_ot_data["gameRounds"]) > 30
@@ -239,14 +232,14 @@ class TestDemoParser:
         assert self.default_data["parserParameters"]["tradeTime"] == 5
         assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
         assert self.default_data["parserParameters"]["parseRate"] == 256
-        for r in self.default_data["gameRounds"]:
-            assert isinstance(r["bombEvents"], list)
-            assert isinstance(r["damages"], list)
-            assert isinstance(r["kills"], list)
-            assert isinstance(r["flashes"], list)
-            assert isinstance(r["grenades"], list)
-            assert isinstance(r["weaponFires"], list)
-            assert isinstance(r["frames"], list)
+        for game_round in self.default_data["gameRounds"]:
+            assert isinstance(game_round["bombEvents"], list)
+            assert isinstance(game_round["damages"], list)
+            assert isinstance(game_round["kills"], list)
+            assert isinstance(game_round["flashes"], list)
+            assert isinstance(game_round["grenades"], list)
+            assert isinstance(game_round["weaponFires"], list)
+            assert isinstance(game_round["frames"], list)
 
     def test_mvp(self):
         """Tests mvp."""
@@ -311,14 +304,14 @@ class TestDemoParser:
     def test_parse_kill_frames(self):
         """Tests parse kill frames."""
         self.parser_kill_frames = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             log=False,
             parse_frames=False,
             parse_kill_frames=True,
         )
         self.default_data = self.parser_kill_frames.parse()
-        for r in self.default_data["gameRounds"]:
-            assert len(r["kills"]) == len(r["frames"])
+        for game_round in self.default_data["gameRounds"]:
+            assert len(game_round["kills"]) == len(game_round["frames"])
 
     def test_default_parse_df(self):
         """Tests default parse to dataframe."""
@@ -347,21 +340,20 @@ class TestDemoParser:
         Original error had "Troy" (bot) showing up instead of "Charmees" (player).
         """
         self.bot_name_parser = DemoParser(
-            demofile="bot_name_test.dem", log=False, parse_frames=False
+            demofile="tests/bot_name_test.dem", log=False, parse_frames=False
         )
         self.bot_name_data = self.bot_name_parser.parse()
         charmees_found = 0
-        for r in self.bot_name_data["gameRounds"]:
-            if r["damages"]:
-                for e in r["damages"]:
-                    if e["victimName"] == "Charmees":
-                        charmees_found += 1
+        for game_round in self.bot_name_data["gameRounds"]:
+            for damage_event in game_round["damages"] or []:
+                if damage_event["victimName"] == "Charmees":
+                    charmees_found += 1
         assert charmees_found > 0
 
     def test_remove_bad_scoring(self):
         """Tests if remove bad scoring works. Issue 149 raised by kenmareirl."""
         self.bad_scoring_parser_bad_demo = DemoParser(
-            demofile="anonymo-vs-ldlc-m1-nuke.dem", log=False, parse_frames=False
+            demofile="tests/anonymo-vs-ldlc-m1-nuke.dem", log=False, parse_frames=False
         )
         self.bad_scoring_parser_data = self.bad_scoring_parser_bad_demo.parse()
         self.bad_scoring_parser_data = self.bad_scoring_parser_bad_demo.clean_rounds(
@@ -369,7 +361,7 @@ class TestDemoParser:
         )
         assert len(self.bad_scoring_parser_data["gameRounds"]) == 26
         self.bad_scoring_parser_good_demo = DemoParser(
-            demofile="valve_matchmaking.dem", log=False, parse_frames=False
+            demofile="tests/valve_matchmaking.dem", log=False, parse_frames=False
         )
         self.bad_scoring_parser_data_good = self.bad_scoring_parser_good_demo.parse()
         self.bad_scoring_parser_data_good = (
@@ -379,10 +371,65 @@ class TestDemoParser:
         )
         assert len(self.bad_scoring_parser_data["gameRounds"]) == 26
 
+    def test_handle_skipped_round_freezetime_end_event(self):
+        """Tests that missing RoundFreezetimeEnd does not break the parser."""
+        missing_round_freezetime_end_event_parser = DemoParser(
+            demofile="tests/mibr-vs-fluxo-m2-vertigo.dem", log=False, parse_frames=False
+        )
+        missing_freezetime_end_data = missing_round_freezetime_end_event_parser.parse()
+        assert len(missing_freezetime_end_data["gameRounds"]) == 21
+
+    def test_remove_bad_scoring_no_ot_ot_value(self):
+        """Tests that remove bad scoring works for the score 11-5.
+
+        Issue 220 raised by ozanhagen.
+        """
+        scoring_parser = DemoParser()
+        scoring_parser.json = {
+            "gameRounds": [
+                {"tScore": 0, "ctScore": 0, "endTScore": 1, "endCTScore": 0},
+                {"tScore": 0, "ctScore": 0, "endTScore": 1, "endCTScore": 0},
+                {"tScore": 1, "ctScore": 0, "endTScore": 2, "endCTScore": 0},
+                {"tScore": 2, "ctScore": 0, "endTScore": 3, "endCTScore": 0},
+                {"tScore": 3, "ctScore": 0, "endTScore": 4, "endCTScore": 0},
+                {"tScore": 4, "ctScore": 0, "endTScore": 4, "endCTScore": 1},
+                {"tScore": 4, "ctScore": 1, "endTScore": 5, "endCTScore": 1},
+                {"tScore": 5, "ctScore": 1, "endTScore": 6, "endCTScore": 1},
+                {"tScore": 6, "ctScore": 1, "endTScore": 6, "endCTScore": 2},
+                {"tScore": 6, "ctScore": 2, "endTScore": 7, "endCTScore": 2},
+                {"tScore": 7, "ctScore": 2, "endTScore": 8, "endCTScore": 2},
+                {"tScore": 8, "ctScore": 2, "endTScore": 9, "endCTScore": 2},
+                {"tScore": 9, "ctScore": 2, "endTScore": 10, "endCTScore": 2},
+                {"tScore": 10, "ctScore": 2, "endTScore": 10, "endCTScore": 3},
+                {"tScore": 10, "ctScore": 3, "endTScore": 10, "endCTScore": 4},
+                {"tScore": 10, "ctScore": 4, "endTScore": 10, "endCTScore": 5},
+                {"tScore": 5, "ctScore": 10, "endTScore": 5, "endCTScore": 11},
+                {"tScore": 5, "ctScore": 10, "endTScore": 5, "endCTScore": 11},
+                {"tScore": 5, "ctScore": 10, "endTScore": 6, "endCTScore": 10},
+                {"tScore": 5, "ctScore": 10, "endTScore": 5, "endCTScore": 11},
+                {"tScore": 5, "ctScore": 10, "endTScore": 6, "endCTScore": 10},
+                {"tScore": 6, "ctScore": 10, "endTScore": 7, "endCTScore": 10},
+                {"tScore": 7, "ctScore": 10, "endTScore": 8, "endCTScore": 10},
+                {"tScore": 8, "ctScore": 10, "endTScore": 9, "endCTScore": 10},
+                {"tScore": 9, "ctScore": 10, "endTScore": 10, "endCTScore": 10},
+                {"tScore": 10, "ctScore": 10, "endTScore": 10, "endCTScore": 11},
+                {"tScore": 10, "ctScore": 11, "endTScore": 11, "endCTScore": 11},
+                {"tScore": 11, "ctScore": 11, "endTScore": 11, "endCTScore": 12},
+                {"tScore": 11, "ctScore": 12, "endTScore": 11, "endCTScore": 13},
+                {"tScore": 11, "ctScore": 13, "endTScore": 12, "endCTScore": 13},
+                {"tScore": 12, "ctScore": 13, "endTScore": 12, "endCTScore": 14},
+                {"tScore": 12, "ctScore": 14, "endTScore": 12, "endCTScore": 15},
+                {"tScore": 12, "ctScore": 15, "endTScore": 12, "endCTScore": 16},
+                {"tScore": 0, "ctScore": 0, "endTScore": 0, "endCTScore": 1},
+            ]
+        }
+        scoring_parser.remove_bad_scoring()
+        assert len(scoring_parser.json["gameRounds"]) == 28
+
     def test_warmup(self):
         """Tests if warmup rounds are properly parsing."""
         self.warmup_parser = DemoParser(
-            demofile="warmup_test.dem", log=False, parse_frames=False
+            demofile="tests/warmup_test.dem", log=False, parse_frames=False
         )
         self.warmup_data = self.warmup_parser.parse()
         self.warmup_data = self.warmup_parser.clean_rounds(
@@ -392,7 +439,7 @@ class TestDemoParser:
         assert len(self.warmup_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_data["gameRounds"])
         self.warmup_parser_sneem = DemoParser(
-            demofile="vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
+            demofile="tests/vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
         )
         self.warmup_sneem_data = self.warmup_parser_sneem.parse()
         self.warmup_sneem_data = self.warmup_parser_sneem.clean_rounds(
@@ -404,17 +451,17 @@ class TestDemoParser:
     def test_bomb_sites(self):
         """Tests that both bombsite A and B show up."""
         self.bombsite_parser = DemoParser(
-            demofile="bombsite_test.dem", log=False, parse_frames=False
+            demofile="tests/bombsite_test.dem", log=False, parse_frames=False
         )
         self.bombsite_data = self.bombsite_parser.parse()
-        for r in self.bombsite_data["gameRounds"]:
-            for e in r["bombEvents"]:
-                assert e["bombSite"] in ["A", "B"]
+        for game_round in self.bombsite_data["gameRounds"]:
+            for event in game_round["bombEvents"]:
+                assert event["bombSite"] in ["A", "B"]
 
     def test_phase_lists(self):
         """Tests that phase lists are lists."""
         self.phase_parser = DemoParser(
-            demofile="bombsite_test.dem", log=False, parse_frames=False
+            demofile="tests/bombsite_test.dem", log=False, parse_frames=False
         )
         self.phase_data = self.phase_parser.parse()
         for phase in self.phase_data["matchPhases"]:
@@ -423,7 +470,7 @@ class TestDemoParser:
     def test_round_clean(self):
         """Tests that remove time rounds is working."""
         self.round_clean_parser = DemoParser(
-            demofile="round_clean_test.dem", log=False, parse_frames=False
+            demofile="tests/round_clean_test.dem", log=False, parse_frames=False
         )
         self.round_clean_data = self.round_clean_parser.parse()
         self.round_clean_parser.remove_time_rounds()
@@ -432,7 +479,7 @@ class TestDemoParser:
     def test_clean_return_type(self):
         """Tests clean_rounds has correct return type."""
         self.clean_return_parser = DemoParser(
-            demofile="default.dem",
+            demofile="tests/default.dem",
             log=False,
             parse_rate=256,
             dmg_rolled=True,
@@ -459,7 +506,7 @@ class TestDemoParser:
     def test_player_clean(self):
         """Tests that remove excess players is working."""
         self.player_clean_parser = DemoParser(
-            demofile="pov-clean.dem", log=False, parse_frames=True
+            demofile="tests/pov-clean.dem", log=False, parse_frames=True
         )
         self.player_clean_data = self.player_clean_parser.parse()
         self.player_clean_parser.remove_excess_players()
@@ -526,7 +573,7 @@ class TestDemoParser:
     def test_zero_kills(self):
         """Tests a demo that raised many errors."""
         self.zero_kills_parser = DemoParser(
-            demofile="nip-vs-gambit-m2-inferno.dem", log=False, parse_rate=256
+            demofile="tests/nip-vs-gambit-m2-inferno.dem", log=False, parse_rate=256
         )
         self.zero_kills_data = self.zero_kills_parser.parse()
         assert len(self.zero_kills_data["gameRounds"]) == 22
@@ -534,7 +581,7 @@ class TestDemoParser:
     def test_end_round_cleanup(self):
         """Tests cleaning the last round."""
         self.end_round_parser = DemoParser(
-            demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
+            demofile="tests/vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
         )
         self.end_round_data = self.end_round_parser.parse()
         assert len(self.end_round_data["gameRounds"]) == 30
@@ -542,7 +589,7 @@ class TestDemoParser:
     def test_clean_no_json(self):
         """Tests cleaning when parser.json is not set or None."""
         self.no_json_parser = DemoParser(
-            demofile="vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
+            demofile="tests/vitality-vs-ence-m1-mirage.dem", log=False, parse_rate=256
         )
         with pytest.raises(AttributeError):
             self.no_json_parser.clean_rounds()
@@ -553,7 +600,7 @@ class TestDemoParser:
     def test_esea_ot_demo(self):
         """Tests an ESEA demo with OT rounds."""
         self.esea_ot_parser = DemoParser(
-            demofile="esea_match_16902209.dem", log=False, parse_rate=256
+            demofile="tests/esea_match_16902209.dem", log=False, parse_rate=256
         )
         self.esea_ot_data = self.esea_ot_parser.parse()
         assert len(self.esea_ot_data["gameRounds"]) == 35
@@ -574,7 +621,9 @@ class TestDemoParser:
 
     def test_parse_error(self):
         """Tests if parser raises an AttributeError for missing json attribute."""
-        error_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
+        error_parser = DemoParser(
+            demofile="tests/default.dem", log=False, parse_rate=256
+        )
         error_parser.json = None
         with patch.object(error_parser, "read_json") as read_mock, patch.object(
             error_parser, "parse_demo"
@@ -592,13 +641,13 @@ class TestDemoParser:
         a different result than previously.
         """
         self.conversion_parser = DemoParser(
-            demofile="vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
+            demofile="tests/vitality-vs-g2-m2-mirage.dem", log=False, parse_frames=True
         )
         self.conversion_parser.parse()
         references = set()
-        for r in self.conversion_parser.json["gameRounds"] or []:
-            for d in r["damages"] or []:
-                references.add(d["attackerSteamID"])
+        for game_round in self.conversion_parser.json["gameRounds"] or []:
+            for damage_event in game_round["damages"] or []:
+                references.add(damage_event["attackerSteamID"])
         dataframe = self.conversion_parser.parse_json_to_df()
         targets = set(dataframe["damages"]["attackerSteamID"].unique())
         # None != pd.NA so remove these before comparing
@@ -609,7 +658,7 @@ class TestDemoParser:
     def test_falsy_game_rounds(self):
         """Check that cleaning does not throw when gameRounds is falsy."""
         falsy_game_rounds_parser = DemoParser(
-            demofile="default.dem", log=False, parse_rate=256
+            demofile="tests/default.dem", log=False, parse_rate=256
         )
         falsy_game_rounds_parser.json = {
             "gameRounds": None,
@@ -624,8 +673,10 @@ class TestDemoParser:
 
     def test_no_json(self):
         """Tests if parser raises an AttributeError for missing json attribute."""
-        no_json_parser = DemoParser(demofile="default.dem", log=False, parse_rate=256)
-        # Json ist set but falsy
+        no_json_parser = DemoParser(
+            demofile="tests/default.dem", log=False, parse_rate=256
+        )
+        # Json is set but falsy
         no_json_parser.json = None
         with pytest.raises(AttributeError):
             no_json_parser._parse_frames()
@@ -659,7 +710,7 @@ class TestDemoParser:
         to len(round["frames])-1
         """
         self.index_parser = DemoParser(
-            demofile="vitality-vs-g2-m2-mirage.dem",
+            demofile="tests/vitality-vs-g2-m2-mirage.dem",
             log=False,
             parse_frames=True,
         )
@@ -679,7 +730,7 @@ class TestDemoParser:
     def test_renumbering(self):
         """Tests that renumbering rounds and frames works."""
         self.renumbering_parser = DemoParser(
-            demofile="esea_match_16902209.dem", log=False, parse_frames=True
+            demofile="tests/esea_match_16902209.dem", log=False, parse_frames=True
         )
         self.round_clean_data = self.renumbering_parser.parse(clean=False)
         self.renumbering_parser.remove_rounds_with_no_frames()

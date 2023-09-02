@@ -1,7 +1,9 @@
 """This module contains the type definitions for the parsed json structure."""
 
 from dataclasses import dataclass
-from typing import Literal, NotRequired, TypedDict, TypeGuard, final, overload
+from typing import Literal, NotRequired, TypeAlias, TypeGuard, final, overload
+
+from typing_extensions import TypedDict
 
 
 @dataclass
@@ -35,7 +37,7 @@ class Chat(TypedDict):
     # Unclear: Seems true for ChatMessages to allchat
     # but false for SayText admin commands to all chat
     isChatAll: bool
-    type: str  # noqa: A003
+    type: str
 
 
 class Token(TypedDict):
@@ -47,6 +49,24 @@ class Token(TypedDict):
     tToken: str
     ctToken: str
     token: str
+
+
+# Type to represent different options for map control minimap plot
+MapControlPlotType = Literal["default", "players"]
+
+# Type to represent tile id for navigation tiles.
+TileId: TypeAlias = int
+
+# Type to represent player position (tuple of floats (x, y, z))
+PlayerPosition: TypeAlias = tuple[float, float, float]
+
+# Type to represent player position (tuple of floats (x, y))
+PlayerPosition2D: TypeAlias = tuple[float, float]
+
+# Return type for awpy.analytics.map_control._bfs_helper.
+# Contains map control values for one team.
+# Maps TileId to list of tile map control values.
+TeamMapControlValues: TypeAlias = dict[TileId, list[float]]
 
 
 class Area(TypedDict):
@@ -62,6 +82,7 @@ class Area(TypedDict):
 
 
 DistanceType = Literal["graph", "geodesic", "euclidean"]
+PointDistanceType = Literal[DistanceType, "manhattan", "canberra", "cosine"]
 AreaMatrix = dict[str, dict[str, dict[DistanceType, float]]]
 PlaceMatrix = dict[
     str,
@@ -226,12 +247,12 @@ class BombAction(TypedDict):
     tick: int
     seconds: float
     clockTime: str
-    playerSteamID: int
-    playerName: str
-    playerTeam: str
-    playerX: float
-    playerY: float
-    playerZ: float
+    playerSteamID: int | None
+    playerName: str | None
+    playerTeam: str | None
+    playerX: float | None
+    playerY: float | None
+    playerZ: float | None
     bombAction: str
     bombSite: str | None
 
@@ -461,17 +482,17 @@ class PlayerInfo(TypedDict):
     isBot: bool
     isBlinded: bool
     isAirborne: bool
-    isDuck: bool
-    isDuckInProgress: bool
-    isUnDuckInProgress: bool
-    isDefus: bool
-    isPlant: bool
-    isReload: bool
+    isDucking: bool
+    isDuckingInProgress: bool
+    isUnDuckingInProgress: bool
+    isDefusing: bool
+    isPlanting: bool
+    isReloading: bool
     isInBombZone: bool
     isInBuyZone: bool
-    isStand: bool
+    isStanding: bool
     isScoped: bool
-    isWalk: bool
+    isWalking: bool
     isUnknown: bool
     inventory: list[WeaponInfo] | None
     spotters: list[int] | None
@@ -484,7 +505,7 @@ class PlayerInfo(TypedDict):
     hasHelmet: bool
     hasDefuse: bool
     hasBomb: bool
-    p: int
+    ping: int
     zoomLevel: int
 
 
@@ -512,7 +533,7 @@ class Smoke(TypedDict):
 class GameFrame(TypedDict):
     """GameFrame (game state at time t)."""
 
-    frameId: int
+    frameID: int
     globalFrameID: int
     isKillFrame: bool
     tick: int
@@ -678,7 +699,7 @@ class ClosestArea(TypedDict):
     """
 
     mapName: str
-    areaId: int
+    areaId: TileId
     distance: float
 
 
@@ -689,9 +710,9 @@ class DistanceObject(TypedDict):
     distance and the areas in the path between two points/areas.
     """
 
-    distanceType: str
+    distanceType: PointDistanceType
     distance: float
-    areas: list[int]
+    areas: list[TileId]
 
 
 class RoundStatistics(TypedDict):
@@ -702,6 +723,54 @@ class RoundStatistics(TypedDict):
     is_clutching: set[str | None]
     active_players: set[str]
     players_killed: dict[Literal["CT", "T"], set[str]]
+
+
+@dataclass
+class BFSTileData:
+    """Dataclass containing data for tiles during bfs algorithm.
+
+    Holds information for tile_id for tile, current map control
+    value, and steps remaining for bfs algorithm
+    """
+
+    tile_id: TileId
+    map_control_value: float
+    steps_left: int
+
+
+@dataclass
+class TeamMetadata:
+    """Dataclass containing metadata for one team.
+
+    Holds information for alive player locations. Can include
+    more metadata (utility, bomb location, etc.) in the future
+    """
+
+    alive_player_locations: list[PlayerPosition]
+
+
+@dataclass
+class FrameTeamMetadata:
+    """Dataclass with metadata on both teams in frame.
+
+    Return type for awpy.analytics.map_control.extract_teams_metadata.
+    Holds parsed metadata object (TeamMetadata) for both teams
+    """
+
+    t_metadata: TeamMetadata
+    ct_metadata: TeamMetadata
+
+
+@dataclass
+class FrameMapControlValues:
+    """Dataclass with map control values for both teams in frame.
+
+    Return type for awpy.analytics.map_control.calc_map_control.
+    Holds TeamMapControlValues for each team for a certain frame.
+    """
+
+    t_values: TeamMapControlValues
+    ct_values: TeamMapControlValues
 
 
 @overload
@@ -866,13 +935,13 @@ def int_to_string_n_players(
         return "0"
     if n_players == 1:
         return "1"
-    if n_players == 2:  # noqa: Ruff(PLR2004)
+    if n_players == 2:  # noqa: PLR2004
         return "2"
-    if n_players == 3:  # noqa: Ruff(PLR2004)
+    if n_players == 3:  # noqa: PLR2004
         return "3"
-    if n_players == 4:  # noqa: Ruff(PLR2004)
+    if n_players == 4:  # noqa: PLR2004
         return "4"
-    if n_players == 5:  # noqa: Ruff(PLR2004)
+    if n_players == 5:  # noqa: PLR2004
         return "5"
     msg = "n_players has to be in range(6)"
     raise ValueError(msg)

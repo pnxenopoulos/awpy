@@ -7,22 +7,24 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="awpy",
-    version="1.2.3",
+    version="1.3.1",
     packages=find_packages(),
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires=[
-        "imageio==2.28",
-        "matplotlib==3.7",
-        "networkx==2.6",
+        "imageio~=2.28.0",
+        "matplotlib~=3.7.0",
+        "networkx~=3.1",
         "numpy>=1.20,<=1.25",
-        "pandas>=2.0.1, <=2.1",
-        "scipy==1.10",
-        "Shapely==2.0",
+        "pandas~=2.0.1",
+        "pydantic~=2.0.1",
+        "scipy~=1.10.0",
+        "Shapely~=2.0.0",
         "sphinx-rtd-theme==1.2",
         "sympy==1.11",
-        "textdistance==4.5",
-        "tqdm==4.55",
+        "textdistance~=4.5.0",
+        "tqdm~=4.65.0",
+        "typing_extensions~=4.7.0",
     ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
