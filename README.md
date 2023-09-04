@@ -4,7 +4,7 @@
 
 
 # awpy
-The `awpy` package provides data parsing, analytics and visualization capabilities for Counter-Strike: Global Offensive (CSGO) data. In this repository, you will find the source code, issue tracker and other useful `awpy` information. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics. You may visit the documentation [here](https://awpy.readthedocs.io/en/latest/).
+The `awpy` package provides data parsing, analytics and visualization capabilities for Counter-Strike (both CSGO and CS2) data. In this repository, you will find the source code, issue tracker and other useful `awpy` information. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics. You may visit the documentation [here](https://awpy.readthedocs.io/en/latest/).
 
 ## Table of Contents
 [Setup and Installation](#setup)
@@ -79,14 +79,14 @@ data_df = demo_parser.parse(return_type="df")
 Please note that the parser parses _everything_ in the demo. This means that you may have rounds from the warmup (denoted with the `isWarmup` flag), rounds that may have ended in a draw, and other odd-looking rounds. Try using the `DemoParser.clean_rounds()` method to clean up. Note that this is not going to be 100 percent perfect.
 
 ### Help! The parser doesn't work or lacks a feature
-If you need help with the parser, join [our Discord](https://discord.gg/3JrhKYcEKW). CSGO demos are oftentimes imperfect, but if you ask on Discord, we can try to figure out what is the problem. Please remember to post the error and demo if you can! You can also check the [open issues](https://github.com/pnxenopoulos/awpy/issues) or visit visit [our documentation](https://awpy.readthedocs.io/en/latest/).
+If you need help with the parser, join [our Discord](https://discord.gg/3JrhKYcEKW). Counter-Strike demos are oftentimes imperfect, but if you ask on Discord, we can try to figure out what is the problem. Please remember to post the error and demo if you can! You can also check the [open issues](https://github.com/pnxenopoulos/awpy/issues) or visit visit [our documentation](https://awpy.readthedocs.io/en/latest/).
 
 ## Examples and Projects
 Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
 
-- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb)
-- [Basic CSGO analysis](https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb)
-- [Basic CSGO visualization](https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
+- [Parsing a demofile](https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb)
+- [Basic analysis](https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb)
+- [Basic visualization](https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
 - [Working with navigation meshes](https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb)
 - [Advanced navigation functionality](https://github.com/pnxenopoulos/awpy/blob/main/examples/04_Advanced_Navigation_Functionality.ipynb)
 - [Map control](https://github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb)
@@ -102,10 +102,10 @@ We welcome any contributions from the community. You can visit the [issue page](
 ```
 .
 ├── awpy
-│   ├── analytics                 # Code for CSGO analytics
-│   ├── data                      # Code for dealing with CSGO map and nav data
-│   ├── parser                    # Code for CSGO demo parser
-│   └── visualization             # Code for CSGO visualization
+│   ├── analytics                 # Code for analytics
+│   ├── data                      # Code for dealing with map and nav data
+│   ├── parser                    # Code for demo parser
+│   └── visualization             # Code for visualization
 ├── doc                           # Contains documentation files
 ├── examples                      # Contains Jupyter Notebooks showing example code
 └── tests                         # Contains tests for the awpy package
