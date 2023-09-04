@@ -9,15 +9,15 @@ import (
 
 func TestConvertRoundMVPReason(t * testing.T) {
     t.Parallel()
-    enumReasons: = [3]events.RoundMVPReason {
+    enumReasons := [3]events.RoundMVPReason {
         events.MVPReasonMostEliminations, events.MVPReasonBombDefused, events.MVPReasonBombPlanted
     }
-    textReasons: = []string {
+    textReasons := []string {
         "MVPReasonMostEliminations", "MVPReasonBombDefused", "MVPReasonBombPlanted"
     }
-    for index, reason: = range enumReasons {
-        is: = convertRoundMVPReason(reason)
-        want: = textReasons[index]
+    for index, reason := range enumReasons {
+        is := convertRoundMVPReason(reason)
+        want := textReasons[index]
         if is != want {
             t.Errorf("Round MVP reason value of %v should convert to %v, got %v", reason, want, is)
         }
