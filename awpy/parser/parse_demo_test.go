@@ -7,19 +7,21 @@ import (
 	events "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs/events"
 )
 
-func TestConvertRoundMVPReason(t *testing.T) {
-	t.Parallel()
-	enumReasons := [3]events.RoundMVPReason{
-		events.MVPReasonMostEliminations, events.MVPReasonBombDefused, events.MVPReasonBombPlanted
-	}
-	textReasons := []string{"MVPReasonMostEliminations", "MVPReasonBombDefused", "MVPReasonBombPlanted"}
-	for index, reason := range enumReasons {
-		is := convertRoundMVPReason(reason)
-		want := textReasons[index]
-		if is != want {
-			t.Errorf("Round MVP reason value of %v should convert to %v, got %v", reason, want, is)
-		}
-	}
+func TestConvertRoundMVPReason(t * testing.T) {
+    t.Parallel()
+    enumReasons: = [3]events.RoundMVPReason {
+        events.MVPReasonMostEliminations, events.MVPReasonBombDefused, events.MVPReasonBombPlanted
+    }
+    textReasons: = []string {
+        "MVPReasonMostEliminations", "MVPReasonBombDefused", "MVPReasonBombPlanted"
+    }
+    for index, reason: = range enumReasons {
+        is: = convertRoundMVPReason(reason)
+        want: = textReasons[index]
+        if is != want {
+            t.Errorf("Round MVP reason value of %v should convert to %v, got %v", reason, want, is)
+        }
+    }
 }
 
 func TestConvertRank(t *testing.T) {
