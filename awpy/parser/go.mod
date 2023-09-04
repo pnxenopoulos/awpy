@@ -1,6 +1,6 @@
 module github.com/pnxenopoulos/csgo
 
-go 1.18
+go 1.21
 
 require github.com/markus-wa/demoinfocs-golang/v3 v3.3.0
 

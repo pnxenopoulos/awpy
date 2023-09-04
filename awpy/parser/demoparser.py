@@ -84,7 +84,7 @@ class DemoParser:
         json (dict): Dictionary containing the parsed json file
 
     Raises:
-        ValueError: Raises a ValueError if the Golang version is lower than 1.18
+        ValueError: Raises a ValueError if the Golang version is lower than 1.21
     """
 
     def __init__(
@@ -461,7 +461,7 @@ class DemoParser:
             Outputs a JSON file to current working directory.
 
         Raises:
-            ValueError: Raises a ValueError if the Golang version is lower than 1.18
+            ValueError: Raises a ValueError if the Golang version is lower than 1.21
             FileNotFoundError: Raises a FileNotFoundError
                 if the demofile path does not exist.
         """
@@ -471,11 +471,11 @@ class DemoParser:
             error_message = (
                 "Error calling Go. "
                 "Check if Go is installed using 'go version'."
-                " Need at least v1.18.0."
+                " Need at least v1.21.0."
             )
             self.logger.error(error_message)
             raise ValueError(error_message)
-        self.logger.info("Go version>=1.18.0")
+        self.logger.info("Go version>=1.21.0")
 
         # Check if demofile exists
         if not os.path.exists(os.path.abspath(self.demofile)):
