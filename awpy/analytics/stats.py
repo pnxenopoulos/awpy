@@ -626,14 +626,13 @@ def _handle_mvps(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
-    if "mvpName" in game_round:
-        player_key = (
-            game_round["mvpName"]
-            if game_round["mvpSteamID"] == 0
-            else str(game_round["mvpSteamID"])
-        )
-        if player_key in round_statistics["active_players"]:
-            player_statistics[player_key]["mvp"] += 1
+    player_key = (
+        game_round["mvpName"]
+        if game_round["mvpSteamID"] == 0
+        else str(game_round["mvpSteamID"])
+    )
+    if player_key in round_statistics["active_players"]:
+        player_statistics[player_key]["mvp"] += 1
 
 
 def _increment_statistic(
