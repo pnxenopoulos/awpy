@@ -21,6 +21,7 @@ from awpy.analytics.nav import (
 from awpy.data import NAV, NAV_GRAPHS
 from awpy.types import (
     BFSTileData,
+    DistanceObject,
     FrameMapControlValues,
     FrameTeamMetadata,
     GameFrame,
@@ -29,9 +30,7 @@ from awpy.types import (
     TeamFrameInfo,
     TeamMapControlValues,
     TeamMetadata,
-    TileDistanceObject,
     TileId,
-    TileNeighbors,
 )
 
 
@@ -39,8 +38,8 @@ def _approximate_neighbors(
     map_name: str,
     source_tile_id: TileId,
     n_neighbors: int = 5,
-) -> list[TileDistanceObject]:
-    """Approximates neighbors for isolated tiles by finding n closest tiles.
+) -> list[DistanceObject]:
+    """Approximates neighbors for isolated tiles by finding n_neighbors closest tiles.
 
     Args:
         map_name (str): Map for source_tile_id
@@ -48,7 +47,7 @@ def _approximate_neighbors(
         n_neighbors (int): Number of closest tiles/approximated neighbors wanted
 
     Returns:
-        List of TileDistanceObjects for n closest tiles
+        List of TileDistanceObjects for n_neighbors closest tiles
 
     Raises:
         ValueError: If source_tile_id is not in awpy.data.NAV[map_name]
@@ -62,26 +61,17 @@ def _approximate_neighbors(
         raise ValueError(msg)
 
     current_map_info = NAV[map_name]
-    possible_neighbors_arr: list[TileDistanceObject] = []
-
-    for tile in current_map_info:
-        if tile != source_tile_id:
-            current_tile_distance_obj = TileDistanceObject(
-                tile_id=tile,
-                distance=area_distance(
-                    map_name, tile, source_tile_id, dist_type="euclidean"
-                )["distance"],
-            )
-
-            possible_neighbors_arr.append(current_tile_distance_obj)
-
-    return sorted(possible_neighbors_arr, key=lambda d: d.distance)[:n_neighbors]
+    possible_neighbors_arr: list[DistanceObject] = [
+        area_distance(map_name, tile, source_tile_id, dist_type="euclidean")
+        for tile in current_map_info
+        if tile != source_tile_id
+    ]
+    return sorted(possible_neighbors_arr, key=lambda d: d["distance"])[:n_neighbors]
 
 
 def _bfs(
     map_name: str,
     current_tiles: list[TileId],
-    neighbor_info: TileNeighbors,
     area_threshold: float = 1 / 20,
 ) -> TeamMapControlValues:
     """Helper function to run bfs from given tiles to generate map_control values dict.
@@ -96,7 +86,6 @@ def _bfs(
     Args:
         map_name (str): Map for current_tiles
         current_tiles (TileId): List of source tiles for bfs iteration(s)
-        neighbor_info (dict): Dictionary mapping tile to its navigable neighbors
         area_threshold (float): Percentage representing amount of map's total
                                 navigable area which is the max cumulative tile
                                 area for each bfs algorithm
@@ -117,11 +106,9 @@ def _bfs(
     for cur_start_tile in current_tiles:
         tiles_seen: set[TileId] = set()
 
-        start_tile = BFSTileData(
-            tile_id=cur_start_tile, map_control_value=1.0, steps_left=10
+        queue: deque[BFSTileData] = deque(
+            [BFSTileData(tile_id=cur_start_tile, map_control_value=1.0, steps_left=10)]
         )
-
-        queue: deque[BFSTileData] = deque([start_tile])
 
         current_player_area = 0
 
@@ -132,10 +119,10 @@ def _bfs(
                 tiles_seen.add(cur_id)
                 map_control_values[cur_id].append(cur_tile.map_control_value)
 
-                neighbors = list(neighbor_info[cur_id])
+                neighbors: list[TileId] = list(NAV_GRAPHS[map_name].neighbors(cur_id))
                 if len(neighbors) == 0:
                     neighbors = [
-                        tile.tile_id
+                        tile["areas"][-1]
                         for tile in _approximate_neighbors(map_name, cur_id)
                     ]
 
@@ -160,7 +147,6 @@ def _calc_frame_map_control_tile_values(
     map_name: str,
     ct_tiles: list[TileId],
     t_tiles: list[TileId],
-    neighbor_info: TileNeighbors,
 ) -> FrameMapControlValues:
     """Calculate a frame's map control values for each side.
 
@@ -174,34 +160,14 @@ def _calc_frame_map_control_tile_values(
         map_name (str): Map for other arguments
         ct_tiles (list): List of CT-occupied tiles
         t_tiles (list): List of T-occupied tiles
-        neighbor_info (TileNeighbors): Object with tile to neighbor mapping
 
     Returns:
         FrameMapControlValues object containing each team's map control values
     """
     return FrameMapControlValues(
-        t_values=_bfs(map_name, t_tiles, neighbor_info),
-        ct_values=_bfs(map_name, ct_tiles, neighbor_info),
+        t_values=_bfs(map_name, t_tiles),
+        ct_values=_bfs(map_name, ct_tiles),
     )
-
-
-def graph_to_tile_neighbors(
-    neighbor_pairs: list[tuple[TileId, TileId]],
-) -> TileNeighbors:
-    """Convert list of neighboring tiles to TileNeighbors object.
-
-    Args:
-        neighbor_pairs (list): List of tuples (pairs of TileId)
-
-    Returns: TileNeighbors object with tile to neighbor mapping
-    """
-    tile_to_neighbors: TileNeighbors = defaultdict(set)
-
-    for tile_1, tile_2 in neighbor_pairs:
-        tile_to_neighbors[tile_1].add(tile_2)
-        tile_to_neighbors[tile_2].add(tile_1)
-
-    return tile_to_neighbors
 
 
 def calc_parsed_frame_map_control_values(
@@ -222,7 +188,8 @@ def calc_parsed_frame_map_control_values(
         current_player_data (FrameTeamMetadata): Object containing team metadata
             (player positions, etc.). Expects extract_team_metadata output format
 
-    Returns: FrameMapControlValues object containing each team's map control values
+    Returns:
+        FrameMapControlValues object containing each team's map control values
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -230,8 +197,6 @@ def calc_parsed_frame_map_control_values(
     if map_name not in NAV:
         msg = "Map not found."
         raise ValueError(msg)
-
-    neighbors_dict = graph_to_tile_neighbors(list(NAV_GRAPHS[map_name].edges))
 
     t_tiles = [
         find_closest_area(map_name, i)["areaId"]
@@ -242,9 +207,7 @@ def calc_parsed_frame_map_control_values(
         for i in current_player_data.ct_metadata.alive_player_locations
     ]
 
-    return _calc_frame_map_control_tile_values(
-        map_name, ct_tiles, t_tiles, neighbors_dict
-    )
+    return _calc_frame_map_control_tile_values(map_name, ct_tiles, t_tiles)
 
 
 def calc_frame_map_control_values(
@@ -264,7 +227,8 @@ def calc_frame_map_control_values(
             relevant tile neighbor dictionary
         frame (GameFrame): Awpy frame object for map control calculations
 
-    Returns: FrameMapControlValues object containing each team's map control values
+    Returns:
+        FrameMapControlValues object containing each team's map control values
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -287,11 +251,11 @@ def _extract_team_metadata(
     Args:
         side_data (TeamFrameInfo): Object with metadata for side's players.
 
-    Returns: TeamMetadata with metadata on team's players
+    Returns:
+        TeamMetadata with metadata on team's players
     """
-    coords = ("x", "y", "z")
     alive_players: list[PlayerPosition] = [
-        tuple(player[dim] for dim in coords)
+        (player["x"], player["y"], player["z"])
         for player in side_data["players"] or []
         if player["isAlive"]
     ]
@@ -308,8 +272,9 @@ def extract_teams_metadata(
         frame (GameFrame): Dictionary in the form of an awpy frame
             containing relevant data for both sides
 
-    Returns: FrameTeamMetadata containing team metadata (player
-        positions, etc.)
+    Returns:
+        FrameTeamMetadata containing team metadata (player
+            positions, etc.)
     """
     return FrameTeamMetadata(
         t_metadata=_extract_team_metadata(frame["t"]),
@@ -324,13 +289,13 @@ def _calc_map_control_metric_from_dict(
     """Return map control metric given FrameMapControlValues object.
 
     Map Control metric is used to quantify how much of the map is controlled
-    by T/CT. Each tile is given a value between -1 (complete T control) and 1
+    by T/CT. Each tile is given a value between 0 (complete T control) and 1
     (complete CT control). If a tile is controlled by both teams, a value is
     found by taking the ratio between the sum of CT values and sum of CT and
     T values. Once all of the tiles' values are calculated, a weighted sum
     is done on the tiles' values where the tiles' area is the weights.
-    This weighted sum is transformed to fit the range [-1, 1] and then
-    returned as the map control metric.
+    This weighted sum is the map control metric returned at the end of the
+    function.
 
     Args:
         map_name (str): Map used in calculate_tile_area
@@ -338,7 +303,8 @@ def _calc_map_control_metric_from_dict(
             values for both teams.
             Expected format that of calc_frame_map_control_values output
 
-    Returns: Map Control Metric
+    Returns:
+        Map Control Metric
     """
     current_map_control_value: list[float] = []
     tile_areas: list[float] = []
@@ -363,19 +329,20 @@ def calc_frame_map_control_metric(
     """Return map control metric for given awpy frame.
 
     Map Control metric is used to quantify how much of the map is controlled
-    by T/CT. Each tile is given a value between -1 (complete T control) and 1
+    by T/CT. Each tile is given a value between 0 (complete T control) and 1
     (complete CT control). If a tile is controlled by both teams, a value is
     found by taking the ratio between the sum of CT values and sum of CT and
     T values. Once all of the tiles' values are calculated, a weighted sum
     is done on the tiles' values where the tiles' area is the weights.
-    This weighted sum is transformed to fit the range [-1, 1] and then
-    returned as the map control metric.
+    This weighted sum is the map control metric returned at the end of the
+    function.
 
     Args:
         map_name (str): Map used position_transform call
         frame (GameFrame): awpy frame to calculate map control metric for
 
-    Returns: Map Control metric for given frame
+    Returns:
+        Map Control metric for given frame
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -401,13 +368,15 @@ def calculate_round_map_control_metrics(
     found by taking the ratio between the sum of CT values and sum of CT and
     T values. Once all of the tiles' values are calculated, a weighted sum
     is done on the tiles' values where the tiles' area is the weights.
-    This weighted sum is the map control metric returned at the end of the function.
+    This weighted sum is the map control metric returned at the end of the
+    function.
 
     Args:
         map_name (str): Map used position_transform call
-        round_data (GameRound): awpy round to calculate map control metrics for
+        round_data (GameRound): awpy round to calculate map control metrics
 
-    Returns: List of map control metric values for given round
+    Returns:
+        List of map control metric values for given round
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV

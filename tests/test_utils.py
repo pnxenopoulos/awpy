@@ -21,10 +21,12 @@ class TestUtils:
         ]
         outputs = [True, False, False, False, False, True]
         for my_input, my_output in zip(inputs, outputs, strict=True):
-            with tempfile.TemporaryFile() as fp:
-                mock_subproc.Popen.return_value.__enter__.return_value.stdout = fp
-                fp.write(my_input)
-                fp.seek(0)
+            with tempfile.TemporaryFile() as temp_file:
+                mock_subproc.Popen.return_value.__enter__.return_value.stdout = (
+                    temp_file
+                )
+                temp_file.write(my_input)
+                temp_file.seek(0)
                 assert check_go_version() is my_output
 
         mock_subproc.Popen.return_value = IOError
@@ -32,9 +34,9 @@ class TestUtils:
 
     def test_autoviv_keyerror(self):
         """Tests if the AutoVivification feature presents a KeyError on missing key."""
-        a = AutoVivification()
-        a["Ping"]["Pong"] = "Test"
-        assert a["Ping"]["Pong"] == "Test"
+        autovivified = AutoVivification()
+        autovivified["Ping"]["Pong"] = "Test"
+        assert autovivified["Ping"]["Pong"] == "Test"
 
     def test_is_in_range(self):
         """Tests if in range."""

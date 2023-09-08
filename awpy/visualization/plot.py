@@ -374,7 +374,8 @@ def _plot_frame_team_player_positions(
             output of extract_player_positions
         axes (plt.axes): axes object for plotting
 
-    Returns: Nothing, all plotting is done on ax object
+    Returns:
+        Nothing, all plotting is done on ax object
     """
     transformed_x = [
         position_transform(map_name, loc[0], "x")
@@ -404,12 +405,13 @@ def _plot_map_control_from_dict(
         player_data (FrameTeamMetadata): Dictionary of player positions
             for each team. Expected format same as output of extract_player_positions
 
-    Returns: Nothing, all plotting is done on ax object
+    Returns:
+        Nothing, all plotting is done on ax object
     """
     ct_tiles, t_tiles = occupied_tiles.ct_values, occupied_tiles.t_values
 
     # Iterate through the tiles that have a value
-    for tile in set(ct_tiles.keys()).union(set(t_tiles.keys())):
+    for tile in set(ct_tiles).union(set(t_tiles)):
         if tile in NAV[map_name]:
             area = NAV[map_name][tile]
 
@@ -471,7 +473,8 @@ def plot_frame_map_control(
             (either default or with players)
         given_fig_ax: Optional tuple containing figure and ax objects for plotting
 
-    Returns: Nothing, all plotting is done on ax object
+    Returns:
+        matplotlib fig and ax
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -522,7 +525,8 @@ def plot_round_map_control(
         plot_type (MapControlPlotType): Determines which type of plot is created
             (either with or without players)
 
-    Returns: True, ensuring function has completed
+    Returns:
+        True, ensuring function has completed
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -563,7 +567,8 @@ def _plot_map_control_metrics(
         metrics (list): List containing map control values to plot
         axes (axes): axes object for plotting
 
-    Returns: Nothing, all plotting is done on ax_object
+    Returns:
+        Nothing, all plotting is done on ax_object
     """
     x = list(range(1, len(metrics) + 1))
     axes.plot(x, metrics)
@@ -600,15 +605,14 @@ def _plot_map_control_metrics(
 
 def plot_map_control_metrics(
     metric_arr: list[float],
-    given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
-) -> None:
+) -> tuple[Figure, Axes]:
     """Function to plot given map control metrics.
 
     Args:
         metric_arr (list): List containing map control values to plot
-        given_fig_ax (tuple): Fig and ax objects if given
 
-    Returns: Plot given map control metric values onto axes object
+    Returns:
+        matplotlib fig and ax with map control metric plot
 
     Raises:
         ValueError: If metrics is empty
@@ -617,9 +621,8 @@ def plot_map_control_metrics(
         msg = "Metrics is empty."
         raise ValueError(msg)
 
-    if given_fig_ax[0] is not None:
-        _plot_map_control_metrics(metric_arr, given_fig_ax[1])
-    else:
-        _, curr_ax = plt.subplots()
-        _plot_map_control_metrics(metric_arr, curr_ax)
-        plt.show()
+    figure, axes = plt.subplots()
+
+    _plot_map_control_metrics(metric_arr, axes)
+
+    return figure, axes

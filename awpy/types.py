@@ -51,6 +51,24 @@ class Token(TypedDict):
     token: str
 
 
+# Type to represent different options for map control minimap plot
+MapControlPlotType = Literal["default", "players"]
+
+# Type to represent tile id for navigation tiles.
+TileId: TypeAlias = int
+
+# Type to represent player position (tuple of floats (x, y, z))
+PlayerPosition: TypeAlias = tuple[float, float, float]
+
+# Type to represent player position (tuple of floats (x, y))
+PlayerPosition2D: TypeAlias = tuple[float, float]
+
+# Return type for awpy.analytics.map_control._bfs_helper.
+# Contains map control values for one team.
+# Maps TileId to list of tile map control values.
+TeamMapControlValues: TypeAlias = dict[TileId, list[float]]
+
+
 class Area(TypedDict):
     """TypedDict for area entries in NAV."""
 
@@ -64,6 +82,7 @@ class Area(TypedDict):
 
 
 DistanceType = Literal["graph", "geodesic", "euclidean"]
+PointDistanceType = Literal[DistanceType, "manhattan", "canberra", "cosine"]
 AreaMatrix = dict[str, dict[str, dict[DistanceType, float]]]
 PlaceMatrix = dict[
     str,
@@ -676,7 +695,7 @@ class ClosestArea(TypedDict):
     """
 
     mapName: str
-    areaId: int
+    areaId: TileId
     distance: float
 
 
@@ -687,9 +706,9 @@ class DistanceObject(TypedDict):
     distance and the areas in the path between two points/areas.
     """
 
-    distanceType: str
+    distanceType: PointDistanceType
     distance: float
-    areas: list[int]
+    areas: list[TileId]
 
 
 class RoundStatistics(TypedDict):
@@ -700,40 +719,6 @@ class RoundStatistics(TypedDict):
     is_clutching: set[str | None]
     active_players: set[str]
     players_killed: dict[Literal["CT", "T"], set[str]]
-
-
-# Type to represent different options for map control minimap plot
-MapControlPlotType = Literal["default", "players"]
-
-# Type to represent tile id for navigation tiles.
-TileId: TypeAlias = int
-
-# Type to represent player position (tuple of floats [x, y, z])
-PlayerPosition: TypeAlias = tuple[float, float, float]
-
-# Type to represent player position (tuple of floats [x, y, z])
-PlayerPosition2D: TypeAlias = tuple[float, float]
-
-# Return type for awpy.analytics.map_control._bfs_helper.
-# Contains map control values for one team.
-# Maps TileId to list of tile map control values.
-TeamMapControlValues: TypeAlias = dict[TileId, list[float]]
-
-# Return type for awpy.analytics.map_control.graph_to_tile_neighbors
-# Maps TileId to set of neighboring tiles.
-TileNeighbors: TypeAlias = dict[TileId, set[int]]
-
-
-@dataclass
-class TileDistanceObject:
-    """Dataclass with data for map control tile distance calculations.
-
-    Holds information for distance to source tile and tile_id
-    distance is associated with.
-    """
-
-    tile_id: TileId
-    distance: float
 
 
 @dataclass
@@ -753,7 +738,7 @@ class BFSTileData:
 class TeamMetadata:
     """Dataclass containing metadata for one team.
 
-    Holds information for aliver player locations. Can include
+    Holds information for alive player locations. Can include
     more metadata (utility, bomb location, etc.) in the future
     """
 
@@ -946,13 +931,13 @@ def int_to_string_n_players(
         return "0"
     if n_players == 1:
         return "1"
-    if n_players == 2:  # noqa: Ruff(PLR2004)
+    if n_players == 2:  # noqa: PLR2004
         return "2"
-    if n_players == 3:  # noqa: Ruff(PLR2004)
+    if n_players == 3:  # noqa: PLR2004
         return "3"
-    if n_players == 4:  # noqa: Ruff(PLR2004)
+    if n_players == 4:  # noqa: PLR2004
         return "4"
-    if n_players == 5:  # noqa: Ruff(PLR2004)
+    if n_players == 5:  # noqa: PLR2004
         return "5"
     msg = "n_players has to be in range(6)"
     raise ValueError(msg)

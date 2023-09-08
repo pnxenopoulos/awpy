@@ -28,18 +28,18 @@ class TestDemoParser:
 
     @staticmethod
     def _check_round_scores(rounds: list[GameRound]) -> None:
-        for i, r in enumerate(rounds):
+        for i, game_round in enumerate(rounds):
             if i == 0:
-                assert r["tScore"] == 0
-                assert r["ctScore"] == 0
+                assert game_round["tScore"] == 0
+                assert game_round["ctScore"] == 0
             if i > 0 and i != len(rounds):
                 winning_side = rounds[i - 1]["winningSide"]
                 if winning_side == "ct":
-                    assert r["ctScore"] > rounds[i - 1]["ctScore"]
-                    assert r["tScore"] == rounds[i - 1]["tScore"]
+                    assert game_round["ctScore"] > rounds[i - 1]["ctScore"]
+                    assert game_round["tScore"] == rounds[i - 1]["tScore"]
                 elif winning_side == "t":
-                    assert r["ctScore"] == rounds[i - 1]["ctScore"]
-                    assert r["tScore"] > rounds[i - 1]["tScore"]
+                    assert game_round["ctScore"] == rounds[i - 1]["ctScore"]
+                    assert game_round["tScore"] > rounds[i - 1]["tScore"]
 
     def test_demo_id_inferred(self):
         """Tests if a demo_id is correctly inferred."""
@@ -174,9 +174,9 @@ class TestDemoParser:
 
     def test_read_json_bad_path(self):
         """Tests if the read_json fails on bad path."""
-        p = DemoParser()
+        bad_path_parser = DemoParser()
         with pytest.raises(FileNotFoundError):
-            p.read_json("bad_json.json")
+            bad_path_parser.read_json("bad_json.json")
 
     def test_parse_output_type(self):
         """Tests if the JSON output from parse is a dict."""
@@ -232,14 +232,14 @@ class TestDemoParser:
         assert self.default_data["parserParameters"]["tradeTime"] == 5
         assert self.default_data["parserParameters"]["roundBuyStyle"] == "hltv"
         assert self.default_data["parserParameters"]["parseRate"] == 256
-        for r in self.default_data["gameRounds"]:
-            assert isinstance(r["bombEvents"], list)
-            assert isinstance(r["damages"], list)
-            assert isinstance(r["kills"], list)
-            assert isinstance(r["flashes"], list)
-            assert isinstance(r["grenades"], list)
-            assert isinstance(r["weaponFires"], list)
-            assert isinstance(r["frames"], list)
+        for game_round in self.default_data["gameRounds"]:
+            assert isinstance(game_round["bombEvents"], list)
+            assert isinstance(game_round["damages"], list)
+            assert isinstance(game_round["kills"], list)
+            assert isinstance(game_round["flashes"], list)
+            assert isinstance(game_round["grenades"], list)
+            assert isinstance(game_round["weaponFires"], list)
+            assert isinstance(game_round["frames"], list)
 
     def test_parse_kill_frames(self):
         """Tests parse kill frames."""
@@ -250,8 +250,8 @@ class TestDemoParser:
             parse_kill_frames=True,
         )
         self.default_data = self.parser_kill_frames.parse()
-        for r in self.default_data["gameRounds"]:
-            assert len(r["kills"]) == len(r["frames"])
+        for game_round in self.default_data["gameRounds"]:
+            assert len(game_round["kills"]) == len(game_round["frames"])
 
     def test_default_parse_df(self):
         """Tests default parse to dataframe."""
@@ -284,11 +284,10 @@ class TestDemoParser:
         )
         self.bot_name_data = self.bot_name_parser.parse()
         charmees_found = 0
-        for r in self.bot_name_data["gameRounds"]:
-            if r["damages"]:
-                for e in r["damages"]:
-                    if e["victimName"] == "Charmees":
-                        charmees_found += 1
+        for game_round in self.bot_name_data["gameRounds"]:
+            for damage_event in game_round["damages"] or []:
+                if damage_event["victimName"] == "Charmees":
+                    charmees_found += 1
         assert charmees_found > 0
 
     def test_remove_bad_scoring(self):
@@ -389,15 +388,28 @@ class TestDemoParser:
         assert len(self.warmup_sneem_data["gameRounds"]) == 30
         self._check_round_scores(self.warmup_sneem_data["gameRounds"])
 
+    def test_284(self):
+        """Test new warmup logic and freezetime workaround.
+
+        See https://github.com/pnxenopoulos/awpy/issues/284
+        """
+        cevo_pov_parser = DemoParser(demofile="tests/cevo-pov.dem", log=False)
+        data = cevo_pov_parser.parse(clean=False)
+        # No extra rounds from freezetime workaround
+        assert len(data["gameRounds"]) == 28
+        data = cevo_pov_parser.clean_rounds()
+        # Cleans correct number of rounds.
+        assert len(data["gameRounds"]) == 21
+
     def test_bomb_sites(self):
         """Tests that both bombsite A and B show up."""
         self.bombsite_parser = DemoParser(
             demofile="tests/bombsite_test.dem", log=False, parse_frames=False
         )
         self.bombsite_data = self.bombsite_parser.parse()
-        for r in self.bombsite_data["gameRounds"]:
-            for e in r["bombEvents"]:
-                assert e["bombSite"] in ["A", "B"]
+        for game_round in self.bombsite_data["gameRounds"]:
+            for event in game_round["bombEvents"]:
+                assert event["bombSite"] in ["A", "B"]
 
     def test_phase_lists(self):
         """Tests that phase lists are lists."""
@@ -586,9 +598,9 @@ class TestDemoParser:
         )
         self.conversion_parser.parse()
         references = set()
-        for r in self.conversion_parser.json["gameRounds"] or []:
-            for d in r["damages"] or []:
-                references.add(d["attackerSteamID"])
+        for game_round in self.conversion_parser.json["gameRounds"] or []:
+            for damage_event in game_round["damages"] or []:
+                references.add(damage_event["attackerSteamID"])
         dataframe = self.conversion_parser.parse_json_to_df()
         targets = set(dataframe["damages"]["attackerSteamID"].unique())
         # None != pd.NA so remove these before comparing
@@ -617,7 +629,7 @@ class TestDemoParser:
         no_json_parser = DemoParser(
             demofile="tests/default.dem", log=False, parse_rate=256
         )
-        # Json ist set but falsy
+        # Json is set but falsy
         no_json_parser.json = None
         with pytest.raises(AttributeError):
             no_json_parser._parse_frames()

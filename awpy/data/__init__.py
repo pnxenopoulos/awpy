@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import distance
 
-from awpy.types import Area, AreaMatrix, MapData, PlaceMatrix
+from awpy.types import Area, AreaMatrix, MapData, PlaceMatrix, TileId
 from awpy.utils import transform_csv_to_json
 
 PATH = os.path.join(os.path.dirname(__file__), "")
@@ -17,11 +17,11 @@ NAV_CSV = pd.read_csv(PATH + "nav/nav_info.csv")
 NAV_CSV.areaName = NAV_CSV.areaName.fillna("")
 
 
-NAV: dict[str, dict[int, Area]] = transform_csv_to_json(NAV_CSV)
+NAV: dict[str, dict[TileId, Area]] = transform_csv_to_json(NAV_CSV)
 
 
 def create_nav_graphs(
-    nav: dict[str, dict[int, Area]], data_path: str
+    nav: dict[str, dict[TileId, Area]], data_path: str
 ) -> dict[str, nx.DiGraph]:
     """Function to create a dict of DiGraphs from dict of areas and edge_list file.
 

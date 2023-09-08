@@ -26,9 +26,7 @@ pre-commit install --install-hooks
 After you have made your changes locally, use these tools to surface bugs or code smells by running the following:
 
 ```shell
-pre-commit run --all-files --show-diff-on-failure  # black formatting, ruff linting
-pyright  # type checking
-pylint awpy  # more linting
+pre-commit run --all-files --show-diff-on-failure  # ruff, black, typos, pyright, pylint, golangci-lint
 coverage run -m pytest --durations=10  # python tests
 coverage report -m  # produces text-based coverage report
 ```
