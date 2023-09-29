@@ -551,6 +551,12 @@ func convertRoundEndReason(r events.RoundEndReason) string {
 		return "TerroristsSurrender"
 	case events.RoundEndReasonCTSurrender:
 		return "CTSurrender"
+	case events.RoundEndReasonStillInProgress:
+		return "StillInProgress"
+	case events.RoundEndReasonTerroristsPlanted:
+		return "TerroristsPlanted"
+	case events.RoundEndReasonCTsReachedHostage:
+		return "CTsReachedHostage"
 	default:
 		return unknown
 	}
