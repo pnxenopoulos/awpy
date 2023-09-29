@@ -2011,14 +2011,14 @@ func registerKillHandler(demoParser *dem.Parser, currentGame *Game, currentRound
 			currentFrame.Projectiles = []GrenadeInfo{}
 			for _, ele := range allGrenades {
 				if ele != nil {
-					currentFire := Fire{}
-					objPos := ele.Entity.Position()
-					currentFire.UniqueID = ele.UniqueID()
+					currentProjectile := GrenadeInfo{}
+					currentProjectile.ProjectileType = ele.WeaponInstance.String()
+					objPos := ele.Trajectory[len(ele.Trajectory)-1]
 
-					currentFire.X = objPos.X
-					currentFire.Y = objPos.Y
-					currentFire.Z = objPos.Z
-					currentFrame.Fires = append(currentFrame.Fires, currentFire)
+					currentProjectile.X = objPos.X
+					currentProjectile.Y = objPos.Y
+					currentProjectile.Z = objPos.Z
+					currentFrame.Projectiles = append(currentFrame.Projectiles, currentProjectile)
 				}
 			}
 
