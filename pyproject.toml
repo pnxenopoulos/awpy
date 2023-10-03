@@ -223,6 +223,10 @@ max-statements = 50
 # Minimum number of public methods for a class (see R0903).
 min-public-methods = 1
 
+# Maximum number of allowed ancestors (see R0901).
+# Inheriting from typing_extensions.TypedDict alones gives that
+max-parents = 22
+
 [tool.pylint.exceptions]
 # Exceptions that will emit a warning when caught.
 overgeneral-exceptions = ["builtins.BaseException"]
