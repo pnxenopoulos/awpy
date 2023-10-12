@@ -42,10 +42,24 @@ def check_go_version() -> bool:
     Returns True if greater than 1.18.0
 
     Returns:
-        bool whether the found go version is recent enough
+        bool: bool whether the found go version is recent enough
+
+    Raises:
+        ValueError: If the go version could not be retrieved
     """
 
     def parse_go_version(parsed_resp: list[bytes] | None) -> list[str]:
+        """Parse the go version from a list of bytes.
+
+        Args:
+            parsed_resp (list[bytes] | None): Raw input to extract version from.
+
+        Returns:
+            list[str]: List representation of the version.
+
+        Raises:
+            ValueError: If the go version could not be retrieved
+        """
         if parsed_resp is None or len(parsed_resp) != 1:
             msg = "Error finding Go version"
             raise ValueError(msg)
@@ -71,9 +85,12 @@ def is_in_range(value: float, minimum: float, maximum: float) -> bool:
     """Checks if a value is in the range of two others inclusive.
 
     Args:
-        value (Any): Value to check whether it is in range
-        minimum (Any): Lower inclusive bound of the range check
-        maximum (Any): Upper inclusive bound of the range check
+        value (float): Value to check whether it is in range
+        minimum (float): Lower inclusive bound of the range check
+        maximum (float): Upper inclusive bound of the range check
+
+    Returns:
+        bool: Whether the value us between min and max.
     """
     return minimum <= value <= maximum
 
@@ -82,11 +99,10 @@ def transform_csv_to_json(sample_csv: pd.DataFrame) -> dict[str, dict[TileId, Ar
     """From Adi. Used to transform a nav file CSV to JSON.
 
     Args:
-        sample_csv (pd.DataFrame):
-            Dataframe containing information about areas of each map
+        sample_csv (pd.DataFrame): Information about areas of each map
 
     Returns:
-        dict[str, dict[int, Area]] containing information about each area of each map
+        dict[str, dict[TileId, Area]]: Information about each area of each map
     """
     final_dic: dict[str, dict[TileId, Area]] = {}
     for cur_map in sample_csv["mapName"].unique():

@@ -1,7 +1,13 @@
 exclude: docs/
 repos:
+  - repo: https://github.com/JanEricNitschke/pymend
+    rev: "v1.0.10"
+    hooks:
+      - id: pymend
+        language: python
+        args: ["--write", "--check", "--output-style=google"]
   - repo: 'https://github.com/pre-commit/pre-commit-hooks'
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-yaml
         language: python
@@ -38,7 +44,7 @@ repos:
       - id: black
         language: python
   - repo: https://github.com/crate-ci/typos
-    rev: v1.16.17
+    rev: v1.16.19
     hooks:
       - id: typos
         args: []

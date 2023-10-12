@@ -7,11 +7,11 @@ def generate_vector_state(frame: GameFrame, map_name: str) -> dict:
     """Returns a game state in a dictionary format.
 
     Args:
-        frame (GameFrame) : Dict output of a frame generated from the DemoParser class
-        map_name (string): String indicating the map name
+        frame (GameFrame): Dict output of a frame generated from the DemoParser class
+        map_name (str): String indicating the map name
 
     Returns:
-        A dict with keys for each feature.
+        dict: With keys for each feature.
     """
     game_state: dict = {
         "mapName": map_name,
@@ -76,11 +76,11 @@ def generate_graph_state(frame: GameFrame) -> dict:
     """Returns a game state as a graph.
 
     Args:
-        frame (GameFrame) : Dict output of a frame generated from the DemoParser class
+        frame (GameFrame): Dict output of a frame generated from the DemoParser class
 
     Returns:
-        A dict with keys "T", "CT" and "Global",
-        where each entry is a vector. Global vector is CT + T concatenated
+        dict: With keys "T", "CT" and "Global",
+            where each entry is a vector. Global vector is CT + T concatenated
     """
     return {"ct": [], "t": [], "global": []}
 
@@ -89,10 +89,10 @@ def generate_set_state(frame: GameFrame) -> dict:
     """Returns a game state as a set.
 
     Args:
-        frame (GameFrame) : Dict output of a frame generated from the DemoParser class
+        frame (GameFrame): Dict output of a frame generated from the DemoParser class
 
     Returns:
-        A dict with keys "T", "CT" and "Global",
-        where each entry is a vector. Global vector is CT + T concatenated
+        dict: With keys "T", "CT" and "Global",
+            where each entry is a vector. Global vector is CT + T concatenated
     """
     return {"ct": [], "t": [], "global": []}

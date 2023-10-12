@@ -62,14 +62,14 @@ class DemoParser:
         demo_id (string): A unique demo name/game id.
             Default is inferred from demofile name
         output_file (str): The output file name. Default is 'demoid'+".json"
-        parse_rate (int, optional): One of 128, 64, 32, 16, 8, 4, 2, or 1.
+        parse_rate (int?): One of 128, 64, 32, 16, 8, 4, 2, or 1.
             The lower the value, the more frames are collected.
             Indicates spacing between parsed demo frames in ticks. Default is 128.
         parse_frames (bool): Flag if you want to parse frames (trajectory data) or not.
             Default is True
         parse_kill_frames (bool): Flag if you want to parse frames on kills.
             Default is False
-        trade_time (int, optional): Length of the window for a trade (in seconds).
+        trade_time (int?): Length of the window for a trade (in seconds).
             Default is 5.
         dmg_rolled (bool): Boolean if you want damages rolled up.
             As multiple damages for a player can happen in 1 tick from the same weapon.
@@ -100,22 +100,17 @@ class DemoParser:
         """Instantiate a DemoParser.
 
         Args:
-            demofile (string):
-                A string denoting the path to the demo file,
+            demofile (str): A string denoting the path to the demo file,
                 which ends in .dem. Defaults to ''
-            outpath (string):
-                Path where to save the outputfile to.
+            outpath (str | None): Path where to save the outputfile to.
                 Default is current directory
-            demo_id (string):
-                A unique demo name/game id.
+            demo_id (str | None): A unique demo name/game id.
                 Default is inferred from demofile name
-            log (bool, optional):
-                A boolean indicating if the log should print to stdout.
+            log (bool): A boolean indicating if the log should print to stdout.
                 Default is False
-            debug (bool, optional):
-                A boolean indicating if debug output should be used.
+            debug (bool): A boolean indicating if debug output should be used.
                 Default is False
-            **parser_args (ParserArgs): Further keyword args:
+            **parser_args (Unpack[ParserArgs]): Further keyword args:
                 parse_rate (int, optional):
                     One of 128, 64, 32, 16, 8, 4, 2, or 1.
                     The lower the value, the more frames are collected.
@@ -211,7 +206,7 @@ class DemoParser:
         """Json getter.
 
         Returns:
-            Game: Parsed demo information in json format
+            Game | None: Parsed demo information in json format
         """
         return self._json
 
@@ -384,7 +379,7 @@ class DemoParser:
         """Parse rate getter.
 
         Returns:
-            int: Current parse rate.
+            ParseRate: Current parse rate.
         """
         return self.parser_args["parse_rate"]
 
@@ -393,7 +388,7 @@ class DemoParser:
         """Parse rate setter.
 
         Args:
-            parse_rate (int): Parse rate to use.
+            parse_rate (ParseRate): Parse rate to use.
         """
         self.parser_args["parse_rate"] = parse_rate
 
@@ -458,7 +453,7 @@ class DemoParser:
         and the file needs to exist.
 
         Returns:
-            Outputs a JSON file to current working directory.
+            None: Outputs a JSON file to current working directory.
 
         Raises:
             ValueError: Raises a ValueError if the Golang version is lower than 1.18
@@ -536,13 +531,13 @@ class DemoParser:
         Can be used to read in already processed demofiles.
 
         Args:
-            json_path (string): Path to JSON file
+            json_path (str): Path to JSON file
 
-        Returns (Game):
-            JSON in Python dictionary form
+        Returns:
+            Game: The game object represented by the read json.
 
         Raises:
-            FileNotFoundError: Raises a FileNotFoundError if the JSON path doesn't exist
+            FileNotFoundError: If the JSON path doesn't exist
         """
         # Check if JSON exists
         if not os.path.exists(json_path):
@@ -576,13 +571,13 @@ class DemoParser:
         """Wrapper for parse_demo() and read_json(). Use to parse a demo.
 
         Args:
-            return_type (string, optional): Either "json" or "df". Default is "json"
-            clean (bool, optional): True to run clean_rounds.
+            return_type (RoundReturnType): Either "json" or "df". Default is "json"
+            clean (bool): True to run clean_rounds.
                 Otherwise, uncleaned data is returned. Defaults to True.
 
         Returns:
-            A dictionary of output which
-            is parsed to a JSON file in the working directory.
+            Game | dict[str, Any]: A dictionary of output which
+                is parsed to a JSON file in the working directory.
 
         Raises:
             ValueError: Raises a ValueError if the return_type is not "json" or "df"
@@ -612,7 +607,7 @@ class DemoParser:
         """Returns JSON into dictionary where keys correspond to data frames.
 
         Returns:
-            A dictionary of output
+            dict[str, Any]: A dictionary of output
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
@@ -653,8 +648,8 @@ class DemoParser:
         """Returns frames as a Pandas dataframe.
 
         Returns:
-            A Pandas dataframe where each row is a frame (game state) in the demo,
-            which is a discrete point of time.
+            pd.DataFrame: Each row is a frame (game state) in the demo,
+                which is a discrete point of time.
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
@@ -704,8 +699,8 @@ class DemoParser:
         """Returns player frames as a Pandas dataframe.
 
         Returns:
-            A Pandas dataframe where each row is a player's attributes
-            at a given frame (game state).
+            pd.DataFrame: A Pandas dataframe where each row is a player's attributes
+                at a given frame (game state).
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
@@ -740,7 +735,7 @@ class DemoParser:
         """Returns rounds as a Pandas dataframe.
 
         Returns:
-            A Pandas dataframe where each row is a round
+            pd.DataFrame: A Pandas dataframe where each row is a round
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
@@ -788,10 +783,10 @@ class DemoParser:
         """Returns action as a Pandas dataframe.
 
         Args:
-            action (str): Action dict to convert to dataframe.
+            action (GameActionKey): Action dict to convert to dataframe.
 
         Returns:
-            A Pandas dataframe where each row is a damage event.
+            pd.DataFrame: A Pandas dataframe where each row is a damage event.
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
@@ -865,30 +860,30 @@ class DemoParser:
         """Cleans a parsed demofile JSON.
 
         Args:
-            remove_no_frames (bool, optional): Remove rounds where there are no frames.
+            remove_no_frames (bool): Remove rounds where there are no frames.
                 Default to True.
-            remove_warmups (bool, optional): Remove warmup rounds. Defaults to True.
-            remove_knifes (bool, optional): Remove knife rounds. Defaults to True.
-            remove_bad_timings (bool, optional): Remove bad timings. Defaults to True.
-            remove_excess_players (bool, optional):
-                Remove rounds with more than 5 players. Defaults to True.
-            remove_excess_kills (bool, optional): Remove rounds with more than 10 kills.
+            remove_warmups (bool): Remove warmup rounds. Defaults to True.
+            remove_knifes (bool): Remove knife rounds. Defaults to True.
+            remove_bad_timings (bool): Remove bad timings. Defaults to True.
+            remove_excess_players (bool): Remove rounds with more than 5 players.
                 Defaults to True.
-            remove_bad_endings (bool, optional):
-                Remove rounds with bad round end reasons. Defaults to True.
-            remove_bad_scoring (bool, optional): Remove rounds where the scoring is off
+            remove_excess_kills (bool): Remove rounds with more than 10 kills.
+                Defaults to True.
+            remove_bad_endings (bool): Remove rounds with bad round end reasons.
+                Defaults to True.
+            remove_bad_scoring (bool): Remove rounds where the scoring is off
                 Like scores going below the previous round's. Defaults to False.
-            return_type (str, optional): Return JSON or DataFrame. Defaults to "json".
-            save_to_json (bool, optional): Whether to write the JSON to a file.
+            return_type (RoundReturnType): Return JSON or DataFrame. Defaults to "json".
+            save_to_json (bool): Whether to write the JSON to a file.
                 Defaults to True.
+
+        Returns:
+            Game | dict[str, Any]: A dictionary of the cleaned demo.
 
         Raises:
             AttributeError: Raises an AttributeError if the .json attribute is None
             ValueError: Raises a ValueError if the return type is neither
                 'json' nor 'df'
-
-        Returns:
-            dict: A dictionary of the cleaned demo.
         """
         if self.json:
             if remove_no_frames:
@@ -1019,6 +1014,14 @@ class DemoParser:
             raise AttributeError(msg)
 
     def _has_winner_and_not_winner(self, game_round: GameRound) -> bool:
+        """Check whether the game round end has a winner of the game and a loser.
+
+        Args:
+            game_round (GameRound): Game round to check
+
+        Returns:
+            bool: True if the game round ends with one side winning.
+        """
         tie_score = 15
         ot_tie_score = 3
         regular_valid_t_win = (game_round["endTScore"] == tie_score + 1) and (
@@ -1199,7 +1202,7 @@ class DemoParser:
         """Removes rounds with bad end reason.
 
         Args:
-            bad_endings (list, optional): List of bad round end reasons.
+            bad_endings (list[str] | None): List of bad round end reasons.
                 Defaults to ["Draw", "Unknown", ""].
 
         Raises:

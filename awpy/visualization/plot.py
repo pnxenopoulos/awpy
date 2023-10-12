@@ -51,7 +51,11 @@ from awpy.visualization import AWPY_TMP_FOLDER, SIDE_COLORS
 
 @contextmanager
 def with_tmp_dir() -> Generator[None, None, None]:
-    """Create and finally delete tmp dir."""
+    """Create and finally delete tmp dir.
+
+    Yields:
+        None: Nothing, just returns control.
+    """
     # Raises an exception if the folder already exists.
     # This is intended. We do not want to delete this folder if the user
     # already has one with that name.
@@ -68,14 +72,14 @@ def plot_map(
     """Plots a blank map.
 
     Args:
-        map_name (str, optional): Map to search. Defaults to "de_dust2"
-        map_type (str, optional): "original" or "simpleradar". Defaults to "original"
-        dark (bool, optional): Only for use with map_type="simpleradar".
+        map_name (str): Map to search. Defaults to "de_dust2"
+        map_type (str): "original" or "simpleradar". Defaults to "original"
+        dark (bool): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type
             Defaults to False
 
     Returns:
-        matplotlib fig and ax
+        tuple[Figure, Axes]: matplotlib fig and ax
     """
     base_path = os.path.join(os.path.dirname(__file__), f"""../data/map/{map_name}""")
     if map_type == "original":
@@ -109,10 +113,10 @@ def position_transform(
     Args:
         map_name (str): Map to search
         position (float): X or Y coordinate
-        axis (str): Either "x" or "y" (lowercase)
+        axis (Literal['x', 'y']): Either "x" or "y" (lowercase)
 
     Returns:
-        float
+        float: float
 
     Raises:
         ValueError: Raises a ValueError if axis not 'x' or 'y'
@@ -140,10 +144,10 @@ def position_transform_all(
 
     Args:
         map_name (str): Map to search
-        position (tuple): (X,Y,Z) coordinates
+        position (tuple[float, float, float]): (X,Y,Z) coordinates
 
     Returns:
-        tuple
+        tuple[float, float, float]: tuple
     """
     current_map_data = MAP_DATA[map_name]
     start_x = current_map_data["pos_x"]
@@ -176,17 +180,17 @@ def plot_positions(
             marker (str): Marker for the position
             alpha (float): Alpha value for the position
             sizes (float): Size for the position
-        map_name (str, optional): Map to search. Defaults to "de_ancient"
-        map_type (str, optional): "original" or "simpleradar". Defaults to "original"
-        dark (bool, optional): Only for use with map_type="simpleradar".
+        map_name (str): Map to search. Defaults to "de_ancient"
+        map_type (str): "original" or "simpleradar". Defaults to "original"
+        dark (bool): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type
             Defaults to False
-        apply_transformation (bool, optional): Indicates if you need to also use
+        apply_transformation (bool): Indicates if you need to also use
             position_transform() for the X/Y coordinates,
             Defaults to False
 
     Returns:
-        matplotlib fig and ax
+        tuple[Figure, Axes]: matplotlib fig and ax
     """
     figure, axes = plot_map(map_name=map_name, map_type=map_type, dark=dark)
     for position in positions:
@@ -217,7 +221,7 @@ def _get_plot_position_for_player(
 
     Args:
         player (PlayerInfo): Information about a player at a point in time.
-        side (Literal["ct", "t"]): Side that the player is playing on.
+        side (Literal['ct', 't']): Side that the player is playing on.
         map_name (str): Map that the player is playing on.
 
     Returns:
@@ -268,17 +272,17 @@ def plot_round(
 
     Args:
         filename (str): Filename to save the gif
-        frames (list): List of frames from a parsed demo
-        map_name (str, optional): Map to search. Defaults to "de_ancient"
-        map_type (str, optional): "original" or "simpleradar". Defaults to "original
-        dark (bool, optional): Only for use with map_type="simpleradar".
+        frames (list[GameFrame]): List of frames from a parsed demo
+        map_name (str): Map to search. Defaults to "de_ancient"
+        map_type (str): "original" or "simpleradar". Defaults to "original
+        dark (bool): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type
             Defaults to False
-        fps (int, optional): Number of frames per second in the gif
+        fps (int): Number of frames per second in the gif
             Defaults to 10
 
     Returns:
-        True, saves .gif
+        Literal[True]: True, saves .gif
     """
     image_files: list[str] = []
     for i, game_frame in tqdm(enumerate(frames)):
@@ -315,19 +319,19 @@ def plot_nades(
     """Plots grenade trajectories.
 
     Args:
-        rounds (list): List of round objects from a parsed demo
-        nades (list, optional): List of grenade types to plot
+        rounds (list[GameRound]): List of round objects from a parsed demo
+        nades (list[str] | None): List of grenade types to plot
             Defaults to []
-        side (str, optional): Specify side to plot grenades. Either "CT" or "T".
+        side (str): Specify side to plot grenades. Either "CT" or "T".
             Defaults to "CT"
-        map_name (str, optional): Map to search. Defaults to "de_ancient"
-        map_type (str, optional): "original" or "simpleradar". Defaults to "original"
-        dark (bool, optional): Only for use with map_type="simpleradar".
+        map_name (str): Map to search. Defaults to "de_ancient"
+        map_type (str): "original" or "simpleradar". Defaults to "original"
+        dark (bool): Only for use with map_type="simpleradar".
             Indicates if you want to use the SimpleRadar dark map type.
             Defaults to False
 
     Returns:
-        matplotlib fig and ax
+        tuple[Figure, Axes]: matplotlib fig and ax
     """
     if nades is None:
         nades = []
@@ -369,13 +373,13 @@ def _plot_frame_team_player_positions(
 
     Args:
         map_name (str): Map used position_transform call
-        side (Literal): Side used to determine player scatterplot color
+        side (Literal['CT', 'T']): Side used to determine player scatterplot color
         player_data (TeamMetadata): Team's metadata dictionary. Expected format same as
             output of extract_player_positions
-        axes (plt.axes): axes object for plotting
+        axes (plt.Axes): axes object for plotting
 
     Returns:
-        Nothing, all plotting is done on ax object
+        None: Nothing, all plotting is done on ax object
     """
     transformed_x = [
         position_transform(map_name, loc[0], "x")
@@ -400,13 +404,14 @@ def _plot_map_control_from_dict(
 
     Args:
         map_name (str): Map used position_transform call
-        occupied_tiles (TeamMapControlValues): Map control values for occupied tiles
-        axes (plt.axes): axes object for plotting
-        player_data (FrameTeamMetadata): Dictionary of player positions
-            for each team. Expected format same as output of extract_player_positions
+        occupied_tiles (FrameMapControlValues): Map control values for occupied tiles
+        axes (plt.Axes): axes object for plotting
+        player_data (FrameTeamMetadata | None): Player positions for each team.
+            Expected format same as output of extract_player_positions
+            (Default value = None)
 
     Returns:
-        Nothing, all plotting is done on ax object
+        None: Nothing, all plotting is done on ax object
     """
     ct_tiles, t_tiles = occupied_tiles.ct_values, occupied_tiles.t_values
 
@@ -471,13 +476,15 @@ def plot_frame_map_control(
         frame (GameFrame): awpy frame to calculate map control for
         plot_type (MapControlPlotType): Determines which type of plot is created
             (either default or with players)
-        given_fig_ax: Optional tuple containing figure and ax objects for plotting
+        given_fig_ax (tuple[plt.Figure, plt.Axes] | tuple[None, None]): Figure and ax
+            objects for plotting (Default value = (None, None))
 
     Returns:
-        matplotlib fig and ax
+        tuple[Figure, Axes]: matplotlib fig and ax
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
+        ValueError: If the dist_type is incorrect.
     """
     if map_name not in NAV:
         msg = "Map not found."
@@ -523,14 +530,13 @@ def plot_round_map_control(
         round_data (GameRound): Round whose map control will be animated.
             Expected format that of awpy round
         plot_type (MapControlPlotType): Determines which type of plot is created
-            (either with or without players)
+            (either with or without players) (Default value = 'default')
 
     Returns:
-        True, ensuring function has completed
+        Literal[True]: True, ensuring function has completed
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
-    ]
     """
     if map_name not in NAV:
         msg = "Map not found."
@@ -564,11 +570,11 @@ def _plot_map_control_metrics(
     """Helper function to plot map control metrics.
 
     Args:
-        metrics (list): List containing map control values to plot
-        axes (axes): axes object for plotting
+        metrics (list[float]): List containing map control values to plot
+        axes (plt.Axes): axes object for plotting
 
     Returns:
-        Nothing, all plotting is done on ax_object
+        None: Nothing, all plotting is done on ax_object
     """
     x = list(range(1, len(metrics) + 1))
     axes.plot(x, metrics)
@@ -609,10 +615,10 @@ def plot_map_control_metrics(
     """Function to plot given map control metrics.
 
     Args:
-        metric_arr (list): List containing map control values to plot
+        metric_arr (list[float]): List containing map control values to plot
 
     Returns:
-        matplotlib fig and ax with map control metric plot
+        tuple[Figure, Axes]: matplotlib fig and ax with map control metric plot
 
     Raises:
         ValueError: If metrics is empty

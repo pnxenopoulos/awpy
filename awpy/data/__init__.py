@@ -26,11 +26,11 @@ def create_nav_graphs(
     """Function to create a dict of DiGraphs from dict of areas and edge_list file.
 
     Args:
-        nav (dict): Dictionary containing information about each area of each map
+        nav (dict[str, dict[TileId, Area]]): Information about each area of each map
         data_path (str): Path to the awpy.data folder containing navigation and map data
 
     Returns:
-        A dictionary mapping each map (str) to an nx.DiGraph of its traversible areas
+        dict[str, nx.DiGraph]: Each map to an nx.DiGraph of its traversible areas
     """
     nav_graphs: dict[str, nx.DiGraph] = {}
     for map_name in nav:
@@ -91,6 +91,11 @@ with open(Path(PATH + "map/map_data.json"), encoding="utf8") as map_data:
 
 
 def _get_dist_matrices() -> tuple[dict[str, PlaceMatrix], dict[str, AreaMatrix]]:
+    """Grab the distance matrices from files and combine them.
+
+    Returns:
+        tuple[dict[str, PlaceMatrix], dict[str, AreaMatrix]]: Dist matrices.
+    """
     place_dist_matrix: dict[str, PlaceMatrix] = {}
     area_dist_matrix: dict[str, AreaMatrix] = {}
     for file in os.listdir(PATH + "nav/"):

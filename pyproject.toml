@@ -48,6 +48,14 @@ include-package-data = true
     "*.sum",
 ]
 
+[tool.pymend]
+extend-exclude             = "docs/|tests/|setup.py"
+output-style               = "google"
+input-style                = "google"
+check                      = true
+force-params-min-n-params  = 2
+force-meta-min-func-length = 3
+
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
 select = [
@@ -190,7 +198,7 @@ fail-under = 10.0
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
-good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e", "PlayerPosition2D"]
+good-names          = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e", "PlayerPosition2D"]
 include-naming-hint = true
 
 [tool.pylint.design]
