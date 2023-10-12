@@ -114,6 +114,8 @@ We welcome any contributions from the community. You can visit the [issue page](
 ## Acknowledgments
 This project is made possible by the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang).
 
+The name "Awpy" is due to [Nick Wan](https://www.twitch.tv/nickwan_datasci)'s great idea!
+
 Big shoutout to [SimpleRadar](https://readtldr.gg/simpleradar?utm_source=github&utm_id=xenos-csgo-parser) for allowing use of their map images.
 
 Special thanks to [arjun-22](https://github.com/arjun-22) for his work on the initial stats module, expanding test coverage, and quality assurance checks.
