@@ -233,7 +233,8 @@ min-public-methods = 1
 
 # Maximum number of allowed ancestors (see R0901).
 # Inheriting from typing_extensions.TypedDict alones gives that
-max-parents = 22
+# Tracked here: https://github.com/pylint-dev/pylint/issues/9101
+max-parents = 30
 
 [tool.pylint.exceptions]
 # Exceptions that will emit a warning when caught.
