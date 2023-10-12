@@ -13,7 +13,7 @@ setup(
     # installed or upgraded on the target machine
     install_requires=[
         "imageio~=2.31.5",
-        "matplotlib~=3.8.0",
+        "matplotlib~=3.7.0",
         "networkx~=3.1",
         "numpy>=1.26,<=1.27",
         "pandas~=2.1.1",
