@@ -15,7 +15,7 @@ setup(
         "imageio~=2.28.0",
         "matplotlib~=3.7.0",
         "networkx~=3.1",
-        "numpy>=1.20,<=1.25",
+        "numpy>=1.26,<=1.27",
         "pandas~=2.0.1",
         "pydantic~=2.0.1",
         "scipy~=1.10.0",
