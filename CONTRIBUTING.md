@@ -35,7 +35,7 @@ The coverage run -m pytest --durations=10 command, which runs the Python tests, 
 
 If you do not have the time or bandwidth, you can omit running the test command locally, since Github actions will run them, as well.
 
-### Testing/Coverage
+### Testing & Coverage
 
 If you are fixing a bug or adding a new feature make sure to also add [unit tests](https://en.wikipedia.org/wiki/Unit_testing)
 that cover the original bug or your new functionality.

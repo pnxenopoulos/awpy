@@ -10,9 +10,9 @@ class TestUtils:
 
     @patch("awpy.utils.subprocess")
     def test_go_version(self, mock_subproc: MagicMock):
-        """Tests if the Golang version >= 1.18.0."""
+        """Tests if the Golang version >= 1.21.0."""
         inputs = [
-            b"go version go1.18.4 windows/amd64",
+            b"go version go1.21.0 windows/amd64",
             b"go version go1.17.4 windows/amd64",
             b"go version go1.7.4 windows/amd64",
             b"",

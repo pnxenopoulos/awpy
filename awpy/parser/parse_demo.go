@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	dem "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs"
-	common "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs/common"
-	events "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs/events"
+	dem "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs"
+	common "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/common"
+	events "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
 )
 
 const unknown = "Unknown"
@@ -551,6 +551,12 @@ func convertRoundEndReason(r events.RoundEndReason) string {
 		return "TerroristsSurrender"
 	case events.RoundEndReasonCTSurrender:
 		return "CTSurrender"
+	case events.RoundEndReasonStillInProgress:
+		return "StillInProgress"
+	case events.RoundEndReasonTerroristsPlanted:
+		return "TerroristsPlanted"
+	case events.RoundEndReasonCTsReachedHostage:
+		return "CTsReachedHostage"
 	default:
 		return unknown
 	}

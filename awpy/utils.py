@@ -39,7 +39,7 @@ class AutoVivification(dict):
 def check_go_version() -> bool:
     """Function to check the Golang version of the current machine.
 
-    Returns True if greater than 1.18.0
+    Returns True if greater than 1.21.0
 
     Returns:
         bool whether the found go version is recent enough
@@ -64,7 +64,7 @@ def check_go_version() -> bool:
     except Exception as e:  # noqa: BLE001
         print(e)
         return False
-    return [int(x) for x in parsed_go_version] >= [1, 18]
+    return [int(x) for x in parsed_go_version] >= [1, 21]
 
 
 def is_in_range(value: float, minimum: float, maximum: float) -> bool:

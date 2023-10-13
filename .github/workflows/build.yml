@@ -15,8 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.11"] #, "3.12-dev"]
-        go-version: ["1.18", "1.19", "1.20"]
+        python-version: ["3.11"]
+        go-version: ["1.21"]
     steps:
       - name: Checkout awpy library
         uses: actions/checkout@v3

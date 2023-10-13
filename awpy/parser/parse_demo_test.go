@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	common "github.com/markus-wa/demoinfocs-golang/v3/pkg/demoinfocs/common"
+	common "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/common"
 )
 
 func TestConvertRank(t *testing.T) {

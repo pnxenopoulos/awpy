@@ -9,6 +9,8 @@ extend-ignore-identifiers-re = [
     "MAKAR.*",
     # Don't correct the id in notebook
     ".*ba355586.*",
+    # Dont correct repo version
+    ".*348096939ba7.*"
 ]
 
 [type.golangcilint]
