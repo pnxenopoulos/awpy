@@ -241,6 +241,66 @@ class TestDemoParser:
             assert isinstance(game_round["weaponFires"], list)
             assert isinstance(game_round["frames"], list)
 
+    def test_mvp(self):
+        """Tests mvp."""
+        self.default_data = self.parser.parse()
+        expected = {
+            1: {
+                "mvpName": "tiziaN",
+                "mvpSteamID": 76561197997556936,
+                "mvpReason": "MVPReasonMostEliminations",
+            },
+            3: {
+                "mvpName": "syrsoNR",
+                "mvpSteamID": 76561197980122997,
+                "mvpReason": "MVPReasonBombPlanted",
+            },
+            8: {
+                "mvpName": "Ex6TenZ-BALLISTIX",
+                "mvpSteamID": 76561197972003061,
+                "mvpReason": "MVPReasonBombDefused",
+            },
+            11: {
+                "mvpName": "keev",
+                "mvpSteamID": 76561198011536764,
+                "mvpReason": "MVPReasonMostEliminations",
+            },
+            22: {
+                "mvpName": "crisby",
+                "mvpSteamID": 76561197973392984,
+                "mvpReason": "MVPReasonBombDefused",
+            },
+            23: {"mvpName": None, "mvpSteamID": None, "mvpReason": None},
+            24: {
+                "mvpName": "keev",
+                "mvpSteamID": 76561198011536764,
+                "mvpReason": "MVPReasonBombDefused",
+            },
+            27: {
+                "mvpName": "ALEX * Intel",
+                "mvpSteamID": 76561198004871434,
+                "mvpReason": "MVPReasonMostEliminations",
+            },
+            29: {
+                "mvpName": "crisby",
+                "mvpSteamID": 76561197973392984,
+                "mvpReason": "MVPReasonMostEliminations",
+            },
+        }
+        for game_round in self.default_data["gameRounds"]:
+            if game_round["roundNum"] in expected:
+                assert (
+                    game_round["mvpName"] == expected[game_round["roundNum"]]["mvpName"]
+                )
+                assert (
+                    game_round["mvpSteamID"]
+                    == expected[game_round["roundNum"]]["mvpSteamID"]
+                )
+                assert (
+                    game_round["mvpReason"]
+                    == expected[game_round["roundNum"]]["mvpReason"]
+                )
+
     def test_parse_kill_frames(self):
         """Tests parse kill frames."""
         self.parser_kill_frames = DemoParser(

@@ -569,6 +569,9 @@ class GameRound(TypedDict):
     winningTeam: str | None
     losingTeam: str | None
     roundEndReason: str
+    mvpName: str | None
+    mvpSteamID: int | None
+    mvpReason: str | None
     ctFreezeTimeEndEqVal: int
     ctRoundStartEqVal: int
     ctRoundSpendMoney: int
@@ -677,6 +680,7 @@ class PlayerStatistics(TypedDict):
     success1v4: int
     attempts1v5: int
     success1v5: int
+    mvp: int
 
 
 class KAST(TypedDict):

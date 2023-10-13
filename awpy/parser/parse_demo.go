@@ -138,6 +138,9 @@ type GameRound struct {
 	WinningTeam          *string            `json:"winningTeam"`
 	LosingTeam           *string            `json:"losingTeam"`
 	Reason               string             `json:"roundEndReason"`
+	MVPName              *string            `json:"mvpName"`
+	MVPSteamID           *int64             `json:"mvpSteamID"`
+	MVPReason            *string            `json:"mvpReason"`
 	CTFreezeTimeEndEqVal int64              `json:"ctFreezeTimeEndEqVal"`
 	CTRoundStartEqVal    int64              `json:"ctRoundStartEqVal"`
 	CTRoundMoneySpend    int64              `json:"ctRoundSpendMoney"`
@@ -551,6 +554,19 @@ func convertRoundEndReason(r events.RoundEndReason) string {
 		return "TerroristsSurrender"
 	case events.RoundEndReasonCTSurrender:
 		return "CTSurrender"
+	default:
+		return unknown
+	}
+}
+
+func convertRoundMVPReason(r events.RoundMVPReason) string {
+	switch reason := r; reason {
+	case events.MVPReasonMostEliminations:
+		return "MVPReasonMostEliminations"
+	case events.MVPReasonBombDefused:
+		return "MVPReasonBombDefused"
+	case events.MVPReasonBombPlanted:
+		return "MVPReasonBombPlanted"
 	default:
 		return unknown
 	}
@@ -1468,6 +1484,18 @@ func registerRoundEndHandler(demoParser *dem.Parser, currentGame *Game, currentR
 		// 	currentGame.ParsingOpts.RoundBuyStyle)
 		// currentRound.TBuyType = parseTeamBuy(currentRound.TRoundStartEqVal+currentRound.TSpend, "T",
 		// 	currentGame.ParsingOpts.RoundBuyStyle)
+	})
+}
+
+func registerRoundMVPHandler(demoParser *dem.Parser, currentRound *GameRound) {
+	(*demoParser).RegisterEventHandler(func(e events.RoundMVPAnnouncement) {
+		if e.Player != nil {
+			currentRound.MVPName = &e.Player.Name
+			playerSteamID := int64(e.Player.SteamID64)
+			mvpReason := convertRoundMVPReason(e.Reason)
+			currentRound.MVPSteamID = &playerSteamID
+			currentRound.MVPReason = &mvpReason
+		}
 	})
 }
 
@@ -2734,6 +2762,9 @@ func main() {
 	// Parse round ends
 	registerRoundEndOfficialHandler(&p, &currentGame, &currentRound, &roundInEndTime, &RoundRestartDelay)
 	registerRoundEndHandler(&p, &currentGame, &currentRound, &roundStarted, &roundInEndTime, &RoundRestartDelay)
+
+	// Parse MVP announcements
+	registerRoundMVPHandler(&p, &currentRound)
 
 	// Parse bomb defuses
 	registerBombDefusedHandler(&p, &currentGame, &currentRound)
