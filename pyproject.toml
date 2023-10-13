@@ -44,6 +44,7 @@ include-package-data = true
     "data/nav/*.txt",
     "data/nav/*.csv",
     "data/nav/*.json",
+    "data/wpa/*.json",
     "*.mod",
     "*.sum",
 ]
@@ -98,7 +99,7 @@ select = [
     "RUF",
     "EM",
 ]
-ignore = ["D208", "ANN101", "T20", "PTH", "TRY003"] # , "PLR0912", "PLR0915", "PLR0913"
+ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "INP001"] # , "PLR0912", "PLR0915", "PLR0913"
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
