@@ -19,7 +19,7 @@ setup(
         "pandas~=2.1.1",
         "pydantic~=2.4.2",
         "scipy~=1.11.3",
-        "Shapely~=2.0.1",
+        "Shapely~=2.0.2",
         "sphinx-rtd-theme==1.3",
         "sympy==1.12",
         "textdistance~=4.6.0",
