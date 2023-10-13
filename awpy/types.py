@@ -143,6 +143,7 @@ class ParserOpts(TypedDict):
     """ParserOpts holds the parameters passed to the parser."""
 
     parseRate: int
+    parseRelative: bool
     parseFrames: bool
     parseKillFrames: bool
     tradeTime: int
@@ -163,6 +164,7 @@ class FullParserArgs(TypedDict):
     """TypedDict for total parser **kwargs."""
 
     parse_rate: ParseRate
+    parse_relative: bool
     parse_frames: bool
     parse_kill_frames: bool
     trade_time: int
@@ -177,6 +179,7 @@ class ParserArgs(TypedDict, total=False):
     """Non total parser **kwargs."""
 
     parse_rate: ParseRate
+    parse_relative: bool
     parse_frames: bool
     parse_kill_frames: bool
     trade_time: int
@@ -609,6 +612,7 @@ class Game(TypedDict):
     clientName: str
     mapName: str
     tickRate: int
+    frameRate: int
     playbackTicks: int
     playbackFramesCount: int
     parsedToFrameIdx: int

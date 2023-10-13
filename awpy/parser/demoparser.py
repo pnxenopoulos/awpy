@@ -65,6 +65,10 @@ class DemoParser:
         parse_rate (int, optional): One of 128, 64, 32, 16, 8, 4, 2, or 1.
             The lower the value, the more frames are collected.
             Indicates spacing between parsed demo frames in ticks. Default is 128.
+        parse_relative (bool): Whether the parse rate should be corrected to match
+            a demo tickrate of 128. This would mean that a parse rate of 128
+            would always record 1 frame per second and a rate of 64 would record
+            one every two seconds, etc.
         parse_frames (bool): Flag if you want to parse frames (trajectory data) or not.
             Default is True
         parse_kill_frames (bool): Flag if you want to parse frames on kills.
@@ -121,6 +125,12 @@ class DemoParser:
                     The lower the value, the more frames are collected.
                     Indicates spacing between parsed demo frames in ticks.
                     Default is 128.
+                parse_relative (bool): Whether the parse rate should be corrected to
+                    match a demo tickrate of 128.
+                    This would mean that a parse rate of 128
+                    would always record 1 frame per second and a rate of 64 would record
+                    one every two seconds, etc.
+                    Default is False.
                 parse_frames (bool, optional):
                     Flag if you want to parse frames (trajectory data) or not.
                     Default is True
@@ -170,6 +180,7 @@ class DemoParser:
 
         self.parser_args: FullParserArgs = {
             "parse_rate": 128,
+            "parse_relative": False,
             "trade_time": 5,
             "parse_frames": True,
             "parse_kill_frames": False,
@@ -397,6 +408,24 @@ class DemoParser:
         """
         self.parser_args["parse_rate"] = parse_rate
 
+    @property
+    def parse_relative(self) -> bool:
+        """parse_relative getter.
+
+        Returns:
+            bool: Current parse_relative value.
+        """
+        return self.parser_args["parse_relative"]
+
+    @parse_relative.setter
+    def parse_relative(self, parse_relative: bool) -> None:
+        """parse_relative setter.
+
+        Args:
+            parse_relative (bool): parse_relative to use.
+        """
+        self.parser_args["parse_relative"] = parse_relative
+
     def _check_parse_rate(self) -> None:
         """Check that parse rate is not too high or low."""
         # Handle parse rate. If the parse rate is less than 64, likely to be slow
@@ -513,6 +542,8 @@ class DemoParser:
             parser_cmd.append("--jsonindentation")
         if self.parse_chat:
             parser_cmd.append("--parsechat")
+        if self.parse_relative:
+            parser_cmd.append("--parserelative")
         self.logger.debug(parser_cmd)
         with subprocess.Popen(
             parser_cmd,  # noqa: S603
