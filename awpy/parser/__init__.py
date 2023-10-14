@@ -1,6 +1,6 @@
 """Provides data parsing capabilities for CSGO data."""
-from awpy.parser.demoparser import DemoParser
+from awpy.parser.demoparser_old import DemoParser
 
-from . import demoparser
+from . import demoparser_old
 
-__all__ = ["demoparser", "DemoParser"]
+__all__ = ["demoparser_old", "DemoParser"]
