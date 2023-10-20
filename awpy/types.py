@@ -10,7 +10,7 @@ from typing_extensions import TypedDict
 class PlotPosition:
     """Class to store information needed for plotting a position."""
 
-    position: tuple[float, float]
+    position: tuple[float, float, float]
     color: str
     marker: str
     alpha: float | None = None
