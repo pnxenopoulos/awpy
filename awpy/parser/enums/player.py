@@ -3,9 +3,9 @@ from enum import Enum
 class PlayerData(Enum):
     """PlayerData as defined by demoparser2
     """
-    X = "x"  # m_vec + m_cell
-    Y = "y"  # m_vec + m_cell
-    Z = "z"  # m_vec + m_cell
+    X = "X"  # m_vec + m_cell
+    Y = "Y"  # m_vec + m_cell
+    Z = "Z"  # m_vec + m_cell
     HEALTH = "health"  # m_iHealth
     SCORE = "score"  # m_iScore
     MVPS = "mvps"  # m_iMVPs

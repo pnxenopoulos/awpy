@@ -26,7 +26,7 @@ import numpy as np
 
 from demoparser2 import DemoParser
 from awpy.parser.models import Demo, DemoHeader
-from awpy.parser.enums import GameEvent
+from awpy.parser.enums import GameEvent, PlayerData
 
 def parse_header(parsed_header: dict) -> DemoHeader:
     """Parse the header of the demofile.
@@ -140,15 +140,59 @@ def parse_demo(file: str) -> Demo:
         GameEvent.ROUND_END.value,
         GameEvent.ROUND_OFFICIALLY_ENDED.value
     ])
-    
-    
-    round_events = []
-    for _, round_event in enumerate(parsed_round_times):
-        round_event[1]["event"] = round_event[0]
-        round_events.append(round_event[1].loc[:,["tick", "event"]])
-    rounds_df = pd.concat(round_events)
-    rounds_df['order'] = rounds_df['event'].map(event_order)
-    rounds_df = rounds_df.sort_values(by=["tick", "order"])
+    rounds_df = parse_rounds(parsed_round_times)
 
+    # player damages
+    # kills
+    # weapon fires
+    # bomb events
+    # frames
+    deaths_df = parser.parse_events([
+        GameEvent.PLAYER_DEATH.value,
+        GameEvent.OTHER_DEATH.value
+    ])
+    # states (L2)
+    ticks = parser.parse_ticks([
+        # Location
+        PlayerData.X.value,
+        PlayerData.Y.value,
+        PlayerData.Z.value,
+        PlayerData.PITCH.value,
+        PlayerData.YAW.value,
+        PlayerData.LAST_PLACE_NAME.value,
+        # Health/Armor/Weapon
+        PlayerData.IS_ALIVE.value,
+        PlayerData.HEALTH.value,
+        PlayerData.ARMOR.value,
+        PlayerData.HAS_HELMET.value,
+        PlayerData.HAS_DEFUSER.value,
+        PlayerData.ACTIVE_WEAPON.value,
+        PlayerData.CURRENT_EQUIP_VALUE.value,
+        PlayerData.ROUND_START_EQUIP_VALUE.value,
+        # Rank
+        PlayerData.RANK.value,
+        # Extra
+        PlayerData.PING.value,
+        PlayerData.CLAN_NAME.value,
+        PlayerData.TEAM_NUM.value,
+        PlayerData.FLASH_DURATION.value,
+        PlayerData.FLASH_MAX_ALPHA.value,
+        PlayerData.IS_SCOPED.value,
+        PlayerData.IS_DEFUSING.value,
+        PlayerData.IS_WALKING.value,
+        PlayerData.IS_STRAFING.value,
+        PlayerData.IN_BUY_ZONE.value,
+        PlayerData.IN_BOMB_ZONE.value,
+        PlayerData.IN_CROUCH.value,
+        PlayerData.SPOTTED.value,
+    ])
+
+
+    # Final dict
+    parsed_data = {
+        "header": header,
+        "rounds": parsed_round_times
+    }
+    
     grenades = parser.parse_grenades()
     return None
