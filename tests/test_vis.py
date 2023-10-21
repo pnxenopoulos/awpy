@@ -74,8 +74,8 @@ class TestVis:
     @patch("awpy.visualization.plot.Axes.scatter")
     def test_plot_positions(self, scatter_mock: MagicMock):
         """Test plot positions."""
-        pos1 = PlotPosition((1, 2), "red", "X", 1.0, 1.0)
-        pos2 = PlotPosition((2, 1), "blue", "8", 0.4, 0.3)
+        pos1 = PlotPosition((1, 2, 0), "red", "X", 1.0, 1.0)
+        pos2 = PlotPosition((2, 1, 0), "blue", "8", 0.4, 0.3)
         fig, axis = plot_positions(
             positions=[pos1, pos2],
             apply_transformation=True,
@@ -100,11 +100,11 @@ class TestVis:
             {
                 "bomb": {"x": 1890, "y": 74, "z": 1613.03125},
                 "t": {"players": []},
-                "ct": {"players": [{"hp": 100, "x": 0, "y": 0}]},
+                "ct": {"players": [{"hp": 100, "x": 0, "y": 0, "z": 0}]},
             },
             {
                 "bomb": {"x": 1890, "y": 74, "z": 1613.03125},
-                "t": {"players": [{"hp": 0, "x": 0, "y": 0}]},
+                "t": {"players": [{"hp": 0, "x": 0, "y": 0, "z": 0}]},
                 "ct": {"players": []},
             },
         ]
@@ -121,6 +121,7 @@ class TestVis:
                         (
                             position_transform("de_ancient", 1890, "x"),
                             position_transform("de_ancient", 74, "y"),
+                            1613.03125,
                         ),
                         "orange",
                         "8",
@@ -129,6 +130,7 @@ class TestVis:
                         (
                             position_transform("de_ancient", 0, "x"),
                             position_transform("de_ancient", 0, "y"),
+                            0,
                         ),
                         "red",
                         "x",
