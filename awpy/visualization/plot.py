@@ -62,6 +62,30 @@ def with_tmp_dir() -> Generator[None, None, None]:
         shutil.rmtree(AWPY_TMP_FOLDER)
 
 
+def _get_image_with_size(
+    base_path: str, *, qualifier: str = "", split: bool = False
+) -> tuple[np.ndarray, tuple[float, float]]:
+    """Get image and size of image.
+
+    Args:
+        base_path (str): Path to image
+        qualifier (str): Additional qualifier to the image.
+            Valid are: ("", "_dark", "_light"). Defaults to "".
+        split (bool): Whether to split levels for maps with multiple levels.
+            Defaults to False.
+
+    Returns:
+        tuple[np.ndarray, tuple[float, float]]: image and size of image
+    """
+    figsize = (6.4, 4.8)
+    map_bg = imageio.imread(f"{base_path}{qualifier}.png")
+    if split:
+        map_bg_lower = imageio.imread(f"{base_path}_lower{qualifier}.png")
+        map_bg = np.concatenate([map_bg, map_bg_lower])
+        figsize = (figsize[0], figsize[1] * 2)
+    return map_bg, figsize
+
+
 def plot_map(
     map_name: str = "de_dust2",
     map_type: str = "original",
@@ -84,29 +108,16 @@ def plot_map(
         matplotlib fig and ax
     """
     base_path = os.path.join(os.path.dirname(__file__), f"""../data/map/{map_name}""")
-    figsize = (6.4, 4.8)
+    split = split_levels and map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]
     if map_type == "original":
-        map_bg = imageio.imread(f"{base_path}.png")
-        if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
-            map_bg_lower = imageio.imread(f"{base_path}_lower.png")
-            map_bg = np.concatenate([map_bg, map_bg_lower])
+        map_bg, figsize = _get_image_with_size(base_path, split=split)
     else:
         try:
-            col = "dark" if dark else "light"
-            map_bg = imageio.imread(f"{base_path}_{col}.png")
-            if map_name in MAP_DATA and "z_cutoff" in MAP_DATA[map_name]:
-                map_bg_lower = imageio.imread(f"{base_path}_lower_{col}.png")
-                map_bg = np.concatenate([map_bg, map_bg_lower])
+            map_bg, figsize = _get_image_with_size(
+                base_path, qualifier="_dark" if dark else "_light", split=split
+            )
         except FileNotFoundError:
-            map_bg = imageio.imread(f"{base_path}.png")
-            if (
-                split_levels
-                and map_name in MAP_DATA
-                and "z_cutoff" in MAP_DATA[map_name]
-            ):
-                map_bg_lower = imageio.imread(f"{base_path}_lower.png")
-                map_bg = np.concatenate([map_bg, map_bg_lower])
-                figsize = (figsize[0], figsize[1] * 2)
+            map_bg, figsize = _get_image_with_size(base_path, split=split)
     figure, axes = plt.subplots(figsize=figsize)
     axes.imshow(map_bg, zorder=0)
     return figure, axes
