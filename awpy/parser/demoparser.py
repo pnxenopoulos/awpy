@@ -30,10 +30,8 @@ from awpy.parser.enums import GameEvent, PlayerData
 
 def parse_header(parsed_header: dict) -> DemoHeader:
     """Parse the header of the demofile.
-
     Args:
         parsed_header (dict): The header of the demofile.
-
     Returns:
         DemoHeader: The parsed header of the demofile.
     """
@@ -124,14 +122,109 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     parsed_rounds_df = parsed_rounds_df.astype(int)
     return parsed_rounds_df
 
+def parse_smokes_and_infernos(parsed: list[tuple]) -> pd.DataFrame:
+    parsed_dfs = []
+    for data in parsed:
+        key = data[0]
+        df = data[1]
+        df = df[["entityid", "tick", "x", "y", "z"]]
+        df["event"] = key
+        parsed_dfs.append(df)
+    parsed_df = pd.concat(parsed_dfs)
+    parsed_df = parsed_df.sort_values(by=["tick", "entityid"])
+    return parsed_df
+
+def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
+    parsed_dfs = []
+    for data in parsed:
+        key = data[0]
+        df = data[1]
+        df["event"] = key
+        df = df.rename(columns={
+            "user_name": "player",
+            "user_steamid": "steamid"
+        })
+        match key:
+            # No pickup or dropped. Might want to see if we can get player info on each
+            case GameEvent.BOMB_PLANTED.value:
+                df = df[["tick", "event", "player", "steamid", "site"]]
+            case GameEvent.BOMB_DEFUSED.value:
+                df = df[["tick", "event", "player", "steamid", "site"]]
+            case GameEvent.BOMB_BEGINDEFUSE.value:
+                df = df[["tick", "event", "player", "steamid", "haskit"]]
+            case GameEvent.BOMB_BEGINPLANT.value:
+                df = df[["tick", "event", "player", "steamid", "site"]]
+            case GameEvent.BOMB_EXPLODED.value:
+                df = df[["tick", "event", "player", "steamid", "site"]]
+        parsed_dfs.append(df)
+    parsed_df = pd.concat(parsed_dfs)
+    return parsed_df.sort_values(by=["tick"])
+
+def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
+    damage_df = parsed[0][1]
+    damage_df = damage_df.rename(columns={
+        "attacker_name": "attacker",
+        "user_name": "victim",
+        "user_steamid": "victim_steamid",
+    })
+    return damage_df.sort_values(by=["tick"])
+
+def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
+    death_df = parsed[0][1]
+    death_df = death_df.rename(columns={
+        "attacker_name": "attacker",
+        "user_name": "victim",
+        "user_steamid": "victim_steamid",
+    })
+    return death_df.sort_values(by=["tick"])
+
+def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
+    tick_df = tick_df.rename(columns={
+        "name": "player",
+        "clan_name": "clan",
+        "last_place_name": "last_place"
+    })
+    tick_df = tick_df[[
+        "tick",
+        "player",
+        "steamid",
+        "clan",
+        "team_num", # fix CT/T
+        "X",
+        "Y",
+        "Z",
+        "pitch",
+        "yaw",
+        "last_place",
+        "is_alive",
+        "health",
+        "armor",
+        "has_helmet",
+        "has_defuser",
+        "active_weapon",
+        "current_equip_value",
+        "round_start_equip_value",
+        "rank",
+        "ping",
+        "flash_duration",
+        "flash_max_alpha",
+        "is_scoped",
+        "is_defusing",
+        "is_walking",
+        "is_strafing",
+        "in_buy_zone",
+        "in_bomb_zone",
+        "in_crouch",
+        "spotted",
+    ]]
+    return tick_df
+
 
 def parse_demo(file: str) -> Demo:
     parser = DemoParser(file)
-
     # Header
     parsed_header = parser.parse_header()
     header = parse_header(parsed_header)
-
     # Rounds
     parsed_round_times = parser.parse_events([
         GameEvent.ROUND_START.value,
@@ -140,19 +233,36 @@ def parse_demo(file: str) -> Demo:
         GameEvent.ROUND_END.value,
         GameEvent.ROUND_OFFICIALLY_ENDED.value
     ])
-    rounds_df = parse_rounds(parsed_round_times)
-
-    # player damages
-    # kills
-    # weapon fires
-    # bomb events
-    # frames
-    deaths_df = parser.parse_events([
-        GameEvent.PLAYER_DEATH.value,
-        GameEvent.OTHER_DEATH.value
+    round_df = parse_rounds(parsed_round_times)
+    # Damages
+    damage = parser.parse_events([
+        GameEvent.PLAYER_HURT.value
     ])
-    # states (L2)
-    ticks = parser.parse_ticks([
+    damage_df = parse_damages(damage)
+    # Blockers (smokes, molotovs, etc.)
+    effect = parser.parse_events([
+        GameEvent.INFERNO_STARTBURN.value,
+        GameEvent.INFERNO_EXPIRE.value,
+        GameEvent.SMOKEGRENADE_DETONATE.value,
+        GameEvent.SMOKEGRENADE_EXPIRED.value,
+    ])
+    effect_df = parse_smokes_and_infernos(effect)
+    # Bomb
+    bomb = parser.parse_events([
+        GameEvent.BOMB_BEGINDEFUSE.value,
+        GameEvent.BOMB_BEGINPLANT.value,
+        GameEvent.BOMB_DEFUSED.value,
+        GameEvent.BOMB_EXPLODED.value,
+        GameEvent.BOMB_PLANTED.value
+    ])
+    bomb_df = parse_bomb_events(bomb)
+    # Deaths
+    deaths = parser.parse_events([
+        GameEvent.PLAYER_DEATH.value,
+    ])
+    death_df = parse_deaths(deaths)
+    # Frames
+    tick_df = parser.parse_ticks([
         # Location
         PlayerData.X.value,
         PlayerData.Y.value,
@@ -186,13 +296,16 @@ def parse_demo(file: str) -> Demo:
         PlayerData.IN_CROUCH.value,
         PlayerData.SPOTTED.value,
     ])
-
-
+    tick_df = parse_frame(tick_df)
     # Final dict
     parsed_data = {
         "header": header,
-        "rounds": parsed_round_times
+        "rounds": round_df,
+        "kills": death_df,
+        "damages": damage_df,
+        "effects": effect_df,
+        "bomb_events": bomb_df,
+        "ticks": ticks_df
     }
-    
     grenades = parser.parse_grenades()
-    return None
+    return parsed_data
