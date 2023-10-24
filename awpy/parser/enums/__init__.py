@@ -6,4 +6,12 @@ from .reason import RoundEndReason
 from .state import GameState
 from .weapon import Weapon
 
-__all__ = ["Button", "GameEvent", "HitGroup", "PlayerData", "RoundEndReason", "GameState", "Weapon"]
+__all__ = [
+    "Button",
+    "GameEvent",
+    "HitGroup",
+    "PlayerData",
+    "RoundEndReason",
+    "GameState",
+    "Weapon",
+]

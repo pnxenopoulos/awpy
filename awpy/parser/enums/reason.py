@@ -1,8 +1,9 @@
 from enum import Enum
 
+
 class RoundEndReason(Enum):
-    """RoundEndReasons
-    """
+    """RoundEndReasons"""
+
     STILL_IN_PROGRESS = 0
     TARGET_BOMBED = 1
     VIP_ESCAPED = 2

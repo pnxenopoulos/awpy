@@ -1,8 +1,10 @@
 from typing import TypedDict
 from awpy.parser.enums import HitGroup, RoundEndReason
 
+
 class Round(TypedDict):
     """Class to store a game round"""
+
     is_warmup: bool
     start_tick: int
     freeze_end_tick: int
@@ -19,8 +21,10 @@ class Round(TypedDict):
     t_eq_val: int
     t_spend: int
 
+
 class PlayerFrame(TypedDict):
     """Class to store player information for a game frame."""
+
     name: str
     steam_id: int
     x: float
@@ -40,8 +44,10 @@ class PlayerFrame(TypedDict):
     inventory: list[str]  # should probably be a weapon enum
     rank: int
 
+
 class TeamFrame(TypedDict):
     """Class to store team information for a game frame."""
+
     players_alive: int
     eq_val: int
     he: int
@@ -50,8 +56,10 @@ class TeamFrame(TypedDict):
     fire: int
     players: list[PlayerFrame]
 
+
 class GameFrame(TypedDict):
     """Class to store game frame information."""
+
     tick: int
     seconds_since_phase_start: float
     seconds_since_round_start: float
@@ -59,8 +67,10 @@ class GameFrame(TypedDict):
     t: TeamFrame
     ct: TeamFrame
 
+
 class Kill(TypedDict):
     """Class to store kill information."""
+
     tick: int
     flash_assist: bool
     assister_name: str
@@ -83,8 +93,10 @@ class Kill(TypedDict):
     thrusmoke: bool
     weapon: str
 
+
 class Damage(TypedDict):
     """Class to store damage information."""
+
     tick: int
     attacker_name: str
     attacker_steam_id: int
@@ -95,4 +107,3 @@ class Damage(TypedDict):
     health: int
     armor: int
     weapon: str
-

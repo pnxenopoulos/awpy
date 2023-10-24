@@ -1,10 +1,12 @@
 import pandas as pd
 
 from typing import TypedDict
-from .header import DemoHeader
+from awpy.parser.models.header import DemoHeader
+
 
 class Demo(TypedDict):
     """Class to store a demo's data"""
+
     header: DemoHeader
     rounds: pd.DataFrame
     kills: pd.DataFrame

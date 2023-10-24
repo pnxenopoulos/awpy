@@ -1,8 +1,9 @@
 from enum import Enum
 
+
 class GameEvent(Enum):
-    """GameEvents as defined by demoparser2
-    """
+    """GameEvents as defined by demoparser2"""
+
     # Bomb-related Events
     BOMB_PLANTED = "bomb_planted"
     BOMB_DEFUSED = "bomb_defused"

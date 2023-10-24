@@ -1,8 +1,9 @@
 from enum import Enum
 
+
 class HitGroup(Enum):
-    """HitGroup
-    """
+    """HitGroup"""
+
     GENERIC = 0
     HEAD = 1
     CHEST = 2

@@ -1,7 +1,9 @@
 from typing import TypedDict
 
+
 class DemoHeader(TypedDict):
     """Class to store demo header information."""
+
     demo_version_guid: str
     network_protocol: str
     fullpackets_version: str
