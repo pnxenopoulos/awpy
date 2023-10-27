@@ -3,7 +3,6 @@ module github.com/pnxenopoulos/csgo
 go 1.21
 
 require (
-	github.com/markus-wa/demoinfocs-golang/v3 v3.3.0
 	github.com/markus-wa/demoinfocs-golang/v4 v4.0.0-beta.5
 )
 
