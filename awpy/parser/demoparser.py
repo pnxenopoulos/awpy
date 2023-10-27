@@ -58,7 +58,10 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     round_events = []
     for _, round_event in enumerate(parsed_round_events):
         round_event[1]["event"] = round_event[0]
-        round_events.append(round_event[1].loc[:, ["tick", "event"]])
+        if round_event[0] == GameEvent.ROUND_END.value:
+            round_events.append(round_event[1].loc[:, ["tick", "event", "reason"]])
+        else:
+            round_events.append(round_event[1].loc[:, ["tick", "event"]])
     round_event_df = pd.concat(round_events)
 
     # Ascribe order to event types and sort by tick and order
@@ -70,16 +73,41 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
         GameEvent.ROUND_END.value: 4,
     }
     round_event_df["order"] = round_event_df["event"].map(event_order)
+    round_event_df["reason"] = round_event_df["reason"].astype("Int64")
+    round_event_df["reason"] = round_event_df["reason"].map({
+        0: "still_in_progress",
+        1: "target_bombed",
+        2: "vip_escaped",
+        3: "vip_killed",
+        4: "t_escape",
+        5: "ct_stop_escape",
+        6: "t_stopped",
+        7: "bomb_defused",
+        8: "ct_win",
+        9: "t_win",
+        10: "draw",
+        11: "hostages_rescued",
+        12: "target_saved",
+        13: "hostages_not_rescued",
+        14: "t_not_escaped",
+        15: "vip_not_escaped",
+        16: "game_start",
+        17: "t_surrender",
+        18: "ct_surrender",
+        19: "t_planted",
+        20: "cts_reached_hostage",
+        pd.NA: pd.NA
+    })
     round_event_df = round_event_df.sort_values(by=["tick", "order"])
     first_event = round_event_df.iloc[0]["event"]
     match first_event:
         case GameEvent.ROUND_START.value:
             pass
         case _:
-            round_event_df = pd.concat(
+            round_event_df = pd.concat([
+                pd.DataFrame({"tick": [0], "event": [GameEvent.ROUND_START.value], "order": [1], "reason": [pd.NA]}),
                 round_event_df,
-                pd.DataFrame({"tick": [0], "event": [GameEvent.ROUND_START.value], "order": [1]})
-            )
+            ])
     parsed_rounds_df = create_round_df(round_event_df)
 
     return parsed_rounds_df
@@ -100,6 +128,7 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     buy_time_end = []
     round_end = []
     round_end_official = []
+    reason = []
     current_round = None
 
     # Iterate through the DataFrame and populate the lists
@@ -112,6 +141,7 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
                 buy_time_end.append(current_round.get("buy_time_end", None))
                 round_end.append(current_round.get("round_end", None))
                 round_end_official.append(current_round.get("round_end_official", None))
+                reason.append(current_round.get("reason", None))
             # Start a new round
             current_round = {"round_start": row["tick"]}
         elif current_round is not None:
@@ -121,6 +151,7 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
                 current_round["buy_time_end"] = row["tick"]
             elif row["event"] == "round_end":
                 current_round["round_end"] = row["tick"]
+                current_round["reason"] = row["reason"]
             elif row["event"] == "round_officially_ended":
                 current_round["round_end_official"] = row["tick"]
 
@@ -130,6 +161,7 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     buy_time_end.append(current_round.get("buy_time_end", None))
     round_end.append(current_round.get("round_end", None))
     round_end_official.append(current_round.get("round_end_official", None))
+    reason.append(current_round.get("reason", None))
 
     # Create a new DataFrame with the desired columns
     parsed_rounds_df = pd.DataFrame(
@@ -139,12 +171,13 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
             "buy_time_end": buy_time_end,
             "round_end": round_end,
             "round_end_official": round_end_official,
+            "round_end_reason": reason,
         }
     )
-    parsed_rounds_df = parsed_rounds_df.fillna(-1)
-    parsed_rounds_df = parsed_rounds_df.astype(int)
+    final_df = parsed_rounds_df[["round_start", "freeze_time_end", "buy_time_end", "round_end", "round_end_official"]].astype("Int64")
+    final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
 
-    return parsed_rounds_df
+    return final_df
 
 
 def parse_smokes_and_infernos(parsed: list[tuple]) -> pd.DataFrame:
@@ -324,7 +357,7 @@ def parse_demo(file: str) -> Demo:
     header = parse_header(parsed_header)
 
     # Rounds
-    parsed_round_times = parser.parse_events(
+    parsed_round_events = parser.parse_events(
         [
             GameEvent.ROUND_START.value,
             GameEvent.ROUND_FREEZE_END.value,
@@ -333,7 +366,7 @@ def parse_demo(file: str) -> Demo:
             GameEvent.ROUND_OFFICIALLY_ENDED.value,
         ]
     )
-    round_df = parse_rounds(parsed_round_times)
+    round_df = parse_rounds(parsed_round_events)
 
     # Damages
     damage = parser.parse_events([GameEvent.PLAYER_HURT.value])

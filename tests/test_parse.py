@@ -16,7 +16,7 @@ class TestParser:
 
     def test_demo_csgo_heroic_g2_katowice_2023(self):
         """Tests the output of Heroic vs G2 at Katowice 2023 (CSGO)."""
-        parsed = parse_demo("tests/heroic-g2-katowice-2023-mirage.dem")
+        parsed = parse_demo("tests/g2-vs-ence-m2-vertigo.dem")
 
         # Header
         parsed["header"]["map_name"] == "de_vertigo"
@@ -24,6 +24,31 @@ class TestParser:
         parsed["header"]["client_name"] == "SourceTV Demo"
 
         # Rounds (not correct, need to calculate dmg)
+        round_df = parsed["rounds"]
+        round_df.shape[0] == 21
+        round_df.round_end_reason.values[0] == "t_win"
+        round_df.round_end_reason.values[1] == "t_win"
+        round_df.round_end_reason.values[2] == "ct_win"
+        round_df.round_end_reason.values[3] == "bomb_defused"
+        round_df.round_end_reason.values[4] == "ct_win"
+        round_df.round_end_reason.values[5] == "bomb_defused"
+        round_df.round_end_reason.values[6] == "t_win"
+        round_df.round_end_reason.values[7] == "target_bombed"
+        round_df.round_end_reason.values[8] == "t_win"
+        round_df.round_end_reason.values[9] == "t_win"
+        round_df.round_end_reason.values[10] == "t_win"
+        round_df.round_end_reason.values[11] == "ct_win"
+        round_df.round_end_reason.values[12] == "bomb_defused"
+        round_df.round_end_reason.values[13] == "target_bombed"
+        round_df.round_end_reason.values[14] == "t_win"
+        round_df.round_end_reason.values[15] == "target_bombed"
+        round_df.round_end_reason.values[16] == "target_bombed"
+        round_df.round_end_reason.values[17] == "t_win"
+        round_df.round_end_reason.values[18] == "target_bombed"
+        round_df.round_end_reason.values[19] == "t_win"
+        round_df.round_end_reason.values[20] == "t_win"
+
+        # Damages
         damage_df = parsed["damages"]
         damage_df["dmg"] = damage_df["dmg_health"].apply(lambda x: min(x, 100))
         damage_df = parsed["damages"].groupby("attacker").dmg.sum().reset_index(name="adr")
