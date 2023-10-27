@@ -74,40 +74,51 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     }
     round_event_df["order"] = round_event_df["event"].map(event_order)
     round_event_df["reason"] = round_event_df["reason"].astype("Int64")
-    round_event_df["reason"] = round_event_df["reason"].map({
-        0: "still_in_progress",
-        1: "target_bombed",
-        2: "vip_escaped",
-        3: "vip_killed",
-        4: "t_escape",
-        5: "ct_stop_escape",
-        6: "t_stopped",
-        7: "bomb_defused",
-        8: "ct_win",
-        9: "t_win",
-        10: "draw",
-        11: "hostages_rescued",
-        12: "target_saved",
-        13: "hostages_not_rescued",
-        14: "t_not_escaped",
-        15: "vip_not_escaped",
-        16: "game_start",
-        17: "t_surrender",
-        18: "ct_surrender",
-        19: "t_planted",
-        20: "cts_reached_hostage",
-        pd.NA: pd.NA
-    })
+    round_event_df["reason"] = round_event_df["reason"].map(
+        {
+            0: "still_in_progress",
+            1: "target_bombed",
+            2: "vip_escaped",
+            3: "vip_killed",
+            4: "t_escape",
+            5: "ct_stop_escape",
+            6: "t_stopped",
+            7: "bomb_defused",
+            8: "ct_win",
+            9: "t_win",
+            10: "draw",
+            11: "hostages_rescued",
+            12: "target_saved",
+            13: "hostages_not_rescued",
+            14: "t_not_escaped",
+            15: "vip_not_escaped",
+            16: "game_start",
+            17: "t_surrender",
+            18: "ct_surrender",
+            19: "t_planted",
+            20: "cts_reached_hostage",
+            pd.NA: pd.NA,
+        }
+    )
     round_event_df = round_event_df.sort_values(by=["tick", "order"])
     first_event = round_event_df.iloc[0]["event"]
     match first_event:
         case GameEvent.ROUND_START.value:
             pass
         case _:
-            round_event_df = pd.concat([
-                pd.DataFrame({"tick": [0], "event": [GameEvent.ROUND_START.value], "order": [1], "reason": [pd.NA]}),
-                round_event_df,
-            ])
+            round_event_df = pd.concat(
+                [
+                    pd.DataFrame(
+                        {
+                            "tick": [0],
+                            "event": [GameEvent.ROUND_START.value],
+                            "order": [1],
+                            "reason": [pd.NA],
+                        }
+                    ),
+                    round_event_df,
+                ]
+            )
     parsed_rounds_df = create_round_df(round_event_df)
 
     return parsed_rounds_df
@@ -174,7 +185,15 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
             "round_end_reason": reason,
         }
     )
-    final_df = parsed_rounds_df[["round_start", "freeze_time_end", "buy_time_end", "round_end", "round_end_official"]].astype("Int64")
+    final_df = parsed_rounds_df[
+        [
+            "round_start",
+            "freeze_time_end",
+            "buy_time_end",
+            "round_end",
+            "round_end_official",
+        ]
+    ].astype("Int64")
     final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
 
     return final_df
@@ -334,9 +353,7 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
             ]
         )
     )
-    tick_df = tick_df[
-        intersection
-    ]
+    tick_df = tick_df[intersection]
 
     return tick_df
 
