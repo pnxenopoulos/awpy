@@ -30,6 +30,7 @@ dependencies = [
     "textdistance~=4.5.0",
     "tqdm~=4.65.0",
     "typing_extensions~=4.7.0",
+    "demoparser2>=0.11.2"
 ]
 dynamic = ["version"]
 
@@ -38,14 +39,11 @@ include-package-data = true
 
 [tool.setuptools.package-data]
 "*" = [
-    "*.go",
     "data/map/*.png",
     "data/map/*.json",
     "data/nav/*.txt",
     "data/nav/*.csv",
     "data/nav/*.json",
-    "*.mod",
-    "*.sum",
 ]
 
 [tool.ruff]

@@ -71,6 +71,15 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     }
     round_event_df["order"] = round_event_df["event"].map(event_order)
     round_event_df = round_event_df.sort_values(by=["tick", "order"])
+    first_event = round_event_df.iloc[0]["event"]
+    match first_event:
+        case GameEvent.ROUND_START.value:
+            pass
+        case _:
+            round_event_df = pd.concat(
+                round_event_df,
+                pd.DataFrame({"tick": [0], "event": [GameEvent.ROUND_START.value], "order": [1]})
+            )
     parsed_rounds_df = create_round_df(round_event_df)
 
     return parsed_rounds_df
@@ -255,40 +264,45 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
         ["t", "ct"],
         default="spectator",
     )
+    intersection = list(
+        set(tick_df.columns).intersection(
+            [
+                "tick",
+                "player",
+                "steamid",
+                "clan",
+                "side",
+                "X",
+                "Y",
+                "Z",
+                "pitch",
+                "yaw",
+                "last_place",
+                "is_alive",
+                "health",
+                "armor",
+                "has_helmet",
+                "has_defuser",
+                "active_weapon",
+                "current_equip_value",
+                "round_start_equip_value",
+                "rank",
+                "ping",
+                "flash_duration",
+                "flash_max_alpha",
+                "is_scoped",
+                "is_defusing",
+                "is_walking",
+                "is_strafing",
+                "in_buy_zone",
+                "in_bomb_zone",
+                "in_crouch",
+                "spotted",
+            ]
+        )
+    )
     tick_df = tick_df[
-        [
-            "tick",
-            "player",
-            "steamid",
-            "clan",
-            "side",
-            "X",
-            "Y",
-            "Z",
-            "pitch",
-            "yaw",
-            "last_place",
-            "is_alive",
-            "health",
-            "armor",
-            "has_helmet",
-            "has_defuser",
-            "active_weapon",
-            "current_equip_value",
-            "round_start_equip_value",
-            "rank",
-            "ping",
-            "flash_duration",
-            "flash_max_alpha",
-            "is_scoped",
-            "is_defusing",
-            "is_walking",
-            "is_strafing",
-            "in_buy_zone",
-            "in_bomb_zone",
-            "in_crouch",
-            "spotted",
-        ]
+        intersection
     ]
 
     return tick_df
@@ -395,6 +409,9 @@ def parse_demo(file: str) -> Demo:
     )
     tick_df = parse_frame(tick_df)
 
+    # Grenades
+    grenade_df = parser.parse_grenades()
+
     # Final dict
     parsed_data = {
         "header": header,
@@ -404,6 +421,7 @@ def parse_demo(file: str) -> Demo:
         "effects": effect_df,
         "bomb_events": bomb_df,
         "ticks": tick_df,
+        "grenades": grenade_df,
     }
 
     return parsed_data

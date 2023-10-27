@@ -25,18 +25,16 @@ setup(
         "textdistance~=4.5.0",
         "tqdm~=4.65.0",
         "typing_extensions~=4.7.0",
+        "demoparser2>=0.11.2"
     ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
         "": [
-            "*.go",
             "data/map/*.png",
             "data/map/*.json",
             "data/nav/*.txt",
             "data/nav/*.csv",
             "data/nav/*.json",
-            "*.mod",
-            "*.sum",
         ]
     },
     # metadata to display on PyPI
