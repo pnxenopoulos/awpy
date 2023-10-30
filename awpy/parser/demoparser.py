@@ -163,12 +163,13 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
                 current_round["round_end_official"] = row["tick"]
 
     # Append the last collected round's events
-    round_start.append(current_round.get("round_start", None))
-    freeze_time_end.append(current_round.get("freeze_time_end", None))
-    buy_time_end.append(current_round.get("buy_time_end", None))
-    round_end.append(current_round.get("round_end", None))
-    round_end_official.append(current_round.get("round_end_official", None))
-    reason.append(current_round.get("reason", None))
+    if current_round is not None:
+        round_start.append(current_round.get("round_start", None))
+        freeze_time_end.append(current_round.get("freeze_time_end", None))
+        buy_time_end.append(current_round.get("buy_time_end", None))
+        round_end.append(current_round.get("round_end", None))
+        round_end_official.append(current_round.get("round_end_official", None))
+        reason.append(current_round.get("reason", None))
 
     # Create a new DataFrame with the desired columns
     parsed_rounds_df = pd.DataFrame(
