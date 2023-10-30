@@ -1,8 +1,10 @@
+"""Enum for button presses."""
+
 from enum import Enum
 
 
 class Button(Enum):
-    """Button as defined by demoparser2"""
+    """Button as defined by demoparser2."""
 
     FORWARD = "FORWARD"  # m_nButtonDownMaskPrev
     LEFT = "LEFT"  # m_nButtonDownMaskPrev

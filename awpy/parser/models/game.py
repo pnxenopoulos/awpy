@@ -1,4 +1,7 @@
+"""Defines the Round class, which stores a round's parsed data."""
+
 from typing import TypedDict
+
 from awpy.parser.enums import HitGroup, RoundEndReason
 
 

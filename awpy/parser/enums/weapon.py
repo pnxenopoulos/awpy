@@ -1,8 +1,10 @@
+"""Enum for weapon-related entities."""
+
 from enum import Enum
 
 
 class Weapon(Enum):
-    """Weapon as defined by demoparser2"""
+    """Weapon as defined by demoparser2."""
 
     ACTIVE_WEAPON_NAME = "active_weapon_name"  # m_iItemDefinitionIndex + lookup
     ACTIVE_WEAPON_SKIN = "active_weapon_skin"  # m_iRawValue32 + lookup

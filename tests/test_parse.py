@@ -1,10 +1,5 @@
 """Tests demo parsing functionality."""
-import logging
-import os
-from unittest.mock import MagicMock, patch
 
-import pandas as pd
-import pytest
 
 from awpy.parser import parse_demo
 

@@ -1,8 +1,10 @@
+"""Enum for round end reasons."""
+
 from enum import Enum
 
 
 class RoundEndReason(Enum):
-    """RoundEndReasons"""
+    """RoundEndReasons from demofile."""
 
     STILL_IN_PROGRESS = 0
     TARGET_BOMBED = 1

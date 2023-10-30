@@ -1,8 +1,10 @@
+"""Enum used for hitgroups."""
+
 from enum import Enum
 
 
 class HitGroup(Enum):
-    """HitGroup"""
+    """HitGroup from demofile."""
 
     GENERIC = 0
     HEAD = 1

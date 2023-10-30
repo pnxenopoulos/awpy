@@ -18,12 +18,12 @@ Example::
 https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb
 """
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from demoparser2 import DemoParser
+
+from awpy.parser.enums import GameEvent, PlayerData, Team
 from awpy.parser.models import Demo, DemoHeader
-from awpy.parser.enums import GameEvent, PlayerData
 
 
 def parse_header(parsed_header: dict) -> DemoHeader:
@@ -40,9 +40,7 @@ def parse_header(parsed_header: dict) -> DemoHeader:
             parsed_header[key] = True
         elif value == "false":
             parsed_header[key] = False
-    header = DemoHeader(**parsed_header)
-
-    return header
+    return DemoHeader(**parsed_header)
 
 
 def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
@@ -119,9 +117,7 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
                     round_event_df,
                 ]
             )
-    parsed_rounds_df = create_round_df(round_event_df)
-
-    return parsed_rounds_df
+    return create_round_df(round_event_df)
 
 
 def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
@@ -203,23 +199,22 @@ def parse_smokes_and_infernos(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the smokes and infernos of the demofile.
 
     Args:
-        parsed (list[tuple]): List of tuples containing DataFrames with start/stop events for infernos and smokes.
+        parsed (list[tuple]): List of tuples containing DataFrames with start/stops
+            for infernos and smokes.
 
     Returns:
         pd.DataFrame: DataFrame with the parsed smokes and infernos data.
     """
-    parsed_dfs = []
+    all_event_dfs = []
 
     for data in parsed:
         key = data[0]
-        df = data[1]
-        df = df[["entityid", "tick", "x", "y", "z"]]
-        df["event"] = key
-        parsed_dfs.append(df)
-    parsed_df = pd.concat(parsed_dfs)
-    parsed_df = parsed_df.sort_values(by=["tick", "entityid"])
-
-    return parsed_df
+        parsed_df = data[1]
+        parsed_df = parsed_df.loc[:, ["entityid", "tick", "x", "y", "z"]]
+        parsed_df["event"] = key
+        all_event_dfs.append(parsed_df)
+    smoke_inferno_df = pd.concat(all_event_dfs)
+    return smoke_inferno_df.sort_values(by=["tick", "entityid"])
 
 
 def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
@@ -231,30 +226,32 @@ def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with the parsed bomb events data.
     """
-    parsed_dfs = []
+    all_event_dfs = []
 
     for data in parsed:
         key = data[0]
-        df = data[1]
-        df["event"] = key
-        df = df.rename(columns={"user_name": "player", "user_steamid": "steamid"})
+        parsed_df = data[1]
+        parsed_df["event"] = key
+        parsed_df = parsed_df.rename(
+            columns={"user_name": "player", "user_steamid": "steamid"}
+        )
         match key:
             # No pickup or dropped. Might want to see if we can get player info on each
             case GameEvent.BOMB_PLANTED.value:
-                df = df[["tick", "event", "player", "steamid", "site"]]
+                parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
             case GameEvent.BOMB_DEFUSED.value:
-                df = df[["tick", "event", "player", "steamid", "site"]]
+                parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
             case GameEvent.BOMB_BEGINDEFUSE.value:
-                df = df[["tick", "event", "player", "steamid", "haskit"]]
+                parsed_df = parsed_df[["tick", "event", "player", "steamid", "haskit"]]
             case GameEvent.BOMB_BEGINPLANT.value:
-                df = df[["tick", "event", "player", "steamid", "site"]]
+                parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
             case GameEvent.BOMB_EXPLODED.value:
-                df = df[["tick", "event", "player", "steamid", "site"]]
-        parsed_dfs.append(df)
+                parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
+        all_event_dfs.append(parsed_df)
 
-    parsed_df = pd.concat(parsed_dfs)
+    bomb_df = pd.concat(all_event_dfs)
 
-    return parsed_df.sort_values(by=["tick"])
+    return bomb_df.sort_values(by=["tick"])
 
 
 def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
@@ -312,7 +309,7 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
         columns={"name": "player", "clan_name": "clan", "last_place_name": "last_place"}
     )
     tick_df["side"] = np.select(
-        [tick_df["team_num"] == 2.0, tick_df["team_num"] == 3.0],
+        [tick_df["team_num"] == Team.T.value, tick_df["team_num"] == Team.CT.value],
         ["t", "ct"],
         default="spectator",
     )
@@ -353,9 +350,7 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
             ]
         )
     )
-    tick_df = tick_df[intersection]
-
-    return tick_df
+    return tick_df[intersection]
 
 
 def parse_demo(file: str) -> Demo:
@@ -365,7 +360,8 @@ def parse_demo(file: str) -> Demo:
         file (str): Path to the demofile.
 
     Returns:
-        Demo: Dictionary with the parsed data. Has keys `header`, `rounds`, `kills`, `damages`, `effects`, `bomb_events`, `ticks`.
+        Demo: Dictionary with the parsed data. Has keys `header`, `rounds`, `kills`,
+            `damages`, `effects`, `bomb_events`, `ticks`.
     """
     parser = DemoParser(file)
 
@@ -474,4 +470,4 @@ def parse_demo(file: str) -> Demo:
         "grenades": grenade_df,
     }
 
-    return parsed_data
+    return Demo(**parsed_data)

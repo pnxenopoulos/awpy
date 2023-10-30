@@ -1,3 +1,4 @@
+"""Defines the DemoHeader dictionary that scores."""
 from typing import TypedDict
 
 

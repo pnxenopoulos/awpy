@@ -1,8 +1,10 @@
+"""Enum for game state features."""
+
 from enum import Enum
 
 
 class GameState(Enum):
-    """GameState as defined by demoparser2"""
+    """GameState as defined by demoparser2."""
 
     TEAM_ROUNDS_TOTAL = "team_rounds_total"  # m_iScore
     TEAM_SURRENDERED = "team_surrendered"  # m_bSurrendered

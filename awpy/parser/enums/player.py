@@ -1,8 +1,15 @@
+"""Enums for players and teams."""
+
 from enum import Enum
 
 
+class Team(Enum):
+    """Team enum from demofile."""
+    T = 2.0
+    CT = 3.0
+
 class PlayerData(Enum):
-    """PlayerData as defined by demoparser2"""
+    """PlayerData as defined by demoparser2."""
 
     X = "X"  # m_vec + m_cell
     Y = "Y"  # m_vec + m_cell
