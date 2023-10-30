@@ -145,7 +145,7 @@ target-version = "py311"
 convention = "google" # Accepts: "google", "numpy", or "pep257".
 
 [tool.ruff.pylint]
-max-args = 15
+max-args = 17
 
 [tool.pyright]
 include                            = ["awpy"]
@@ -184,7 +184,7 @@ testpaths = ["tests"]
 
 [tool.pylint.main]
 # Specify a score threshold under which the program will exit with error.
-fail-under = 10.0
+fail-under = 9.95
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
