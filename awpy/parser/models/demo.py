@@ -15,7 +15,6 @@ class Demo(TypedDict):
     kills: pd.DataFrame
     damages: pd.DataFrame
     grenades: pd.DataFrame
-    # flashes: pd.DataFrame
     effects: pd.DataFrame
     bomb_events: pd.DataFrame
     ticks: pd.DataFrame

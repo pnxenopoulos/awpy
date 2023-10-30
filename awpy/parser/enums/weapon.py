@@ -9,7 +9,8 @@ class Weapon(Enum):
     ACTIVE_WEAPON_NAME = "active_weapon_name"  # m_iItemDefinitionIndex + lookup
     ACTIVE_WEAPON_SKIN = "active_weapon_skin"  # m_iRawValue32 + lookup
     ACTIVE_WEAPON_AMMO = "active_weapon_ammo"  # m_iClip1
-    ACTIVE_WEAPON_ORIGINAL_OWNER = "active_weapon_original_owner"  # m_OriginalOwnerXuidLow + m_OriginalOwnerXuidHigh
+    # m_OriginalOwnerXuidLow + m_OriginalOwnerXuidHigh
+    ACTIVE_WEAPON_ORIGINAL_OWNER = "active_weapon_original_owner"
     TOTAL_AMMO_LEFT = "total_ammo_left"  # m_pReserveAmmo
     ITEM_DEF_IDX = "item_def_idx"  # m_iItemDefinitionIndex
     WEAPON_QUALITY = "weapon_quality"  # m_iEntityQuality

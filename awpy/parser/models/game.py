@@ -6,7 +6,7 @@ from awpy.parser.enums import HitGroup, RoundEndReason
 
 
 class Round(TypedDict):
-    """Class to store a game round"""
+    """Class to store a game round."""
 
     is_warmup: bool
     start_tick: int
