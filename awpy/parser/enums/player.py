@@ -5,8 +5,10 @@ from enum import Enum
 
 class Team(Enum):
     """Team enum from demofile."""
+
     T = 2.0
     CT = 3.0
+
 
 class PlayerData(Enum):
     """PlayerData as defined by demoparser2."""
