@@ -299,7 +299,7 @@ def _get_geodesic_area_distance(
         )
 
     try:
-        geodesic_path = nx.astar_path(
+        geodesic_path: list[TileId] = nx.astar_path(
             map_graph, area_a, area_b, heuristic=dist_heuristic, weight="weight"
         )
         geodesic_cost = sum(
@@ -629,7 +629,7 @@ def _get_area_place_mapping(map_name: str) -> dict[str, list[TileId]]:
         dict[str, list[TileId]]: The mapping
             "areaName": [areas that have this area name] for each "areaName"
     """
-    area_mapping = defaultdict(list)
+    area_mapping: dict[str, list[TileId]] = defaultdict(list)
     # Get the mapping "areaName": [areas that have this area name]
     for area in NAV[map_name]:
         area_mapping[NAV[map_name][area]["areaName"]].append(area)

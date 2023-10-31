@@ -129,7 +129,7 @@ strictDictionaryInference          = true
 strictSetInference                 = true
 useLibraryCodeForTypes             = false
 reportPropertyTypeMismatch         = "error"
-reportFunctionMemberAccess         = "warning"
+reportFunctionMemberAccess         = "error"
 reportMissingTypeStubs             = "none"
 reportUntypedFunctionDecorator     = "error"
 reportUntypedClassDecorator        = "error"
@@ -138,14 +138,17 @@ reportUntypedNamedTuple            = "error"
 reportPrivateUsage                 = "error"
 reportConstantRedefinition         = "error"
 reportOverlappingOverload          = "error"
-reportMissingParameterType         = "warning"
-reportUnnecessaryIsInstance        = "none"
+reportMissingParameterType         = "error"
+# Because this is externally visible
+# and we want to have the check for users
+# that do not use type checkers.
+reportUnnecessaryIsInstance        = "warning"
 reportUnnecessaryCast              = "error"
 reportUnnecessaryComparison        = "error"
 reportUnnecessaryContains          = "error"
 reportAssertAlwaysTrue             = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
-reportImplicitOverride             = "none"
+reportImplicitOverride             = "error"
 reportShadowedImports              = "error"
 
 

@@ -2,21 +2,26 @@
 
 import re
 import subprocess
-from typing import Any
+from typing import Self, TypeVar
 
 import pandas as pd
+from typing_extensions import override
 
 from awpy.types import Area, TileId
 
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
 
-class AutoVivification(dict):
+
+class AutoVivification(dict[_KT, _VT | Self]):
     """Implementation of perl's autovivification feature.
 
     Stolen from:
     https://stackoverflow.com/questions/651794/whats-the-best-way-to-initialize-a-dict-of-dicts-in-python
     """
 
-    def __getitem__(self, item: Any) -> Any:  # noqa: ANN401
+    @override
+    def __getitem__(self, item: _KT) -> _VT | Self:
         """Autovivified get item from dict.
 
         Tries to get the item as normal.
@@ -24,13 +29,13 @@ class AutoVivification(dict):
         AutoVivification dict is added instead.
 
         Args:
-            item (Any): Item to retrieve the value for.
+            item (_KT): Item to retrieve the value for.
 
         Returns:
-            Any: Retrieved value.
+            _VT | Self: Retrieved value.
         """
         try:
-            return dict.__getitem__(self, item)
+            return dict[_KT, _VT | Self].__getitem__(self, item)
         except KeyError:
             value = self[item] = type(self)()
             return value
