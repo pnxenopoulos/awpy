@@ -1,17 +1,4 @@
-<style>
-table {
-    border-collapse: collapse;
-}
-table, th, td {
-   border: 1px solid black;
-}
-blockquote {
-    border-left: solid blue;
-    padding-left: 10px;
-}
-</style>
-
-<table border="0">
+<table style="border-collapse: collapse; border: 0px solid black;">
   <tr>
     <td align="center"><img src="https://www.counter-strike.net/favicon.ico" alt="Counter Strike 2" style="max-width: 30%; max-height: 30%;"></td>
     <td align="center">
