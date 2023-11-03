@@ -1,19 +1,20 @@
 <p align="center">
-    <h1 align="center">Awpy</h2>
-    <h4 align="center">Demo Parsing, Analytics and Visualization for Counter Strike</h4>
-    <img src="https://www.counter-strike.net/favicon.ico", alt="Counter Strike 2">
+    <h2 align="center">Awpy</h2>
+    <p align="center" style="font-size: 16px;">Demo Parsing, Analytics and Visualization for Counter Strike</p>
+    <img src="https://www.counter-strike.net/favicon.ico" align="center" alt="Counter Strike 2" width="50%" height="50%">
     <br>
-    <a href="https://discord.gg/W34XjsSs2H"><img src="https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord" alt="Awpy Discord"></a>
-    <a href="https://pepy.tech/project/awpy"><img src="https://static.pepy.tech/personalized-badge/awpy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads" alt="Awpy Downloads"></a>
-    <a href="https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml"><img src="https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg" alt="Build"></a>
-    <a href="https://awpy.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/awpy/badge/?version=latest" alt="Documentation Status"></a>
-    <a href="https://www.python.org/downloads/release/python-311/"><img src="https://img.shields.io/badge/python-3.11-blue.svg" alt="Python 3.11"></a>
-    <a href="https://github.com/pnxenopoulos/awpy/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT Licence"></a>
-    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
-    <a href="https://github.com/pylint-dev/pylint"><img src="https://img.shields.io/badge/linting-pylint-yellowgreen" alt="linting: pylint"></a>
-    <a href="https://github.com/charliermarsh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v1.json" alt="Ruff"></a>
-    <a href="https://microsoft.github.io/pyright/"><img src="https://microsoft.github.io/pyright/img/pyright_badge.svg" alt="Checked with pyright"></a>
-    <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit" alt="pre-commit"></a>
+    <a href="https://discord.gg/W34XjsSs2H"><img src="https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord" align="center"  alt="Awpy Discord"></a>
+    <a href="https://pepy.tech/project/awpy"><img src="https://static.pepy.tech/personalized-badge/awpy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads" align="center"  alt="Awpy Downloads"></a>
+    <a href="https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml"><img src="https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg" align="center"  alt="Build"></a>
+    <a href="https://awpy.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/awpy/badge/?version=latest" align="center"  alt="Documentation Status"></a>
+    <a href="https://github.com/pnxenopoulos/awpy/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" align="center" alt="MIT Licence"></a>
+    <br>
+    <a href="https://www.python.org/downloads/release/python-311/"><img src="https://img.shields.io/badge/python-3.11-blue.svg" align="center" alt="Python 3.11"></a>
+    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" align="center" alt="Code style: black"></a>
+    <a href="https://github.com/pylint-dev/pylint"><img src="https://img.shields.io/badge/linting-pylint-yellowgreen" align="center" alt="linting: pylint"></a>
+    <a href="https://github.com/charliermarsh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v1.json" align="center" alt="Ruff"></a>
+    <a href="https://microsoft.github.io/pyright/"><img src="https://microsoft.github.io/pyright/img/pyright_badge.svg" align="center" alt="Checked with pyright"></a>
+    <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit" align="center" alt="pre-commit"></a>
 </p>
 
 ---
