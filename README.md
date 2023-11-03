@@ -1,14 +1,21 @@
 <dib align="center">
+
     <h1>Awpy</h1>
+
     <p style="font-size: 16px;">Demo Parsing, Analytics and Visualization for Counter Strike</p>
+
     <img src="https://www.counter-strike.net/favicon.ico" alt="Counter Strike 2" style="max-width: 30%; max-height: 30%;">
+
     <p>
+
         <a href="https://discord.gg/W34XjsSs2H"><img src="https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord" alt="Awpy Discord"></a>
         <a href="https://pepy.tech/project/awpy"><img src="https://static.pepy.tech/personalized-badge/awpy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads" alt="Awpy Downloads"></a>
         <a href="https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml"><img src="https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg" alt="Build"></a>
         <a href="https://awpy.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/awpy/badge/?version=latest" alt="Documentation Status"></a>
         <a href="https://github.com/pnxenopoulos/awpy/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT Licence"></a>
+    
     </p>
+
 </div>
 
 ---
