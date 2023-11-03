@@ -1,4 +1,4 @@
-<dib align="center">
+<div align="center">
 
     <h1>Awpy</h1>
 
