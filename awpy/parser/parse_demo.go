@@ -11,6 +11,9 @@ import (
 	"strconv"
 	"strings"
 
+	r3 "github.com/golang/geo/r3"
+	
+
 	dem "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs"
 	common "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/common"
 	events "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/events"
@@ -690,8 +693,8 @@ func parsePlayer(gs dem.GameState, p *common.Player) PlayerInfo {
 	}
 
 	playerPos := p.LastAlivePosition
-	playerEyePos := p.PositionEyes()
-	playerVel := p.Velocity()
+	playerEyePos := r3.Vector{}
+	playerVel := r3.Vector{}
 
 	// Calc other metrics
 	currentPlayer.X = playerPos.X
