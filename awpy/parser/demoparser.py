@@ -18,6 +18,9 @@ Example::
 https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb
 """
 
+import os
+import warnings
+
 import numpy as np
 import pandas as pd
 from demoparser2 import DemoParser
@@ -52,6 +55,19 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Pandas DataFrame with the parsed rounds data.
     """
+    if len(parsed_round_events) == 0:
+        warnings.warn("No round events found in the demofile.", stacklevel=2)
+        return pd.DataFrame(
+            columns=[
+                "round_start",
+                "freeze_time_end",
+                "buy_time_end",
+                "round_end",
+                "round_end_official",
+                "round_end_reason",
+            ]
+        )
+
     # Get the round events in dataframe order
     round_events = []
     for _, round_event in enumerate(parsed_round_events):
@@ -206,9 +222,16 @@ def parse_smokes_and_infernos(parsed: list[tuple]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with the parsed smokes and infernos data.
     """
+    if len(parsed) == 0:
+        warnings.warn("No smoke/inferno events found in the demofile.", stacklevel=2)
+        return pd.DataFrame(columns=["entityid", "tick", "x", "y", "z", "event"])
+
     all_event_dfs = []
 
     for data in parsed:
+        if len(data) == 0:
+            continue
+
         key = data[0]
         parsed_df = data[1]
         parsed_df = parsed_df.loc[:, ["entityid", "tick", "x", "y", "z"]]
@@ -227,9 +250,18 @@ def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with the parsed bomb events data.
     """
+    if len(parsed) == 0:
+        warnings.warn("No bomb events found in the demofile.", stacklevel=2)
+        return pd.DataFrame(
+            columns=["tick", "event", "player", "steamid", "haskit", "site"]
+        )
+
     all_event_dfs = []
 
     for data in parsed:
+        if len(data) == 0:
+            continue
+
         key = data[0]
         parsed_df = data[1]
         parsed_df["event"] = key
@@ -264,6 +296,24 @@ def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with the parsed damage events data.
     """
+    if len(parsed) == 0:
+        warnings.warn("No player damage events found in the demofile.", stacklevel=2)
+        return pd.DataFrame(
+            columns=[
+                "armor",
+                "attacker",
+                "attacker_steamid",
+                "dmg_armor",
+                "dmg_health",
+                "health",
+                "hitgroup",
+                "tick",
+                "victim",
+                "victim_steamid",
+                "weapon",
+            ]
+        )
+
     damage_df = parsed[0][1]
     damage_df = damage_df.rename(
         columns={
@@ -275,6 +325,7 @@ def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
 
     return damage_df.sort_values(by=["tick"])
 
+
 def parse_blinds(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the blinds of the demofile.
 
@@ -284,6 +335,20 @@ def parse_blinds(parsed: list[tuple]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with the parsed blind events data.
     """
+    if len(parsed) == 0:
+        warnings.warn("No player blind events found in the demofile.", stacklevel=2)
+        return pd.DataFrame(
+            columns=[
+                "flasher",
+                "flasher_steamid",
+                "blind_duration",
+                "entityid",
+                "tick",
+                "victim",
+                "victim_steadid",
+            ]
+        )
+
     blind_df = parsed[0][1]
     blind_df = blind_df.rename(
         columns={
@@ -296,15 +361,21 @@ def parse_blinds(parsed: list[tuple]) -> pd.DataFrame:
 
     return blind_df.sort_values(by=["tick"])
 
+
 def parse_weapon_fires(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the weapon fires of the demofile.
 
     Args:
-        parsed (list[tuple]): List of tuples containing DataFrames with weapon fire events.
+        parsed (list[tuple]): List of tuples containing DataFrames with
+            weaponfire events.
 
     Returns:
         pd.DataFrame: DataFrame with the parsed weapon fire events data.
     """
+    if len(parsed) == 0:
+        warnings.warn("No weapon fires found in the demofile.", stacklevel=2)
+        return pd.DataFrame(columns=["silenced", "tick", "player", "steamid", "weapon"])
+
     weapon_fires_df = parsed[0][1]
     weapon_fires_df = weapon_fires_df.rename(
         columns={
@@ -325,6 +396,38 @@ def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with the parsed death events data.
     """
+    if len(parsed) == 0:
+        warnings.warn("No deaths found in the demofile.", stacklevel=2)
+        return pd.DataFrame(
+            columns=[
+                "assistedflash",
+                "assister_name",
+                "assister_steamid",
+                "attacker",
+                "attacker_steamid",
+                "attackerblind",
+                "distance",
+                "dmg_armor",
+                "dmg_health",
+                "dominated",
+                "headshot",
+                "hitgroup",
+                "noreplay",
+                "noscope",
+                "penetrated",
+                "revenge",
+                "thrusmoke",
+                "tick",
+                "victim",
+                "victim_steamid",
+                "weapon",
+                "weapon_fauxitemid",
+                "weapon_itemid",
+                "weapon_originalowner_xuid",
+                "wipe",
+            ]
+        )
+
     death_df = parsed[0][1]
     death_df = death_df.rename(
         columns={
@@ -404,6 +507,10 @@ def parse_demo(file: str) -> Demo:
         Demo: Dictionary with the parsed data. Has keys `header`, `rounds`, `kills`,
             `damages`, `effects`, `bomb_events`, `ticks`.
     """
+    if not os.path.exists(file):
+        err_msg = f"{file} not found."
+        raise FileNotFoundError(err_msg)
+
     parser = DemoParser(file)
 
     # Header
@@ -466,46 +573,98 @@ def parse_demo(file: str) -> Demo:
     weapon_fires_df = parse_weapon_fires(weapon_fires)
 
     # Frames
-    tick_df = parser.parse_ticks(
-        [
-            # Location
-            PlayerData.X.value,
-            PlayerData.Y.value,
-            PlayerData.Z.value,
-            PlayerData.PITCH.value,
-            PlayerData.YAW.value,
-            PlayerData.LAST_PLACE_NAME.value,
-            # Health/Armor/Weapon
-            PlayerData.IS_ALIVE.value,
-            PlayerData.HEALTH.value,
-            PlayerData.ARMOR.value,
-            PlayerData.HAS_HELMET.value,
-            PlayerData.HAS_DEFUSER.value,
-            PlayerData.ACTIVE_WEAPON.value,
-            PlayerData.CURRENT_EQUIP_VALUE.value,
-            PlayerData.ROUND_START_EQUIP_VALUE.value,
-            # Rank
-            PlayerData.RANK.value,
-            # Extra
-            PlayerData.PING.value,
-            PlayerData.CLAN_NAME.value,
-            PlayerData.TEAM_NUM.value,
-            PlayerData.FLASH_DURATION.value,
-            PlayerData.FLASH_MAX_ALPHA.value,
-            PlayerData.IS_SCOPED.value,
-            PlayerData.IS_DEFUSING.value,
-            PlayerData.IS_WALKING.value,
-            PlayerData.IS_STRAFING.value,
-            PlayerData.IN_BUY_ZONE.value,
-            PlayerData.IN_BOMB_ZONE.value,
-            PlayerData.IN_CROUCH.value,
-            PlayerData.SPOTTED.value,
+    tick_df = pd.DataFrame(
+        columns=[
+            "tick",
+            "side",
+            "steamid",
+            "in_buy_zone",
+            "rank",
+            "ping",
+            "is_strafing",
+            "Y",
+            "player",
+            "last_place",
+            "in_bomb_zone",
+            "X",
+            "spotted",
+            "is_walking",
+            "active_weapon",
+            "Z",
+            "is_alive",
+            "flash_duration",
+            "health",
+            "is_scoped",
+            "in_crouch",
+            "pitch",
+            "is_defusing",
+            "current_equip_value",
+            "yaw",
+            "clan",
+            "flash_max_alpha",
+            "round_start_equip_value",
         ]
     )
-    tick_df = parse_frame(tick_df)
+    try:
+        tick_df = parser.parse_ticks(
+            [
+                # Location
+                PlayerData.X.value,
+                PlayerData.Y.value,
+                PlayerData.Z.value,
+                PlayerData.PITCH.value,
+                PlayerData.YAW.value,
+                PlayerData.LAST_PLACE_NAME.value,
+                # Health/Armor/Weapon
+                PlayerData.IS_ALIVE.value,
+                PlayerData.HEALTH.value,
+                PlayerData.ARMOR.value,
+                PlayerData.HAS_HELMET.value,
+                PlayerData.HAS_DEFUSER.value,
+                PlayerData.ACTIVE_WEAPON.value,
+                PlayerData.CURRENT_EQUIP_VALUE.value,
+                PlayerData.ROUND_START_EQUIP_VALUE.value,
+                # Rank
+                PlayerData.RANK.value,
+                # Extra
+                PlayerData.PING.value,
+                PlayerData.CLAN_NAME.value,
+                PlayerData.TEAM_NUM.value,
+                PlayerData.FLASH_DURATION.value,
+                PlayerData.FLASH_MAX_ALPHA.value,
+                PlayerData.IS_SCOPED.value,
+                PlayerData.IS_DEFUSING.value,
+                PlayerData.IS_WALKING.value,
+                PlayerData.IS_STRAFING.value,
+                PlayerData.IN_BUY_ZONE.value,
+                PlayerData.IN_BOMB_ZONE.value,
+                PlayerData.IN_CROUCH.value,
+                PlayerData.SPOTTED.value,
+            ]
+        )
+        tick_df = parse_frame(tick_df)
+    except Exception as err:
+        warn_msg = f"Error parsing tick data found in the demofile: {err}"
+        warnings.warn(warn_msg, stacklevel=2)
 
     # Grenades
-    grenade_df = parser.parse_grenades()
+    grenade_df = pd.DataFrame(
+        columns=[
+            "X",
+            "Y",
+            "Z",
+            "tick",
+            "thrower_steamid",
+            "name",
+            "grenade_type",
+            "entity_id",
+        ]
+    )
+    try:
+        grenade_df = parser.parse_grenades()
+    except Exception as err:
+        warn_msg = f"Error parsing grenade data found in the demofile: {err}"
+        warnings.warn(warn_msg, stacklevel=2)
 
     # Final dict
     parsed_data = {

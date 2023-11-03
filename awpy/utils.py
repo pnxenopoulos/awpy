@@ -61,7 +61,7 @@ def check_go_version() -> bool:
                 proc.stdout.read().splitlines() if proc.stdout is not None else None
             )
         parsed_go_version = parse_go_version(parsed_resp)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print(e)
         return False
     return [int(x) for x in parsed_go_version] >= [1, 18]
