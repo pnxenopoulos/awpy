@@ -275,6 +275,46 @@ def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
 
     return damage_df.sort_values(by=["tick"])
 
+def parse_blinds(parsed: list[tuple]) -> pd.DataFrame:
+    """Parse the blinds of the demofile.
+
+    Args:
+        parsed (list[tuple]): List of tuples containing DataFrames with blind events.
+
+    Returns:
+        pd.DataFrame: DataFrame with the parsed blind events data.
+    """
+    blind_df = parsed[0][1]
+    blind_df = blind_df.rename(
+        columns={
+            "attacker_name": "flasher",
+            "attacker_steamid": "flasher_steamid",
+            "user_name": "victim",
+            "user_steamid": "victim_steamid",
+        }
+    )
+
+    return blind_df.sort_values(by=["tick"])
+
+def parse_weapon_fires(parsed: list[tuple]) -> pd.DataFrame:
+    """Parse the weapon fires of the demofile.
+
+    Args:
+        parsed (list[tuple]): List of tuples containing DataFrames with weapon fire events.
+
+    Returns:
+        pd.DataFrame: DataFrame with the parsed weapon fire events data.
+    """
+    weapon_fires_df = parsed[0][1]
+    weapon_fires_df = weapon_fires_df.rename(
+        columns={
+            "user_name": "player",
+            "user_steamid": "steamid",
+        }
+    )
+
+    return weapon_fires_df.sort_values(by=["tick"])
+
 
 def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the deaths of the demofile.
@@ -417,6 +457,14 @@ def parse_demo(file: str) -> Demo:
     )
     death_df = parse_deaths(deaths)
 
+    # Blinds
+    blinds = parser.parse_events([GameEvent.PLAYER_BLIND.value])
+    blinds_df = parse_blinds(blinds)
+
+    # Weapon Fires
+    weapon_fires = parser.parse_events([GameEvent.WEAPON_FIRE.value])
+    weapon_fires_df = parse_weapon_fires(weapon_fires)
+
     # Frames
     tick_df = parser.parse_ticks(
         [
@@ -467,6 +515,8 @@ def parse_demo(file: str) -> Demo:
         "damages": damage_df,
         "effects": effect_df,
         "bomb_events": bomb_df,
+        "flashes": blinds_df,
+        "weapon_fires": weapon_fires_df,
         "ticks": tick_df,
         "grenades": grenade_df,
     }
