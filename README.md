@@ -1,8 +1,8 @@
 <table border="0">
   <tr>
-    <td align="center"><img src="https://www.counter-strike.net/favicon.ico" alt="Counter Strike 2" style="max-width: 50%; max-height: 50%;"></td>
+    <td align="center"><img src="https://www.counter-strike.net/favicon.ico" alt="Counter Strike 2" style="max-width: 30%; max-height: 30%;"></td>
     <td align="center">
-      <p style="font-size: 24px;">Awpy</p>
+      <p style="font-size: 32px; font-weight: bold;">Awpy</p>
       <p style="font-size: 16px;">Demo Parsing, Analytics and Visualization for Counter Strike</p>
       <p>
         <a href="https://discord.gg/W34XjsSs2H"><img src="https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord" alt="Awpy Discord"></a>
