@@ -1,15 +1,19 @@
-<p align="center">
-    <h2 align="center">Awpy</h2>
-    <p align="center" style="font-size: 16px;">Demo Parsing, Analytics and Visualization for Counter Strike</p>
-    <img src="https://www.counter-strike.net/favicon.ico" align="center" alt="Counter Strike 2" style="max-width: 50%; max-height: 50%;">
-    <br>
-</p>
+<table>
+  <tr>
+    <td><img src="https://www.counter-strike.net/favicon.ico" alt="Counter Strike 2" style="max-width: 50%; max-height: 50%;"></td>
+    <td>
+      <h2>Awpy</h2>
+      <p style="font-size: 16px;">Demo Parsing, Analytics and Visualization for Counter Strike</p>
+    </td>
+  </tr>
+</table>
 
 <div style="text-align: center;">
     <a href="https://discord.gg/W34XjsSs2H"><img src="https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord" alt="Awpy Discord"></a>
     <a href="https://pepy.tech/project/awpy"><img src="https://static.pepy.tech/personalized-badge/awpy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads" alt="Awpy Downloads"></a>
     <a href="https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml"><img src="https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg" alt="Build"></a>
     <a href="https://awpy.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/awpy/badge/?version=latest" alt="Documentation Status"></a>
+    <a href="https://github.com/pnxenopoulos/awpy/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT Licence"></a>
     <br>
     <a href="https://www.python.org/downloads/release/python-311/"><img src="https://img.shields.io/badge/python-3.11-blue.svg" alt="Python 3.11"></a>
     <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
@@ -100,7 +104,7 @@ Take a look at the following Jupyter notebooks provided in our `examples/` direc
 If you use the parser for any public analysis, we kindly ask you to link to this repository, so that others may know how you parsed, analyzed or visualized your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it!
 
 ## Contributing
-We welcome any contributions from the community. You can visit the [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, or you can message mods on Discord. If you're new to contributed, don't worry! We will always have a need for writing tests, quality assurance, and documentation, which are great beginner tasks. We also seek contributors to produce interesting content (such as tweets, analyses, papers, etc.) -- you can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html). If you are interested in contributing to Awpy, learn more [here](https://github.com/pnxenopoulos/awpy/blob/main/CONTRIBUTING.md).
+We welcome any contributions from the community. You can visit the [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, or you can message mods on Discord. If you're new to contributed, don't worry! We will always have a need for writing tests, quality assurance, and documentation, which are great beginner tasks. We also seek contributors to produce interesting content (such as tweets, analyses, papers, etc.) -- you can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html). If you are interested in contributing to Awpy, learn more [here](https://github.com/pnxenopoulos/awpy/blob/main/CONTRIBUTING.md). We are big fans of tools like [black](https://github.com/psf/black), [ruff](https://github.com/charliermarsh/ruff), [pylint](https://github.com/pylint-dev/pylint) and [pyright](https://microsoft.github.io/pyright/).
 
 ## Structure
 `awpy` is structured as follows:
