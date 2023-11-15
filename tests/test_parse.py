@@ -17,7 +17,7 @@ class TestParser:
             parse_demo("file-does-not-exist.dem")
 
     def test_demo_csgo_heroic_g2_katowice_2023(self):
-        """Tests the output of Heroic vs G2 at Katowice 2023 (CSGO)."""
+        """Tests the output of Ence vs G2 at IEM Sydney 2023 (CSGO)."""
         parsed = parse_demo("tests/g2-vs-ence-m2-vertigo.dem")
 
         # Header

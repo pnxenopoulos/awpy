@@ -25,9 +25,16 @@ import numpy as np
 import pandas as pd
 from demoparser2 import DemoParser
 
-from awpy.parser.enums import GameEvent, PlayerData, Team
-from awpy.parser.models import Demo, DemoHeader
+from awpy.parser.enums import GameEvent, GameState, PlayerData, Team
+from awpy.parser.models import Demo, DemoHeader\
 
+from typing import Optional
+
+def find_round_num(tick: int, rounds_df: pd.DataFrame) -> Optional[int]:
+    for _, row in rounds_df.iterrows():
+        if row['round_start'] <= tick <= row['round_end_official']:
+            return int(row['round_num'])
+    return None  # Return None or an appropriate value if no round is found
 
 def parse_header(parsed_header: dict) -> DemoHeader:
     """Parse the header of the demofile.
@@ -209,6 +216,9 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     ].astype("Int64")
     final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
 
+    final_df["round_num"] = range(1, len(final_df) + 1)
+    final_df["round_end_official"] = final_df["round_end_official"].fillna(final_df["round_end"])
+
     return final_df
 
 
@@ -238,7 +248,9 @@ def parse_smokes_and_infernos(parsed: list[tuple]) -> pd.DataFrame:
         parsed_df["event"] = key
         all_event_dfs.append(parsed_df)
     smoke_inferno_df = pd.concat(all_event_dfs)
-    return smoke_inferno_df.sort_values(by=["tick", "entityid"])
+    smoke_inferno_df.sort_values(by=["tick", "entityid"], inplace=True)
+
+    return smoke_inferno_df
 
 
 def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
@@ -283,8 +295,11 @@ def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
         all_event_dfs.append(parsed_df)
 
     bomb_df = pd.concat(all_event_dfs)
+    bomb_df["steamid"] = bomb_df["steamid"].astype("Int64")
 
-    return bomb_df.sort_values(by=["tick"])
+    bomb_df.sort_values(by=["tick"], inplace=True)
+
+    return bomb_df
 
 
 def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
@@ -322,8 +337,12 @@ def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
             "user_steamid": "victim_steamid",
         }
     )
+    damage_df["attacker_steamid"] = damage_df["attacker_steamid"].astype("Int64")
+    damage_df["victim_steamid"] = damage_df["victim_steamid"].astype("Int64")
 
-    return damage_df.sort_values(by=["tick"])
+    damage_df.sort_values(by=["tick"], inplace=True)
+
+    return damage_df
 
 
 def parse_blinds(parsed: list[tuple]) -> pd.DataFrame:
@@ -358,8 +377,12 @@ def parse_blinds(parsed: list[tuple]) -> pd.DataFrame:
             "user_steamid": "victim_steamid",
         }
     )
+    blind_df["flasher_steamid"] = blind_df["flasher_steamid"].astype("Int64")
+    blind_df["victim_steamid"] = blind_df["victim_steamid"].astype("Int64")
 
-    return blind_df.sort_values(by=["tick"])
+    blind_df.sort_values(by=["tick"], inplace=True)
+
+    return blind_df
 
 
 def parse_weapon_fires(parsed: list[tuple]) -> pd.DataFrame:
@@ -383,8 +406,11 @@ def parse_weapon_fires(parsed: list[tuple]) -> pd.DataFrame:
             "user_steamid": "steamid",
         }
     )
+    weapon_fires_df["steamid"] = weapon_fires_df["steamid"].astype("Int64")
 
-    return weapon_fires_df.sort_values(by=["tick"])
+    weapon_fires_df.sort_values(by=["tick"], inplace=True)
+
+    return weapon_fires_df
 
 
 def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
@@ -436,8 +462,13 @@ def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
             "user_steamid": "victim_steamid",
         }
     )
+    death_df["attacker_steamid"] = death_df["attacker_steamid"].astype("Int64")
+    death_df["assister_steamid"] = death_df["assister_steamid"].astype("Int64")
+    death_df["victim_steamid"] = death_df["victim_steamid"].astype("Int64")
 
-    return death_df.sort_values(by=["tick"])
+    death_df.sort_values(by=["tick"], inplace=True)
+
+    return death_df
 
 
 def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
@@ -457,10 +488,21 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
         ["t", "ct"],
         default="spectator",
     )
+    tick_df["game_phase"] = tick_df["game_phase"].replace({
+        0: "init",
+        1: "pregame",
+        2: "startgame",
+        3: "preround",
+        4: "teamwin",
+        5: "restart",
+        6: "stalemate",
+        7: "gameover"
+    })
     intersection = list(
         set(tick_df.columns).intersection(
             [
                 "tick",
+                "game_phase",
                 "player",
                 "steamid",
                 "clan",
@@ -494,7 +536,11 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
             ]
         )
     )
-    return tick_df[intersection]
+    tick_df = tick_df[intersection]
+
+    tick_df["steamid"] = tick_df["steamid"].astype("Int64")
+
+    return tick_df
 
 
 def parse_demo(file: str) -> Demo:
@@ -530,8 +576,10 @@ def parse_demo(file: str) -> Demo:
     round_df = parse_rounds(parsed_round_events)
 
     # Damages
-    damage = parser.parse_events([GameEvent.PLAYER_HURT.value])
+    damage = parser.parse_events([GameEvent.PLAYER_HURT.value], other=["game_phase"])
     damage_df = parse_damages(damage)
+    damage_df['round_num'] = damage_df['tick'].apply(lambda tick: find_round_num(tick, round_df))
+    damage_df["round_num"] = damage_df["round_num"].astype("Int64")
 
     # Blockers (smokes, molotovs, etc.)
     effect = parser.parse_events(
@@ -543,6 +591,8 @@ def parse_demo(file: str) -> Demo:
         ]
     )
     effect_df = parse_smokes_and_infernos(effect)
+    effect_df['round_num'] = effect_df['tick'].apply(lambda tick: find_round_num(tick, round_df))
+    effect_df["round_num"] = effect_df["round_num"].astype("Int64")
 
     # Bomb
     bomb = parser.parse_events(
@@ -555,27 +605,36 @@ def parse_demo(file: str) -> Demo:
         ]
     )
     bomb_df = parse_bomb_events(bomb)
+    bomb_df['round_num'] = bomb_df['tick'].apply(lambda tick: find_round_num(tick, round_df))
+    bomb_df["round_num"] = bomb_df["round_num"].astype("Int64")
 
     # Deaths
     deaths = parser.parse_events(
         [
             GameEvent.PLAYER_DEATH.value,
-        ]
+        ],
     )
     death_df = parse_deaths(deaths)
+    death_df['round_num'] = death_df['tick'].apply(lambda tick: find_round_num(tick, round_df))
+    death_df["round_num"] = death_df["round_num"].astype("Int64")
 
     # Blinds
     blinds = parser.parse_events([GameEvent.PLAYER_BLIND.value])
     blinds_df = parse_blinds(blinds)
+    blinds_df['round_num'] = blinds_df['tick'].apply(lambda tick: find_round_num(tick, round_df))
+    blinds_df["round_num"] = blinds_df["round_num"].astype("Int64")
 
     # Weapon Fires
     weapon_fires = parser.parse_events([GameEvent.WEAPON_FIRE.value])
     weapon_fires_df = parse_weapon_fires(weapon_fires)
+    weapon_fires_df['round_num'] = weapon_fires_df['tick'].apply(lambda tick: find_round_num(tick, round_df))
+    weapon_fires_df["round_num"] = weapon_fires_df["round_num"].astype("Int64")
 
     # Frames
     tick_df = pd.DataFrame(
         columns=[
             "tick",
+            "game_phase",
             "side",
             "steamid",
             "in_buy_zone",
@@ -594,6 +653,7 @@ def parse_demo(file: str) -> Demo:
             "is_alive",
             "flash_duration",
             "health",
+            "armor",
             "is_scoped",
             "in_crouch",
             "pitch",
@@ -608,6 +668,7 @@ def parse_demo(file: str) -> Demo:
     try:
         tick_df = parser.parse_ticks(
             [
+                GameState.GAME_PHASE.value,
                 # Location
                 PlayerData.X.value,
                 PlayerData.Y.value,
@@ -640,6 +701,8 @@ def parse_demo(file: str) -> Demo:
                 PlayerData.IN_BOMB_ZONE.value,
                 PlayerData.IN_CROUCH.value,
                 PlayerData.SPOTTED.value,
+                # Other
+                GameState.TOTAL_ROUNDS_PLAYED.value
             ]
         )
         tick_df = parse_frame(tick_df)
@@ -662,6 +725,8 @@ def parse_demo(file: str) -> Demo:
     )
     try:
         grenade_df = parser.parse_grenades()
+        grenade_df['round_num'] = grenade_df['tick'].apply(lambda tick: find_round_num(tick, round_df))
+        grenade_df["round_num"] = grenade_df["round_num"].astype("Int64")
     except Exception as err:
         warn_msg = f"Error parsing grenade data found in the demofile: {err}"
         warnings.warn(warn_msg, stacklevel=2)

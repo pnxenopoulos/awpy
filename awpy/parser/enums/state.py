@@ -65,3 +65,14 @@ class GameState(Enum):
     T_LOSING_STREAK = "t_losing_streak"  # m_iNumConsecutiveTerroristLoses
     SURVIVAL_START_TIME = "survival_start_time"  # m_flSurvivalStartTime
     ROUND_IN_PROGRESS = "round_in_progress"  # m_bRoundInProgress
+
+class GamePhase(Enum):
+    """GamePhase represents a portion of the game."""
+    INIT = 0
+    PREGAME = 1
+    STARTGAME = 2
+    PREROUND = 3
+    TEAMWIN = 4
+    RESTART = 5
+    STALEMATE = 6
+    GAMEOVER = 7

@@ -25,7 +25,7 @@ setup(
         "textdistance~=4.5.0",
         "tqdm~=4.65.0",
         "typing_extensions~=4.7.0",
-        "demoparser2>=0.11.2",
+        "demoparser2>=0.15.0",
     ],
     package_data={
         # If any package contains *.txt or *.rst files, include them:
