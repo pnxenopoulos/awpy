@@ -1,6 +1,4 @@
 """Provides analytics capabilities for CSGO data."""
-from awpy.analytics.stats import player_stats
+from awpy.analytics.stats import adr
 
-from . import stats
-
-__all__ = ["stats"]
+__all__ = ["adr"]

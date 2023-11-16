@@ -66,8 +66,10 @@ class GameState(Enum):
     SURVIVAL_START_TIME = "survival_start_time"  # m_flSurvivalStartTime
     ROUND_IN_PROGRESS = "round_in_progress"  # m_bRoundInProgress
 
+
 class GamePhase(Enum):
     """GamePhase represents a portion of the game."""
+
     INIT = 0
     PREGAME = 1
     STARTGAME = 2
