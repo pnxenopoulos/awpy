@@ -1,9 +1,8 @@
 """Tests demo stats functionality."""
 
-import pytest
 
-from awpy.parser import parse_demo
 from awpy.analytics import adr
+from awpy.parser import parse_demo
 
 
 class TestStats:
@@ -16,12 +15,12 @@ class TestStats:
     def test_adr(self):
         """Tests average-damage-per-round (ADR) calculation."""
         adr_df = adr(self.parsed_demo)
-        adr_NiKo = adr_df[
+        adr_niko = adr_df[
             (adr_df["steamid"] == 76561198041683378) & (adr_df["side"] == "total")
         ]["adr"].iloc[0]
-        adr_Snappi = adr_df[
+        adr_snappi = adr_df[
             (adr_df["steamid"] == 76561197989423065) & (adr_df["side"] == "total")
         ]["adr"].iloc[0]
 
-        assert round(adr_NiKo, 1) == 125.5
-        assert round(adr_Snappi, 1) == 109.7
+        assert round(adr_niko, 1) == 125.5
+        assert round(adr_snappi, 1) == 109.7
