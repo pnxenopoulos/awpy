@@ -1,7 +1,7 @@
 """Tests demo stats functionality."""
 
 
-from awpy.analytics import adr
+from awpy.analytics import adr, kast
 from awpy.parser import parse_demo
 
 
@@ -24,3 +24,12 @@ class TestStats:
 
         assert round(adr_niko, 1) == 125.5
         assert round(adr_snappi, 1) == 109.7
+
+    def test_kast(self):
+        """Tests kill-assist-survive-traded (KAST) calculation."""
+        kast_df = kast(self.parsed_demo)
+        kast_niko = kast_df[
+            (kast_df["steamid"] == 76561198041683378) & (kast_df["side"] == "total")
+        ]["kast"].iloc[0]
+
+        assert round(kast_niko, 2) == 0.95

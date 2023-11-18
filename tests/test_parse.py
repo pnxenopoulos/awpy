@@ -1,8 +1,10 @@
 """Tests demo parsing functionality."""
 
+import pandas as pd
 import pytest
 
 from awpy.parser import parse_demo
+from awpy.parser.demoparser import is_trade_kill, was_traded
 
 
 class TestParser:
@@ -64,3 +66,24 @@ class TestParser:
         assert kill_df[kill_df["attacker"] == "dycha"].kill_count.to_numpy()[0] == 15
         assert kill_df[kill_df["attacker"] == "SunPayus"].kill_count.to_numpy()[0] == 12
         assert kill_df[kill_df["attacker"] == "maden"].kill_count.to_numpy()[0] == 11
+
+    def test_trade_kills(self):
+        """Tests that we can identify trade kills."""
+        kill_df = pd.DataFrame(
+            {
+                "tick": [128, 256, 1024],
+                "attacker_steamid": [1, 6, 2],
+                "victim_steamid": [7, 1, 6],
+                "attacker_side": ["ct", "t", "ct"],
+                "victim_side": ["t", "ct", "t"],
+            }
+        )
+        kill_df["is_trade"] = kill_df.apply(
+            lambda row: is_trade_kill(kill_df, row.name, 640), axis=1
+        )
+        kill_df["was_traded"] = kill_df.apply(
+            lambda row: was_traded(kill_df, row.name, 640), axis=1
+        )
+
+        assert all(kill_df.is_trade.to_numpy() == [False, True, False])
+        assert all(kill_df.is_trade.to_numpy() == [True, False, False])

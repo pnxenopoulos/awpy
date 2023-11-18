@@ -547,11 +547,72 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
     return tick_df
 
 
-def parse_demo(file: str) -> Demo:
+def is_trade_kill(df: pd.DataFrame, kill_index: int, trade_time: int) -> bool:
+    """Check if a kill is a trade kill.
+
+    Args:
+        df (pd.DataFrame): DataFrame of kills.
+        kill_index (int): Row to check for trade kill status.
+        trade_time (int): Ticks between kills.
+
+    Returns:
+        bool: True if the kill_index row of `df` is a trade kill. False otherwise.
+    """
+    if kill_index == 0:
+        return False
+    current_kill = df.iloc[kill_index]
+    kill_victim = current_kill["victim_steamid"]
+    kill_tick = current_kill["tick"]
+    # Define the tick range for a trade kill
+    trade_tick_range = range(max(kill_tick - trade_time, 0), kill_tick)
+    # Check subsequent kills for a trade kill
+    for i in range(max(0, kill_index - 1) + 1):
+        subsequent_kill = df.iloc[i]
+        if (
+            subsequent_kill["tick"] in trade_tick_range
+            and subsequent_kill["attacker_steamid"] == kill_victim
+            and subsequent_kill["attacker_side"] != subsequent_kill["victim_side"]
+        ):
+            return True
+    return False
+
+
+def was_traded(df: pd.DataFrame, kill_index: int, trade_time: int) -> bool:
+    """Check if a kill was traded later.
+
+    Args:
+        df (pd.DataFrame): DataFrame of kills.
+        kill_index (int): Row to check for trade kill status.
+        trade_time (int): Ticks between kills.
+
+    Returns:
+        bool: True if the kill_index row of `df` was traded later. False otherwise.
+    """
+    current_kill = df.iloc[kill_index]
+    kill_attacker = current_kill["attacker_steamid"]
+    kill_tick = current_kill["tick"]
+    # Define the tick range for a trade kill
+    trade_tick_range = range(kill_tick, kill_tick + trade_time)
+    # Check subsequent kills for a trade kill
+    for i in range(kill_index, df.shape[0] + 1):
+        if i == df.shape[0]:
+            break
+        next_kill = df.iloc[i]
+        if (
+            next_kill["tick"] in trade_tick_range
+            and next_kill["victim_steamid"] == kill_attacker
+            and next_kill["attacker_side"] != next_kill["victim_side"]
+        ):
+            return True
+    return False
+
+
+def parse_demo(file: str, trade_time: int = 640) -> Demo:
     """Parse the demofile.
 
     Args:
         file (str): Path to the demofile.
+        trade_time (int, optional): Ticks between kills. Defaults to 640.
 
     Returns:
         Demo: Dictionary with the parsed data. Has keys `header`, `rounds`, `kills`,
@@ -578,55 +639,6 @@ def parse_demo(file: str) -> Demo:
         ]
     )
     round_df = parse_rounds(parsed_round_events)
-
-    # Damages
-    damage = parser.parse_events([GameEvent.PLAYER_HURT.value], other=["game_phase"])
-    damage_df = parse_damages(damage)
-    damage_df = apply_round_num_to_df(damage_df, round_df)
-
-    # Blockers (smokes, molotovs, etc.)
-    effect = parser.parse_events(
-        [
-            GameEvent.INFERNO_STARTBURN.value,
-            GameEvent.INFERNO_EXPIRE.value,
-            GameEvent.SMOKEGRENADE_DETONATE.value,
-            GameEvent.SMOKEGRENADE_EXPIRED.value,
-        ]
-    )
-    effect_df = parse_smokes_and_infernos(effect)
-    effect_df = apply_round_num_to_df(effect_df, round_df)
-
-    # Bomb
-    bomb = parser.parse_events(
-        [
-            GameEvent.BOMB_BEGINDEFUSE.value,
-            GameEvent.BOMB_BEGINPLANT.value,
-            GameEvent.BOMB_DEFUSED.value,
-            GameEvent.BOMB_EXPLODED.value,
-            GameEvent.BOMB_PLANTED.value,
-        ]
-    )
-    bomb_df = parse_bomb_events(bomb)
-    bomb_df = apply_round_num_to_df(bomb_df, round_df)
-
-    # Deaths
-    deaths = parser.parse_events(
-        [
-            GameEvent.PLAYER_DEATH.value,
-        ],
-    )
-    death_df = parse_deaths(deaths)
-    death_df = apply_round_num_to_df(death_df, round_df)
-
-    # Blinds
-    blinds = parser.parse_events([GameEvent.PLAYER_BLIND.value])
-    blinds_df = parse_blinds(blinds)
-    blinds_df = apply_round_num_to_df(blinds_df, round_df)
-
-    # Weapon Fires
-    weapon_fires = parser.parse_events([GameEvent.WEAPON_FIRE.value])
-    weapon_fires_df = parse_weapon_fires(weapon_fires)
-    weapon_fires_df = apply_round_num_to_df(weapon_fires_df, round_df)
 
     # Frames
     tick_df = pd.DataFrame(
@@ -706,6 +718,102 @@ def parse_demo(file: str) -> Demo:
     except Exception as err:
         warn_msg = f"Error parsing tick data found in the demofile: {err}"
         warnings.warn(warn_msg, stacklevel=2)
+
+    # Damages
+    damage = parser.parse_events([GameEvent.PLAYER_HURT.value], other=["game_phase"])
+    damage_df = parse_damages(damage)
+    damage_df = apply_round_num_to_df(damage_df, round_df)
+
+    # Add sides to damage_df
+    damage_df = damage_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "attacker_steamid"],
+        right_on=["tick", "steamid"],
+    )
+    damage_df = damage_df.rename(columns={"side": "attacker_side"})
+    damage_df = damage_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "victim_steamid"],
+        right_on=["tick", "steamid"],
+    )
+    damage_df = damage_df.rename(columns={"side": "victim_side"})
+
+    # Blockers (smokes, molotovs, etc.)
+    effect = parser.parse_events(
+        [
+            GameEvent.INFERNO_STARTBURN.value,
+            GameEvent.INFERNO_EXPIRE.value,
+            GameEvent.SMOKEGRENADE_DETONATE.value,
+            GameEvent.SMOKEGRENADE_EXPIRED.value,
+        ]
+    )
+    effect_df = parse_smokes_and_infernos(effect)
+    effect_df = apply_round_num_to_df(effect_df, round_df)
+
+    # Bomb
+    bomb = parser.parse_events(
+        [
+            GameEvent.BOMB_BEGINDEFUSE.value,
+            GameEvent.BOMB_BEGINPLANT.value,
+            GameEvent.BOMB_DEFUSED.value,
+            GameEvent.BOMB_EXPLODED.value,
+            GameEvent.BOMB_PLANTED.value,
+        ]
+    )
+    bomb_df = parse_bomb_events(bomb)
+    bomb_df = apply_round_num_to_df(bomb_df, round_df)
+
+    # Deaths
+    deaths = parser.parse_events(
+        [
+            GameEvent.PLAYER_DEATH.value,
+        ],
+    )
+    death_df = parse_deaths(deaths)
+    death_df = apply_round_num_to_df(death_df, round_df)
+
+    # Add sides to death_df
+    death_df = death_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "attacker_steamid"],
+        right_on=["tick", "steamid"],
+    )
+    death_df = death_df.drop("steamid", axis=1)
+    death_df = death_df.rename(columns={"side": "attacker_side"})
+
+    death_df = death_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "victim_steamid"],
+        right_on=["tick", "steamid"],
+    )
+    death_df = death_df.drop("steamid", axis=1)
+    death_df = death_df.rename(columns={"side": "victim_side"})
+
+    death_df = death_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "assister_steamid"],
+        right_on=["tick", "steamid"],
+        how="left",
+    )
+    death_df = death_df.drop("steamid", axis=1)
+    death_df = death_df.rename(columns={"side": "assister_side"})
+
+    death_df["is_trade"] = death_df.apply(
+        lambda row: is_trade_kill(death_df, row.name, trade_time), axis=1
+    )
+    death_df["was_traded"] = death_df.apply(
+        lambda row: was_traded(death_df, row.name, trade_time), axis=1
+    )
+
+    # Blinds
+    blinds = parser.parse_events([GameEvent.PLAYER_BLIND.value])
+    blinds_df = parse_blinds(blinds)
+    blinds_df = apply_round_num_to_df(blinds_df, round_df)
+
+    # Weapon Fires
+    weapon_fires = parser.parse_events([GameEvent.WEAPON_FIRE.value])
+    weapon_fires_df = parse_weapon_fires(weapon_fires)
+    weapon_fires_df = apply_round_num_to_df(weapon_fires_df, round_df)
 
     # Grenades
     grenade_df = pd.DataFrame(
