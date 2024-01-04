@@ -367,7 +367,7 @@ def _plot_frame_team_player_positions(
     map_name: str,
     side: Literal["CT", "T"],
     player_data: TeamMetadata,
-    axes: plt.Axes,
+    axes: Axes,
 ) -> None:
     """Helper function to team's alive player positions.
 
@@ -376,7 +376,7 @@ def _plot_frame_team_player_positions(
         side (Literal['CT', 'T']): Side used to determine player scatterplot color
         player_data (TeamMetadata): Team's metadata dictionary. Expected format same as
             output of extract_player_positions
-        axes (plt.Axes): axes object for plotting
+        axes (Axes): axes object for plotting
 
     Returns:
         None: Nothing, all plotting is done on ax object
@@ -397,7 +397,7 @@ def _plot_frame_team_player_positions(
 def _plot_map_control_from_dict(
     map_name: str,
     occupied_tiles: FrameMapControlValues,
-    axes: plt.Axes,
+    axes: Axes,
     player_data: FrameTeamMetadata | None = None,
 ) -> None:
     """Helper function to plot map control nav tile plot.
@@ -405,7 +405,7 @@ def _plot_map_control_from_dict(
     Args:
         map_name (str): Map used position_transform call
         occupied_tiles (FrameMapControlValues): Map control values for occupied tiles
-        axes (plt.Axes): axes object for plotting
+        axes (Axes): axes object for plotting
         player_data (FrameTeamMetadata | None): Player positions for each team.
             Expected format same as output of extract_player_positions
             (Default value = None)
@@ -467,7 +467,7 @@ def plot_frame_map_control(
     map_name: str,
     frame: GameFrame,
     plot_type: MapControlPlotType = "default",
-    given_fig_ax: tuple[plt.Figure, plt.Axes] | tuple[None, None] = (None, None),
+    given_fig_ax: tuple[Figure, Axes] | tuple[None, None] = (None, None),
 ) -> tuple[Figure, Axes]:
     """Visualize map control for awpy frame.
 
@@ -476,7 +476,7 @@ def plot_frame_map_control(
         frame (GameFrame): awpy frame to calculate map control for
         plot_type (MapControlPlotType): Determines which type of plot is created
             (either default or with players)
-        given_fig_ax (tuple[plt.Figure, plt.Axes] | tuple[None, None]): Figure and ax
+        given_fig_ax (tuple[Figure, Axes] | tuple[None, None]): Figure and ax
             objects for plotting (Default value = (None, None))
 
     Returns:
@@ -565,13 +565,13 @@ def plot_round_map_control(
 
 def _plot_map_control_metrics(
     metrics: list[float],
-    axes: plt.Axes,
+    axes: Axes,
 ) -> None:
     """Helper function to plot map control metrics.
 
     Args:
         metrics (list[float]): List containing map control values to plot
-        axes (plt.Axes): axes object for plotting
+        axes (Axes): axes object for plotting
 
     Returns:
         None: Nothing, all plotting is done on ax_object
