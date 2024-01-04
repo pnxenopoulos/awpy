@@ -17,19 +17,19 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "imageio~=2.28.0",
-    "matplotlib~=3.7.0",
+    "imageio~=2.33.1",
+    "matplotlib~=3.8.0",
     "networkx~=3.1",
-    "numpy>=1.20,<=1.25",
-    "pandas~=2.0.1",
-    "pydantic~=2.0.1",
-    "scipy~=1.10.0",
-    "Shapely~=2.0.0",
-    "sphinx-rtd-theme==1.2",
-    "sympy==1.11",
-    "textdistance~=4.5.0",
-    "tqdm~=4.65.0",
-    "typing_extensions~=4.7.0",
+    "numpy>=1.26,<=1.27",
+    "pandas~=2.1.1",
+    "pydantic~=2.5.2",
+    "scipy~=1.11.4",
+    "Shapely~=2.0.2",
+    "sphinx-rtd-theme==1.3",
+    "sympy==1.12",
+    "textdistance~=4.6.1",
+    "tqdm~=4.66.1",
+    "typing_extensions>=4.7.0,<5.0",
 ]
 dynamic = ["version"]
 
@@ -48,57 +48,29 @@ include-package-data = true
     "*.sum",
 ]
 
+[tool.pymend]
+extend-exclude             = "docs/|tests/|setup.py"
+output-style               = "google"
+input-style                = "google"
+check                      = true
+force-params-min-n-params  = 2
+force-meta-min-func-length = 3
+
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = [
-    "E",
-    "F",
-    "B",
-    "W",
-    "I",
-    "N",
-    "D",
-    "UP",
-    "YTT",
-    "ANN",
-    "S",
-    "BLE",
-    "FBT",
-    "A",
-    "C4",
-    "DTZ",
-    "T10",
-    "EXE",
-    "ISC",
-    "ICN",
-    "G",
-    "INP",
-    "PIE",
-    "PYI",
-    "PT",
-    "Q",
-    "RSE",
-    "RET",
-    "SLF",
-    "SIM",
-    "TID",
-    "TCH",
-    "INT",
-    "ARG",
-    "ERA",
-    "PD",
+select = ["ALL"]
+ignore = [
+    "D208",
+    "ANN101",
+    "T20",
+    "PTH",
+    "TRY003",
+    "COM",
+    "FA",
+    "PTH",
+    "C901",
     "PERF",
-    "PGH",
-    "PLC",
-    "PLE",
-    "PLR",
-    "PLW",
-    "TRY",
-    "NPY",
-    "RUF",
-    "EM",
-]
-ignore = ["D208", "ANN101", "T20", "PTH", "TRY003"] # , "PLR0912", "PLR0915", "PLR0913"
+] # , "PLR0912", "PLR0915", "PLR0913"
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -157,7 +129,7 @@ strictDictionaryInference          = true
 strictSetInference                 = true
 useLibraryCodeForTypes             = false
 reportPropertyTypeMismatch         = "error"
-reportFunctionMemberAccess         = "warning"
+reportFunctionMemberAccess         = "error"
 reportMissingTypeStubs             = "none"
 reportUntypedFunctionDecorator     = "error"
 reportUntypedClassDecorator        = "error"
@@ -166,14 +138,17 @@ reportUntypedNamedTuple            = "error"
 reportPrivateUsage                 = "error"
 reportConstantRedefinition         = "error"
 reportOverlappingOverload          = "error"
-reportMissingParameterType         = "warning"
-reportUnnecessaryIsInstance        = "none"
+reportMissingParameterType         = "error"
+# Because this is externally visible
+# and we want to have the check for users
+# that do not use type checkers.
+reportUnnecessaryIsInstance        = "warning"
 reportUnnecessaryCast              = "error"
 reportUnnecessaryComparison        = "error"
 reportUnnecessaryContains          = "error"
 reportAssertAlwaysTrue             = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
-reportImplicitOverride             = "none"
+reportImplicitOverride             = "error"
 reportShadowedImports              = "error"
 
 
@@ -190,7 +165,7 @@ fail-under = 10.0
 
 [tool.pylint.basic]
 # Good variable names which should always be accepted, separated by a comma.
-good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e", "PlayerPosition2D"]
+good-names          = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e", "PlayerPosition2D"]
 include-naming-hint = true
 
 [tool.pylint.design]
@@ -222,6 +197,11 @@ max-statements = 50
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods = 1
+
+# Maximum number of allowed ancestors (see R0901).
+# Inheriting from typing_extensions.TypedDict alones gives that
+# Tracked here: https://github.com/pylint-dev/pylint/issues/9101
+max-parents = 30
 
 [tool.pylint.exceptions]
 # Exceptions that will emit a warning when caught.

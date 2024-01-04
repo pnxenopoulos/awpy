@@ -59,15 +59,13 @@ def initialize_round(
 
     Args:
         cur_round (GameRound): Current CSGO round to initialize for.
-        player_statistics (dict[str, PlayerStatistics]):
-            Dict storing player statistics for a given match.
-        active_sides (set[Literal["CT", "T"]]): Set of the currently active sides.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        active_sides (set[Literal['CT', 'T']]): Set of the currently active sides.
 
     Returns:
-        dict[str, KAST]: Initialized KAST dict for each player.
-        dict[str, int]: Number of kills in the round for each player.
-        set[str]]: Players to track for the given round.
-
+        RoundStatistics: Initialized KAST dict for each player.
+            dict[str, int]: Number of kills in the round for each player.
+            set[str]]: Players to track for the given round.
     """
     kast: dict[str, KAST] = {}
     round_kills: dict[str, int] = {}
@@ -247,6 +245,18 @@ def _get_actor_key(
     actor: Any,
     game_action: Any,
 ) -> str:
+    """Get the key for a specific actor..
+
+    Args:
+        actor (Any): Actor to get the key for.
+        game_action (Any): Action that the actor is performing.
+
+    Returns:
+        str: Key for the actor.
+
+    Raises:
+        KeyError: If the actor is not a valid actor for the given game action.
+    """
     actor_name = actor + "Name"
     actor_steamid = actor + "SteamID"
     if (actor_name) not in game_action or (actor_steamid) not in game_action:
@@ -268,7 +278,14 @@ def _handle_pure_killer_stats(
     round_statistics: RoundStatistics,
     kill_action: KillAction,
 ) -> None:
-    # Purely attacker related stats
+    """Purely attacker related stats.
+
+    Args:
+        killer_key (str): The key of the killer.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+        kill_action (KillAction): The kill action to handle.
+    """
     if (
         killer_key in round_statistics["active_players"]
         and kill_action["attackerSteamID"]
@@ -288,6 +305,17 @@ def _is_clutch(
     game_round: GameRound,
     round_statistics: RoundStatistics,
 ) -> bool:
+    """Determine whether the current game state is in a clutch.
+
+    Args:
+        victim_side (Literal['CT', 'T']): Which side the victim of the last
+            kill was on.
+        game_round (GameRound): The current game round that is being analyzed.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+
+    Returns:
+        bool: True if the current game state is a clutch.
+    """
     total_players_victim_side = game_round[lower_side(victim_side) + "Side"]["players"]
     if total_players_victim_side is None:
         return False
@@ -303,6 +331,17 @@ def _find_clutcher(
     victim_side: Literal["CT", "T"],
     round_statistics: RoundStatistics,
 ) -> str | None:
+    """Try to find the key of a currently clutching player.
+
+    Args:
+        victim_side_players (list[Players]): Player on the side of the most
+            recent victim.
+        victim_side (Literal['CT', 'T']): Which side the victim was one.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+
+    Returns:
+        str | None: They key of the clutcher or None if no clutcher was found.
+    """
     for player in victim_side_players:
         clutcher_key = (
             str(player["playerName"])
@@ -324,7 +363,14 @@ def _handle_clutching(
     round_statistics: RoundStatistics,
     player_statistics: dict[str, PlayerStatistics],
 ) -> None:
-    # Clutch logic
+    """Clutch logic.
+
+    Args:
+        kill_action (KillAction): The most recent kill action.
+        game_round (GameRound): Information about the current game round.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+    """
     victim_side = kill_action["victimSide"]
     if victim_side is None or not is_valid_side(victim_side):
         return
@@ -368,7 +414,15 @@ def _handle_pure_victim_stats(
     kill_action: KillAction,
     game_round: GameRound,
 ) -> None:
-    # Purely victim related stats:
+    """Purely victim related stats:.
+
+    Args:
+        victim_key (str): Key of the current victim.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): _Player statistics for the current round.
+        kill_action (KillAction): Kill action to handle.
+        game_round (GameRound): Current game round being analyzed.
+    """
     if victim_key in round_statistics["active_players"]:
         player_statistics[victim_key]["deaths"] += 1
         round_statistics["kast"][victim_key]["s"] = False
@@ -383,6 +437,14 @@ def _handle_trade_stats(
     round_statistics: RoundStatistics,
     kill_action: KillAction,
 ) -> None:
+    """Logic to handle whether a kill counts as a trade.
+
+    Args:
+        killer_key (str): Key of the killer.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+        kill_action (KillAction): The kill action that might be a trade.
+    """
     if kill_action["isTrade"]:
         # A trade is always onto an enemy
         # If your teammate kills someone and then you kill them
@@ -421,6 +483,15 @@ def _handle_assists(
     round_statistics: RoundStatistics,
     kill_action: KillAction,
 ) -> None:
+    """Handle whether a kill was an assist..
+
+    Args:
+        assister_key (str): Player that might get the assits.
+        flashthrower_key (str): Player that might get the flash assist.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+        kill_action (KillAction): The kill action at question.
+    """
     if (
         kill_action["assisterSteamID"]
         and kill_action["assisterSide"] != kill_action["victimSide"]
@@ -444,6 +515,15 @@ def _handle_first_kill(
     round_statistics: RoundStatistics,
     kill_action: KillAction,
 ) -> None:
+    """Check who gets credit for first kill/death.
+
+    Args:
+        killer_key (str): Player that got the kill.
+        victim_key (str): Player that died.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+        kill_action (KillAction): The kill action that might be a trade.
+    """
     if kill_action["isFirstKill"] and kill_action["attackerSteamID"]:
         if killer_key in round_statistics["active_players"]:
             player_statistics[killer_key]["firstKills"] += 1
@@ -456,6 +536,13 @@ def _handle_kills(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
+    """Handle all the kills in a round.
+
+    Args:
+        game_round (GameRound): Game round to handle kills for.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+    """
     for k in game_round["kills"] or []:
         killer_key = _get_actor_key("attacker", k)
         victim_key = _get_actor_key("victim", k)
@@ -496,6 +583,13 @@ def _handle_damages(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
+    """Handle all the damage events in a round.
+
+    Args:
+        game_round (GameRound): Game round to handle kills for.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+    """
     for damage_action in game_round["damages"] or []:
         attacker_key = _get_actor_key("attacker", damage_action)
         victim_key = _get_actor_key("victim", damage_action)
@@ -532,6 +626,13 @@ def _handle_weapon_fires(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
+    """Handle all weapon fires in the round.
+
+    Args:
+        game_round (GameRound): Game round to handle kills for.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+    """
     for weapon_fire in game_round["weaponFires"] or []:
         fire_key = _get_actor_key("player", weapon_fire)
         if fire_key in round_statistics["active_players"]:
@@ -543,6 +644,13 @@ def _handle_flashes(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
+    """Handle all flashes in the round.
+
+    Args:
+        game_round (GameRound): Game round to handle kills for.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+    """
     for flash_action in game_round["flashes"] or []:
         flasher_key = _get_actor_key("attacker", flash_action)
         if (
@@ -565,6 +673,13 @@ def _handle_grenades(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
+    """_Handle all grenades in the round.
+
+    Args:
+        game_round (GameRound): Game round to handle kills for.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+    """
     for grenade_action in game_round["grenades"] or []:
         thrower_key = _get_actor_key("thrower", grenade_action)
         if (
@@ -586,6 +701,13 @@ def _handle_bomb(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
+    """Handle all bomb related events in the round.
+
+    Args:
+        game_round (GameRound): Game round to handle kills for.
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+    """
     for bomb_event in game_round["bombEvents"] or []:
         player_key = (
             bomb_event["playerName"]
@@ -606,6 +728,12 @@ def _handle_kast(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
+    """Check which players earned a point for their KAST.
+
+    Args:
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+    """
     for player, components in round_statistics["kast"].items():
         if player in round_statistics["active_players"] and any(components.values()):
             player_statistics[player]["kast"] += 1
@@ -615,6 +743,12 @@ def _handle_multi_kills(
     player_statistics: dict[str, PlayerStatistics],
     round_statistics: RoundStatistics,
 ) -> None:
+    """Handle which players earned multikills this round.
+
+    Args:
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        round_statistics (RoundStatistics): Player statistics for the current round.
+    """
     for player, n_kills in round_statistics["round_kills"].items():
         if player in round_statistics["active_players"]:
             _increment_statistic(player_statistics, player, n_kills)
@@ -623,6 +757,13 @@ def _handle_multi_kills(
 def _increment_statistic(
     player_statistics: dict[str, PlayerStatistics], player: str, n_kills: int
 ) -> None:
+    """Increment the appropriate multi kill statistic.
+
+    Args:
+        player_statistics (dict[str, PlayerStatistics]): Overall stats for the match.
+        player (str): Player that got the multi kill
+        n_kills (int): How many kills the player got
+    """
     if not proper_player_number(n_kills):  # 0, 1, 2, 3, 4, 5
         return
     kills_string = "kills" + int_to_string_n_players(n_kills)
@@ -636,13 +777,12 @@ def player_stats(
 
     Args:
         game_rounds (list[GameRound]): List of game rounds as produced by the DemoParser
-        return_type (str, optional): Return format ("json" or "df"). Defaults to "json".
-        selected_side (str, optional): Which side(s) to consider. Defaults to "all".
+        return_type (str): Return format ("json" or "df"). Defaults to "json".
+        selected_side (str): Which side(s) to consider. Defaults to "all".
             Other options are "CT" and "T"
 
     Returns:
-        Union[dict[str, PlayerStatistics],pd.Dataframe]:
-            Dictionary or Dataframe containing player information
+        dict[str, PlayerStatistics] | pd.DataFrame: Player information
     """
     player_statistics: dict[str, PlayerStatistics] = {}
 

@@ -1,11 +1,11 @@
 """Functions for calculating map control values and metrics.
 
-    A team's map control can be thought of as the sum of it's
-    individual player's control.
+A team's map control can be thought of as the sum of it's
+individual player's control.
 
-    Example notebook:
+Example notebook:
 
-    https://github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
+https://github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb
 """
 
 from collections import defaultdict, deque
@@ -45,13 +45,14 @@ def _approximate_neighbors(
         map_name (str): Map for source_tile_id
         source_tile_id (TileId): TileId for source tile
         n_neighbors (int): Number of closest tiles/approximated neighbors wanted
+            (Default value = 5)
 
     Returns:
-        List of TileDistanceObjects for n_neighbors closest tiles
+        list[DistanceObject]: List of TileDistanceObjects for n_neighbors closest tiles
 
     Raises:
         ValueError: If source_tile_id is not in awpy.data.NAV[map_name]
-                    If n_neighbors <= 0
+        ValueError: If n_neighbors <= 0
     """
     if source_tile_id not in NAV[map_name]:
         msg = "Tile ID not found."
@@ -85,13 +86,13 @@ def _bfs(
 
     Args:
         map_name (str): Map for current_tiles
-        current_tiles (TileId): List of source tiles for bfs iteration(s)
+        current_tiles (list[TileId]): List of source tiles for bfs iteration(s)
         area_threshold (float): Percentage representing amount of map's total
-                                navigable area which is the max cumulative tile
-                                area for each bfs algorithm
+            navigable area which is the max cumulative tile
+            area for each bfs algorithm (Default value = 1 / 20)
 
     Returns:
-        TeamMapControlValues containing map control values
+        TeamMapControlValues: Map control values
 
     Raises:
         ValueError: If area_threshold <= 0
@@ -158,11 +159,11 @@ def _calc_frame_map_control_tile_values(
 
     Args:
         map_name (str): Map for other arguments
-        ct_tiles (list): List of CT-occupied tiles
-        t_tiles (list): List of T-occupied tiles
+        ct_tiles (list[TileId]): List of CT-occupied tiles
+        t_tiles (list[TileId]): List of T-occupied tiles
 
     Returns:
-        FrameMapControlValues object containing each team's map control values
+        FrameMapControlValues: Each team's map control values
     """
     return FrameMapControlValues(
         t_values=_bfs(map_name, t_tiles),
@@ -189,7 +190,7 @@ def calc_parsed_frame_map_control_values(
             (player positions, etc.). Expects extract_team_metadata output format
 
     Returns:
-        FrameMapControlValues object containing each team's map control values
+        FrameMapControlValues: Each team's map control values
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -228,7 +229,7 @@ def calc_frame_map_control_values(
         frame (GameFrame): Awpy frame object for map control calculations
 
     Returns:
-        FrameMapControlValues object containing each team's map control values
+        FrameMapControlValues: Each team's map control values
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -252,7 +253,7 @@ def _extract_team_metadata(
         side_data (TeamFrameInfo): Object with metadata for side's players.
 
     Returns:
-        TeamMetadata with metadata on team's players
+        TeamMetadata: Metadata on team's players
     """
     alive_players: list[PlayerPosition] = [
         (player["x"], player["y"], player["z"])
@@ -273,8 +274,7 @@ def extract_teams_metadata(
             containing relevant data for both sides
 
     Returns:
-        FrameTeamMetadata containing team metadata (player
-            positions, etc.)
+        FrameTeamMetadata: Team metadata (player positions, etc.)
     """
     return FrameTeamMetadata(
         t_metadata=_extract_team_metadata(frame["t"]),
@@ -304,7 +304,7 @@ def _calc_map_control_metric_from_dict(
             Expected format that of calc_frame_map_control_values output
 
     Returns:
-        Map Control Metric
+        float: Map Control Metric
     """
     current_map_control_value: list[float] = []
     tile_areas: list[float] = []
@@ -342,7 +342,7 @@ def calc_frame_map_control_metric(
         frame (GameFrame): awpy frame to calculate map control metric for
 
     Returns:
-        Map Control metric for given frame
+        float: Map Control metric for given frame
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV
@@ -376,7 +376,7 @@ def calculate_round_map_control_metrics(
         round_data (GameRound): awpy round to calculate map control metrics
 
     Returns:
-        List of map control metric values for given round
+        list[float]: List of map control metric values for given round
 
     Raises:
         ValueError: If map_name is not in awpy.data.NAV

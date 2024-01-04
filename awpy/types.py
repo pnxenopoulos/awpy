@@ -783,10 +783,10 @@ def other_side(side: Literal["CT", "T"]) -> Literal["T", "CT"]:
     """Takes a csgo side as input and returns the opposite side in the same formatting.
 
     Args:
-        side (string): A csgo team side (t or ct all upper or all lower case)
+        side (Literal['CT', 'T']): A csgo team side (CT or T)
 
     Returns:
-        A string of the opposite team side in the same formatting as the input
+        Literal['T', 'CT']: Opposite team side.
 
     Raises:
         ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
@@ -813,10 +813,10 @@ def lower_side(side: Literal["CT", "T"]) -> Literal["ct", "t"]:
     """Takes a csgo side as input and returns lower cased version.
 
     Args:
-        side (string): A csgo team side (T or CT )
+        side (Literal['CT', 'T']): A csgo team side (T or CT )
 
     Returns:
-        The lower cased string.
+        Literal['ct', 't']: The lower cased string.
 
     Raises:
         ValueError: Raises a ValueError if side not neither 'CT' nor 'T'
@@ -843,10 +843,10 @@ def upper_side(side: Literal["ct", "t"]) -> Literal["CT", "T"]:
     """Takes a csgo side as input and returns upper cased version.
 
     Args:
-        side (string): A csgo team side (t or ct )
+        side (Literal['ct', 't']): A csgo team side (t or ct )
 
     Returns:
-        The upper cased string.
+        Literal['CT', 'T']: The upper cased string.
 
     Raises:
         ValueError: Raises a ValueError if side not neither 'ct' nor 't'
@@ -866,7 +866,7 @@ def is_valid_side(side: str) -> TypeGuard[Literal["CT", "T"]]:
         side (str): String to type guard
 
     Returns:
-        Whether it is CT or T
+        TypeGuard[Literal['CT', 'T']]: Whether it is CT or T
     """
     return side in {"CT", "T"}
 
@@ -878,7 +878,7 @@ def proper_player_number(n_players: int, /) -> TypeGuard[Literal[0, 1, 2, 3, 4, 
         n_players (int): Int to type guard
 
     Returns:
-        Whether the int is in range(6)
+        TypeGuard[Literal[0, 1, 2, 3, 4, 5]]: Whether the int is in range(6)
     """
     return n_players in range(6)
 
@@ -921,11 +921,11 @@ def int_to_string_n_players(
     Args:
         n_players (Literal[0, 1, 2, 3, 4, 5]): Int to convert to string.
 
+    Returns:
+        Literal['0', '1', '2', '3', '4', '5']: str(n_players)
+
     Raises:
         ValueError: If the int is not in range(6)
-
-    Returns:
-        str(n_players)
     """
     if n_players == 0:
         return "0"

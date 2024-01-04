@@ -1,7 +1,13 @@
 exclude: docs/
 repos:
+  - repo: https://github.com/JanEricNitschke/pymend
+    rev: "v1.0.10"
+    hooks:
+      - id: pymend
+        language: python
+        args: ["--write", "--check", "--output-style=google"]
   - repo: 'https://github.com/pre-commit/pre-commit-hooks'
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-yaml
         language: python
@@ -26,19 +32,19 @@ repos:
       - id: check-builtin-literals
         language: python
   - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.0.291
+    rev: v0.1.11
     hooks:
       - id: ruff
         args:
           - '--fix'
           - '--exit-non-zero-on-fix'
   - repo: 'https://github.com/psf/black'
-    rev: 23.9.1
+    rev: 23.12.1
     hooks:
       - id: black
         language: python
   - repo: https://github.com/crate-ci/typos
-    rev: v1.16.13
+    rev: v1.17.0
     hooks:
       - id: typos
         args: []
@@ -64,7 +70,7 @@ repos:
             "-sn", # Don't display the score
           ]
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.54.2
+    rev: v1.55.2
     hooks:
       - id: golangci-lint
         entry: bash -c 'cd awpy/parser && golangci-lint run --new-from-rev HEAD --fix'

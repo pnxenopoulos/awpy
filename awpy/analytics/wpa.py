@@ -15,11 +15,14 @@ def state_win_probability(frame: GameFrame, model: Any) -> dict:  # noqa: ANN401
     """Predicts the win probability of a given frame.
 
     Args:
-        frame (dict): Dict output of a frame generated from the DemoParser class
-        model (Unknown): Model to predict win probabability from.
+        frame (GameFrame): Dict output of a frame generated from the DemoParser class
+        model (Any): Model to predict win probabability from.
 
     Returns:
-        A dictionary containing the CT and T round win probabilities
+        dict: A dictionary containing the CT and T round win probabilities
+
+    Raises:
+        NotImplementedError: Not yet implemented.
     """
     raise NotImplementedError
 
@@ -33,6 +36,9 @@ def round_win_probability(ct_score: int, t_score: int, map_name: str) -> dict:
         map_name (str): Map the demo is from
 
     Returns:
-        A dictionary containing the CT game win, T game win and Draw probabilities
+        dict: A dictionary containing the CT game win, T game win and Draw probabilities
+
+    Raises:
+        NotImplementedError: Not yet implemented.
     """
     raise NotImplementedError
