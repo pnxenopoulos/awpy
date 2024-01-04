@@ -303,7 +303,10 @@ def _get_geodesic_area_distance(
             map_graph, area_a, area_b, heuristic=dist_heuristic, weight="weight"
         )
         geodesic_cost = sum(
-            map_graph[u][v]["weight"] for u, v in pairwise(geodesic_path)
+            map_graph[u][v]["weight"]
+            for u, v in pairwise(
+                geodesic_path
+            )  # pyright: ignore [reportGeneralTypeIssues]
         )
     except nx.NetworkXNoPath:
         return float("inf"), []

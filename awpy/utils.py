@@ -2,7 +2,7 @@
 
 import re
 import subprocess
-from typing import Self, TypeVar
+from typing import TypeVar
 
 import pandas as pd
 from typing_extensions import override
@@ -13,7 +13,7 @@ _KT = TypeVar("_KT")
 _VT = TypeVar("_VT")
 
 
-class AutoVivification(dict[_KT, _VT | Self]):
+class AutoVivification(dict[_KT, _VT | "AutoVivification"]):
     """Implementation of perl's autovivification feature.
 
     Stolen from:
@@ -21,7 +21,7 @@ class AutoVivification(dict[_KT, _VT | Self]):
     """
 
     @override
-    def __getitem__(self, item: _KT) -> _VT | Self:
+    def __getitem__(self, item: _KT) -> _VT | "AutoVivification":
         """Autovivified get item from dict.
 
         Tries to get the item as normal.
@@ -32,10 +32,10 @@ class AutoVivification(dict[_KT, _VT | Self]):
             item (_KT): Item to retrieve the value for.
 
         Returns:
-            _VT | Self: Retrieved value.
+            _VT | 'AutoVivification': Retrieved value.
         """
         try:
-            return dict[_KT, _VT | Self].__getitem__(self, item)
+            return super().__getitem__(item)
         except KeyError:
             value = self[item] = type(self)()
             return value
