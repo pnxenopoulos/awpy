@@ -3,6 +3,8 @@ import pandas as pd
 
 from awpy.parser.models.demo import Demo
 
+from typing import Literal
+
 
 def adr(demo: Demo) -> pd.DataFrame:
     """Calculates average damage per round (ADR) for each player.
@@ -121,15 +123,34 @@ def kast(demo: Demo) -> pd.DataFrame:
         .rename("kill_rounds")
         .to_dict()
     )
+    kills_side = (
+        kill_df.groupby(["attacker_steamid", "attacker_side"])["round_num"]
+        .unique()
+        .rename("kill_rounds")
+        .to_dict()
+    )
     assists = (
         kill_df.groupby("assister_steamid")["round_num"]
         .unique()
         .rename("assist_rounds")
         .to_dict()
     )
+    assists_side = (
+        kill_df.groupby(["assister_steamid", "assister_side"])["round_num"]
+        .unique()
+        .rename("assist_rounds")
+        .to_dict()
+    )
     trades = (
-        kill_df[kill_df["was_traded"] is True]
+        kill_df[kill_df["was_traded"] == True]
         .groupby("victim_steamid")["round_num"]
+        .unique()
+        .rename("trade_rounds")
+        .to_dict()
+    )
+    trades_side = (
+        kill_df[kill_df["was_traded"] == True]
+        .groupby(["victim_steamid", "victim_side"])["round_num"]
         .unique()
         .rename("trade_rounds")
         .to_dict()
@@ -142,7 +163,7 @@ def kast(demo: Demo) -> pd.DataFrame:
         .tail(1)
     )
     survival_rounds = end_ticks[["round_num", "steamid", "is_alive"]]
-    survival_rounds = survival_rounds[survival_rounds["is_alive"] is True]
+    survival_rounds = survival_rounds[survival_rounds["is_alive"] == True]
     survivals = (
         survival_rounds.groupby("steamid")["round_num"]
         .unique()
@@ -159,6 +180,8 @@ def kast(demo: Demo) -> pd.DataFrame:
     kast = {}
 
     for steamid in all_steamids:
+        kast[steamid] = {"t": 0, "ct": 0, "total": 0}
+        # Calculate total
         kill_rounds = kills.get(steamid, [])
         assist_rounds = assists.get(steamid, [])
         trade_rounds = trades.get(steamid, [])
@@ -168,7 +191,8 @@ def kast(demo: Demo) -> pd.DataFrame:
         rounds.update(assist_rounds)
         rounds.update(trade_rounds)
         rounds.update(survival_rounds)
-        kast[steamid] = len(rounds) / total_rounds
+        total_rounds = _calculate_total_rounds_for_side(steamid, "total", tick_df)
+        kast[steamid]["total"] = len(rounds) / total_rounds
 
     kast_df = (
         pd.DataFrame.from_dict(kast, orient="index", columns=["kast"])
@@ -178,3 +202,42 @@ def kast(demo: Demo) -> pd.DataFrame:
     kast_df["side"] = "total"
 
     return kast_df
+
+
+def _calculate_total_rounds_for_side(
+    steamid: int, side: Literal["ct", "t", "total"], tick_df: pd.DataFrame
+) -> int:
+    start_ticks = (
+        tick_df[tick_df["side"].isin(["t", "ct"])]
+        .groupby(["steamid", "round_num"])
+        .head(1)
+    )
+    start_ticks_by_id = start_ticks[start_ticks["steamid"] == steamid]
+    if side == "total":
+        return start_ticks_by_id.shape[0]
+    elif side == "ct":
+        return start_ticks_by_id[start_ticks_by_id["side"] == "ct"].shape[0]
+    elif side == "t":
+        return start_ticks_by_id[start_ticks_by_id["side"] == "t"].shape[0]
+    else:
+        raise ValueError("Invalid side provided. Only t, ct, or total")
+
+
+def _calculate_kast_for_side(
+    steamid: int,
+    kills: dict,
+    assists: dict,
+    trades: dict,
+    survivals: dict,
+    total_rounds: int,
+) -> float:
+    kill_rounds = kills.get(steamid, [])
+    assist_rounds = assists.get(steamid, [])
+    trade_rounds = trades.get(steamid, [])
+    survival_rounds = survivals.get(steamid, [])
+    rounds = set()
+    rounds.update(kill_rounds)
+    rounds.update(assist_rounds)
+    rounds.update(trade_rounds)
+    rounds.update(survival_rounds)
+    return len(rounds) / total_rounds

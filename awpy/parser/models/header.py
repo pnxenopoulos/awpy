@@ -1,8 +1,8 @@
 """Defines the DemoHeader dictionary that scores."""
-from typing import TypedDict
+from pydantic import BaseModel
 
 
-class DemoHeader(TypedDict):
+class DemoHeader(BaseModel):
     """Class to store demo header information."""
 
     demo_version_guid: str

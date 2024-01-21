@@ -1,11 +1,12 @@
 """Defines the Round class, which stores a round's parsed data."""
 
-from typing import TypedDict
+from pydantic import BaseModel
+from typing import List
 
-from awpy.parser.enums import HitGroup, RoundEndReason
+from awpy.parser import enums
 
 
-class Round(TypedDict):
+class Round(BaseModel):
     """Class to store a game round."""
 
     is_warmup: bool
@@ -16,7 +17,7 @@ class Round(TypedDict):
     end_official_tick: int
     bomb_plant_tick: int
     bomb_defuse_tick: int
-    round_end_reason: RoundEndReason
+    round_end_reason: enums.RoundEndReason
     ct_score_start: int
     t_score_start: int
     ct_eq_val: int
@@ -25,7 +26,7 @@ class Round(TypedDict):
     t_spend: int
 
 
-class PlayerFrame(TypedDict):
+class PlayerFrame(BaseModel):
     """Class to store player information for a game frame."""
 
     name: str
@@ -44,11 +45,11 @@ class PlayerFrame(TypedDict):
     ping: int
     current_eq_val: int
     active_weapon: str
-    inventory: list[str]  # should probably be a weapon enum
+    inventory: List[str]  # should probably be a weapon enum
     rank: int
 
 
-class TeamFrame(TypedDict):
+class TeamFrame(BaseModel):
     """Class to store team information for a game frame."""
 
     players_alive: int
@@ -57,10 +58,10 @@ class TeamFrame(TypedDict):
     flash: int
     smoke: int
     fire: int
-    players: list[PlayerFrame]
+    players: List[PlayerFrame]
 
 
-class GameFrame(TypedDict):
+class GameFrame(BaseModel):
     """Class to store game frame information."""
 
     tick: int
@@ -71,7 +72,7 @@ class GameFrame(TypedDict):
     ct: TeamFrame
 
 
-class Kill(TypedDict):
+class Kill(BaseModel):
     """Class to store kill information."""
 
     tick: int
@@ -88,7 +89,7 @@ class Kill(TypedDict):
     dmg_health: int
     domination: bool
     headshot: bool
-    hitgroup: HitGroup
+    hitgroup: enums.HitGroup
     noreplay: bool
     noscope: bool
     penetrated: bool
@@ -97,7 +98,7 @@ class Kill(TypedDict):
     weapon: str
 
 
-class Damage(TypedDict):
+class Damage(BaseModel):
     """Class to store damage information."""
 
     tick: int

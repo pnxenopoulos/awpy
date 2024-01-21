@@ -25,8 +25,7 @@ import numpy as np
 import pandas as pd
 from demoparser2 import DemoParser
 
-from awpy.parser.enums import GameEvent, GameState, PlayerData, Team
-from awpy.parser.models import Demo, DemoHeader
+from awpy.parser import enums, models
 
 
 def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFrame:
@@ -48,21 +47,21 @@ def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFr
     return df
 
 
-def parse_header(parsed_header: dict) -> DemoHeader:
+def parse_header(parsed_header: dict) -> models.DemoHeader:
     """Parse the header of the demofile.
 
     Args:
         parsed_header (dict): The header of the demofile.
 
     Returns:
-        DemoHeader: The parsed header of the demofile.
+        models.DemoHeader: The parsed header of the demofile.
     """
     for key, value in parsed_header.items():
         if value == "true":
             parsed_header[key] = True
         elif value == "false":
             parsed_header[key] = False
-    return DemoHeader(**parsed_header)
+    return models.DemoHeader(**parsed_header)
 
 
 def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
@@ -91,7 +90,7 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     round_events = []
     for _, round_event in enumerate(parsed_round_events):
         round_event[1]["event"] = round_event[0]
-        if round_event[0] == GameEvent.ROUND_END.value:
+        if round_event[0] == enums.GameEvent.ROUND_END.value:
             round_events.append(round_event[1].loc[:, ["tick", "event", "reason"]])
         else:
             round_events.append(round_event[1].loc[:, ["tick", "event"]])
@@ -99,11 +98,11 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
 
     # Ascribe order to event types and sort by tick and order
     event_order = {
-        GameEvent.ROUND_OFFICIALLY_ENDED.value: 0,
-        GameEvent.ROUND_START.value: 1,
-        GameEvent.ROUND_FREEZE_END.value: 2,
-        GameEvent.BUYTIME_ENDED.value: 3,
-        GameEvent.ROUND_END.value: 4,
+        enums.GameEvent.ROUND_OFFICIALLY_ENDED.value: 0,
+        enums.GameEvent.ROUND_START.value: 1,
+        enums.GameEvent.ROUND_FREEZE_END.value: 2,
+        enums.GameEvent.BUYTIME_ENDED.value: 3,
+        enums.GameEvent.ROUND_END.value: 4,
     }
     round_event_df["order"] = round_event_df["event"].map(event_order)
     round_event_df["reason"] = round_event_df["reason"].astype("Int64")
@@ -136,7 +135,7 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     round_event_df = round_event_df.sort_values(by=["tick", "order"])
     first_event = round_event_df.iloc[0]["event"]
     match first_event:
-        case GameEvent.ROUND_START.value:
+        case enums.GameEvent.ROUND_START.value:
             pass
         case _:
             round_event_df = pd.concat(
@@ -144,7 +143,7 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
                     pd.DataFrame(
                         {
                             "tick": [0],
-                            "event": [GameEvent.ROUND_START.value],
+                            "event": [enums.GameEvent.ROUND_START.value],
                             "order": [1],
                             "reason": [pd.NA],
                         }
@@ -227,6 +226,7 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
         ]
     ].astype("Int64")
     final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
+    final_df = final_df[~final_df["round_end_reason"].isna()]
 
     final_df["round_num"] = range(1, len(final_df) + 1)
     final_df["round_end_official"] = final_df["round_end_official"].fillna(
@@ -294,15 +294,15 @@ def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
         )
         match key:
             # No pickup or dropped. Might want to see if we can get player info on each
-            case GameEvent.BOMB_PLANTED.value:
+            case enums.GameEvent.BOMB_PLANTED.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
-            case GameEvent.BOMB_DEFUSED.value:
+            case enums.GameEvent.BOMB_DEFUSED.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
-            case GameEvent.BOMB_BEGINDEFUSE.value:
+            case enums.GameEvent.BOMB_BEGINDEFUSE.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "haskit"]]
-            case GameEvent.BOMB_BEGINPLANT.value:
+            case enums.GameEvent.BOMB_BEGINPLANT.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
-            case GameEvent.BOMB_EXPLODED.value:
+            case enums.GameEvent.BOMB_EXPLODED.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
         all_event_dfs.append(parsed_df)
 
@@ -486,7 +486,7 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
         columns={"name": "player", "clan_name": "clan", "last_place_name": "last_place"}
     )
     tick_df["side"] = np.select(
-        [tick_df["team_num"] == Team.T.value, tick_df["team_num"] == Team.CT.value],
+        [tick_df["team_num"] == enums.Side.T.value, tick_df["team_num"] == enums.Side.CT.value],
         ["t", "ct"],
         default="spectator",
     )
@@ -535,7 +535,6 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
                 "is_strafing",
                 "in_buy_zone",
                 "in_bomb_zone",
-                "in_crouch",
                 "spotted",
             ]
         )
@@ -607,7 +606,7 @@ def was_traded(df: pd.DataFrame, kill_index: int, trade_time: int) -> bool:
     return False
 
 
-def parse_demo(file: str, trade_time: int = 640) -> Demo:
+def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
     """Parse the demofile.
 
     Args:
@@ -615,7 +614,7 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
         trade_time (int, optional): Ticks between kills. Defaults to 640.
 
     Returns:
-        Demo: Dictionary with the parsed data. Has keys `header`, `rounds`, `kills`,
+        models.Demo: Dictionary with the parsed data. Has keys `header`, `rounds`, `kills`,
             `damages`, `effects`, `bomb_events`, `ticks`.
     """
     if not os.path.exists(file):
@@ -631,11 +630,11 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
     # Rounds
     parsed_round_events = parser.parse_events(
         [
-            GameEvent.ROUND_START.value,
-            GameEvent.ROUND_FREEZE_END.value,
-            GameEvent.BUYTIME_ENDED.value,
-            GameEvent.ROUND_END.value,
-            GameEvent.ROUND_OFFICIALLY_ENDED.value,
+            enums.GameEvent.ROUND_START.value,
+            enums.GameEvent.ROUND_FREEZE_END.value,
+            enums.GameEvent.BUYTIME_ENDED.value,
+            enums.GameEvent.ROUND_END.value,
+            enums.GameEvent.ROUND_OFFICIALLY_ENDED.value,
         ]
     )
     round_df = parse_rounds(parsed_round_events)
@@ -665,7 +664,6 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
             "health",
             "armor",
             "is_scoped",
-            "in_crouch",
             "pitch",
             "is_defusing",
             "current_equip_value",
@@ -678,39 +676,38 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
     try:
         tick_df = parser.parse_ticks(
             [
-                GameState.GAME_PHASE.value,
+                enums.GameState.GAME_PHASE.value,
                 # Location
-                PlayerData.X.value,
-                PlayerData.Y.value,
-                PlayerData.Z.value,
-                PlayerData.PITCH.value,
-                PlayerData.YAW.value,
-                PlayerData.LAST_PLACE_NAME.value,
+                enums.PlayerData.X.value,
+                enums.PlayerData.Y.value,
+                enums.PlayerData.Z.value,
+                enums.PlayerData.PITCH.value,
+                enums.PlayerData.YAW.value,
+                enums.PlayerData.LAST_PLACE_NAME.value,
                 # Health/Armor/Weapon
-                PlayerData.IS_ALIVE.value,
-                PlayerData.HEALTH.value,
-                PlayerData.ARMOR.value,
-                PlayerData.HAS_HELMET.value,
-                PlayerData.HAS_DEFUSER.value,
-                PlayerData.ACTIVE_WEAPON.value,
-                PlayerData.CURRENT_EQUIP_VALUE.value,
-                PlayerData.ROUND_START_EQUIP_VALUE.value,
+                enums.PlayerData.IS_ALIVE.value,
+                enums.PlayerData.HEALTH.value,
+                enums.PlayerData.ARMOR.value,
+                enums.PlayerData.HAS_HELMET.value,
+                enums.PlayerData.HAS_DEFUSER.value,
+                enums.PlayerData.ACTIVE_WEAPON.value,
+                enums.PlayerData.CURRENT_EQUIP_VALUE.value,
+                enums.PlayerData.ROUND_START_EQUIP_VALUE.value,
                 # Rank
-                PlayerData.RANK.value,
+                enums.PlayerData.RANK.value,
                 # Extra
-                PlayerData.PING.value,
-                PlayerData.CLAN_NAME.value,
-                PlayerData.TEAM_NUM.value,
-                PlayerData.FLASH_DURATION.value,
-                PlayerData.FLASH_MAX_ALPHA.value,
-                PlayerData.IS_SCOPED.value,
-                PlayerData.IS_DEFUSING.value,
-                PlayerData.IS_WALKING.value,
-                PlayerData.IS_STRAFING.value,
-                PlayerData.IN_BUY_ZONE.value,
-                PlayerData.IN_BOMB_ZONE.value,
-                PlayerData.IN_CROUCH.value,
-                PlayerData.SPOTTED.value,
+                enums.PlayerData.PING.value,
+                enums.PlayerData.CLAN_NAME.value,
+                enums.PlayerData.TEAM_NUM.value,
+                enums.PlayerData.FLASH_DURATION.value,
+                enums.PlayerData.FLASH_MAX_ALPHA.value,
+                enums.PlayerData.IS_SCOPED.value,
+                enums.PlayerData.IS_DEFUSING.value,
+                enums.PlayerData.IS_WALKING.value,
+                enums.PlayerData.IS_STRAFING.value,
+                enums.PlayerData.IN_BUY_ZONE.value,
+                enums.PlayerData.IN_BOMB_ZONE.value,
+                enums.PlayerData.SPOTTED.value,
             ],
         )
         tick_df = parse_frame(tick_df)
@@ -720,7 +717,7 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
         warnings.warn(warn_msg, stacklevel=2)
 
     # Damages
-    damage = parser.parse_events([GameEvent.PLAYER_HURT.value], other=["game_phase"])
+    damage = parser.parse_events([enums.GameEvent.PLAYER_HURT.value], other=["game_phase"])
     damage_df = parse_damages(damage)
     damage_df = apply_round_num_to_df(damage_df, round_df)
 
@@ -741,10 +738,10 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
     # Blockers (smokes, molotovs, etc.)
     effect = parser.parse_events(
         [
-            GameEvent.INFERNO_STARTBURN.value,
-            GameEvent.INFERNO_EXPIRE.value,
-            GameEvent.SMOKEGRENADE_DETONATE.value,
-            GameEvent.SMOKEGRENADE_EXPIRED.value,
+            enums.GameEvent.INFERNO_STARTBURN.value,
+            enums.GameEvent.INFERNO_EXPIRE.value,
+            enums.GameEvent.SMOKEGRENADE_DETONATE.value,
+            enums.GameEvent.SMOKEGRENADE_EXPIRED.value,
         ]
     )
     effect_df = parse_smokes_and_infernos(effect)
@@ -753,11 +750,11 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
     # Bomb
     bomb = parser.parse_events(
         [
-            GameEvent.BOMB_BEGINDEFUSE.value,
-            GameEvent.BOMB_BEGINPLANT.value,
-            GameEvent.BOMB_DEFUSED.value,
-            GameEvent.BOMB_EXPLODED.value,
-            GameEvent.BOMB_PLANTED.value,
+            enums.GameEvent.BOMB_BEGINDEFUSE.value,
+            enums.GameEvent.BOMB_BEGINPLANT.value,
+            enums.GameEvent.BOMB_DEFUSED.value,
+            enums.GameEvent.BOMB_EXPLODED.value,
+            enums.GameEvent.BOMB_PLANTED.value,
         ]
     )
     bomb_df = parse_bomb_events(bomb)
@@ -766,7 +763,7 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
     # Deaths
     deaths = parser.parse_events(
         [
-            GameEvent.PLAYER_DEATH.value,
+            enums.GameEvent.PLAYER_DEATH.value,
         ],
     )
     death_df = parse_deaths(deaths)
@@ -806,12 +803,12 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
     )
 
     # Blinds
-    blinds = parser.parse_events([GameEvent.PLAYER_BLIND.value])
+    blinds = parser.parse_events([enums.GameEvent.PLAYER_BLIND.value])
     blinds_df = parse_blinds(blinds)
     blinds_df = apply_round_num_to_df(blinds_df, round_df)
 
     # Weapon Fires
-    weapon_fires = parser.parse_events([GameEvent.WEAPON_FIRE.value])
+    weapon_fires = parser.parse_events([enums.GameEvent.WEAPON_FIRE.value])
     weapon_fires_df = parse_weapon_fires(weapon_fires)
     weapon_fires_df = apply_round_num_to_df(weapon_fires_df, round_df)
 
@@ -849,4 +846,4 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
         "grenades": grenade_df,
     }
 
-    return Demo(**parsed_data)
+    return models.Demo(**parsed_data)

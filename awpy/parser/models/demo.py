@@ -1,16 +1,15 @@
 """Defines the Demo class, which stores a demo's parsed data."""
 
-from typing import TypedDict
-
 import pandas as pd
+from pydantic import BaseModel
 
-from awpy.parser.models.header import DemoHeader
+from awpy.parser import models
 
 
-class Demo(TypedDict):
+class Demo(BaseModel):
     """Class to store a demo's data."""
 
-    header: DemoHeader
+    header: models.DemoHeader
     rounds: pd.DataFrame
     kills: pd.DataFrame
     damages: pd.DataFrame

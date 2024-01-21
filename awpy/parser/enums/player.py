@@ -3,8 +3,8 @@
 from enum import Enum
 
 
-class Team(Enum):
-    """Team enum from demofile."""
+class Side(Enum):
+    """Side enum from demofile."""
 
     T = 2.0
     CT = 3.0
