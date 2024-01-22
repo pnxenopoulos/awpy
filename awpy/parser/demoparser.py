@@ -25,7 +25,8 @@ import numpy as np
 import pandas as pd
 from demoparser2 import DemoParser
 
-from awpy.parser import enums, models
+from awpy.parser.enums import GameEvent
+from awpy.parser.models import Demo
 
 
 def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFrame:
@@ -47,193 +48,193 @@ def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFr
     return df
 
 
-def parse_header(parsed_header: dict) -> models.DemoHeader:
-    """Parse the header of the demofile.
+# def parse_header(parsed_header: dict) -> models.DemoHeader:
+#     """Parse the header of the demofile.
 
-    Args:
-        parsed_header (dict): The header of the demofile.
+#     Args:
+#         parsed_header (dict): The header of the demofile.
 
-    Returns:
-        models.DemoHeader: The parsed header of the demofile.
-    """
-    for key, value in parsed_header.items():
-        if value == "true":
-            parsed_header[key] = True
-        elif value == "false":
-            parsed_header[key] = False
-    return models.DemoHeader(**parsed_header)
-
-
-def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
-    """Parse the rounds of the demofile.
-
-    Args:
-        parsed_round_events (list[tuple]): Output of parser.parse_events(...)
-
-    Returns:
-        pd.DataFrame: Pandas DataFrame with the parsed rounds data.
-    """
-    if len(parsed_round_events) == 0:
-        warnings.warn("No round events found in the demofile.", stacklevel=2)
-        return pd.DataFrame(
-            columns=[
-                "round_start",
-                "freeze_time_end",
-                "buy_time_end",
-                "round_end",
-                "round_end_official",
-                "round_end_reason",
-            ]
-        )
-
-    # Get the round events in dataframe order
-    round_events = []
-    for _, round_event in enumerate(parsed_round_events):
-        round_event[1]["event"] = round_event[0]
-        if round_event[0] == enums.GameEvent.ROUND_END.value:
-            round_events.append(round_event[1].loc[:, ["tick", "event", "reason"]])
-        else:
-            round_events.append(round_event[1].loc[:, ["tick", "event"]])
-    round_event_df = pd.concat(round_events)
-
-    # Ascribe order to event types and sort by tick and order
-    event_order = {
-        enums.GameEvent.ROUND_OFFICIALLY_ENDED.value: 0,
-        enums.GameEvent.ROUND_START.value: 1,
-        enums.GameEvent.ROUND_FREEZE_END.value: 2,
-        enums.GameEvent.BUYTIME_ENDED.value: 3,
-        enums.GameEvent.ROUND_END.value: 4,
-    }
-    round_event_df["order"] = round_event_df["event"].map(event_order)
-    round_event_df["reason"] = round_event_df["reason"].astype("Int64")
-    round_event_df["reason"] = round_event_df["reason"].map(
-        {
-            0: "still_in_progress",
-            1: "target_bombed",
-            2: "vip_escaped",
-            3: "vip_killed",
-            4: "t_escape",
-            5: "ct_stop_escape",
-            6: "t_stopped",
-            7: "bomb_defused",
-            8: "ct_win",
-            9: "t_win",
-            10: "draw",
-            11: "hostages_rescued",
-            12: "target_saved",
-            13: "hostages_not_rescued",
-            14: "t_not_escaped",
-            15: "vip_not_escaped",
-            16: "game_start",
-            17: "t_surrender",
-            18: "ct_surrender",
-            19: "t_planted",
-            20: "cts_reached_hostage",
-            pd.NA: pd.NA,
-        }
-    )
-    round_event_df = round_event_df.sort_values(by=["tick", "order"])
-    first_event = round_event_df.iloc[0]["event"]
-    match first_event:
-        case enums.GameEvent.ROUND_START.value:
-            pass
-        case _:
-            round_event_df = pd.concat(
-                [
-                    pd.DataFrame(
-                        {
-                            "tick": [0],
-                            "event": [enums.GameEvent.ROUND_START.value],
-                            "order": [1],
-                            "reason": [pd.NA],
-                        }
-                    ),
-                    round_event_df,
-                ]
-            )
-    return create_round_df(round_event_df)
+#     Returns:
+#         models.DemoHeader: The parsed header of the demofile.
+#     """
+#     for key, value in parsed_header.items():
+#         if value == "true":
+#             parsed_header[key] = True
+#         elif value == "false":
+#             parsed_header[key] = False
+#     return models.DemoHeader(**parsed_header)
 
 
-def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
-    """Creates a DataFrame with the round events by matching start and end events.
+# def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
+#     """Parse the rounds of the demofile.
 
-    Args:
-        round_event_df (pd.DataFrame): DataFrame with the round events.
+#     Args:
+#         parsed_round_events (list[tuple]): Output of parser.parse_events(...)
 
-    Returns:
-        pd.DataFrame: DataFrame with the round events by matching start and end events.
-    """
-    # Initialize empty lists for each event type
-    round_start = []
-    freeze_time_end = []
-    buy_time_end = []
-    round_end = []
-    round_end_official = []
-    reason = []
-    current_round = None
+#     Returns:
+#         pd.DataFrame: Pandas DataFrame with the parsed rounds data.
+#     """
+#     if len(parsed_round_events) == 0:
+#         warnings.warn("No round events found in the demofile.", stacklevel=2)
+#         return pd.DataFrame(
+#             columns=[
+#                 "round_start",
+#                 "freeze_time_end",
+#                 "buy_time_end",
+#                 "round_end",
+#                 "round_end_official",
+#                 "round_end_reason",
+#             ]
+#         )
 
-    # Iterate through the DataFrame and populate the lists
-    for _, row in round_event_df.iterrows():
-        if row["event"] == "round_start":
-            if current_round is not None:
-                # Append the collected events to the respective lists
-                round_start.append(current_round.get("round_start", None))
-                freeze_time_end.append(current_round.get("freeze_time_end", None))
-                buy_time_end.append(current_round.get("buy_time_end", None))
-                round_end.append(current_round.get("round_end", None))
-                round_end_official.append(current_round.get("round_end_official", None))
-                reason.append(current_round.get("reason", None))
-            # Start a new round
-            current_round = {"round_start": row["tick"]}
-        elif current_round is not None:
-            if row["event"] == "round_freeze_end":
-                current_round["freeze_time_end"] = row["tick"]
-            elif row["event"] == "buytime_ended":
-                current_round["buy_time_end"] = row["tick"]
-            elif row["event"] == "round_end":
-                current_round["round_end"] = row["tick"]
-                current_round["reason"] = row["reason"]
-            elif row["event"] == "round_officially_ended":
-                current_round["round_end_official"] = row["tick"]
+#     # Get the round events in dataframe order
+#     round_events = []
+#     for _, round_event in enumerate(parsed_round_events):
+#         round_event[1]["event"] = round_event[0]
+#         if round_event[0] == GameEvent.ROUND_END.value:
+#             round_events.append(round_event[1].loc[:, ["tick", "event", "reason"]])
+#         else:
+#             round_events.append(round_event[1].loc[:, ["tick", "event"]])
+#     round_event_df = pd.concat(round_events)
 
-    # Append the last collected round's events
-    if current_round is not None:
-        round_start.append(current_round.get("round_start", None))
-        freeze_time_end.append(current_round.get("freeze_time_end", None))
-        buy_time_end.append(current_round.get("buy_time_end", None))
-        round_end.append(current_round.get("round_end", None))
-        round_end_official.append(current_round.get("round_end_official", None))
-        reason.append(current_round.get("reason", None))
+#     # Ascribe order to event types and sort by tick and order
+#     event_order = {
+#         GameEvent.ROUND_OFFICIALLY_ENDED.value: 0,
+#         GameEvent.ROUND_START.value: 1,
+#         GameEvent.ROUND_FREEZE_END.value: 2,
+#         GameEvent.BUYTIME_ENDED.value: 3,
+#         GameEvent.ROUND_END.value: 4,
+#     }
+#     round_event_df["order"] = round_event_df["event"].map(event_order)
+#     round_event_df["reason"] = round_event_df["reason"].astype("Int64")
+#     round_event_df["reason"] = round_event_df["reason"].map(
+#         {
+#             0: "still_in_progress",
+#             1: "target_bombed",
+#             2: "vip_escaped",
+#             3: "vip_killed",
+#             4: "t_escape",
+#             5: "ct_stop_escape",
+#             6: "t_stopped",
+#             7: "bomb_defused",
+#             8: "ct_win",
+#             9: "t_win",
+#             10: "draw",
+#             11: "hostages_rescued",
+#             12: "target_saved",
+#             13: "hostages_not_rescued",
+#             14: "t_not_escaped",
+#             15: "vip_not_escaped",
+#             16: "game_start",
+#             17: "t_surrender",
+#             18: "ct_surrender",
+#             19: "t_planted",
+#             20: "cts_reached_hostage",
+#             pd.NA: pd.NA,
+#         }
+#     )
+#     round_event_df = round_event_df.sort_values(by=["tick", "order"])
+#     first_event = round_event_df.iloc[0]["event"]
+#     match first_event:
+#         case GameEvent.ROUND_START.value:
+#             pass
+#         case _:
+#             round_event_df = pd.concat(
+#                 [
+#                     pd.DataFrame(
+#                         {
+#                             "tick": [0],
+#                             "event": [GameEvent.ROUND_START.value],
+#                             "order": [1],
+#                             "reason": [pd.NA],
+#                         }
+#                     ),
+#                     round_event_df,
+#                 ]
+#             )
+#     return create_round_df(round_event_df)
 
-    # Create a new DataFrame with the desired columns
-    parsed_rounds_df = pd.DataFrame(
-        {
-            "round_start": round_start,
-            "freeze_time_end": freeze_time_end,
-            "buy_time_end": buy_time_end,
-            "round_end": round_end,
-            "round_end_official": round_end_official,
-            "round_end_reason": reason,
-        }
-    )
-    final_df = parsed_rounds_df[
-        [
-            "round_start",
-            "freeze_time_end",
-            "buy_time_end",
-            "round_end",
-            "round_end_official",
-        ]
-    ].astype("Int64")
-    final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
-    final_df = final_df[~final_df["round_end_reason"].isna()]
 
-    final_df["round_num"] = range(1, len(final_df) + 1)
-    final_df["round_end_official"] = final_df["round_end_official"].fillna(
-        final_df["round_end"]
-    )
+# def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
+#     """Creates a DataFrame with the round events by matching start and end events.
 
-    return final_df
+#     Args:
+#         round_event_df (pd.DataFrame): DataFrame with the round events.
+
+#     Returns:
+#         pd.DataFrame: DataFrame with the round events by matching start and end events.
+#     """
+#     # Initialize empty lists for each event type
+#     round_start = []
+#     freeze_time_end = []
+#     buy_time_end = []
+#     round_end = []
+#     round_end_official = []
+#     reason = []
+#     current_round = None
+
+#     # Iterate through the DataFrame and populate the lists
+#     for _, row in round_event_df.iterrows():
+#         if row["event"] == "round_start":
+#             if current_round is not None:
+#                 # Append the collected events to the respective lists
+#                 round_start.append(current_round.get("round_start", None))
+#                 freeze_time_end.append(current_round.get("freeze_time_end", None))
+#                 buy_time_end.append(current_round.get("buy_time_end", None))
+#                 round_end.append(current_round.get("round_end", None))
+#                 round_end_official.append(current_round.get("round_end_official", None))
+#                 reason.append(current_round.get("reason", None))
+#             # Start a new round
+#             current_round = {"round_start": row["tick"]}
+#         elif current_round is not None:
+#             if row["event"] == "round_freeze_end":
+#                 current_round["freeze_time_end"] = row["tick"]
+#             elif row["event"] == "buytime_ended":
+#                 current_round["buy_time_end"] = row["tick"]
+#             elif row["event"] == "round_end":
+#                 current_round["round_end"] = row["tick"]
+#                 current_round["reason"] = row["reason"]
+#             elif row["event"] == "round_officially_ended":
+#                 current_round["round_end_official"] = row["tick"]
+
+#     # Append the last collected round's events
+#     if current_round is not None:
+#         round_start.append(current_round.get("round_start", None))
+#         freeze_time_end.append(current_round.get("freeze_time_end", None))
+#         buy_time_end.append(current_round.get("buy_time_end", None))
+#         round_end.append(current_round.get("round_end", None))
+#         round_end_official.append(current_round.get("round_end_official", None))
+#         reason.append(current_round.get("reason", None))
+
+#     # Create a new DataFrame with the desired columns
+#     parsed_rounds_df = pd.DataFrame(
+#         {
+#             "round_start": round_start,
+#             "freeze_time_end": freeze_time_end,
+#             "buy_time_end": buy_time_end,
+#             "round_end": round_end,
+#             "round_end_official": round_end_official,
+#             "round_end_reason": reason,
+#         }
+#     )
+#     final_df = parsed_rounds_df[
+#         [
+#             "round_start",
+#             "freeze_time_end",
+#             "buy_time_end",
+#             "round_end",
+#             "round_end_official",
+#         ]
+#     ].astype("Int64")
+#     final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
+#     final_df = final_df[~final_df["round_end_reason"].isna()]
+
+#     final_df["round_num"] = range(1, len(final_df) + 1)
+#     final_df["round_end_official"] = final_df["round_end_official"].fillna(
+#         final_df["round_end"]
+#     )
+
+#     return final_df
 
 
 def parse_smokes_and_infernos(parsed: list[tuple]) -> pd.DataFrame:
@@ -294,15 +295,15 @@ def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
         )
         match key:
             # No pickup or dropped. Might want to see if we can get player info on each
-            case enums.GameEvent.BOMB_PLANTED.value:
+            case GameEvent.BOMB_PLANTED.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
-            case enums.GameEvent.BOMB_DEFUSED.value:
+            case GameEvent.BOMB_DEFUSED.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
-            case enums.GameEvent.BOMB_BEGINDEFUSE.value:
+            case GameEvent.BOMB_BEGINDEFUSE.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "haskit"]]
-            case enums.GameEvent.BOMB_BEGINPLANT.value:
+            case GameEvent.BOMB_BEGINPLANT.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
-            case enums.GameEvent.BOMB_EXPLODED.value:
+            case GameEvent.BOMB_EXPLODED.value:
                 parsed_df = parsed_df[["tick", "event", "player", "steamid", "site"]]
         all_event_dfs.append(parsed_df)
 
@@ -486,7 +487,10 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
         columns={"name": "player", "clan_name": "clan", "last_place_name": "last_place"}
     )
     tick_df["side"] = np.select(
-        [tick_df["team_num"] == enums.Side.T.value, tick_df["team_num"] == enums.Side.CT.value],
+        [
+            tick_df["team_num"] == enums.Side.T.value,
+            tick_df["team_num"] == enums.Side.CT.value,
+        ],
         ["t", "ct"],
         default="spectator",
     )
@@ -606,7 +610,7 @@ def was_traded(df: pd.DataFrame, kill_index: int, trade_time: int) -> bool:
     return False
 
 
-def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
+def parse_demo(file: str, trade_time: int = 640) -> Demo:
     """Parse the demofile.
 
     Args:
@@ -630,11 +634,11 @@ def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
     # Rounds
     parsed_round_events = parser.parse_events(
         [
-            enums.GameEvent.ROUND_START.value,
-            enums.GameEvent.ROUND_FREEZE_END.value,
-            enums.GameEvent.BUYTIME_ENDED.value,
-            enums.GameEvent.ROUND_END.value,
-            enums.GameEvent.ROUND_OFFICIALLY_ENDED.value,
+            GameEvent.ROUND_START.value,
+            GameEvent.ROUND_FREEZE_END.value,
+            GameEvent.BUYTIME_ENDED.value,
+            GameEvent.ROUND_END.value,
+            GameEvent.ROUND_OFFICIALLY_ENDED.value,
         ]
     )
     round_df = parse_rounds(parsed_round_events)
@@ -717,7 +721,7 @@ def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
         warnings.warn(warn_msg, stacklevel=2)
 
     # Damages
-    damage = parser.parse_events([enums.GameEvent.PLAYER_HURT.value], other=["game_phase"])
+    damage = parser.parse_events([GameEvent.PLAYER_HURT.value], other=["game_phase"])
     damage_df = parse_damages(damage)
     damage_df = apply_round_num_to_df(damage_df, round_df)
 
@@ -738,10 +742,10 @@ def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
     # Blockers (smokes, molotovs, etc.)
     effect = parser.parse_events(
         [
-            enums.GameEvent.INFERNO_STARTBURN.value,
-            enums.GameEvent.INFERNO_EXPIRE.value,
-            enums.GameEvent.SMOKEGRENADE_DETONATE.value,
-            enums.GameEvent.SMOKEGRENADE_EXPIRED.value,
+            GameEvent.INFERNO_STARTBURN.value,
+            GameEvent.INFERNO_EXPIRE.value,
+            GameEvent.SMOKEGRENADE_DETONATE.value,
+            GameEvent.SMOKEGRENADE_EXPIRED.value,
         ]
     )
     effect_df = parse_smokes_and_infernos(effect)
@@ -750,11 +754,11 @@ def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
     # Bomb
     bomb = parser.parse_events(
         [
-            enums.GameEvent.BOMB_BEGINDEFUSE.value,
-            enums.GameEvent.BOMB_BEGINPLANT.value,
-            enums.GameEvent.BOMB_DEFUSED.value,
-            enums.GameEvent.BOMB_EXPLODED.value,
-            enums.GameEvent.BOMB_PLANTED.value,
+            GameEvent.BOMB_BEGINDEFUSE.value,
+            GameEvent.BOMB_BEGINPLANT.value,
+            GameEvent.BOMB_DEFUSED.value,
+            GameEvent.BOMB_EXPLODED.value,
+            GameEvent.BOMB_PLANTED.value,
         ]
     )
     bomb_df = parse_bomb_events(bomb)
@@ -763,7 +767,7 @@ def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
     # Deaths
     deaths = parser.parse_events(
         [
-            enums.GameEvent.PLAYER_DEATH.value,
+            GameEvent.PLAYER_DEATH.value,
         ],
     )
     death_df = parse_deaths(deaths)
@@ -803,12 +807,12 @@ def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
     )
 
     # Blinds
-    blinds = parser.parse_events([enums.GameEvent.PLAYER_BLIND.value])
+    blinds = parser.parse_events([GameEvent.PLAYER_BLIND.value])
     blinds_df = parse_blinds(blinds)
     blinds_df = apply_round_num_to_df(blinds_df, round_df)
 
     # Weapon Fires
-    weapon_fires = parser.parse_events([enums.GameEvent.WEAPON_FIRE.value])
+    weapon_fires = parser.parse_events([GameEvent.WEAPON_FIRE.value])
     weapon_fires_df = parse_weapon_fires(weapon_fires)
     weapon_fires_df = apply_round_num_to_df(weapon_fires_df, round_df)
 
@@ -846,4 +850,4 @@ def parse_demo(file: str, trade_time: int = 640) -> models.Demo:
         "grenades": grenade_df,
     }
 
-    return models.Demo(**parsed_data)
+    return Demo(**parsed_data)

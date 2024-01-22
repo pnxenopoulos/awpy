@@ -1,15 +1,17 @@
 """Defines the Demo class, which stores a demo's parsed data."""
 
 import pandas as pd
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, validator
 
-from awpy.parser import models
+from .header import DemoHeader
 
 
 class Demo(BaseModel):
     """Class to store a demo's data."""
 
-    header: models.DemoHeader
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    header: DemoHeader
     rounds: pd.DataFrame
     kills: pd.DataFrame
     damages: pd.DataFrame
@@ -19,3 +21,20 @@ class Demo(BaseModel):
     weapon_fires: pd.DataFrame
     bomb_events: pd.DataFrame
     ticks: pd.DataFrame
+
+    @validator(
+        "rounds",
+        "kills",
+        "damages",
+        "grenades",
+        "effects",
+        "flashes",
+        "weapon_fires",
+        "bomb_events",
+        "ticks",
+        pre=True,
+    )
+    def validate_dataframe(cls, v: pd.DataFrame):
+        if not isinstance(v, pd.DataFrame):
+            raise ValueError("Field must be a pandas DataFrame")
+        return v

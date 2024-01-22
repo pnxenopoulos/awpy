@@ -25,6 +25,7 @@ dependencies = [
     "pandas>=2.2.0",
     "pydantic>=2.5.3",
     "scipy>=1.12.0",
+    "setuptools>=69.0.3",
     "Shapely~=2.0.0",
     "sphinx-rtd-theme==1.2",
     "sympy==1.11",

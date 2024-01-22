@@ -1,10 +1,11 @@
 imageio~=2.28.0
 matplotlib~=3.7.0
 networkx~=3.1
-numpy>=1.20,<=1.25
+numpy>=1.26
 pandas~=2.0.1
-pydantic~=2.1.1
+pydantic~=2.5.3
 scipy~=1.10.0
+setuptools~=69.0.3
 Shapely~=2.0.0
 sphinx-rtd-theme==1.2
 sympy==1.11

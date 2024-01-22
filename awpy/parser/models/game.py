@@ -1,9 +1,8 @@
 """Defines the Round class, which stores a round's parsed data."""
 
 from pydantic import BaseModel
-from typing import List
 
-from awpy.parser import enums
+from awpy.parser.enums import RoundEndReason, HitGroup
 
 
 class Round(BaseModel):
@@ -17,7 +16,7 @@ class Round(BaseModel):
     end_official_tick: int
     bomb_plant_tick: int
     bomb_defuse_tick: int
-    round_end_reason: enums.RoundEndReason
+    round_end_reason: RoundEndReason
     ct_score_start: int
     t_score_start: int
     ct_eq_val: int
@@ -45,7 +44,7 @@ class PlayerFrame(BaseModel):
     ping: int
     current_eq_val: int
     active_weapon: str
-    inventory: List[str]  # should probably be a weapon enum
+    inventory: list[str]  # should probably be a weapon enum
     rank: int
 
 
@@ -58,7 +57,7 @@ class TeamFrame(BaseModel):
     flash: int
     smoke: int
     fire: int
-    players: List[PlayerFrame]
+    players: list[PlayerFrame]
 
 
 class GameFrame(BaseModel):
@@ -89,7 +88,7 @@ class Kill(BaseModel):
     dmg_health: int
     domination: bool
     headshot: bool
-    hitgroup: enums.HitGroup
+    hitgroup: HitGroup
     noreplay: bool
     noscope: bool
     penetrated: bool
