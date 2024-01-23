@@ -32,8 +32,6 @@ from awpy.parser.frame import parse_frame, create_empty_tick_df
 from awpy.parser.damage import (
     parse_damages,
     parse_deaths,
-    is_trade_kill,
-    was_traded,
     add_trade_info,
 )
 from awpy.parser.grenade import parse_smokes_and_infernos, parse_blinds
@@ -623,6 +621,15 @@ from awpy.parser.weapon import parse_weapon_fires
 
 
 def get_events_from_parser(parser: DemoParser, event_list: list[str]) -> list[tuple]:
+    """Get events from the `demoparser2` Rust-based parser.
+
+    Args:
+        parser (DemoParser): The `demoparser2` Rust-based parser.
+        event_list (list[str]): List of events to parse, see `GameEvent` enum.
+
+    Returns:
+        list[tuple]: List of tuples containing the event name and the parsed event data.
+    """
     try:
         return parser.parse_events(event_list)
     except Exception as err:
@@ -656,6 +663,7 @@ def parse_damages_df(
         left_on=["tick", "attacker_steamid"],
         right_on=["tick", "steamid"],
     )
+    damage_df = damage_df.drop("steamid", axis=1)
     damage_df = damage_df.rename(columns={"side": "attacker_side"})
 
     # Add victim side
@@ -664,6 +672,7 @@ def parse_damages_df(
         left_on=["tick", "victim_steamid"],
         right_on=["tick", "steamid"],
     )
+    damage_df = damage_df.drop("steamid", axis=1)
     damage_df = damage_df.rename(columns={"side": "victim_side"})
 
     return apply_round_num_to_df(damage_df, round_df)
@@ -813,7 +822,7 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
         "kills": parse_kills_df(parser, rounds_df, ticks_df, trade_time),
         "flashes": parse_blinds_df(parser, rounds_df),
         "weapon_fires": parse_weapon_fires_df(parser, rounds_df),
-        "grenades": parse_grenades_df(parser),
+        "grenades": parse_grenades_df(parser, rounds_df),
     }
 
     return Demo(**parsed_data)

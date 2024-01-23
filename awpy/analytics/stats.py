@@ -16,7 +16,7 @@ def adr(demo: Demo) -> pd.DataFrame:
         pd.DataFrame: A dataframe with the columns: `steamid`, `side`, `dmg`,
         `rounds_played`, `adr`.
     """
-    tick_df = demo["ticks"]
+    tick_df = demo.ticks
 
     # Get unique player-rounds and their counts
     clean_ticks = tick_df[
@@ -48,7 +48,7 @@ def adr(demo: Demo) -> pd.DataFrame:
     player_ticks_shifted["tick"] = player_ticks_shifted["tick"] + 1
 
     # Get damages only from viable ticks. Get player health from tick before.
-    damage_df = demo["damages"]
+    damage_df = demo.damages
     damages = damage_df.merge(inplay_ticks, on="tick", how="inner")
 
     damages = damages.merge(

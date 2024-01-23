@@ -334,6 +334,7 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     ].astype("Int64")
     final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
     final_df = final_df[~final_df["round_end_reason"].isna()]
+    final_df = final_df[~final_df["round_end_reason"].isin(["game_start", "still_in_progress"])]
 
     final_df["round_num"] = range(1, len(final_df) + 1)
     final_df["round_end_official"] = final_df["round_end_official"].fillna(
@@ -359,4 +360,5 @@ def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFr
     intervals = pd.cut(df["tick"], interval_index)
     round_num_map = dict(zip(interval_index, round_df["round_num"], strict=True))
     df["round_num"] = intervals.map(round_num_map)
+    df = df[~df["round_num"].isna()]
     return df
