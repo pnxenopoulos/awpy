@@ -2,6 +2,7 @@
 import pandas as pd
 import warnings
 
+
 def parse_weapon_fires(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the weapon fires of the demofile.
 
@@ -13,9 +14,7 @@ def parse_weapon_fires(parsed: list[tuple]) -> pd.DataFrame:
     """
     if not parsed:
         warnings.warn("No weapon fires found in the demofile.", stacklevel=2)
-        return pd.DataFrame(
-            columns=["silenced", "tick", "player", "steamid", "weapon"]
-        )
+        return pd.DataFrame(columns=["silenced", "tick", "player", "steamid", "weapon"])
 
     # Assuming the first element of 'parsed' always contains the relevant DataFrame
     weapon_fires_df = parsed[0][1]

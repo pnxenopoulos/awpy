@@ -2,6 +2,7 @@
 import pandas as pd
 import warnings
 
+
 def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the damages of the demofile.
 
@@ -15,8 +16,17 @@ def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
         warnings.warn("No player damage events found in the demofile.", stacklevel=2)
         return pd.DataFrame(
             columns=[
-                "armor", "attacker", "attacker_steamid", "dmg_armor", "dmg_health",
-                "health", "hitgroup", "tick", "victim", "victim_steamid", "weapon",
+                "armor",
+                "attacker",
+                "attacker_steamid",
+                "dmg_armor",
+                "dmg_health",
+                "health",
+                "hitgroup",
+                "tick",
+                "victim",
+                "victim_steamid",
+                "weapon",
             ]
         )
 
@@ -37,6 +47,7 @@ def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
 
     return damage_df.sort_values(by="tick")
 
+
 def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the deaths of the demofile.
 
@@ -50,12 +61,31 @@ def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
         warnings.warn("No deaths found in the demofile.", stacklevel=2)
         return pd.DataFrame(
             columns=[
-                "assistedflash", "assister_name", "assister_steamid", "attacker", 
-                "attacker_steamid", "attackerblind", "distance", "dmg_armor", 
-                "dmg_health", "dominated", "headshot", "hitgroup", "noreplay", 
-                "noscope", "penetrated", "revenge", "thrusmoke", "tick", "victim", 
-                "victim_steamid", "weapon", "weapon_fauxitemid", "weapon_itemid", 
-                "weapon_originalowner_xuid", "wipe",
+                "assistedflash",
+                "assister_name",
+                "assister_steamid",
+                "attacker",
+                "attacker_steamid",
+                "attackerblind",
+                "distance",
+                "dmg_armor",
+                "dmg_health",
+                "dominated",
+                "headshot",
+                "hitgroup",
+                "noreplay",
+                "noscope",
+                "penetrated",
+                "revenge",
+                "thrusmoke",
+                "tick",
+                "victim",
+                "victim_steamid",
+                "weapon",
+                "weapon_fauxitemid",
+                "weapon_itemid",
+                "weapon_originalowner_xuid",
+                "wipe",
             ]
         )
 
@@ -75,6 +105,7 @@ def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
         death_df[col] = death_df[col].astype("Int64")
 
     return death_df.sort_values(by="tick")
+
 
 def is_trade_kill(df: pd.DataFrame, kill_index: int, trade_time: int) -> bool:
     """Check if a kill is a trade kill.
@@ -134,6 +165,7 @@ def was_traded(df: pd.DataFrame, kill_index: int, trade_time: int) -> bool:
             return True
 
     return False
+
 
 def add_trade_info(df: pd.DataFrame, trade_time: int) -> pd.DataFrame:
     """Add trade kill and was traded columns to a DataFrame of kills.

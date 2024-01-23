@@ -19,10 +19,12 @@ def parse_smokes_and_infernos(parsed: list[tuple]) -> pd.DataFrame:
 
     all_event_dfs = [
         df.assign(event=key).loc[:, ["entityid", "tick", "x", "y", "z", "event"]]
-        for key, df in parsed if not df.empty
+        for key, df in parsed
+        if not df.empty
     ]
 
     return pd.concat(all_event_dfs).sort_values(by=["tick", "entityid"])
+
 
 def parse_blinds(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the blinds of the demofile.
@@ -37,8 +39,13 @@ def parse_blinds(parsed: list[tuple]) -> pd.DataFrame:
         warnings.warn("No player blind events found in the demofile.", stacklevel=2)
         return pd.DataFrame(
             columns=[
-                "flasher", "flasher_steamid", "blind_duration", "entityid", 
-                "tick", "victim", "victim_steamid"
+                "flasher",
+                "flasher_steamid",
+                "blind_duration",
+                "entityid",
+                "tick",
+                "victim",
+                "victim_steamid",
             ]
         )
 

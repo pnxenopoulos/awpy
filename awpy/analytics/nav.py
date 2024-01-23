@@ -700,17 +700,13 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
                         "centroid"
                     ] = area_distance(
                         map_name, centroid1, centroid2, dist_type=dist_type
-                    )[
-                        "distance"
-                    ]
+                    )["distance"]
                     # Distances between the representative points for each named place
                     place_distance_matrix[place1][place2][dist_type][
                         "representative_point"
                     ] = area_distance(
                         map_name, reps[place1], reps[place2], dist_type=dist_type
-                    )[
-                        "distance"
-                    ]
+                    )["distance"]
                     # Median of all the distance pairs for areaA in place1
                     # to areaB in place2
                     # Without having the AREA_DISTANCE_MATRIX precalculated
@@ -728,9 +724,7 @@ def generate_place_distance_matrix(map_name: str, *, save: bool = False) -> Plac
                         "representative_point"
                     ] = AREA_DIST_MATRIX[map_name][str(reps[place1])][
                         str(reps[place2])
-                    ][
-                        dist_type
-                    ]
+                    ][dist_type]
                     place_distance_matrix[place1][place2][dist_type][
                         "median_dist"
                     ] = _get_median_place_distance(
@@ -985,8 +979,7 @@ def _check_arguments_position_distance(
         raise ValueError(msg)
     # Three dimensional space. Unlikely to change anytime soon
     if (
-        distance_type not in ["geodesic", "graph"]
-        and position_array_1.shape[2] != 3  # noqa: PLR2004
+        distance_type not in ["geodesic", "graph"] and position_array_1.shape[2] != 3  # noqa: PLR2004
     ):
         msg = (
             "Game state shapes are incorrect! "

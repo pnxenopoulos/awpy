@@ -55,7 +55,8 @@ def check_go_version() -> bool:
 
     try:
         with subprocess.Popen(
-            ["go", "version"], stdout=subprocess.PIPE  # noqa: S603, S607
+            ["go", "version"],
+            stdout=subprocess.PIPE,  # noqa: S603, S607
         ) as proc:
             parsed_resp = (
                 proc.stdout.read().splitlines() if proc.stdout is not None else None

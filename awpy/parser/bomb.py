@@ -16,17 +16,18 @@ def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
     """
     if not parsed:
         warnings.warn("No bomb events found in the demofile.", stacklevel=2)
-        return pd.DataFrame(columns=["tick", "event", "player", "steamid", "haskit", "site"])
+        return pd.DataFrame(
+            columns=["tick", "event", "player", "steamid", "haskit", "site"]
+        )
 
     all_event_dfs = [
-        process_bomb_event_type(key, df)
-        for key, df in parsed
-        if not df.empty
+        process_bomb_event_type(key, df) for key, df in parsed if not df.empty
     ]
 
     bomb_df = pd.concat(all_event_dfs)
     bomb_df["steamid"] = bomb_df["steamid"].astype("Int64")
     return bomb_df.sort_values(by=["tick"])
+
 
 def process_bomb_event_type(key: str, df: pd.DataFrame) -> pd.DataFrame:
     """Process a bomb event type (bomb plant, defusal, etc.).
@@ -44,7 +45,13 @@ def process_bomb_event_type(key: str, df: pd.DataFrame) -> pd.DataFrame:
     columns_map = {
         GameEvent.BOMB_PLANTED.value: ["tick", "event", "player", "steamid", "site"],
         GameEvent.BOMB_DEFUSED.value: ["tick", "event", "player", "steamid", "site"],
-        GameEvent.BOMB_BEGINDEFUSE.value: ["tick", "event", "player", "steamid", "haskit"],
+        GameEvent.BOMB_BEGINDEFUSE.value: [
+            "tick",
+            "event",
+            "player",
+            "steamid",
+            "haskit",
+        ],
         GameEvent.BOMB_BEGINPLANT.value: ["tick", "event", "player", "steamid", "site"],
         GameEvent.BOMB_EXPLODED.value: ["tick", "event", "player", "steamid", "site"],
     }

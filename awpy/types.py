@@ -914,7 +914,7 @@ def int_to_string_n_players(n_players: Literal[5]) -> Literal["5"]:
 
 
 def int_to_string_n_players(
-    n_players: Literal[0, 1, 2, 3, 4, 5]
+    n_players: Literal[0, 1, 2, 3, 4, 5],
 ) -> Literal["0", "1", "2", "3", "4", "5"]:
     """_Typeguarded conversion from int in range(6) to str.
 

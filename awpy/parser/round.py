@@ -269,7 +269,7 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     """
     # Sort the round event dataframe by tick and order
     round_event_df.sort_values(by=["tick", "order"], inplace=True)
-    
+
     # Initialize empty lists for each event type
     round_start = []
     freeze_time_end = []

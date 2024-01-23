@@ -29,11 +29,16 @@ from awpy.parser.models import Demo
 from awpy.parser.header import parse_header
 from awpy.parser.round import parse_rounds, apply_round_num_to_df
 from awpy.parser.frame import parse_frame, create_empty_tick_df
-from awpy.parser.damage import parse_damages, parse_deaths, is_trade_kill, was_traded, add_trade_info
+from awpy.parser.damage import (
+    parse_damages,
+    parse_deaths,
+    is_trade_kill,
+    was_traded,
+    add_trade_info,
+)
 from awpy.parser.grenade import parse_smokes_and_infernos, parse_blinds
 from awpy.parser.bomb import parse_bomb_events
 from awpy.parser.weapon import parse_weapon_fires
-
 
 
 # def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFrame:
@@ -616,12 +621,14 @@ from awpy.parser.weapon import parse_weapon_fires
 #             return True
 #     return False
 
+
 def get_events_from_parser(parser: DemoParser, event_list: list[str]) -> list[tuple]:
     try:
         return parser.parse_events(event_list)
     except Exception as err:
         warnings.warn(f"Error parsing events: {err}", stacklevel=2)
         return []
+
 
 def parse_effects_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:
     effects = get_events_from_parser(
@@ -631,15 +638,36 @@ def parse_effects_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame
             GameEvent.INFERNO_EXPIRE.value,
             GameEvent.SMOKEGRENADE_DETONATE.value,
             GameEvent.SMOKEGRENADE_EXPIRED.value,
-        ]
+        ],
     )
     effects_df = parse_smokes_and_infernos(effects)
     return apply_round_num_to_df(effects_df, round_df)
 
-def parse_damages_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:
+
+def parse_damages_df(
+    parser: DemoParser, round_df: pd.DataFrame, tick_df: pd.DataFrame
+) -> pd.DataFrame:
     damages = get_events_from_parser(parser, [GameEvent.PLAYER_HURT.value])
     damage_df = parse_damages(damages)
+
+    # Add attacker side
+    damage_df = damage_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "attacker_steamid"],
+        right_on=["tick", "steamid"],
+    )
+    damage_df = damage_df.rename(columns={"side": "attacker_side"})
+
+    # Add victim side
+    damage_df = damage_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "victim_steamid"],
+        right_on=["tick", "steamid"],
+    )
+    damage_df = damage_df.rename(columns={"side": "victim_side"})
+
     return apply_round_num_to_df(damage_df, round_df)
+
 
 def parse_bomb_events_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:
     bomb_events = get_events_from_parser(
@@ -650,27 +678,53 @@ def parse_bomb_events_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataF
             GameEvent.BOMB_DEFUSED.value,
             GameEvent.BOMB_EXPLODED.value,
             GameEvent.BOMB_PLANTED.value,
-        ]
+        ],
     )
     bomb_df = parse_bomb_events(bomb_events)
     return apply_round_num_to_df(bomb_df, round_df)
 
-def parse_kills_df(parser: DemoParser, round_df: pd.DataFrame, trade_time: int) -> pd.DataFrame:
+
+def parse_kills_df(
+    parser: DemoParser, round_df: pd.DataFrame, tick_df: pd.DataFrame, trade_time: int
+) -> pd.DataFrame:
     kills = get_events_from_parser(parser, [GameEvent.PLAYER_DEATH.value])
     kill_df = parse_deaths(kills)
-    kill_df = apply_round_num_to_df(kill_df, round_df)
+
+    # Add attacker side
+    kill_df = kill_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "attacker_steamid"],
+        right_on=["tick", "steamid"],
+    )
+    kill_df = kill_df.drop("steamid", axis=1)
+    kill_df = kill_df.rename(columns={"side": "attacker_side"})
+
+    # Add victim side
+    kill_df = kill_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "victim_steamid"],
+        right_on=["tick", "steamid"],
+    )
+    kill_df = kill_df.drop("steamid", axis=1)
+    kill_df = kill_df.rename(columns={"side": "victim_side"})
+
+    # Add trade info (must be done after adding sides)
     kill_df = add_trade_info(kill_df, trade_time)
+
     return apply_round_num_to_df(kill_df, round_df)
+
 
 def parse_blinds_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:
     blinds = get_events_from_parser(parser, [GameEvent.PLAYER_BLIND.value])
     blinds_df = parse_blinds(blinds)
     return apply_round_num_to_df(blinds_df, round_df)
 
+
 def parse_weapon_fires_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:
     weapon_fires = get_events_from_parser(parser, [GameEvent.WEAPON_FIRE.value])
     weapon_fires_df = parse_weapon_fires(weapon_fires)
     return apply_round_num_to_df(weapon_fires_df, round_df)
+
 
 def parse_grenades_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:
     try:
@@ -678,48 +732,57 @@ def parse_grenades_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFram
         return apply_round_num_to_df(grenade_df, round_df)
     except Exception as err:
         warnings.warn(f"Error parsing grenade data: {err}", stacklevel=2)
-        return pd.DataFrame() 
+        return pd.DataFrame()
 
-def parse_ticks_df(parser: DemoParser, round_df: pd.DataFrame, trade_time: int) -> pd.DataFrame:
+
+def parse_ticks_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:
     tick_df = create_empty_tick_df()
     try:
-        tick_df = apply_round_num_to_df(parse_frame(parser.parse_ticks([
-                GameState.GAME_PHASE.value,
-                # Location
-                PlayerData.X.value,
-                PlayerData.Y.value,
-                PlayerData.Z.value,
-                PlayerData.PITCH.value,
-                PlayerData.YAW.value,
-                PlayerData.LAST_PLACE_NAME.value,
-                # Health/Armor/Weapon
-                PlayerData.IS_ALIVE.value,
-                PlayerData.HEALTH.value,
-                PlayerData.ARMOR.value,
-                PlayerData.HAS_HELMET.value,
-                PlayerData.HAS_DEFUSER.value,
-                PlayerData.ACTIVE_WEAPON.value,
-                PlayerData.CURRENT_EQUIP_VALUE.value,
-                PlayerData.ROUND_START_EQUIP_VALUE.value,
-                # Rank
-                PlayerData.RANK.value,
-                # Extra
-                PlayerData.PING.value,
-                PlayerData.CLAN_NAME.value,
-                PlayerData.TEAM_NUM.value,
-                PlayerData.FLASH_DURATION.value,
-                PlayerData.FLASH_MAX_ALPHA.value,
-                PlayerData.IS_SCOPED.value,
-                PlayerData.IS_DEFUSING.value,
-                PlayerData.IS_WALKING.value,
-                PlayerData.IS_STRAFING.value,
-                PlayerData.IN_BUY_ZONE.value,
-                PlayerData.IN_BOMB_ZONE.value,
-                PlayerData.SPOTTED.value,
-            ])), round_df)
+        tick_df = apply_round_num_to_df(
+            parse_frame(
+                parser.parse_ticks(
+                    [
+                        GameState.GAME_PHASE.value,
+                        # Location
+                        PlayerData.X.value,
+                        PlayerData.Y.value,
+                        PlayerData.Z.value,
+                        PlayerData.PITCH.value,
+                        PlayerData.YAW.value,
+                        PlayerData.LAST_PLACE_NAME.value,
+                        # Health/Armor/Weapon
+                        PlayerData.IS_ALIVE.value,
+                        PlayerData.HEALTH.value,
+                        PlayerData.ARMOR.value,
+                        PlayerData.HAS_HELMET.value,
+                        PlayerData.HAS_DEFUSER.value,
+                        PlayerData.ACTIVE_WEAPON.value,
+                        PlayerData.CURRENT_EQUIP_VALUE.value,
+                        PlayerData.ROUND_START_EQUIP_VALUE.value,
+                        # Rank
+                        PlayerData.RANK.value,
+                        # Extra
+                        PlayerData.PING.value,
+                        PlayerData.CLAN_NAME.value,
+                        PlayerData.TEAM_NUM.value,
+                        PlayerData.FLASH_DURATION.value,
+                        PlayerData.FLASH_MAX_ALPHA.value,
+                        PlayerData.IS_SCOPED.value,
+                        PlayerData.IS_DEFUSING.value,
+                        PlayerData.IS_WALKING.value,
+                        PlayerData.IS_STRAFING.value,
+                        PlayerData.IN_BUY_ZONE.value,
+                        PlayerData.IN_BOMB_ZONE.value,
+                        PlayerData.SPOTTED.value,
+                    ]
+                )
+            ),
+            round_df,
+        )
     except Exception as err:
         warnings.warn(f"Error parsing tick data: {err}", stacklevel=2)
     return tick_df
+
 
 def parse_demo(file: str, trade_time: int = 640) -> Demo:
     if not os.path.exists(file):
@@ -728,29 +791,33 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
     parser = DemoParser(file)
 
     # Parse the rounds
-    round_events = get_events_from_parser(parser, [
-        GameEvent.ROUND_START.value,
-        GameEvent.ROUND_FREEZE_END.value,
-        GameEvent.BUYTIME_ENDED.value,
-        GameEvent.ROUND_END.value,
-        GameEvent.ROUND_OFFICIALLY_ENDED.value,
-    ])
+    round_events = get_events_from_parser(
+        parser,
+        [
+            GameEvent.ROUND_START.value,
+            GameEvent.ROUND_FREEZE_END.value,
+            GameEvent.BUYTIME_ENDED.value,
+            GameEvent.ROUND_END.value,
+            GameEvent.ROUND_OFFICIALLY_ENDED.value,
+        ],
+    )
     rounds_df = parse_rounds(round_events)
+    ticks_df = parse_ticks_df(parser, rounds_df)
     parsed_data = {
         "header": parse_header(parser.parse_header()),
         "rounds": rounds_df,
+        "ticks": ticks_df,
         "effects": parse_effects_df(parser, rounds_df),
-        "damages": parse_damages_df(parser, rounds_df),
+        "damages": parse_damages_df(parser, rounds_df, ticks_df),
         "bomb_events": parse_bomb_events_df(parser, rounds_df),
-        "kills": parse_kills_df(parser, rounds_df, trade_time),
+        "kills": parse_kills_df(parser, rounds_df, ticks_df, trade_time),
         "flashes": parse_blinds_df(parser, rounds_df),
         "weapon_fires": parse_weapon_fires_df(parser, rounds_df),
         "grenades": parse_grenades_df(parser),
-        ###
-        "ticks": parse_ticks_df(parser, trade_time),
     }
 
     return Demo(**parsed_data)
+
 
 # def parse_demo(file: str, trade_time: int = 640) -> Demo:
 #     """Parse the demofile.
