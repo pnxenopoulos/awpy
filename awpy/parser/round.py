@@ -334,7 +334,9 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     ].astype("Int64")
     final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
     final_df = final_df[~final_df["round_end_reason"].isna()]
-    final_df = final_df[~final_df["round_end_reason"].isin(["game_start", "still_in_progress"])]
+    final_df = final_df[
+        ~final_df["round_end_reason"].isin(["game_start", "still_in_progress"])
+    ]
 
     final_df["round_num"] = range(1, len(final_df) + 1)
     final_df["round_end_official"] = final_df["round_end_official"].fillna(

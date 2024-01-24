@@ -62,7 +62,7 @@ def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
         return pd.DataFrame(
             columns=[
                 "assistedflash",
-                "assister_name",
+                "assister",
                 "assister_steamid",
                 "attacker",
                 "attacker_steamid",
@@ -94,6 +94,7 @@ def parse_deaths(parsed: list[tuple]) -> pd.DataFrame:
 
     # Renaming columns
     rename_columns = {
+        "assister_name": "assister",
         "attacker_name": "attacker",
         "user_name": "victim",
         "user_steamid": "victim_steamid",
@@ -127,9 +128,19 @@ def is_trade_kill(df: pd.DataFrame, kill_index: int, trade_time: int) -> bool:
 
     for i in range(kill_index):
         previous_kill = df.iloc[i]
+
+        # If the previous kill was too long ago, stop looping
+        if not (kill_tick - trade_time <= previous_kill["tick"] < kill_tick):
+            break
+
+        # If the previous kill did not have a valid side, skip it
+        if pd.isna(previous_kill["attacker_side"]) or pd.isna(
+            previous_kill["victim_side"]
+        ):
+            continue
+
         if (
-            kill_tick - trade_time <= previous_kill["tick"] < kill_tick
-            and previous_kill["attacker_steamid"] == kill_victim
+            previous_kill["attacker_steamid"] == kill_victim
             and previous_kill["attacker_side"] != previous_kill["victim_side"]
         ):
             return True

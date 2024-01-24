@@ -704,22 +704,36 @@ def parse_kills_df(
         tick_df[["tick", "steamid", "side"]],
         left_on=["tick", "attacker_steamid"],
         right_on=["tick", "steamid"],
+        how="left",
     )
     kill_df = kill_df.drop("steamid", axis=1)
     kill_df = kill_df.rename(columns={"side": "attacker_side"})
+    kill_df["attacker_side"] = kill_df["attacker_side"].fillna(pd.NA)
 
     # Add victim side
     kill_df = kill_df.merge(
         tick_df[["tick", "steamid", "side"]],
         left_on=["tick", "victim_steamid"],
         right_on=["tick", "steamid"],
+        how="left",
     )
     kill_df = kill_df.drop("steamid", axis=1)
     kill_df = kill_df.rename(columns={"side": "victim_side"})
+    kill_df["victim_side"] = kill_df["victim_side"].fillna(pd.NA)
+
+    # Add assister side
+    kill_df = kill_df.merge(
+        tick_df[["tick", "steamid", "side"]],
+        left_on=["tick", "assister_steamid"],
+        right_on=["tick", "steamid"],
+        how="left",
+    )
+    kill_df = kill_df.drop("steamid", axis=1)
+    kill_df = kill_df.rename(columns={"side": "assister_side"})
+    kill_df["assister_side"] = kill_df["assister_side"].fillna(pd.NA)
 
     # Add trade info (must be done after adding sides)
     kill_df = add_trade_info(kill_df, trade_time)
-
     return apply_round_num_to_df(kill_df, round_df)
 
 
