@@ -359,7 +359,14 @@ def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFr
     interval_index = pd.IntervalIndex.from_arrays(
         round_df["round_start"], round_df["round_end_official"], closed="left"
     )
-    intervals = pd.cut(df["tick"], interval_index)
+    all_but_last = interval_index[:-1]
+    last_interval = pd.Interval(
+        left=round_df["round_start"].iloc[-1],
+        right=round_df["round_end_official"].iloc[-1],
+        closed="both",
+    )
+    fixed_interval_index = all_but_last.append(pd.IntervalIndex([last_interval]))
+    intervals = pd.cut(df["tick"], fixed_interval_index)
     round_num_map = dict(zip(interval_index, round_df["round_num"], strict=True))
     df["round_num"] = intervals.map(round_num_map)
     df = df[~df["round_num"].isna()]

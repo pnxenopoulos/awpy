@@ -22,6 +22,7 @@ import os
 import warnings
 
 import pandas as pd
+import numpy as np
 from demoparser2 import DemoParser
 
 from awpy.parser.enums import GameEvent, GameState, PlayerData
@@ -698,6 +699,7 @@ def parse_kills_df(
 ) -> pd.DataFrame:
     kills = get_events_from_parser(parser, [GameEvent.PLAYER_DEATH.value])
     kill_df = parse_deaths(kills)
+    kill_df = apply_round_num_to_df(kill_df, round_df)
 
     # Add attacker side
     kill_df = kill_df.merge(
@@ -708,7 +710,7 @@ def parse_kills_df(
     )
     kill_df = kill_df.drop("steamid", axis=1)
     kill_df = kill_df.rename(columns={"side": "attacker_side"})
-    kill_df["attacker_side"] = kill_df["attacker_side"].fillna(pd.NA)
+    kill_df["attacker_side"] = kill_df["attacker_side"].replace([np.nan], [None])
 
     # Add victim side
     kill_df = kill_df.merge(
@@ -719,7 +721,7 @@ def parse_kills_df(
     )
     kill_df = kill_df.drop("steamid", axis=1)
     kill_df = kill_df.rename(columns={"side": "victim_side"})
-    kill_df["victim_side"] = kill_df["victim_side"].fillna(pd.NA)
+    kill_df["victim_side"] = kill_df["victim_side"].replace([np.nan], [None])
 
     # Add assister side
     kill_df = kill_df.merge(
@@ -730,11 +732,11 @@ def parse_kills_df(
     )
     kill_df = kill_df.drop("steamid", axis=1)
     kill_df = kill_df.rename(columns={"side": "assister_side"})
-    kill_df["assister_side"] = kill_df["assister_side"].fillna(pd.NA)
+    kill_df["assister_side"] = kill_df["assister_side"].replace([np.nan], [None])
 
     # Add trade info (must be done after adding sides)
     kill_df = add_trade_info(kill_df, trade_time)
-    return apply_round_num_to_df(kill_df, round_df)
+    return kill_df
 
 
 def parse_blinds_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:

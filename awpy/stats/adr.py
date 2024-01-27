@@ -41,11 +41,14 @@ def calculate_aggregate_damage(damages: pd.DataFrame) -> pd.DataFrame:
         damages.groupby("attacker_steamid")["dmg_health_adj"].sum().reset_index()
     )
     total_dmg["side"] = "total"
+    total_dmg.columns = ["steamid", "dmg", "side"]
+    total_dmg = total_dmg[["steamid", "side", "dmg"]]
     side_dmg = (
         damages.groupby(["attacker_steamid", "attacker_side"])["dmg_health_adj"]
         .sum()
         .reset_index()
     )
+    side_dmg.columns = ["steamid", "side", "dmg"]
     return pd.concat([total_dmg, side_dmg], ignore_index=True).rename(
         columns={"attacker_steamid": "steamid", "dmg_health_adj": "dmg"}
     )
