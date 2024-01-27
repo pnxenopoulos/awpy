@@ -22,7 +22,8 @@ dependencies = [
     "pandas>=2.2.0",
     "pydantic>=2.5.3",
     "setuptools>=69.0.3",
-    "demoparser2>=0.17.0"
+    "sphinx-rtd-theme==2.0.0",
+    "demoparser2>=0.16.1"
 ]
 dynamic = ["version"]
 
@@ -121,8 +122,8 @@ line-length = 88
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-# Assume Python 3.11.
-target-version = "py311"
+# Assume Python 3.12.
+target-version = "py312"
 
 [tool.ruff.per-file-ignores]
 "__init__.py"              = ["E402", "F401"]
