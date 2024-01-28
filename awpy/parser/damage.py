@@ -1,6 +1,7 @@
 """Parsing methods for damage and kill-related events."""
-import pandas as pd
+
 import warnings
+import pandas as pd
 
 
 def parse_damages(parsed: list[tuple]) -> pd.DataFrame:
@@ -130,7 +131,7 @@ def is_trade_kill(df: pd.DataFrame, kill_index: int, trade_time: int) -> bool:
         previous_kill = df.iloc[i]
 
         # If the previous kill was too long ago, stop looping
-        if not (kill_tick - trade_time <= previous_kill["tick"] < kill_tick):
+        if not kill_tick - trade_time <= previous_kill["tick"] < kill_tick:
             break
 
         # If the previous kill did not have a valid side, skip it

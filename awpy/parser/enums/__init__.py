@@ -14,7 +14,7 @@ __all__ = [
     "HitGroup",
     "PlayerData",
     "RoundEndReason",
-    "Team",
+    "Side",
     "GameState",
     "Weapon",
 ]

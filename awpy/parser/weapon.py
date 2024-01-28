@@ -1,13 +1,15 @@
 """Methods for parsing weapon-related entities and events."""
-import pandas as pd
+
 import warnings
+import pandas as pd
 
 
 def parse_weapon_fires(parsed: list[tuple]) -> pd.DataFrame:
     """Parse the weapon fires of the demofile.
 
     Args:
-        parsed (list[tuple]): List of tuples containing DataFrames with weaponfire events.
+        parsed (list[tuple]): List of tuples containing DataFrames with
+            weaponfire events.
 
     Returns:
         pd.DataFrame: DataFrame with the parsed weapon fire events data.

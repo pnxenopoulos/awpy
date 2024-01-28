@@ -1,6 +1,7 @@
 """Parsing methods for bomb-related events."""
-import pandas as pd
+
 import warnings
+import pandas as pd
 
 from awpy.parser.enums import GameEvent
 
@@ -37,7 +38,8 @@ def process_bomb_event_type(key: str, df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): The DataFrame containing the bomb event data.
 
     Returns:
-        pd.DataFrame: The processed DataFrame containing all instances of the specified event type.
+        pd.DataFrame: The processed DataFrame containing all instances of the
+            specified event type.
     """
     df["event"] = key
     df = df.rename(columns={"user_name": "player", "user_steamid": "steamid"})

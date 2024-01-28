@@ -1,6 +1,7 @@
 """Basic stats for a box-score"""
-import pandas as pd
+
 from typing import Literal
+import pandas as pd
 
 from awpy.parser.models.demo import Demo
 from awpy.stats.utils import get_player_rounds, get_rounds_played
@@ -9,6 +10,16 @@ from awpy.stats.utils import get_player_rounds, get_rounds_played
 def kills_per_round(
     demo: Demo, side: Literal["ct", "t", "total"] = "total"
 ) -> pd.DataFrame:
+    """Calculates the Kills per Round (KPR) for each player.
+
+    Args:
+        demo (Demo): The demo to calculate the KPR for.
+        side (Literal['ct', 't', 'total'], optional): Side to calculate KPR.
+            Defaults to "total".
+
+    Returns:
+        pd.DataFrame: DataFrame with the KPR for each player
+    """
     player_rounds = get_player_rounds(demo.ticks)
     rounds_played = get_rounds_played(player_rounds)
     rounds_played = rounds_played[rounds_played["side"] == side]
@@ -36,6 +47,16 @@ def kills_per_round(
 def deaths_per_round(
     demo: Demo, side: Literal["ct", "t", "total"] = "total"
 ) -> pd.DataFrame:
+    """Calculates the Deaths per Round (DPR) for each player.
+
+    Args:
+        demo (Demo): The demo to calculate the DPR for.
+        side (Literal['ct', 't', 'total'], optional): Side to calculate SPR.
+            Defaults to "total".
+
+    Returns:
+        pd.DataFrame: DataFrame with the DPR for each player
+    """
     player_rounds = get_player_rounds(demo.ticks)
     rounds_played = get_rounds_played(player_rounds)
     rounds_played = rounds_played[rounds_played["side"] == side]
@@ -62,6 +83,16 @@ def deaths_per_round(
 def assists_per_round(
     demo: Demo, side: Literal["ct", "t", "total"] = "total"
 ) -> pd.DataFrame:
+    """Calculates the Assists per Round (APR) for each player.
+
+    Args:
+        demo (Demo): The demo to calculate the APR for.
+        side (Literal['ct', 't', 'total'], optional): Side to calculate APR.
+            Defaults to "total".
+
+    Returns:
+        pd.DataFrame: DataFrame with the APR for each player
+    """
     player_rounds = get_player_rounds(demo.ticks)
     rounds_played = get_rounds_played(player_rounds)
     rounds_played = rounds_played[rounds_played["side"] == side]

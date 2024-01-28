@@ -1,4 +1,5 @@
 """Parsing methods for game frames."""
+
 import numpy as np
 import pandas as pd
 from awpy.parser.enums import Side
@@ -84,6 +85,11 @@ def parse_frame(tick_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_empty_tick_df() -> pd.DataFrame:
+    """Create an empty DataFrame with the columns of the tick DataFrame.
+
+    Returns:
+        pd.DataFrame: Empty DataFrame with the columns of the tick DataFrame.
+    """
     columns = [
         "tick",
         "game_phase",

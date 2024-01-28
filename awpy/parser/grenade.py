@@ -1,6 +1,7 @@
 """Parsing methods for projectiles (grenades)."""
-import pandas as pd
+
 import warnings
+import pandas as pd
 
 
 def parse_smokes_and_infernos(parsed: list[tuple]) -> pd.DataFrame:

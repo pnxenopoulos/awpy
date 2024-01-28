@@ -1,11 +1,39 @@
 """Methodology to calculate Average Damage per Round (ADR)"""
+
 import pandas as pd
 
 from awpy.parser.models.demo import Demo
 from awpy.stats.utils import get_player_rounds, get_rounds_played
 
 
+def adr(demo: Demo) -> pd.DataFrame:
+    """Calculate the Average Damage per Round (ADR) for each player.
+
+    Args:
+        demo (Demo): The demo to calculate the ADR for.
+
+    Returns:
+        pd.DataFrame: DataFrame with the ADR for each player in
+            the demo, tabulated by side.
+    """
+    player_rounds = get_player_rounds(demo.ticks)
+    rounds_played = get_rounds_played(player_rounds)
+    damages = get_damages(demo)
+    agg_dmg = calculate_aggregate_damage(damages)
+    agg_dmg = merge_aggregated_damage_with_rounds_played(agg_dmg, rounds_played)
+    agg_dmg["adr"] = agg_dmg["dmg"] / agg_dmg["rounds_played"]
+    return agg_dmg
+
+
 def get_damages(demo: Demo) -> pd.DataFrame:
+    """Get the non-team damages from the demo.
+
+    Args:
+        demo (Demo): The demo to get the damages from.
+
+    Returns:
+        pd.DataFrame: DataFrame with the non-team damages from the demo.
+    """
     inplay_ticks = demo.ticks[
         demo.ticks["game_phase"].isin(["startgame", "preround", "teamwin", "restart"])
     ]
@@ -34,6 +62,14 @@ def get_damages(demo: Demo) -> pd.DataFrame:
 
 
 def calculate_aggregate_damage(damages: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the aggregate damage for each player.
+
+    Args:
+        damages (pd.DataFrame): Output of `get_damages(...)`.
+
+    Returns:
+        pd.DataFrame: DataFrame with the aggregate damage for each player.
+    """
     damages["dmg_health_adj"] = damages.apply(
         lambda x: min(x["dmg_health"], x["health_victim"]), axis=1
     )
@@ -54,17 +90,16 @@ def calculate_aggregate_damage(damages: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def merge_with_rounds_played(
+def merge_aggregated_damage_with_rounds_played(
     agg_dmg: pd.DataFrame, rounds_played: pd.DataFrame
 ) -> pd.DataFrame:
+    """Merge the aggregate damage with the rounds played.
+
+    Args:
+        agg_dmg (pd.DataFrame): Output of `calculate_aggregate_damage(...)`.
+        rounds_played (pd.DataFrame): Output of `get_rounds_played(...)`.
+
+    Returns:
+        pd.DataFrame: DataFrame with the aggregate damage and rounds played.
+    """
     return agg_dmg.merge(rounds_played, on=["steamid", "side"])
-
-
-def adr(demo: Demo) -> pd.DataFrame:
-    player_rounds = get_player_rounds(demo.ticks)
-    rounds_played = get_rounds_played(player_rounds)
-    damages = get_damages(demo)
-    agg_dmg = calculate_aggregate_damage(damages)
-    agg_dmg = merge_with_rounds_played(agg_dmg, rounds_played)
-    agg_dmg["adr"] = agg_dmg["dmg"] / agg_dmg["rounds_played"]
-    return agg_dmg

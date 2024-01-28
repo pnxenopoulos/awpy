@@ -1,4 +1,5 @@
 """Global test configuration."""
+
 import json
 import os
 
