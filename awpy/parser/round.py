@@ -22,7 +22,9 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     round_events = process_round_events(parsed_round_events)
     round_event_df = pd.concat(round_events)
 
-    return create_round_df(round_event_df)
+    round_df = create_round_df(round_event_df)
+    round_df=round_df.loc[round_df.index>max(round_df[round_df['round_end'].isna()].index)]
+    return round_df
 
 
 def empty_rounds_dataframe() -> pd.DataFrame:
