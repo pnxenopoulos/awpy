@@ -36,7 +36,7 @@ from awpy.parser.frame import create_empty_tick_df, parse_frame
 from awpy.parser.grenade import parse_blinds, parse_smokes_and_infernos
 from awpy.parser.header import parse_header
 from awpy.parser.models import Demo
-from awpy.parser.round import apply_round_num_to_df, parse_rounds
+from awpy.parser.round import apply_round_num_to_df, parse_rounds_df
 from awpy.parser.weapon import parse_weapon_fires
 
 
@@ -333,7 +333,7 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
             GameEvent.ROUND_OFFICIALLY_ENDED.value,
         ],
     )
-    rounds_df = parse_rounds(round_events)
+    rounds_df = parse_rounds_df(round_events)
     ticks_df = parse_ticks_df(parser, rounds_df)
     parsed_data = {
         "header": parse_header(parser.parse_header()),

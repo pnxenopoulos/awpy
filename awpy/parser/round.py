@@ -7,7 +7,7 @@ import pandas as pd
 from awpy.parser.enums import GameEvent
 
 
-def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
+def parse_rounds_df(parsed_round_events: list[tuple]) -> pd.DataFrame:
     """Parse the rounds of the demofile.
 
     Args:
@@ -18,7 +18,7 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     """
     if not parsed_round_events:
         warnings.warn("No round events found in the demofile.", stacklevel=2)
-        return empty_rounds_dataframe()
+        return create_empty_rounds_dataframe()
 
     round_events = process_round_events(parsed_round_events)
     round_event_df = pd.concat(round_events)
@@ -26,7 +26,7 @@ def parse_rounds(parsed_round_events: list[tuple]) -> pd.DataFrame:
     return create_round_df(round_event_df)
 
 
-def empty_rounds_dataframe() -> pd.DataFrame:
+def create_empty_rounds_dataframe() -> pd.DataFrame:
     """Creates an empty dataframe for game rounds.
 
     Returns:
@@ -46,7 +46,7 @@ def empty_rounds_dataframe() -> pd.DataFrame:
 def process_round_events(parsed_round_events: list[tuple]) -> list:
     """Process and transform round events into DataFrames."""
     event_order = get_round_event_order()
-    return [transform_round_event(event, event_order) for event in parsed_round_events]
+    return [round_event_to_df(event, event_order) for event in parsed_round_events]
 
 
 def get_round_event_order() -> dict:
@@ -102,7 +102,7 @@ def map_round_end_reasons(reason_series: pd.Series) -> pd.Series:
     return reason_series.astype("Int64").map(reasons_map)
 
 
-def transform_round_event(round_event: tuple, event_order: dict) -> pd.DataFrame:
+def round_event_to_df(round_event: tuple, event_order: dict) -> pd.DataFrame:
     """Transform a round event into a DataFrame.
 
     Args:
@@ -129,7 +129,7 @@ def transform_round_event(round_event: tuple, event_order: dict) -> pd.DataFrame
     return event_df
 
 
-def prepend_round_start(round_event_df: pd.DataFrame) -> pd.DataFrame:
+def prepend_round_start_to_round_event(round_event_df: pd.DataFrame) -> pd.DataFrame:
     """Prepend a round start event to the round event DataFrame.
 
     Args:
@@ -161,12 +161,92 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with the round events by matching start and end events.
     """
+    # Prepend a round start event if it is not the first event
     round_event_df = round_event_df.sort_values(by=["tick", "order"])
     first_event = round_event_df.iloc[0]["event"]
     if first_event != GameEvent.ROUND_START.value:
-        round_event_df = prepend_round_start(round_event_df)
-    return round_event_df
+        round_event_df = prepend_round_start_to_round_event(round_event_df)
+    
+    # Initialize empty lists for each event type
+    round_start = []
+    freeze_time_end = []
+    buy_time_end = []
+    round_end = []
+    round_end_official = []
+    reason = []
+    current_round = None
 
+    # Iterate through the DataFrame and populate the lists
+    for _, row in round_event_df.iterrows():
+        if row["event"] == "round_start":
+            if current_round is not None:
+                # Append the collected events to the respective lists
+                round_start.append(current_round.get("round_start", None))
+                freeze_time_end.append(current_round.get("freeze_time_end", None))
+                buy_time_end.append(current_round.get("buy_time_end", None))
+                round_end.append(current_round.get("round_end", None))
+                round_end_official.append(current_round.get("round_end_official", None))
+                reason.append(current_round.get("reason", None))
+            # Start a new round
+            current_round = {"round_start": row["tick"]}
+        elif current_round is not None:
+            if row["event"] == "round_freeze_end":
+                current_round["freeze_time_end"] = row["tick"]
+            elif row["event"] == "buytime_ended":
+                current_round["buy_time_end"] = row["tick"]
+            elif row["event"] == "round_end":
+                current_round["round_end"] = row["tick"]
+                current_round["reason"] = row["reason"]
+            elif row["event"] == "round_officially_ended":
+                current_round["round_end_official"] = row["tick"]
+
+    # Append the last collected round's events
+    if current_round is not None:
+        round_start.append(current_round.get("round_start", None))
+        freeze_time_end.append(current_round.get("freeze_time_end", None))
+        buy_time_end.append(current_round.get("buy_time_end", None))
+        round_end.append(current_round.get("round_end", None))
+        round_end_official.append(current_round.get("round_end_official", None))
+        reason.append(current_round.get("reason", None))
+
+    # Create a new DataFrame with the desired columns
+    parsed_rounds_df = pd.DataFrame(
+        {
+            "round_start": round_start,
+            "freeze_time_end": freeze_time_end,
+            "buy_time_end": buy_time_end,
+            "round_end": round_end,
+            "round_end_official": round_end_official,
+            "round_end_reason": reason,
+        }
+    )
+    final_df = parsed_rounds_df[
+        [
+            "round_start",
+            "freeze_time_end",
+            "buy_time_end",
+            "round_end",
+            "round_end_official",
+        ]
+    ].astype("Int64")
+    final_df["round_end_reason"] = parsed_rounds_df["round_end_reason"]
+    final_df = final_df[~final_df["round_end_reason"].isna()]
+
+    # Filter out rounds that have the same start and end, or that have erroneous data
+    final_df["round_end_official"] = final_df["round_end_official"].fillna(
+        final_df["round_end"]
+    )
+    final_df = final_df[
+        final_df["round_start"] != final_df["round_end_official"]
+    ].reset_index(drop=True)
+    final_df = final_df[
+        final_df["round_start"] <= final_df["freeze_time_end"]
+    ].reset_index(drop=True)
+
+    final_df["round_num"] = range(1, len(final_df) + 1)
+    
+
+    return final_df
 
 def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFrame:
     """Assigns a round num to each row in the DataFrame.
@@ -181,14 +261,7 @@ def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFr
     interval_index = pd.IntervalIndex.from_arrays(
         round_df["round_start"], round_df["round_end_official"], closed="left"
     )
-    all_but_last = interval_index[:-1]
-    last_interval = pd.Interval(
-        left=round_df["round_start"].iloc[-1],
-        right=round_df["round_end_official"].iloc[-1],
-        closed="both",
-    )
-    fixed_interval_index = all_but_last.append(pd.IntervalIndex([last_interval]))
-    intervals = pd.cut(df["tick"], fixed_interval_index)
+    intervals = pd.cut(df["tick"], interval_index)
     round_num_map = dict(zip(interval_index, round_df["round_num"], strict=True))
     df["round_num"] = intervals.map(round_num_map)
     return df[~df["round_num"].isna()]
