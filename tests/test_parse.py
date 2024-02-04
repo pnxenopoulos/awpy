@@ -4,6 +4,14 @@ import pandas as pd
 import pytest
 
 from awpy.parser import parse_demo
+from awpy.parser.damage import is_trade_kill, was_traded
+from awpy.parser.models import Demo
+
+
+@pytest.fixture(scope="class")
+def navi_vs_vp():
+    """Fixture to parse the NaVi vs VP demo."""
+    return parse_demo("tests/natus-vincere-vs-virtus-pro-m1-overpass.dem")
 
 
 class TestParser:
@@ -17,18 +25,28 @@ class TestParser:
         with pytest.raises(FileNotFoundError):
             parse_demo("file-does-not-exist.dem")
 
-    def test_demo_cs2_navi_vp_pgl_copenhagen_2024(self):
-        """Tests the output of NaVi vs VP at PGL Copenhagen 2024 (CS2)."""
-        parsed = parse_demo("natus-vincere-vs-virtus-pro-m1-overpass.dem")
+    def test_navi_vs_vp_header(self, navi_vs_vp: Demo):
+        """Tests the header of NaVi vs VP at PGL Copenhagen 2024 (CS2).
 
-        # Header
-        assert parsed.header.demo_version_guid == "8e9d71ab-04a1-4c01-bb61-acfede27c046"
-        assert parsed.header.demo_version_name == "valve_demo_2"
-        assert parsed.header.map_name == "de_overpass"
+        Args:
+            navi_vs_vp (Demo): The parsed NaVi vs VP demo.
+        """
+        assert (
+            navi_vs_vp.header.demo_version_guid
+            == "8e9d71ab-04a1-4c01-bb61-acfede27c046"
+        )
+        assert navi_vs_vp.header.demo_version_name == "valve_demo_2"
+        assert navi_vs_vp.header.map_name == "de_overpass"
 
-        # Rounds
-        assert parsed.rounds.shape[0] == 35
-        round_end_reasons = parsed.rounds.round_end_reason.to_numpy()
+    def test_navi_vs_vp_rounds(self, navi_vs_vp: Demo):
+        """Tests the rounds of NaVi vs VP at PGL Copenhagen 2024 (CS2).
+
+        Args:
+            navi_vs_vp (Demo): The parsed NaVi vs VP demo.
+        """
+        assert navi_vs_vp.rounds.shape[0] == 35
+
+        round_end_reasons = navi_vs_vp.rounds.round_end_reason.to_numpy()
 
         # First Half
         assert round_end_reasons[0] == "t_win"
@@ -71,11 +89,18 @@ class TestParser:
         assert round_end_reasons[33] == "t_win"
         assert round_end_reasons[34] == "t_win"
 
-        # Kills
-        kill_df = parsed.kills[
-            parsed.kills["attacker_side"] != parsed.kills["victim_side"]
+    def test_navi_vs_vp_kills(self, navi_vs_vp: Demo):
+        """Tests the kills of NaVi vs VP at PGL Copenhagen 2024 (CS2).
+
+        Args:
+            navi_vs_vp (Demo): The parsed NaVi vs VP demo.
+        """
+        kill_df = navi_vs_vp.kills[
+            navi_vs_vp.kills["attacker_side"] != navi_vs_vp.kills["victim_side"]
         ]
         kill_df = kill_df.groupby("attacker").size().reset_index(name="kill_count")
+
+        # Kills
         assert kill_df.loc[kill_df["attacker"] == "iM", "kill_count"].iloc[0] == 28
         assert (
             kill_df.loc[kill_df["attacker"] == "w0nderful", "kill_count"].iloc[0] == 28
@@ -84,9 +109,7 @@ class TestParser:
             kill_df.loc[kill_df["attacker"] == "AleksibOb", "kill_count"].iloc[0] == 22
         )
         assert kill_df.loc[kill_df["attacker"] == "jL.", "kill_count"].iloc[0] == 22
-        assert (
-            kill_df.loc[kill_df["attacker"] == "b1t", "kill_count"].iloc[0] == 19
-        )  # Listed as 20 in HLTV
+        assert kill_df.loc[kill_df["attacker"] == "b1t", "kill_count"].iloc[0] == 19
         assert kill_df.loc[kill_df["attacker"] == "Hop6epT", "kill_count"].iloc[0] == 25
         assert kill_df.loc[kill_df["attacker"] == "fame", "kill_count"].iloc[0] == 19
         assert (
@@ -96,7 +119,9 @@ class TestParser:
         assert kill_df.loc[kill_df["attacker"] == "mir1", "kill_count"].iloc[0] == 19
 
         # Deaths
-        death_df = parsed.kills.groupby("victim").size().reset_index(name="death_count")
+        death_df = (
+            navi_vs_vp.kills.groupby("victim").size().reset_index(name="death_count")
+        )
         assert death_df.loc[death_df["victim"] == "iM", "death_count"].iloc[0] == 20
         assert (
             death_df.loc[death_df["victim"] == "w0nderful", "death_count"].iloc[0] == 15
@@ -109,9 +134,7 @@ class TestParser:
         assert (
             death_df.loc[death_df["victim"] == "Hop6epT", "death_count"].iloc[0] == 24
         )
-        assert (
-            death_df.loc[death_df["victim"] == "fame", "death_count"].iloc[0] == 23
-        )  # Listed as 24 in HLTV
+        assert death_df.loc[death_df["victim"] == "fame", "death_count"].iloc[0] == 23
         assert (
             death_df.loc[death_df["victim"] == "JAMEZWER", "death_count"].iloc[0] == 22
         )
@@ -119,29 +142,26 @@ class TestParser:
         assert death_df.loc[death_df["victim"] == "mir1", "death_count"].iloc[0] == 28
 
         # Assists
-        kill_df = parsed.kills[
-            parsed.kills["attacker_side"] != parsed.kills["victim_side"]
-        ]
         assist_df = kill_df.groupby("assister").size().reset_index(name="assist_count")
         assert assist_df.loc[assist_df["assister"] == "iM", "assist_count"].iloc[0] == 3
         assert (
             assist_df.loc[assist_df["assister"] == "w0nderful", "assist_count"].iloc[0]
             == 5
-        )  # Listed as 7 in HLTV
+        )
         assert (
             assist_df.loc[assist_df["assister"] == "AleksibOb", "assist_count"].iloc[0]
             == 14
         )
         assert (
             assist_df.loc[assist_df["assister"] == "jL.", "assist_count"].iloc[0] == 6
-        )  # Listed as 7 in HLTV
+        )
         assert (
             assist_df.loc[assist_df["assister"] == "b1t", "assist_count"].iloc[0] == 12
-        )  # Listed as 13 in HLTV
+        )
         assert (
             assist_df.loc[assist_df["assister"] == "Hop6epT", "assist_count"].iloc[0]
             == 7
-        )  # Listed as 8 in HLTV
+        )
         assert (
             assist_df.loc[assist_df["assister"] == "fame", "assist_count"].iloc[0] == 1
         )
@@ -152,10 +172,10 @@ class TestParser:
         assert (
             assist_df.loc[assist_df["assister"] == "FL1TJO", "assist_count"].iloc[0]
             == 8
-        )  # Listed as 9 in HLTV
+        )
         assert (
             assist_df.loc[assist_df["assister"] == "mir1", "assist_count"].iloc[0] == 8
-        )  # Listed as 9 in HLTV
+        )
 
     def test_trade_kills(self):
         """Tests that we can identify trade kills."""

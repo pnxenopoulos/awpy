@@ -1,6 +1,7 @@
 """Parsing methods for bomb-related events."""
 
 import warnings
+
 import pandas as pd
 
 from awpy.parser.enums import GameEvent
@@ -30,19 +31,19 @@ def parse_bomb_events(parsed: list[tuple]) -> pd.DataFrame:
     return bomb_df.sort_values(by=["tick"])
 
 
-def process_bomb_event_type(key: str, df: pd.DataFrame) -> pd.DataFrame:
+def process_bomb_event_type(key: str, bomb_df: pd.DataFrame) -> pd.DataFrame:
     """Process a bomb event type (bomb plant, defusal, etc.).
 
     Args:
         key (str): The event type. One of the `GameEvent` enums for bomb-related events.
-        df (pd.DataFrame): The DataFrame containing the bomb event data.
+        bomb_df (pd.DataFrame): The DataFrame containing the bomb event data.
 
     Returns:
         pd.DataFrame: The processed DataFrame containing all instances of the
             specified event type.
     """
-    df["event"] = key
-    df = df.rename(columns={"user_name": "player", "user_steamid": "steamid"})
+    bomb_df["event"] = key
+    bomb_df = bomb_df.rename(columns={"user_name": "player", "user_steamid": "steamid"})
 
     columns_map = {
         GameEvent.BOMB_PLANTED.value: ["tick", "event", "player", "steamid", "site"],
@@ -58,4 +59,4 @@ def process_bomb_event_type(key: str, df: pd.DataFrame) -> pd.DataFrame:
         GameEvent.BOMB_EXPLODED.value: ["tick", "event", "player", "steamid", "site"],
     }
 
-    return df[columns_map.get(key, [])]
+    return bomb_df[columns_map.get(key, [])]

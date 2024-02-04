@@ -1,6 +1,7 @@
-"""Basic stats for a box-score"""
+"""Basic stats for a box-score."""
 
 from typing import Literal
+
 import pandas as pd
 
 from awpy.parser.models.demo import Demo

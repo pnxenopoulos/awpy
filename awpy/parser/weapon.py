@@ -1,6 +1,7 @@
 """Methods for parsing weapon-related entities and events."""
 
 import warnings
+
 import pandas as pd
 
 

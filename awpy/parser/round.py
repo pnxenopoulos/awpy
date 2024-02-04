@@ -1,6 +1,7 @@
 """Parsing methods for game rounds of a Counter-Strike demo file."""
 
 import warnings
+
 import pandas as pd
 
 from awpy.parser.enums import GameEvent
@@ -45,10 +46,7 @@ def empty_rounds_dataframe() -> pd.DataFrame:
 def process_round_events(parsed_round_events: list[tuple]) -> list:
     """Process and transform round events into DataFrames."""
     event_order = get_round_event_order()
-    round_events = [
-        transform_round_event(event, event_order) for event in parsed_round_events
-    ]
-    return round_events
+    return [transform_round_event(event, event_order) for event in parsed_round_events]
 
 
 def get_round_event_order() -> dict:
@@ -57,7 +55,7 @@ def get_round_event_order() -> dict:
     Returns:
         dict: A dictionary mapping enums.GameEvent to an integer representing order.
     """
-    event_order = {
+    return {
         # This is 0 because start/official end can occur on same tick
         GameEvent.ROUND_OFFICIALLY_ENDED.value: 0,
         GameEvent.ROUND_START.value: 1,
@@ -65,7 +63,6 @@ def get_round_event_order() -> dict:
         GameEvent.BUYTIME_ENDED.value: 3,
         GameEvent.ROUND_END.value: 4,
     }
-    return event_order
 
 
 def map_round_end_reasons(reason_series: pd.Series) -> pd.Series:
@@ -194,5 +191,4 @@ def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFr
     intervals = pd.cut(df["tick"], fixed_interval_index)
     round_num_map = dict(zip(interval_index, round_df["round_num"], strict=True))
     df["round_num"] = intervals.map(round_num_map)
-    df = df[~df["round_num"].isna()]
-    return df
+    return df[~df["round_num"].isna()]

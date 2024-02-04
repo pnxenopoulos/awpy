@@ -34,8 +34,17 @@ class Demo(BaseModel):
         "ticks",
         pre=True,
     )
-    def validate_dataframe(self, v: pd.DataFrame):
-        """Validate that the field is a pandas DataFrame."""
-        if not isinstance(v, pd.DataFrame):
-            raise ValueError("Field must be a pandas DataFrame")
-        return v
+    @classmethod
+    def validate_dataframe(cls, val: pd.DataFrame) -> bool:  # noqa: ANN102
+        """Validate that the field is a pandas DataFrame.
+
+        Args:
+            val (pd.DataFrame): A dataframe value to validate.
+
+        Returns:
+            bool: True if the fields are pandas DataFrames.
+        """
+        if not isinstance(val, pd.DataFrame):
+            type_error_msg = f"{val} must be a pandas DataFrame"
+            raise TypeError(type_error_msg)
+        return val

@@ -1,6 +1,7 @@
-"""Methodology to calculate Kill, Assist, Survival, and Trade (KAST) %"""
+"""Methodology to calculate Kill, Assist, Survival, and Trade (KAST) %."""
 
 from typing import Literal
+
 import pandas as pd
 
 from awpy.parser.models.demo import Demo
@@ -121,18 +122,26 @@ def calculate_kast(
         dict: A dictionary mapping the steamid to a dictionary containing
             the KAST rounds.
     """
-    kast = {}
+    kast_stats = {}
     for steamid in all_steamids:
         total_rounds = calculate_total_rounds_for_side(steamid, "total", tick_df)
-        kast[steamid] = {
+        kast_stats[steamid] = {
             "total": calculate_kast_for_side(
                 steamid, kills, assists, trades, survivals, total_rounds
             )
         }
-    return kast
+    return kast_stats
 
 
 def prepare_kast_df(kast_data: dict) -> pd.DataFrame:
+    """Prepare the KAST DataFrame.
+
+    Args:
+        kast_data (dict): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
     kast_df = (
         pd.DataFrame.from_dict(kast_data, orient="index")
         .reset_index()
@@ -147,6 +156,19 @@ def prepare_kast_df(kast_data: dict) -> pd.DataFrame:
 def calculate_total_rounds_for_side(
     steamid: int, side: Literal["ct", "t", "total"], tick_df: pd.DataFrame
 ) -> int:
+    """Calculate the total rounds for a given side.
+
+    Args:
+        steamid (int): _description_
+        side (Literal[&quot;ct&quot;, &quot;t&quot;, &quot;total&quot;]): _description_
+        tick_df (pd.DataFrame): _description_
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        int: _description_
+    """
     start_ticks = (
         tick_df[tick_df["side"].isin(["t", "ct"])]
         .groupby(["steamid", "round_num"])
@@ -159,8 +181,8 @@ def calculate_total_rounds_for_side(
         return start_ticks_by_id[start_ticks_by_id["side"] == "ct"].shape[0]
     if side == "t":
         return start_ticks_by_id[start_ticks_by_id["side"] == "t"].shape[0]
-    else:
-        raise ValueError("Invalid side provided. Only t, ct, or total")
+    invalid_side_msg = "Invalid side provided. Only t, ct, or total"
+    raise ValueError(invalid_side_msg)
 
 
 def calculate_kast_for_side(
@@ -171,6 +193,19 @@ def calculate_kast_for_side(
     survivals: dict,
     total_rounds: int,
 ) -> float:
+    """Calculate the KAST% for a given side.
+
+    Args:
+        steamid (int): _description_
+        kills (dict): _description_
+        assists (dict): _description_
+        trades (dict): _description_
+        survivals (dict): _description_
+        total_rounds (int): _description_
+
+    Returns:
+        float: _description_
+    """
     kill_rounds = kills.get(steamid, [])
     assist_rounds = assists.get(steamid, [])
     trade_rounds = trades.get(steamid, [])

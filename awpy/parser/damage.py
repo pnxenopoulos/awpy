@@ -1,6 +1,7 @@
 """Parsing methods for damage and kill-related events."""
 
 import warnings
+
 import pandas as pd
 
 

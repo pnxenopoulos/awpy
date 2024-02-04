@@ -1,7 +1,7 @@
 """Tests demo stats functionality."""
 
-from awpy.analytics import adr, kast
 from awpy.parser import parse_demo
+from awpy.stats import adr, kast
 
 
 class TestStats:

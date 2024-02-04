@@ -1,4 +1,4 @@
-"""Methodology to calculate Average Damage per Round (ADR)"""
+"""Methodology to calculate Average Damage per Round (ADR)."""
 
 import pandas as pd
 

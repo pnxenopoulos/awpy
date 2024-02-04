@@ -1,6 +1,7 @@
 """Parsing methods for projectiles (grenades)."""
 
 import warnings
+
 import pandas as pd
 
 

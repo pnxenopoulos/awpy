@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from awpy.parser.enums import RoundEndReason, HitGroup
+from awpy.parser.enums import HitGroup, RoundEndReason
 
 
 class Round(BaseModel):
@@ -66,7 +66,7 @@ class GameFrame(BaseModel):
     tick: int
     seconds_since_phase_start: float
     seconds_since_round_start: float
-    clockTime: str
+    clock_time: str
     t: TeamFrame
     ct: TeamFrame
 

@@ -21,22 +21,22 @@ https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofi
 import os
 import warnings
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from demoparser2 import DemoParser
 
-from awpy.parser.enums import GameEvent, GameState, PlayerData
-from awpy.parser.models import Demo
-from awpy.parser.header import parse_header
-from awpy.parser.round import parse_rounds, apply_round_num_to_df
-from awpy.parser.frame import parse_frame, create_empty_tick_df
+from awpy.parser.bomb import parse_bomb_events
 from awpy.parser.damage import (
+    add_trade_info,
     parse_damages,
     parse_deaths,
-    add_trade_info,
 )
-from awpy.parser.grenade import parse_smokes_and_infernos, parse_blinds
-from awpy.parser.bomb import parse_bomb_events
+from awpy.parser.enums import GameEvent, GameState, PlayerData
+from awpy.parser.frame import create_empty_tick_df, parse_frame
+from awpy.parser.grenade import parse_blinds, parse_smokes_and_infernos
+from awpy.parser.header import parse_header
+from awpy.parser.models import Demo
+from awpy.parser.round import apply_round_num_to_df, parse_rounds
 from awpy.parser.weapon import parse_weapon_fires
 
 
@@ -193,8 +193,7 @@ def parse_kills_df(
     kill_df["assister_side"] = kill_df["assister_side"].replace([np.nan], [None])
 
     # Add trade info (must be done after adding sides)
-    kill_df = add_trade_info(kill_df, trade_time)
-    return kill_df
+    return add_trade_info(kill_df, trade_time)
 
 
 def parse_blinds_df(parser: DemoParser, round_df: pd.DataFrame) -> pd.DataFrame:
@@ -318,7 +317,8 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
         Demo: A `Demo` object containing the parsed data.
     """
     if not os.path.exists(file):
-        raise FileNotFoundError(f"{file} not found.")
+        file_not_found_msg = f"{file} not found."
+        raise FileNotFoundError(file_not_found_msg)
 
     parser = DemoParser(file)
 
