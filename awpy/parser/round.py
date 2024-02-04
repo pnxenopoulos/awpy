@@ -166,7 +166,7 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     first_event = round_event_df.iloc[0]["event"]
     if first_event != GameEvent.ROUND_START.value:
         round_event_df = prepend_round_start_to_round_event(round_event_df)
-    
+
     # Initialize empty lists for each event type
     round_start = []
     freeze_time_end = []
@@ -244,9 +244,9 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
     ].reset_index(drop=True)
 
     final_df["round_num"] = range(1, len(final_df) + 1)
-    
 
     return final_df
+
 
 def apply_round_num_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFrame:
     """Assigns a round num to each row in the DataFrame.
