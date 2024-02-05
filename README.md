@@ -5,7 +5,12 @@
 
 ---
 
-The Awpy Python package provides data parsing, analytics and visualization capabilities for Counter-Strike 2 data. Awpy contains functionality to parse (kills, damages, grenades, etc.), analyze (win probability, Rating, KAST%, ADR, etc.), and visualize (animated plots, grenade diagrams, etc.) CS2 demos. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics. You may visit detailed documentation [here](https://awpy.readthedocs.io/en/latest/).
+- :computer: Parse Counter-Strike demos in Python in one line.
+- :skull: Access kill, damage, grenade, bomb, player trajectory data, and more
+- :chart: Calculate common statistics, such as ADR, KAST, Rating and win probability
+- 🎞️ Visualize Counter-Strike data, including animated round gifs
+
+Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics.
 
 ## Installation
 To install Awpy, you can run
