@@ -22,7 +22,17 @@ class Demo(BaseModel):
     bomb_events: pd.DataFrame
     ticks: pd.DataFrame
 
-    @field_validator('rounds', 'kills', 'damages', 'grenades', 'effects', 'flashes', 'weapon_fires', 'bomb_events', 'ticks')
+    @field_validator(
+        "rounds",
+        "kills",
+        "damages",
+        "grenades",
+        "effects",
+        "flashes",
+        "weapon_fires",
+        "bomb_events",
+        "ticks",
+    )
     @classmethod
     def validate_dataframe(cls, val: pd.DataFrame) -> bool:  # noqa: ANN102
         """Validate that the field is a pandas DataFrame.
