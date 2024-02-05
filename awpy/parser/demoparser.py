@@ -25,17 +25,17 @@ import numpy as np
 import pandas as pd
 from demoparser2 import DemoParser
 
+from awpy.parser.enums import GameEvent, GameState, PlayerData
+from awpy.parser.models import Demo
 from awpy.parser.bomb import parse_bomb_events
 from awpy.parser.damage import (
     add_trade_info,
     parse_damages,
     parse_deaths,
 )
-from awpy.parser.enums import GameEvent, GameState, PlayerData
 from awpy.parser.frame import create_empty_tick_df, parse_frame
 from awpy.parser.grenade import parse_blinds, parse_smokes_and_infernos
 from awpy.parser.header import parse_header
-from awpy.parser.models import Demo
 from awpy.parser.round import apply_round_num_to_df, parse_rounds_df
 from awpy.parser.weapon import parse_weapon_fires
 
@@ -312,6 +312,7 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
 
     Raises:
         FileNotFoundError: If the filepath does not exist.
+        ValueError: If the trade time is not a positive integer.
 
     Returns:
         Demo: A `Demo` object containing the parsed data.
@@ -319,10 +320,15 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
     if not os.path.exists(file):
         file_not_found_msg = f"{file} not found."
         raise FileNotFoundError(file_not_found_msg)
+    
+    if trade_time < 0:
+        trade_time_error_msg = f"Trade time must be a positive integer. Received: {trade_time}"
+        raise ValueError(trade_time_error_msg)
 
+    # Create a parser object
     parser = DemoParser(file)
 
-    # Parse the rounds
+    # Parse the round-related events
     round_events = get_events_from_parser(
         parser,
         [
@@ -334,7 +340,11 @@ def parse_demo(file: str, trade_time: int = 640) -> Demo:
         ],
     )
     rounds_df = parse_rounds_df(round_events)
+
+    # Get all ticks
     ticks_df = parse_ticks_df(parser, rounds_df)
+
+    # Create the parsed demo response
     parsed_data = {
         "header": parse_header(parser.parse_header()),
         "rounds": rounds_df,

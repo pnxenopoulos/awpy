@@ -5,71 +5,59 @@
 
 ---
 
-The `awpy` Python package provides data parsing, analytics and visualization capabilities for Counter-Strike 2 data. Awpy contains functionality to parse (kills, damages, grenades, etc.), analyze (win probability, Rating, KAST%, ADR, etc.), and visualize (animated plots, grenade diagrams, etc.) CS2 demos. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics. You may visit detailed documentation [here](https://awpy.readthedocs.io/en/latest/).
-
-## Table of Contents
-[Installation](#setup)
-
-[Example Code and Projects](#example-code)
-
-[Contributing](#contributing)
-
-[Structure](#structure)
-
-[Acknowledgments](#acknowledgments)
+The Awpy Python package provides data parsing, analytics and visualization capabilities for Counter-Strike 2 data. Awpy contains functionality to parse (kills, damages, grenades, etc.), analyze (win probability, Rating, KAST%, ADR, etc.), and visualize (animated plots, grenade diagrams, etc.) CS2 demos. Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics. You may visit detailed documentation [here](https://awpy.readthedocs.io/en/latest/).
 
 ## Installation
-To install `awpy`, you can run
+To install Awpy, you can run
 
 ```
 pip install awpy
 ```
 
-`awpy` requires [Python](https://www.python.org/downloads/) >= 3.12. To update the library, just run `pip install --upgrade awpy`. 
+`awpy` requires [Python](https://www.python.org/downloads/) >= 3.12. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
 
 :bulb: **Tip:** Don't worry if you get stuck, visit us [our Discord](https://discord.gg/W34XjsSs2H) for help.
 
-#### Colab Notebook
-Do you work in Google Colab? No problem, the `awpy` Python library runs there, too! Check out how to [setup awpy Python library in Google Colab](https://colab.research.google.com/drive/1xiXeWHSAlqYNa-xjSK9B2xalvLMpIlJF?usp=sharing).
-
 ## Example Code
-Using the `awpy` package is straightforward. Just grab a demofile and have output in a JSON or Pandas DataFrame in a few seconds. Use the example below to get started.
+Using Awpy is easy! Just find a demo you want to analyze and use the example below to get started. For example, take [NaVi vs Virtus.pro](https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro).
 
 ```python
 from awpy import parse_demo
 
 # Awpy parsed into a dictionary of data frames
-parsed_dfs = parse_demo("cool-hltv-demo.dem")
+parsed_dfs = parse_demo("natus-vincere-vs-virtus-pro-m1-overpass.dem")
 
 # Demo info such as map, server, etc.
-parsed["header"]
+parsed.header
 
 # Round start/end ticks, along with round end reasons
-parsed["rounds"]
+parsed.rounds
 
 # Kill, damage, and weapon fire events
-parsed["kills"]
-parsed["damages"]
-parsed["weapon_fires"]
+parsed.kills
+parsed.damages
+parsed.weapon_fires
 
 # Effects, such as infernos (fires) and smokes
-parsed["effects"]
+parsed.effects
 
 # All bomb events, such as plants and defuses
-parsed["bomb_events"]
+parsed.bomb_events
 
 # Every time a player was blinded and for how long
-parsed["flashes"]
+parsed.flashes
 
 # Trajectories of all grenades
-parsed["grenades"]
+parsed.grenades
 
 # Information on every player at every tick
-parsed["ticks"]
+parsed.tick
 ```
 
+:question: **Tip:** Want to learn more about the parser output? Visit the [parser primer](https://awpy.readthedocs.io/en/latest/parser_output.html) in our documentation!
+
 ### Help! The parser doesn't work or returns weird data
-CS2 demos can be a bit troublesome. It is likely you'll see increased error rates in POV demos. To help us gain more datapoints to hunt down parsing bugs, please raise a bug report in our [Github issues](https://github.com/pnxenopoulos/awpy/issues) or in our [our Discord](https://discord.gg/3JrhKYcEKW). We're committed to increasing parsing coverage rates and appreciate any errors you may find. You can also check [our documentation](https://awpy.readthedocs.io/en/latest/).
+Counter-Strike demos can be a bit troublesome. It is likely you'll see increased error rates in POV demos. To help us gain more datapoints to hunt down parsing bugs, please raise a bug report in our [Github issues](https://github.com/pnxenopoulos/awpy/issues) or in our [our Discord](https://discord.gg/3JrhKYcEKW). We're committed to increasing parsing coverage rates and appreciate any errors you may find.
 
 ## Examples and Projects
 Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
@@ -84,17 +72,19 @@ Take a look at the following Jupyter notebooks provided in our `examples/` direc
 If you use the parser for any public analysis, we kindly ask you to link to this repository, so that others may know how you parsed, analyzed or visualized your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it!
 
 ## Contributing
-We welcome any contributions from the community. You can visit the [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, or you can message mods on Discord. If you're new to contributed, don't worry! We will always have a need for writing tests, quality assurance, and documentation, which are great beginner tasks. We also seek contributors to produce interesting content (such as tweets, analyses, papers, etc.) -- you can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html). If you are interested in contributing to Awpy, learn more [here](https://github.com/pnxenopoulos/awpy/blob/main/CONTRIBUTING.md). We are big fans of tools like [black](https://github.com/psf/black), [ruff](https://github.com/charliermarsh/ruff), [pylint](https://github.com/pylint-dev/pylint) and [pyright](https://microsoft.github.io/pyright/).
+We welcome any contributions from the community no matter the skill-level. You can visit the [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, the [Awpy project](https://github.com/users/pnxenopoulos/projects/5) for a different view of project priorities, or you can message us on Discord. Some examples of where you can make a difference: documentation, quality assurance, developing new features, creating unique content with Awpy. You can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html). If you are interested in contributing to Awpy, learn more [here](https://github.com/pnxenopoulos/awpy/blob/main/CONTRIBUTING.md).
+
+:books: **Tip:** We are happy to walk through those that want to contribute, no matter the skill level. There are a diverse set of ways one can contribute to Awpy.
 
 ## Structure
-`awpy` is structured as follows:
+Awpy is structured as follows:
 
 ```
 .
 ├── awpy
-│   ├── analytics                 # Code for Counter-Strike analytics
 │   ├── data                      # Code for dealing with Counter-Strike map and nav data
 │   ├── parser                    # Code for Counter-Strike demo parser
+│   ├── stats                     # Code for Counter-Strike statistics and analytics
 │   └── visualization             # Code for Counter-Strike visualization
 ├── doc                           # Contains documentation files
 ├── examples                      # Contains Jupyter Notebooks showing example code
@@ -105,19 +95,9 @@ We welcome any contributions from the community. You can visit the [issue page](
 
 The name "Awpy" is due to [Nick Wan](https://www.twitch.tv/nickwan_datasci) -- we recommend his stream for sports data analytics enthusiasts. 
 
-Awpy was first built on the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang). We now rely on [demoparser2](https://github.com/LaihoE/demoparser) for parsing, which is another fantastic parsing project.
+Awpy was first built on the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang). We now rely on [demoparser2](https://github.com/LaihoE/demoparser) for parsing, which is another fantastic parsing project, built specifically for Python.
 
 Thanks to [SimpleRadar](https://readtldr.gg/simpleradar?utm_source=github&utm_id=xenos-csgo-parser) for allowing use of their map images in the visualization module.
-
-#### List of Contributors
-
-- [Jan-Eric](https://github.com/JanEricNitschke)
-- [Adi](https://twitter.com/AdiSujithkumar)
-- [hojlund](https://github.com/hojlund123)
-- [arjun-22](https://github.com/arjun-22)
-
-Additional thanks to those of you in the Discord community who file bug reports and test awpy thoroughly.
-
 
 
 

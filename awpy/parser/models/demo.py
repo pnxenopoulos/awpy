@@ -1,7 +1,7 @@
 """Defines the Demo class, which stores a demo's parsed data."""
 
 import pandas as pd
-from pydantic import BaseModel, ConfigDict, validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from .header import DemoHeader
 
@@ -22,18 +22,7 @@ class Demo(BaseModel):
     bomb_events: pd.DataFrame
     ticks: pd.DataFrame
 
-    @validator(
-        "rounds",
-        "kills",
-        "damages",
-        "grenades",
-        "effects",
-        "flashes",
-        "weapon_fires",
-        "bomb_events",
-        "ticks",
-        pre=True,
-    )
+    @field_validator('rounds', 'kills', 'damages', 'grenades', 'effects', 'flashes', 'weapon_fires', 'bomb_events', 'ticks')
     @classmethod
     def validate_dataframe(cls, val: pd.DataFrame) -> bool:  # noqa: ANN102
         """Validate that the field is a pandas DataFrame.
