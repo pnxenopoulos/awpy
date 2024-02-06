@@ -162,10 +162,19 @@ def create_round_df(round_event_df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: DataFrame with the round events by matching start and end events.
     """
     # Prepend a round start event if it is not the first event
-    round_event_df = round_event_df.sort_values(by=["tick", "order"]).reset_index().drop("index", axis=1)
+    round_event_df = (
+        round_event_df.sort_values(by=["tick", "order"])
+        .reset_index()
+        .drop("index", axis=1)
+    )
     # First, filter our erroneous round starts
-    first_round_officially_ended_idx = round_event_df[round_event_df["event"] == "round_officially_ended"].index.min()
-    last_round_start_idx = round_event_df[(round_event_df["event"] == "round_start") & (round_event_df.index < first_round_officially_ended_idx)].tick.idxmax()
+    first_round_officially_ended_idx = round_event_df[
+        round_event_df["event"] == "round_officially_ended"
+    ].index.min()
+    last_round_start_idx = round_event_df[
+        (round_event_df["event"] == "round_start")
+        & (round_event_df.index < first_round_officially_ended_idx)
+    ].tick.idxmax()
     round_event_df = round_event_df.loc[last_round_start_idx:]
     first_event = round_event_df.iloc[0]["event"]
     if first_event != GameEvent.ROUND_START.value:
