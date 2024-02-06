@@ -16,3 +16,16 @@ def impact(_demo: Demo) -> pd.DataFrame:
             in the demo, tabulated by side.
     """
     raise NotImplementedError
+
+
+def rating(_demo: Demo) -> pd.DataFrame:
+    """Calculates the HLTV Rating 2.0 for each player in the demo.
+
+    Args:
+        demo (Demo): The demo to calculate the rating for.
+
+    Returns:
+        pd.DataFrame: DataFrame with the HLTV Rating 2.0 for each player
+            in the demo, tabulated by side.
+    """
+    raise NotImplementedError

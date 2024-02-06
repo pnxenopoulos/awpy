@@ -22,6 +22,7 @@ class GameEvent(Enum):
     BUYTIME_ENDED = "buytime_ended"
     ROUND_TIME_WARNING = "round_time_warning"
     ROUND_END = "round_end"
+    ROUND_OFFICIALLY_ENDED = "round_officially_ended"
     # Grenades Events
     DECOY_STARTED = "decoy_started"
     DECOY_DETONATE = "decoy_detonate"
@@ -54,7 +55,6 @@ class GameEvent(Enum):
     ROUND_ANNOUNCE_LAST_ROUND_HALF = "round_announce_last_round_half"
     ANNOUNCE_PHASE_END = "announce_phase_end"
     ROUND_ANNOUNCE_MATCH_START = "round_announce_match_start"
-    ROUND_OFFICIALLY_ENDED = "round_officially_ended"
     ROUND_ANNOUNCE_MATCH_POINT = "round_announce_match_point"
     # Miscellaneous Events
     BEGIN_NEW_MATCH = "begin_new_match"
