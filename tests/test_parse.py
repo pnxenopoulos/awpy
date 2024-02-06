@@ -281,9 +281,13 @@ class TestParser:
         assert (
             death_df.loc[death_df["victim"] == "--br0", "death_count"].iloc[0] == 14
         )  # Says he got 15
-        assert death_df.loc[death_df["victim"] == "degst3r", "death_count"].iloc[0] == 16
+        assert (
+            death_df.loc[death_df["victim"] == "degst3r", "death_count"].iloc[0] == 16
+        )
         assert death_df.loc[death_df["victim"] == "DemQQ-", "death_count"].iloc[0] == 15
-        assert death_df.loc[death_df["victim"] == "kRaSnaL", "death_count"].iloc[0] == 17
+        assert (
+            death_df.loc[death_df["victim"] == "kRaSnaL", "death_count"].iloc[0] == 17
+        )
 
         # Assists
         assist_df = (
@@ -295,20 +299,25 @@ class TestParser:
             assist_df.loc[assist_df["assister"] == "RAALZh3h3", "assist_count"].iloc[0]
             == 1
         )
-        assert assist_df.loc[assist_df["assister"] == "-910", "assist_count"].iloc[0] == 8
+        assert (
+            assist_df.loc[assist_df["assister"] == "-910", "assist_count"].iloc[0] == 8
+        )
         assert (
             assist_df.loc[assist_df["assister"] == "Mzinho-H", "assist_count"].iloc[0]
             == 8
         )
         assert (
-            assist_df.loc[assist_df["assister"] == "Senzu-", "assist_count"].iloc[0] == 4
+            assist_df.loc[assist_df["assister"] == "Senzu-", "assist_count"].iloc[0]
+            == 4
         )  # Says he got 5
         assert (
             assist_df.loc[assist_df["assister"] == "innocent", "assist_count"].iloc[0]
             == 6
         )
         assert (
-            assist_df.loc[assist_df["assister"] == "somedieyoung", "assist_count"].iloc[0]
+            assist_df.loc[assist_df["assister"] == "somedieyoung", "assist_count"].iloc[
+                0
+            ]
             == 4
         )
         assert (
@@ -316,8 +325,10 @@ class TestParser:
         )
         # Degster had 0 assists
         assert (
-            assist_df.loc[assist_df["assister"] == "DemQQ-", "assist_count"].iloc[0] == 3
+            assist_df.loc[assist_df["assister"] == "DemQQ-", "assist_count"].iloc[0]
+            == 3
         )
         assert (
-            assist_df.loc[assist_df["assister"] == "kRaSnaL", "assist_count"].iloc[0] == 1
+            assist_df.loc[assist_df["assister"] == "kRaSnaL", "assist_count"].iloc[0]
+            == 1
         )
