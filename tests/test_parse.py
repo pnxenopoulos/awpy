@@ -225,8 +225,6 @@ class TestParser:
         """
         assert faceit_demo.rounds.shape[0] == 20
 
-        round_end_reasons = faceit_demo.rounds.round_end_reason.to_numpy()
-
     def test_faceit_kills(self, faceit_demo: Demo):
         """Tests the kills of a FACEIT demo.
 
