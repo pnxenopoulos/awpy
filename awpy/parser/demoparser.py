@@ -97,7 +97,7 @@ def parse_events_from_demo(
         event_list (list[str]): List of events to parse, see `GameEvent` enum.
 
     Returns:
-        list[Tuple[str, pd.DataFrame]]: List of tuples containing the event name 
+        list[Tuple[str, pd.DataFrame]]: List of tuples containing the event name
             and the parsed event data.
     """
     try:
