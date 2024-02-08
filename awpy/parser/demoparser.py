@@ -17,7 +17,6 @@ https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofi
 
 import os
 import warnings
-from typing import Tuple
 
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
@@ -89,7 +88,7 @@ def build_event_list(*, extended_events: bool = False) -> list[str]:
 
 def parse_events_from_demo(
     parser: DemoParser, event_list: list[str]
-) -> list[Tuple[str, pd.DataFrame]]:
+) -> list[tuple[str, pd.DataFrame]]:
     """Get events from the `demoparser2` Rust-based parser.
 
     Args:
