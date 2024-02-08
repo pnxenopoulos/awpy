@@ -5,7 +5,94 @@ import warnings
 import pandas as pd
 
 from awpy.parser.enums import GameEvent
+from awpy.parser.models import Demo
 
+
+def get_round_events(demo: Demo) -> pd.DataFrame:
+    """_summary_
+
+    Args:
+        demo (Demo): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    # Get all the round events and concatenate them
+    round_starts = demo.events.get("round_start")
+    round_freeze_ends = demo.events.get("round_freeze_end")
+    round_ends = demo.events.get("round_end")
+    round_officially_ended = demo.events.get("round_officially_ended")
+
+    round_events = pd.concat(
+        [
+            round_starts[["tick", "event_type"]],
+            round_freeze_ends[["tick", "event_type"]],
+            round_ends[["tick", "event_type"]],
+            round_officially_ended[["tick", "event_type"]],
+        ]
+    )
+
+    round_events["order"] = round_events["event_type"].map({
+        # This is 0 because start/official end can occur on same tick
+        GameEvent.ROUND_OFFICIALLY_ENDED.value: 0,
+        GameEvent.ROUND_START.value: 1,
+        GameEvent.ROUND_FREEZE_END.value: 2,
+        GameEvent.ROUND_END.value: 3,
+    })
+    round_events = round_events.sort_values(by=["tick", "order"]).reset_index(drop=True).drop(columns=["order"], axis=1)
+    round_events = round_events[["tick", "event_type"]]
+
+    # find first valid round
+    start_idx = find_first_valid_round(round_events)
+    round_events = round_events.iloc[start_idx:].reset_index(drop=True)
+
+    round_events = filter_invalid_rounds(round_events)
+
+    # find first round_start -> 
+
+    return round_events
+
+def find_first_valid_round(round_events: pd.DataFrame) -> int:
+    """_summary_
+
+    Args:
+        round_events (pd.DataFrame): _description_
+
+    Returns:
+        int: _description_
+    """
+    start_idx = 0
+    for i, row in round_events.iterrows():
+        if i < 3: continue  # Need first valid START-FREEZE-END-OFFICIAL
+        if row["event_type"] == "round_officially_ended":
+            if round_events.iloc[i-1]["event_type"] == "round_end":
+                if round_events.iloc[i-2]["event_type"] == "round_freeze_end":
+                    if round_events.iloc[i-3]["event_type"] == "round_start":
+                        start_idx = i-3
+                        break
+    return start_idx
+
+def filter_invalid_rounds(round_events: pd.DataFrame) -> pd.DataFrame:
+    """_summary_
+
+    Args:
+        round_events (pd.DataFrame): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    valid_rows = []
+    for i, row in round_events.iterrows():
+        if i < 3: continue
+        if (i == round_events.shape[0]-1) and (row["event_type"] == "round_end"):
+            valid_rows.extend([round_events.iloc[i-2:i-1], round_events.iloc[i-1:i], round_events.iloc[i:i+1]])
+            break
+        if row["event_type"] == "round_officially_ended":
+            if round_events.iloc[i-1]["event_type"] == "round_end":
+                if round_events.iloc[i-2]["event_type"] == "round_freeze_end":
+                    if round_events.iloc[i-3]["event_type"] == "round_start":
+                        valid_rows.extend([round_events.iloc[i-3:i-2], round_events.iloc[i-2:i-1], round_events.iloc[i-1:i], round_events.iloc[i:i+1]])
+    return pd.concat(valid_rows, ignore_index=True)
 
 def parse_rounds_df(parsed_round_events: list[tuple]) -> pd.DataFrame:
     """Parse the rounds of the demofile.
