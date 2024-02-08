@@ -7,7 +7,8 @@ def parse_header(parsed_header: dict) -> DemoHeader:
     """Parse the header of the demofile.
 
     Args:
-        parsed_header (dict): The header of the demofile.
+        parsed_header (dict): The header of the demofile. Output
+            of `parser.parse_header()`.
 
     Returns:
         DemoHeader: The parsed header of the demofile.

@@ -6,7 +6,7 @@ Example::
 
     from awpy.parser import parse_demo
 
-    parsed = parse_demo("og-vs-natus-vincere-m1-dust2.dem")
+    parsed = parse_demo(file="og-vs-natus-vincere-m1-dust2.dem")
     parsed.header
     parsed.events
     parsed.ticks
@@ -20,9 +20,10 @@ import warnings
 
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
+from typing import Tuple
 
 from awpy.parser.enums import Button, GameEvent, GameState, PlayerData
-from awpy.parser.header import parse_header
+from awpy.parser.header import DemoHeader, parse_header
 from awpy.parser.models import Demo
 
 
@@ -86,7 +87,7 @@ def build_event_list(*, extended_events: bool = False) -> list[str]:
     return events
 
 
-def parse_events_from_demo(parser: DemoParser, event_list: list[str]) -> list[tuple]:
+def parse_events_from_demo(parser: DemoParser, event_list: list[str]) -> list[Tuple[str, pd.DataFrame]]:
     """Get events from the `demoparser2` Rust-based parser.
 
     Args:
@@ -94,7 +95,7 @@ def parse_events_from_demo(parser: DemoParser, event_list: list[str]) -> list[tu
         event_list (list[str]): List of events to parse, see `GameEvent` enum.
 
     Returns:
-        list[tuple]: List of tuples containing the event name and the parsed event data.
+        list[Tuple[str, pd.DataFrame]]: List of tuples containing the event name and the parsed event data.
     """
     try:
         return parser.parse_events(event_list)
@@ -240,7 +241,6 @@ def parse_demo(
 
     Raises:
         FileNotFoundError: If the filepath does not exist.
-        ValueError: If the trade time is not a positive integer.
 
     Returns:
         Demo: A `Demo` object containing the parsed data.
@@ -248,6 +248,12 @@ def parse_demo(
     if not os.path.exists(file):
         file_not_found_msg = f"{file} not found."
         raise FileNotFoundError(file_not_found_msg)
+
+    if extended_ticks and not ticks:
+        warnings.warn(
+            "Extended ticks set to TRUE but ticks is set to FALSE. Defaulting to both.",
+            stacklevel=2,
+        )
 
     # Create a parser object
     parser = DemoParser(file)
@@ -274,9 +280,12 @@ def parse_demo(
     # Parse grenades
     parsed_grenades = parse_grenades_from_demo(parser)
 
+    # Parse the demo header
+    header = parse_header(parser.parse_header())
+
     # Create the parsed demo response
     parsed_data = {
-        "header": parse_header(parser.parse_header()),
+        "header": header,
         "events": events,
         "ticks": parsed_ticks,
         "grenades": parsed_grenades,

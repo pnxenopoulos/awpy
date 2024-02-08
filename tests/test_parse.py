@@ -12,7 +12,7 @@ def hltv_demo():
 
     https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro
     """
-    return parse_demo("tests/natus-vincere-vs-virtus-pro-m1-overpass.dem")
+    return parse_demo(file="tests/natus-vincere-vs-virtus-pro-m1-overpass.dem")
 
 
 @pytest.fixture(scope="class")
@@ -21,7 +21,7 @@ def faceit_demo():
 
     https://www.faceit.com/en/cs2/room/1-89e005ee-da0b-487a-9d5b-65fde0069d7a
     """
-    return parse_demo("tests/1-89e005ee-da0b-487a-9d5b-65fde0069d7a-1-2.dem")
+    return parse_demo(file="tests/1-89e005ee-da0b-487a-9d5b-65fde0069d7a-1-2.dem")
 
 
 class TestParser:

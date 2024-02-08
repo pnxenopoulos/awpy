@@ -31,7 +31,7 @@ Using Awpy to parse Counter-Strike demos is as easy as the few lines of code sho
    from awpy import parse_demo
 
    # Parse a demo file in one line!
-   demo = parse_demo("og-vs-natus-vincere-m1-dust2.dem")
+   demo = parse_demo(file="og-vs-natus-vincere-m1-dust2.dem")
 
    # The `demo` object contains a variety of keys
    demo.header       # Header information like the map, tick rate, etc.

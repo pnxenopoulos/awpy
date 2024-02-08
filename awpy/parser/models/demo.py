@@ -14,4 +14,4 @@ class Demo(BaseModel):
     header: DemoHeader
     events: dict[str, pd.DataFrame]
     ticks: pd.DataFrame | None
-    grenades: pd.DataFrame
+    grenades: pd.DataFrame | None

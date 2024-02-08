@@ -29,7 +29,7 @@ Using Awpy is easy! Just find a demo you want to analyze and use the example bel
 from awpy import parse_demo
 
 # Awpy parsed into a dictionary of data frames
-parsed_dfs = parse_demo("natus-vincere-vs-virtus-pro-m1-overpass.dem")
+parsed_dfs = parse_demo(file="natus-vincere-vs-virtus-pro-m1-overpass.dem")
 
 # Demo info such as map, server, etc.
 parsed.header
