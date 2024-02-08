@@ -35,7 +35,7 @@ class TestParser:
         with pytest.raises(
             FileNotFoundError, match="file-does-not-exist.dem not found."
         ):
-            parse_demo("file-does-not-exist.dem")
+            parse_demo(file="file-does-not-exist.dem")
 
     def test_hltv_demo_header(self, hltv_demo: Demo):
         """Tests the header of NaVi vs VP at PGL Copenhagen 2024 (CS2).
