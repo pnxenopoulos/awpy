@@ -17,13 +17,13 @@ https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofi
 
 import os
 import warnings
+from typing import Tuple
 
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
-from typing import Tuple
 
 from awpy.parser.enums import Button, GameEvent, GameState, PlayerData
-from awpy.parser.header import DemoHeader, parse_header
+from awpy.parser.header import parse_header
 from awpy.parser.models import Demo
 
 
@@ -87,7 +87,9 @@ def build_event_list(*, extended_events: bool = False) -> list[str]:
     return events
 
 
-def parse_events_from_demo(parser: DemoParser, event_list: list[str]) -> list[Tuple[str, pd.DataFrame]]:
+def parse_events_from_demo(
+    parser: DemoParser, event_list: list[str]
+) -> list[Tuple[str, pd.DataFrame]]:
     """Get events from the `demoparser2` Rust-based parser.
 
     Args:
@@ -95,7 +97,8 @@ def parse_events_from_demo(parser: DemoParser, event_list: list[str]) -> list[Tu
         event_list (list[str]): List of events to parse, see `GameEvent` enum.
 
     Returns:
-        list[Tuple[str, pd.DataFrame]]: List of tuples containing the event name and the parsed event data.
+        list[Tuple[str, pd.DataFrame]]: List of tuples containing the event name 
+            and the parsed event data.
     """
     try:
         return parser.parse_events(event_list)
@@ -259,12 +262,12 @@ def parse_demo(
     parser = DemoParser(file)
 
     # Parse all relevant events
-    events = build_event_list(extended_events=extended_events)
+    event_list = build_event_list(extended_events=extended_events)
     parsed_events = parse_events_from_demo(
         parser,
-        events,
+        event_list,
     )
-    events = dict(parsed_events)
+    events: dict[str, pd.DataFrame] = dict(parsed_events)
 
     # Parse relevant
     parsed_ticks = None
@@ -284,11 +287,6 @@ def parse_demo(
     header = parse_header(parser.parse_header())
 
     # Create the parsed demo response
-    parsed_data = {
-        "header": header,
-        "events": events,
-        "ticks": parsed_ticks,
-        "grenades": parsed_grenades,
-    }
-
-    return Demo(**parsed_data)
+    return Demo(
+        header=header, events=events, ticks=parsed_ticks, grenades=parsed_grenades
+    )
