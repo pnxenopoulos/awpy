@@ -89,7 +89,7 @@ select = [
     "RUF",
     "EM",
 ]
-ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "BLE001"] # , "PLR0912", "PLR0915", "PLR0913"
+ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "BLE001", "PLR2004"]
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
