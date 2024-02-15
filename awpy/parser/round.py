@@ -225,7 +225,7 @@ def apply_round_id_to_df(df: pd.DataFrame, round_df: pd.DataFrame) -> pd.DataFra
         tick_col_missing_msg = "DataFrame must contain a 'tick' column."
         raise ValueError(tick_col_missing_msg)
     interval_index = pd.IntervalIndex.from_arrays(
-        round_df["round_start"], round_df["round_end_official"], closed="left"
+        round_df["round_start"], round_df["round_officially_ended"], closed="left"
     )
     intervals = pd.cut(df["tick"], interval_index)
     round_id_map = dict(zip(interval_index, round_df["round_id"], strict=True))
