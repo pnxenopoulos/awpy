@@ -1,11 +1,12 @@
 """Tests demo parsing functionality."""
 
-import pytest
 import pandas as pd
+import pytest
 from pydantic import ValidationError
 
 from awpy.parser import parse_demo
 from awpy.parser.models import Demo, DemoHeader
+from awpy.parser.round import apply_round_id_to_df, parse_rounds
 
 
 @pytest.fixture(scope="class")
@@ -15,6 +16,51 @@ def hltv_demo():
     https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro
     """
     return parse_demo(file="tests/natus-vincere-vs-virtus-pro-m1-overpass.dem")
+
+
+@pytest.fixture(scope="class")
+def hltv_demo_round_end_reasons():
+    """Test case for NaVi vs VP at PGL Copenhagen 2024 (CS2) from HLTV.
+
+    https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro
+    """
+    return [
+        "t_win",
+        "t_win",
+        "t_win",
+        "t_win",
+        "t_win",
+        "t_win",
+        "target_saved",
+        "t_win",
+        "target_bombed",
+        "t_win",
+        "ct_win",
+        "ct_win",
+        "t_win",
+        "target_bombed",
+        "t_win",
+        "t_win",
+        "target_bombed",
+        "ct_win",
+        "t_win",
+        "target_bombed",
+        "t_win",
+        "target_saved",
+        "target_saved",
+        "t_win",
+        "target_bombed",
+        "t_win",
+        "ct_win",
+        "t_win",
+        "t_win",
+        "ct_win",
+        "target_bombed",
+        "bomb_defused",
+        "ct_win",
+        "t_win",
+        "t_win",
+    ]
 
 
 @pytest.fixture(scope="class")
@@ -64,7 +110,7 @@ class TestParser:
             Demo(header=header, events={}, ticks=None, grenades=None)
 
     def test_missing_round_start(self, header: DemoHeader):
-        """Test that we raise appropriate errors if we are missing round start events."""
+        """Test that we raise an error if we are missing round start events."""
         with pytest.raises(ValidationError):
             Demo(
                 header=header,
@@ -78,7 +124,7 @@ class TestParser:
             )
 
     def test_missing_round_freeze(self, header: DemoHeader):
-        """Test that we raise appropriate errors if we are missing round freeze events."""
+        """Test that we raise an error if we are missing round freeze events."""
         with pytest.raises(ValidationError):
             Demo(
                 header=header,
@@ -92,7 +138,7 @@ class TestParser:
             )
 
     def test_missing_round_end(self, header: DemoHeader):
-        """Test that we raise appropriate errors if we are missing round freeze events."""
+        """Test that we raise an error if we are missing round freeze events."""
         with pytest.raises(ValidationError):
             Demo(
                 header=header,
@@ -106,7 +152,7 @@ class TestParser:
             )
 
     def test_missing_round_officially_ended(self, header: DemoHeader):
-        """Test that we raise appropriate errors if we are missing round freeze events."""
+        """Test that we raise an error if we are missing round freeze events."""
         with pytest.raises(ValidationError):
             Demo(
                 header=header,
@@ -131,7 +177,9 @@ class TestParser:
         assert all(demo.events["round_start"].columns == ["tick", "event_type"])
         assert all(demo.events["round_freeze_end"].columns == ["tick", "event_type"])
         assert all(demo.events["round_end"].columns == ["tick", "event_type"])
-        assert all(demo.events["round_officially_ended"].columns == ["tick", "event_type"])
+        assert all(
+            demo.events["round_officially_ended"].columns == ["tick", "event_type"]
+        )
 
     def test_hltv_demo_header(self, hltv_demo: Demo):
         """Tests the header of NaVi vs VP at PGL Copenhagen 2024 (CS2).
@@ -158,3 +206,36 @@ class TestParser:
         assert faceit_demo.header.demo_version_name == "valve_demo_2"
         assert faceit_demo.header.map_name == "de_anubis"
         assert faceit_demo.header.server_name == "FACEIT.com register to play here"
+
+
+class TestRoundParser:
+    """Class to test the round parsing functions."""
+
+    def test_hltv_rounds(self, hltv_demo: Demo, hltv_demo_round_end_reasons: list[str]):
+        """Tests the round parsing for NaVi vs VP at PGL Copenhagen 2024 (CS2).
+
+        Args:
+            hltv_demo (Demo): The parsed NaVi vs VP demo.
+            hltv_demo_round_end_reasons (list[str]): The expected round end reasons.
+        """
+        rounds = parse_rounds(hltv_demo)
+        assert rounds.shape[0] == 35
+        assert rounds.round_start.tolist()[0] == 79_614
+        round_end_reasons = rounds.round_end_reason.tolist()
+        for parsed_reason, expected_reason in zip(
+            round_end_reasons, hltv_demo_round_end_reasons, strict=False
+        ):
+            assert parsed_reason == expected_reason
+
+    def test_tick_column_not_found(self, hltv_demo: Demo):
+        """Test that we raise an error if the tick column is not found."""
+        rounds = parse_rounds(hltv_demo)
+        with pytest.raises(KeyError):
+            apply_round_id_to_df(rounds, rounds)
+
+    def test_round_id_for_event(self, hltv_demo: Demo):
+        """Test that we add the round_id to the DataFrame."""
+        rounds = parse_rounds(hltv_demo)
+        events = pd.DataFrame({"tick": [80_000], "event": ["test_event"]})
+        events = apply_round_id_to_df(events, rounds)
+        assert events.round_id.tolist()[0] == 1

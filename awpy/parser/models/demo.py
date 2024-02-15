@@ -18,21 +18,29 @@ class Demo(BaseModel):
 
     @field_validator("events")
     @classmethod
-    def validate_round_events(cls, events: dict[str, pd.DataFrame]):
+    def validate_round_events(
+        cls: type["Demo"], events: dict[str, pd.DataFrame]
+    ) -> dict[str, pd.DataFrame]:
         """Validate that the events DataFrame contains the necessary events."""
         if "round_start" not in events:
-            raise ValueError("No round_start events found")
+            no_round_start_msg = "No round_start events found"
+            raise ValueError(no_round_start_msg)
         if "round_freeze_end" not in events:
-            raise ValueError("No round_freeze_end events found")
+            no_round_freeze_msg = "No round_freeze_end events found"
+            raise ValueError(no_round_freeze_msg)
         if "round_end" not in events:
-            raise ValueError("No round_end events found")
+            no_round_end_msg = "No round_end events found"
+            raise ValueError(no_round_end_msg)
         if "round_officially_ended" not in events:
-            raise ValueError("No round_officially_ended events found")
+            no_round_officially_ended = "No round_officially_ended events found"
+            raise ValueError(no_round_officially_ended)
         return events
 
     @field_validator("events")
     @classmethod
-    def add_event_name_to_dataframe(cls, events: dict[str, pd.DataFrame]):
+    def add_event_name_to_dataframe(
+        cls: type["Demo"], events: dict[str, pd.DataFrame]
+    ) -> dict[str, pd.DataFrame]:
         """Apply the event name to the DataFrame."""
         for event_name, df in events.items():
             df["event_type"] = event_name
