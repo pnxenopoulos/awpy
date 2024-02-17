@@ -3,7 +3,7 @@
 import pandas as pd
 
 from awpy.parser.enums import GameEvent
-from awpy.parser.models import Demo
+from awpy.parser.models.demo import Demo
 
 
 def parse_rounds(demo: Demo) -> pd.DataFrame:

@@ -3,7 +3,7 @@
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from .header import DemoHeader
+from awpy.parser.models.header import DemoHeader
 
 
 class Demo(BaseModel):

@@ -24,48 +24,54 @@ from demoparser2 import DemoParser  # pylint: disable=E0611
 from awpy.parser.enums import Button, GameEvent, GameState, PlayerData
 from awpy.parser.header import parse_header
 from awpy.parser.models import Demo
+from awpy.parser.round import parse_rounds, apply_round_id_to_df
 
 
-def build_event_list(*, extended_events: bool = False) -> list[str]:
+def build_event_list(
+    *, extended_events: bool = False, custom_events: list[str] = None
+) -> list[str]:
     """Build the list of events to parse.
 
     Args:
         extended_events (bool, optional): Whether to parse an extended
             set of events. Defaults to False.
+        custom_events (list[str], optional): List of custom event names to include.
 
     Returns:
         list[str]: List of events to parse, see `GameEvent` enum.
     """
-    events = [
-        # Round
-        GameEvent.ROUND_START.value,
-        GameEvent.ROUND_FREEZE_END.value,
-        GameEvent.ROUND_END.value,
-        GameEvent.ROUND_OFFICIALLY_ENDED.value,
-        # Bomb
-        GameEvent.BOMB_PLANTED.value,
-        GameEvent.BOMB_DEFUSED.value,
-        GameEvent.BOMB_BEGINPLANT.value,
-        GameEvent.BOMB_EXPLODED.value,
-        GameEvent.BOMB_BEGINDEFUSE.value,
-        # Grenade
-        GameEvent.FLASHBANG_DETONATE.value,
-        GameEvent.HEGRENADE_DETONATE.value,
-        GameEvent.INFERNO_STARTBURN.value,
-        GameEvent.INFERNO_EXPIRE.value,
-        GameEvent.SMOKEGRENADE_DETONATE.value,
-        GameEvent.SMOKEGRENADE_EXPIRED.value,
-        # Player
-        GameEvent.PLAYER_HURT.value,
-        GameEvent.PLAYER_DEATH.value,
-        # Phases
-        GameEvent.BEGIN_NEW_MATCH.value,
-        GameEvent.ANNOUNCE_PHASE_END.value,
-        GameEvent.ROUND_ANNOUNCE_LAST_ROUND_HALF.value,
-        GameEvent.ROUND_ANNOUNCE_MATCH_START.value,
-    ]
+    events = set(
+        [
+            # Round
+            GameEvent.ROUND_START.value,
+            GameEvent.ROUND_FREEZE_END.value,
+            GameEvent.ROUND_END.value,
+            GameEvent.ROUND_OFFICIALLY_ENDED.value,
+            # Bomb
+            GameEvent.BOMB_PLANTED.value,
+            GameEvent.BOMB_DEFUSED.value,
+            GameEvent.BOMB_BEGINPLANT.value,
+            GameEvent.BOMB_EXPLODED.value,
+            GameEvent.BOMB_BEGINDEFUSE.value,
+            # Grenade
+            GameEvent.FLASHBANG_DETONATE.value,
+            GameEvent.HEGRENADE_DETONATE.value,
+            GameEvent.INFERNO_STARTBURN.value,
+            GameEvent.INFERNO_EXPIRE.value,
+            GameEvent.SMOKEGRENADE_DETONATE.value,
+            GameEvent.SMOKEGRENADE_EXPIRED.value,
+            # Player
+            GameEvent.PLAYER_HURT.value,
+            GameEvent.PLAYER_DEATH.value,
+            # Phases
+            GameEvent.BEGIN_NEW_MATCH.value,
+            GameEvent.ANNOUNCE_PHASE_END.value,
+            GameEvent.ROUND_ANNOUNCE_LAST_ROUND_HALF.value,
+            GameEvent.ROUND_ANNOUNCE_MATCH_START.value,
+        ]
+    )
     if extended_events:
-        events.extend(
+        events.update(
             [
                 GameEvent.DECOY_STARTED.value,
                 GameEvent.DECOY_DETONATE.value,
@@ -83,7 +89,9 @@ def build_event_list(*, extended_events: bool = False) -> list[str]:
                 GameEvent.RANK_UPDATE.value,
             ]
         )
-    return events
+    if custom_events:
+        events.update(custom_events)
+    return list(events)
 
 
 def parse_events_from_demo(
@@ -229,6 +237,7 @@ def parse_demo(
     extended_ticks: bool = False,
     extended_events: bool = False,
     keystrokes: bool = False,
+    custom_events: list[str] = None,
 ) -> Demo:
     """Parse a Counter-Strike 2 demo file.
 
@@ -240,6 +249,7 @@ def parse_demo(
         extended_events (bool, optional): Whether to parse extended
             events. Defaults to False.
         keystrokes (bool, optional): Whether to parse keystrokes. Defaults to False.
+        custom_events (list[str], optional): List of custom event names to include.
 
     Raises:
         FileNotFoundError: If the filepath does not exist.
@@ -261,7 +271,9 @@ def parse_demo(
     parser = DemoParser(file)
 
     # Parse all relevant events
-    event_list = build_event_list(extended_events=extended_events)
+    event_list = build_event_list(
+        extended_events=extended_events, custom_events=custom_events
+    )
     parsed_events = parse_events_from_demo(
         parser,
         event_list,
@@ -286,6 +298,18 @@ def parse_demo(
     header = parse_header(parser.parse_header())
 
     # Create the parsed demo response
-    return Demo(
+    demo = Demo(
         header=header, events=events, ticks=parsed_ticks, grenades=parsed_grenades
     )
+
+    # Add round ids to the events
+    rounds_df = parse_rounds(demo)
+    for event_name, df in demo.events.items():
+        df = apply_round_id_to_df(df, rounds_df)
+        demo.events[event_name] = df
+
+    # # Add round ids to the ticks
+    if demo.ticks is not None:
+        demo.ticks = apply_round_id_to_df(demo.ticks, rounds_df)
+
+    return demo

@@ -1,6 +1,6 @@
 """Parsing methods for the header of a Counter-Strike demo file."""
 
-from awpy.parser.models import DemoHeader
+from awpy.parser.models.header import DemoHeader
 
 
 def parse_header(parsed_header: dict) -> DemoHeader:
