@@ -15,7 +15,9 @@ def hltv_demo():
 
     https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro
     """
-    return parse_demo(file="tests/natus-vincere-vs-virtus-pro-m1-overpass.dem")
+    return parse_demo(
+        file="tests/natus-vincere-vs-virtus-pro-m1-overpass.dem", rounds=False
+    )
 
 
 @pytest.fixture(scope="class")

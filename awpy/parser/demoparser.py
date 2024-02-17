@@ -24,11 +24,11 @@ from demoparser2 import DemoParser  # pylint: disable=E0611
 from awpy.parser.enums import Button, GameEvent, GameState, PlayerData
 from awpy.parser.header import parse_header
 from awpy.parser.models import Demo
-from awpy.parser.round import parse_rounds, apply_round_id_to_df
+from awpy.parser.round import apply_round_id_to_df, parse_rounds
 
 
 def build_event_list(
-    *, extended_events: bool = False, custom_events: list[str] = None
+    *, extended_events: bool = False, custom_events: list[str] | None = None
 ) -> list[str]:
     """Build the list of events to parse.
 
@@ -40,36 +40,35 @@ def build_event_list(
     Returns:
         list[str]: List of events to parse, see `GameEvent` enum.
     """
-    events = set(
-        [
-            # Round
-            GameEvent.ROUND_START.value,
-            GameEvent.ROUND_FREEZE_END.value,
-            GameEvent.ROUND_END.value,
-            GameEvent.ROUND_OFFICIALLY_ENDED.value,
-            # Bomb
-            GameEvent.BOMB_PLANTED.value,
-            GameEvent.BOMB_DEFUSED.value,
-            GameEvent.BOMB_BEGINPLANT.value,
-            GameEvent.BOMB_EXPLODED.value,
-            GameEvent.BOMB_BEGINDEFUSE.value,
-            # Grenade
-            GameEvent.FLASHBANG_DETONATE.value,
-            GameEvent.HEGRENADE_DETONATE.value,
-            GameEvent.INFERNO_STARTBURN.value,
-            GameEvent.INFERNO_EXPIRE.value,
-            GameEvent.SMOKEGRENADE_DETONATE.value,
-            GameEvent.SMOKEGRENADE_EXPIRED.value,
-            # Player
-            GameEvent.PLAYER_HURT.value,
-            GameEvent.PLAYER_DEATH.value,
-            # Phases
-            GameEvent.BEGIN_NEW_MATCH.value,
-            GameEvent.ANNOUNCE_PHASE_END.value,
-            GameEvent.ROUND_ANNOUNCE_LAST_ROUND_HALF.value,
-            GameEvent.ROUND_ANNOUNCE_MATCH_START.value,
-        ]
-    )
+    base_events = [
+        # Round
+        GameEvent.ROUND_START.value,
+        GameEvent.ROUND_FREEZE_END.value,
+        GameEvent.ROUND_END.value,
+        GameEvent.ROUND_OFFICIALLY_ENDED.value,
+        # Bomb
+        GameEvent.BOMB_PLANTED.value,
+        GameEvent.BOMB_DEFUSED.value,
+        GameEvent.BOMB_BEGINPLANT.value,
+        GameEvent.BOMB_EXPLODED.value,
+        GameEvent.BOMB_BEGINDEFUSE.value,
+        # Grenade
+        GameEvent.FLASHBANG_DETONATE.value,
+        GameEvent.HEGRENADE_DETONATE.value,
+        GameEvent.INFERNO_STARTBURN.value,
+        GameEvent.INFERNO_EXPIRE.value,
+        GameEvent.SMOKEGRENADE_DETONATE.value,
+        GameEvent.SMOKEGRENADE_EXPIRED.value,
+        # Player
+        GameEvent.PLAYER_HURT.value,
+        GameEvent.PLAYER_DEATH.value,
+        # Phases
+        GameEvent.BEGIN_NEW_MATCH.value,
+        GameEvent.ANNOUNCE_PHASE_END.value,
+        GameEvent.ROUND_ANNOUNCE_LAST_ROUND_HALF.value,
+        GameEvent.ROUND_ANNOUNCE_MATCH_START.value,
+    ]
+    events = set(base_events)
     if extended_events:
         events.update(
             [
@@ -230,19 +229,43 @@ def parse_grenades_from_demo(parser: DemoParser) -> pd.DataFrame:
     return grenade_df
 
 
+def apply_round_id_to_demo(demo: Demo) -> Demo:
+    """Apply the round_id to the events and ticks DataFrames.
+
+    Args:
+        demo (Demo): The parsed demo.
+
+    Returns:
+        Demo: The parsed demo with round ids applied to the events and ticks.
+    """
+    # Add round ids to the events
+    rounds_df = parse_rounds(demo)
+    for event_name, event_df in demo.events.items():
+        event_df_with_round_ids = apply_round_id_to_df(event_df, rounds_df)
+        demo.events[event_name] = event_df_with_round_ids
+
+    # # Add round ids to the ticks
+    if demo.ticks is not None:
+        demo.ticks = apply_round_id_to_df(demo.ticks, rounds_df)
+
+    return demo
+
+
 def parse_demo(
     *,
     file: str,
+    rounds: bool = True,
     ticks: bool = True,
     extended_ticks: bool = False,
     extended_events: bool = False,
     keystrokes: bool = False,
-    custom_events: list[str] = None,
+    custom_events: list[str] | None = None,
 ) -> Demo:
     """Parse a Counter-Strike 2 demo file.
 
     Args:
         file (str): Path to the demo file.
+        rounds (bool, optional): Whether to parse rounds. Defaults to True.
         ticks (bool, optional): Whether to parse ticks. Defaults to True.
         extended_ticks (bool, optional): Whether to parse extended information
             for each tick. Defaults to False.
@@ -302,14 +325,7 @@ def parse_demo(
         header=header, events=events, ticks=parsed_ticks, grenades=parsed_grenades
     )
 
-    # Add round ids to the events
-    rounds_df = parse_rounds(demo)
-    for event_name, df in demo.events.items():
-        df = apply_round_id_to_df(df, rounds_df)
-        demo.events[event_name] = df
-
-    # # Add round ids to the ticks
-    if demo.ticks is not None:
-        demo.ticks = apply_round_id_to_df(demo.ticks, rounds_df)
+    if rounds:
+        demo = apply_round_id_to_demo(demo)
 
     return demo
