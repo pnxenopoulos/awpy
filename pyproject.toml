@@ -24,7 +24,7 @@ dependencies = [
     "pydantic>=2.6.0",
     "setuptools>=69.0.3",
     "sphinx-rtd-theme==2.0.0",
-    "demoparser2>=0.16.1"
+    "demoparser2>=0.18.0"
 ]
 
 [tool.setuptools]
