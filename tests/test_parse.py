@@ -195,6 +195,7 @@ class TestParser:
                 "round_freeze_end": pd.DataFrame([{"tick": 1}]),
                 "round_end": pd.DataFrame([{"tick": 1}]),
                 "round_officially_ended": pd.DataFrame([{"tick": 1}]),
+                "bomb_planted": pd.DataFrame([{"tick": 1}]),
             },
             ticks=None,
             grenades=None,
@@ -205,6 +206,7 @@ class TestParser:
         assert all(
             demo.events["round_officially_ended"].columns == ["tick", "event_type"]
         )
+        assert all(demo.events["bomb_planted"].columns == ["tick", "event_type"])
 
     def test_hltv_demo_header(self, hltv_demo: Demo):
         """Tests the header of NaVi vs VP at PGL Copenhagen 2024 (CS2).

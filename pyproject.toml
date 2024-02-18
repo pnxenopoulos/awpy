@@ -11,12 +11,13 @@ authors = [
 ]
 description = "Counter-Strike demo parsing, analysis and visualization"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 keywords = ["counter-strike", "csgo", "esports", "sports-analytics"]
 license = { text = "MIT License" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
     "numpy>=1.26.3",
@@ -122,7 +123,7 @@ line-length = 88
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-# Assume Python 3.12.
+# Assume Python 3.11.
 target-version = "py312"
 
 [tool.ruff.per-file-ignores]
