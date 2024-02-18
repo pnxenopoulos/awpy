@@ -52,12 +52,7 @@ Counter-Strike demos can be a bit troublesome. It is likely you'll see increased
 ## Examples and Projects
 Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
 
-- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CSGO_Demofile.ipynb)
-- [Basic CSGO analysis](https://github.com/pnxenopoulos/awpy/blob/main/examples/01_Basic_CSGO_Analysis.ipynb)
-- [Basic CSGO visualization](https://github.com/pnxenopoulos/awpy/blob/main/examples/02_Basic_CSGO_Visualization.ipynb)
-- [Working with navigation meshes](https://github.com/pnxenopoulos/awpy/blob/main/examples/03_Working_with_Navigation_Meshes.ipynb)
-- [Advanced navigation functionality](https://github.com/pnxenopoulos/awpy/blob/main/examples/04_Advanced_Navigation_Functionality.ipynb)
-- [Map control](https://github.com/pnxenopoulos/awpy/blob/main/examples/05_Map_Control_Calculations_And_Visualizations.ipynb)
+- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CS2_Demofile.ipynb)
 
 If you use the parser for any public analysis, we kindly ask you to link to the Awpy repository, so that others may know how you parsed, analyzed or visualized your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it to our growing list!
 
