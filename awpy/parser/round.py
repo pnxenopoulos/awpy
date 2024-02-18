@@ -54,7 +54,7 @@ def parse_rounds(demo: Demo) -> pd.DataFrame:
         "round_freeze_end",
         "round_end",
         "round_officially_ended",
-        "bomb_plant"
+        "bomb_plant",
     ]:
         rounds[column] = rounds[column].astype(int)
 
@@ -63,7 +63,9 @@ def parse_rounds(demo: Demo) -> pd.DataFrame:
     bomb_plants = apply_round_id_to_df(bomb_plants, rounds)
     rounds = rounds.merge(bomb_plants[["tick", "round_id"]], how="left", on="round_id")
     rounds = rounds.rename(columns={"tick": "bomb_plant"}).fillna(pd.NA)
-    rounds["bomb_plant"] = pd.to_numeric(rounds["bomb_plant"], errors='coerce').astype('Int64')
+    rounds["bomb_plant"] = pd.to_numeric(rounds["bomb_plant"], errors="coerce").astype(
+        "Int64"
+    )
 
     return rounds
 
