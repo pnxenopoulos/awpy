@@ -223,6 +223,8 @@ class TestRoundParser:
         rounds = parse_rounds(hltv_demo)
         assert rounds.shape[0] == 35
         assert rounds.round_start.tolist()[0] == 79_614
+        assert rounds.bomb_plant.tolist()[0] == 86_518
+        assert pd.isna(rounds.bomb_plant.tolist()[6])
         round_end_reasons = rounds.round_end_reason.tolist()
         for parsed_reason, expected_reason in zip(
             round_end_reasons, hltv_demo_round_end_reasons, strict=False

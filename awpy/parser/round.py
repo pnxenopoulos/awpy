@@ -54,8 +54,16 @@ def parse_rounds(demo: Demo) -> pd.DataFrame:
         "round_freeze_end",
         "round_end",
         "round_officially_ended",
+        "bomb_plant"
     ]:
         rounds[column] = rounds[column].astype(int)
+
+    # Get bomb plant information
+    bomb_plants: pd.DataFrame = demo.events.get("bomb_planted")
+    bomb_plants = apply_round_id_to_df(bomb_plants, rounds)
+    rounds = rounds.merge(bomb_plants[["tick", "round_id"]], how="left", on="round_id")
+    rounds = rounds.rename(columns={"tick": "bomb_plant"}).fillna(pd.NA)
+    rounds["bomb_plant"] = pd.to_numeric(rounds["bomb_plant"], errors='coerce').astype('Int64')
 
     return rounds
 
@@ -90,7 +98,7 @@ def get_round_events(demo: Demo) -> pd.DataFrame:
             GameEvent.ROUND_OFFICIALLY_ENDED.value: 0,
             GameEvent.ROUND_START.value: 1,
             GameEvent.ROUND_FREEZE_END.value: 2,
-            GameEvent.ROUND_END.value: 3,
+            GameEvent.ROUND_END.value: 4,
         }
     )
     round_events = (

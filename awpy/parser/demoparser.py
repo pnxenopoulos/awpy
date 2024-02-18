@@ -248,6 +248,9 @@ def apply_round_id_to_demo(demo: Demo) -> Demo:
     if demo.ticks is not None:
         demo.ticks = apply_round_id_to_df(demo.ticks, rounds_df)
 
+    if demo.grenades is not None:
+        demo.grenades = apply_round_id_to_df(demo.grenades, rounds_df)
+
     return demo
 
 
