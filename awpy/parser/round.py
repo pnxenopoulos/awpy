@@ -54,7 +54,6 @@ def parse_rounds(demo: Demo) -> pd.DataFrame:
         "round_freeze_end",
         "round_end",
         "round_officially_ended",
-        "bomb_plant",
     ]:
         rounds[column] = rounds[column].astype(int)
 

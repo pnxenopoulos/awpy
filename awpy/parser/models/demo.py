@@ -32,8 +32,11 @@ class Demo(BaseModel):
             no_round_end_msg = "No round_end events found"
             raise ValueError(no_round_end_msg)
         if "round_officially_ended" not in events:
-            no_round_officially_ended = "No round_officially_ended events found"
-            raise ValueError(no_round_officially_ended)
+            no_round_officially_ended_msg = "No round_officially_ended events found"
+            raise ValueError(no_round_officially_ended_msg)
+        if "bomb_planted" not in events:
+            no_bomb_planted_msg = "No bomb_planted events found"
+            raise ValueError(no_bomb_planted_msg)
         return events
 
     @field_validator("events")

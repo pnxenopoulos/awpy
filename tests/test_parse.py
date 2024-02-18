@@ -120,6 +120,7 @@ class TestParser:
                     "round_freeze_end": [],
                     "round_end": [],
                     "round_officially_ended": [],
+                    "bomb_planted": [],
                 },
                 ticks=None,
                 grenades=None,
@@ -134,13 +135,14 @@ class TestParser:
                     "round_start": [],
                     "round_end": [],
                     "round_officially_ended": [],
+                    "bomb_planted": [],
                 },
                 ticks=None,
                 grenades=None,
             )
 
     def test_missing_round_end(self, header: DemoHeader):
-        """Test that we raise an error if we are missing round freeze events."""
+        """Test that we raise an error if we are missing round end events."""
         with pytest.raises(ValidationError):
             Demo(
                 header=header,
@@ -148,17 +150,38 @@ class TestParser:
                     "round_start": [],
                     "round_freeze_end": [],
                     "round_officially_ended": [],
+                    "bomb_planted": [],
                 },
                 ticks=None,
                 grenades=None,
             )
 
     def test_missing_round_officially_ended(self, header: DemoHeader):
-        """Test that we raise an error if we are missing round freeze events."""
+        """Test that we raise an error if we are missing round official end events."""
         with pytest.raises(ValidationError):
             Demo(
                 header=header,
-                events={"round_start": [], "round_freeze_end": [], "round_end": []},
+                events={
+                    "round_start": [],
+                    "round_freeze_end": [],
+                    "round_end": [],
+                    "bomb_planted": [],
+                },
+                ticks=None,
+                grenades=None,
+            )
+
+    def test_missing_bomb_planted(self, header: DemoHeader):
+        """Test that we raise an error if we are missing bomb planted events."""
+        with pytest.raises(ValidationError):
+            Demo(
+                header=header,
+                events={
+                    "round_start": [],
+                    "round_freeze_end": [],
+                    "round_end": [],
+                    "round_officially_ended": [],
+                },
                 ticks=None,
                 grenades=None,
             )
