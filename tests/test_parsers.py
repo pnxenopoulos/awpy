@@ -16,7 +16,7 @@ def hltv_demoparser() -> DemoParser:
     Source: HLTV
     Link: https://www.hltv.org/stats/matches/mapstatsid/170716/spirit-vs-mouz
     """
-    return DemoParser(file="tests/spirit-vs-mouz-m1-vertigo.dem")
+    return DemoParser("tests/spirit-vs-mouz-m1-vertigo.dem")
 
 
 @pytest.fixture(scope="class")
