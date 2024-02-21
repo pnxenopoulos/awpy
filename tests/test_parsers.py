@@ -4,16 +4,19 @@ import pandas as pd
 import pytest
 from demoparser2 import DemoParser
 
-from awpy.parsers import remove_nonplay_ticks
+from awpy.parsers import parse_damages, parse_kills, remove_nonplay_ticks
 
 
 @pytest.fixture(scope="class")
 def hltv_demoparser() -> DemoParser:
-    """Test case for NaVi vs VP at PGL Copenhagen 2024 (CS2) from HLTV.
+    """Test case for an HLTV demo.
 
-    https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro
+    Teams: Spirit vs MOUZ
+    Event: PGL CS2 Major Copenhagen 2024 Europe RMR B (CS2)
+    Source: HLTV
+    Link: https://www.hltv.org/stats/matches/mapstatsid/170716/spirit-vs-mouz
     """
-    return DemoParser(file="tests/natus-vincere-vs-virtus-pro-m1-overpass.dem")
+    return DemoParser(file="tests/spirit-vs-mouz-m1-vertigo.dem")
 
 
 @pytest.fixture(scope="class")
@@ -56,3 +59,90 @@ class TestParsers:
         assert len(filtered_df) == 2
         assert "event1" in filtered_df["other_data"].to_numpy()
         assert "event2" in filtered_df["other_data"].to_numpy()
+
+    def test_kills(self, hltv_demoparser: DemoParser):
+        """Tests that we can get kills from demos."""
+        hltv_kills = parse_kills(hltv_demoparser)
+        # Checks kills and headshots
+        assert hltv_kills.shape[0] == 159
+        assert (
+            hltv_kills[hltv_kills["attacker_side"] != hltv_kills["victim_side"]].shape[
+                0
+            ]
+            == 158
+        )
+        assert hltv_kills["headshot"].sum() == 65
+        # Check assists
+        hltv_assists = (
+            hltv_kills[
+                ~hltv_kills["assister_name"].isna() & ~hltv_kills["assistedflash"]
+            ]
+            .groupby("assister_name")
+            .size()
+        ).reset_index(name="assists")
+        assert all(
+            hltv_assists[hltv_assists["assister_name"] == "Brollan"].assists == 3
+        )
+        assert all(
+            hltv_assists[hltv_assists["assister_name"] == "Jimphhat"].assists == 8
+        )
+        assert all(
+            hltv_assists[hltv_assists["assister_name"] == "chopper"].assists == 3
+        )
+        assert all(hltv_assists[hltv_assists["assister_name"] == "donk"].assists == 7)
+        assert all(hltv_assists[hltv_assists["assister_name"] == "magixx"].assists == 4)
+        assert all(hltv_assists[hltv_assists["assister_name"] == "sh1ro"].assists == 6)
+        assert all(hltv_assists[hltv_assists["assister_name"] == "siuhy"].assists == 5)
+        assert all(hltv_assists[hltv_assists["assister_name"] == "torzsi"].assists == 3)
+        assert all(
+            hltv_assists[hltv_assists["assister_name"] == "xertioN"].assists == 7
+        )
+        assert all(hltv_assists[hltv_assists["assister_name"] == "zont1x"].assists == 8)
+
+    def test_damages(self, hltv_demoparser: DemoParser):
+        """Tests that we can get damages from demos."""
+        hltv_damage = parse_damages(hltv_demoparser)
+        hltv_damage_total = round(
+            hltv_damage[hltv_damage["attacker_side"] != hltv_damage["victim_side"]]
+            .groupby("attacker_name")
+            .dmg_health_real.sum()
+            / 23,
+            1,
+        ).reset_index(name="adr")
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "Brollan"].adr
+            == 91.4
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "Jimpphat"].adr
+            == 87.7
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "chopper"].adr
+            == 62.1
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "donk"].adr == 72.8
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "magixx"].adr
+            == 65.1
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "sh1ro"].adr == 93.7
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "siuhy"].adr == 84.7
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "torzsi"].adr
+            == 73.9
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "xertioN"].adr
+            == 65.5
+        )
+        assert all(
+            hltv_damage_total[hltv_damage_total["attacker_name"] == "zont1x"].adr
+            == 70.8
+        )
