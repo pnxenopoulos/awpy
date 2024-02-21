@@ -10,7 +10,7 @@ from awpy.converters import (
 )
 
 
-def filter_out_nonplay_ticks(parsed_df: pd.DataFrame) -> pd.DataFrame:
+def remove_nonplay_ticks(parsed_df: pd.DataFrame) -> pd.DataFrame:
     """Filter out non-play records from a dataframe.
 
     Args:
@@ -36,13 +36,13 @@ def filter_out_nonplay_ticks(parsed_df: pd.DataFrame) -> pd.DataFrame:
 
     # Remove records which do not occur in-play
     parsed_df = parsed_df[
-        (parsed_df["is_freeze_period"] is False)
-        & (parsed_df["is_warmup_period"] is False)
-        & (parsed_df["is_terrorist_timeout"] is False)
-        & (parsed_df["is_ct_timeout"] is False)
-        & (parsed_df["is_technical_timeout"] is False)
-        & (parsed_df["is_waiting_for_resume"] is False)
-        & (parsed_df["is_match_started"] is True)
+        (~parsed_df["is_freeze_period"])
+        & (~parsed_df["is_warmup_period"])
+        & (~parsed_df["is_terrorist_timeout"])
+        & (~parsed_df["is_ct_timeout"])
+        & (~parsed_df["is_technical_timeout"])
+        & (~parsed_df["is_waiting_for_resume"])
+        & (parsed_df["is_match_started"])
         & (
             parsed_df["game_phase"].isin(
                 [
@@ -137,7 +137,7 @@ def parse_kills(parser: DemoParser) -> pd.DataFrame:
     )
 
     # Filter out nonplay ticks
-    kill_df = filter_out_nonplay_ticks(kill_df)
+    kill_df = remove_nonplay_ticks(kill_df)
 
     # Get only relevant columns
     kill_df = kill_df[
@@ -285,7 +285,7 @@ def parse_damages(parser: DemoParser) -> pd.DataFrame:
     )
 
     # Filter out nonplay ticks
-    damage_df = filter_out_nonplay_ticks(damage_df)
+    damage_df = remove_nonplay_ticks(damage_df)
 
     # Get only relevant columns
     damage_df = damage_df[
@@ -399,7 +399,7 @@ def parse_bomb(parser: DemoParser) -> pd.DataFrame:
         ],
     )
     bomb_planted["event"] = "planted"
-    bomb_planted = filter_out_nonplay_ticks(bomb_planted)
+    bomb_planted = remove_nonplay_ticks(bomb_planted)
     # Get bomb defuses
     bomb_defused = parser.parse_event(
         "bomb_defused",
@@ -418,7 +418,7 @@ def parse_bomb(parser: DemoParser) -> pd.DataFrame:
         ],
     )
     bomb_defused["event"] = "defused"
-    bomb_defused = filter_out_nonplay_ticks(bomb_defused)
+    bomb_defused = remove_nonplay_ticks(bomb_defused)
     # Get bomb explosions
     bomb_exploded = parser.parse_event(
         "bomb_exploded",
@@ -437,7 +437,7 @@ def parse_bomb(parser: DemoParser) -> pd.DataFrame:
         ],
     )
     bomb_exploded["event"] = "exploded"
-    bomb_exploded = filter_out_nonplay_ticks(bomb_exploded)
+    bomb_exploded = remove_nonplay_ticks(bomb_exploded)
     # Combine all bomb events
     bomb_df = pd.concat([bomb_planted, bomb_defused, bomb_exploded])
     bomb_df["site"] = map_bombsites(bomb_df["site"])
@@ -473,7 +473,7 @@ def parse_smokes(parser: DemoParser) -> pd.DataFrame:
             "game_phase",
         ],
     )
-    smoke_starts = filter_out_nonplay_ticks(smoke_starts)
+    smoke_starts = remove_nonplay_ticks(smoke_starts)
     # Get smoke ends
     smoke_ends = parser.parse_event(
         "smokegrenade_expired",
@@ -489,7 +489,7 @@ def parse_smokes(parser: DemoParser) -> pd.DataFrame:
             "game_phase",
         ],
     )
-    smoke_ends = filter_out_nonplay_ticks(smoke_ends)
+    smoke_ends = remove_nonplay_ticks(smoke_ends)
     # Initialize an empty list to store the matched rows
     matched_rows = []
     # Loop through each row in smoke starts
@@ -538,7 +538,7 @@ def parse_flashes(parser: DemoParser) -> pd.DataFrame:
             "game_phase",
         ],
     )
-    blind_df = filter_out_nonplay_ticks(blind_df)
+    blind_df = remove_nonplay_ticks(blind_df)
     blind_df = blind_df[
         [
             "tick",
@@ -603,7 +603,7 @@ def parse_infernos(parser: DemoParser) -> pd.DataFrame:
             "game_phase",
         ],
     )
-    inferno_starts = filter_out_nonplay_ticks(inferno_starts)
+    inferno_starts = remove_nonplay_ticks(inferno_starts)
     inferno_ends = parser.parse_event(
         "inferno_expire",
         other=[
@@ -618,7 +618,7 @@ def parse_infernos(parser: DemoParser) -> pd.DataFrame:
             "game_phase",
         ],
     )
-    inferno_ends = filter_out_nonplay_ticks(inferno_ends)
+    inferno_ends = remove_nonplay_ticks(inferno_ends)
     # Initialize an empty list to store the matched rows
     matched_rows = []
     # Loop through each row in inferno_starts
@@ -688,7 +688,7 @@ def parse_weapon_fires(parser: DemoParser) -> pd.DataFrame:
             "game_phase",
         ],
     )
-    weapon_fires_df = filter_out_nonplay_ticks(weapon_fires_df)
+    weapon_fires_df = remove_nonplay_ticks(weapon_fires_df)
     weapon_fires_df = weapon_fires_df[
         [
             "tick",
@@ -777,7 +777,7 @@ def parse_ticks(parser: DemoParser) -> pd.DataFrame:
             "game_phase",
         ]
     )
-    ticks = filter_out_nonplay_ticks(ticks)
+    ticks = remove_nonplay_ticks(ticks)
     return ticks.rename(
         columns={
             "FORWARD": "key_forward",
