@@ -71,7 +71,12 @@ class TestParsers:
             ]
             == 158
         )
-        assert hltv_kills[hltv_kills["attacker_side"] != hltv_kills["victim_side"]].headshot.sum() == 65
+        assert (
+            hltv_kills[
+                hltv_kills["attacker_side"] != hltv_kills["victim_side"]
+            ].headshot.sum()
+            == 65
+        )
         # Check assists
         hltv_assists = (
             hltv_kills[
