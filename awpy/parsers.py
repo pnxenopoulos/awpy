@@ -121,6 +121,7 @@ def parse_kills(parser: DemoParser) -> pd.DataFrame:
             "pitch",
             "yaw",
             "team_name",
+            "team_clan_name",
         ],
         other=[
             "is_bomb_planted",
@@ -170,6 +171,7 @@ def parse_kills(parser: DemoParser) -> pd.DataFrame:
             "assister_ping",
             "assister_pitch",
             "assister_team_name",
+            "assister_team_clan_name",
             "assister_name",
             "assister_steamid",
             # Attacker
@@ -188,6 +190,7 @@ def parse_kills(parser: DemoParser) -> pd.DataFrame:
             "attacker_ping",
             "attacker_pitch",
             "attacker_team_name",
+            "attacker_team_clan_name",
             "attacker_name",
             "attacker_steamid",
             # Victim
@@ -206,6 +209,7 @@ def parse_kills(parser: DemoParser) -> pd.DataFrame:
             "user_ping",
             "user_pitch",
             "user_team_name",
+            "user_team_clan_name",
             "user_name",
         ]
     ]
@@ -217,6 +221,9 @@ def parse_kills(parser: DemoParser) -> pd.DataFrame:
             "assister_team_name": "assister_side",
             "attacker_team_name": "attacker_side",
             "user_team_name": "victim_side",
+            "assister_team_clan_name": "assister_clan",
+            "attacker_team_clan_name": "attacker_clan",
+            "user_team_clan_name": "victim_clan",
             "assister_last_place_name": "assister_place",
             "attacker_last_place_name": "attacker_place",
             "user_last_place_name": "victim_place",
@@ -269,6 +276,7 @@ def parse_damages(parser: DemoParser) -> pd.DataFrame:
             "pitch",
             "yaw",
             "team_name",
+            "team_clan_name",
         ],
         other=[
             "is_bomb_planted",
@@ -313,6 +321,7 @@ def parse_damages(parser: DemoParser) -> pd.DataFrame:
             "attacker_ping",
             "attacker_pitch",
             "attacker_team_name",
+            "attacker_team_clan_name",
             "attacker_name",
             "attacker_steamid",
             # Victim
@@ -331,6 +340,7 @@ def parse_damages(parser: DemoParser) -> pd.DataFrame:
             "user_ping",
             "user_pitch",
             "user_team_name",
+            "user_team_clan_name",
             "user_name",
         ]
     ]
@@ -344,6 +354,8 @@ def parse_damages(parser: DemoParser) -> pd.DataFrame:
             "game_phase": "phase",
             "attacker_team_name": "attacker_side",
             "user_team_name": "victim_side",
+            "attacker_team_clan_name": "attacker_clan",
+            "user_team_clan_name": "victim_clan",
             "attacker_last_place_name": "attacker_place",
             "user_last_place_name": "victim_place",
             "attacker_has_defuser": "attacker_defuser",
@@ -460,7 +472,7 @@ def parse_smokes(parser: DemoParser) -> pd.DataFrame:
     # Get smoke starts
     smoke_starts = parser.parse_event(
         "smokegrenade_detonate",
-        player=["team_name"],
+        player=["team_name", "team_clan_name"],
         other=[
             # State
             "is_freeze_period",
@@ -504,6 +516,8 @@ def parse_smokes(parser: DemoParser) -> pd.DataFrame:
             "start_tick": start_row["tick"],
             "end_tick": None if end_row.empty else end_row.iloc[0]["tick"],
             "thrower_name": start_row["user_name"],
+            "thrower_clan": start_row["user_team_clan_name"],
+            "thrower_side": start_row["user_team_name"],
             "thrower_steamid": start_row["user_steamid"],
             "X": start_row["x"],
             "Y": start_row["y"],
@@ -524,7 +538,16 @@ def parse_flashes(parser: DemoParser) -> pd.DataFrame:
     """
     blind_df = parser.parse_event(
         "player_blind",
-        player=["X", "Y", "Z", "last_place_name", "pitch", "yaw", "team_name"],
+        player=[
+            "X",
+            "Y",
+            "Z",
+            "last_place_name",
+            "pitch",
+            "yaw",
+            "team_name",
+            "team_clan_name",
+        ],
         other=[
             "is_bomb_planted",
             # State
@@ -547,6 +570,7 @@ def parse_flashes(parser: DemoParser) -> pd.DataFrame:
             "attacker_name",
             "attacker_steamid",
             "attacker_team_name",
+            "attacker_team_clan_name",
             "attacker_X",
             "attacker_Y",
             "attacker_Z",
@@ -556,6 +580,7 @@ def parse_flashes(parser: DemoParser) -> pd.DataFrame:
             "user_name",
             "user_steamid",
             "user_team_name",
+            "user_team_clan_name",
             "user_X",
             "user_Y",
             "user_Z",
@@ -574,6 +599,8 @@ def parse_flashes(parser: DemoParser) -> pd.DataFrame:
             "game_phase": "phase",
             "attacker_team_name": "attacker_side",
             "user_team_name": "victim_side",
+            "attacker_team_clan_name": "attacker_clan",
+            "user_team_clan_name": "victim_clan",
             "attacker_last_place_name": "attacker_place",
             "user_last_place_name": "victim_place",
         }
@@ -591,6 +618,7 @@ def parse_infernos(parser: DemoParser) -> pd.DataFrame:
     """
     inferno_starts = parser.parse_event(
         "inferno_startburn",
+        player=["team_name", "team_clan_name"],
         other=[
             # State
             "is_freeze_period",
@@ -634,6 +662,8 @@ def parse_infernos(parser: DemoParser) -> pd.DataFrame:
             "start_tick": start_row["tick"],
             "end_tick": None if end_row.empty else end_row.iloc[0]["tick"],
             "thrower_name": start_row["user_name"],
+            "thrower_clan": start_row["user_team_clan_name"],
+            "thrower_side": start_row["user_team_name"],
             "thrower_steamid": start_row["user_steamid"],
             "X": start_row["x"],
             "Y": start_row["y"],
@@ -670,6 +700,7 @@ def parse_weapon_fires(parser: DemoParser) -> pd.DataFrame:
             "pitch",
             "yaw",
             "team_name",
+            "team_clan_name",
             "accuracy_penalty",
             "is_strafing",
             "zoom_lvl",
@@ -695,6 +726,7 @@ def parse_weapon_fires(parser: DemoParser) -> pd.DataFrame:
             "user_name",
             "user_steamid",
             "user_team_name",
+            "user_team_clan_name",
             "user_X",
             "user_Y",
             "user_Z",
@@ -711,7 +743,12 @@ def parse_weapon_fires(parser: DemoParser) -> pd.DataFrame:
             "weapon",
         ]
     ]
-    weapon_fires_df.rename(columns={"user_last_place_name": "player_place"})
+    weapon_fires_df.rename(
+        columns={
+            "user_last_place_name": "player_place",
+            "user_team_clan_name": "player_clan",
+        }
+    )
     for col in weapon_fires_df.columns:
         if "user_" in col:
             weapon_fires_df = weapon_fires_df.rename(
@@ -746,6 +783,7 @@ def parse_ticks(parser: DemoParser) -> pd.DataFrame:
             "WALK",
             # Player
             "team_name",
+            "team_clan_name",
             "X",
             "Y",
             "Z",
@@ -795,5 +833,6 @@ def parse_ticks(parser: DemoParser) -> pd.DataFrame:
             "active_weapon": "weapon",
             "last_place_name": "place",
             "team_name": "side",
+            "team_clan_name": "clan",
         }
     )
