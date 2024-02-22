@@ -26,22 +26,21 @@ pip install awpy
 Using Awpy is easy! Just find a demo you want to analyze and use the example below to get started. For example, take [NaVi vs Virtus.pro](https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro).
 
 ```python
-from awpy import parse_demo
+from awpy import Demo
 
-# Awpy parsed into a dictionary of data frames
-demo = parse_demo(file="natus-vincere-vs-virtus-pro-m1-overpass.dem")
+# Simply call `Demo(file="...")` to parse a demo
+dem = Demo(file="natus-vincere-vs-virtus-pro-m1-overpass.dem")
 
-# Demo info such as map, server, etc.
-demo.header
-
-# Dictionary of events and their Pandas dataframes
-demo.events
-
-# Player-level information at each tick
-demo.ticks
-
-# Grenade trajectories
-demo.grenades
+# Access various dictionaries & dataframes
+dem.header
+dem.grenades
+dem.kills
+dem.damages
+dem.bomb
+dem.smokes
+dem.infernos
+dem.weapon_fires
+dem.ticks
 ```
 
 :question: **Tip:** Want to learn more about the parser output? Visit the [parser primer](https://awpy.readthedocs.io/en/latest/parser_output.html) in our documentation!
@@ -50,9 +49,9 @@ demo.grenades
 Counter-Strike demos can be a bit troublesome. It is likely you'll see increased error rates in POV demos. To help us address parsing issues, please open a bug report in our [Github issues](https://github.com/pnxenopoulos/awpy/issues) or in our [our Discord](https://discord.gg/3JrhKYcEKW). We're committed to increasing parsing coverage rates and appreciate any errors you may find.
 
 ## Examples and Projects
-Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing CSGO data.
+Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing Counter-Strike data.
 
-- [Parsing a CSGO demofile](https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CS2_Demofile.ipynb)
+- [Parsing a CS2 demofile](https://github.com/pnxenopoulos/awpy/blob/main/examples/00_Parsing_a_CS2_Demofile.ipynb)
 
 If you use the parser for any public analysis, we kindly ask you to link to the Awpy repository, so that others may know how you parsed, analyzed or visualized your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it to our growing list!
 

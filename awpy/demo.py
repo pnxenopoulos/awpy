@@ -1,15 +1,15 @@
 """Defines the Demo class."""
 
 import os
+from typing import Any
 
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from awpy.parsers import (
     parse_bomb,
     parse_damages,
-    parse_flashes,
     parse_grenades,
     parse_infernos,
     parse_kills,
@@ -37,7 +37,7 @@ class DemoHeader(BaseModel):
 
 
 class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
-    """Class to store a demo's data."""
+    """Class to store a demo's data. Called with `Demo(file="...")`."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -52,45 +52,61 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
     damages: pd.DataFrame
     bomb: pd.DataFrame
     smokes: pd.DataFrame
-    flashes: pd.DataFrame
     infernos: pd.DataFrame
     weapon_fires: pd.DataFrame
-    footstep: pd.DataFrame
     ticks: pd.DataFrame
-    button_presses: pd.DataFrame
 
-    def __init__(self, file: str) -> None:  # pylint: disable=super-init-not-called
-        """Create a demo object.
+    @model_validator(mode="before")
+    @classmethod
+    def parse_demo(cls: type["Demo"], values: dict[str, Any]) -> dict[str, Any]:
+        """Parse the demo file.
 
         Args:
-            file (str): Path to the demo file
+            values (dict[str, Any]): Passed in arguments.
 
         Raises:
-            FileNotFoundError: If the file does not exist
-            ValueError: If there is an error parsing the demo
+            ValueError: If `file` is not a passed argument.
+            FileNotFoundError: If specified filepath does not exist.
 
         Returns:
-            Demo: The demo object
+            dict[str, Any]: The parsed demo data.
         """
+        file = values.get("file")
+        if file is None:
+            file_arg_error_msg = "Must specify filepath with `file` argument."
+            raise ValueError(file_arg_error_msg)
         if not os.path.exists(file):
-            file_not_found_msg = f"{file} not found."
-            raise FileNotFoundError(file_not_found_msg)
+            file_not_found_error_msg = f"{file} not found."
+            raise FileNotFoundError(file_not_found_error_msg)
 
-        # Create the parser and parse the events
-        self.parser = DemoParser(file)
-        self.header = parse_header(self.parser.parse_header())
+        parser = DemoParser(file)
+        header = parse_header(parser.parse_header())
 
         # Parse the demo
-        # Need to add rounds parsing here
-        self.grenades = parse_grenades(self.parser)
-        self.kills = parse_kills(self.parser)
-        self.damages = parse_damages(self.parser)
-        self.bomb = parse_bomb(self.parser)
-        self.smokes = parse_smokes(self.parser)
-        self.flashes = parse_flashes(self.parser)
-        self.infernos = parse_infernos(self.parser)
-        self.weapon_fires = parse_weapon_fires(self.parser)
-        self.ticks = parse_ticks(self.parser)
+        grenades = parse_grenades(parser)
+        kills = parse_kills(parser)
+        damages = parse_damages(parser)
+        bomb = parse_bomb(parser)
+        smokes = parse_smokes(parser)
+        infernos = parse_infernos(parser)
+        weapon_fires = parse_weapon_fires(parser)
+        ticks = parse_ticks(parser)
+
+        return {
+            # Parser & Metadata
+            "file": file,
+            "parser": parser,
+            "header": header,
+            # Parsed data
+            "grenades": grenades,
+            "kills": kills,
+            "damages": damages,
+            "bomb": bomb,
+            "smokes": smokes,
+            "infernos": infernos,
+            "weapon_fires": weapon_fires,
+            "ticks": ticks,
+        }
 
 
 def parse_header(parsed_header: dict) -> DemoHeader:
