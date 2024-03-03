@@ -45,15 +45,16 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
     file: str
     parser: DemoParser
     header: DemoHeader
+    events: dict[str, pd.DataFrame]
 
     # Data
-    grenades: pd.DataFrame
     kills: pd.DataFrame
     damages: pd.DataFrame
     bomb: pd.DataFrame
     smokes: pd.DataFrame
     infernos: pd.DataFrame
     weapon_fires: pd.DataFrame
+    grenades: pd.DataFrame
     ticks: pd.DataFrame
 
     @model_validator(mode="before")
@@ -81,15 +82,56 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
 
         parser = DemoParser(file)
         header = parse_header(parser.parse_header())
+        events = dict(
+            parser.parse_events(
+                parser.list_game_events(),
+                player=[
+                    "X",
+                    "Y",
+                    "Z",
+                    "last_place_name",
+                    "flash_duration",
+                    "is_strafing",
+                    "accuracy_penalty",
+                    "zoom_lvl",
+                    "health",
+                    "armor",
+                    "inventory",
+                    "current_equip_value",
+                    "rank",
+                    "ping",
+                    "has_defuser",
+                    "has_helmet",
+                    "pitch",
+                    "yaw",
+                    "team_name",
+                    "team_clan_name",
+                ],
+                other=[
+                    # Bomb
+                    "is_bomb_planted",
+                    "which_bomb_zone",
+                    # State
+                    "is_freeze_period",
+                    "is_warmup_period",
+                    "is_terrorist_timeout",
+                    "is_ct_timeout",
+                    "is_technical_timeout",
+                    "is_waiting_for_resume",
+                    "is_match_started",
+                    "game_phase",
+                ],
+            )
+        )
 
         # Parse the demo
+        kills = parse_kills(events)
+        damages = parse_damages(events)
+        bomb = parse_bomb(events)
+        smokes = parse_smokes(events)
+        infernos = parse_infernos(events)
+        weapon_fires = parse_weapon_fires(events)
         grenades = parse_grenades(parser)
-        kills = parse_kills(parser)
-        damages = parse_damages(parser)
-        bomb = parse_bomb(parser)
-        smokes = parse_smokes(parser)
-        infernos = parse_infernos(parser)
-        weapon_fires = parse_weapon_fires(parser)
         ticks = parse_ticks(parser)
 
         return {
@@ -97,14 +139,16 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
             "file": file,
             "parser": parser,
             "header": header,
-            # Parsed data
-            "grenades": grenades,
+            "events": events,
+            # Parsed from event dictionary
             "kills": kills,
             "damages": damages,
             "bomb": bomb,
             "smokes": smokes,
             "infernos": infernos,
             "weapon_fires": weapon_fires,
+            # Parsed from parser
+            "grenades": grenades,
             "ticks": ticks,
         }
 

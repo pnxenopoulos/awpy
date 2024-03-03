@@ -93,50 +93,23 @@ def parse_grenades(parser: DemoParser) -> pd.DataFrame:
     ]
 
 
-def parse_kills(parser: DemoParser) -> pd.DataFrame:
+def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Parse the kills of the demofile.
 
     Args:
-        parser: The parser object.
+        events: A dictionary of parsed events.
 
     Returns:
         The kills for the demofile.
+
+    Raises:
+        KeyError: If the player_death event is not found in the events.
     """
-    # Parse the kills from the demoparser
-    kill_df = parser.parse_event(
-        "player_death",
-        player=[
-            "X",
-            "Y",
-            "Z",
-            "last_place_name",
-            "flash_duration",
-            "health",
-            "armor",
-            "inventory",
-            "current_equip_value",
-            "rank",
-            "ping",
-            "has_defuser",
-            "has_helmet",
-            "pitch",
-            "yaw",
-            "team_name",
-            "team_clan_name",
-        ],
-        other=[
-            "is_bomb_planted",
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    # Get the kill events
+    kill_df = events.get("player_death")
+    if kill_df is None:
+        player_death_missing_msg = "player_death not found in events."
+        raise KeyError(player_death_missing_msg)
 
     # Filter out nonplay ticks
     kill_df = remove_nonplay_ticks(kill_df)
@@ -253,49 +226,23 @@ def parse_kills(parser: DemoParser) -> pd.DataFrame:
     return kill_df
 
 
-def parse_damages(parser: DemoParser) -> pd.DataFrame:
+def parse_damages(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Parse the damages of the demofile.
 
     Args:
-        parser: The parser object.
+        events: A dictionary of parsed events.
 
     Returns:
         The damages for the demofile.
+
+    Raises:
+        KeyError: If the player_death event is not found in the events.
     """
-    # Parse the damages from the demoparser
-    damage_df = parser.parse_event(
-        "player_hurt",
-        player=[
-            "X",
-            "Y",
-            "Z",
-            "last_place_name",
-            "health",
-            "armor",
-            "inventory",
-            "current_equip_value",
-            "rank",
-            "ping",
-            "has_defuser",
-            "has_helmet",
-            "pitch",
-            "yaw",
-            "team_name",
-            "team_clan_name",
-        ],
-        other=[
-            "is_bomb_planted",
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    # Get the damage events
+    damage_df = events.get("player_hurt")
+    if damage_df is None:
+        player_hurt_missing_msg = "player_hurt not found in events."
+        raise KeyError(player_hurt_missing_msg)
 
     # Filter out nonplay ticks
     damage_df = remove_nonplay_ticks(damage_df)
@@ -389,70 +336,43 @@ def parse_damages(parser: DemoParser) -> pd.DataFrame:
     return damage_df
 
 
-def parse_bomb(parser: DemoParser) -> pd.DataFrame:
+def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Parse the bomb events of the demofile.
 
     Args:
-        parser: The parser object.
+        events: A dictionary of parsed events.
 
     Returns:
         The bomb events for the demofile.
+
+    Raises:
+        KeyError: If bomb_planted, bomb_defused, or bomb_exploded events
+            are not found in the events.
     """
     # Get bomb plants
-    bomb_planted = parser.parse_event(
-        "bomb_planted",
-        player=["X", "Y", "Z"],
-        other=[
-            "which_bomb_zone",
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    bomb_planted = events.get("bomb_planted")
+    if bomb_planted is None:
+        bomb_planted_missing_msg = "bomb_planted not found in events."
+        raise KeyError(bomb_planted_missing_msg)
+
     bomb_planted["event"] = "planted"
     bomb_planted = remove_nonplay_ticks(bomb_planted)
+
     # Get bomb defuses
-    bomb_defused = parser.parse_event(
-        "bomb_defused",
-        player=["X", "Y", "Z"],
-        other=[
-            "which_bomb_zone",
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    bomb_defused = events.get("bomb_defused")
+    if bomb_defused is None:
+        bomb_defused_missing_msg = "bomb_defused not found in events."
+        raise KeyError(bomb_defused_missing_msg)
+
     bomb_defused["event"] = "defused"
     bomb_defused = remove_nonplay_ticks(bomb_defused)
+
     # Get bomb explosions
-    bomb_exploded = parser.parse_event(
-        "bomb_exploded",
-        player=["X", "Y", "Z"],
-        other=[
-            "which_bomb_zone",
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    bomb_exploded = events.get("bomb_exploded")
+    if bomb_exploded is None:
+        bomb_exploded_missing_msg = "bomb_exploded not found in events."
+        raise KeyError(bomb_exploded_missing_msg)
+
     bomb_exploded["event"] = "exploded"
     bomb_exploded = remove_nonplay_ticks(bomb_exploded)
     # Combine all bomb events
@@ -465,50 +385,38 @@ def parse_bomb(parser: DemoParser) -> pd.DataFrame:
     return bomb_df
 
 
-def parse_smokes(parser: DemoParser) -> pd.DataFrame:
+def parse_smokes(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Parse the smokes of the demofile.
 
     Args:
-        parser: The parser object.
+        events: A dictionary of parsed events.
 
     Returns:
         The smokes for the demofile.
+
+    Raises:
+        KeyError: If smokegrenade_detonate or smokegrenade_expired is not
+            found in the events.
     """
     # Get smoke starts
-    smoke_starts = parser.parse_event(
-        "smokegrenade_detonate",
-        player=["team_name", "team_clan_name"],
-        other=[
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    smoke_starts = events.get("smokegrenade_detonate")
+    if smoke_starts is None:
+        smokegrenade_detonate_missing_msg = "smokegrenade_detonate not found in events."
+        raise KeyError(smokegrenade_detonate_missing_msg)
+
     smoke_starts = remove_nonplay_ticks(smoke_starts)
+
     # Get smoke ends
-    smoke_ends = parser.parse_event(
-        "smokegrenade_expired",
-        other=[
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    smoke_ends = events.get("smokegrenade_expired")
+    if smoke_ends is None:
+        smokegrenade_expired_missing_msg = "smokegrenade_expired not found in events."
+        raise KeyError(smokegrenade_expired_missing_msg)
+
     smoke_ends = remove_nonplay_ticks(smoke_ends)
+
     # Initialize an empty list to store the matched rows
     matched_rows = []
+
     # Loop through each row in smoke starts
     for _, start_row in smoke_starts.iterrows():
         # Find the corresponding end row
@@ -532,48 +440,36 @@ def parse_smokes(parser: DemoParser) -> pd.DataFrame:
     return pd.DataFrame(matched_rows)
 
 
-def parse_infernos(parser: DemoParser) -> pd.DataFrame:
+def parse_infernos(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Parse the infernos of the demofile.
 
     Args:
-        parser: The parser object.
+        events: A dictionary of parsed events.
 
     Returns:
         The infernos for the demofile.
+
+    Raises:
+        KeyError: If inferno_startburn or inferno_expire is not found in the events.
     """
-    inferno_starts = parser.parse_event(
-        "inferno_startburn",
-        player=["team_name", "team_clan_name"],
-        other=[
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    # Get inferno starts
+    inferno_starts = events.get("inferno_startburn")
+    if inferno_starts is None:
+        inferno_startburn_missing_msg = "inferno_startburn not found in events."
+        raise KeyError(inferno_startburn_missing_msg)
+
     inferno_starts = remove_nonplay_ticks(inferno_starts)
-    inferno_ends = parser.parse_event(
-        "inferno_expire",
-        other=[
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+
+    # Get inferno ends
+    inferno_ends = events.get("inferno_expire")
+    if inferno_ends is None:
+        inferno_expire_missing_msg = "inferno_expire not found in events."
+        raise KeyError(inferno_expire_missing_msg)
+
     inferno_ends = remove_nonplay_ticks(inferno_ends)
     # Initialize an empty list to store the matched rows
     matched_rows = []
+
     # Loop through each row in inferno_starts
     for _, start_row in inferno_starts.iterrows():
         # Find the corresponding end row
@@ -598,52 +494,23 @@ def parse_infernos(parser: DemoParser) -> pd.DataFrame:
     return pd.DataFrame(matched_rows)
 
 
-def parse_weapon_fires(parser: DemoParser) -> pd.DataFrame:
+def parse_weapon_fires(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Parse the weapon fires of the demofile.
 
     Args:
-        parser: The parser object.
+        events: A dictionary of parsed events.
 
     Returns:
         The weapon fires for the demofile.
+
+    Raises:
+        KeyError: If the weapon_fire event is not found in the events.
     """
-    weapon_fires_df = parser.parse_event(
-        "weapon_fire",
-        player=[
-            "X",
-            "Y",
-            "Z",
-            "last_place_name",
-            "health",
-            "armor",
-            "inventory",
-            "current_equip_value",
-            "rank",
-            "ping",
-            "has_defuser",
-            "has_helmet",
-            "pitch",
-            "yaw",
-            "team_name",
-            "team_clan_name",
-            "accuracy_penalty",
-            "is_strafing",
-            "zoom_lvl",
-            "last_shot_time",
-            "fire_seq_start_time",
-        ],
-        other=[
-            # State
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ],
-    )
+    weapon_fires_df = events.get("weapon_fire")
+    if weapon_fires_df is None:
+        weapon_fire_missing_msg = "weapon_fire not found in events."
+        raise KeyError(weapon_fire_missing_msg)
+
     weapon_fires_df = remove_nonplay_ticks(weapon_fires_df)
     weapon_fires_df = weapon_fires_df[
         [

@@ -8,7 +8,7 @@ from awpy.parsers import parse_damages, parse_kills, remove_nonplay_ticks
 
 
 @pytest.fixture(scope="class")
-def hltv_demoparser() -> DemoParser:
+def hltv_events() -> dict[str, pd.DataFrame]:
     """Test case for an HLTV demo.
 
     Teams: Spirit vs MOUZ
@@ -16,7 +16,45 @@ def hltv_demoparser() -> DemoParser:
     Source: HLTV
     Link: https://www.hltv.org/stats/matches/mapstatsid/170716/spirit-vs-mouz
     """
-    return DemoParser("tests/spirit-vs-mouz-m1-vertigo.dem")
+    parser = DemoParser("tests/spirit-vs-mouz-m1-vertigo.dem")
+    return dict(
+        parser.parse_events(
+            parser.list_game_events(),
+            player=[
+                "X",
+                "Y",
+                "Z",
+                "last_place_name",
+                "flash_duration",
+                "health",
+                "armor",
+                "inventory",
+                "current_equip_value",
+                "rank",
+                "ping",
+                "has_defuser",
+                "has_helmet",
+                "pitch",
+                "yaw",
+                "team_name",
+                "team_clan_name",
+            ],
+            other=[
+                # Bomb
+                "is_bomb_planted",
+                "which_bomb_zone",
+                # State
+                "is_freeze_period",
+                "is_warmup_period",
+                "is_terrorist_timeout",
+                "is_ct_timeout",
+                "is_technical_timeout",
+                "is_waiting_for_resume",
+                "is_match_started",
+                "game_phase",
+            ],
+        )
+    )
 
 
 @pytest.fixture(scope="class")
@@ -60,9 +98,9 @@ class TestParsers:
         assert "event1" in filtered_df["other_data"].to_numpy()
         assert "event2" in filtered_df["other_data"].to_numpy()
 
-    def test_kills(self, hltv_demoparser: DemoParser):
+    def test_kills(self, hltv_events: dict[str, pd.DataFrame]):
         """Tests that we can get kills from demos."""
-        hltv_kills = parse_kills(hltv_demoparser)
+        hltv_kills = parse_kills(hltv_events)
         # Checks kills and headshots
         assert hltv_kills.shape[0] == 159
         assert (
@@ -104,9 +142,9 @@ class TestParsers:
         )
         assert all(hltv_assists[hltv_assists["assister_name"] == "zont1x"].assists == 8)
 
-    def test_damages(self, hltv_demoparser: DemoParser):
+    def test_damages(self, hltv_events: dict[str, pd.DataFrame]):
         """Tests that we can get damages from demos."""
-        hltv_damage = parse_damages(hltv_demoparser)
+        hltv_damage = parse_damages(hltv_events)
         hltv_damage_total = round(
             hltv_damage[hltv_damage["attacker_side"] != hltv_damage["victim_side"]]
             .groupby("attacker_name")

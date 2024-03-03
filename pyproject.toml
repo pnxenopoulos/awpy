@@ -25,7 +25,7 @@ dependencies = [
     "pydantic>=2.6.0",
     "setuptools>=69.0.3",
     "sphinx-rtd-theme==2.0.0",
-    "demoparser2>=0.18.0"
+    "demoparser2>=0.21.0"
 ]
 
 [tool.setuptools]
@@ -245,6 +245,12 @@ disable = ["unnecessary-ellipsis"] #  but needed for pyright
 [tool.pylint.miscellaneous]
 # List of note tags to take in consideration, separated by a comma.
 notes = ["FIXME", "XXX", "TODO"]
+
+[tool.pylint.messages_control]
+# Disable specific message categories across the project
+disable = [
+    "R0801",  # Duplicate code detection
+]
 
 [tool.pylint.refactoring]
 # Maximum number of nested blocks for function / method body
