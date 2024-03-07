@@ -13,6 +13,7 @@ from awpy.parsers import (
     parse_grenades,
     parse_infernos,
     parse_kills,
+    parse_rounds,
     parse_smokes,
     parse_ticks,
     parse_weapon_fires,
@@ -54,6 +55,7 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
     smokes: pd.DataFrame
     infernos: pd.DataFrame
     weapon_fires: pd.DataFrame
+    rounds: pd.DataFrame
     grenades: pd.DataFrame
     ticks: pd.DataFrame
 
@@ -131,6 +133,7 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
         smokes = parse_smokes(events)
         infernos = parse_infernos(events)
         weapon_fires = parse_weapon_fires(events)
+        rounds = parse_rounds(parser)
         grenades = parse_grenades(parser)
         ticks = parse_ticks(parser)
 
@@ -148,6 +151,7 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
             "infernos": infernos,
             "weapon_fires": weapon_fires,
             # Parsed from parser
+            "rounds": rounds,
             "grenades": grenades,
             "ticks": ticks,
         }

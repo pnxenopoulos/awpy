@@ -4,14 +4,26 @@ import pandas as pd
 import pytest
 from demoparser2 import DemoParser
 
-from awpy.parsers import parse_damages, parse_kills, remove_nonplay_ticks
+from awpy.parsers import parse_damages, parse_kills, parse_rounds, remove_nonplay_ticks
+
+
+@pytest.fixture(scope="class")
+def hltv_parser() -> DemoParser:
+    """Test DemoParser for an HLTV demo.
+
+    Teams: Spirit vs MOUZ (de_vertigo)
+    Event: PGL CS2 Major Copenhagen 2024 Europe RMR B (CS2)
+    Source: HLTV
+    Link: https://www.hltv.org/stats/matches/mapstatsid/170716/spirit-vs-mouz
+    """
+    return DemoParser("tests/spirit-vs-mouz-m1-vertigo.dem")
 
 
 @pytest.fixture(scope="class")
 def hltv_events() -> dict[str, pd.DataFrame]:
-    """Test case for an HLTV demo.
+    """Test evenb for an HLTV demo.
 
-    Teams: Spirit vs MOUZ
+    Teams: Spirit vs MOUZ (de_vertigo)
     Event: PGL CS2 Major Copenhagen 2024 Europe RMR B (CS2)
     Source: HLTV
     Link: https://www.hltv.org/stats/matches/mapstatsid/170716/spirit-vs-mouz
@@ -97,6 +109,35 @@ class TestParsers:
         assert len(filtered_df) == 2
         assert "event1" in filtered_df["other_data"].to_numpy()
         assert "event2" in filtered_df["other_data"].to_numpy()
+
+    def test_rounds(self, hltv_parser: DemoParser):
+        """Tests that we can get rounds from demos."""
+        hltv_rounds = parse_rounds(hltv_parser)
+        assert hltv_rounds.reason.to_numpy().tolist() == [
+            "ct_killed",
+            "ct_killed",
+            "ct_killed",
+            "t_killed",
+            "bomb_defused",
+            "ct_killed",
+            "bomb_exploded",
+            "t_killed",
+            "bomb_defused",
+            "t_killed",
+            "ct_killed",
+            "ct_killed",
+            "ct_killed",
+            "ct_killed",
+            "t_killed",
+            "ct_killed",
+            "t_killed",
+            "t_killed",
+            "t_killed",
+            "ct_killed",
+            "t_killed",
+            "bomb_exploded",
+            "t_killed",
+        ]
 
     def test_kills(self, hltv_events: dict[str, pd.DataFrame]):
         """Tests that we can get kills from demos."""
