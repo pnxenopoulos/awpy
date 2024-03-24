@@ -21,7 +21,7 @@ def hltv_parser() -> DemoParser:
 
 @pytest.fixture(scope="class")
 def hltv_events() -> dict[str, pd.DataFrame]:
-    """Test evenb for an HLTV demo.
+    """Test events for an HLTV demo.
 
     Teams: Spirit vs MOUZ (de_vertigo)
     Event: PGL CS2 Major Copenhagen 2024 Europe RMR B (CS2)

@@ -11,21 +11,24 @@ authors = [
 ]
 description = "Counter-Strike demo parsing, analysis and visualization"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 keywords = ["counter-strike", "csgo", "esports", "sports-analytics"]
 license = { text = "MIT License" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.11",
+    "Intended Audience :: Science/Research",
+    "Topic :: Games/Entertainment",
+    "Topic :: Games/Entertainment :: First Person Shooters",
+    "Topic :: Scientific/Engineering :: Information Analysis"
 ]
 dependencies = [
+    "loguru>=0.7.2",
     "numpy>=1.26.3",
     "pandas>=2.2.0",
     "pydantic>=2.6.0",
     "setuptools>=69.0.3",
     "sphinx-rtd-theme==2.0.0",
-    "demoparser2>=0.21.0"
+    "demoparser2>=0.21.2"
 ]
 
 [tool.setuptools]

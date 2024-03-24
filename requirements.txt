@@ -1,6 +1,7 @@
+loguru~=0.7.2
 numpy~=1.26.3
 pandas~=2.2.0
 pydantic~=2.6.0
 setuptools~=69.0.3
 sphinx-rtd-theme~=2.0.0
-demoparser2>=0.21.0
+demoparser2>=0.21.2

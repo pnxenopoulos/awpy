@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
+from loguru import logger
 
 from awpy.converters import (
     map_bombsites,
@@ -167,7 +168,7 @@ def parse_rounds(parser: DemoParser) -> pd.DataFrame:
     rounds_filtered = rounds.loc[indices_to_keep].reset_index(drop=True)
     rounds_filtered["round"] = (rounds_filtered["event"] == "start").cumsum()
     rounds_reshaped = rounds_filtered.pivot_table(
-        index="round", columns="event", values="tick", aggfunc="first"
+        index="round", columns="event", values="tick", aggfunc="first", observed=False
     ).reset_index(drop=True)
     rounds_reshaped = rounds_reshaped[
         ["start", "freeze_end", "end", "official_end"]
@@ -243,7 +244,6 @@ def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "assister_has_helmet",
             "assister_inventory",
             "assister_ping",
-            "assister_pitch",
             "assister_team_name",
             "assister_team_clan_name",
             "assister_name",
@@ -263,7 +263,6 @@ def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "attacker_has_helmet",
             "attacker_inventory",
             "attacker_ping",
-            "attacker_pitch",
             "attacker_team_name",
             "attacker_team_clan_name",
             "attacker_name",
@@ -283,7 +282,6 @@ def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "user_has_helmet",
             "user_inventory",
             "user_ping",
-            "user_pitch",
             "user_team_name",
             "user_team_clan_name",
             "user_name",
@@ -442,39 +440,38 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
     Returns:
         The bomb events for the demofile.
-
-    Raises:
-        KeyError: If bomb_planted, bomb_defused, or bomb_exploded events
-            are not found in the events.
     """
+    bomb_subevents = []
+
     # Get bomb plants
     bomb_planted = events.get("bomb_planted")
     if bomb_planted is None:
-        bomb_planted_missing_msg = "bomb_planted not found in events."
-        raise KeyError(bomb_planted_missing_msg)
-
-    bomb_planted["event"] = "planted"
-    bomb_planted = remove_nonplay_ticks(bomb_planted)
+        logger.warning("bomb_planted not found in events.")
+    else:
+        bomb_planted["event"] = "planted"
+        bomb_planted = remove_nonplay_ticks(bomb_planted)
+        bomb_subevents.append(bomb_planted)
 
     # Get bomb defuses
     bomb_defused = events.get("bomb_defused")
     if bomb_defused is None:
-        bomb_defused_missing_msg = "bomb_defused not found in events."
-        raise KeyError(bomb_defused_missing_msg)
-
-    bomb_defused["event"] = "defused"
-    bomb_defused = remove_nonplay_ticks(bomb_defused)
+        logger.warning("bomb_defused not found in events.")
+    else:
+        bomb_defused["event"] = "defused"
+        bomb_defused = remove_nonplay_ticks(bomb_defused)
+        bomb_subevents.append(bomb_defused)
 
     # Get bomb explosions
     bomb_exploded = events.get("bomb_exploded")
     if bomb_exploded is None:
-        bomb_exploded_missing_msg = "bomb_exploded not found in events."
-        raise KeyError(bomb_exploded_missing_msg)
+        logger.warning("bomb_exploded not found in events.")
+    else:
+        bomb_exploded["event"] = "exploded"
+        bomb_exploded = remove_nonplay_ticks(bomb_exploded)
+        bomb_subevents.append(bomb_exploded)
 
-    bomb_exploded["event"] = "exploded"
-    bomb_exploded = remove_nonplay_ticks(bomb_exploded)
     # Combine all bomb events
-    bomb_df = pd.concat([bomb_planted, bomb_defused, bomb_exploded])
+    bomb_df = pd.concat(bomb_subevents)
     bomb_df["site"] = map_bombsites(bomb_df["site"])
     # Rename columns
     for col in bomb_df.columns:
