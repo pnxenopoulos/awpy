@@ -1,7 +1,6 @@
 """Defines the Demo class."""
 
 import os
-from importlib.metadata import version
 from typing import Any
 
 import pandas as pd
@@ -49,7 +48,6 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
     parser: DemoParser
     header: DemoHeader
     events: dict[str, pd.DataFrame]
-    version: str
 
     # Data
     kills: pd.DataFrame
@@ -143,19 +141,13 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
         grenades = apply_round_num(rounds, parse_grenades(parser))
         ticks = apply_round_num(rounds, parse_ticks(parser))
 
-        awpy_version = None
-        try:
-            awpy_version = version("awpy")
-        except Exception as _e:  # TODO: Fix for tests on Github Actions
-            awpy_version = None
-
         return {
             # Parser & Metadata
             "file": file,
             "parser": parser,
             "header": header,
             "events": events,
-            "version": awpy_version,
+            "version": None,
             "hash": None,
             # Parsed from event dictionary
             "kills": kills,
