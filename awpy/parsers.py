@@ -187,6 +187,9 @@ def parse_rounds(parser: DemoParser) -> pd.DataFrame:
         how="left",
     )
     rounds_reshaped["round"] = rounds_reshaped.index + 1
+    rounds_reshaped["official_end"] = rounds_reshaped["official_end"].fillna(
+        rounds_reshaped["end"]
+    )
     return rounds_reshaped[
         ["round", "start", "freeze_end", "end", "official_end", "winner", "reason"]
     ]

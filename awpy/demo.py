@@ -5,6 +5,7 @@ from typing import Any
 
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
+from importlib.metadata import version
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from awpy.parsers import (
@@ -18,6 +19,7 @@ from awpy.parsers import (
     parse_ticks,
     parse_weapon_fires,
 )
+from awpy.utils import apply_round_num
 
 
 class DemoHeader(BaseModel):
@@ -47,6 +49,7 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
     parser: DemoParser
     header: DemoHeader
     events: dict[str, pd.DataFrame]
+    version: str
 
     # Data
     kills: pd.DataFrame
@@ -127,15 +130,18 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
         )
 
         # Parse the demo
-        kills = parse_kills(events)
-        damages = parse_damages(events)
-        bomb = parse_bomb(events)
-        smokes = parse_smokes(events)
-        infernos = parse_infernos(events)
-        weapon_fires = parse_weapon_fires(events)
         rounds = parse_rounds(parser)
-        grenades = parse_grenades(parser)
-        ticks = parse_ticks(parser)
+
+        kills = apply_round_num(rounds, parse_kills(events))
+        damages = apply_round_num(rounds, parse_damages(events))
+        bomb = apply_round_num(rounds, parse_bomb(events))
+        smokes = apply_round_num(rounds, parse_smokes(events), tick_col="start_tick")
+        infernos = apply_round_num(
+            rounds, parse_infernos(events), tick_col="start_tick"
+        )
+        weapon_fires = apply_round_num(rounds, parse_weapon_fires(events))
+        grenades = apply_round_num(rounds, parse_grenades(parser))
+        ticks = apply_round_num(rounds, parse_ticks(parser))
 
         return {
             # Parser & Metadata
@@ -143,6 +149,8 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
             "parser": parser,
             "header": header,
             "events": events,
+            "version": version("awpy"),
+            "hash": None,
             # Parsed from event dictionary
             "kills": kills,
             "damages": damages,
