@@ -1,11 +1,11 @@
 """Defines the Demo class."""
 
 import os
+from importlib.metadata import version
 from typing import Any
 
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
-from importlib.metadata import version
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from awpy.parsers import (
