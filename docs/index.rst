@@ -51,7 +51,7 @@ Using awpy
 :doc:`installation`
    How to install `awpy`.
 
-:doc:`examples`
+:ref:`examples`
    Examples code and Jupyter notebooks to help get you started.
 
 :doc:`projects`
@@ -85,7 +85,7 @@ awpy Modules
    :hidden:
 
    installation
-   examples
+   examples/index
    projects
    faq
    license
