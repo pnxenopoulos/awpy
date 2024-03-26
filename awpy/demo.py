@@ -143,13 +143,19 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
         grenades = apply_round_num(rounds, parse_grenades(parser))
         ticks = apply_round_num(rounds, parse_ticks(parser))
 
+        awpy_version = None
+        try:
+            awpy_version = version("awpy")
+        except Exception as _e:  # TODO: Fix for tests on Github Actions
+            awpy_version = None
+
         return {
             # Parser & Metadata
             "file": file,
             "parser": parser,
             "header": header,
             "events": events,
-            "version": version("awpy"),
+            "version": awpy_version,
             "hash": None,
             # Parsed from event dictionary
             "kills": kills,
