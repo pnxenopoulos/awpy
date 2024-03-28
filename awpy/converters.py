@@ -3,21 +3,6 @@
 import pandas as pd
 
 
-def map_bombsites(series: pd.Series) -> pd.Series:
-    """Map bombsites to their names.
-
-    Args:
-        series (pd.Series): Series of bombsite integers.
-
-    Returns:
-        pd.Series: Series of bombsite names.
-    """
-    bombsite_mapping = {318: "A", 401: "B"}
-    return series.map(
-        lambda x: bombsite_mapping.get(x)  # pylint: disable=unnecessary-lambda
-    )
-
-
 def map_hitgroup(series: pd.Series) -> pd.Series:
     """Map hitgroups to their names.
 

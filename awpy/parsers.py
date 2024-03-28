@@ -6,7 +6,6 @@ from demoparser2 import DemoParser  # pylint: disable=E0611
 from loguru import logger
 
 from awpy.converters import (
-    map_bombsites,
     map_hitgroup,
 )
 
@@ -138,6 +137,11 @@ def parse_rounds(parser: DemoParser) -> pd.DataFrame:
             round_end_official[["event", "tick"]],
         ]
     )
+
+    # Remove everything that happen on tick 0, except starts
+    rounds = rounds[~((rounds["tick"] == 0) & (rounds["event"] != "start"))]
+
+    # Then, order
     event_order = ["official_end", "start", "freeze_end", "end"]
     rounds["event"] = pd.Categorical(
         rounds["event"], categories=event_order, ordered=True
@@ -450,7 +454,26 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         logger.warning("bomb_planted not found in events.")
     else:
         bomb_planted["event"] = "planted"
-        bomb_planted = remove_nonplay_ticks(bomb_planted)
+        bomb_planted = remove_nonplay_ticks(
+            bomb_planted[
+                [
+                    "is_freeze_period",
+                    "is_warmup_period",
+                    "is_terrorist_timeout",
+                    "is_ct_timeout",
+                    "is_technical_timeout",
+                    "is_waiting_for_resume",
+                    "is_match_started",
+                    "game_phase",
+                    "tick",
+                    "event",
+                    "user_last_place_name",
+                    "user_X",
+                    "user_Y",
+                    "user_Z",
+                ]
+            ]
+        )
         bomb_subevents.append(bomb_planted)
 
     # Get bomb defuses
@@ -459,7 +482,26 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         logger.warning("bomb_defused not found in events.")
     else:
         bomb_defused["event"] = "defused"
-        bomb_defused = remove_nonplay_ticks(bomb_defused)
+        bomb_defused = remove_nonplay_ticks(
+            bomb_defused[
+                [
+                    "is_freeze_period",
+                    "is_warmup_period",
+                    "is_terrorist_timeout",
+                    "is_ct_timeout",
+                    "is_technical_timeout",
+                    "is_waiting_for_resume",
+                    "is_match_started",
+                    "game_phase",
+                    "tick",
+                    "event",
+                    "user_last_place_name",
+                    "user_X",
+                    "user_Y",
+                    "user_Z",
+                ]
+            ]
+        )
         bomb_subevents.append(bomb_defused)
 
     # Get bomb explosions
@@ -468,16 +510,50 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         logger.warning("bomb_exploded not found in events.")
     else:
         bomb_exploded["event"] = "exploded"
-        bomb_exploded = remove_nonplay_ticks(bomb_exploded)
+        bomb_exploded = remove_nonplay_ticks(
+            bomb_exploded[
+                [
+                    "is_freeze_period",
+                    "is_warmup_period",
+                    "is_terrorist_timeout",
+                    "is_ct_timeout",
+                    "is_technical_timeout",
+                    "is_waiting_for_resume",
+                    "is_match_started",
+                    "game_phase",
+                    "tick",
+                    "event",
+                    "user_last_place_name",
+                    "user_X",
+                    "user_Y",
+                    "user_Z",
+                ]
+            ]
+        )
         bomb_subevents.append(bomb_exploded)
+
+    # Have to return an empty dataframe
+    if len(bomb_subevents) == 0:
+        return pd.DataFrame(columns=["tick", "event", "site", "X", "Y", "Z"])
 
     # Combine all bomb events
     bomb_df = pd.concat(bomb_subevents)
-    bomb_df["site"] = map_bombsites(bomb_df["site"])
+
     # Rename columns
+    bomb_df = bomb_df.rename(columns={"user_last_place_name": "site"})
     for col in bomb_df.columns:
         if "user_" in col:
-            bomb_df = bomb_df.rename(columns={col: col.replace("user_", "player_")})
+            bomb_df = bomb_df.rename(columns={col: col.replace("user_", "")})
+
+    # Handle bomb locations
+    bomb_df = bomb_df.sort_values("tick").reset_index(drop=True)
+    for i, row in bomb_df.iterrows():
+        if row["event"] == "exploded" and i > 0:
+            # The prior row will contain the correct site.
+            bomb_df.loc[i, "site"] = bomb_df.loc[i - 1, "site"]
+            bomb_df.loc[i, "X"] = bomb_df.loc[i - 1, "X"]
+            bomb_df.loc[i, "Y"] = bomb_df.loc[i - 1, "Y"]
+            bomb_df.loc[i, "Z"] = bomb_df.loc[i - 1, "Z"]
     return bomb_df
 
 
