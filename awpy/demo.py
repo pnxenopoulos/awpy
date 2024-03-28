@@ -1,7 +1,6 @@
 """Defines the Demo class."""
 
 import os
-from importlib.metadata import version
 from typing import Any
 
 import pandas as pd
@@ -148,8 +147,6 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
             "parser": parser,
             "header": header,
             "events": events,
-            "version": None,
-            "hash": None,
             # Parsed from event dictionary
             "kills": kills,
             "damages": damages,
