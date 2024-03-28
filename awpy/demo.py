@@ -49,7 +49,6 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
     parser: DemoParser
     header: DemoHeader
     events: dict[str, pd.DataFrame]
-    version: str
 
     # Data
     kills: pd.DataFrame
@@ -149,7 +148,7 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
             "parser": parser,
             "header": header,
             "events": events,
-            "version": version("awpy"),
+            "version": None,
             "hash": None,
             # Parsed from event dictionary
             "kills": kills,
