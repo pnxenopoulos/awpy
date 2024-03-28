@@ -3,7 +3,6 @@
 import pandas as pd
 
 from awpy.converters import (
-    map_bombsites,
     map_game_phase,
     map_hitgroup,
     map_round_end_reasons,
@@ -12,13 +11,6 @@ from awpy.converters import (
 
 class TestConverters:
     """Tests conversion methods."""
-
-    def test_map_bombsites(self):
-        """Test the map_bombsites method."""
-        series = pd.Series([318, 401, -1])
-        expected = pd.Series(["A", "B", None])
-        result = map_bombsites(series)
-        pd.testing.assert_series_equal(result, expected)
 
     def test_map_hitgroup(self):
         """Test the map_hitgroup method."""
