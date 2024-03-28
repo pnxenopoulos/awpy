@@ -1,6 +1,6 @@
-"""Provides analytics capabilities for CSGO data."""
-from awpy.analytics.stats import player_stats
+"""Analytics module to calculate player statistics."""
 
-from . import stats
+from awpy.analytics.adr import adr
+from awpy.analytics.kast import calculate_trades
 
-__all__ = ["stats"]
+__all__ = ["adr", "calculate_trades"]
