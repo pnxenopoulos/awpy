@@ -3,6 +3,7 @@
 import pandas as pd
 
 from awpy import Demo
+from awpy.stats.utils import get_player_rounds
 
 
 def adr(
@@ -16,7 +17,7 @@ def adr(
         self_kills (bool, optional): Whether to use self kills. Defaults to True.
 
     Returns:
-        pd.DataFrame: A dataframe of the player, id, adr, side, and n_rounds.
+        pd.DataFrame: A dataframe of the player info + adr.
     """
     damages = demo.damages
 
@@ -30,42 +31,33 @@ def adr(
 
     # Calculate all/ct/t total damage
     damages_all = (
-        damages.groupby("attacker_name").dmg_health_real.sum().reset_index(name="dmg")
+        damages.groupby(["attacker_name", "attacker_steamid"])
+        .dmg_health_real.sum()
+        .reset_index(name="dmg")
     )
     damages_all["side"] = "all"
     damages_ct = (
         damages[damages["attacker_side"] == "CT"]
-        .groupby("attacker_name")
+        .groupby(["attacker_name", "attacker_steamid"])
         .dmg_health_real.sum()
         .reset_index(name="dmg")
     )
     damages_ct["side"] = "CT"
     damages_t = (
         damages[damages["attacker_side"] == "TERRORIST"]
-        .groupby("attacker_name")
+        .groupby(["attacker_name", "attacker_steamid"])
         .dmg_health_real.sum()
         .reset_index(name="dmg")
     )
     damages_t["side"] = "TERRORIST"
     damage_agg = pd.concat([damages_all, damages_ct, damages_t])
-    damage_agg.columns = ["name", "dmg", "side"]
+    damage_agg.columns = ["name", "steamid", "dmg", "side"]
 
     # Get rounds played by each player/side
-    player_sides_by_round = demo.ticks.groupby(["name", "side", "round"]).head(1)[
-        ["name", "side", "round"]
-    ]
-    player_side_rounds = (
-        player_sides_by_round.groupby(["name", "side"]).size().reset_index()
-    )
-    player_side_rounds.columns = ["name", "side", "n_rounds"]
-    player_total_rounds = player_sides_by_round.groupby(["name"]).size().reset_index()
-    player_total_rounds["side"] = "all"
-    player_total_rounds.columns = ["name", "n_rounds", "side"]
-    player_total_rounds = player_total_rounds[["name", "side", "n_rounds"]]
-    player_rounds_agg = pd.concat([player_side_rounds, player_total_rounds])
+    player_rounds_agg = get_player_rounds(demo)
 
     # Merge damage and rounds
-    adr_df = damage_agg.merge(player_rounds_agg, on=["name", "side"])
+    adr_df = damage_agg.merge(player_rounds_agg, on=["name", "steamid", "side"])
     adr_df["adr"] = adr_df["dmg"] / adr_df["n_rounds"]
 
-    return adr_df[["name", "side", "n_rounds", "dmg", "adr"]]
+    return adr_df[["name", "steamid", "side", "n_rounds", "dmg", "adr"]]

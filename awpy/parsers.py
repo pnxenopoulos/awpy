@@ -10,6 +10,22 @@ from awpy.converters import (
 )
 
 
+def parse_col_types(df: pd.DataFrame) -> pd.DataFrame:
+    """Parse the column types of a dataframe.
+
+    Args:
+        df: A pandas DataFrame.
+
+    Returns:
+        A DataFrame with the column types.
+    """
+    for col in df.columns:
+        # SteamIDs should be ints
+        if "steamid" in col:
+            df[col] = df[col].astype(str)
+    return df
+
+
 def remove_nonplay_ticks(parsed_df: pd.DataFrame) -> pd.DataFrame:
     """Filter out non-play records from a dataframe.
 
@@ -218,7 +234,7 @@ def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         raise KeyError(player_death_missing_msg)
 
     # Filter out nonplay ticks
-    kill_df = remove_nonplay_ticks(kill_df)
+    kill_df = parse_col_types(remove_nonplay_ticks(kill_df))
 
     # Get only relevant columns
     kill_df = kill_df[
@@ -292,6 +308,7 @@ def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "user_team_name",
             "user_team_clan_name",
             "user_name",
+            "user_steamid",
         ]
     ]
 
@@ -348,7 +365,7 @@ def parse_damages(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         raise KeyError(player_hurt_missing_msg)
 
     # Filter out nonplay ticks
-    damage_df = remove_nonplay_ticks(damage_df)
+    damage_df = parse_col_types(remove_nonplay_ticks(damage_df))
 
     # Get only relevant columns
     damage_df = damage_df[
@@ -454,25 +471,27 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         logger.warning("bomb_planted not found in events.")
     else:
         bomb_planted["event"] = "planted"
-        bomb_planted = remove_nonplay_ticks(
-            bomb_planted[
-                [
-                    "is_freeze_period",
-                    "is_warmup_period",
-                    "is_terrorist_timeout",
-                    "is_ct_timeout",
-                    "is_technical_timeout",
-                    "is_waiting_for_resume",
-                    "is_match_started",
-                    "game_phase",
-                    "tick",
-                    "event",
-                    "user_last_place_name",
-                    "user_X",
-                    "user_Y",
-                    "user_Z",
+        bomb_planted = parse_col_types(
+            remove_nonplay_ticks(
+                bomb_planted[
+                    [
+                        "is_freeze_period",
+                        "is_warmup_period",
+                        "is_terrorist_timeout",
+                        "is_ct_timeout",
+                        "is_technical_timeout",
+                        "is_waiting_for_resume",
+                        "is_match_started",
+                        "game_phase",
+                        "tick",
+                        "event",
+                        "user_last_place_name",
+                        "user_X",
+                        "user_Y",
+                        "user_Z",
+                    ]
                 ]
-            ]
+            )
         )
         bomb_subevents.append(bomb_planted)
 
@@ -482,25 +501,27 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         logger.warning("bomb_defused not found in events.")
     else:
         bomb_defused["event"] = "defused"
-        bomb_defused = remove_nonplay_ticks(
-            bomb_defused[
-                [
-                    "is_freeze_period",
-                    "is_warmup_period",
-                    "is_terrorist_timeout",
-                    "is_ct_timeout",
-                    "is_technical_timeout",
-                    "is_waiting_for_resume",
-                    "is_match_started",
-                    "game_phase",
-                    "tick",
-                    "event",
-                    "user_last_place_name",
-                    "user_X",
-                    "user_Y",
-                    "user_Z",
+        bomb_defused = parse_col_types(
+            remove_nonplay_ticks(
+                bomb_defused[
+                    [
+                        "is_freeze_period",
+                        "is_warmup_period",
+                        "is_terrorist_timeout",
+                        "is_ct_timeout",
+                        "is_technical_timeout",
+                        "is_waiting_for_resume",
+                        "is_match_started",
+                        "game_phase",
+                        "tick",
+                        "event",
+                        "user_last_place_name",
+                        "user_X",
+                        "user_Y",
+                        "user_Z",
+                    ]
                 ]
-            ]
+            )
         )
         bomb_subevents.append(bomb_defused)
 
@@ -510,25 +531,27 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         logger.warning("bomb_exploded not found in events.")
     else:
         bomb_exploded["event"] = "exploded"
-        bomb_exploded = remove_nonplay_ticks(
-            bomb_exploded[
-                [
-                    "is_freeze_period",
-                    "is_warmup_period",
-                    "is_terrorist_timeout",
-                    "is_ct_timeout",
-                    "is_technical_timeout",
-                    "is_waiting_for_resume",
-                    "is_match_started",
-                    "game_phase",
-                    "tick",
-                    "event",
-                    "user_last_place_name",
-                    "user_X",
-                    "user_Y",
-                    "user_Z",
+        bomb_exploded = parse_col_types(
+            remove_nonplay_ticks(
+                bomb_exploded[
+                    [
+                        "is_freeze_period",
+                        "is_warmup_period",
+                        "is_terrorist_timeout",
+                        "is_ct_timeout",
+                        "is_technical_timeout",
+                        "is_waiting_for_resume",
+                        "is_match_started",
+                        "game_phase",
+                        "tick",
+                        "event",
+                        "user_last_place_name",
+                        "user_X",
+                        "user_Y",
+                        "user_Z",
+                    ]
                 ]
-            ]
+            )
         )
         bomb_subevents.append(bomb_exploded)
 
@@ -576,7 +599,7 @@ def parse_smokes(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         smokegrenade_detonate_missing_msg = "smokegrenade_detonate not found in events."
         raise KeyError(smokegrenade_detonate_missing_msg)
 
-    smoke_starts = remove_nonplay_ticks(smoke_starts)
+    smoke_starts = parse_col_types(remove_nonplay_ticks(smoke_starts))
 
     # Get smoke ends
     smoke_ends = events.get("smokegrenade_expired")
@@ -584,7 +607,7 @@ def parse_smokes(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         smokegrenade_expired_missing_msg = "smokegrenade_expired not found in events."
         raise KeyError(smokegrenade_expired_missing_msg)
 
-    smoke_ends = remove_nonplay_ticks(smoke_ends)
+    smoke_ends = parse_col_types(remove_nonplay_ticks(smoke_ends))
 
     # Initialize an empty list to store the matched rows
     matched_rows = []
@@ -630,7 +653,7 @@ def parse_infernos(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         inferno_startburn_missing_msg = "inferno_startburn not found in events."
         raise KeyError(inferno_startburn_missing_msg)
 
-    inferno_starts = remove_nonplay_ticks(inferno_starts)
+    inferno_starts = parse_col_types(remove_nonplay_ticks(inferno_starts))
 
     # Get inferno ends
     inferno_ends = events.get("inferno_expire")
@@ -638,7 +661,7 @@ def parse_infernos(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         inferno_expire_missing_msg = "inferno_expire not found in events."
         raise KeyError(inferno_expire_missing_msg)
 
-    inferno_ends = remove_nonplay_ticks(inferno_ends)
+    inferno_ends = parse_col_types(remove_nonplay_ticks(inferno_ends))
     # Initialize an empty list to store the matched rows
     matched_rows = []
 
@@ -683,7 +706,7 @@ def parse_weapon_fires(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
         weapon_fire_missing_msg = "weapon_fire not found in events."
         raise KeyError(weapon_fire_missing_msg)
 
-    weapon_fires_df = remove_nonplay_ticks(weapon_fires_df)
+    weapon_fires_df = parse_col_types(remove_nonplay_ticks(weapon_fires_df))
     weapon_fires_df = weapon_fires_df[
         [
             "tick",
@@ -779,7 +802,7 @@ def parse_ticks(parser: DemoParser) -> pd.DataFrame:
             "game_phase",
         ]
     )
-    ticks = remove_nonplay_ticks(ticks)
+    ticks = parse_col_types(remove_nonplay_ticks(ticks))
     return ticks.rename(
         columns={
             "FORWARD": "key_forward",
