@@ -9,17 +9,15 @@ jobs:
       name: test-release-pypi
     permissions:
       id-token: write
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.9"
+
 
       - name: Build release distributions
         run: |
@@ -32,3 +30,7 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Install package from TestPyPI
+        run: |
+          python -m pip install --index-url https://test.pypi.org/simple/ awpy
