@@ -1,9 +1,9 @@
 """Test the Demo object."""
 
 import pytest
+from pydantic_core._pydantic_core import ValidationError
 
 from awpy.demo import Demo
-from pydantic_core._pydantic_core import ValidationError
 
 
 class TestDemo:
