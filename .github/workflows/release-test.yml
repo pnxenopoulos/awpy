@@ -33,4 +33,4 @@ jobs:
 
       - name: Install package from TestPyPI
         run: |
-          python -m pip install --index-url https://test.pypi.org/simple/ awpy
+          python -m pip install --index-url --no-deps https://test.pypi.org/simple/ awpy

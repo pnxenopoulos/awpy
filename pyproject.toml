@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "awpy"
-version = "2.0.0rc2"
+version = "2.0.0rc3"
 authors = [
     { name = "Peter Xenopoulos", email = "xenopoulos@nyu.edu" },
     { name = "Jan-Eric Nitschke", email = "janericnitschke@gmail.com" },
