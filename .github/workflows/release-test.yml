@@ -1,6 +1,6 @@
 name: Build and Publish to Test PyPI
 
-on: push
+on: workflow_dispatch
 
 jobs:
   build-and-release:
