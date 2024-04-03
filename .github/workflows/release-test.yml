@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build
 
-      - name: Publish package distributions to TestPyPI
+      - name: Publish package distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
             repository-url: https://test.pypi.org/legacy/
