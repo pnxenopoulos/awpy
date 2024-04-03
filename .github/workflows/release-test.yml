@@ -5,8 +5,10 @@ on: push
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    environment:
+      name: test-release-pypi
     permissions:
-        id-token: write
+      id-token: write
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
