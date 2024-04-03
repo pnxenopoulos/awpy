@@ -1,11 +1,10 @@
 """Defines the Demo class."""
 
-import os
-from typing import Any
+from typing import Any, Optional
 
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, FilePath
 
 from awpy.parsers import (
     parse_bomb,
@@ -43,51 +42,42 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    file: FilePath
+
     # Parser & Metadata
-    file: str
-    parser: DemoParser
-    header: DemoHeader
-    events: dict[str, pd.DataFrame]
+    parser: DemoParser = Field(default=None)
+    header: DemoHeader = Field(default=None)
+    events: dict[str, pd.DataFrame] = Field(default=dict)
 
     # Data
-    kills: pd.DataFrame
-    damages: pd.DataFrame
-    bomb: pd.DataFrame
-    smokes: pd.DataFrame
-    infernos: pd.DataFrame
-    weapon_fires: pd.DataFrame
-    rounds: pd.DataFrame
-    grenades: pd.DataFrame
-    ticks: pd.DataFrame
+    kills: Optional[pd.DataFrame] = Field(default=None)
+    damages: Optional[pd.DataFrame] = Field(default=None)
+    bomb: Optional[pd.DataFrame] = Field(default=None)
+    smokes: Optional[pd.DataFrame] = Field(default=None)
+    infernos: Optional[pd.DataFrame] = Field(default=None)
+    weapon_fires: Optional[pd.DataFrame] = Field(default=None)
+    rounds: Optional[pd.DataFrame] = Field(default=None)
+    grenades: Optional[pd.DataFrame] = Field(default=None)
+    ticks: Optional[pd.DataFrame] = Field(default=None)
 
-    @model_validator(mode="before")
-    @classmethod
-    def parse_demo(cls: type["Demo"], values: dict[str, Any]) -> dict[str, Any]:
-        """Parse the demo file.
+    def __init__(self, **data: dict[str, Any]) -> None:
+        """Initialize the Demo class. Performs any parsing."""
+        super().__init__(**data)
 
-        Args:
-            values (dict[str, Any]): Passed in arguments.
+        self.parser = DemoParser(str(self.file))
+        self._parse_demo()
+        self._parse_events()
 
-        Raises:
-            ValueError: If `file` is not a passed argument.
-            FileNotFoundError: If specified filepath does not exist.
+    def _parse_demo(self) -> None:
+        """Parse the demo header and file."""
+        if not self.parser:
+            no_parser_error_msg = "No parser found!"
+            raise ValueError(no_parser_error_msg)
 
-        Returns:
-            dict[str, Any]: The parsed demo data.
-        """
-        file = values.get("file")
-        if file is None:
-            file_arg_error_msg = "Must specify filepath with `file` argument."
-            raise ValueError(file_arg_error_msg)
-        if not os.path.exists(file):
-            file_not_found_error_msg = f"{file} not found."
-            raise FileNotFoundError(file_not_found_error_msg)
-
-        parser = DemoParser(file)
-        header = parse_header(parser.parse_header())
-        events = dict(
-            parser.parse_events(
-                parser.list_game_events(),
+        self.header = parse_header(self.parser.parse_header())
+        self.events = dict(
+            self.parser.parse_events(
+                self.parser.list_game_events(),
                 player=[
                     "X",
                     "Y",
@@ -127,38 +117,48 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
             )
         )
 
-        # Parse the demo
-        rounds = parse_rounds(parser)
+    def _parse_events(self) -> None:
+        """Process the raw parsed data."""
+        if len(self.events.keys()) == 0:
+            no_events_error_msg = "No events found!"
+            raise ValueError(no_events_error_msg)
 
-        kills = apply_round_num(rounds, parse_kills(events))
-        damages = apply_round_num(rounds, parse_damages(events))
-        bomb = apply_round_num(rounds, parse_bomb(events))
-        smokes = apply_round_num(rounds, parse_smokes(events), tick_col="start_tick")
-        infernos = apply_round_num(
-            rounds, parse_infernos(events), tick_col="start_tick"
+        self.rounds = parse_rounds(self.parser)
+
+        self.kills = apply_round_num(self.rounds, parse_kills(self.events))
+        self.damages = apply_round_num(self.rounds, parse_damages(self.events))
+        self.bomb = apply_round_num(self.rounds, parse_bomb(self.events))
+        self.smokes = apply_round_num(
+            self.rounds, parse_smokes(self.events), tick_col="start_tick"
         )
-        weapon_fires = apply_round_num(rounds, parse_weapon_fires(events))
-        grenades = apply_round_num(rounds, parse_grenades(parser))
-        ticks = apply_round_num(rounds, parse_ticks(parser))
+        self.infernos = apply_round_num(
+            self.rounds, parse_infernos(self.events), tick_col="start_tick"
+        )
+        self.weapon_fires = apply_round_num(
+            self.rounds, parse_weapon_fires(self.events)
+        )
+        self.grenades = apply_round_num(self.rounds, parse_grenades(self.parser))
+        self.ticks = apply_round_num(self.rounds, parse_ticks(self.parser))
 
-        return {
-            # Parser & Metadata
-            "file": file,
-            "parser": parser,
-            "header": header,
-            "events": events,
-            # Parsed from event dictionary
-            "kills": kills,
-            "damages": damages,
-            "bomb": bomb,
-            "smokes": smokes,
-            "infernos": infernos,
-            "weapon_fires": weapon_fires,
-            # Parsed from parser
-            "rounds": rounds,
-            "grenades": grenades,
-            "ticks": ticks,
-        }
+    @property
+    def is_parsed(self) -> bool:
+        """Check if the demo has been parsed."""
+        return all(
+            [
+                self.parser,
+                self.header,
+                self.events,
+                self.kills is not None,
+                self.damages is not None,
+                self.bomb is not None,
+                self.smokes is not None,
+                self.infernos is not None,
+                self.weapon_fires is not None,
+                self.rounds is not None,
+                self.grenades is not None,
+                self.ticks is not None,
+            ]
+        )
 
 
 def parse_header(parsed_header: dict) -> DemoHeader:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "awpy"
-version = "2.0.0rc4"
+version = "2.0.0rc1"
 authors = [
     { name = "Peter Xenopoulos", email = "xenopoulos@nyu.edu" },
     { name = "Jan-Eric Nitschke", email = "janericnitschke@gmail.com" },
@@ -93,7 +93,7 @@ select = [
     "RUF",
     "EM",
 ]
-ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "BLE001", "PLR2004"]
+ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007"]
 
 # Exclude a variety of commonly ignored directories.
 exclude = [

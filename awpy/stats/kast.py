@@ -52,7 +52,18 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: A dataframe of the player info + kast.
+
+    Raises:
+        ValueError: If kills or ticks are missing in the parsed demo.
     """
+    if not demo.kills:
+        missing_kills_error_msg = "Kills is missing in the parsed demo!"
+        raise ValueError(missing_kills_error_msg)
+
+    if not demo.ticks:
+        missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
+        raise ValueError(missing_ticks_error_msg)
+
     kills_with_trades = calculate_trades(demo.kills, trade_ticks)
 
     # Get rounds where a player had a kill

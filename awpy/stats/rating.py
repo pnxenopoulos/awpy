@@ -15,7 +15,18 @@ def impact(demo: Demo) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: A dataframe of the player info + impact.
+
+    Raises:
+        ValueError: If kills or ticks are missing in the parsed demo.
     """
+    if not demo.kills:
+        missing_kills_error_msg = "Kills is missing in the parsed demo!"
+        raise ValueError(missing_kills_error_msg)
+
+    if not demo.ticks:
+        missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
+        raise ValueError(missing_ticks_error_msg)
+
     # Get total rounds by player
     player_total_rounds = get_player_rounds(demo)
 
@@ -103,7 +114,18 @@ def rating(demo: Demo) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: A dataframe of the player info + impact + rating.
+
+    Raises:
+        ValueError: If kills or ticks are missing in the parsed demo.
     """
+    if not demo.kills:
+        missing_kills_error_msg = "Kills is missing in the parsed demo!"
+        raise ValueError(missing_kills_error_msg)
+
+    if not demo.ticks:
+        missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
+        raise ValueError(missing_ticks_error_msg)
+
     # Get total rounds by player
     player_total_rounds = get_player_rounds(demo)
 

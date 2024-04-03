@@ -18,7 +18,7 @@ To install Awpy, you can run
 pip install awpy
 ```
 
-`awpy` requires [Python](https://www.python.org/downloads/) >= 3.11. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
+`awpy` requires [Python](https://www.python.org/downloads/) >= 3.9. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
 
 :bulb: **Tip:** Don't worry if you get stuck, visit us [our Discord](https://discord.gg/W34XjsSs2H) for help.
 
@@ -66,13 +66,16 @@ Awpy is structured as follows:
 ```
 .
 ├── awpy
-│   ├── data                      # Code for dealing with Counter-Strike map and nav data
-│   ├── parser                    # Code for Counter-Strike demo parser
-│   ├── stats                     # Code for Counter-Strike statistics and analytics
-│   └── visualization             # Code for Counter-Strike visualization
-├── doc                           # Contains documentation files
-├── examples                      # Contains Jupyter Notebooks showing example code
-└── tests                         # Contains tests for the awpy package
+│   ├── data                      # Data directory (PLANNED)
+│   ├── stats                     # Stats and analytics module
+│   └── visualization             # Visualization module (PLANNED)
+│   converters.py                 # Utilities for converting to readable strings
+│   demo.py                       # Defines the base Demo class
+│   parsers.py                    # Defines simple parsers for different events
+│   utils.py                      # Utilities used across the project
+├── doc                           # Documentation files
+├── examples                      # Jupyter Notebooks showing example code
+└── tests                         # Tests
 ```
 
 ## Acknowledgments

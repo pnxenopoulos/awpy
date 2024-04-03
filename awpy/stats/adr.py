@@ -18,7 +18,14 @@ def adr(
 
     Returns:
         pd.DataFrame: A dataframe of the player info + adr.
+
+    Raises:
+        ValueError: If damages are missing in the parsed demo.
     """
+    if not demo.damages:
+        missing_damages_error_msg = "Damages is missing in the parsed demo!"
+        raise ValueError(missing_damages_error_msg)
+
     damages = demo.damages
 
     # Remove team damage
