@@ -3,6 +3,7 @@
 import pytest
 
 from awpy.demo import Demo
+from pydantic_core._pydantic_core import ValidationError
 
 
 class TestDemo:
@@ -15,11 +16,11 @@ class TestDemo:
 
     def test_invalid_filepath(self):
         """Test the Demo object with an invalid filepath."""
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(ValidationError):
             Demo(file="xyz.dem")
 
     def test_hltv_demo(self):
         """Test the Demo object with an HLTV demo."""
         parsed_demo = Demo(file="tests/spirit-vs-mouz-m1-vertigo.dem")
-        assert parsed_demo.file == "tests/spirit-vs-mouz-m1-vertigo.dem"
+        assert str(parsed_demo.file) == "tests/spirit-vs-mouz-m1-vertigo.dem"
         assert parsed_demo.header.map_name == "de_vertigo"
