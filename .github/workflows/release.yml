@@ -6,7 +6,7 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     environment:
-      name: release-pypi
+      name: prod-release-pypi
     permissions:
       id-token: write
 
