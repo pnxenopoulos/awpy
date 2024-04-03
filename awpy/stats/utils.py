@@ -20,7 +20,7 @@ def get_player_rounds(demo: Demo) -> pd.DataFrame:
     if not demo.ticks:
         missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
         raise ValueError(missing_ticks_error_msg)
-    
+
     # Get rounds played by each player/side
     player_sides_by_round = demo.ticks.groupby(
         ["name", "steamid", "side", "round"]
