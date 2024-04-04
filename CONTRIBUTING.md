@@ -45,4 +45,4 @@ While developing, you can also edit the [test_data.json](/tests/test_data.json) 
 
 ## Thanks
 
-With all this you are now ready to make contributions to Awpy. We are looking forward to your contributions!
+With all this you are now ready to make contributions to Awpy. We look forward to your contributions!
