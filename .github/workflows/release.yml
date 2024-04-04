@@ -1,0 +1,35 @@
+name: Build and Publish to Prod PyPI
+
+on: workflow_dispatch
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    environment:
+      name: prod-release-pypi
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+
+      - name: Build release distributions
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Publish package distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Install package from PyPI
+        run: |
+          python -m pip install --no-deps awpy

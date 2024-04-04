@@ -1,0 +1,12 @@
+[default.extend-words]
+# Don't correct the acronym ot for overtime
+ot = "ot"
+
+
+[default]
+extend-ignore-identifiers-re = [
+    # Don't correct the name MAKARxJESUS
+    "MAKAR.*",
+    # Don't correct the id in notebook
+    ".*ba355586.*",
+]
