@@ -1,24 +1,23 @@
 """Calculates CT & T side likeliehood of winning a round at any given point"""
 
-import pandas as pd
 from typing import List, Dict, Union
 
 from awpy import Demo
 
 
-def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, float]]:
+def build_feature_matrix(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, float]]:
     """
-    Calculate win probabilities for specified ticks in a Counter-Strike match demo.
+    Builds the game state feature matrix for specified ticks.
 
     Args:
-        demo (Demo): A parsed demo object containing CS:GO match data.
-        ticks (Union[int, List[int]]): A single tick or a list of ticks at which to calculate win probabilities.
+        demo (Demo): A parsed demo object containing CS2 match data.
+        ticks (Union[int, List[int]]): A single tick or a list of ticks at which to calculate features.
 
     Returns:
-        List[Dict[str, float]]: A list of dictionaries with the calculated win probabilities for CT and T sides for each tick.
-
+        List[Dict[str, Union[int, str, bool]]]: A list of dictionaries where each dictionary contains the game state features at a given tick.
+    
     Raises:
-        ValueError: If specified ticks are not found within the demo object or if ticks are from different rounds.
+        ValueError: If specified ticks are not found within the demo object.
     """
     if not demo.ticks.empty:
         if isinstance(ticks, int):
@@ -70,5 +69,19 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, 
         return game_state
     else:
         raise ValueError("Ticks data is missing in the parsed demo.")
+    
+
+def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, float]]:
+    """
+    Calculate win probabilities for specified ticks in a CS2 match demo.
+
+    Args:
+        demo (Demo): A parsed demo object containing CS2 match data.
+        ticks (Union[int, List[int]]): A single tick or a list of ticks at which to calculate win probabilities.
+
+    Returns:
+        List[Dict[str, float]]: A list of dictionaries with the calculated win probabilities for CT and T sides for each tick.
+
+    """
 
 
