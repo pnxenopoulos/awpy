@@ -88,7 +88,7 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
                     "accuracy_penalty",
                     "zoom_lvl",
                     "health",
-                    "armor",
+                    "armor_value",
                     "inventory",
                     "current_equip_value",
                     "rank",
