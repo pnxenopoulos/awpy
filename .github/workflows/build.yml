@@ -8,11 +8,13 @@ on:
     paths:
       - 'awpy/**'
       - 'tests/**'
+      - 'pyproject.toml'
   pull_request:
     branches: [main]
     paths:
       - 'awpy/**'
       - 'tests/**'
+      - 'pyproject.toml'
 
 jobs:
   build:
