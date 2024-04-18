@@ -17,18 +17,23 @@ license = { text = "MIT License" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Games/Entertainment",
     "Topic :: Games/Entertainment :: First Person Shooters",
-    "Topic :: Scientific/Engineering :: Information Analysis"
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
-    "loguru>=0.7.2",
-    "numpy>=1.26.3",
-    "pandas>=2.2.0",
-    "pydantic>=2.6.0",
-    "setuptools>=69.0.3",
+    "loguru~=0.7.2",
+    "numpy~=1.26.3",
+    "pandas~=2.2.2",
+    "pydantic~=2.7.0",
+    "setuptools~=69.2.0",
     "sphinx-rtd-theme==2.0.0",
-    "demoparser2>=0.21.2"
+    "demoparser2~=0.23.0"
 ]
 
 [tool.setuptools]

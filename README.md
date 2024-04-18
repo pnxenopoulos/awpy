@@ -1,6 +1,9 @@
+<center>
 # Awpy
 
 [![Awpy Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Awpy Downloads](https://static.pepy.tech/personalized-badge/awpy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads)](https://pepy.tech/project/awpy) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/awpy) [![Build](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml) [![Documentation Status](https://readthedocs.org/projects/awpy/badge/?version=latest)](https://awpy.readthedocs.io/en/latest/?badge=latest) [![MIT License](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/awpy/blob/main/LICENSE)
+
+</center>
 
 **Counter-Strike 2 Demo Parsing, Analytics and Visualization in Python**
 
@@ -10,6 +13,8 @@
 - 🎞️ Visualize Counter-Strike data, including animated round gifs
 
 Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics.
+
+---
 
 ## Installation
 To install Awpy, you can run
@@ -33,6 +38,7 @@ dem = Demo(file="natus-vincere-vs-virtus-pro-m1-overpass.dem")
 
 # Access various dictionaries & dataframes
 dem.header
+dem.rounds
 dem.grenades
 dem.kills
 dem.damages
