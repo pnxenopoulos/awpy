@@ -11,10 +11,7 @@
 - :skull: Access kill, damage, grenade, bomb, player trajectory data, and more
 - :chart: Calculate common statistics, such as ADR, KAST, Rating and win probability
 - 🎞️ Visualize Counter-Strike data, including animated round gifs
-
-Please join [our Discord](https://discord.gg/W34XjsSs2H) for discussion around the library and esports analytics.
-
----
+- :speaker: Active [Discord](https://discord.gg/W34XjsSs2H) community
 
 ## Installation
 To install Awpy, you can run
@@ -23,13 +20,14 @@ To install Awpy, you can run
 pip install awpy
 ```
 
-`awpy` requires [Python](https://www.python.org/downloads/) >= 3.9. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
+> [!NOTE]
+> `awpy` requires [Python](https://www.python.org/downloads/) >= 3.9. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
 
 > [!TIP]
 > Don't worry if you get stuck, visit us [our Discord](https://discord.gg/W34XjsSs2H) for help.
 
 ## Example Code
-Using Awpy is easy! Just find a demo you want to analyze and use the example below to get started. For example, take [NaVi vs Virtus.pro](https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro).
+Using Awpy is easy. Just find a demo you want to analyze and use the example below to get started. For example, take [NaVi vs Virtus.pro](https://www.hltv.org/stats/matches/mapstatsid/169189/natus-vincere-vs-virtuspro).
 
 ```python
 from awpy import Demo
@@ -54,7 +52,7 @@ dem.ticks
 > Want to learn more about the parser output? Visit the [parser primer](https://awpy.readthedocs.io/en/latest/parser_output.html) in our documentation!
 
 ### Help! The parser doesn't work or returns weird data
-Counter-Strike demos can be a bit troublesome. It is likely you'll see increased error rates in POV demos. To help us address parsing issues, please open a bug report in our [Github issues](https://github.com/pnxenopoulos/awpy/issues) or in our [our Discord](https://discord.gg/3JrhKYcEKW). We're committed to increasing parsing coverage rates and appreciate any errors you may find.
+Counter-Strike demos can be a bit troublesome. It is likely you'll see increased error rates in POV demos. To help us address parsing issues, please open a bug report in our [Github issues](https://github.com/pnxenopoulos/awpy/issues) as well as in our [our Discord](https://discord.gg/3JrhKYcEKW). We're committed to increasing parsing coverage rates and appreciate any errors you may find.
 
 ## Examples and Projects
 Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing Counter-Strike data.
