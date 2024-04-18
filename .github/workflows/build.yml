@@ -5,8 +5,14 @@ name: build
 on:
   push:
     branches: [main, dev]
+    paths:
+      - 'awpy/**'
+      - 'tests/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'awpy/**'
+      - 'tests/**'
 
 jobs:
   build:
