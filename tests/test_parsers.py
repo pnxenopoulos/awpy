@@ -39,7 +39,7 @@ def hltv_events() -> dict[str, pd.DataFrame]:
                 "last_place_name",
                 "flash_duration",
                 "health",
-                "armor",
+                "armor_value",
                 "inventory",
                 "current_equip_value",
                 "rank",

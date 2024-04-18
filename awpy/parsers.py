@@ -781,7 +781,7 @@ def parse_ticks(parser: DemoParser) -> pd.DataFrame:
             "is_strafing",
             "in_crouch",
             "health",
-            "armor",
+            "armor_value",
             "has_defuser",
             "has_helmet",
             "inventory",
