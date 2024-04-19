@@ -26,6 +26,11 @@ def process_tick_data(tick_data: pd.DataFrame, demo: Demo) -> Dict[str, Union[in
     equipment_value_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0)]['current_equip_value'].sum()
     hp_remaining_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0)]['health'].sum()
     hp_remaining_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0)]['health'].sum()
+    armor_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0) & (tick_data['armor_value'] > 0)].shape[0]
+    armor_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0) & (tick_data['armor_value'] > 0)].shape[0]
+    has_helmet_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0) & (tick_data['has_helmet'] == True)].shape[0]
+    has_helmet_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0) & (tick_data['has_helmet'] == True)].shape[0]
+    
     
     return {
         "tick": tick_data['tick'].iloc[0],
@@ -38,6 +43,10 @@ def process_tick_data(tick_data: pd.DataFrame, demo: Demo) -> Dict[str, Union[in
         "equipment_value_t": equipment_value_t,
         "hp_remaining_ct": hp_remaining_ct,
         "hp_remaining_t": hp_remaining_t,
+        "armor_ct": armor_ct,
+        "armor_t": armor_t,
+        "has_helmet_ct": has_helmet_ct,
+        "has_helmet_t": has_helmet_t
     }
 
 def build_feature_matrix(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, Union[int, str, bool]]]:
