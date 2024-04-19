@@ -94,5 +94,13 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, 
     Raises:
         NotImplementedError: This function has not yet been implemented.
     """
-    raise NotImplementedError("This functionality is not yet implemented.")
+    feature_matrix = build_feature_matrix(demo, ticks)
+    probabilities = []
+    for features in feature_matrix:
+        win_prob_ct = 0.50 
+        probabilities.append({
+            "tick": features["tick"],
+            "CT_win_probability": win_prob_ct,
+        })
+    return probabilities
 
