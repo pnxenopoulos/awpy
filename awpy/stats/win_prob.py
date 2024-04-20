@@ -101,6 +101,8 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, 
         probabilities.append({
             "tick": features["tick"],
             "CT_win_probability": win_prob_ct,
+            "T_win_probability": 1 - win_prob_ct,
         })
+    print(probabilities)
     return probabilities
 
