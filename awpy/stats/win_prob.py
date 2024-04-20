@@ -2,8 +2,12 @@
 
 from typing import List, Dict, Union
 import pandas as pd 
+import numpy as np
 
 from awpy import Demo
+
+def generate_random_weights(num_features):
+    return np.random.uniform(low=-1.0, high=1.0, size=num_features)
 
 
 def process_tick_data(tick_data: pd.DataFrame, demo: Demo) -> Dict[str, Union[int, str, bool]]:
@@ -95,6 +99,7 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, 
         NotImplementedError: This function has not yet been implemented.
     """
     feature_matrix = build_feature_matrix(demo, ticks)
+    mock_weights = generate_random_weights(12)
     probabilities = []
     for features in feature_matrix:
         win_prob_ct = 0.50 
@@ -103,6 +108,6 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> List[Dict[str, 
             "CT_win_probability": win_prob_ct,
             "T_win_probability": 1 - win_prob_ct,
         })
-    print(probabilities)
     return probabilities
+
 
