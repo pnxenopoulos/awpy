@@ -22,7 +22,7 @@ def adr(
     Raises:
         ValueError: If damages are missing in the parsed demo.
     """
-    if not demo.damages:
+    if demo.damages is None:
         missing_damages_error_msg = "Damages is missing in the parsed demo!"
         raise ValueError(missing_damages_error_msg)
 

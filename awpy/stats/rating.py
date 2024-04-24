@@ -19,11 +19,11 @@ def impact(demo: Demo) -> pd.DataFrame:
     Raises:
         ValueError: If kills or ticks are missing in the parsed demo.
     """
-    if not demo.kills:
+    if demo.kills is None:
         missing_kills_error_msg = "Kills is missing in the parsed demo!"
         raise ValueError(missing_kills_error_msg)
 
-    if not demo.ticks:
+    if demo.ticks is None:
         missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
         raise ValueError(missing_ticks_error_msg)
 
@@ -118,11 +118,11 @@ def rating(demo: Demo) -> pd.DataFrame:
     Raises:
         ValueError: If kills or ticks are missing in the parsed demo.
     """
-    if not demo.kills:
+    if demo.kills is None:
         missing_kills_error_msg = "Kills is missing in the parsed demo!"
         raise ValueError(missing_kills_error_msg)
 
-    if not demo.ticks:
+    if demo.ticks is None:
         missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
         raise ValueError(missing_ticks_error_msg)
 

@@ -17,7 +17,7 @@ def get_player_rounds(demo: Demo) -> pd.DataFrame:
     Raises:
         ValueError: If ticks are missing in the parsed demo.
     """
-    if not demo.ticks:
+    if demo.ticks is None:
         missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
         raise ValueError(missing_ticks_error_msg)
 
