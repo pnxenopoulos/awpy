@@ -131,6 +131,7 @@ def parse_rounds(parser: DemoParser) -> pd.DataFrame:
     if len(round_end) == 0:
         round_end_missing_msg = "round_end not found in events."
         raise KeyError(round_end_missing_msg)
+    round_end = round_end[~round_end["winner"].isnull()]  # Remove None round ends
     round_end["event"] = "end"
 
     round_end_official = parser.parse_event("round_officially_ended")
@@ -182,6 +183,9 @@ def parse_rounds(parser: DemoParser) -> pd.DataFrame:
             indices_to_keep.extend(range(i, i + full_sequence_offset))
         # Case for end of match where we might not get a round official end
         elif current_sequence == ["start", "freeze_end", "end"]:
+            indices_to_keep.extend(range(i, i + full_sequence_offset - 1))
+        # Case for start of match where we might not get a freeze end
+        elif current_sequence[0:full_sequence_offset - 1] == ["start", "end", "official_end"]:
             indices_to_keep.extend(range(i, i + full_sequence_offset - 1))
 
     # Filter the DataFrame to keep only the rows with the correct sequence
