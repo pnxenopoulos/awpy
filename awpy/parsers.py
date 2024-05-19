@@ -728,7 +728,7 @@ def parse_weapon_fires(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "user_yaw",
             "user_pitch",
             "user_last_place_name",
-            #"user_is_strafing", #deactivated for now
+            # "user_is_strafing", #deactivated for now
             "user_accuracy_penalty",
             "user_health",
             "user_armor_value",

@@ -1,10 +1,8 @@
 """Defines the Demo class."""
 
-from typing import Any, Optional
+from pathlib import Path
 
-import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
-from pydantic import BaseModel, ConfigDict, Field, FilePath
 
 from awpy.parsers import (
     parse_bomb,
@@ -20,53 +18,44 @@ from awpy.parsers import (
 from awpy.utils import apply_round_num
 
 
-class DemoHeader(BaseModel):
-    """Class to store demo header information."""
-
-    demo_version_guid: str
-    network_protocol: str
-    fullpackets_version: str
-    allow_clientside_particles: bool
-    addons: str
-    client_name: str
-    map_name: str
-    server_name: str
-    demo_version_name: str
-    allow_clientside_entities: bool
-    demo_file_stamp: str
-    game_directory: str
-
-
-class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
+class Demo:
     """Class to store a demo's data. Called with `Demo(file="...")`."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    def __init__(self, path: Path) -> None:
+        """Instantiate a Demo object.
 
-    file: FilePath
+        Args:
+            path (Path): Path to demofile.
 
-    # Parser & Metadata
-    parser: DemoParser = Field(default=None)
-    header: DemoHeader = Field(default=None)
-    events: dict[str, pd.DataFrame] = Field(default=dict)
+        Raises:
+            FileNotFoundError: If the specified `path` does not exist.
+        """
+        # Pathify any input
+        path = Path(path)
 
-    # Data
-    kills: Optional[pd.DataFrame] = Field(default=None)
-    damages: Optional[pd.DataFrame] = Field(default=None)
-    bomb: Optional[pd.DataFrame] = Field(default=None)
-    smokes: Optional[pd.DataFrame] = Field(default=None)
-    infernos: Optional[pd.DataFrame] = Field(default=None)
-    weapon_fires: Optional[pd.DataFrame] = Field(default=None)
-    rounds: Optional[pd.DataFrame] = Field(default=None)
-    grenades: Optional[pd.DataFrame] = Field(default=None)
-    ticks: Optional[pd.DataFrame] = Field(default=None)
+        # Parser & Metadata
+        self.parser = None  # DemoParser
+        self.header = None  # DemoHeader
+        self.events = {}  # Dictionary of [event, dataframe]
 
-    def __init__(self, **data: dict[str, Any]) -> None:
-        """Initialize the Demo class. Performs any parsing."""
-        super().__init__(**data)
+        # Data (pandas dataframes)
+        self.kills = None
+        self.damages = None
+        self.bomb = None
+        self.smokes = None
+        self.infernos = None
+        self.weapon_fires = None
+        self.rounds = None
+        self.grenades = None
+        self.ticks = None
 
-        self.parser = DemoParser(str(self.file))
-        self._parse_demo()
-        self._parse_events()
+        if path.exists():
+            self.parser = DemoParser(str(path))
+            self._parse_demo()
+            self._parse_events()
+        else:
+            demo_path_not_found_msg = f"{path} does not exist!"
+            raise FileNotFoundError(demo_path_not_found_msg)
 
     def _parse_demo(self) -> None:
         """Parse the demo header and file."""
@@ -161,15 +150,15 @@ class Demo(BaseModel):  # pylint: disable=too-many-instance-attributes
         )
 
 
-def parse_header(parsed_header: dict) -> DemoHeader:
-    """Parse the header of the demofile.
+def parse_header(parsed_header: dict) -> dict:
+    """Parse the header of the demofile to a dictionary.
 
     Args:
         parsed_header (dict): The header of the demofile. Output
             of `parser.parse_header()`.
 
     Returns:
-        DemoHeader: The parsed header of the demofile.
+        dict: The parsed header of the demofile.
     """
     for key, value in parsed_header.items():
         if value == "true":
@@ -178,4 +167,4 @@ def parse_header(parsed_header: dict) -> DemoHeader:
             parsed_header[key] = False
         else:
             pass  # Loop through and convert strings to bools
-    return DemoHeader(**parsed_header)
+    return parsed_header
