@@ -30,7 +30,6 @@ dependencies = [
     "loguru>=0.7.2",
     "numpy>=1.26.3",
     "pandas>=2.2.2",
-    "pydantic>=2.7.0",
     "setuptools>=69.2.0",
     "sphinx-rtd-theme==2.0.0",
     "demoparser2>=0.25.0"
