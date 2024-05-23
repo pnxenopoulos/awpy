@@ -28,6 +28,7 @@ classifiers = [
 ]
 dependencies = [
     "loguru>=0.7.2",
+    "matplotlib>=3.9.0",
     "numpy>=1.26.3",
     "pandas>=2.2.2",
     "setuptools>=69.2.0",
@@ -40,11 +41,7 @@ include-package-data = true
 
 [tool.setuptools.package-data]
 "*" = [
-    "data/map/*.png",
-    "data/map/*.json",
-    "data/nav/*.txt",
-    "data/nav/*.csv",
-    "data/nav/*.json",
+    "data/maps/*.png"
 ]
 
 [tool.ruff]

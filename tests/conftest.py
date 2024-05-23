@@ -1,4 +1,4 @@
-"""Global test configuration."""
+"""Awpy test configuration."""
 
 import json
 import os
@@ -22,12 +22,12 @@ def teardown():  # noqa: PT004, ANN201
     """Cleans testing environment by deleting all .dem and .json files."""
     yield
     for file in os.listdir():
-        if file.endswith(".json"):
+        if file.endswith((".json", ".dem")):
             os.remove(file)
 
 
 def _get_demofile(demo_link: str, demo_name: str) -> None:
-    """Sends a request to get a demofile from MediaFire.
+    """Sends a request to get a demofile from the object storage.
 
     Args:
         demo_link (str): Link to demo.
