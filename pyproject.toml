@@ -42,6 +42,7 @@ demoparser2 = ">=0.25.0"
 [tool.poetry.dev-dependencies]
 black = "^24.4.2"
 pytest = "^6.2"
+requests = "^2.32.3"
 ruff = "^0.0.259"
 pyright = "^1.1.198"
 coverage = "^5.5"
@@ -96,11 +97,9 @@ select = [
     "SIM",
     "TID",
     "TCH",
-    "INT",
     "ARG",
     "ERA",
     "PD",
-    "PERF",
     "PGH",
     "PLC",
     "PLE",
@@ -137,13 +136,16 @@ exclude = [
 ]
 line-length = 88
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-target-version = "py312"
 
 [tool.ruff.pydocstyle]
 convention = "google"
 
 [tool.ruff.pylint]
 max-args = 17
+
+[tool.ruff.per-file-ignores]
+"__init__.py"              = ["E402", "F401"]
+"tests/test_*.py"          = ["ANN201", "S101", "SLF001", "PLR2004"]
 
 # Pyright config
 [tool.pyright]

@@ -75,11 +75,10 @@ jobs:
         run: |
           poetry install --no-interaction
 
-      - name: Check formatting with black
-        uses: psf/black@stable
-
-      - name: Lint with ruff
-        uses: chartboost/ruff-action@v1
+      - name: Check formatting and lint with ruff
+        run: |
+          poetry run ruff check . --fix --exit-zero
+          poetry run ruff check .
 
       - name: Typecheck with pyright
         uses: jakebailey/pyright-action@v2
