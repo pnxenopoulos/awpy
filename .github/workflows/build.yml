@@ -93,8 +93,8 @@ jobs:
           poetry run coverage json
           poetry run coverage html
 
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-report
-          path: htmlcov/
+      # - name: Archive code coverage results
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: code-coverage-report-${{ github.run_id }}
+      #     path: htmlcov/
