@@ -45,6 +45,7 @@ pytest = "^6.2"
 requests = "^2.32.3"
 ruff = "^0.0.259"
 pyright = "^1.1.198"
+pylint = "^3.2.2"
 coverage = "^5.5"
 
 # Test & Coverage config
