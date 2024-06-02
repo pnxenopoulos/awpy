@@ -50,6 +50,7 @@ jobs:
           cache: "poetry"
           cache-dependency-path: |
             poetry.lock
+            pyproject.toml
 
       # Install Poetry
       - uses: snok/install-poetry@v1
@@ -57,18 +58,18 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      # Cache your dependencies (i.e. all the stuff in your `pyproject.toml`). Note the cache
-      # key: if you're using multiple Python versions, or multiple OSes, you'd need to include
-      # them in the cache key. I'm not, so it can be simple and just depend on the poetry.lock.
-      - name: cache deps
-        id: cache-deps
-        uses: actions/cache@v2
-        with:
-          path: .venv
-          key: pydeps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            pydeps-${{ runner.os }}-${{ matrix.python-version }}-
-            pydeps-${{ runner.os }}-
+      # # Cache your dependencies (i.e. all the stuff in your `pyproject.toml`). Note the cache
+      # # key: if you're using multiple Python versions, or multiple OSes, you'd need to include
+      # # them in the cache key. I'm not, so it can be simple and just depend on the poetry.lock.
+      # - name: cache deps
+      #   id: cache-deps
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: .venv
+      #     key: pydeps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      #     restore-keys: |
+      #       pydeps-${{ runner.os }}-${{ matrix.python-version }}-
+      #       pydeps-${{ runner.os }}-
 
       - name: Install awpy
         run: |
