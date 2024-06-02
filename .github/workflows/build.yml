@@ -16,6 +16,10 @@ on:
       - "tests/**"
       - "pyproject.toml"
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -52,11 +56,24 @@ jobs:
             poetry.lock
             pyproject.toml
 
-      # Install Poetry
-      - uses: snok/install-poetry@v1
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Setup a local virtual environment for poetry
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+
+      - uses: actions/cache@v4
+        name: Cache dependencies
         with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+          path: ./.venv
+          key: venv-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+
+      # # Install Poetry
+      # - uses: snok/install-poetry@v1
+      #   with:
+      #     virtualenvs-create: true
+      #     virtualenvs-in-project: true
 
       # # Cache your dependencies (i.e. all the stuff in your `pyproject.toml`). Note the cache
       # # key: if you're using multiple Python versions, or multiple OSes, you'd need to include
