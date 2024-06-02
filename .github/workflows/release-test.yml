@@ -18,19 +18,28 @@ jobs:
         with:
           python-version: "3.9"
 
-
-      - name: Build release distributions
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Setup a local virtual environment for poetry
         run: |
-          python -m pip install --upgrade pip build
-          python -m build
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+          poetry config repositories.testpypi https://test.pypi.org/simple/
 
-      - name: Publish package distribution to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Install package from TestPyPI
+      - name: Install awpy
         run: |
-          python -m pip install --index-url https://test.pypi.org/simple/ --no-deps awpy
+          poetry install --no-interaction
+
+      - name: Publish to test PyPI
+        run: poetry publish --repository testpypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
+
+      # - name: Publish package distribution to TestPyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     repository-url: https://test.pypi.org/legacy/
+      #     user: __token__
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Install package from test PyPI
+        run: |
+          poetry add awpy --source testpypi

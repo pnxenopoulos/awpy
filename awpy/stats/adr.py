@@ -7,7 +7,9 @@ from awpy.stats.utils import get_player_rounds
 
 
 def adr(
-    demo: Demo, team_dmg: bool = False, self_kills: bool = True  # noqa: FBT001, FBT002
+    demo: Demo,
+    team_dmg: bool = False,
+    self_kills: bool = True,  # noqa: FBT001, FBT002
 ) -> pd.DataFrame:
     """Calculates Average Damage Per Round. Does not include team damage.
 
