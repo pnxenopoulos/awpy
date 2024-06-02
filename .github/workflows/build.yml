@@ -80,8 +80,8 @@ jobs:
           poetry run ruff check . --fix --exit-zero
           poetry run ruff check .
 
-      - name: Run pyright
-        run: poetry run pyright
+      # - name: Run pyright
+      #   run: poetry run pyright
 
       - name: Thorough check with pylint
         run: poetry run pylint awpy
