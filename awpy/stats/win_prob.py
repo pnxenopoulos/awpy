@@ -6,6 +6,10 @@ import numpy as np
 
 from awpy import Demo
 
+def generate_random_weights(num_features):
+    return np.random.uniform(low=-1.0, high=1.0, size=num_features)
+
+
 def process_tick_data(tick_data: pd.DataFrame, demo: Demo) -> pd.DataFrame:
     """
     Processes individual tick data to extract game state features.
@@ -30,23 +34,23 @@ def process_tick_data(tick_data: pd.DataFrame, demo: Demo) -> pd.DataFrame:
     armor_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0) & (tick_data['armor_value'] > 0)].shape[0]
     has_helmet_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0) & (tick_data['has_helmet'] == True)].shape[0]
     has_helmet_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0) & (tick_data['has_helmet'] == True)].shape[0]
-    
-    return pd.DataFrame({
-        "tick": [tick_data['tick'].iloc[0]],
-        "round": [round_number],
-        "map_name": [map_name],
-        "bomb_planted": [bomb_planted],
-        "players_alive_ct": [players_alive_ct],
-        "players_alive_t": [players_alive_t],
-        "equipment_value_ct": [equipment_value_ct],
-        "equipment_value_t": [equipment_value_t],
-        "hp_remaining_ct": [hp_remaining_ct],
-        "hp_remaining_t": [hp_remaining_t],
-        "armor_ct": [armor_ct],
-        "armor_t": [armor_t],
-        "has_helmet_ct": [has_helmet_ct],
-        "has_helmet_t": [has_helmet_t]
-    })
+
+    return pd.DataFrame([{
+        "tick": tick_data['tick'].iloc[0],
+        "round": round_number,
+        "map_name": map_name,
+        "bomb_planted": bomb_planted,
+        "players_alive_ct": players_alive_ct,
+        "players_alive_t": players_alive_t,
+        "equipment_value_ct": equipment_value_ct,
+        "equipment_value_t": equipment_value_t,
+        "hp_remaining_ct": hp_remaining_ct,
+        "hp_remaining_t": hp_remaining_t,
+        "armor_ct": armor_ct,
+        "armor_t": armor_t,
+        "has_helmet_ct": has_helmet_ct,
+        "has_helmet_t": has_helmet_t
+    }])
 
 def build_feature_matrix(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFrame:
     """
@@ -76,7 +80,7 @@ def build_feature_matrix(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFra
 
     # Applying the external function to each group of tick data
     game_state = filtered_ticks.groupby('tick').apply(lambda x: process_tick_data(x, demo))
-    return game_state.reset_index(drop=True)
+    return pd.concat(game_state.tolist()).reset_index(drop=True)
     
 
 def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFrame:
