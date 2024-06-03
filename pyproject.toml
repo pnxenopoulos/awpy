@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "awpy"
-version = "2.0.0-alpha"
+version = "2.0.0a1"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
 authors = [
@@ -12,7 +12,7 @@ authors = [
     "Jan-Eric Nitschke <janericnitschke@gmail.com>"
 ]
 license = "MIT"
-keywords = ["counter-strike", "csgo", "esports", "sports-analytics"]
+keywords = ["counter-strike 2", "counter-strike", "csgo", "esports", "sports-analytics"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Intended Audience :: Science/Research",
