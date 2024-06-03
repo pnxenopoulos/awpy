@@ -1,0 +1,50 @@
+name: Build and Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'release-v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    environment:
+      name: test-release-pypi
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Setup a local virtual environment for poetry
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+          poetry config repositories.testpypi https://test.pypi.org/legacy/
+
+      - name: Install awpy
+        run: |
+          poetry install --no-interaction
+
+      - name: Publish to test PyPI
+        run: |
+          poetry publish --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+      - name: Check that installation from test PyPI passes
+        run: |
+          poetry add awpy --source testpypi
+
+      - name: Publish to PyPI
+        run: |
+          poetry publish --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Check that installation from PyPI passes
+        run: |
+          poetry add awpy

@@ -19,50 +19,31 @@ awpy
 .. |Licence| image:: https://img.shields.io/badge/license-MIT-lightgrey
    :target: https://github.com/pnxenopoulos/awpy/blob/main/LICENSE
    
-`awpy` allows a user to parse, analyze and visualize Counter-Strike: Global Offensive (CSGO) demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help with the library. To install the library, run ``pip install awpy`` (Python >= 3.11).
+`awpy` allows a user to parse, analyze and visualize Counter-Strike demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help with the library. To install the library, run ``pip install awpy`` (Python >= 3.11).
 
 .. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-Using this library to parse CSGO demos is as easy as the few lines of code shown below. To see what output looks like, check out :doc:`parser_output`.
+Using Awpy to parse Counter-Strike demos is as easy as the few lines of code shown below. To see what output looks like, check out :doc:`parser_output`.
 
 .. code-block:: python
 
-   from awpy.parser import DemoParser
+   from awpy import parse_demo
 
-   # Set the parse_rate equal to the tick rate at which you would like to parse the frames of the demo.
-   # This parameter only matters if parse_frames=True
-   # For reference, MM demos are usually 64 ticks, and pro/FACEIT demos are usually 128 ticks.
-   demo_parser = DemoParser(demofile="og-vs-natus-vincere-m1-dust2.dem", 
-                            demo_id="og-vs-natus-vincere", 
-                            parse_frames=True,
-                            parse_rate=128)
+   # Parse a demo file in one line!
+   demo = parse_demo(file="og-vs-natus-vincere-m1-dust2.dem")
 
-
-   # Parse the demofile, output results to dictionary with df name as key
-   data = demo_parser.parse()
-
-
-   # There are a variety of top level keys
-   # You can view game rounds and events in 'gameRounds']
-   data["matchID"]
-   data["clientName"]
-   data["mapName"]
-   data["tickRate"]
-   data["playbackTicks"]
-   data["playbackFramesCount"]
-   data["parsedToFrameIdx"]
-   data["parserParameters"]
-   data["serverVars"]
-   data["matchPhases"]
-   data["matchmakingRanks"]
-   data["playerConnections"]
-   data["gameRounds"] # From this value, you can extract player events via: data['gameRounds'][i]['kills'], etc.
-
-   # You can also parse the data into dataframes using
-   data_df = demo_parser.parse(return_type="df")
-
-   # The parser also writes a JSON file of the output named demo_id.json
+   # The `demo` object contains a variety of keys
+   demo.header       # Header information like the map, tick rate, etc.
+   demo.rounds       # A list of rounds and their start/end ticks
+   demo.kills        # Kills and their details
+   demo.damages      # Damage dealt by each player
+   demo.grenades     # Grenade throws and their trajectories
+   demo.effects      # Smokes & mollies
+   demo.flashes      # When a player is flashed
+   demo.weapon_fires # Shots fired by each player
+   demo.bomb_events  # Include plants, defuses, plant_start, defuse_start, etc.
+   demo.ticks        # A list of each player's info at each tick
 
 
 Using awpy
@@ -84,14 +65,14 @@ Using awpy
 
 awpy Modules
 ------------
-:doc:`analytics`
-   Analytics module.
-
 :doc:`data`
    Data module.
 
 :doc:`parser`
    Parsing module.
+
+:doc:`stats`
+   Stats module.
 
 :doc:`visualization`
    Visualization module.
@@ -114,7 +95,7 @@ awpy Modules
    :maxdepth: 2
    :hidden:
 
-   analytics
    data
    parser
+   stats
    visualization

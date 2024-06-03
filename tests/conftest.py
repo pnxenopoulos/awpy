@@ -1,4 +1,5 @@
-"""Global test configuration."""
+"""Awpy test configuration."""
+
 import json
 import os
 
@@ -7,25 +8,26 @@ import requests
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup() -> None:  # noqa: PT004
+def setup():  # noqa: PT004, ANN201
     """Sets up testing environment by downloading demofiles."""
     with open("tests/test_data.json", encoding="utf-8") as file:
         demo_data = json.load(file)
     for file in demo_data:
-        _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
+        if file not in os.listdir("tests"):
+            _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
 
 
 @pytest.fixture(scope="session", autouse=True)
-def teardown() -> None:  # noqa: PT004
+def teardown():  # noqa: PT004, ANN201
     """Cleans testing environment by deleting all .dem and .json files."""
     yield
     for file in os.listdir():
-        if file.endswith(".json"):
+        if file.endswith((".json", ".dem")):
             os.remove(file)
 
 
 def _get_demofile(demo_link: str, demo_name: str) -> None:
-    """Sends a request to get a demofile from MediaFire.
+    """Sends a request to get a demofile from the object storage.
 
     Args:
         demo_link (str): Link to demo.

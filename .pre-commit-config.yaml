@@ -63,8 +63,3 @@ repos:
             "-rn", # Only display messages
             "-sn", # Don't display the score
           ]
-  - repo: https://github.com/golangci/golangci-lint
-    rev: v1.54.2
-    hooks:
-      - id: golangci-lint
-        entry: bash -c 'cd awpy/parser && golangci-lint run --new-from-rev HEAD --fix'
