@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from demoparser2 import DemoParser  # pylint: disable=E0611
+from loguru import logger
 
 from awpy.parsers import (
     parse_bomb,
@@ -21,17 +22,20 @@ from awpy.utils import apply_round_num
 class Demo:
     """Class to store a demo's data. Called with `Demo(file="...")`."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, verbose: bool = False) -> None:
         """Instantiate a Demo object.
 
         Args:
             path (Path): Path to demofile.
+            verbose (bool, optional): Whether to be log verbosely. Defaults to False.
 
         Raises:
             FileNotFoundError: If the specified `path` does not exist.
         """
         # Pathify any input
-        path = Path(path)
+        self.path = Path(path)
+
+        self.verbose = verbose
 
         # Parser & Metadata
         self.parser = None  # DemoParser
@@ -49,10 +53,13 @@ class Demo:
         self.grenades = None
         self.ticks = None
 
-        if path.exists():
-            self.parser = DemoParser(str(path))
+        if self.path.exists():
+            self.parser = DemoParser(str(self.path))
+            logger.success(f"Created parser for {self.path}")
             self._parse_demo()
+            logger.success(f"Parsed raw events for {self.path}")
             self._parse_events()
+            logger.success(f"Processed events for {self.path}")
         else:
             demo_path_not_found_msg = f"{path} does not exist!"
             raise FileNotFoundError(demo_path_not_found_msg)
@@ -64,6 +71,7 @@ class Demo:
             raise ValueError(no_parser_error_msg)
 
         self.header = parse_header(self.parser.parse_header())
+
         self.events = dict(
             self.parser.parse_events(
                 self.parser.list_game_events(),

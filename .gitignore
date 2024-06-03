@@ -134,8 +134,9 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
-# csgo demofiles
+# counter strike demofiles
 *.dem
+*.zip
 
 # vscode
 *code-workspace
