@@ -43,7 +43,7 @@ jobs:
 
       - name: Publish to PyPI
         run: |
-          poetry publish --repository testpypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
+          poetry publish --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Check that installation from PyPI passes
         run: |
