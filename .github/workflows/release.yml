@@ -27,7 +27,7 @@ jobs:
         run: |
           poetry config virtualenvs.create true --local
           poetry config virtualenvs.in-project true --local
-          poetry config repositories.testpypi https://test.pypi.org/simple/
+          poetry config repositories.testpypi https://test.pypi.org/legacy/
 
       - name: Install awpy
         run: |
