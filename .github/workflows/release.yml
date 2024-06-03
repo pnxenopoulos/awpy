@@ -34,16 +34,20 @@ jobs:
           poetry install --no-interaction
 
       - name: Publish to test PyPI
+        env:
+          TEST_POETRY_PYPI_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
-          poetry publish --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }}
+          poetry publish --repository testpypi --username __token__ --password $TEST_PYPI_API_TOKEN
 
       - name: Check that installation from test PyPI passes
         run: |
           poetry add awpy --source testpypi
 
       - name: Publish to PyPI
+        env:
+          POETRY_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          poetry publish --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
+          poetry publish --username __token__ --password $POETRY_PYPI_TOKEN
 
       - name: Check that installation from PyPI passes
         run: |
