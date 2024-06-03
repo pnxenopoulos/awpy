@@ -1,12 +1,12 @@
 """Module for plotting Counter-Strike data."""
 
 import importlib.resources
+from typing import Optional
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from typing import Optional
 
 
 def plot_map(map_name: str, *, lower: Optional[bool] = None) -> tuple[Figure, Axes]:
@@ -14,7 +14,8 @@ def plot_map(map_name: str, *, lower: Optional[bool] = None) -> tuple[Figure, Ax
 
     Args:
         map_name (str): Name of the map to plot.
-        lower (Optional[bool], optional): True if you want to plot the lower, False for upper. Defaults to None.
+        lower (Optional[bool], optional): True if you want to plot the lower, False for
+            upper. Defaults to None.
 
     Raises:
         FileNotFoundError: Raises a FileNotFoundError if the map image is not found.
@@ -47,7 +48,7 @@ def plot_upper_and_lower(map_name: str) -> tuple[Figure, list[Axes]]:
     """Plot a Counter-Strike map side-by-side.
 
     Args:
-        map_names (List[str]): Name of the map to plot.
+        map_name (str): Name of the map to plot.
         lower (bool, optional): Allows plotting the lower layer. Defaults to False.
 
     Raises:
@@ -59,7 +60,7 @@ def plot_upper_and_lower(map_name: str) -> tuple[Figure, list[Axes]]:
     map_names = [map_name, f"{map_name}_lower"]
     figure, axes = plt.subplots(1, 2)  # , figsize=(2 * 5, 5)
 
-    for ax, map_name in zip(axes, map_names):
+    for ax, map_name in zip(axes, map_names, strict=True):
         with importlib.resources.path(
             "awpy.data.maps", f"{map_name}.png"
         ) as map_img_path:
