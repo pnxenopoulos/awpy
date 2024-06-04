@@ -18,8 +18,8 @@ class MockDemo:
     """Mock Demo class for testing."""
 
     def __init__(
-        self, path: Path, *, verbose: bool, ticks: bool
-    ) -> None:  # noqa: ARG002
+        self, path: Path, *, verbose: bool, ticks: bool  # noqa: ARG002
+    ) -> None:
         """Creates a mock Demo object."""
         self.kills = pd.DataFrame({"data": [1, 2, 3]})
         self.damages = pd.DataFrame({"data": [1, 2, 3]})
