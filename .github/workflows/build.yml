@@ -3,12 +3,6 @@
 name: build
 
 on:
-  push:
-    branches: [main, dev]
-    paths:
-      - "awpy/**"
-      - "tests/**"
-      - "pyproject.toml"
   pull_request:
     branches: [main]
     paths:

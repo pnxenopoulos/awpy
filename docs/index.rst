@@ -16,46 +16,43 @@ awpy
 .. |Build| image:: https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg
    :target: https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml
    
-.. |Licence| image:: https://img.shields.io/badge/license-MIT-lightgrey
+.. |License| image:: https://img.shields.io/badge/license-MIT-lightgrey
    :target: https://github.com/pnxenopoulos/awpy/blob/main/LICENSE
    
-`awpy` allows a user to parse, analyze and visualize Counter-Strike demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help with the library. To install the library, run ``pip install awpy`` (Python >= 3.11).
+`awpy` allows a user to parse, analyze and visualize Counter-Strike 2 demo files. You can visit the repository_ to view the source code, examples and data. Please join the Discord_ server if you would like to join our esports analytics community or to receive help. To install the library, run ``pip install awpy`` (Python >= 3.9).
 
 .. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-Using Awpy to parse Counter-Strike demos is as easy as the few lines of code shown below. To see what output looks like, check out :doc:`parser_output`.
+Using Awpy to parse Counter-Strike 2 demos is as easy as the few lines of code shown below. To see what output looks like, check out :doc:`parser_output`.
 
 .. code-block:: python
 
-   from awpy import parse_demo
+   from awpy import Demo
 
-   # Parse a demo file in one line!
-   demo = parse_demo(file="og-vs-natus-vincere-m1-dust2.dem")
+   # Simply call `Demo(path="...")` to parse a demo
+   dem = Demo("natus-vincere-vs-virtus-pro-m1-overpass.dem")
 
-   # The `demo` object contains a variety of keys
-   demo.header       # Header information like the map, tick rate, etc.
-   demo.rounds       # A list of rounds and their start/end ticks
-   demo.kills        # Kills and their details
-   demo.damages      # Damage dealt by each player
-   demo.grenades     # Grenade throws and their trajectories
-   demo.effects      # Smokes & mollies
-   demo.flashes      # When a player is flashed
-   demo.weapon_fires # Shots fired by each player
-   demo.bomb_events  # Include plants, defuses, plant_start, defuse_start, etc.
-   demo.ticks        # A list of each player's info at each tick
+   # Access various dictionaries & dataframes
+   dem.header
+   dem.rounds
+   dem.grenades
+   dem.kills
+   dem.damages
+   dem.bomb
+   dem.smokes
+   dem.infernos
+   dem.weapon_fires
+   dem.ticks
 
 
-Using awpy
+Using Awpy
 ----------
 :doc:`installation`
    How to install `awpy`.
 
 :doc:`examples`
    Examples code and Jupyter notebooks to help get you started.
-
-:doc:`projects`
-   Projects that use `awpy`.
 
 :doc:`faq`
    Need help? Check the FAQs first.
@@ -68,13 +65,13 @@ awpy Modules
 :doc:`data`
    Data module.
 
-:doc:`parser`
-   Parsing module.
+:doc:`parsing`
+   Parsing modules.
 
 :doc:`stats`
    Stats module.
 
-:doc:`visualization`
+:doc:`vis`
    Visualization module.
 
 .. Hidden TOCs
