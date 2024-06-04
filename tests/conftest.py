@@ -22,7 +22,7 @@ def teardown():  # noqa: PT004, ANN201
     """Cleans testing environment by deleting all .dem and .json files."""
     yield
     for file in os.listdir():
-        if file.endswith((".json", ".dem")):
+        if file.endswith((".json", ".dem", ".zip")):
             os.remove(file)
 
 
