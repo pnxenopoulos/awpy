@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "awpy"
-version = "2.0.0a2"
+version = "2.0.0a3"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
 authors = [
@@ -16,7 +16,6 @@ keywords = ["counter-strike 2", "counter-strike", "csgo", "esports", "sports-ana
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
