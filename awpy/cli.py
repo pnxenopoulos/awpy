@@ -20,10 +20,11 @@ def awpy() -> None:
 @awpy.command(help="Parse a Counter-Strike 2 demo file.")
 @click.argument("demo", type=click.Path(exists=True))
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
-def parse(demo: Path, *, verbose: bool = True) -> None:
+@click.option("--noticks", is_flag=True, default=False, help="Disable tick parsing.")
+def parse(demo: Path, *, verbose: bool = False, noticks: bool = False) -> None:
     """Parse a file given its path."""
     demo_path = Path(demo)  # Pathify
-    demo = Demo(path=demo_path, verbose=verbose)
+    demo = Demo(path=demo_path, verbose=verbose, ticks=not noticks)
     zip_name = demo_path.stem + ".zip"
 
     with (
@@ -39,14 +40,20 @@ def parse(demo: Path, *, verbose: bool = True) -> None:
             ("weapon_fires", demo.weapon_fires),
             ("rounds", demo.rounds),
             ("grenades", demo.grenades),
-            ("ticks", demo.ticks),
         ]:
             df_filename = os.path.join(tmpdirname, f"{df_name}.data")
             df.to_parquet(df_filename, index=False)
-            zipf.write(df_filename, f"{df_name}")
+            zipf.write(df_filename, f"{df_name}.data")
 
-        with open(os.path.join(tmpdirname, "header.json"), "w") as f:
+        if not noticks:
+            ticks_filename = os.path.join(tmpdirname, "ticks.data")
+            demo.ticks.to_parquet(ticks_filename, index=False)
+            zipf.write(ticks_filename, "ticks.data")
+
+        header_filename = os.path.join(tmpdirname, "header.json")
+        with open(header_filename, "w") as f:
             json.dump(demo.header, f)
+        zipf.write(header_filename, "header.json")
 
         if verbose:
             logger.success(f"Zipped dataframes for {zip_name}")

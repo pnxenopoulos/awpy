@@ -22,12 +22,15 @@ from awpy.utils import apply_round_num
 class Demo:
     """Class to store a demo's data. Called with `Demo(file="...")`."""
 
-    def __init__(self, path: Path, *, verbose: bool = False) -> None:
+    def __init__(
+        self, path: Path, *, verbose: bool = False, ticks: bool = True
+    ) -> None:
         """Instantiate a Demo object.
 
         Args:
             path (Path): Path to demofile.
             verbose (bool, optional): Whether to be log verbosely. Defaults to False.
+            ticks (bool, optional): Whether to parse ticks. Defaults to True.
 
         Raises:
             FileNotFoundError: If the specified `path` does not exist.
@@ -35,7 +38,9 @@ class Demo:
         # Pathify any input
         self.path = Path(path)
 
+        # Save params
         self.verbose = verbose
+        self.parse_ticks = ticks if ticks else False
 
         # Parser & Metadata
         self.parser = None  # DemoParser
@@ -55,11 +60,14 @@ class Demo:
 
         if self.path.exists():
             self.parser = DemoParser(str(self.path))
-            logger.success(f"Created parser for {self.path}")
+            if self.verbose:
+                logger.success(f"Created parser for {self.path}")
             self._parse_demo()
-            logger.success(f"Parsed raw events for {self.path}")
+            if self.verbose:
+                logger.success(f"Parsed raw events for {self.path}")
             self._parse_events()
-            logger.success(f"Processed events for {self.path}")
+            if self.verbose:
+                logger.success(f"Processed events for {self.path}")
         else:
             demo_path_not_found_msg = f"{path} does not exist!"
             raise FileNotFoundError(demo_path_not_found_msg)
@@ -135,7 +143,8 @@ class Demo:
             self.rounds, parse_weapon_fires(self.events)
         )
         self.grenades = apply_round_num(self.rounds, parse_grenades(self.parser))
-        self.ticks = apply_round_num(self.rounds, parse_ticks(self.parser))
+        if self.parse_ticks is True:
+            self.ticks = apply_round_num(self.rounds, parse_ticks(self.parser))
 
     @property
     def is_parsed(self) -> bool:
