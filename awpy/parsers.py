@@ -796,6 +796,7 @@ def parse_ticks(parser: DemoParser) -> pd.DataFrame:
             "current_equip_value",
             "active_weapon",
             "rank",
+            "ping",
             "game_time", # ADDED
             # Game State
             "is_bomb_planted",
