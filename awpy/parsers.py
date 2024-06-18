@@ -796,9 +796,10 @@ def parse_ticks(parser: DemoParser) -> pd.DataFrame:
             "current_equip_value",
             "active_weapon",
             "rank",
-            "ping",
+            "game_time", # ADDED
             # Game State
             "is_bomb_planted",
+            "round_start_time", # ADDED
             # State for filtering
             "is_freeze_period",
             "is_warmup_period",
@@ -811,6 +812,7 @@ def parse_ticks(parser: DemoParser) -> pd.DataFrame:
         ]
     )
     ticks = parse_col_types(remove_nonplay_ticks(ticks))
+    ticks["round_time"] = ticks.game_time - ticks.round_start_time # ADDED
     return ticks.rename(
         columns={
             "FORWARD": "key_forward",
