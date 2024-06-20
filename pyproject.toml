@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "awpy"
-version = "2.0.0a3"
+version = "2.0.0a4"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
 authors = [
@@ -36,7 +36,7 @@ numpy = ">=1.26.3"
 pandas = ">=2.2.2"
 setuptools = ">=69.2.0"
 sphinx-rtd-theme = "==2.0.0"
-demoparser2 = ">=0.25.0"
+demoparser2 = ">=0.26.1"
 tqdm = "^4.66.4"
 
 [tool.poetry.dev-dependencies]

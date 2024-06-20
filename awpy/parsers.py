@@ -321,29 +321,6 @@ def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     ]
 
     # Rename columns
-    kill_df = kill_df.rename(
-        columns={
-            "is_bomb_planted": "bomb_planted",
-            "assister_team_name": "assister_side",
-            "attacker_team_name": "attacker_side",
-            "user_team_name": "victim_side",
-            "assister_team_clan_name": "assister_clan",
-            "attacker_team_clan_name": "attacker_clan",
-            "user_team_clan_name": "victim_clan",
-            "assister_last_place_name": "assister_place",
-            "attacker_last_place_name": "attacker_place",
-            "user_last_place_name": "victim_place",
-            "assister_has_defuser": "assister_defuser",
-            "attacker_has_defuser": "attacker_defuser",
-            "user_has_defuser": "victim_defuser",
-            "assister_has_helmet": "assister_helmet",
-            "attacker_has_helmet": "attacker_helmet",
-            "user_has_helmet": "victim_helmet",
-            "assister_current_equip_value": "assister_equipment_value",
-            "attacker_current_equip_value": "attacker_equipment_value",
-            "user_current_equip_value": "victim_equipment_value",
-        }
-    )
     for col in kill_df.columns:
         if "user_" in col:
             kill_df = kill_df.rename(columns={col: col.replace("user_", "victim_")})
@@ -424,27 +401,6 @@ def parse_damages(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     ]
 
     # Rename columns
-    damage_df = damage_df.rename(
-        columns={
-            "is_warmup_period": "warmup",
-            "is_match_started": "started",
-            "is_bomb_planted": "bomb_planted",
-            "game_phase": "phase",
-            "attacker_team_name": "attacker_side",
-            "user_team_name": "victim_side",
-            "attacker_team_clan_name": "attacker_clan",
-            "user_team_clan_name": "victim_clan",
-            "attacker_last_place_name": "attacker_place",
-            "user_last_place_name": "victim_place",
-            "attacker_has_defuser": "attacker_defuser",
-            "user_has_defuser": "victim_defuser",
-            "attacker_has_helmet": "attacker_helmet",
-            "user_has_helmet": "victim_helmet",
-            "attacker_current_equip_value": "attacker_equipment_value",
-            "user_current_equip_value": "victim_equipment_value",
-        }
-    )
-
     for col in damage_df.columns:
         if "user_" in col:
             damage_df = damage_df.rename(columns={col: col.replace("user_", "victim_")})
@@ -738,12 +694,8 @@ def parse_weapon_fires(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "weapon",
         ]
     ]
-    weapon_fires_df.rename(
-        columns={
-            "user_last_place_name": "player_place",
-            "user_team_clan_name": "player_clan",
-        }
-    )
+
+    # Rename columns
     for col in weapon_fires_df.columns:
         if "user_" in col:
             weapon_fires_df = weapon_fires_df.rename(
@@ -752,82 +704,19 @@ def parse_weapon_fires(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return weapon_fires_df
 
 
-def parse_ticks(parser: DemoParser) -> pd.DataFrame:
+def parse_ticks(
+    parser: DemoParser, player_props: list[str], other_props: list[str]
+) -> pd.DataFrame:
     """Parse the ticks of the demofile.
 
     Args:
-        parser: The parser object.
+        parser (DemoParser): The parser object.
+        player_props (list[str]): Player properties to parse.
+        other_props (list[str]): World properties to parse.
 
     Returns:
-        The ticks for the demofile.
+        pd.DataFrame: The ticks for the demofile.
     """
-    ticks = parser.parse_ticks(
-        [
-            # Key presses
-            "FORWARD",
-            "LEFT",
-            "RIGHT",
-            "BACK",
-            "FIRE",
-            "RIGHTCLICK",
-            "RELOAD",
-            "INSPECT",
-            "USE",
-            "ZOOM",
-            "SCOREBOARD",
-            "WALK",
-            # Player
-            "team_name",
-            "team_clan_name",
-            "X",
-            "Y",
-            "Z",
-            "pitch",
-            "yaw",
-            "last_place_name",
-            "is_walking",
-            "is_strafing",
-            "in_crouch",
-            "health",
-            "armor_value",
-            "has_defuser",
-            "has_helmet",
-            "inventory",
-            "current_equip_value",
-            "active_weapon",
-            "rank",
-            "ping",
-            # Game State
-            "is_bomb_planted",
-            # State for filtering
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ]
-    )
-    ticks = parse_col_types(remove_nonplay_ticks(ticks))
-    return ticks.rename(
-        columns={
-            "FORWARD": "key_forward",
-            "LEFT": "key_left",
-            "RIGHT": "key_right",
-            "BACK": "key_back",
-            "FIRE": "key_fire",
-            "RIGHTCLICK": "key_rightclick",
-            "RELOAD": "key_reload",
-            "INSPECT": "key_inspect",
-            "USE": "key_use",
-            "ZOOM": "key_zoom",
-            "SCOREBOARD": "key_scoreboard",
-            "WALK": "key_walk",
-            "active_weapon": "weapon",
-            "last_place_name": "place",
-            "team_name": "side",
-            "team_clan_name": "clan",
-        }
-    )
+    props = player_props.copy().extend(other_props)
+    ticks = parser.parse_ticks(props)
+    return parse_col_types(remove_nonplay_ticks(ticks))
