@@ -60,7 +60,7 @@ def plot_upper_and_lower(map_name: str) -> tuple[Figure, list[Axes]]:
     map_names = [map_name, f"{map_name}_lower"]
     figure, axes = plt.subplots(1, 2)  # , figsize=(2 * 5, 5)
 
-    for ax, map_layer_name in zip(axes, map_names):
+    for ax, map_layer_name in zip(axes, map_names, strict=True):
         with importlib.resources.path(
             "awpy.data.maps", f"{map_layer_name}.png"
         ) as map_img_path:

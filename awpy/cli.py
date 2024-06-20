@@ -27,7 +27,8 @@ def get(resource_type: Literal["usd"], resource_name: str) -> None:
         if resource_name == "all":
             logger.info("Getting all USDs...")
         else:
-            logger.info(f"Getting USD for {resource_name}...")
+            getting_specific_usd_msg = f"Getting USD for {resource_name}..."
+            logger.info(getting_specific_usd_msg)
 
 
 @awpy.command(help="Parse a Counter-Strike 2 demo file.")
