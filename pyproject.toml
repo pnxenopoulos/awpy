@@ -36,7 +36,7 @@ numpy = ">=1.26.3"
 pandas = ">=2.2.2"
 setuptools = ">=69.2.0"
 sphinx-rtd-theme = "==2.0.0"
-demoparser2 = ">=0.26.1"
+demoparser2 = ">=0.26.2"
 tqdm = "^4.66.4"
 
 [tool.poetry.dev-dependencies]
