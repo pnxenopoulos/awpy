@@ -32,7 +32,7 @@ def adr(
 
     # Remove team damage
     if team_dmg:
-        damages = damages[damages["attacker_side"] != damages["victim_side"]]
+        damages = damages[damages["attacker_team_name"] != damages["victim_team_name"]]
 
     # Remove self kills
     if self_kills:
@@ -46,14 +46,14 @@ def adr(
     )
     damages_all["side"] = "all"
     damages_ct = (
-        damages[damages["attacker_side"] == "CT"]
+        damages[damages["attacker_team_name"] == "CT"]
         .groupby(["attacker_name", "attacker_steamid"])
         .dmg_health_real.sum()
         .reset_index(name="dmg")
     )
     damages_ct["side"] = "CT"
     damages_t = (
-        damages[damages["attacker_side"] == "TERRORIST"]
+        damages[damages["attacker_team_name"] == "TERRORIST"]
         .groupby(["attacker_name", "attacker_steamid"])
         .dmg_health_real.sum()
         .reset_index(name="dmg")

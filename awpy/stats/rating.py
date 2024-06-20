@@ -38,14 +38,14 @@ def impact(demo: Demo) -> pd.DataFrame:
         .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_ct = (
-        demo.kills[demo.kills["attacker_side"] == "CT"]
+        demo.kills[demo.kills["attacker_team_name"] == "CT"]
         .groupby(["attacker_name", "attacker_steamid"])
         .size()
         .reset_index(name="kills")
         .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_t = (
-        demo.kills[demo.kills["attacker_side"] == "TERRORIST"]
+        demo.kills[demo.kills["attacker_team_name"] == "TERRORIST"]
         .groupby(["attacker_name", "attacker_steamid"])
         .size()
         .reset_index(name="kills")
@@ -138,7 +138,7 @@ def rating(demo: Demo) -> pd.DataFrame:
     )
     kills_total["side"] = "all"
     kills_ct = (
-        demo.kills[demo.kills["attacker_side"] == "CT"]
+        demo.kills[demo.kills["attacker_team_name"] == "CT"]
         .groupby(["attacker_name", "attacker_steamid"])
         .size()
         .reset_index(name="kills")
@@ -146,7 +146,7 @@ def rating(demo: Demo) -> pd.DataFrame:
     )
     kills_ct["side"] = "CT"
     kills_t = (
-        demo.kills[demo.kills["attacker_side"] == "TERRORIST"]
+        demo.kills[demo.kills["attacker_team_name"] == "TERRORIST"]
         .groupby(["attacker_name", "attacker_steamid"])
         .size()
         .reset_index(name="kills")
@@ -163,7 +163,7 @@ def rating(demo: Demo) -> pd.DataFrame:
     )
     deaths_total["side"] = "all"
     deaths_ct = (
-        demo.kills[demo.kills["victim_side"] == "CT"]
+        demo.kills[demo.kills["victim_team_name"] == "CT"]
         .groupby(["victim_name", "victim_steamid"])
         .size()
         .reset_index(name="deaths")
@@ -171,7 +171,7 @@ def rating(demo: Demo) -> pd.DataFrame:
     )
     deaths_ct["side"] = "CT"
     deaths_t = (
-        demo.kills[demo.kills["victim_side"] == "TERRORIST"]
+        demo.kills[demo.kills["victim_team_name"] == "TERRORIST"]
         .groupby(["victim_name", "victim_steamid"])
         .size()
         .reset_index(name="deaths")

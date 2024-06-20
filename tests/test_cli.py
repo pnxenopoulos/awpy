@@ -18,7 +18,7 @@ class MockDemo:
     """Mock Demo class for testing."""
 
     def __init__(
-        self, path: Path, *, verbose: bool, ticks: bool  # noqa: ARG002
+        self, path: Path, *, verbose: bool, ticks: bool, rounds: bool  # noqa: ARG002
     ) -> None:
         """Creates a mock Demo object."""
         self.kills = pd.DataFrame({"data": [1, 2, 3]})
@@ -31,6 +31,7 @@ class MockDemo:
         self.grenades = pd.DataFrame({"data": [1, 2, 3]})
         self.ticks = pd.DataFrame({"data": [1, 2, 3]})
         self.header = {"info": "mock"}
+        self.events = {"event1": pd.DataFrame({"data": [1, 2, 3]})}
 
 
 @pytest.fixture()
@@ -75,6 +76,7 @@ class TestCommandLine:
                     "grenades.data",
                     "ticks.data",
                     "header.json",
+                    "events/event1.data",
                 ]
                 zipped_files = [Path(file).name for file in zipf.namelist()]
                 assert all(Path(file).name in zipped_files for file in expected_files)
@@ -105,6 +107,7 @@ class TestCommandLine:
                     "rounds.data",
                     "grenades.data",
                     "header.json",
+                    "events/event1.data",
                 ]
                 zipped_files = [Path(file).name for file in zipf.namelist()]
                 assert all(Path(file).name in zipped_files for file in expected_files)

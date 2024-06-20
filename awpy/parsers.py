@@ -717,6 +717,5 @@ def parse_ticks(
     Returns:
         pd.DataFrame: The ticks for the demofile.
     """
-    props = player_props.copy().extend(other_props)
-    ticks = parser.parse_ticks(props)
+    ticks = parser.parse_ticks(wanted_props=player_props + other_props)
     return parse_col_types(remove_nonplay_ticks(ticks))

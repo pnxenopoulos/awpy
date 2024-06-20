@@ -74,7 +74,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     kills_ct = (
         kills_with_trades.loc[
-            kills_with_trades["attacker_side"] == "CT",
+            kills_with_trades["attacker_team_name"] == "CT",
             ["attacker_name", "attacker_steamid", "round"],
         ]
         .drop_duplicates()
@@ -82,7 +82,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     kills_t = (
         kills_with_trades.loc[
-            kills_with_trades["attacker_side"] == "TERRORIST",
+            kills_with_trades["attacker_team_name"] == "TERRORIST",
             ["attacker_name", "attacker_steamid", "round"],
         ]
         .drop_duplicates()
@@ -123,7 +123,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     trades_ct = (
         kills_with_trades.loc[
-            (kills_with_trades["victim_side"] == "CT")
+            (kills_with_trades["victim_team_name"] == "CT")
             & (kills_with_trades["was_traded"]),
             ["victim_name", "victim_steamid", "round"],
         ]
@@ -132,7 +132,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     trades_t = (
         kills_with_trades.loc[
-            (kills_with_trades["victim_side"] == "TERRORIST")
+            (kills_with_trades["victim_team_name"] == "TERRORIST")
             & (kills_with_trades["was_traded"]),
             ["victim_name", "victim_steamid", "round"],
         ]
