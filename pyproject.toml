@@ -40,7 +40,7 @@ tqdm = "^4.66.4"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^24.4.2", extras = ["jupyter"] }
-pytest = "^6.2"
+pytest = "^7.2"
 requests = "^2.32.3"
 ruff = "^0.0.259"
 pyright = "^1.1.198"
