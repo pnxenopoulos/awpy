@@ -51,8 +51,8 @@ def parse(
     verbose: bool = False,
     noticks: bool = False,
     norounds: bool = True,
-    player_props: list[str] = None,
-    other_props: list[str] = None,
+    player_props: Optional[tuple[str]] = None,
+    other_props: Optional[tuple[str]] = None,
 ) -> None:
     """Parse a file given its path."""
     demo_path = Path(demo)  # Pathify
@@ -61,7 +61,7 @@ def parse(
         verbose=verbose,
         ticks=not noticks,
         rounds=not norounds,
-        player_props=list(player_props),
-        other_props=list(other_props),
+        player_props=player_props[0].split(",") if player_props else None,
+        other_props=other_props[0].split(",") if other_props else None,
     )
     demo.compress(outpath=outpath)
