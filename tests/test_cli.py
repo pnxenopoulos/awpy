@@ -32,8 +32,6 @@ class TestCommandLine:
             pytest.fail(f"Test file {demofile} does not exist.")
         
         result = self.runner.invoke(parse, [str(demofile)])
-        print("Output:", result.output)
-        print("Exception:", result.exception)
         assert result.exit_code == 0
 
         zip_name = Path(Path(demofile.name).stem + ".zip")

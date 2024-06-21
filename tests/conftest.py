@@ -6,6 +6,8 @@ import os
 import pytest
 import requests
 
+from loguru import logger
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():  # noqa: PT004, ANN201
@@ -14,6 +16,7 @@ def setup():  # noqa: PT004, ANN201
         demo_data = json.load(file)
     for file in demo_data:
         if file not in os.listdir("tests"):
+            logger.debug(f"Downloading {file}.dem...")
             _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
 
 
