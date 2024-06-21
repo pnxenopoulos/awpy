@@ -48,22 +48,27 @@ jobs:
 
       - name: Install Poetry
         uses: abatilo/actions-poetry@v2
+      
       - name: Setup a local virtual environment for poetry
+        shell: bash
         run: |
           poetry config virtualenvs.create true --local
           poetry config virtualenvs.in-project true --local
 
       - uses: actions/cache@v4
         name: Cache awpy dependencies
+        shell: bash
         with:
           path: ./.venv
           key: venv-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
 
       - name: Install awpy
+        shell: bash
         run: |
           poetry install --no-interaction
 
       - name: Formatting + Lint
+        shell: bash
         run: |
           poetry run ruff check . --fix --exit-zero
           poetry run ruff check .
@@ -75,6 +80,7 @@ jobs:
       #   run: poetry run pylint awpy
 
       - name: Test
+        shell: bash
         run: |
           poetry run coverage run -m pytest --durations=10
           poetry run coverage report -m
