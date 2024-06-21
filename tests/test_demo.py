@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from awpy.demo import Demo
-from conftest import setup  # Import the setup fixture
 
 
 class TestDemo:

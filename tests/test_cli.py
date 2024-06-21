@@ -9,7 +9,6 @@ import pytest
 from click.testing import CliRunner
 
 from awpy.cli import parse
-from conftest import setup  # Import the setup fixture
 
 
 class TestCommandLine:

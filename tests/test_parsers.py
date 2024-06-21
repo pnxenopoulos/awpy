@@ -5,7 +5,6 @@ import pytest
 from demoparser2 import DemoParser
 
 from awpy.parsers import parse_damages, parse_kills, parse_rounds, remove_nonplay_ticks
-from conftest import setup  # Import the setup fixture
 
 
 @pytest.fixture(scope="class")
