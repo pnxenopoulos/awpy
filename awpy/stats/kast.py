@@ -97,7 +97,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     assists_ct = (
         kills_with_trades.loc[
-            kills_with_trades["assister_side"] == "CT",
+            kills_with_trades["assister_team_name"] == "CT",
             ["assister_name", "assister_steamid", "round"],
         ]
         .drop_duplicates()
@@ -105,7 +105,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     assists_t = (
         kills_with_trades.loc[
-            kills_with_trades["assister_side"] == "TERRORIST",
+            kills_with_trades["assister_team_name"] == "TERRORIST",
             ["assister_name", "assister_steamid", "round"],
         ]
         .drop_duplicates()
@@ -148,19 +148,21 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .loc[demo.ticks["health"] > 0]
     )
     survivals_total = survivals[["name", "steamid", "round"]]
-    survivals_ct = survivals.loc[survivals["side"] == "ct"]
-    survivals_t = survivals.loc[survivals["side"] == "t"]
+    survivals_ct = survivals.loc[survivals["team_name"] == "ct"]
+    survivals_t = survivals.loc[survivals["team_name"] == "t"]
 
     # Get total rounds by player
-    player_sides_by_round = demo.ticks.groupby(
-        ["name", "steamid", "side", "round"]
-    ).head(1)[["name", "steamid", "side", "round"]]
-    player_side_rounds = (
-        player_sides_by_round.groupby(["name", "steamid", "side"]).size().reset_index()
+    player_team_names_by_round = demo.ticks.groupby(
+        ["name", "steamid", "team_name", "round"]
+    ).head(1)[["name", "steamid", "team_name", "round"]]
+    player_team_name_rounds = (
+        player_team_names_by_round.groupby(["name", "steamid", "team_name"])
+        .size()
+        .reset_index()
     )
-    player_side_rounds.columns = ["name", "steamid", "side", "n_rounds"]
+    player_team_name_rounds.columns = ["name", "steamid", "team_name", "n_rounds"]
     player_total_rounds = (
-        player_sides_by_round.groupby(["name", "steamid"]).size().reset_index()
+        player_team_names_by_round.groupby(["name", "steamid"]).size().reset_index()
     )
 
     # Tabulate total rounds
@@ -175,7 +177,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .merge(player_total_rounds, on=["name", "steamid"])
         .rename(columns={0: "n_rounds"})
     )
-    total_kast["side"] = "all"
+    total_kast["team_name"] = "all"
     total_kast["kast"] = total_kast["kast_rounds"] * 100 / total_kast["n_rounds"]
 
     # CT
@@ -188,7 +190,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .reset_index()
         .rename(columns={0: "kast_rounds"})
         .merge(
-            player_side_rounds[player_side_rounds["side"] == "CT"],
+            player_team_name_rounds[player_team_name_rounds["team_name"] == "CT"],
             on=["name", "steamid"],
         )
         .rename(columns={0: "n_rounds"})
@@ -205,7 +207,9 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .reset_index()
         .rename(columns={0: "kast_rounds"})
         .merge(
-            player_side_rounds[player_side_rounds["side"] == "TERRORIST"],
+            player_team_name_rounds[
+                player_team_name_rounds["team_name"] == "TERRORIST"
+            ],
             on=["name", "steamid"],
         )
         .rename(columns={0: "n_rounds"})
@@ -213,4 +217,4 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     t_kast["kast"] = t_kast["kast_rounds"] * 100 / t_kast["n_rounds"]
 
     kast_df = pd.concat([total_kast, ct_kast, t_kast])
-    return kast_df[["name", "steamid", "side", "kast_rounds", "n_rounds", "kast"]]
+    return kast_df[["name", "steamid", "team_name", "kast_rounds", "n_rounds", "kast"]]

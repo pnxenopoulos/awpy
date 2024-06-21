@@ -31,3 +31,44 @@ jobs:
           webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
           commit_ref: ${{ github.ref }}
         if: github.event_name != 'pull_request'
+
+name: docs
+
+on:
+  push:
+    tags:
+      - 'release-v*.*.*'
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: Install dependencies
+        run: |
+          poetry install --no-root
+          poetry install --dev nbsphinx
+
+      - name: Build Sphinx documentation
+        run: |
+          cd docs
+          poetry run sphinx-build -b html source build/html
+
+      - name: Upload documentation to Read the Docs
+        run: |
+          curl -X POST -d "token=${{ secrets.READTHEDOCS_TOKEN }}" \
+          -d "branch=main" \
+          https://readthedocs.org/api/v2/webhook/YOUR_PROJECT_NAME/

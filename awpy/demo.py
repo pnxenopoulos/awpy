@@ -1,5 +1,9 @@
 """Defines the Demo class."""
 
+import json
+import os
+import tempfile
+import zipfile
 from pathlib import Path
 from typing import Optional
 
@@ -18,6 +22,43 @@ from awpy.parsers import (
     parse_weapon_fires,
 )
 from awpy.utils import apply_round_num
+
+PROP_WARNING_LIMIT = 40
+DEFAULT_PLAYER_PROPS = [
+    "team_name",
+    "team_clan_name",
+    "X",
+    "Y",
+    "Z",
+    "pitch",
+    "yaw",
+    "last_place_name",
+    "health",
+    "armor_value",
+    "inventory",
+    "current_equip_value",
+    "has_defuser",
+    "has_helmet",
+    "flash_duration",
+    "is_strafing",
+    "accuracy_penalty",
+    "zoom_lvl",
+    "ping",
+]
+
+DEFAULT_WORLD_PROPS = [
+    "game_time",
+    "is_bomb_planted",
+    "which_bomb_zone",
+    "is_freeze_period",
+    "is_warmup_period",
+    "is_terrorist_timeout",
+    "is_ct_timeout",
+    "is_technical_timeout",
+    "is_waiting_for_resume",
+    "is_match_started",
+    "game_phase",
+]
 
 
 class Demo:
@@ -60,47 +101,14 @@ class Demo:
         self.parser = None  # DemoParser
         self.header = None  # DemoHeader
         self.player_props = (
-            [
-                "team_name",
-                "team_clan_name",
-                "X",
-                "Y",
-                "Z",
-                "pitch",
-                "yaw",
-                "last_place_name",
-                "health",
-                "armor_value",
-                "inventory",
-                "current_equip_value",
-                "has_defuser",
-                "has_helmet",
-                "flash_duration",
-                "is_strafing",
-                "accuracy_penalty",
-                "zoom_lvl",
-                "rank",
-                "ping",
-            ]
+            DEFAULT_PLAYER_PROPS
             if player_props is None
-            else player_props
+            else player_props + DEFAULT_PLAYER_PROPS
         )
         self.other_props = (
-            [
-                "game_time",
-                "is_bomb_planted",
-                "which_bomb_zone",
-                "is_freeze_period",
-                "is_warmup_period",
-                "is_terrorist_timeout",
-                "is_ct_timeout",
-                "is_technical_timeout",
-                "is_waiting_for_resume",
-                "is_match_started",
-                "game_phase",
-            ]
+            DEFAULT_WORLD_PROPS
             if other_props is None
-            else other_props
+            else other_props + DEFAULT_WORLD_PROPS
         )
         self.events = {}  # Dictionary of [event, dataframe]
 
@@ -163,8 +171,6 @@ class Demo:
 
         self.header = parse_header(self.parser.parse_header())
 
-        self._success(f"Parsed header for {self.path}")
-
         self._debug(
             f"Found the following game events: {self.parser.list_game_events()}"
         )
@@ -200,7 +206,7 @@ class Demo:
 
         # Parse ticks
         if self.parse_ticks is True:
-            if len(self.player_props) + len(self.other_props) > 40:
+            if len(self.player_props) + len(self.other_props) > PROP_WARNING_LIMIT:
                 self._warn(
                     f"""
                     Trying to get
@@ -214,6 +220,8 @@ class Demo:
                 self.rounds,
                 parse_ticks(self.parser, self.player_props, self.other_props),
             )
+        else:
+            self._debug("Skipping tick parsing...")
 
         # Get round info for every event
         if self.get_round_info is True:
@@ -222,26 +230,50 @@ class Demo:
                     self.events[event_name] = apply_round_num(
                         self.rounds, self.events[event_name]
                     )
+        else:
+            self._debug("Skipping round number parsing for events...")
 
-    @property
-    def is_parsed(self) -> bool:
-        """Check if the demo has been parsed."""
-        return all(
-            [
-                self.parser,
-                self.header,
-                self.events,
-                self.kills is not None,
-                self.damages is not None,
-                self.bomb is not None,
-                self.smokes is not None,
-                self.infernos is not None,
-                self.weapon_fires is not None,
-                self.rounds is not None,
-                self.grenades is not None,
-                self.ticks is not None,
-            ]
-        )
+    def compress(self) -> None:
+        """Save the demo data to a zip file."""
+        zip_name = self.path.stem + ".zip"
+
+        with (
+            tempfile.TemporaryDirectory() as tmpdirname,
+            zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf,
+        ):
+            # Get the main dataframes
+            for df_name, df in [
+                ("kills", self.kills),
+                ("damages", self.damages),
+                ("bomb", self.bomb),
+                ("smokes", self.smokes),
+                ("infernos", self.infernos),
+                ("weapon_fires", self.weapon_fires),
+                ("rounds", self.rounds),
+                ("grenades", self.grenades),
+            ]:
+                df_filename = os.path.join(tmpdirname, f"{df_name}.data")
+                df.to_parquet(df_filename, index=False)
+                zipf.write(df_filename, f"{df_name}.data")
+
+            # Write all events
+            for event_name, event in self.events.items():
+                event_filename = os.path.join(tmpdirname, f"{event_name}-event.data")
+                event.to_parquet(event_filename, index=False)
+                zipf.write(event_filename, os.path.join("events", f"{event_name}.data"))
+
+            # Write ticks
+            if self.ticks:
+                ticks_filename = os.path.join(tmpdirname, "ticks.data")
+                self.ticks.to_parquet(ticks_filename, index=False)
+                zipf.write(ticks_filename, "ticks.data")
+
+            header_filename = os.path.join(tmpdirname, "header.json")
+            with open(header_filename, "w", encoding="utf-8") as f:
+                json.dump(self.header, f)
+            zipf.write(header_filename, "header.json")
+
+            self._success(f"Zipped demo data to {zip_name}")
 
 
 def parse_header(parsed_header: dict) -> dict:

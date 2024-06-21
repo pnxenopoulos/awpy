@@ -1,9 +1,5 @@
 """Command-line interface for Awpy."""
 
-import json
-import os
-import tempfile
-import zipfile
 from pathlib import Path
 from typing import Literal
 
@@ -47,43 +43,4 @@ def parse(
     """Parse a file given its path."""
     demo_path = Path(demo)  # Pathify
     demo = Demo(path=demo_path, verbose=verbose, ticks=not noticks, rounds=rounds)
-    zip_name = demo_path.stem + ".zip"
-
-    with (
-        tempfile.TemporaryDirectory() as tmpdirname,
-        zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf,
-    ):
-        # Get the main dataframes
-        for df_name, df in [
-            ("kills", demo.kills),
-            ("damages", demo.damages),
-            ("bomb", demo.bomb),
-            ("smokes", demo.smokes),
-            ("infernos", demo.infernos),
-            ("weapon_fires", demo.weapon_fires),
-            ("rounds", demo.rounds),
-            ("grenades", demo.grenades),
-        ]:
-            df_filename = os.path.join(tmpdirname, f"{df_name}.data")
-            df.to_parquet(df_filename, index=False)
-            zipf.write(df_filename, f"{df_name}.data")
-
-        # Write all events
-        for event_name, event in demo.events.items():
-            event_filename = os.path.join(tmpdirname, f"{event_name}-event.data")
-            event.to_parquet(event_filename, index=False)
-            zipf.write(event_filename, os.path.join("events", f"{event_name}.data"))
-
-        # Write ticks
-        if not noticks:
-            ticks_filename = os.path.join(tmpdirname, "ticks.data")
-            demo.ticks.to_parquet(ticks_filename, index=False)
-            zipf.write(ticks_filename, "ticks.data")
-
-        header_filename = os.path.join(tmpdirname, "header.json")
-        with open(header_filename, "w", encoding="utf-8") as f:
-            json.dump(demo.header, f)
-        zipf.write(header_filename, "header.json")
-
-        if verbose:
-            logger.success(f"Zipped dataframes for {zip_name}")
+    demo.compress()
