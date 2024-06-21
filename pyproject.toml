@@ -39,7 +39,7 @@ demoparser2 = ">=0.26.2"
 tqdm = "^4.66.4"
 
 [tool.poetry.dev-dependencies]
-black = "^24.4.2"
+black = { version = "^24.4.2", extras = ["jupyter"] }
 pytest = "^6.2"
 requests = "^2.32.3"
 ruff = "^0.0.259"

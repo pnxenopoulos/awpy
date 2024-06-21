@@ -100,17 +100,21 @@ class Demo:
         # Parser & Metadata
         self.parser = None  # DemoParser
         self.header = None  # DemoHeader
+        self.events = {}  # Dictionary of [event, dataframe]
+
+        # Set the prop lists. Always include default props
         self.player_props = (
             DEFAULT_PLAYER_PROPS
             if player_props is None
             else player_props + DEFAULT_PLAYER_PROPS
         )
+        self.player_props = list(set(self.player_props))
         self.other_props = (
             DEFAULT_WORLD_PROPS
             if other_props is None
             else other_props + DEFAULT_WORLD_PROPS
         )
-        self.events = {}  # Dictionary of [event, dataframe]
+        self.other_props = list(set(self.other_props))
 
         # Data (pandas dataframes)
         self.kills = None
@@ -188,21 +192,22 @@ class Demo:
             no_events_error_msg = "No events found!"
             raise ValueError(no_events_error_msg)
 
-        self.rounds = parse_rounds(self.parser)
+        if self.get_round_info is True:
+            self.rounds = parse_rounds(self.parser)
 
-        self.kills = apply_round_num(self.rounds, parse_kills(self.events))
-        self.damages = apply_round_num(self.rounds, parse_damages(self.events))
-        self.bomb = apply_round_num(self.rounds, parse_bomb(self.events))
-        self.smokes = apply_round_num(
-            self.rounds, parse_smokes(self.events), tick_col="start_tick"
-        )
-        self.infernos = apply_round_num(
-            self.rounds, parse_infernos(self.events), tick_col="start_tick"
-        )
-        self.weapon_fires = apply_round_num(
-            self.rounds, parse_weapon_fires(self.events)
-        )
-        self.grenades = apply_round_num(self.rounds, parse_grenades(self.parser))
+            self.kills = apply_round_num(self.rounds, parse_kills(self.events))
+            self.damages = apply_round_num(self.rounds, parse_damages(self.events))
+            self.bomb = apply_round_num(self.rounds, parse_bomb(self.events))
+            self.smokes = apply_round_num(
+                self.rounds, parse_smokes(self.events), tick_col="start_tick"
+            )
+            self.infernos = apply_round_num(
+                self.rounds, parse_infernos(self.events), tick_col="start_tick"
+            )
+            self.weapon_fires = apply_round_num(
+                self.rounds, parse_weapon_fires(self.events)
+            )
+            self.grenades = apply_round_num(self.rounds, parse_grenades(self.parser))
 
         # Parse ticks
         if self.parse_ticks is True:
@@ -233,28 +238,34 @@ class Demo:
         else:
             self._debug("Skipping round number parsing for events...")
 
-    def compress(self) -> None:
-        """Save the demo data to a zip file."""
-        zip_name = self.path.stem + ".zip"
+    def compress(self, outpath: Optional[Path] = None) -> None:
+        """Saves the demo data to a zip file.
+
+        Args:
+            outpath (Path): Path to save the zip file. Defaults to cwd.
+        """
+        outpath = Path.cwd() if outpath is None else Path(outpath)
+        zip_name = outpath / Path(self.path.stem + ".zip")
 
         with (
             tempfile.TemporaryDirectory() as tmpdirname,
             zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf,
         ):
             # Get the main dataframes
-            for df_name, df in [
-                ("kills", self.kills),
-                ("damages", self.damages),
-                ("bomb", self.bomb),
-                ("smokes", self.smokes),
-                ("infernos", self.infernos),
-                ("weapon_fires", self.weapon_fires),
-                ("rounds", self.rounds),
-                ("grenades", self.grenades),
-            ]:
-                df_filename = os.path.join(tmpdirname, f"{df_name}.data")
-                df.to_parquet(df_filename, index=False)
-                zipf.write(df_filename, f"{df_name}.data")
+            if self.get_round_info:
+                for df_name, df in [
+                    ("kills", self.kills),
+                    ("damages", self.damages),
+                    ("bomb", self.bomb),
+                    ("smokes", self.smokes),
+                    ("infernos", self.infernos),
+                    ("weapon_fires", self.weapon_fires),
+                    ("rounds", self.rounds),
+                    ("grenades", self.grenades),
+                ]:
+                    df_filename = os.path.join(tmpdirname, f"{df_name}.data")
+                    df.to_parquet(df_filename, index=False)
+                    zipf.write(df_filename, f"{df_name}.data")
 
             # Write all events
             for event_name, event in self.events.items():
@@ -263,7 +274,7 @@ class Demo:
                 zipf.write(event_filename, os.path.join("events", f"{event_name}.data"))
 
             # Write ticks
-            if self.ticks:
+            if self.ticks is not None:
                 ticks_filename = os.path.join(tmpdirname, "ticks.data")
                 self.ticks.to_parquet(ticks_filename, index=False)
                 zipf.write(ticks_filename, "ticks.data")

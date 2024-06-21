@@ -1,7 +1,7 @@
 """Command-line interface for Awpy."""
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 import click
 from loguru import logger
@@ -29,18 +29,39 @@ def get(resource_type: Literal["usd"], resource_name: str) -> None:
 
 @awpy.command(help="Parse a Counter-Strike 2 demo file.")
 @click.argument("demo", type=click.Path(exists=True))
+@click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
 @click.option("--noticks", is_flag=True, default=False, help="Disable tick parsing.")
 @click.option(
-    "--rounds",
+    "--norounds",
     is_flag=True,
-    default=True,
+    default=False,
     help="Get round information for every event.",
 )
+@click.option(
+    "--player-props", multiple=True, help="List of player properties to include."
+)
+@click.option(
+    "--other-props", multiple=True, help="List of other properties to include."
+)
 def parse(
-    demo: Path, *, verbose: bool = False, noticks: bool = False, rounds: bool = True
+    demo: Path,
+    *,
+    outpath: Optional[Path] = None,
+    verbose: bool = False,
+    noticks: bool = False,
+    norounds: bool = True,
+    player_props: list[str] = None,
+    other_props: list[str] = None,
 ) -> None:
     """Parse a file given its path."""
     demo_path = Path(demo)  # Pathify
-    demo = Demo(path=demo_path, verbose=verbose, ticks=not noticks, rounds=rounds)
-    demo.compress()
+    demo = Demo(
+        path=demo_path,
+        verbose=verbose,
+        ticks=not noticks,
+        rounds=not norounds,
+        player_props=list(player_props),
+        other_props=list(other_props),
+    )
+    demo.compress(outpath=outpath)
