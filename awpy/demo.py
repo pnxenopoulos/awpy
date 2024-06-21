@@ -95,7 +95,7 @@ class Demo:
         # Save params. If/else in case bad params are passed
         self.verbose = verbose
         self.parse_ticks = ticks if ticks else False
-        self.get_round_info = rounds if rounds else False
+        self.parse_rounds = rounds if rounds else False
 
         # Parser & Metadata
         self.parser = None  # DemoParser
@@ -192,7 +192,7 @@ class Demo:
             no_events_error_msg = "No events found!"
             raise ValueError(no_events_error_msg)
 
-        if self.get_round_info is True:
+        if self.parse_rounds is True:
             self.rounds = parse_rounds(self.parser)
 
             self.kills = apply_round_num(self.rounds, parse_kills(self.events))
@@ -221,15 +221,16 @@ class Demo:
                     dynamically in .player_props and .other_props
                     """
                 )
-            self.ticks = apply_round_num(
-                self.rounds,
-                parse_ticks(self.parser, self.player_props, self.other_props),
-            )
+            if self.parse_rounds:
+                self.ticks = apply_round_num(
+                    self.rounds,
+                    parse_ticks(self.parser, self.player_props, self.other_props),
+                )
         else:
             self._debug("Skipping tick parsing...")
 
         # Get round info for every event
-        if self.get_round_info is True:
+        if self.parse_rounds is True:
             for event_name, event in self.events.items():
                 if "tick" in event.columns:
                     self.events[event_name] = apply_round_num(
@@ -252,7 +253,7 @@ class Demo:
             zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf,
         ):
             # Get the main dataframes
-            if self.get_round_info:
+            if self.parse_rounds:
                 for df_name, df in [
                     ("kills", self.kills),
                     ("damages", self.damages),

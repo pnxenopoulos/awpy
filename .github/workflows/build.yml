@@ -78,8 +78,6 @@ jobs:
         run: |
           poetry run coverage run -m pytest --durations=10
           poetry run coverage report -m
-          poetry run coverage json
-          poetry run coverage html
 
       # - name: Archive code coverage results
       #   uses: actions/upload-artifact@v4
