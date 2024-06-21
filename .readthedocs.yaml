@@ -5,11 +5,7 @@
 version: 2
 
 build:
-<<<<<<< HEAD
-  os: ubuntu-22.04
-=======
   os: "ubuntu-22.04"
->>>>>>> main
   tools:
     python: "3.10"
   jobs:

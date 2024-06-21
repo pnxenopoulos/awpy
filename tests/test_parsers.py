@@ -4,13 +4,9 @@ import pandas as pd
 import pytest
 from demoparser2 import DemoParser
 
-<<<<<<< HEAD
-from awpy.parsers import parse_damages, parse_kills, parse_rounds, remove_nonplay_ticks
-=======
 from awpy.parsers.events import parse_damages, parse_kills
 from awpy.parsers.rounds import parse_rounds
 from awpy.parsers.ticks import remove_nonplay_ticks
->>>>>>> main
 
 
 @pytest.fixture(scope="class")
@@ -26,8 +22,6 @@ def hltv_parser() -> DemoParser:
 
 
 @pytest.fixture(scope="class")
-<<<<<<< HEAD
-=======
 def faceit_parser() -> DemoParser:
     """Test DemoParser for a Faceit demo.
 
@@ -38,7 +32,6 @@ def faceit_parser() -> DemoParser:
 
 
 @pytest.fixture(scope="class")
->>>>>>> main
 def hltv_events() -> dict[str, pd.DataFrame]:
     """Test events for an HLTV demo.
 
@@ -89,8 +82,6 @@ def hltv_events() -> dict[str, pd.DataFrame]:
 
 
 @pytest.fixture(scope="class")
-<<<<<<< HEAD
-=======
 def faceit_events() -> dict[str, pd.DataFrame]:
     """Test events for a Faceit demo.
 
@@ -139,7 +130,6 @@ def faceit_events() -> dict[str, pd.DataFrame]:
 
 
 @pytest.fixture(scope="class")
->>>>>>> main
 def parsed_state() -> pd.DataFrame:
     """Creates mock parsed state to be filtered."""
     columns = [
@@ -180,17 +170,11 @@ class TestParsers:
         assert "event1" in filtered_df["other_data"].to_numpy()
         assert "event2" in filtered_df["other_data"].to_numpy()
 
-<<<<<<< HEAD
-    def test_rounds(self, hltv_parser: DemoParser):
-        """Tests that we can get rounds from demos."""
-        hltv_rounds = parse_rounds(hltv_parser)
-=======
     def test_hltv_rounds(
         self, hltv_parser: DemoParser, hltv_events: dict[str, pd.DataFrame]
     ):
         """Tests that we can get correct rounds from HLTV demos."""
         hltv_rounds = parse_rounds(hltv_parser, hltv_events)
->>>>>>> main
         assert hltv_rounds.reason.to_numpy().tolist() == [
             "ct_killed",
             "ct_killed",
@@ -217,35 +201,20 @@ class TestParsers:
             "t_killed",
         ]
 
-<<<<<<< HEAD
-    def test_kills(self, hltv_events: dict[str, pd.DataFrame]):
-        """Tests that we can get kills from demos."""
-=======
     def test_hltv_kills(self, hltv_events: dict[str, pd.DataFrame]):
         """Tests that we can get correct kills from HLTV demos."""
->>>>>>> main
         hltv_kills = parse_kills(hltv_events)
         # Checks kills and headshots
         assert hltv_kills.shape[0] == 159
         assert (
-<<<<<<< HEAD
-            hltv_kills[hltv_kills["attacker_side"] != hltv_kills["victim_side"]].shape[
-                0
-            ]
-=======
             hltv_kills[
                 hltv_kills["attacker_team_name"] != hltv_kills["victim_team_name"]
             ].shape[0]
->>>>>>> main
             == 158
         )
         assert (
             hltv_kills[
-<<<<<<< HEAD
-                hltv_kills["attacker_side"] != hltv_kills["victim_side"]
-=======
                 hltv_kills["attacker_team_name"] != hltv_kills["victim_team_name"]
->>>>>>> main
             ].headshot.sum()
             == 65
         )
@@ -276,13 +245,6 @@ class TestParsers:
         )
         assert all(hltv_assists[hltv_assists["assister_name"] == "zont1x"].assists == 8)
 
-<<<<<<< HEAD
-    def test_damages(self, hltv_events: dict[str, pd.DataFrame]):
-        """Tests that we can get damages from demos."""
-        hltv_damage = parse_damages(hltv_events)
-        hltv_damage_total = round(
-            hltv_damage[hltv_damage["attacker_side"] != hltv_damage["victim_side"]]
-=======
     def test_hltv_damages(self, hltv_events: dict[str, pd.DataFrame]):
         """Tests that we can get correct damages from HLTV demos."""
         hltv_damage = parse_damages(hltv_events)
@@ -290,7 +252,6 @@ class TestParsers:
             hltv_damage[
                 hltv_damage["attacker_team_name"] != hltv_damage["victim_team_name"]
             ]
->>>>>>> main
             .groupby("attacker_name")
             .dmg_health_real.sum()
             / 23,
@@ -333,8 +294,6 @@ class TestParsers:
             hltv_damage_total[hltv_damage_total["attacker_name"] == "zont1x"].adr
             == 70.8
         )
-<<<<<<< HEAD
-=======
 
     def test_faceit_kills(self, faceit_events: dict[str, pd.DataFrame]):
         """Tests that we can get correct number of kills from FACEIT demos."""
@@ -389,4 +348,3 @@ class TestParsers:
         assert all(
             faceit_assists[faceit_assists["assister_name"] == "lauNX-"].assists == 5
         )
->>>>>>> main

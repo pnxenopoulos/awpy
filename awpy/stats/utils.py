@@ -17,30 +17,12 @@ def get_player_rounds(demo: Demo) -> pd.DataFrame:
     Raises:
         ValueError: If ticks are missing in the parsed demo.
     """
-<<<<<<< HEAD
-    if not demo.ticks:
-=======
     if demo.ticks is None:
->>>>>>> main
         missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
         raise ValueError(missing_ticks_error_msg)
 
     # Get rounds played by each player/side
     player_sides_by_round = demo.ticks.groupby(
-<<<<<<< HEAD
-        ["name", "steamid", "side", "round"]
-    ).head(1)[["name", "steamid", "side", "round"]]
-    player_side_rounds = (
-        player_sides_by_round.groupby(["name", "steamid", "side"]).size().reset_index()
-    )
-    player_side_rounds.columns = ["name", "steamid", "side", "n_rounds"]
-    player_total_rounds = (
-        player_sides_by_round.groupby(["name", "steamid"]).size().reset_index()
-    )
-    player_total_rounds["side"] = "all"
-    player_total_rounds.columns = ["name", "steamid", "n_rounds", "side"]
-    player_total_rounds = player_total_rounds[["name", "steamid", "side", "n_rounds"]]
-=======
         ["name", "steamid", "team_name", "round"]
     ).head(1)[["name", "steamid", "team_name", "round"]]
     player_sides_by_round = player_sides_by_round.merge(demo.rounds, on="round")
@@ -58,6 +40,5 @@ def get_player_rounds(demo: Demo) -> pd.DataFrame:
     player_total_rounds = player_total_rounds[
         ["name", "steamid", "team_name", "n_rounds"]
     ]
->>>>>>> main
 
     return pd.concat([player_side_rounds, player_total_rounds])

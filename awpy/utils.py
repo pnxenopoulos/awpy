@@ -1,9 +1,6 @@
 """Utilities for the Awpy package."""
-<<<<<<< HEAD
-=======
 
 from typing import Literal
->>>>>>> main
 
 import pandas as pd
 
@@ -36,10 +33,6 @@ def apply_round_num(
 
     # Add round
     df["round"] = intervals.get_indexer(df[tick_col]) + 1
-<<<<<<< HEAD
-
-    return df
-=======
     df["round"] = df["round"].replace(0, pd.NA)
 
     return df
@@ -75,4 +68,3 @@ def rename_columns_with_affix(
             ]  # Reverse replace
             new_columns[col] = new_col
     return df.rename(columns=new_columns)
->>>>>>> main

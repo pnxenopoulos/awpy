@@ -1,30 +1,9 @@
 [build-system]
-<<<<<<< HEAD
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-=======
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
->>>>>>> main
 
 [tool.poetry]
 name = "awpy"
-<<<<<<< HEAD
-version = "2.0.0rc1"
-authors = [
-    { name = "Peter Xenopoulos", email = "xenopoulos@nyu.edu" },
-    { name = "Jan-Eric Nitschke", email = "janericnitschke@gmail.com" },
-]
-description = "Counter-Strike demo parsing, analysis and visualization"
-readme = "README.md"
-requires-python = ">=3.9"
-keywords = ["counter-strike", "csgo", "esports", "sports-analytics"]
-license = { text = "MIT License" }
-classifiers = [
-    "License :: OSI Approved :: MIT License",
-    "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3",
-=======
 version = "2.0.0b2"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
@@ -37,31 +16,16 @@ keywords = ["counter-strike 2", "counter-strike", "csgo", "esports", "sports-ana
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Intended Audience :: Science/Research",
->>>>>>> main
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Games/Entertainment",
     "Topic :: Games/Entertainment :: First Person Shooters",
-<<<<<<< HEAD
-    "Topic :: Scientific/Engineering :: Information Analysis",
-]
-dependencies = [
-    "loguru~=0.7.2",
-    "numpy~=1.26.3",
-    "pandas~=2.2.2",
-    "pydantic~=2.7.0",
-    "setuptools~=69.2.0",
-    "sphinx-rtd-theme==2.0.0",
-    "demoparser2~=0.23.0"
-]
-=======
     "Topic :: Scientific/Engineering :: Information Analysis"
 ]
 homepage = "https://awpycs.com"
 repository = "https://github.com/pnxenopoulos/awpy"
->>>>>>> main
 
 [tool.poetry.dependencies]
 python = "<3.12,>=3.9"
@@ -104,17 +68,7 @@ testpaths = ["tests"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-<<<<<<< HEAD
-"*" = [
-    "data/map/*.png",
-    "data/map/*.json",
-    "data/nav/*.txt",
-    "data/nav/*.csv",
-    "data/nav/*.json",
-]
-=======
 "*" = ["data/maps/*.png"]
->>>>>>> main
 
 # Ruff config
 [tool.ruff]
@@ -187,67 +141,19 @@ select = [
     "RUF",
     "EM"
 ]
-<<<<<<< HEAD
-ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007"]
-
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-    "docs",
-]
-
-# Same as Black.
-=======
 ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
->>>>>>> main
 line-length = 88
 
 [tool.ruff.pydocstyle]
 convention = "google"
 
-<<<<<<< HEAD
-# Assume Python 3.11.
-target-version = "py312"
-=======
 [tool.ruff.pylint]
 max-args = 17
->>>>>>> main
 
 [tool.ruff.per-file-ignores]
 "__init__.py"              = ["E402", "F401"]
 "tests/test_*.py"          = ["ANN201", "S101", "SLF001", "PLR2004"]
-<<<<<<< HEAD
-"awpy/analytics/states.py" = ["ARG001"]
-"awpy/analytics/wpa.py"    = ["ARG001"]
-"awpy/parser/cleaning.py"  = ["PLC1901"]
-
-[tool.ruff.pydocstyle]
-convention = "google" # Accepts: "google", "numpy", or "pep257".
-
-[tool.ruff.pylint]
-max-args = 17
-=======
->>>>>>> main
 
 # Pyright config
 [tool.pyright]
@@ -279,10 +185,6 @@ reportShadowedImports = "error"
 
 # Pylint config
 [tool.pylint.main]
-<<<<<<< HEAD
-# Specify a score threshold under which the program will exit with error.
-=======
->>>>>>> main
 fail-under = 9.85
 
 [tool.pylint.basic]
@@ -294,15 +196,7 @@ max-args = 15
 max-attributes = 8
 max-bool-expr = 5
 max-branches = 12
-<<<<<<< HEAD
-
-# Maximum number of locals for function / method body.
 max-locals = 20
-
-# Maximum number of public methods for a class (see R0904).
-=======
-max-locals = 20
->>>>>>> main
 max-public-methods = 30
 max-returns = 6
 max-statements = 50
@@ -323,18 +217,7 @@ disable = ["unnecessary-ellipsis"]
 notes = ["FIXME", "XXX", "TODO"]
 
 [tool.pylint.messages_control]
-<<<<<<< HEAD
-# Disable specific message categories across the project
-disable = [
-    "R0801",  # Duplicate code detection
-]
-
-[tool.pylint.refactoring]
-# Maximum number of nested blocks for function / method body
-max-nested-blocks = 5
-=======
 disable = ["R0801"]
->>>>>>> main
 
 [tool.pylint.refactoring]
 max-nested-blocks = 5
