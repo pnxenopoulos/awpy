@@ -27,11 +27,16 @@ class TestCommandLine:
 
     def test_parse_zip_creation(self):
         """Test that the parse command produces a zip file."""
-        tmpfile = Path("tests/spirit-vs-mouz-m1-vertigo.dem")
-        result = self.runner.invoke(parse, [str(tmpfile)])
+        demofile = Path("tests/spirit-vs-mouz-m1-vertigo.dem")
+        if not demofile.exists():
+            pytest.fail(f"Test file {demofile} does not exist.")
+        
+        result = self.runner.invoke(parse, [str(demofile)])
+        print("Output:", result.output)
+        print("Exception:", result.exception)
         assert result.exit_code == 0
 
-        zip_name = Path(Path(tmpfile.name).stem + ".zip")
+        zip_name = Path(Path(demofile.name).stem + ".zip")
         assert os.path.exists(zip_name)
 
         with zipfile.ZipFile(zip_name, "r") as zipf:
