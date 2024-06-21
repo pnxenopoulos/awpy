@@ -71,7 +71,7 @@ jobs:
       - name: Run parse test
         run: |
           curl -L -o test.dem https://figshare.com/ndownloader/files/44628529
-          awpy parse test.dem
+          poetry run awpy parse test.dem
 
       # - name: Run pyright
       #   run: poetry run pyright
