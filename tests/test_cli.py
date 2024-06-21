@@ -29,7 +29,6 @@ class TestCommandLine:
         """Test that the parse command produces a zip file."""
         tmpfile = Path("tests/spirit-vs-mouz-m1-vertigo.dem")
         result = self.runner.invoke(parse, [str(tmpfile)])
-        print(result.stdout)
         assert result.exit_code == 0
 
         zip_name = Path(Path(tmpfile.name).stem + ".zip")
