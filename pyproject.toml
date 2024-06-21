@@ -45,7 +45,7 @@ requests = "^2.32.3"
 ruff = "^0.0.259"
 pyright = "^1.1.198"
 pylint = "^3.2.2"
-coverage = "^5.5"
+coverage = { version = "^7.5.3", extras = ["toml"] }
 sphinx = "^7.3.7"
 sphinx-rtd-theme = "^2.0.0"
 nbsphinx = "^0.9.3"
