@@ -14,7 +14,6 @@ def setup():  # noqa: PT004, ANN201
         demo_data = json.load(file)
     for file in demo_data:
         if file not in os.listdir("tests"):
-            dl_demo_msg = f"Downloading {file}.dem..."
             _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
 
 
