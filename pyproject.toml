@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "awpy"
-version = "2.0.0a3"
+version = "2.0.0a4"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
 authors = [
@@ -35,18 +35,21 @@ matplotlib = ">=3.9.0"
 numpy = ">=1.26.3"
 pandas = ">=2.2.2"
 setuptools = ">=69.2.0"
-sphinx-rtd-theme = "==2.0.0"
-demoparser2 = ">=0.25.0"
+demoparser2 = ">=0.26.2"
 tqdm = "^4.66.4"
 
 [tool.poetry.dev-dependencies]
-black = "^24.4.2"
+black = { version = "^24.4.2", extras = ["jupyter"] }
 pytest = "^6.2"
 requests = "^2.32.3"
 ruff = "^0.0.259"
 pyright = "^1.1.198"
 pylint = "^3.2.2"
 coverage = "^5.5"
+sphinx = "^7.3.7"
+sphinx-rtd-theme = "^2.0.0"
+nbsphinx = "^0.9.3"
+ipykernel = "^6.29.4"
 
 [tool.poetry.scripts]
 awpy = "awpy.cli:awpy"

@@ -23,17 +23,22 @@ def get_player_rounds(demo: Demo) -> pd.DataFrame:
 
     # Get rounds played by each player/side
     player_sides_by_round = demo.ticks.groupby(
-        ["name", "steamid", "side", "round"]
-    ).head(1)[["name", "steamid", "side", "round"]]
+        ["name", "steamid", "team_name", "round"]
+    ).head(1)[["name", "steamid", "team_name", "round"]]
+    player_sides_by_round = player_sides_by_round.merge(demo.rounds, on="round")
     player_side_rounds = (
-        player_sides_by_round.groupby(["name", "steamid", "side"]).size().reset_index()
+        player_sides_by_round.groupby(["name", "steamid", "team_name"])
+        .size()
+        .reset_index()
     )
-    player_side_rounds.columns = ["name", "steamid", "side", "n_rounds"]
+    player_side_rounds.columns = ["name", "steamid", "team_name", "n_rounds"]
     player_total_rounds = (
         player_sides_by_round.groupby(["name", "steamid"]).size().reset_index()
     )
-    player_total_rounds["side"] = "all"
-    player_total_rounds.columns = ["name", "steamid", "n_rounds", "side"]
-    player_total_rounds = player_total_rounds[["name", "steamid", "side", "n_rounds"]]
+    player_total_rounds["team_name"] = "all"
+    player_total_rounds.columns = ["name", "steamid", "n_rounds", "team_name"]
+    player_total_rounds = player_total_rounds[
+        ["name", "steamid", "team_name", "n_rounds"]
+    ]
 
     return pd.concat([player_side_rounds, player_total_rounds])

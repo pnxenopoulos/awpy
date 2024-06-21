@@ -203,14 +203,14 @@ class TestParsers:
         # Checks kills and headshots
         assert hltv_kills.shape[0] == 159
         assert (
-            hltv_kills[hltv_kills["attacker_side"] != hltv_kills["victim_side"]].shape[
-                0
-            ]
+            hltv_kills[
+                hltv_kills["attacker_team_name"] != hltv_kills["victim_team_name"]
+            ].shape[0]
             == 158
         )
         assert (
             hltv_kills[
-                hltv_kills["attacker_side"] != hltv_kills["victim_side"]
+                hltv_kills["attacker_team_name"] != hltv_kills["victim_team_name"]
             ].headshot.sum()
             == 65
         )
@@ -245,7 +245,9 @@ class TestParsers:
         """Tests that we can get correct damages from HLTV demos."""
         hltv_damage = parse_damages(hltv_events)
         hltv_damage_total = round(
-            hltv_damage[hltv_damage["attacker_side"] != hltv_damage["victim_side"]]
+            hltv_damage[
+                hltv_damage["attacker_team_name"] != hltv_damage["victim_team_name"]
+            ]
             .groupby("attacker_name")
             .dmg_health_real.sum()
             / 23,
@@ -296,13 +298,13 @@ class TestParsers:
         assert faceit_kills.shape[0] == 156
         assert (
             faceit_kills[
-                faceit_kills["attacker_side"] != faceit_kills["victim_side"]
+                faceit_kills["attacker_team_name"] != faceit_kills["victim_team_name"]
             ].shape[0]
             == 156
         )
         assert (
             faceit_kills[
-                faceit_kills["attacker_side"] != faceit_kills["victim_side"]
+                faceit_kills["attacker_team_name"] != faceit_kills["victim_team_name"]
             ].headshot.sum()
             == 90
         )
