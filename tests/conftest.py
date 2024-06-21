@@ -19,6 +19,10 @@ def setup():  # noqa: PT004, ANN201
             dl_demo_msg = f"Downloading {file}.dem..."
             logger.debug(dl_demo_msg)
             _get_demofile(demo_link=demo_data[file]["url"], demo_name=file)
+    cwd_msg = f"Current working directory: {os.getcwd()}"
+    logger.success(cwd_msg)
+    listdir_msg = f"Files in directory: {os.listdir()}"
+    logger.success(listdir_msg)
 
 
 @pytest.fixture(scope="session", autouse=True)
