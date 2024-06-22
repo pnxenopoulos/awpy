@@ -64,7 +64,7 @@ jobs:
       - name: Install awpy
         shell: bash
         run: |
-          poetry install --no-interaction --no-cache
+          poetry install --no-interaction
 
       - name: Formatting + Lint
         shell: bash
