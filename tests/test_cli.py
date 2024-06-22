@@ -14,8 +14,8 @@ from awpy.cli import parse
 class TestCommandLine:
     """Tests the Awpy command line interface."""
 
-    @pytest.fixture(autouse=True)
-    def setup_runner(self, setup):  # noqa: ARG002, ANN001, PT004
+    @pytest.fixture(scope="module", autouse=True)
+    def setup_runner(self):  # noqa: PT004
         """Setup CLI runner."""
         self.runner = CliRunner()
 
