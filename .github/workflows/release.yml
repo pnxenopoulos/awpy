@@ -28,7 +28,7 @@ jobs:
           poetry config virtualenvs.create true --local
           poetry config virtualenvs.in-project true --local
           poetry config repositories.testpypi https://test.pypi.org/legacy/
-          poetry config repositories.pypi https://upload.pypi.org/legacy/
+          poetry config repositories.pypi https://pypi.org/simple/
 
       - name: Install awpy
         run: |
@@ -36,8 +36,8 @@ jobs:
 
       - name: Publish to test PyPI
         run: |
-          poetry publish --build --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} -v
+          poetry publish --build --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} -vvv
 
       - name: Publish to PyPI
         run: |
-          poetry publish --build --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -v
+          poetry publish --build --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -vvv
