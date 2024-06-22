@@ -81,8 +81,9 @@ jobs:
       - name: Test
         shell: bash
         run: |
-          poetry run coverage run -m pytest --durations=10 -s --traceconfig --log-cli-level=DEBUG tests/
-          poetry run coverage report -m
+          poetry run pytest --durations=10 -s --traceconfig --log-cli-level=DEBUG tests/
+      # poetry run coverage run -m pytest --durations=10 -s --traceconfig --log-cli-level=DEBUG tests/
+      # poetry run coverage report -m
 
       # - name: Archive code coverage results
       #   uses: actions/upload-artifact@v4
