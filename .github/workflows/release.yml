@@ -34,10 +34,19 @@ jobs:
         run: |
           poetry install --no-interaction
 
-      - name: Publish to test PyPI
-        run: |
-          poetry publish --build --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} -vvv
+      # - name: Publish to test PyPI
+      #   run: |
+      #     poetry publish --build --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} -vvv
 
+      - name: Debug Step
+        run: |
+          echo "Listing directory contents"
+          ls -la
+          echo "Checking Poetry version"
+          poetry --version
+          echo "Checking installed packages"
+          poetry show
+      
       - name: Publish to PyPI
         run: |
           poetry publish --build --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -vvv
