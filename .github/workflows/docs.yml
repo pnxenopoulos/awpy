@@ -41,7 +41,7 @@ jobs:
 
       - name: Build Sphinx documentation
         run: |
-          poetry run sphinx-build -b html docs/source docs/build/html
+          poetry run sphinx-build -b html docs/ docs/build/html
     
       - name: Upload documentation to Read the Docs
         run: |

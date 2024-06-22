@@ -35,8 +35,8 @@ jobs:
 
       - name: Publish to test PyPI
         run: |
-          poetry publish --build --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }}
+          poetry publish --build --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} -v
 
       - name: Publish to PyPI
         run: |
-          poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
+          poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -v

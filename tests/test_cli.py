@@ -15,7 +15,7 @@ class TestCommandLine:
     """Tests the Awpy command line interface."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):  # noqa: PT004
+    def setup_runner(self, setup):  # noqa: ANN001, ARG002, PT004
         """Setup CLI runner."""
         self.runner = CliRunner()
 
@@ -27,12 +27,10 @@ class TestCommandLine:
 
     def test_parse_zip_creation(self):
         """Test that the parse command produces a zip file."""
-        tmpfile = Path("tests/spirit-vs-mouz-m1-vertigo.dem")
-        result = self.runner.invoke(parse, [str(tmpfile)])
-        print(result.stdout)
+        result = self.runner.invoke(parse, ["tests/spirit-vs-mouz-m1-vertigo.dem"])
         assert result.exit_code == 0
 
-        zip_name = Path(Path(tmpfile.name).stem + ".zip")
+        zip_name = "spirit-vs-mouz-m1-vertigo.zip"
         assert os.path.exists(zip_name)
 
         with zipfile.ZipFile(zip_name, "r") as zipf:
