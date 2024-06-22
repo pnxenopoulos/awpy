@@ -1,0 +1,51 @@
+name: docs
+
+on:
+  push:
+    tags:
+      - 'release-v*.*.*'
+
+jobs:
+  build-and-create-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Awpy library
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: |
+            poetry.lock
+            pyproject.toml
+      
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Setup a local virtual environment for poetry
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+
+      - uses: actions/cache@v4
+        name: Cache awpy dependencies
+        with:
+          path: ./.venv
+          key: venv-docs-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install awpy
+        run: |
+          poetry install --no-interaction
+
+      - name: Build Sphinx documentation
+        run: |
+          poetry run sphinx-build -b html docs/ docs/build/html
+    
+      - name: Upload documentation to Read the Docs
+        run: |
+          curl -X POST \
+          -d "token=${{ secrets.RTD_WEBOOK_TOKEN }}" \
+          https://readthedocs.org/api/v2/webhook/awpy/190613/ \
+          -H "Content-Type: application/json"

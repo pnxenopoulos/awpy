@@ -3,11 +3,7 @@ name: release
 on:
   push:
     tags:
-<<<<<<< HEAD
-      - "release-v*.*.*"
-=======
       - 'release-v*.*.*'
->>>>>>> main
 
 jobs:
   build-and-release:
@@ -37,6 +33,7 @@ jobs:
         run: |
           poetry install --no-interaction
 <<<<<<< HEAD
+<<<<<<< HEAD
 
       - name: Publish to PyPI
         run: |
@@ -47,3 +44,13 @@ jobs:
         run: |
           poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -vvv
 >>>>>>> main
+=======
+
+      - name: Publish to test PyPI
+        run: |
+          poetry publish --build --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} -v
+
+      - name: Publish to PyPI
+        run: |
+          poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -v
+>>>>>>> 4bc4496 (v2.0.0a5 (#336))
