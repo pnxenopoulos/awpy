@@ -7,9 +7,7 @@ This module contains both data, primarily related to map (e.g., images, navigati
 
     from awpy.data.map_data import MAP_DATA
 
-`MAP_DATA` is a dictionary where the top-level keys are map names (strings) and the next-level keys are scaling properties for the map.
-
-By running `NAV["de_dust2"][1213]`, we would see
+`MAP_DATA` is a dictionary where the top-level keys are map names (strings) and the next-level keys are scaling properties for the map. Below, we show an example for one map.
 
 .. code-block:: json
 

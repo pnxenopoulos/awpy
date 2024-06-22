@@ -5,7 +5,7 @@ import os
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from demoparser2 import DemoParser  # pylint: disable=E0611
 from loguru import logger
@@ -238,6 +238,28 @@ class Demo:
                     )
         else:
             self._debug("Skipping round number parsing for events...")
+
+    def get_ticks(self, ticks: Union[list[int], int]) -> dict:
+        """Get the data at a specific tick.
+
+        Args:
+            ticks (Union[list[int], int]): The tick or ticks to get data for.
+
+        Returns:
+            dict: The player data at the specified tick.
+        """
+        if not isinstance(ticks, list):
+            ticks = [ticks]
+
+        for t in ticks:
+            if t < 0:
+                negative_ticks_error_msg = "Negative ticks not possible!"
+                raise ValueError(negative_ticks_error_msg)
+
+        return apply_round_num(
+            self.rounds,
+            parse_ticks(self.parser, self.player_props, self.other_props, ticks),
+        )
 
     def compress(self, outpath: Optional[Path] = None) -> None:
         """Saves the demo data to a zip file.

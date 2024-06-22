@@ -1,5 +1,7 @@
 """Contains parsers for the different pieces of data."""
 
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
@@ -704,7 +706,10 @@ def parse_weapon_fires(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 
 def parse_ticks(
-    parser: DemoParser, player_props: list[str], other_props: list[str]
+    parser: DemoParser,
+    player_props: list[str],
+    other_props: list[str],
+    ticks: Optional[list[int]] = None,
 ) -> pd.DataFrame:
     """Parse the ticks of the demofile.
 
@@ -712,9 +717,16 @@ def parse_ticks(
         parser (DemoParser): The parser object.
         player_props (list[str]): Player properties to parse.
         other_props (list[str]): World properties to parse.
+        ticks (Optional[list[int]]): List of ticks or tick to parse.
 
     Returns:
         pd.DataFrame: The ticks for the demofile.
     """
-    ticks = parser.parse_ticks(wanted_props=player_props + other_props)
-    return parse_col_types(remove_nonplay_ticks(ticks))
+    if ticks:
+        ticks_df = parser.parse_ticks(
+            wanted_props=player_props + other_props, ticks=ticks
+        )
+        return parse_col_types(remove_nonplay_ticks(ticks_df))
+
+    ticks_df = parser.parse_ticks(wanted_props=player_props + other_props)
+    return parse_col_types(remove_nonplay_ticks(ticks_df))
