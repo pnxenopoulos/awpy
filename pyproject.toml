@@ -59,9 +59,6 @@ awpy = "awpy.cli:awpy"
 branch = true
 source = ["awpy"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-
 # Setuptools
 [tool.setuptools]
 include-package-data = true
