@@ -1,7 +1,7 @@
 """Module for tick parsing functions."""
 
 import pandas as pd
-from demoparser2 import DemoParser  # pylint: disable=E0611
+from demoparser2 import DemoParser
 
 from awpy.parsers.utils import parse_col_types
 

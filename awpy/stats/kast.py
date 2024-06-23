@@ -43,7 +43,7 @@ def calculate_trades(kills: pd.DataFrame, trade_ticks: int = 128 * 5) -> pd.Data
     return kills
 
 
-def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
+def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:  # pylint: disable=R0914
     """Calculates Kill-Assist-Survival-Trade %.
 
     Args:

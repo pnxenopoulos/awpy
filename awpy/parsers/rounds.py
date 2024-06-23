@@ -4,7 +4,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from demoparser2 import DemoParser  # pylint: disable=E0611
+from demoparser2 import DemoParser
 
 
 def _find_bomb_plant_tick(row: pd.Series, bomb_ticks: pd.Series) -> Union[int, float]:
@@ -143,7 +143,7 @@ def parse_rounds(parser: DemoParser, events: dict[str, pd.DataFrame]) -> pd.Data
 
     # Find the bomb plant ticks
     bomb_planted = events.get("bomb_planted")
-    if bomb_planted.shape[0] == 0:
+    if not bomb_planted or bomb_planted.shape[0] == 0:
         return rounds_df
 
     rounds_df["bomb_plant"] = rounds_df.apply(

@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from demoparser2 import DemoParser  # pylint: disable=E0611
+from demoparser2 import DemoParser
 from loguru import logger
 
 from awpy.converters import (

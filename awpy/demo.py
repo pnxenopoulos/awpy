@@ -7,7 +7,7 @@ import zipfile
 from pathlib import Path
 from typing import Optional
 
-from demoparser2 import DemoParser  # pylint: disable=E0611
+from demoparser2 import DemoParser
 from loguru import logger
 
 from awpy.parsers.clock import parse_times
@@ -62,7 +62,7 @@ DEFAULT_WORLD_PROPS = [
 ]
 
 
-class Demo:
+class Demo:  # pylint: disable=R0902
     """Class to store a demo's data. Called with `Demo(file="...")`."""
 
     def __init__(
@@ -265,7 +265,7 @@ class Demo:
         Args:
             outpath (Path): Path to save the zip file. Defaults to cwd.
         """
-        outpath = Path.cwd() if outpath is None else Path(outpath)
+        outpath = Path.cwd() if outpath is None else outpath
         zip_name = outpath / Path(self.path.stem + ".zip")
 
         with (
@@ -284,6 +284,8 @@ class Demo:
                     ("rounds", self.rounds),
                     ("grenades", self.grenades),
                 ]:
+                    if df is None:
+                        continue
                     df_filename = os.path.join(tmpdirname, f"{df_name}.data")
                     df.to_parquet(df_filename, index=False)
                     zipf.write(df_filename, f"{df_name}.data")

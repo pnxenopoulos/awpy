@@ -22,7 +22,7 @@ def position_transform_axis(
     Raises:
         ValueError: Raises a ValueError if axis not 'x' or 'y'
     """
-    axis = axis.lower()
+    axis = axis.lower()  # pyright: ignore[reportAssignmentType]
     if axis not in ["x", "y"]:
         msg = f"'axis' has to be 'x' or 'y', not {axis}"
         raise ValueError(msg)
