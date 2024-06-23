@@ -226,7 +226,7 @@ class Demo:
                 self.rounds,
             )
             self.grenades = parse_times(
-                apply_round_num(self.rounds, parse_grenades(self.events)), self.rounds
+                apply_round_num(self.rounds, parse_grenades(self.parser)), self.rounds
             )
 
         # Parse ticks
