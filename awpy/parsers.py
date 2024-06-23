@@ -1,6 +1,6 @@
 """Contains parsers for the different pieces of data."""
 
-from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -111,11 +111,29 @@ def parse_grenades(parser: DemoParser) -> pd.DataFrame:
     ]
 
 
-def parse_rounds(parser: DemoParser) -> pd.DataFrame:
+# Function to find the bomb plant tick for each round
+def _find_bomb_plant_tick(row: pd.Series, bomb_ticks: pd.Series) -> Union[int, float]:
+    """Find the bomb plant tick for a round.
+
+    Args:
+        row: A row from a dataframe
+        bomb_ticks: A series of bomb ticks
+
+    Returns:
+        The bomb plant tick for the round, or NaN if no bomb plant was found.
+    """
+    # Filter the bomb ticks that fall within the round's start and end
+    plant_ticks = bomb_ticks[(bomb_ticks >= row["start"]) & (bomb_ticks <= row["end"])]
+    # Return the first bomb plant tick if it exists, otherwise NaN
+    return plant_ticks.iloc[0] if not plant_ticks.empty else np.nan
+
+
+def parse_rounds(parser: DemoParser, events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Parse the rounds of the demofile.
 
     Args:
         parser: The parser object.
+        events: A dictionary of parsed events.
 
     Returns:
         The rounds for the demofile.
@@ -220,9 +238,24 @@ def parse_rounds(parser: DemoParser) -> pd.DataFrame:
     rounds_reshaped["official_end"] = rounds_reshaped["official_end"].fillna(
         rounds_reshaped["end"]
     )
-    return rounds_reshaped[
+
+    # Subset round columns
+    rounds_df = rounds_reshaped[
         ["round", "start", "freeze_end", "end", "official_end", "winner", "reason"]
     ]
+    rounds_df["bomb_plant"] = pd.NA
+    rounds_df["bomb_plant"] = rounds_df["bomb_plant"].astype(pd.Int64Dtype())
+
+    # Find the bomb plant ticks
+    bomb_planted = events.get("bomb_planted")
+    if bomb_planted.shape[0] == 0:
+        return rounds_df
+
+    rounds_df["bomb_plant"] = rounds_df.apply(
+        _find_bomb_plant_tick, bomb_ticks=bomb_planted["tick"], axis=1
+    ).astype(pd.Int64Dtype())
+
+    return rounds_df
 
 
 def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -709,7 +742,6 @@ def parse_ticks(
     parser: DemoParser,
     player_props: list[str],
     other_props: list[str],
-    ticks: Optional[list[int]] = None,
 ) -> pd.DataFrame:
     """Parse the ticks of the demofile.
 
@@ -717,16 +749,59 @@ def parse_ticks(
         parser (DemoParser): The parser object.
         player_props (list[str]): Player properties to parse.
         other_props (list[str]): World properties to parse.
-        ticks (Optional[list[int]]): List of ticks or tick to parse.
 
     Returns:
         pd.DataFrame: The ticks for the demofile.
     """
-    if ticks:
-        ticks_df = parser.parse_ticks(
-            wanted_props=player_props + other_props, ticks=ticks
-        )
-        return parse_col_types(remove_nonplay_ticks(ticks_df))
-
     ticks_df = parser.parse_ticks(wanted_props=player_props + other_props)
     return parse_col_types(remove_nonplay_ticks(ticks_df))
+
+
+def parse_times(
+    df: pd.DataFrame, rounds_df: pd.DataFrame, tick_col: str = "tick"
+) -> pd.DataFrame:
+    """Adds time_since_* columns to the dataframe.
+
+    Args:
+        df (pd.DataFrame): The dataframe to add the time columns to.
+        rounds_df (pd.DataFrame): The rounds dataframe.
+        tick_col (str): The column name of the tick column.
+
+    Returns:
+        pd.DataFrame: The dataframe with the timesince_* columns added.
+    """
+    if tick_col not in df.columns:
+        tick_col_missing_msg = f"{tick_col} not found in dataframe."
+        raise ValueError(tick_col_missing_msg)
+
+    df_with_round_info = df.merge(rounds_df, on="round", how="left")
+    df_with_round_info["ticks_since_round_start"] = (
+        df_with_round_info[tick_col] - df_with_round_info["start"]
+    )
+    df_with_round_info["ticks_since_freeze_time_end"] = (
+        df_with_round_info[tick_col] - df_with_round_info["freeze_end"]
+    )
+    df_with_round_info["ticks_since_bomb_plant"] = (
+        df_with_round_info[tick_col] - df_with_round_info["bomb_plant"]
+    )
+
+    # Apply the function to the selected columns
+    for col in df_with_round_info.columns:
+        if col.startswith("ticks_since_"):
+            df_with_round_info[col] = (
+                df_with_round_info[col]
+                .map(lambda x: pd.NA if x < 0 else x)
+                .astype(pd.Int64Dtype())
+            )
+
+    return df_with_round_info.drop(
+        columns=[
+            "start",
+            "freeze_end",
+            "end",
+            "official_end",
+            "winner",
+            "reason",
+            "bomb_plant",
+        ]
+    )

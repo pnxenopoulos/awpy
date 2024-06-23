@@ -46,11 +46,6 @@ class TestDemo:
         assert parsed_hltv_demo_no_rounds.rounds is None
         assert parsed_hltv_demo_no_rounds.grenades is None
 
-    def test_get_negative_tick(self, parsed_hltv_demo: Demo):
-        """Test that an error is raised when getting a negative tick."""
-        with pytest.raises(ValueError, match="Negative ticks not possible!"):
-            parsed_hltv_demo.get_ticks(-1)
-
     def test_compress(self, parsed_hltv_demo: Demo):
         """Test that the demo is zipped."""
         parsed_hltv_demo.compress()

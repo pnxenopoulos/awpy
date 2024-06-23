@@ -5,7 +5,7 @@ import os
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 from demoparser2 import DemoParser  # pylint: disable=E0611
 from loguru import logger
@@ -19,6 +19,7 @@ from awpy.parsers import (
     parse_rounds,
     parse_smokes,
     parse_ticks,
+    parse_times,
     parse_weapon_fires,
 )
 from awpy.utils import apply_round_num
@@ -193,21 +194,40 @@ class Demo:
             raise ValueError(no_events_error_msg)
 
         if self.parse_rounds is True:
-            self.rounds = parse_rounds(self.parser)
+            self.rounds = parse_rounds(
+                self.parser, self.events
+            )  # Must pass parser for round start/end events
 
-            self.kills = apply_round_num(self.rounds, parse_kills(self.events))
-            self.damages = apply_round_num(self.rounds, parse_damages(self.events))
-            self.bomb = apply_round_num(self.rounds, parse_bomb(self.events))
-            self.smokes = apply_round_num(
-                self.rounds, parse_smokes(self.events), tick_col="start_tick"
+            self.kills = parse_times(
+                apply_round_num(self.rounds, parse_kills(self.events)), self.rounds
             )
-            self.infernos = apply_round_num(
-                self.rounds, parse_infernos(self.events), tick_col="start_tick"
+            self.damages = parse_times(
+                apply_round_num(self.rounds, parse_damages(self.events)), self.rounds
             )
-            self.weapon_fires = apply_round_num(
-                self.rounds, parse_weapon_fires(self.events)
+            self.bomb = parse_times(
+                apply_round_num(self.rounds, parse_bomb(self.events)), self.rounds
             )
-            self.grenades = apply_round_num(self.rounds, parse_grenades(self.parser))
+            self.smokes = parse_times(
+                apply_round_num(
+                    self.rounds, parse_smokes(self.events), tick_col="start_tick"
+                ),
+                self.rounds,
+                tick_col="start_tick",
+            )
+            self.infernos = parse_times(
+                apply_round_num(
+                    self.rounds, parse_infernos(self.events), tick_col="start_tick"
+                ),
+                self.rounds,
+                tick_col="start_tick",
+            )
+            self.weapon_fires = parse_times(
+                apply_round_num(self.rounds, parse_weapon_fires(self.events)),
+                self.rounds,
+            )
+            self.grenades = parse_times(
+                apply_round_num(self.rounds, parse_grenades(self.events)), self.rounds
+            )
 
         # Parse ticks
         if self.parse_ticks is True:
@@ -238,28 +258,6 @@ class Demo:
                     )
         else:
             self._debug("Skipping round number parsing for events...")
-
-    def get_ticks(self, ticks: Union[list[int], int]) -> dict:
-        """Get the data at a specific tick.
-
-        Args:
-            ticks (Union[list[int], int]): The tick or ticks to get data for.
-
-        Returns:
-            dict: The player data at the specified tick.
-        """
-        if not isinstance(ticks, list):
-            ticks = [ticks]
-
-        for t in ticks:
-            if t < 0:
-                negative_ticks_error_msg = "Negative ticks not possible!"
-                raise ValueError(negative_ticks_error_msg)
-
-        return apply_round_num(
-            self.rounds,
-            parse_ticks(self.parser, self.player_props, self.other_props, ticks),
-        )
 
     def compress(self, outpath: Optional[Path] = None) -> None:
         """Saves the demo data to a zip file.
