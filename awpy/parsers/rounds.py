@@ -143,7 +143,7 @@ def parse_rounds(parser: DemoParser, events: dict[str, pd.DataFrame]) -> pd.Data
 
     # Find the bomb plant ticks
     bomb_planted = events.get("bomb_planted")
-    if not bomb_planted or bomb_planted.shape[0] == 0:
+    if bomb_planted is None or bomb_planted.shape[0] == 0:
         return rounds_df
 
     rounds_df["bomb_plant"] = rounds_df.apply(
