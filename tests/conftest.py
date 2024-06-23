@@ -2,6 +2,7 @@
 
 import json
 import os
+from pathlib import Path
 
 import pytest
 import requests
@@ -10,7 +11,7 @@ import requests
 @pytest.fixture(scope="session", autouse=True)
 def setup():  # noqa: PT004, ANN201
     """Sets up testing environment by downloading demofiles."""
-    with open("tests/test_data.json", encoding="utf-8") as file:
+    with Path("tests/test_data.json").open(encoding="utf-8") as file:
         demo_data = json.load(file)
     for file in demo_data:
         if file not in os.listdir("tests"):
@@ -23,7 +24,7 @@ def teardown():  # noqa: PT004, ANN201
     yield
     for file in os.listdir():
         if file.endswith((".json", ".dem", ".zip")):
-            os.remove(file)
+            Path.unlink(file)
 
 
 def _get_demofile(demo_link: str, demo_name: str) -> None:
@@ -33,7 +34,7 @@ def _get_demofile(demo_link: str, demo_name: str) -> None:
         demo_link (str): Link to demo.
         demo_name (str): `<file>.dem` styled filename.
     """
-    if not os.path.exists(demo_path := f"tests/{demo_name}.dem"):
+    if not (demo_path := Path(f"tests/{demo_name}.dem")).exists():
         request = requests.get(demo_link, timeout=100)
-        with open(demo_path, "wb") as demo_file:
+        with demo_path.open("wb") as demo_file:
             demo_file.write(request.content)

@@ -52,16 +52,16 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint awpy
-        language: system
-        types: [python]
-        pass_filenames: false
-        args:
-          [
-            "-rn", # Only display messages
-            "-sn", # Don't display the score
-          ]
+  # - repo: local
+  #   hooks:
+  #     - id: pylint
+  #       name: pylint
+  #       entry: pylint awpy
+  #       language: system
+  #       types: [python]
+  #       pass_filenames: false
+  #       args:
+  #         [
+  #           "-rn", # Only display messages
+  #           "-sn", # Don't display the score
+  #         ]

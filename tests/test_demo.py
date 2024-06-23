@@ -1,7 +1,6 @@
 """Test the Demo object."""
 
 import json
-import os
 import zipfile
 from pathlib import Path
 
@@ -50,8 +49,8 @@ class TestDemo:
         """Test that the demo is zipped."""
         parsed_hltv_demo.compress()
 
-        zip_name = "spirit-vs-mouz-m1-vertigo.zip"
-        assert os.path.exists(zip_name)
+        zip_name = Path("spirit-vs-mouz-m1-vertigo.zip")
+        assert zip_name.exists()
 
         with zipfile.ZipFile(zip_name, "r") as zipf:
             # Check if all expected files are in the zip
@@ -87,8 +86,8 @@ class TestDemo:
         """Test that the demo is zipped and no top-level dataframes are generated."""
         parsed_hltv_demo_no_rounds.compress()
 
-        zip_name = "spirit-vs-mouz-m1-vertigo.zip"
-        assert os.path.exists(zip_name)
+        zip_name = Path("spirit-vs-mouz-m1-vertigo.zip")
+        assert zip_name.exists()
 
         with zipfile.ZipFile(zip_name, "r") as zipf:
             # Check if all expected files are in the zip

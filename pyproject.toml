@@ -39,6 +39,7 @@ demoparser2 = ">=0.26.2"
 tqdm        = "^4.66.4"
 
 [tool.poetry.dev-dependencies]
+pandas-stubs     = "^2.2.2.240603"
 black            = { version = "^24.4.2", extras = ["jupyter"] }
 pytest           = "^8.2.2"
 requests         = "^2.32.3"
@@ -124,15 +125,8 @@ ignore = [
     "ISC001",
     "ISC002",
     # Others
-    "D208",
     "ANN101",
-    "T20",
-    "PTH",
     "TRY003",
-    "BLE001",
-    "PLR2004",
-    "UP007",
-    "ISC001",
     "FA100",
 ]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
@@ -149,16 +143,16 @@ max-args = 17
 
 # Pyright config
 [tool.pyright]
-pythonVersion                      = "3.9"
-include                            = ["awpy"]
-exclude                            = ["tests"]
+pythonVersion = "3.9"
+include       = ["awpy"]
+exclude       = ["tests"]
 # typeCheckingMode                   = "strict"
 strictListInference                = true
 strictDictionaryInference          = true
 strictSetInference                 = true
 useLibraryCodeForTypes             = false
 reportPropertyTypeMismatch         = "error"
-reportFunctionMemberAccess         = "warning"
+reportFunctionMemberAccess         = "error"
 reportMissingTypeStubs             = "none"
 reportUntypedFunctionDecorator     = "error"
 reportUntypedClassDecorator        = "error"
@@ -167,19 +161,19 @@ reportUntypedNamedTuple            = "error"
 reportPrivateUsage                 = "error"
 reportConstantRedefinition         = "error"
 reportOverlappingOverload          = "error"
-reportMissingParameterType         = "warning"
-reportUnnecessaryIsInstance        = "none"
+reportMissingParameterType         = "error"
+reportUnnecessaryIsInstance        = "error"
 reportUnnecessaryCast              = "error"
 reportUnnecessaryComparison        = "error"
 reportUnnecessaryContains          = "error"
 reportAssertAlwaysTrue             = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
-reportImplicitOverride             = "none"
+reportImplicitOverride             = "error"
 reportShadowedImports              = "error"
 
 # Pylint config
 [tool.pylint.main]
-fail-under = 10.0
+fail-under               = 10.0
 extension-pkg-allow-list = ["demoparser2"]
 
 [tool.pylint.basic]

@@ -1,7 +1,6 @@
 """Defines the Demo class."""
 
 import json
-import os
 import tempfile
 import zipfile
 from pathlib import Path
@@ -230,7 +229,7 @@ class Demo:  # pylint: disable=R0902
             )
 
         # Parse ticks
-        if self.parse_ticks is True:
+        if self.parse_ticks:
             if len(self.player_props) + len(self.other_props) > PROP_WARNING_LIMIT:
                 self._warn(
                     f"""
@@ -241,7 +240,8 @@ class Demo:  # pylint: disable=R0902
                     dynamically in .player_props and .other_props
                     """
                 )
-            if self.parse_rounds:
+            # Second part should always be true based on logic above
+            if self.parse_rounds and self.rounds is not None:
                 self.ticks = apply_round_num(
                     self.rounds,
                     parse_ticks(self.parser, self.player_props, self.other_props),
@@ -250,7 +250,7 @@ class Demo:  # pylint: disable=R0902
             self._debug("Skipping tick parsing...")
 
         # Get round info for every event
-        if self.parse_rounds is True:
+        if self.parse_rounds and self.rounds is not None:
             for event_name, event in self.events.items():
                 if "tick" in event.columns:
                     self.events[event_name] = apply_round_num(
@@ -272,6 +272,7 @@ class Demo:  # pylint: disable=R0902
             tempfile.TemporaryDirectory() as tmpdirname,
             zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf,
         ):
+            tmpdirpath = Path(tmpdirname)
             # Get the main dataframes
             if self.parse_rounds:
                 for df_name, df in [
@@ -286,24 +287,24 @@ class Demo:  # pylint: disable=R0902
                 ]:
                     if df is None:
                         continue
-                    df_filename = os.path.join(tmpdirname, f"{df_name}.data")
+                    df_filename = tmpdirpath / f"{df_name}.data"
                     df.to_parquet(df_filename, index=False)
                     zipf.write(df_filename, f"{df_name}.data")
 
             # Write all events
             for event_name, event in self.events.items():
-                event_filename = os.path.join(tmpdirname, f"{event_name}-event.data")
+                event_filename = tmpdirpath / f"{event_name}-event.data"
                 event.to_parquet(event_filename, index=False)
-                zipf.write(event_filename, os.path.join("events", f"{event_name}.data"))
+                zipf.write(event_filename, Path("events") / f"{event_name}.data")
 
             # Write ticks
             if self.ticks is not None:
-                ticks_filename = os.path.join(tmpdirname, "ticks.data")
+                ticks_filename = tmpdirpath / "ticks.data"
                 self.ticks.to_parquet(ticks_filename, index=False)
                 zipf.write(ticks_filename, "ticks.data")
 
-            header_filename = os.path.join(tmpdirname, "header.json")
-            with open(header_filename, "w", encoding="utf-8") as f:
+            header_filename = tmpdirpath / "header.json"
+            with header_filename.open("w", encoding="utf-8") as f:
                 json.dump(self.header, f)
             zipf.write(header_filename, "header.json")
 
