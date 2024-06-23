@@ -1,5 +1,11 @@
 exclude: docs/
 repos:
+  # - repo: https://github.com/JanEricNitschke/pymend
+  #   rev: "v1.0.10"
+  #   hooks:
+  #     - id: pymend
+  #       language: python
+  #       args: ["--write", "--check"]
   - repo: 'https://github.com/pre-commit/pre-commit-hooks'
     rev: v4.4.0
     hooks:
@@ -25,18 +31,14 @@ repos:
         language: python
       - id: check-builtin-literals
         language: python
-  - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.0.291
+  - repo: "https://github.com/charliermarsh/ruff-pre-commit"
+    rev: v0.4.9
     hooks:
       - id: ruff
         args:
-          - '--fix'
-          - '--exit-non-zero-on-fix'
-  - repo: 'https://github.com/psf/black'
-    rev: 23.9.1
-    hooks:
-      - id: black
-        language: python
+          - "--fix"
+          - "--exit-non-zero-on-fix"
+      - id: ruff-format
   - repo: https://github.com/crate-ci/typos
     rev: v1.16.13
     hooks:

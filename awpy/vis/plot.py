@@ -1,7 +1,7 @@
 """Module for plotting Counter-Strike data."""
 
 import importlib.resources
-from typing import Optional
+from typing import Optional, Union, overload
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -9,7 +9,17 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 
-def plot_map(map_name: str, *, lower: Optional[bool] = None) -> tuple[Figure, Axes]:
+@overload
+def plot_map(map_name: str, *, lower: None = ...) -> tuple[Figure, list[Axes]]: ...
+
+
+@overload
+def plot_map(map_name: str, *, lower: bool = ...) -> tuple[Figure, Axes]: ...
+
+
+def plot_map(
+    map_name: str, *, lower: Optional[bool] = None
+) -> tuple[Figure, Union[Axes, list[Axes]]]:
     """Plot a Counter-Strike map.
 
     Args:
@@ -60,7 +70,7 @@ def plot_upper_and_lower(map_name: str) -> tuple[Figure, list[Axes]]:
     map_names = [map_name, f"{map_name}_lower"]
     figure, axes = plt.subplots(1, 2)  # , figsize=(2 * 5, 5)
 
-    for ax, map_layer_name in zip(axes, map_names, strict=True):
+    for ax, map_layer_name in zip(axes, map_names):
         with importlib.resources.path(
             "awpy.data.maps", f"{map_layer_name}.png"
         ) as map_img_path:

@@ -62,8 +62,8 @@ def _find_clock_time(row: pd.Series) -> str:
         "bomb": row["ticks_since_bomb_plant"],
     }
     # Filter out NA values and find the key with the minimum value
-    min_key = min((k for k in times if pd.notna(times[k])), key=lambda k: times[k])
-    return parse_clock(times[min_key], min_key)
+    min_key = min((k for k in times if pd.notna(times[k])), key=lambda k: times[k])  # pylint: disable=C0206
+    return parse_clock(times[min_key], min_key)  # pyright: ignore[reportArgumentType]
 
 
 def parse_times(

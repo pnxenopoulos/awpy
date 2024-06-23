@@ -1,7 +1,6 @@
 """Test the cli functions."""
 
 import json
-import os
 import zipfile
 from pathlib import Path
 
@@ -30,8 +29,8 @@ class TestCommandLine:
         result = self.runner.invoke(parse, ["tests/spirit-vs-mouz-m1-vertigo.dem"])
         assert result.exit_code == 0
 
-        zip_name = "spirit-vs-mouz-m1-vertigo.zip"
-        assert os.path.exists(zip_name)
+        zip_name = Path("spirit-vs-mouz-m1-vertigo.zip")
+        assert zip_name.exists()
 
         with zipfile.ZipFile(zip_name, "r") as zipf:
             # Check if all expected files are in the zip
