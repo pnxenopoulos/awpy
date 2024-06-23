@@ -34,6 +34,7 @@ jobs:
           poetry install --no-interaction
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
       - name: Publish to PyPI
         run: |
@@ -58,6 +59,8 @@ jobs:
           poetry --version
           echo "Checking installed packages"
           poetry show
+=======
+>>>>>>> 3aedb12 (v2 beta (#340))
       
       - name: Publish to PyPI
         run: |

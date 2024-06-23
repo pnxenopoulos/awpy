@@ -100,7 +100,7 @@ jobs:
       - name: Test
         shell: bash
         run: |
-          poetry run coverage run -m pytest --durations=10 -s --traceconfig --log-cli-level=DEBUG tests/
+          poetry run coverage run -m pytest --durations=10
           poetry run coverage report -m
 
       # - name: Archive code coverage results

@@ -16,7 +16,7 @@ class TestCommandLine:
 
     @pytest.fixture(autouse=True)
     def setup_runner(self, setup):  # noqa: ANN001, ARG002, PT004
-        """Setup CLI runner."""
+        """Setup CLI runner. `setup` arg is the pytest setup fixture."""
         self.runner = CliRunner()
 
     def test_parse_invalid_filepath(self):
