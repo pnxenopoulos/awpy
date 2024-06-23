@@ -168,9 +168,9 @@ class TestParsers:
         assert "event1" in filtered_df["other_data"].to_numpy()
         assert "event2" in filtered_df["other_data"].to_numpy()
 
-    def test_hltv_rounds(self, hltv_parser: DemoParser):
+    def test_hltv_rounds(self, hltv_parser: DemoParser, hltv_events: dict[str, pd.DataFrame]):
         """Tests that we can get correct rounds from HLTV demos."""
-        hltv_rounds = parse_rounds(hltv_parser)
+        hltv_rounds = parse_rounds(hltv_parser, hltv_events)
         assert hltv_rounds.reason.to_numpy().tolist() == [
             "ct_killed",
             "ct_killed",
