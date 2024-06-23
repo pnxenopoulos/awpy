@@ -50,7 +50,7 @@ def parse_clock(
     return f"{int(minutes):02}:{int(seconds):02}"
 
 
-def _find_clock_time(row: pd.Series) -> str:
+def _find_clock_time(row: pd.Series) -> Union[str, pd._libs.missing.NAType]:
     """Find the clock time for a row.
 
     Args:
@@ -66,7 +66,7 @@ def _find_clock_time(row: pd.Series) -> str:
     }
     # Filter out NA values
     valid_times = {k: v for k, v in times.items() if pd.notna(v)}
-    
+
     if not valid_times:
         return pd.NA
 

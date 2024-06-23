@@ -1571,7 +1571,6 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.22.4", markers = "python_version < \"3.11\""},
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
@@ -1967,8 +1966,7 @@ astroid = ">=3.2.2,<=3.3.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
 dill = [
     {version = ">=0.2", markers = "python_version < \"3.11\""},
-    {version = ">=0.3.7", markers = "python_version >= \"3.12\""},
-    {version = ">=0.3.6", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
+    {version = ">=0.3.6", markers = "python_version >= \"3.11\""},
 ]
 isort = ">=4.2.5,<5.13.0 || >5.13.0,<6"
 mccabe = ">=0.6,<0.8"
@@ -2729,6 +2727,33 @@ socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
+name = "usd-core"
+version = "24.5"
+description = "Pixar's Universal Scene Description"
+optional = false
+python-versions = "<3.12,>=3.6"
+files = [
+    {file = "usd_core-24.5-cp310-none-macosx_10_9_universal2.whl", hash = "sha256:9f6d5d160f0a7f3f19d9100d0c61901e8698bef7461b9b6713c79b15d029c0d6"},
+    {file = "usd_core-24.5-cp310-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:755b4f66802f5d65a813e249954377ff2cffa2aaa8d74ba4cb5405fcbc493d52"},
+    {file = "usd_core-24.5-cp310-none-win_amd64.whl", hash = "sha256:613a03308d478c32a657ed6ace50bc151fed90b3a34c464676952a6f47b4994f"},
+    {file = "usd_core-24.5-cp311-none-macosx_10_9_universal2.whl", hash = "sha256:db2afa26afb79306521c0fa601cb46ac2b71c3628aa487adc2e19e205cabd2e8"},
+    {file = "usd_core-24.5-cp311-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:78fddf4b9863852706edda359740b559905e8655f92f27a2c28248499532d325"},
+    {file = "usd_core-24.5-cp311-none-win_amd64.whl", hash = "sha256:dc7a268c0c42b0ea311a2b863d856e2373b9bd374fb90c7dfb6e7066dfb1c303"},
+    {file = "usd_core-24.5-cp36-none-macosx_10_9_universal2.whl", hash = "sha256:6b64674eded6b5c4cc226812703f2ebc941b84e6331c73da7c4df344d71818c3"},
+    {file = "usd_core-24.5-cp36-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:70e7c252b8e3ea01b7cf61ca35381e4770397835d1a314feeb353ae0ade886dc"},
+    {file = "usd_core-24.5-cp36-none-win_amd64.whl", hash = "sha256:435ccc14bb449904fc18cdb622447869e1c8bcd947a8799a50a23e96682e7a0e"},
+    {file = "usd_core-24.5-cp37-none-macosx_10_9_universal2.whl", hash = "sha256:e348abd966417b6df7f588103c6bdad7a709a3c87844b471a6b9f4ebe09ddecc"},
+    {file = "usd_core-24.5-cp37-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4c8b1bc981349efb84bd43ddf0616ef43263c8ce6e68ee5ab1aef64c0768878a"},
+    {file = "usd_core-24.5-cp37-none-win_amd64.whl", hash = "sha256:955d4edb4c10b1eb09afef1dc73c93e578a5a5e82f15adc678401f4b11617f63"},
+    {file = "usd_core-24.5-cp38-none-macosx_10_9_universal2.whl", hash = "sha256:82abcde68bd45e310f50cc2af846d30ccb2b41ceb2f65065dc2a63242f25fbd3"},
+    {file = "usd_core-24.5-cp38-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5f9c06cd99cf7a314349e1370bb05293ddc87c3d8db80ef0fc91c5de879870b9"},
+    {file = "usd_core-24.5-cp38-none-win_amd64.whl", hash = "sha256:fa0eb881a189a2e656663659b77817817fe42472d7ef91e2c79afb05391c1be0"},
+    {file = "usd_core-24.5-cp39-none-macosx_10_9_universal2.whl", hash = "sha256:2e866b9bcac44f717445f2e20a00901b611d99d03838ce0f26c553ebe74993b2"},
+    {file = "usd_core-24.5-cp39-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b918cb1a65d07b98b47461376c789e42986ad882f8db5d776cc161f11d747c64"},
+    {file = "usd_core-24.5-cp39-none-win_amd64.whl", hash = "sha256:200c5c202019cf5bc3a6f0a16d458143d6fb8ff404f47a60279d18c92fbabbaf"},
+]
+
+[[package]]
 name = "wcwidth"
 version = "0.2.13"
 description = "Measures the displayed width of unicode strings in a terminal"
@@ -2781,5 +2806,5 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.9"
-content-hash = "70fd1f1ba91fcd4a9d6b931ac4c8bfb2211e515c611cb5389641aa73edece6ea"
+python-versions = "<3.12,>=3.9"
+content-hash = "f568c950bb02ced2ed435ab20ccdcb78bb08bcd09cd8c23566ec4b3cf9bd0a4a"
