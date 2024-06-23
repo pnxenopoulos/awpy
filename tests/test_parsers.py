@@ -4,7 +4,9 @@ import pandas as pd
 import pytest
 from demoparser2 import DemoParser
 
-from awpy.parsers import parse_damages, parse_kills, parse_rounds, remove_nonplay_ticks
+from awpy.parsers.events import parse_damages, parse_kills
+from awpy.parsers.rounds import parse_rounds
+from awpy.parsers.ticks import remove_nonplay_ticks
 
 
 @pytest.fixture(scope="class")
