@@ -55,15 +55,24 @@ def _find_clock_time(row: pd.Series) -> str:
 
     Args:
         row: A row from a dataframe with ticks_since_* columns.
+
+    Returns:
+        str: The clock time in MM:SS format or NA if no valid time is found.
     """
     times = {
         "start": row["ticks_since_round_start"],
         "freeze": row["ticks_since_freeze_time_end"],
         "bomb": row["ticks_since_bomb_plant"],
     }
-    # Filter out NA values and find the key with the minimum value
-    min_key = min((k for k in times if pd.notna(times[k])), key=lambda k: times[k])
-    return parse_clock(times[min_key], min_key)
+    # Filter out NA values
+    valid_times = {k: v for k, v in times.items() if pd.notna(v)}
+    
+    if not valid_times:
+        return pd.NA
+
+    # Find the key with the minimum value among valid times
+    min_key = min(valid_times, key=valid_times.get)
+    return parse_clock(valid_times[min_key], min_key)
 
 
 def parse_times(

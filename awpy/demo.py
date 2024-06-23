@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
 from loguru import logger
 
