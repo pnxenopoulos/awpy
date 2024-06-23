@@ -10,17 +10,18 @@ from typing import Optional
 from demoparser2 import DemoParser  # pylint: disable=E0611
 from loguru import logger
 
-from awpy.parsers import (
+from awpy.parsers.clock import parse_times
+from awpy.parsers.events import (
     parse_bomb,
     parse_damages,
     parse_grenades,
     parse_infernos,
     parse_kills,
-    parse_rounds,
     parse_smokes,
-    parse_ticks,
     parse_weapon_fires,
 )
+from awpy.parsers.rounds import parse_rounds
+from awpy.parsers.ticks import parse_ticks
 from awpy.utils import apply_round_num
 
 PROP_WARNING_LIMIT = 40
@@ -193,21 +194,40 @@ class Demo:
             raise ValueError(no_events_error_msg)
 
         if self.parse_rounds is True:
-            self.rounds = parse_rounds(self.parser)
+            self.rounds = parse_rounds(
+                self.parser, self.events
+            )  # Must pass parser for round start/end events
 
-            self.kills = apply_round_num(self.rounds, parse_kills(self.events))
-            self.damages = apply_round_num(self.rounds, parse_damages(self.events))
-            self.bomb = apply_round_num(self.rounds, parse_bomb(self.events))
-            self.smokes = apply_round_num(
-                self.rounds, parse_smokes(self.events), tick_col="start_tick"
+            self.kills = parse_times(
+                apply_round_num(self.rounds, parse_kills(self.events)), self.rounds
             )
-            self.infernos = apply_round_num(
-                self.rounds, parse_infernos(self.events), tick_col="start_tick"
+            self.damages = parse_times(
+                apply_round_num(self.rounds, parse_damages(self.events)), self.rounds
             )
-            self.weapon_fires = apply_round_num(
-                self.rounds, parse_weapon_fires(self.events)
+            self.bomb = parse_times(
+                apply_round_num(self.rounds, parse_bomb(self.events)), self.rounds
             )
-            self.grenades = apply_round_num(self.rounds, parse_grenades(self.parser))
+            self.smokes = parse_times(
+                apply_round_num(
+                    self.rounds, parse_smokes(self.events), tick_col="start_tick"
+                ),
+                self.rounds,
+                tick_col="start_tick",
+            )
+            self.infernos = parse_times(
+                apply_round_num(
+                    self.rounds, parse_infernos(self.events), tick_col="start_tick"
+                ),
+                self.rounds,
+                tick_col="start_tick",
+            )
+            self.weapon_fires = parse_times(
+                apply_round_num(self.rounds, parse_weapon_fires(self.events)),
+                self.rounds,
+            )
+            self.grenades = parse_times(
+                apply_round_num(self.rounds, parse_grenades(self.parser)), self.rounds
+            )
 
         # Parse ticks
         if self.parse_ticks is True:

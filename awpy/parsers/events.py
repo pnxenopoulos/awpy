@@ -1,4 +1,4 @@
-"""Contains parsers for the different pieces of data."""
+"""Module for event parsing functions."""
 
 import numpy as np
 import pandas as pd
@@ -8,80 +8,8 @@ from loguru import logger
 from awpy.converters import (
     map_hitgroup,
 )
-
-
-def parse_col_types(df: pd.DataFrame) -> pd.DataFrame:
-    """Parse the column types of a dataframe.
-
-    Args:
-        df: A pandas DataFrame.
-
-    Returns:
-        A DataFrame with the column types.
-    """
-    for col in df.columns:
-        # SteamIDs should be ints
-        if "steamid" in col:
-            df[col] = df[col].astype(str)
-    return df
-
-
-def remove_nonplay_ticks(parsed_df: pd.DataFrame) -> pd.DataFrame:
-    """Filter out non-play records from a dataframe.
-
-    Args:
-        parsed_df (pd.DataFrame): A dataframe with the columns...
-
-    Returns:
-        pd.DataFrame: A dataframe with the non-play records removed.
-    """
-    # Check if the required columns are in the dataframe
-    for col in [
-        "is_freeze_period",
-        "is_warmup_period",
-        "is_terrorist_timeout",
-        "is_ct_timeout",
-        "is_technical_timeout",
-        "is_waiting_for_resume",
-        "is_match_started",
-        "game_phase",
-    ]:
-        if col not in parsed_df.columns:
-            error_msg = f"{col} not found in dataframe."
-            raise ValueError(error_msg)
-
-    # Remove records which do not occur in-play
-    parsed_df = parsed_df[
-        (~parsed_df["is_freeze_period"])
-        & (~parsed_df["is_warmup_period"])
-        & (~parsed_df["is_terrorist_timeout"])
-        & (~parsed_df["is_ct_timeout"])
-        & (~parsed_df["is_technical_timeout"])
-        & (~parsed_df["is_waiting_for_resume"])
-        & (parsed_df["is_match_started"])
-        & (
-            parsed_df["game_phase"].isin(
-                [
-                    2,  # startgame
-                    3,  # preround
-                ]
-            )
-        )
-    ]
-
-    # Drop the state columns
-    return parsed_df.drop(
-        columns=[
-            "is_freeze_period",
-            "is_warmup_period",
-            "is_terrorist_timeout",
-            "is_ct_timeout",
-            "is_technical_timeout",
-            "is_waiting_for_resume",
-            "is_match_started",
-            "game_phase",
-        ]
-    )
+from awpy.parsers.ticks import remove_nonplay_ticks
+from awpy.parsers.utils import parse_col_types
 
 
 def parse_grenades(parser: DemoParser) -> pd.DataFrame:
@@ -106,120 +34,6 @@ def parse_grenades(parser: DemoParser) -> pd.DataFrame:
             "Z",
             "entity_id",
         ]
-    ]
-
-
-def parse_rounds(parser: DemoParser) -> pd.DataFrame:
-    """Parse the rounds of the demofile.
-
-    Args:
-        parser: The parser object.
-
-    Returns:
-        The rounds for the demofile.
-
-    Raises:
-        KeyError: If a round-related event is not found in the events.
-    """
-    round_start = parser.parse_event("round_start")
-    if len(round_start) == 0:
-        round_start_missing_msg = "round_start not found in events."
-        raise KeyError(round_start_missing_msg)
-    round_start["event"] = "start"
-
-    round_end = parser.parse_event("round_end")
-    if len(round_end) == 0:
-        round_end_missing_msg = "round_end not found in events."
-        raise KeyError(round_end_missing_msg)
-    round_end = round_end[~round_end["winner"].isna()]  # Remove None round ends
-    round_end["event"] = "end"
-
-    round_end_official = parser.parse_event("round_officially_ended")
-    if len(round_end_official) == 0:
-        round_end_official_missing_msg = "round_officially_ended not found in events."
-        raise KeyError(round_end_official_missing_msg)
-    round_end_official["event"] = "official_end"
-
-    round_freeze_end = parser.parse_event("round_freeze_end")
-    if len(round_freeze_end) == 0:
-        round_freeze_end_missing_msg = "round_freeze_end not found in events."
-        raise KeyError(round_freeze_end_missing_msg)
-    round_freeze_end["event"] = "freeze_end"
-
-    rounds = pd.concat(
-        [
-            round_start[["event", "tick"]],
-            round_freeze_end[["event", "tick"]],
-            round_end[["event", "tick"]],
-            round_end_official[["event", "tick"]],
-        ]
-    )
-
-    # Remove everything that happen on tick 0, except starts
-    rounds = rounds[~((rounds["tick"] == 0) & (rounds["event"] != "start"))]
-
-    # Then, order
-    event_order = ["official_end", "start", "freeze_end", "end"]
-    rounds["event"] = pd.Categorical(
-        rounds["event"], categories=event_order, ordered=True
-    )
-    rounds = (
-        rounds.sort_values(by=["tick", "event"])
-        .drop_duplicates()
-        .reset_index(drop=True)
-    )
-
-    # Initialize an empty list to store the indices of rows to keep
-    indices_to_keep = []
-
-    # Loop through the DataFrame and check for the correct order of events
-    full_sequence_offset = len(event_order)
-    for i in range(len(rounds)):
-        # Extract the current sequence of events
-        current_sequence = rounds["event"].iloc[i : i + full_sequence_offset].tolist()
-        # Check if the current sequence matches the correct order
-        if current_sequence == ["start", "freeze_end", "end", "official_end"]:
-            # If it does, add the indices of these rows to the list
-            indices_to_keep.extend(range(i, i + full_sequence_offset))
-        # Case for end of match where we might not get a round official end
-        # Case for start of match where we might not get a freeze end
-        elif current_sequence == ["start", "freeze_end", "end"] or current_sequence[
-            0 : full_sequence_offset - 1
-        ] == [
-            "start",
-            "end",
-            "official_end",
-        ]:
-            indices_to_keep.extend(range(i, i + full_sequence_offset - 1))
-
-    # Filter the DataFrame to keep only the rows with the correct sequence
-    rounds_filtered = rounds.loc[indices_to_keep].reset_index(drop=True)
-    rounds_filtered["round"] = (rounds_filtered["event"] == "start").cumsum()
-    rounds_reshaped = rounds_filtered.pivot_table(
-        index="round", columns="event", values="tick", aggfunc="first", observed=False
-    ).reset_index(drop=True)
-    rounds_reshaped = rounds_reshaped[
-        ["start", "freeze_end", "end", "official_end"]
-    ].astype("Int32")
-    rounds_reshaped.columns = ["start", "freeze_end", "end", "official_end"]
-    rounds_reshaped = rounds_reshaped.merge(
-        round_end[
-            [
-                "tick",
-                "winner",
-                "reason",
-            ]
-        ],
-        left_on="end",
-        right_on="tick",
-        how="left",
-    )
-    rounds_reshaped["round"] = rounds_reshaped.index + 1
-    rounds_reshaped["official_end"] = rounds_reshaped["official_end"].fillna(
-        rounds_reshaped["end"]
-    )
-    return rounds_reshaped[
-        ["round", "start", "freeze_end", "end", "official_end", "winner", "reason"]
     ]
 
 
@@ -701,20 +515,3 @@ def parse_weapon_fires(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
                 columns={col: col.replace("user_", "player_")}
             )
     return weapon_fires_df
-
-
-def parse_ticks(
-    parser: DemoParser, player_props: list[str], other_props: list[str]
-) -> pd.DataFrame:
-    """Parse the ticks of the demofile.
-
-    Args:
-        parser (DemoParser): The parser object.
-        player_props (list[str]): Player properties to parse.
-        other_props (list[str]): World properties to parse.
-
-    Returns:
-        pd.DataFrame: The ticks for the demofile.
-    """
-    ticks = parser.parse_ticks(wanted_props=player_props + other_props)
-    return parse_col_types(remove_nonplay_ticks(ticks))

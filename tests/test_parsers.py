@@ -4,7 +4,9 @@ import pandas as pd
 import pytest
 from demoparser2 import DemoParser
 
-from awpy.parsers import parse_damages, parse_kills, parse_rounds, remove_nonplay_ticks
+from awpy.parsers.events import parse_damages, parse_kills
+from awpy.parsers.rounds import parse_rounds
+from awpy.parsers.ticks import remove_nonplay_ticks
 
 
 @pytest.fixture(scope="class")
@@ -168,9 +170,11 @@ class TestParsers:
         assert "event1" in filtered_df["other_data"].to_numpy()
         assert "event2" in filtered_df["other_data"].to_numpy()
 
-    def test_hltv_rounds(self, hltv_parser: DemoParser):
+    def test_hltv_rounds(
+        self, hltv_parser: DemoParser, hltv_events: dict[str, pd.DataFrame]
+    ):
         """Tests that we can get correct rounds from HLTV demos."""
-        hltv_rounds = parse_rounds(hltv_parser)
+        hltv_rounds = parse_rounds(hltv_parser, hltv_events)
         assert hltv_rounds.reason.to_numpy().tolist() == [
             "ct_killed",
             "ct_killed",

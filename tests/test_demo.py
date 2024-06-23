@@ -10,6 +10,18 @@ import pytest
 from awpy.demo import Demo
 
 
+@pytest.fixture()
+def parsed_hltv_demo():
+    """Fixture that returns a parsed Demo object."""
+    return Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem")
+
+
+@pytest.fixture()
+def parsed_hltv_demo_no_rounds():
+    """Fixture that returns a parsed Demo object with rounds disabled."""
+    return Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem", rounds=False)
+
+
 class TestDemo:
     """Tests the Demo object."""
 
@@ -18,28 +30,25 @@ class TestDemo:
         with pytest.raises(FileNotFoundError):
             Demo("xyz.dem")
 
-    def test_hltv_demo(self):
+    def test_hltv_demo(self, parsed_hltv_demo: Demo):
         """Test the Demo object with an HLTV demo."""
-        parsed_demo = Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem")
-        assert parsed_demo.header["map_name"] == "de_vertigo"
+        assert parsed_hltv_demo.header["map_name"] == "de_vertigo"
 
-    def test_no_rounds(self):
+    def test_no_rounds(self, parsed_hltv_demo_no_rounds: Demo):
         """Test that when you do not parse rounds, there are no top-level dataframes."""
-        parsed_demo = Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem", rounds=False)
-        assert parsed_demo.rounds is None
-        assert parsed_demo.kills is None
-        assert parsed_demo.damages is None
-        assert parsed_demo.bomb is None
-        assert parsed_demo.smokes is None
-        assert parsed_demo.infernos is None
-        assert parsed_demo.weapon_fires is None
-        assert parsed_demo.rounds is None
-        assert parsed_demo.grenades is None
+        assert parsed_hltv_demo_no_rounds.rounds is None
+        assert parsed_hltv_demo_no_rounds.kills is None
+        assert parsed_hltv_demo_no_rounds.damages is None
+        assert parsed_hltv_demo_no_rounds.bomb is None
+        assert parsed_hltv_demo_no_rounds.smokes is None
+        assert parsed_hltv_demo_no_rounds.infernos is None
+        assert parsed_hltv_demo_no_rounds.weapon_fires is None
+        assert parsed_hltv_demo_no_rounds.rounds is None
+        assert parsed_hltv_demo_no_rounds.grenades is None
 
-    def test_compress(self):
+    def test_compress(self, parsed_hltv_demo: Demo):
         """Test that the demo is zipped."""
-        demo = Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem")
-        demo.compress()
+        parsed_hltv_demo.compress()
 
         zip_name = "spirit-vs-mouz-m1-vertigo.zip"
         assert os.path.exists(zip_name)
@@ -74,10 +83,9 @@ class TestDemo:
                 header = json.load(f)
                 assert header["map_name"] == "de_vertigo"
 
-    def test_compress_no_rounds(self):
+    def test_compress_no_rounds(self, parsed_hltv_demo_no_rounds: Demo):
         """Test that the demo is zipped and no top-level dataframes are generated."""
-        demo = Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem", rounds=False)
-        demo.compress()
+        parsed_hltv_demo_no_rounds.compress()
 
         zip_name = "spirit-vs-mouz-m1-vertigo.zip"
         assert os.path.exists(zip_name)
