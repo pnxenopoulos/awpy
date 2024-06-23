@@ -24,7 +24,7 @@ def teardown():  # noqa: PT004, ANN201
     yield
     for file in os.listdir():
         if file.endswith((".json", ".dem", ".zip")):
-            Path.unlink(file)
+            Path(file).unlink()
 
 
 def _get_demofile(demo_link: str, demo_name: str) -> None:
