@@ -34,42 +34,42 @@ def impact(demo: Demo) -> pd.DataFrame:
     kills_total = (
         demo.kills.groupby(["attacker_name", "attacker_steamid"])
         .size()
-        .reset_index(name="kills")
+        .reset_index(name="kills")  # pyright: ignore[reportCallIssue]
         .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_ct = (
         demo.kills[demo.kills["attacker_team_name"] == "CT"]
         .groupby(["attacker_name", "attacker_steamid"])
         .size()
-        .reset_index(name="kills")
+        .reset_index(name="kills")  # pyright: ignore[reportCallIssue]
         .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_t = (
         demo.kills[demo.kills["attacker_team_name"] == "TERRORIST"]
         .groupby(["attacker_name", "attacker_steamid"])
         .size()
-        .reset_index(name="kills")
+        .reset_index(name="kills")  # pyright: ignore[reportCallIssue]
         .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
     )
 
     assists_total = (
         demo.kills.groupby(["assister_name", "assister_steamid"])
         .size()
-        .reset_index(name="assists")
+        .reset_index(name="assists")  # pyright: ignore[reportCallIssue]
         .rename(columns={"assister_name": "name", "assister_steamid": "steamid"})
     )
     assists_ct = (
         demo.kills[demo.kills["assister_team_name"] == "CT"]
         .groupby(["assister_name", "assister_steamid"])
         .size()
-        .reset_index(name="assists")
+        .reset_index(name="assists")  # pyright: ignore[reportCallIssue]
         .rename(columns={"assister_name": "name", "assister_steamid": "steamid"})
     )
     assists_t = (
         demo.kills[demo.kills["assister_team_name"] == "TERRORIST"]
         .groupby(["assister_name", "assister_steamid"])
         .size()
-        .reset_index(name="assists")
+        .reset_index(name="assists")  # pyright: ignore[reportCallIssue]
         .rename(columns={"assister_name": "name", "assister_steamid": "steamid"})
     )
 
@@ -133,7 +133,7 @@ def rating(demo: Demo) -> pd.DataFrame:
     kills_total = (
         demo.kills.groupby(["attacker_name", "attacker_steamid"])
         .size()
-        .reset_index(name="kills")
+        .reset_index(name="kills")  # pyright: ignore[reportCallIssue]
         .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_total["team_name"] = "all"
@@ -141,7 +141,7 @@ def rating(demo: Demo) -> pd.DataFrame:
         demo.kills[demo.kills["attacker_team_name"] == "CT"]
         .groupby(["attacker_name", "attacker_steamid"])
         .size()
-        .reset_index(name="kills")
+        .reset_index(name="kills")  # pyright: ignore[reportCallIssue]
         .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_ct["team_name"] = "CT"
@@ -149,7 +149,7 @@ def rating(demo: Demo) -> pd.DataFrame:
         demo.kills[demo.kills["attacker_team_name"] == "TERRORIST"]
         .groupby(["attacker_name", "attacker_steamid"])
         .size()
-        .reset_index(name="kills")
+        .reset_index(name="kills")  # pyright: ignore[reportCallIssue]
         .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_t["team_name"] = "TERRORIST"
@@ -158,7 +158,7 @@ def rating(demo: Demo) -> pd.DataFrame:
     deaths_total = (
         demo.kills.groupby(["victim_name", "victim_steamid"])
         .size()
-        .reset_index(name="deaths")
+        .reset_index(name="deaths")  # pyright: ignore[reportCallIssue]
         .rename(columns={"victim_name": "name", "victim_steamid": "steamid"})
     )
     deaths_total["team_name"] = "all"
@@ -166,7 +166,7 @@ def rating(demo: Demo) -> pd.DataFrame:
         demo.kills[demo.kills["victim_team_name"] == "CT"]
         .groupby(["victim_name", "victim_steamid"])
         .size()
-        .reset_index(name="deaths")
+        .reset_index(name="deaths")  # pyright: ignore[reportCallIssue]
         .rename(columns={"victim_name": "name", "victim_steamid": "steamid"})
     )
     deaths_ct["team_name"] = "CT"
@@ -174,7 +174,7 @@ def rating(demo: Demo) -> pd.DataFrame:
         demo.kills[demo.kills["victim_team_name"] == "TERRORIST"]
         .groupby(["victim_name", "victim_steamid"])
         .size()
-        .reset_index(name="deaths")
+        .reset_index(name="deaths")  # pyright: ignore[reportCallIssue]
         .rename(columns={"victim_name": "name", "victim_steamid": "steamid"})
     )
     deaths_t["team_name"] = "TERRORIST"

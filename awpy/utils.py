@@ -32,7 +32,7 @@ def apply_round_num(
     )
 
     # Add round
-    df["round"] = intervals.get_indexer(df[tick_col]) + 1
+    df["round"] = intervals.get_indexer(pd.Index(df[tick_col])) + 1
 
     return df
 

@@ -348,13 +348,13 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
     # Handle bomb locations
     bomb_df = bomb_df.sort_values("tick").reset_index(drop=True)
-    for i, row in bomb_df.iterrows():
-        if row["event"] == "exploded" and i > 0:
-            # The prior row will contain the correct site.
-            bomb_df.loc[i, "site"] = bomb_df.loc[i - 1, "site"]
-            bomb_df.loc[i, "X"] = bomb_df.loc[i - 1, "X"]
-            bomb_df.loc[i, "Y"] = bomb_df.loc[i - 1, "Y"]
-            bomb_df.loc[i, "Z"] = bomb_df.loc[i - 1, "Z"]
+    # Find the first index where the event is "exploded"
+    first_exploded_index = bomb_df[(bomb_df["event"] == "exploded")].index[0]
+    # Backfill the "site", "X", "Y", and "Z" columns
+    # from that index to the end of the DataFrame
+    bomb_df.loc[first_exploded_index:, ["site", "X", "Y", "Z"]] = bomb_df.loc[
+        first_exploded_index, ["site", "X", "Y", "Z"]
+    ].to_numpy()
     return bomb_df
 
 
