@@ -62,8 +62,7 @@ def rename_columns_with_affix(
             )  # Replace only the first occurrence
             new_columns[col] = new_col
         elif affix_type == "suffix" and col.endswith(old_affix):
-            new_col = col[::-1].replace(old_affix[::-1], new_affix[::-1], 1)[
-                ::-1
-            ]  # Reverse replace
+            # Reverse replace
+            new_col = col[::-1].replace(old_affix[::-1], new_affix[::-1], 1)[::-1]
             new_columns[col] = new_col
     return df.rename(columns=new_columns)
