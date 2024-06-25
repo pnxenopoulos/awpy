@@ -22,28 +22,55 @@ def awpy() -> None:
     help="Get Counter-Strike 2 resources like map images, nav meshes or usd files."
 )
 @click.argument("resource_type", type=click.Choice(["map", "nav", "usd"]))
-def get(resource_type: Literal["map", "nav", "usd"]) -> None:
+@click.argument("resource_name", required=False)
+def get(
+    resource_type: Literal["map", "nav", "usd"], resource_name: Optional[str]
+) -> None:
     """Get a resource given its type and name."""
-    AWPY_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if not AWPY_DATA_DIR.exists():
+        AWPY_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        awpy_data_dir_creation_msg = f"Created awpy data directory at {AWPY_DATA_DIR}"
+        logger.debug(awpy_data_dir_creation_msg)
+
     if resource_type == "usd":
-        logger.info("Getting all USDs...")
-        for map_name, url in USD_LINKS.items():
-            # Create usd data dir and file path
+        if resource_name:
+            url = USD_LINKS.get(resource_name)
+            if not url:
+                logger.error(f"No USD link found for {resource_name}")
+                return
             usd_data_dir = AWPY_DATA_DIR / "usd"
             usd_data_dir.mkdir(parents=True, exist_ok=True)
-            usd_file_path = usd_data_dir / f"{map_name}.usdc"
-            logger.info(f"Getting USD for {map_name}...")
-            # Stream, so we can iterate over the response
+            usd_file_path = usd_data_dir / f"{resource_name}.usdc"
+            logger.info(f"Getting USD for {resource_name}...")
             response = requests.get(url, stream=True, timeout=300)
             total_size = int(response.headers.get("content-length", 0))
             block_size = 1024
-            with tqdm(
-                total=total_size, unit="B", unit_scale=True
-            ) as progress_bar, open(usd_file_path, "wb") as file:
+            with (
+                tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
+                open(usd_file_path, "wb") as file,
+            ):
                 for data in response.iter_content(block_size):
                     progress_bar.update(len(data))
                     file.write(data)
-            logger.info(f"Saved USD for {map_name} to {usd_file_path}")
+            logger.info(f"Saved USD for {resource_name} to {usd_file_path}")
+        else:
+            logger.info("Getting all USDs...")
+            for map_name, url in USD_LINKS.items():
+                usd_data_dir = AWPY_DATA_DIR / "usd"
+                usd_data_dir.mkdir(parents=True, exist_ok=True)
+                usd_file_path = usd_data_dir / f"{map_name}.usdc"
+                logger.info(f"Getting USD for {map_name}...")
+                response = requests.get(url, stream=True, timeout=300)
+                total_size = int(response.headers.get("content-length", 0))
+                block_size = 1024
+                with (
+                    tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
+                    open(usd_file_path, "wb") as file,
+                ):
+                    for data in response.iter_content(block_size):
+                        progress_bar.update(len(data))
+                        file.write(data)
+                logger.info(f"Saved USD for {map_name} to {usd_file_path}")
     elif resource_type == "map":
         map_not_impl_msg = "Map files are not yet implemented."
         raise NotImplementedError(map_not_impl_msg)
