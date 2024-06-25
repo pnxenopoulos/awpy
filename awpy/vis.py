@@ -3,6 +3,8 @@
 import numpy as np
 from pxr import Usd, UsdGeom
 
+from awpy.data import AWPY_DATA_DIR
+
 
 def _load_usd(map_name: str) -> Usd.Stage:
     """Load the USD file.
@@ -13,7 +15,8 @@ def _load_usd(map_name: str) -> Usd.Stage:
     Returns:
         Usd.Stage: The USD stage.
     """
-    return Usd.Stage.Open(f"{map_name}.usdc")
+    usd_path = AWPY_DATA_DIR / "usd" / f"{map_name}.usdc"
+    return Usd.Stage.Open(usd_path)
 
 
 # Function to calculate the line equation between two points
