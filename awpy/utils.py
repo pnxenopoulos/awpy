@@ -26,13 +26,13 @@ def apply_round_num(
         tick_col_does_not_exist_error_msg = "`tick` not found in dataframe."
         raise ValueError(tick_col_does_not_exist_error_msg)
 
+    start: pd.Series[int] = rounds_df["start"]
+    end: pd.Series[int] = rounds_df["official_end"]
     # Create intervals
-    intervals = pd.IntervalIndex.from_arrays(
-        rounds_df["start"], rounds_df["official_end"], closed="right"
-    )
+    intervals = pd.IntervalIndex.from_arrays(start, end, closed="right")
 
     # Add round
-    df["round"] = intervals.get_indexer(pd.Index(df[tick_col])) + 1
+    df["round"] = intervals.get_indexer(pd.Index(df[tick_col])) + 1  # pyright: ignore[reportUnknownMemberType]
 
     return df
 
@@ -54,7 +54,7 @@ def rename_columns_with_affix(
     Returns:
         pd.DataFrame: DataFrame with renamed columns.
     """
-    new_columns = {}
+    new_columns: dict[str, str] = {}
     for col in df.columns:
         if affix_type == "prefix" and col.startswith(old_affix):
             new_col = col.replace(

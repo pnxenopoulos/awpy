@@ -4,15 +4,18 @@ import math
 from typing import Literal, Union
 
 import pandas as pd
+from pandas._libs.missing import NAType  # pylint: disable=no-name-in-module
 
 ROUND_START_DEFAULT_TIME_IN_SECS = 20
 FREEZE_DEFAULT_TIME_IN_SECS = 115
 BOMB_DEFAULT_TIME_IN_SECS = 40
 
+TimeVariants = Literal["start", "freeze", "bomb"]
+
 
 def parse_clock(
     seconds_since_phase_change: int,
-    max_time_ticks: Union[Literal["start", "freeze", "bomb"], int],
+    max_time_ticks: Union[TimeVariants, int],
     tick_rate: int = 64,
 ) -> str:
     """Parse the remaining time in a round or phase to a clock string.
@@ -50,20 +53,33 @@ def parse_clock(
     return f"{int(minutes):02}:{int(seconds):02}"
 
 
-def _find_clock_time(row: pd.Series) -> str:
+def _find_clock_time(row: pd.Series[int]) -> Union[str, NAType]:
     """Find the clock time for a row.
 
     Args:
         row: A row from a dataframe with ticks_since_* columns.
+
+    Returns:
+        str: The clock time in MM:SS format or NA if no valid time is found.
     """
-    times: dict[str, int] = {
+    times: dict[TimeVariants, Union[int, NAType]] = {
         "start": row["ticks_since_round_start"],
         "freeze": row["ticks_since_freeze_time_end"],
         "bomb": row["ticks_since_bomb_plant"],
     }
-    # Filter out NA values and find the key with the minimum value
-    min_key = min((k for k in times if pd.notna(times[k])), key=lambda k: times[k])  # pylint: disable=C0206
-    return parse_clock(times[min_key], min_key)  # pyright: ignore[reportArgumentType]
+
+    # Filter out NA values
+    valid_times: dict[TimeVariants, int] = {
+        k: v for k, v in times.items() if pd.notna(v)
+    }
+
+    if not valid_times:
+        return pd.NA
+
+    # Find the key with the minimum value among valid times
+    # (Using valid_times.get causes three separate pyright warnings...)
+    min_key: str = min(valid_times, key=lambda x: valid_times[x])
+    return parse_clock(valid_times[min_key], min_key)
 
 
 def parse_times(

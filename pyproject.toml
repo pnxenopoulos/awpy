@@ -206,7 +206,7 @@ disable    = ["unnecessary-ellipsis"]
 notes = ["FIXME", "XXX", "TODO"]
 
 [tool.pylint.messages_control]
-disable = ["duplicate-code", "unsubscriptable-object"]
+disable = ["duplicate-code", "unsubscriptable-object", "line-too-long"]
 
 [tool.pylint.refactoring]
 max-nested-blocks         = 5

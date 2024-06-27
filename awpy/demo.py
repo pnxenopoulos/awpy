@@ -4,7 +4,7 @@ import json
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from demoparser2 import DemoParser
 from loguru import logger
@@ -22,6 +22,9 @@ from awpy.parsers.events import (
 from awpy.parsers.rounds import parse_rounds
 from awpy.parsers.ticks import parse_ticks
 from awpy.utils import apply_round_num
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 PROP_WARNING_LIMIT = 40
 DEFAULT_PLAYER_PROPS = [
@@ -98,9 +101,10 @@ class Demo:  # pylint: disable=R0902
         self.parse_rounds = rounds if rounds else False
 
         # Parser & Metadata
-        self.parser = None  # DemoParser
+        self.parser: Optional[DemoParser] = None
         self.header = None  # DemoHeader
-        self.events = {}  # Dictionary of [event, dataframe]
+        # Dictionary of [event, dataframe]
+        self.events: Optional[dict[str, pd.DataFrame]] = {}
 
         # Set the prop lists. Always include default props
         self.player_props = (
@@ -116,16 +120,15 @@ class Demo:  # pylint: disable=R0902
         )
         self.other_props = list(set(self.other_props))
 
-        # Data (pandas dataframes)
-        self.kills = None
-        self.damages = None
-        self.bomb = None
-        self.smokes = None
-        self.infernos = None
-        self.weapon_fires = None
-        self.rounds = None
-        self.grenades = None
-        self.ticks = None
+        self.kills: Optional[pd.DataFrame] = None
+        self.damages: Optional[pd.DataFrame] = None
+        self.bomb: Optional[pd.DataFrame] = None
+        self.smokes: Optional[pd.DataFrame] = None
+        self.infernos: Optional[pd.DataFrame] = None
+        self.weapon_fires: Optional[pd.DataFrame] = None
+        self.rounds: Optional[pd.DataFrame] = None
+        self.grenades: Optional[pd.DataFrame] = None
+        self.ticks: Optional[pd.DataFrame] = None
 
         if self.path.exists():
             self.parser = DemoParser(str(self.path))
@@ -188,6 +191,10 @@ class Demo:  # pylint: disable=R0902
 
     def _parse_events(self) -> None:
         """Process the raw parsed data."""
+        if self.events is None:
+            event_non_error_msg = "Events not set yet."
+            raise ValueError(event_non_error_msg)
+
         if len(self.events) == 0:
             no_events_error_msg = "No events found!"
             raise ValueError(no_events_error_msg)
@@ -292,10 +299,11 @@ class Demo:  # pylint: disable=R0902
                     zipf.write(df_filename, f"{df_name}.data")
 
             # Write all events
-            for event_name, event in self.events.items():
-                event_filename = tmpdirpath / f"{event_name}-event.data"
-                event.to_parquet(event_filename, index=False)
-                zipf.write(event_filename, Path("events") / f"{event_name}.data")
+            if self.events is not None:
+                for event_name, event in self.events.items():
+                    event_filename = tmpdirpath / f"{event_name}-event.data"
+                    event.to_parquet(event_filename, index=False)
+                    zipf.write(event_filename, Path("events") / f"{event_name}.data")
 
             # Write ticks
             if self.ticks is not None:
@@ -311,7 +319,7 @@ class Demo:  # pylint: disable=R0902
             self._success(f"Zipped demo data to {zip_name}")
 
 
-def parse_header(parsed_header: dict) -> dict:
+def parse_header(parsed_header: dict[str, str]) -> dict[str, Union[str, bool]]:
     """Parse the header of the demofile to a dictionary.
 
     Args:
@@ -321,11 +329,13 @@ def parse_header(parsed_header: dict) -> dict:
     Returns:
         dict: The parsed header of the demofile.
     """
+    header: dict[str, Union[str, bool]] = dict(parsed_header)
     for key, value in parsed_header.items():
+        # Loop through and convert strings to bools
         if value == "true":
-            parsed_header[key] = True
+            header[key] = True
         elif value == "false":
-            parsed_header[key] = False
+            header[key] = False
         else:
-            pass  # Loop through and convert strings to bools
-    return parsed_header
+            pass
+    return header
