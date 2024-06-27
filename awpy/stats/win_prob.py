@@ -6,9 +6,6 @@ import numpy as np
 
 from awpy import Demo
 
-def generate_random_weights(num_features):
-    return np.random.uniform(low=-1.0, high=1.0, size=num_features)
-
 
 def process_tick_data(tick_data: pd.DataFrame, demo: Demo) -> pd.DataFrame:
     """

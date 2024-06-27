@@ -1,6 +1,9 @@
-name: Build and Publish to Prod PyPI
+name: release
 
-on: workflow_dispatch
+on:
+  push:
+    tags:
+      - "release-v*.*.*"
 
 jobs:
   build-and-release:
@@ -18,18 +21,18 @@ jobs:
         with:
           python-version: "3.9"
 
-
-      - name: Build release distributions
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Setup a local virtual environment for poetry
         run: |
-          python -m pip install --upgrade pip build
-          python -m build
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+          poetry config repositories.testpypi https://test.pypi.org/legacy/
 
-      - name: Publish package distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Install package from PyPI
+      - name: Install awpy
         run: |
-          python -m pip install --no-deps awpy
+          poetry install --no-interaction
+
+      - name: Publish to PyPI
+        run: |
+          poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -vvv
