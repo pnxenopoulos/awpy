@@ -56,7 +56,7 @@ def _find_clock_time(row: pd.Series) -> str:
     Args:
         row: A row from a dataframe with ticks_since_* columns.
     """
-    times = {
+    times: dict[str, int] = {
         "start": row["ticks_since_round_start"],
         "freeze": row["ticks_since_freeze_time_end"],
         "bomb": row["ticks_since_bomb_plant"],

@@ -3,7 +3,7 @@
 import pandas as pd
 
 
-def map_hitgroup(series: pd.Series) -> pd.Series:
+def map_hitgroup(series: pd.Series[int]) -> pd.Series[str]:
     """Map hitgroups to their names.
 
     Args:
@@ -12,7 +12,7 @@ def map_hitgroup(series: pd.Series) -> pd.Series:
     Returns:
         pd.Series: Series of hitgroup names.
     """
-    hitgroup_mapping = {
+    hitgroup_mapping: dict[int, str] = {
         0: "generic",
         1: "head",
         2: "chest",
@@ -24,12 +24,10 @@ def map_hitgroup(series: pd.Series) -> pd.Series:
         8: "neck",
         10: "gear",
     }
-    return series.map(
-        lambda x: hitgroup_mapping.get(x)  # pylint: disable=unnecessary-lambda
-    )
+    return series.map(hitgroup_mapping)
 
 
-def map_round_end_reasons(series: pd.Series) -> pd.Series:
+def map_round_end_reasons(series: pd.Series[int]) -> pd.Series[str]:
     """Map round end reasons to their names.
 
     Args:
@@ -38,7 +36,7 @@ def map_round_end_reasons(series: pd.Series) -> pd.Series:
     Returns:
         pd.Series: Series of round end reason names.
     """
-    round_end_reason_mapping = {
+    round_end_reason_mapping: dict[int, str] = {
         0: "still_in_progress",
         1: "target_bombed",
         2: "vip_escaped",
@@ -61,12 +59,10 @@ def map_round_end_reasons(series: pd.Series) -> pd.Series:
         19: "t_planted",
         20: "cts_reached_hostage",
     }
-    return series.map(
-        lambda x: round_end_reason_mapping.get(x)  # pylint: disable=unnecessary-lambda
-    )
+    return series.map(round_end_reason_mapping)
 
 
-def map_game_phase(series: pd.Series) -> pd.Series:
+def map_game_phase(series: pd.Series[int]) -> pd.Series[str]:
     """Map game phases to their names.
 
     Args:
@@ -75,7 +71,7 @@ def map_game_phase(series: pd.Series) -> pd.Series:
     Returns:
         pd.Series: Series of game phase names.
     """
-    game_phase_mapping = {
+    game_phase_mapping: dict[int, str] = {
         0: "init",
         1: "pregame",
         2: "startgame",
@@ -85,6 +81,4 @@ def map_game_phase(series: pd.Series) -> pd.Series:
         6: "stalemate",
         7: "gameover",
     }
-    return series.map(
-        lambda x: game_phase_mapping.get(x)  # pylint: disable=unnecessary-lambda
-    )
+    return series.map(game_phase_mapping)

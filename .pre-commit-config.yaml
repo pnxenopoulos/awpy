@@ -7,7 +7,7 @@ repos:
   #       language: python
   #       args: ["--write", "--check"]
   - repo: 'https://github.com/pre-commit/pre-commit-hooks'
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: check-yaml
         language: python
@@ -32,7 +32,7 @@ repos:
       - id: check-builtin-literals
         language: python
   - repo: "https://github.com/charliermarsh/ruff-pre-commit"
-    rev: v0.4.9
+    rev: v0.4.10
     hooks:
       - id: ruff
         args:
@@ -40,7 +40,7 @@ repos:
           - "--exit-non-zero-on-fix"
       - id: ruff-format
   - repo: https://github.com/crate-ci/typos
-    rev: v1.16.13
+    rev: v1.22.9
     hooks:
       - id: typos
         args: []

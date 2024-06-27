@@ -44,9 +44,9 @@ black            = { version = "^24.4.2", extras = ["jupyter"] }
 pytest           = "^8.2.2"
 requests         = "^2.32.3"
 ruff             = "^0.4.10"
-pyright          = "^1.1.368"
-pylint           = "^3.2.3"
-coverage         = { version = "^7.5.3", extras = ["toml"] }
+pyright          = "^1.1.369"
+pylint           = "^3.2.4"
+coverage         = { version = "^7.5.4", extras = ["toml"] }
 sphinx           = "^7.3.7"
 sphinx-rtd-theme = "^2.0.0"
 nbsphinx         = "^0.9.3"
@@ -143,9 +143,9 @@ max-args = 17
 
 # Pyright config
 [tool.pyright]
-pythonVersion = "3.9"
-include       = ["awpy"]
-exclude       = ["tests"]
+pythonVersion                      = "3.9"
+include                            = ["awpy"]
+exclude                            = ["tests"]
 typeCheckingMode                   = "strict"
 strictListInference                = true
 strictDictionaryInference          = true
@@ -206,7 +206,7 @@ disable    = ["unnecessary-ellipsis"]
 notes = ["FIXME", "XXX", "TODO"]
 
 [tool.pylint.messages_control]
-disable = ["R0801"]
+disable = ["duplicate-code", "unsubscriptable-object"]
 
 [tool.pylint.refactoring]
 max-nested-blocks         = 5
