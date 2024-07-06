@@ -1,11 +1,11 @@
 """Calculates CT & T side likeliehood of winning a round at any given point"""
-
-from typing import List, Dict, Union
+import joblib
+import os
+from typing import List, Union
 import pandas as pd 
 import numpy as np
 
 from awpy import Demo
-
 
 def process_tick_data(tick_data: pd.DataFrame, demo: Demo) -> pd.DataFrame:
     """
@@ -77,7 +77,12 @@ def build_feature_matrix(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFra
 
     # Applying the external function to each group of tick data
     game_state = filtered_ticks.groupby('tick').apply(lambda x: process_tick_data(x, demo))
-    return pd.concat(game_state.tolist()).reset_index(drop=True)
+    
+    # Include the round number in the output
+    game_state['round'] = filtered_ticks.groupby('tick')['round'].first().values
+    
+    return game_state.reset_index(drop=True)
+
     
 
 def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFrame:
@@ -90,19 +95,29 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: A DataFrame with the calculated win probabilities for CT and T sides for each tick.
-
-    Raises:
-        NotImplementedError: This function has not yet been implemented.
     """
+    # Generate features for the specified ticks
     feature_matrix = build_feature_matrix(demo, ticks)
+
+    # Load the trained model
+    model_path = os.path.join(os.path.dirname(__file__), 'wpa_model_rf.joblib')
+    try:
+        model = joblib.load(model_path)
+    except FileNotFoundError:
+        raise RuntimeError("WPA model not found. Please ensure the model file is present.")
+
+    # Use the model to predict probabilities
+    ct_win_probabilities = model.predict_proba(feature_matrix)[:, 1]
+
+    # Create the output DataFrame
     probabilities = []
-    for _, features in feature_matrix.iterrows():
-        win_prob_ct = 0.50 
+    for tick, ct_prob in zip(feature_matrix['tick'], ct_win_probabilities):
         probabilities.append({
-            "tick": features["tick"],
-            "CT_win_probability": win_prob_ct,
-            "T_win_probability": 1 - win_prob_ct,
+            "tick": tick,
+            "CT_win_probability": ct_prob,
+            "T_win_probability": 1 - ct_prob,
         })
+    
     return pd.DataFrame(probabilities)
 
 
