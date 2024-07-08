@@ -53,7 +53,7 @@ def parse_clock(
     return f"{int(minutes):02}:{int(seconds):02}"
 
 
-def _find_clock_time(row: pd.Series[int]) -> Union[str, NAType]:
+def _find_clock_time(row: "pd.Series[int]") -> Union[str, NAType]:
     """Find the clock time for a row.
 
     Args:

@@ -1,9 +1,12 @@
 """Converters for index-based fields."""
 
-import pandas as pd
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
-def map_hitgroup(series: pd.Series[int]) -> pd.Series[str]:
+def map_hitgroup(series: "pd.Series[int]") -> "pd.Series[str]":
     """Map hitgroups to their names.
 
     Args:
@@ -27,7 +30,7 @@ def map_hitgroup(series: pd.Series[int]) -> pd.Series[str]:
     return series.map(hitgroup_mapping)
 
 
-def map_round_end_reasons(series: pd.Series[int]) -> pd.Series[str]:
+def map_round_end_reasons(series: "pd.Series[int]") -> "pd.Series[str]":
     """Map round end reasons to their names.
 
     Args:
@@ -62,7 +65,7 @@ def map_round_end_reasons(series: pd.Series[int]) -> pd.Series[str]:
     return series.map(round_end_reason_mapping)
 
 
-def map_game_phase(series: pd.Series[int]) -> pd.Series[str]:
+def map_game_phase(series: "pd.Series[int]") -> "pd.Series[str]":
     """Map game phases to their names.
 
     Args:
