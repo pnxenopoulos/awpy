@@ -241,7 +241,7 @@ def parse_bomb(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
     Returns:
         The bomb events for the demofile.
     """
-    bomb_subevents = []
+    bomb_subevents: list[pd.DataFrame] = []
 
     # Get bomb plants
     bomb_planted = events.get("bomb_planted")
