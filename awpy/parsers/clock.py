@@ -110,13 +110,19 @@ def parse_times(
         df_with_round_info[tick_col] - df_with_round_info["bomb_plant"]
     )
 
+    def remove_negative_values(x: Union[int, NAType]) -> Union[int, NAType]:
+        """Handle negative values.
+
+        Needed for type hints.
+        """
+        return pd.NA if pd.isna(x) or x < 0 else x
+
     # Apply the function to the selected columns
     for col in df_with_round_info.columns:
         if col.startswith("ticks_since_"):
-            df_with_round_info[col] = (
-                df_with_round_info[col]
-                .map(lambda x: pd.NA if x < 0 else x)
-                .astype(pd.Int64Dtype())
+            ticks_col: pd.Series[int] = df_with_round_info[col]
+            df_with_round_info[col] = ticks_col.map(remove_negative_values).astype(
+                pd.Int64Dtype()
             )
 
     df_with_round_info = df_with_round_info.drop(

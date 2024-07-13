@@ -191,6 +191,10 @@ class Demo:  # pylint: disable=R0902
 
     def _parse_events(self) -> None:
         """Process the raw parsed data."""
+        if not self.parser:
+            no_parser_error_msg = "No parser found!"
+            raise ValueError(no_parser_error_msg)
+
         if self.events is None:
             event_non_error_msg = "Events not set yet."
             raise ValueError(event_non_error_msg)

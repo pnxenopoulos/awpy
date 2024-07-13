@@ -140,7 +140,8 @@ def parse_kills(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
             kill_df = kill_df.rename(columns={col: col.replace("user_", "victim_")})
 
     # Convert hitgroup to string
-    kill_df["hitgroup"] = map_hitgroup(kill_df["hitgroup"])
+    hitgroup: pd.Series[int] = kill_df["hitgroup"]
+    kill_df["hitgroup"] = map_hitgroup(hitgroup)
 
     return kill_df
 
@@ -220,7 +221,8 @@ def parse_damages(events: dict[str, pd.DataFrame]) -> pd.DataFrame:
             damage_df = damage_df.rename(columns={col: col.replace("user_", "victim_")})
 
     # Convert hitgroup to string
-    damage_df["hitgroup"] = map_hitgroup(damage_df["hitgroup"])
+    hitgroup: pd.Series[int] = damage_df["hitgroup"]
+    damage_df["hitgroup"] = map_hitgroup(hitgroup)
 
     # Create dmg_health_real column
     damage_df["dmg_health_real"] = np.where(
