@@ -299,8 +299,8 @@ def is_visible(
 
     bvh = _build_bvh(meshes)
 
-    point1 = np.array(point1)
-    point2 = np.array(point2)
+    point1 = np.array(point1, dtype=float)
+    point2 = np.array(point2, dtype=float)
     direction = point2 - point1
     direction /= np.linalg.norm(direction)
 
