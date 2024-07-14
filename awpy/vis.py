@@ -307,6 +307,6 @@ def is_visible(
     intersects = _traverse_bvh(bvh, point1, direction, point2)
 
     if intersects:
-        return True
+        return False
 
-    return False
+    return True
