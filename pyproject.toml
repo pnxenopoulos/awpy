@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "awpy"
-version = "2.0.0b1"
+version = "2.0.0b2"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
 authors = [
@@ -28,15 +28,16 @@ homepage = "https://awpycs.com"
 repository = "https://github.com/pnxenopoulos/awpy"
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = "<3.12,>=3.9"
 click = ">=8.1.7"
 loguru = ">=0.7.2"
 matplotlib = ">=3.9.0"
 numpy = "^1.26.4"
 pandas = ">=2.2.2"
 setuptools = ">=70.1.0"
-demoparser2 = ">=0.26.2"
+demoparser2 = ">=0.27.0"
 tqdm = "^4.66.4"
+usd-core = "^24.5"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^24.4.2", extras = ["jupyter"] }
