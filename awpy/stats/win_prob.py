@@ -19,18 +19,18 @@ def process_tick_data(tick_data: pd.DataFrame, demo: Demo) -> pd.DataFrame:
         pd.DataFrame: DataFrame containing the game state features for the tick.
     """
     round_number = tick_data['round'].iloc[0]
-    map_name = demo.header.map_name
+    map_name = demo.header.get('map_name', 'unknown')
     bomb_planted = tick_data['is_bomb_planted'].iloc[0]
-    players_alive_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0)]['steamid'].nunique()
-    players_alive_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0)]['steamid'].nunique()
-    equipment_value_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0)]['current_equip_value'].sum()
-    equipment_value_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0)]['current_equip_value'].sum()
-    hp_remaining_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0)]['health'].sum()
-    hp_remaining_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0)]['health'].sum()
-    armor_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0) & (tick_data['armor_value'] > 0)].shape[0]
-    armor_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0) & (tick_data['armor_value'] > 0)].shape[0]
-    has_helmet_ct = tick_data[(tick_data['side'] == 'CT') & (tick_data['health'] > 0) & (tick_data['has_helmet'] == True)].shape[0]
-    has_helmet_t = tick_data[(tick_data['side'] == 'TERRORIST') & (tick_data['health'] > 0) & (tick_data['has_helmet'] == True)].shape[0]
+    players_alive_ct = tick_data[(tick_data['team_name'] == 'CT') & (tick_data['health'] > 0)]['steamid'].nunique()
+    players_alive_t = tick_data[(tick_data['team_name'] == 'TERRORIST') & (tick_data['health'] > 0)]['steamid'].nunique()
+    equipment_value_ct = tick_data[(tick_data['team_name'] == 'CT') & (tick_data['health'] > 0)]['current_equip_value'].sum()
+    equipment_value_t = tick_data[(tick_data['team_name'] == 'TERRORIST') & (tick_data['health'] > 0)]['current_equip_value'].sum()
+    hp_remaining_ct = tick_data[(tick_data['team_name'] == 'CT') & (tick_data['health'] > 0)]['health'].sum()
+    hp_remaining_t = tick_data[(tick_data['team_name'] == 'TERRORIST') & (tick_data['health'] > 0)]['health'].sum()
+    armor_ct = tick_data[(tick_data['team_name'] == 'CT') & (tick_data['health'] > 0) & (tick_data['armor_value'] > 0)].shape[0]
+    armor_t = tick_data[(tick_data['team_name'] == 'TERRORIST') & (tick_data['health'] > 0) & (tick_data['armor_value'] > 0)].shape[0]
+    has_helmet_ct = tick_data[(tick_data['team_name'] == 'CT') & (tick_data['health'] > 0) & (tick_data['has_helmet'] == True)].shape[0]
+    has_helmet_t = tick_data[(tick_data['team_name'] == 'TERRORIST') & (tick_data['health'] > 0) & (tick_data['has_helmet'] == True)].shape[0]
 
     return pd.DataFrame([{
         "tick": tick_data['tick'].iloc[0],
@@ -95,6 +95,9 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: A DataFrame with the calculated win probabilities for CT and T sides for each tick.
+
+    Raises:
+        RuntimeError: If the win probability model file is not found.
     """
     # Generate features for the specified ticks
     feature_matrix = build_feature_matrix(demo, ticks)
@@ -104,7 +107,9 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFrame:
     try:
         model = joblib.load(model_path)
     except FileNotFoundError:
-        raise RuntimeError("WPA model not found. Please ensure the model file is present.")
+        raise RuntimeError(
+            "Win probability model not found. Please run 'awpy get winprob' to download the model."
+        )
 
     # Use the model to predict probabilities
     ct_win_probabilities = model.predict_proba(feature_matrix)[:, 1]
@@ -119,5 +124,6 @@ def win_probability(demo: Demo, ticks: Union[int, List[int]]) -> pd.DataFrame:
         })
     
     return pd.DataFrame(probabilities)
+
 
 
