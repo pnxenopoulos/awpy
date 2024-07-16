@@ -80,3 +80,10 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    plot
    stats
    vis
+
+.. toctree::
+   :caption: Data
+   :maxdepth: 2
+   :hidden:
+
+   usd

@@ -2,3 +2,7 @@
 
 SIDE_COLORS = {"ct": "#5d79ae", "t": "#de9b35"}
 SUPPORTED_MAPS = ["de_dust2"]
+
+from awpy.plot.plot import plot
+
+__all__ = ["plot"]

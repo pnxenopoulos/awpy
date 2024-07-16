@@ -1,6 +1,5 @@
 """Test the visibility module."""
 
-import numpy as np
 import pytest
 from click.testing import CliRunner
 
@@ -27,6 +26,12 @@ class TestVisibility:
         ct_spawn_towards_b = (-670.19, 2253.08, -56.78)
         long_a_near_site = (1320.44, 2012.22, 61.44)
         assert is_visible(t_spawn_pos_1, t_spawn_pos_2, "de_dust2")
+        assert is_visible(
+            t_spawn_pos_2, t_spawn_pos_1, "de_dust2"
+        )  # Test the flipped version
         assert not is_visible(t_spawn_pos_1, ct_spawn_pos, "de_dust2")
+        assert not is_visible(
+            ct_spawn_pos, t_spawn_pos_1, "de_dust2"
+        )  # Test the flipped version
         assert not is_visible(mid_doors_ct, mid_doors_t, "de_dust2")
         assert is_visible(ct_spawn_towards_b, long_a_near_site, "de_dust2")
