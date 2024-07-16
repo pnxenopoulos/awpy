@@ -1,4 +1,9 @@
 """Utilities for the Awpy package."""
+<<<<<<< HEAD
+=======
+
+from typing import Literal
+>>>>>>> main
 
 import pandas as pd
 
@@ -31,5 +36,43 @@ def apply_round_num(
 
     # Add round
     df["round"] = intervals.get_indexer(df[tick_col]) + 1
+<<<<<<< HEAD
 
     return df
+=======
+    df["round"] = df["round"].replace(0, pd.NA)
+
+    return df
+
+
+def rename_columns_with_affix(
+    df: pd.DataFrame,
+    old_affix: str,
+    new_affix: str,
+    affix_type: Literal["prefix", "suffix"] = "prefix",
+) -> pd.DataFrame:
+    """Rename columns by replacing old_affix with new_affix.
+
+    Args:
+        df (pd.DataFrame): DataFrame whose columns are to be renamed.
+        old_affix (str): Old affix to be replaced.
+        new_affix (str): New affix to replace the old one.
+        affix_type (str, optional): Prefix or suffix replacement. Defaults to 'prefix'.
+
+    Returns:
+        pd.DataFrame: DataFrame with renamed columns.
+    """
+    new_columns = {}
+    for col in df.columns:
+        if affix_type == "prefix" and col.startswith(old_affix):
+            new_col = col.replace(
+                old_affix, new_affix, 1
+            )  # Replace only the first occurrence
+            new_columns[col] = new_col
+        elif affix_type == "suffix" and col.endswith(old_affix):
+            new_col = col[::-1].replace(old_affix[::-1], new_affix[::-1], 1)[
+                ::-1
+            ]  # Reverse replace
+            new_columns[col] = new_col
+    return df.rename(columns=new_columns)
+>>>>>>> main

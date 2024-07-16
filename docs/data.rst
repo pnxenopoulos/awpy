@@ -1,28 +1,24 @@
 Data
 ===========
 
-This module contains both data, primarily related to maps and navigation meshes. Additionally, if you look in the repository, you can find images of popular maps, which we use for visualization. The relevant imports are
+This module contains both data, primarily related to map (e.g., images, navigation meshes and USD files). For example, you can get basic map information with `MAP_DATA`:
 
 .. code-block:: python
 
-    from awpy.data import NAV, NAV_GRAPHS, NAV_CSV
+    from awpy.data.map_data import MAP_DATA
 
-`NAV` is a dictionary where the top-level keys are map names (strings) and the next-level keys are area ids (integers). The list of acceptable map names is `['de_train', 'de_cache', 'de_ancient', 'de_overpass', 'de_dust2', 'de_cbble', 'de_inferno', 'de_nuke', 'de_vertigo', 'de_mirage']`.
-
-By running `NAV["de_dust2"][1213]`, we would see
+`MAP_DATA` is a dictionary where the top-level keys are map names (strings) and the next-level keys are scaling properties for the map. Below, we show an example for one map.
 
 .. code-block:: json
 
-    {
-        'areaName': 'BombsiteA', 
-        'northWestX': 1050.0, 
-        'northWestY': 2303.518799, 
-        'northWestZ': 128.03125, 
-        'southEastX': 1125.0, 
-        'southEastY': 2320.481201, 
-        'southEastZ': 128.03125
+    "ar_baggage": {
+        "pos_x": -1316,
+        "pos_y": 1288,
+        "scale": 2.539062,
+        "rotate": 1,
+        "zoom": 1.3,
+        "selections": [
+            {"name": "default", "altitude_max": 10000, "altitude_min": -5},
+            {"name": "lower", "altitude_max": -5, "altitude_min": -10000},
+        ],
     }
-
-`NAV_GRAPHS` is a dictionary where the top-level keys are map names (strings) and the values are a `networkx` graph.
-
-`NAV_CSV` contains the information that is in `NAV` but in a pandas DataFrame.

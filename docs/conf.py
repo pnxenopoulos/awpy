@@ -29,7 +29,11 @@ author = "Peter Xenopoulos"
 # The short X.Y version
 version = ""
 # The full version, including alpha/beta/rc tags
+<<<<<<< HEAD
 release = "2.0.0rc1"
+=======
+release = "2.0.0b2"
+>>>>>>> main
 
 
 # -- General configuration ---------------------------------------------------
@@ -50,6 +54,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx_rtd_theme",
     "sphinx.ext.autosectionlabel",
+    "nbsphinx",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -69,7 +74,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

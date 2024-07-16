@@ -358,7 +358,7 @@ Frames
         "seconds": 3.71875, 
         "clockTime": "01:52", 
         "t": {
-            "side": "T", 
+            "team_name": "T", 
             "teamName": "", 
             "teamEqVal": 3550, 
             "alivePlayers": 5, 
@@ -367,7 +367,7 @@ Frames
                 "steamID": 76561198035759667, 
                 "name": "alo0o0o0o0", 
                 "team": "", 
-                "side": "T", 
+                "team_name": "T", 
                 "x": -1179.1435546875, 
                 "y": 483.21026611328125, 
                 "z": -55.96875, 

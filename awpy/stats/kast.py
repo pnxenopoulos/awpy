@@ -56,11 +56,19 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     Raises:
         ValueError: If kills or ticks are missing in the parsed demo.
     """
+<<<<<<< HEAD
     if not demo.kills:
         missing_kills_error_msg = "Kills is missing in the parsed demo!"
         raise ValueError(missing_kills_error_msg)
 
     if not demo.ticks:
+=======
+    if demo.kills is None:
+        missing_kills_error_msg = "Kills is missing in the parsed demo!"
+        raise ValueError(missing_kills_error_msg)
+
+    if demo.ticks is None:
+>>>>>>> main
         missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
         raise ValueError(missing_ticks_error_msg)
 
@@ -74,7 +82,11 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     kills_ct = (
         kills_with_trades.loc[
+<<<<<<< HEAD
             kills_with_trades["attacker_side"] == "CT",
+=======
+            kills_with_trades["attacker_team_name"] == "CT",
+>>>>>>> main
             ["attacker_name", "attacker_steamid", "round"],
         ]
         .drop_duplicates()
@@ -82,7 +94,11 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     kills_t = (
         kills_with_trades.loc[
+<<<<<<< HEAD
             kills_with_trades["attacker_side"] == "TERRORIST",
+=======
+            kills_with_trades["attacker_team_name"] == "TERRORIST",
+>>>>>>> main
             ["attacker_name", "attacker_steamid", "round"],
         ]
         .drop_duplicates()
@@ -97,7 +113,11 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     assists_ct = (
         kills_with_trades.loc[
+<<<<<<< HEAD
             kills_with_trades["assister_side"] == "CT",
+=======
+            kills_with_trades["assister_team_name"] == "CT",
+>>>>>>> main
             ["assister_name", "assister_steamid", "round"],
         ]
         .drop_duplicates()
@@ -105,7 +125,11 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     assists_t = (
         kills_with_trades.loc[
+<<<<<<< HEAD
             kills_with_trades["assister_side"] == "TERRORIST",
+=======
+            kills_with_trades["assister_team_name"] == "TERRORIST",
+>>>>>>> main
             ["assister_name", "assister_steamid", "round"],
         ]
         .drop_duplicates()
@@ -123,7 +147,11 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     trades_ct = (
         kills_with_trades.loc[
+<<<<<<< HEAD
             (kills_with_trades["victim_side"] == "CT")
+=======
+            (kills_with_trades["victim_team_name"] == "CT")
+>>>>>>> main
             & (kills_with_trades["was_traded"]),
             ["victim_name", "victim_steamid", "round"],
         ]
@@ -132,7 +160,11 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     trades_t = (
         kills_with_trades.loc[
+<<<<<<< HEAD
             (kills_with_trades["victim_side"] == "TERRORIST")
+=======
+            (kills_with_trades["victim_team_name"] == "TERRORIST")
+>>>>>>> main
             & (kills_with_trades["was_traded"]),
             ["victim_name", "victim_steamid", "round"],
         ]
@@ -148,6 +180,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .loc[demo.ticks["health"] > 0]
     )
     survivals_total = survivals[["name", "steamid", "round"]]
+<<<<<<< HEAD
     survivals_ct = survivals.loc[survivals["side"] == "ct"]
     survivals_t = survivals.loc[survivals["side"] == "t"]
 
@@ -161,6 +194,23 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     player_side_rounds.columns = ["name", "steamid", "side", "n_rounds"]
     player_total_rounds = (
         player_sides_by_round.groupby(["name", "steamid"]).size().reset_index()
+=======
+    survivals_ct = survivals.loc[survivals["team_name"] == "ct"]
+    survivals_t = survivals.loc[survivals["team_name"] == "t"]
+
+    # Get total rounds by player
+    player_team_names_by_round = demo.ticks.groupby(
+        ["name", "steamid", "team_name", "round"]
+    ).head(1)[["name", "steamid", "team_name", "round"]]
+    player_team_name_rounds = (
+        player_team_names_by_round.groupby(["name", "steamid", "team_name"])
+        .size()
+        .reset_index()
+    )
+    player_team_name_rounds.columns = ["name", "steamid", "team_name", "n_rounds"]
+    player_total_rounds = (
+        player_team_names_by_round.groupby(["name", "steamid"]).size().reset_index()
+>>>>>>> main
     )
 
     # Tabulate total rounds
@@ -175,7 +225,11 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .merge(player_total_rounds, on=["name", "steamid"])
         .rename(columns={0: "n_rounds"})
     )
+<<<<<<< HEAD
     total_kast["side"] = "all"
+=======
+    total_kast["team_name"] = "all"
+>>>>>>> main
     total_kast["kast"] = total_kast["kast_rounds"] * 100 / total_kast["n_rounds"]
 
     # CT
@@ -188,7 +242,11 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .reset_index()
         .rename(columns={0: "kast_rounds"})
         .merge(
+<<<<<<< HEAD
             player_side_rounds[player_side_rounds["side"] == "CT"],
+=======
+            player_team_name_rounds[player_team_name_rounds["team_name"] == "CT"],
+>>>>>>> main
             on=["name", "steamid"],
         )
         .rename(columns={0: "n_rounds"})
@@ -205,7 +263,13 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .reset_index()
         .rename(columns={0: "kast_rounds"})
         .merge(
+<<<<<<< HEAD
             player_side_rounds[player_side_rounds["side"] == "TERRORIST"],
+=======
+            player_team_name_rounds[
+                player_team_name_rounds["team_name"] == "TERRORIST"
+            ],
+>>>>>>> main
             on=["name", "steamid"],
         )
         .rename(columns={0: "n_rounds"})
@@ -213,4 +277,8 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     t_kast["kast"] = t_kast["kast_rounds"] * 100 / t_kast["n_rounds"]
 
     kast_df = pd.concat([total_kast, ct_kast, t_kast])
+<<<<<<< HEAD
     return kast_df[["name", "steamid", "side", "kast_rounds", "n_rounds", "kast"]]
+=======
+    return kast_df[["name", "steamid", "team_name", "kast_rounds", "n_rounds", "kast"]]
+>>>>>>> main

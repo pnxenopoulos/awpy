@@ -4,7 +4,13 @@ import pandas as pd
 import pytest
 from demoparser2 import DemoParser
 
+<<<<<<< HEAD
 from awpy.parsers import parse_damages, parse_kills, parse_rounds, remove_nonplay_ticks
+=======
+from awpy.parsers.events import parse_damages, parse_kills
+from awpy.parsers.rounds import parse_rounds
+from awpy.parsers.ticks import remove_nonplay_ticks
+>>>>>>> main
 
 
 @pytest.fixture(scope="class")
@@ -20,6 +26,19 @@ def hltv_parser() -> DemoParser:
 
 
 @pytest.fixture(scope="class")
+<<<<<<< HEAD
+=======
+def faceit_parser() -> DemoParser:
+    """Test DemoParser for a Faceit demo.
+
+    Match ID: 1-a568cd9f-8817-4410-a3f3-2270f89135e2
+    Link: https://www.faceit.com/en/cs2/room/1-a568cd9f-8817-4410-a3f3-2270f89135e2
+    """
+    return DemoParser("tests/faceit-fpl-1-a568cd9f-8817-4410-a3f3-2270f89135e2.dem")
+
+
+@pytest.fixture(scope="class")
+>>>>>>> main
 def hltv_events() -> dict[str, pd.DataFrame]:
     """Test events for an HLTV demo.
 
@@ -70,6 +89,57 @@ def hltv_events() -> dict[str, pd.DataFrame]:
 
 
 @pytest.fixture(scope="class")
+<<<<<<< HEAD
+=======
+def faceit_events() -> dict[str, pd.DataFrame]:
+    """Test events for a Faceit demo.
+
+    Match ID: 1-a568cd9f-8817-4410-a3f3-2270f89135e2
+    Link: https://www.faceit.com/en/cs2/room/1-a568cd9f-8817-4410-a3f3-2270f89135e2
+    """
+    parser = DemoParser("tests/faceit-fpl-1-a568cd9f-8817-4410-a3f3-2270f89135e2.dem")
+    return dict(
+        parser.parse_events(
+            parser.list_game_events(),
+            player=[
+                "X",
+                "Y",
+                "Z",
+                "last_place_name",
+                "flash_duration",
+                "health",
+                "armor_value",
+                "inventory",
+                "current_equip_value",
+                "rank",
+                "ping",
+                "has_defuser",
+                "has_helmet",
+                "pitch",
+                "yaw",
+                "team_name",
+                "team_clan_name",
+            ],
+            other=[
+                # Bomb
+                "is_bomb_planted",
+                "which_bomb_zone",
+                # State
+                "is_freeze_period",
+                "is_warmup_period",
+                "is_terrorist_timeout",
+                "is_ct_timeout",
+                "is_technical_timeout",
+                "is_waiting_for_resume",
+                "is_match_started",
+                "game_phase",
+            ],
+        )
+    )
+
+
+@pytest.fixture(scope="class")
+>>>>>>> main
 def parsed_state() -> pd.DataFrame:
     """Creates mock parsed state to be filtered."""
     columns = [
@@ -110,9 +180,17 @@ class TestParsers:
         assert "event1" in filtered_df["other_data"].to_numpy()
         assert "event2" in filtered_df["other_data"].to_numpy()
 
+<<<<<<< HEAD
     def test_rounds(self, hltv_parser: DemoParser):
         """Tests that we can get rounds from demos."""
         hltv_rounds = parse_rounds(hltv_parser)
+=======
+    def test_hltv_rounds(
+        self, hltv_parser: DemoParser, hltv_events: dict[str, pd.DataFrame]
+    ):
+        """Tests that we can get correct rounds from HLTV demos."""
+        hltv_rounds = parse_rounds(hltv_parser, hltv_events)
+>>>>>>> main
         assert hltv_rounds.reason.to_numpy().tolist() == [
             "ct_killed",
             "ct_killed",
@@ -139,20 +217,35 @@ class TestParsers:
             "t_killed",
         ]
 
+<<<<<<< HEAD
     def test_kills(self, hltv_events: dict[str, pd.DataFrame]):
         """Tests that we can get kills from demos."""
+=======
+    def test_hltv_kills(self, hltv_events: dict[str, pd.DataFrame]):
+        """Tests that we can get correct kills from HLTV demos."""
+>>>>>>> main
         hltv_kills = parse_kills(hltv_events)
         # Checks kills and headshots
         assert hltv_kills.shape[0] == 159
         assert (
+<<<<<<< HEAD
             hltv_kills[hltv_kills["attacker_side"] != hltv_kills["victim_side"]].shape[
                 0
             ]
+=======
+            hltv_kills[
+                hltv_kills["attacker_team_name"] != hltv_kills["victim_team_name"]
+            ].shape[0]
+>>>>>>> main
             == 158
         )
         assert (
             hltv_kills[
+<<<<<<< HEAD
                 hltv_kills["attacker_side"] != hltv_kills["victim_side"]
+=======
+                hltv_kills["attacker_team_name"] != hltv_kills["victim_team_name"]
+>>>>>>> main
             ].headshot.sum()
             == 65
         )
@@ -183,11 +276,21 @@ class TestParsers:
         )
         assert all(hltv_assists[hltv_assists["assister_name"] == "zont1x"].assists == 8)
 
+<<<<<<< HEAD
     def test_damages(self, hltv_events: dict[str, pd.DataFrame]):
         """Tests that we can get damages from demos."""
         hltv_damage = parse_damages(hltv_events)
         hltv_damage_total = round(
             hltv_damage[hltv_damage["attacker_side"] != hltv_damage["victim_side"]]
+=======
+    def test_hltv_damages(self, hltv_events: dict[str, pd.DataFrame]):
+        """Tests that we can get correct damages from HLTV demos."""
+        hltv_damage = parse_damages(hltv_events)
+        hltv_damage_total = round(
+            hltv_damage[
+                hltv_damage["attacker_team_name"] != hltv_damage["victim_team_name"]
+            ]
+>>>>>>> main
             .groupby("attacker_name")
             .dmg_health_real.sum()
             / 23,
@@ -230,3 +333,60 @@ class TestParsers:
             hltv_damage_total[hltv_damage_total["attacker_name"] == "zont1x"].adr
             == 70.8
         )
+<<<<<<< HEAD
+=======
+
+    def test_faceit_kills(self, faceit_events: dict[str, pd.DataFrame]):
+        """Tests that we can get correct number of kills from FACEIT demos."""
+        faceit_kills = parse_kills(faceit_events)
+        # Checks kills and headshots
+        assert faceit_kills.shape[0] == 156
+        assert (
+            faceit_kills[
+                faceit_kills["attacker_team_name"] != faceit_kills["victim_team_name"]
+            ].shape[0]
+            == 156
+        )
+        assert (
+            faceit_kills[
+                faceit_kills["attacker_team_name"] != faceit_kills["victim_team_name"]
+            ].headshot.sum()
+            == 90
+        )
+        # Check assists
+        faceit_assists = (
+            faceit_kills[~faceit_kills["assister_name"].isna()]
+            .groupby("assister_name")
+            .size()
+        ).reset_index(name="assists")
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "AMANEK"].assists == 3
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "Burmylov"].assists == 2
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "Ciocardau"].assists == 7
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "LobaIsLove"].assists == 4
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "Porya555"].assists == 6
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "Sdaim"].assists == 10
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "_Aaron"].assists == 4
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "bibu_"].assists == 4
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "jottAAA-"].assists == 4
+        )
+        assert all(
+            faceit_assists[faceit_assists["assister_name"] == "lauNX-"].assists == 5
+        )
+>>>>>>> main
