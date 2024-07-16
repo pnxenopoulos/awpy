@@ -28,7 +28,7 @@ homepage = "https://awpycs.com"
 repository = "https://github.com/pnxenopoulos/awpy"
 
 [tool.poetry.dependencies]
-python = "<3.12,>=3.9"
+python = "<3.12,>=3.10"
 click = ">=8.1.7"
 loguru = ">=0.7.2"
 matplotlib = ">=3.9.0"
@@ -38,6 +38,7 @@ setuptools = ">=70.1.0"
 demoparser2 = ">=0.27.0"
 tqdm = "^4.66.4"
 usd-core = "^24.5"
+scipy = "^1.14.0"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^24.4.2", extras = ["jupyter"] }

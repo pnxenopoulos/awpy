@@ -67,7 +67,7 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    examples/parse_demo_cli
    examples/demo_stats
    examples/plot_demo
-   examples/map_data
+   examples/visibility
 
 .. toctree::
    :caption: Documentation
