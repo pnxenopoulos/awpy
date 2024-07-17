@@ -103,7 +103,7 @@ def plot(
             raise FileNotFoundError(f"Map image not found: {map_img_path}")
 
         map_bg = mpimg.imread(map_img_path)
-        figure, axes = plt.subplots()
+        figure, axes = plt.subplots(figsize=(1024/300, 1024/300), dpi=300)
         axes.imshow(map_bg, zorder=0)
         axes.axis("off")
 
@@ -134,22 +134,27 @@ def plot(
                 alpha *= 0.4
 
             # Plot the marker
-            axes.plot(transformed_x, transformed_y, marker=marker, color=color, 
-                      markersize=size, alpha=alpha, zorder=10)
+            axes.plot(transformed_x, transformed_y, marker=marker, color='black',
+                    markersize=size, alpha=alpha, zorder=10)
+            axes.plot(transformed_x, transformed_y, marker=marker, color=color,
+                    markersize=size*0.9, alpha=alpha, zorder=11)
 
             if hp > 0:
+                # Increase bar size and lower position
+                bar_width = size
+                bar_length = size * 6
+                vertical_offset = size * 1.1
+
                 # Plot HP bar
-                bar_width = size / 1
-                bar_length = size * 2
-                hp_bar = Rectangle((transformed_x - bar_length/2, transformed_y + size/2 + bar_width), 
-                                   bar_length * hp/100, bar_width, 
-                                   facecolor='green', edgecolor='none', alpha=alpha, zorder=11)
+                hp_bar = Rectangle((transformed_x - bar_length/2, transformed_y + vertical_offset), 
+                                bar_length * hp/100, bar_width, 
+                                facecolor='green', edgecolor='black', alpha=alpha, zorder=11)
                 axes.add_patch(hp_bar)
 
                 # Plot Armor bar
-                armor_bar = Rectangle((transformed_x - bar_length/2, transformed_y + size/2), 
-                                      bar_length * armor/100, bar_width, 
-                                      facecolor='grey', edgecolor='none', alpha=alpha, zorder=11)
+                armor_bar = Rectangle((transformed_x - bar_length/2, transformed_y + vertical_offset + bar_width), 
+                                    bar_length * armor/100, bar_width, 
+                                    facecolor='grey', edgecolor='black', alpha=alpha, zorder=11)
                 axes.add_patch(armor_bar)
 
             # Plot direction
@@ -157,16 +162,18 @@ def plot(
                 pitch, yaw = direction
                 dx = math.cos(math.radians(yaw)) * math.cos(math.radians(pitch))
                 dy = math.sin(math.radians(yaw)) * math.cos(math.radians(pitch))
-                line_length = size * 1.5
+                line_length = size / 2
                 axes.plot([transformed_x, transformed_x + dx*line_length], 
-                          [transformed_y, transformed_y + dy*line_length], 
-                          color="black", alpha=alpha, linewidth=1, zorder=12)
+                        [transformed_y, transformed_y + dy*line_length], 
+                        color="black", alpha=alpha, linewidth=2, zorder=12)
 
-            # Add label if provided
+            # Add label (player name) below the bars
             if label:
-                axes.annotate(label, (transformed_x, transformed_y), 
-                              xytext=(5, 5), textcoords='offset points', 
-                              color='white', fontsize=8, alpha=alpha, zorder=13)
+                label_offset = vertical_offset + 2 * bar_width  # Position below both bars
+                axes.annotate(label, (transformed_x, transformed_y - label_offset), 
+                            xytext=(0, 0), textcoords='offset points', 
+                            color='white', fontsize=8, alpha=alpha, zorder=13,
+                            ha='center', va='top')  # Center the text horizontally
 
     figure.patch.set_facecolor("black")
     plt.tight_layout()
