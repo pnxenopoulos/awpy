@@ -22,7 +22,7 @@ pip install awpy
 ```
 
 > [!NOTE]
-> `awpy` requires [Python](https://www.python.org/downloads/) >= 3.9. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
+> `awpy` requires [Python](https://www.python.org/downloads/) >= 3.10. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
 
 > [!TIP]
 > Don't worry if you get stuck, visit us [our Discord](https://discord.gg/W34XjsSs2H) for help.
