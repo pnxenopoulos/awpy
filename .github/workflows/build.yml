@@ -48,13 +48,28 @@ jobs:
 
       - name: Install Poetry
         uses: abatilo/actions-poetry@v2
-
+      
       - name: Setup a local virtual environment for poetry
         shell: bash
         run: |
           poetry config virtualenvs.create true --local
           poetry config virtualenvs.in-project true --local
 
+<<<<<<< HEAD
+      - name: Check formatting with black
+        uses: psf/black@stable
+
+      - name: Lint with ruff
+        uses: chartboost/ruff-action@v1
+
+      - name: Typecheck with pyright
+        uses: jakebailey/pyright-action@v2
+
+      - name: Thorough check with pylint
+        run: pylint awpy
+
+      - name: Test with pytest
+=======
       - uses: actions/cache@v4
         name: Cache awpy dependencies
         with:
@@ -63,6 +78,10 @@ jobs:
 
       - name: Install awpy
         shell: bash
+<<<<<<< HEAD
+>>>>>>> main
+=======
+>>>>>>> 4bc4496 (v2.0.0a5 (#336))
         run: |
           poetry install --no-interaction
 

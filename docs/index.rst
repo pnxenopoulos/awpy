@@ -74,9 +74,16 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    :maxdepth: 2
    :hidden:
 
+<<<<<<< HEAD
+   data
+   parser
+   stats
+   visualization
+=======
    cli
    data
    demo
    plot
    stats
    vis
+>>>>>>> main

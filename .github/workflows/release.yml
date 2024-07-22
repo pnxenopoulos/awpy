@@ -32,7 +32,49 @@ jobs:
       - name: Install awpy
         run: |
           poetry install --no-interaction
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+
+      - name: Publish to PyPI
+        run: |
+          poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -vvv
+=======
       
       - name: Publish to PyPI
         run: |
           poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -vvv
+>>>>>>> main
+=======
+
+      # - name: Publish to test PyPI
+      #   run: |
+      #     poetry publish --build --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} -vvv
+
+      - name: Debug Step
+        run: |
+          echo "Listing directory contents"
+          ls -la
+          echo "Checking Poetry version"
+          poetry --version
+          echo "Checking installed packages"
+          poetry show
+=======
+>>>>>>> 3aedb12 (v2 beta (#340))
+      
+      - name: Publish to PyPI
+        run: |
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+          poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -v
+>>>>>>> 4bc4496 (v2.0.0a5 (#336))
+=======
+          poetry publish --build --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -v
+>>>>>>> 4f4edbf (testing build (#337))
+=======
+          poetry publish --build --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -vvv
+>>>>>>> 43305a1 (fixing workflows (#338))
+=======
+          poetry publish --build --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -vvv
+>>>>>>> c4ed72c (fixing release script)

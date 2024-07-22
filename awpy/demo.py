@@ -316,7 +316,11 @@ def parse_header(parsed_header: dict) -> dict:
             of `parser.parse_header()`.
 
     Returns:
+<<<<<<< HEAD
+        DemoHeader: The parsed header of the demofile.
+=======
         dict: The parsed header of the demofile.
+>>>>>>> main
     """
     for key, value in parsed_header.items():
         if value == "true":

@@ -11,6 +11,8 @@ from tqdm import tqdm
 from awpy import Demo
 from awpy.data import AWPY_DATA_DIR
 from awpy.data.usd_data import USD_LINKS
+from awpy.data.winprob_data import WINPROB_MODEL_LINK
+from awpy.stats.train_model import main as train_model_main
 
 
 @click.group()
@@ -19,12 +21,12 @@ def awpy() -> None:
 
 
 @awpy.command(
-    help="Get Counter-Strike 2 resources like map images, nav meshes or usd files."
+    help="Get Counter-Strike 2 resources like map images, nav meshes, usd files, or win probability model."
 )
-@click.argument("resource_type", type=click.Choice(["map", "nav", "usd"]))
+@click.argument("resource_type", type=click.Choice(["map", "nav", "usd", "winprob"]))
 @click.argument("resource_name", required=False)
 def get(
-    resource_type: Literal["map", "nav", "usd"], resource_name: Optional[str]
+    resource_type: Literal["map", "nav", "usd", "winprob"], resource_name: Optional[str]
 ) -> None:
     """Get a resource given its type and name."""
     if not AWPY_DATA_DIR.exists():
@@ -77,6 +79,23 @@ def get(
     elif resource_type == "nav":
         nav_not_impl_msg = "Nav files are not yet implemented."
         raise NotImplementedError(nav_not_impl_msg)
+    elif resource_type == "winprob":
+        winprob_data_dir = AWPY_DATA_DIR / "winprob"
+        winprob_data_dir.mkdir(parents=True, exist_ok=True)
+        model_file_path = winprob_data_dir / "winprob_model.joblib"
+        logger.info("Downloading win probability model...")
+        response = requests.get(WINPROB_MODEL_LINK, stream=True, timeout=300)
+        total_size = int(response.headers.get("content-length", 0))
+        block_size = 1024
+        with (
+            tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
+            open(model_file_path, "wb") as file,
+        ):
+            for data in response.iter_content(block_size):
+                progress_bar.update(len(data))
+                file.write(data)
+        logger.info(f"Saved win probability model to {model_file_path}")
+
 
 
 @awpy.command(help="Parse a Counter-Strike 2 demo file.")
@@ -117,3 +136,17 @@ def parse(
         other_props=other_props[0].split(",") if other_props else None,
     )
     demo.compress(outpath=outpath)
+
+@awpy.command(help="Train the win probability model.")
+@click.argument('demo_folder', type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.option('--output', type=click.Path(), help="Path to save the trained model.")
+@click.option('--batch-size', type=int, default=10, help="Batch size for processing demos.")
+def train(demo_folder: str, output: str, batch_size: int):
+    """Train the win probability model using demos from the specified folder."""
+    demo_folder_path = Path(demo_folder)
+    output_path = Path(output) if output else None
+    train_model_main(demo_folder_path, output_path, batch_size)
+    click.echo(f"Model training complete. Model saved to {output_path or 'wpa_model_rf.joblib'}")
+
+# Add the new command to the awpy group
+awpy.add_command(train)

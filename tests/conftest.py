@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+"""Global test configuration."""
+=======
 """Awpy test configuration."""
+>>>>>>> main
 
 import json
 import os
