@@ -1,7 +1,7 @@
 """Module for time and clock parsing functions."""
 
 import math
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
 import pandas as pd
 
@@ -14,6 +14,7 @@ def parse_clock(
     seconds_since_phase_change: int,
     max_time_ticks: Union[Literal["start", "freeze", "bomb"], int],
     tick_rate: int = 64,
+    timings: Optional[dict] = None,
 ) -> str:
     """Parse the remaining time in a round or phase to a clock string.
 
@@ -22,16 +23,25 @@ def parse_clock(
         max_time_ticks (Union[Literal['start', 'freeze', 'bomb'], int]): The maximum
             time in ticks for the phase.
         tick_rate (int, optional): The tick rate of the server. Defaults to 64.
+        timings (dict, optional): The timings for the round. Default dictionary is
+            a dictionary of preset constants.
 
     Returns:
         str: The remaining time in MM:SS format.
     """
+    if timings is None:
+        timings = {
+            "start": ROUND_START_DEFAULT_TIME_IN_SECS,
+            "freeze": FREEZE_DEFAULT_TIME_IN_SECS,
+            "bomb": BOMB_DEFAULT_TIME_IN_SECS,
+        }
+
     if max_time_ticks == "start":
-        max_time_ticks = ROUND_START_DEFAULT_TIME_IN_SECS * tick_rate
+        max_time_ticks = timings["start"] * tick_rate
     elif max_time_ticks == "freeze":
-        max_time_ticks = FREEZE_DEFAULT_TIME_IN_SECS * tick_rate
+        max_time_ticks = timings["freeze"] * tick_rate
     elif max_time_ticks == "bomb":
-        max_time_ticks = BOMB_DEFAULT_TIME_IN_SECS * tick_rate
+        max_time_ticks = timings["bomb"] * tick_rate
 
     # Calculate the remaining time in ticks
     remaining_ticks = max_time_ticks - seconds_since_phase_change

@@ -15,10 +15,10 @@
 
 ## Installation
 
-To install Awpy, you can run
+To install Awpy (it is currently in beta), you can run
 
 ```
-pip install awpy
+pip install --pre awpy
 ```
 
 > [!NOTE]

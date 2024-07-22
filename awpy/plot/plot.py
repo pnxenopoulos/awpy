@@ -19,7 +19,7 @@ from tqdm import tqdm
 from awpy.plot.utils import is_position_on_lower_level, position_transform_axis
 
 
-def plot(
+def plot(  # noqa: PLR0915
     map_name: str,
     points: Optional[List[Tuple[float, float, float]]] = None,
     point_settings: Optional[List[Dict]] = None,
@@ -31,7 +31,8 @@ def plot(
         points (List[Tuple[float, float, float]], optional):
             List of points to plot. Each point is (X, Y, Z). Defaults to None.
         point_settings (List[Dict], optional):
-            List of dictionaries with settings for each point. Each dictionary should contain:
+            List of dictionaries with settings for each point. Each dictionary
+            should contain:
             - 'marker': str (default 'o')
             - 'color': str (default 'red')
             - 'size': float (default 10)
@@ -42,7 +43,8 @@ def plot(
 
     Raises:
         FileNotFoundError: Raises a FileNotFoundError if the map image is not found.
-        ValueError: Raises a ValueError if the number of points and point_settings don't match.
+        ValueError: Raises a ValueError if the number of points and
+            point_settings don't match.
 
     Returns:
         Tuple[Figure, Axes]: Matplotlib Figure and Axes objects.
@@ -50,7 +52,8 @@ def plot(
     # Check for the main map image
     with importlib.resources.path("awpy.data.maps", f"{map_name}.png") as map_img_path:
         if not map_img_path.exists():
-            raise FileNotFoundError(f"Map image not found: {map_img_path}")
+            map_img_path_err = f"Map image not found: {map_img_path}"
+            raise FileNotFoundError(map_img_path_err)
 
         map_bg = mpimg.imread(map_img_path)
         figure, axes = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
@@ -63,7 +66,8 @@ def plot(
         if point_settings is None:
             point_settings = [{}] * len(points)
         elif len(points) != len(point_settings):
-            raise ValueError("Number of points and point settings must match.")
+            settings_mismatch_err = "Number of points and point_settings do not match."
+            raise ValueError(settings_mismatch_err)
 
         # Plot each point
         for (x, y, z), settings in zip(points, point_settings):
@@ -205,7 +209,8 @@ def _generate_frame_plot(map_name: str, frames_data: List[Dict]) -> list[Image.I
 
     Args:
         map_name (str): Name of the map to plot.
-        frames_data (List[Dict]): List of dictionaries, each containing 'points' and 'point_settings' for a frame.
+        frames_data (List[Dict]): List of dictionaries, each containing 'points'
+            and 'point_settings' for a frame.
 
     Returns:
         List[Image.Image]: List of PIL Image objects representing each frame.
@@ -233,7 +238,8 @@ def gif(
 
     Args:
         map_name (str): Name of the map to plot.
-        frames_data (List[Dict]): List of dictionaries, each containing 'points' and 'point_settings' for a frame.
+        frames_data (List[Dict]): List of dictionaries, each containing 'points'
+            and 'point_settings' for a frame.
         frames (List[Image.Image]): List of PIL Image objects.
         output_filename (str): Name of the output GIF file.
         duration (int): Duration of each frame in milliseconds.
@@ -255,9 +261,30 @@ def heatmap(
     size: int = 10,
     cmap: str = "RdYlGn",
     alpha: float = 0.5,
+    *,
     vary_alpha: bool = False,
     kde_lower_bound: float = 0.1,
 ) -> tuple[Figure, Axes]:
+    """Create a heatmap of points on a Counter-Strike map.
+
+    Args:
+        map_name (str): Name of the map to plot.
+        points (List[Tuple[float, float, float]]): List of points to plot.
+        method (Literal["hex", "hist", "kde"]): Method to use for the heatmap.
+        size (int, optional): Size of the heatmap grid. Defaults to 10.
+        cmap (str, optional): Colormap to use. Defaults to 'RdYlGn'.
+        alpha (float, optional): Transparency of the heatmap. Defaults to 0.5.
+        vary_alpha (bool, optional): Vary the alpha based on the density. Defaults
+            to False.
+        kde_lower_bound (float, optional): Lower bound for KDE density values. Defaults
+            to 0.1.
+
+    Raises:
+        ValueError: Raises a ValueError if an invalid method is provided.
+
+    Returns:
+        tuple[Figure, Axes]: Matplotlib Figure and Axes objects
+    """
     fig, ax = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
 
     # Load and display the map
@@ -288,7 +315,7 @@ def heatmap(
 
     elif method == "hist":
         hist, xedges, yedges = np.histogram2d(x, y, bins=size)
-        X, Y = np.meshgrid(xedges[:-1], yedges[:-1])
+        x, y = np.meshgrid(xedges[:-1], yedges[:-1])
 
         # Set counts of 0 to NaN to make them transparent
         hist[hist == 0] = np.nan
@@ -301,11 +328,11 @@ def heatmap(
             colors[..., -1] = np.where(np.isnan(hist_norm), 0, hist_norm * alpha)
             # Plot the heatmap
             heatmap = ax.pcolormesh(
-                X, Y, hist.T, cmap=cmap, norm=LogNorm(), alpha=colors
+                x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=colors
             )
         else:
             heatmap = ax.pcolormesh(
-                X, Y, hist.T, cmap=cmap, norm=LogNorm(), alpha=alpha
+                x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=alpha
             )
 
     elif method == "kde":
@@ -332,7 +359,8 @@ def heatmap(
         else:
             heatmap = ax.pcolormesh(xi, yi, zi, cmap=cmap, alpha=alpha)
     else:
-        raise ValueError("Invalid method. Choose 'hex', 'hist' or 'kde'.")
+        invalid_method_msg = "Invalid method. Choose 'hex', 'hist' or 'kde'."
+        raise ValueError(invalid_method_msg)
 
     ax.axis("off")
     fig.patch.set_facecolor("black")
