@@ -12,5 +12,5 @@ USD_LINKS = {
     "de_inferno": "https://figshare.com/ndownloader/files/47861707",
     "de_mirage": "https://figshare.com/ndownloader/files/47861734",
     "de_nuke": "https://figshare.com/ndownloader/files/47861782",
-    "de_overpass": "https://figshare.com/ndownloader/files/47861788"
+    "de_overpass": "https://figshare.com/ndownloader/files/47861788",
 }
