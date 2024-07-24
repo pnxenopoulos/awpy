@@ -70,6 +70,9 @@ def hltv_events() -> dict[str, pd.DataFrame]:
                 # State
                 "is_freeze_period",
                 "is_warmup_period",
+                "is_terrorist_timeout",
+                "is_ct_timeout",
+                "is_technical_timeout",
                 "is_waiting_for_resume",
                 "is_match_started",
                 "game_phase",
@@ -115,6 +118,9 @@ def faceit_events() -> dict[str, pd.DataFrame]:
                 # State
                 "is_freeze_period",
                 "is_warmup_period",
+                "is_terrorist_timeout",
+                "is_ct_timeout",
+                "is_technical_timeout",
                 "is_waiting_for_resume",
                 "is_match_started",
                 "game_phase",
@@ -129,6 +135,9 @@ def parsed_state() -> pd.DataFrame:
     columns = [
         "is_freeze_period",
         "is_warmup_period",
+        "is_terrorist_timeout",
+        "is_ct_timeout",
+        "is_technical_timeout",
         "is_waiting_for_resume",
         "is_match_started",
         "game_phase",
