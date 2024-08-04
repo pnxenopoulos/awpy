@@ -2,5 +2,5 @@
 
 from awpy.demo import Demo
 
-__version__ = "2.0.0b3"
+__version__ = "2.0.0b4"
 __all__ = ["Demo"]
