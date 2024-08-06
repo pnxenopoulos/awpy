@@ -1,9 +1,9 @@
 """Module for plotting Counter-Strike data."""
 
-import importlib.resources
 import io
 import math
 from collections.abc import Sequence
+from importlib.resources import as_file, files
 from typing import Literal, TypedDict
 
 import matplotlib.image as mpimg
@@ -64,7 +64,7 @@ def plot(  # noqa: PLR0915
         Tuple[Figure, Axes]: Matplotlib Figure and Axes objects.
     """
     # Check for the main map image
-    with importlib.resources.path("awpy.data.maps", f"{map_name}.png") as map_img_path:
+    with as_file(files("awpy.data.maps").joinpath(f"{map_name}.png")) as map_img_path:
         if not map_img_path.exists():
             map_img_path_err = f"Map image not found: {map_img_path}"
             raise FileNotFoundError(map_img_path_err)
@@ -304,7 +304,7 @@ def heatmap(
     fig, ax = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
 
     # Load and display the map
-    with importlib.resources.path("awpy.data.maps", f"{map_name}.png") as map_img_path:
+    with as_file(files("awpy.data.maps").joinpath(f"{map_name}.png")) as map_img_path:
         map_bg = mpimg.imread(map_img_path)
         ax.imshow(map_bg, zorder=0, alpha=0.5)
 
