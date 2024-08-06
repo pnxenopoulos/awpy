@@ -72,11 +72,11 @@ jobs:
           poetry run ruff check .
           poetry run ruff format --check .
 
-      # - name: Run pyright
-      #   run: poetry run pyright
+      - name: Run pyright
+        run: poetry run pyright
 
-      # - name: Thorough check with pylint
-      #   run: poetry run pylint awpy
+      - name: Thorough check with pylint
+        run: poetry run pylint awpy
 
       - name: Test
         shell: bash

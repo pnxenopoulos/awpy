@@ -32,7 +32,7 @@ def apply_round_num(
     intervals = pd.IntervalIndex.from_arrays(start, end, closed="right")
 
     # Add round
-    df["round"] = intervals.get_indexer(pd.Index(df[tick_col])) + 1  # pyright: ignore[reportUnknownMemberType]
+    df["round"] = intervals.get_indexer(pd.Index(df[tick_col])) + 1
 
     return df
 

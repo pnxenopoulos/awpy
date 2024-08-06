@@ -32,22 +32,25 @@ python      = ">=3.9"
 click       = ">=8.1.7"
 loguru      = ">=0.7.2"
 matplotlib  = ">=3.9.0"
-numpy       = "^1.26.4"
+numpy = [
+  { version = ">=1.26.4,<2.0.0", python = ">=3.9,<3.12" },
+  { version = ">=2.0.0", python = ">=3.12,<3.13" },
+]
 pandas      = ">=2.2.2"
 setuptools  = ">=70.1.0"
 demoparser2 = ">=0.26.2"
 tqdm        = "^4.66.4"
 
 [tool.poetry.dev-dependencies]
-pandas-stubs     = "^2.2.2.240603"
-black            = { version = "^24.4.2", extras = ["jupyter"] }
-pytest           = "^8.2.2"
+pandas-stubs     = "^2.2.2.240805"
+black            = { version = "^24.8.0", extras = ["jupyter"] }
+pytest           = "^8.3.2"
 requests         = "^2.32.3"
 ruff             = "^0.4.10"
-pyright          = "^1.1.371"
-pylint           = "^3.2.5"
-coverage         = { version = "^7.6.0", extras = ["toml"] }
-sphinx           = "^7.3.7"
+pyright          = "^1.1.374"
+pylint           = "^3.2.6"
+coverage         = { version = "^7.6.1", extras = ["toml"] }
+sphinx           = "^7.4.7"
 sphinx-rtd-theme = "^2.0.0"
 nbsphinx         = "^0.9.3"
 ipykernel        = "^6.29.5"
@@ -56,6 +59,10 @@ ipykernel        = "^6.29.5"
 awpy = "awpy.cli:awpy"
 
 # Test & Coverage config
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.8.0"
+
 [tool.coverage.run]
 branch = true
 source = ["awpy"]
@@ -146,10 +153,10 @@ max-complexity = 15
 
 # Pyright config
 [tool.pyright]
+# typeCheckingMode                   = "strict"
 pythonVersion                      = "3.9"
 include                            = ["awpy"]
 exclude                            = ["tests"]
-typeCheckingMode                   = "strict"
 strictListInference                = true
 strictDictionaryInference          = true
 strictSetInference                 = true
@@ -173,6 +180,7 @@ reportAssertAlwaysTrue             = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
 reportImplicitOverride             = "error"
 reportShadowedImports              = "error"
+
 
 # Pylint config
 [tool.pylint.main]
