@@ -32,8 +32,8 @@ click = ">=8.1.7"
 loguru = ">=0.7.2"
 matplotlib = ">=3.9.0"
 numpy = [
-  { version = ">=1.26.4,<2.0.0", python = ">=3.9,<3.12" },
-  { version = ">=2.0.0", python = ">=3.12,<3.13" },
+    { version = ">=1.26.4,<2.0.0", python = ">=3.9,<3.12" },
+    { version = ">=2.0.0", python = ">=3.12,<3.13" },
 ]
 pandas = ">=2.2.2"
 setuptools = ">=70.1.0"
@@ -42,6 +42,7 @@ tqdm = "^4.66.4"
 usd-core = "^24.5"
 scipy = "^1.14.0"
 pillow = "^10.4.0"
+typing-extensions = "^4.12.2"
 
 [tool.poetry.dev-dependencies]
 pandas-stubs     = "^2.2.2.240805"
@@ -56,14 +57,10 @@ sphinx           = "^7.4.7"
 sphinx-rtd-theme = "^2.0.0"
 nbsphinx         = "^0.9.3"
 ipykernel        = "^6.29.5"
+pre-commit       = "^3.8.0"
 
 [tool.poetry.scripts]
 awpy = "awpy.cli:awpy"
-
-# Test & Coverage config
-
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^3.8.0"
 
 [tool.coverage.run]
 branch = true
@@ -113,7 +110,7 @@ exclude = [
     "docs",
 ]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -156,7 +153,7 @@ max-complexity = 15
 # Pyright config
 [tool.pyright]
 # typeCheckingMode                   = "strict"
-pythonVersion                      = "3.9"
+pythonVersion                      = "3.10"
 include                            = ["awpy"]
 exclude                            = ["tests"]
 strictListInference                = true

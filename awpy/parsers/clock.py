@@ -1,7 +1,7 @@
 """Module for time and clock parsing functions."""
 
 import math
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import pandas as pd
 from pandas._libs.missing import NAType  # pylint: disable=no-name-in-module
@@ -15,9 +15,9 @@ TimeVariants = Literal["start", "freeze", "bomb"]
 
 def parse_clock(
     seconds_since_phase_change: int,
-    max_time_ticks: Union[TimeVariants, int],
+    max_time_ticks: TimeVariants | int,
     tick_rate: int = 64,
-    timings: Optional[dict] = None,
+    timings: dict[str, int] | None = None,
 ) -> str:
     """Parse the remaining time in a round or phase to a clock string.
 
@@ -63,7 +63,7 @@ def parse_clock(
     return f"{int(minutes):02}:{int(seconds):02}"
 
 
-def _find_clock_time(row: "pd.Series[int]") -> Union[str, NAType]:
+def _find_clock_time(row: "pd.Series[int]") -> str | NAType:
     """Find the clock time for a row.
 
     Args:
@@ -72,7 +72,7 @@ def _find_clock_time(row: "pd.Series[int]") -> Union[str, NAType]:
     Returns:
         str: The clock time in MM:SS format or NA if no valid time is found.
     """
-    times: dict[TimeVariants, Union[int, NAType]] = {
+    times: dict[TimeVariants, int | NAType] = {
         "start": row["ticks_since_round_start"],
         "freeze": row["ticks_since_freeze_time_end"],
         "bomb": row["ticks_since_bomb_plant"],
@@ -120,7 +120,7 @@ def parse_times(
         df_with_round_info[tick_col] - df_with_round_info["bomb_plant"]
     )
 
-    def remove_negative_values(x: Union[int, NAType]) -> Union[int, NAType]:
+    def remove_negative_values(x: int | NAType) -> int | NAType:
         """Handle negative values.
 
         Needed for type hints.

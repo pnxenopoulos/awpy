@@ -3,7 +3,8 @@
 import importlib.resources
 import io
 import math
-from typing import Dict, List, Literal, Optional, Tuple
+from collections.abc import Sequence
+from typing import Literal, TypedDict
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -19,11 +20,24 @@ from tqdm import tqdm
 from awpy.plot.utils import is_position_on_lower_level, position_transform_axis
 
 
+class PointSetting(TypedDict, total=False):
+    """Setting for a point."""
+
+    marker: str
+    color: str
+    size: float
+    hp: int
+    armor: int
+    direction: tuple[float, float]
+    label: str
+
+
 def plot(  # noqa: PLR0915
     map_name: str,
-    points: Optional[List[Tuple[float, float, float]]] = None,
-    point_settings: Optional[List[Dict]] = None,
-) -> Tuple[Figure, Axes]:
+    points: Sequence[tuple[float, float, float]] | None = None,
+    point_settings: Sequence[PointSetting] | None = None,
+) -> tuple[Figure, Axes]:
+    # pylint: disable=too-many-locals, too-many-statements
     """Plot a Counter-Strike map with optional points.
 
     Args:
@@ -64,13 +78,13 @@ def plot(  # noqa: PLR0915
     if points is not None:
         # Ensure points and settings have the same length
         if point_settings is None:
-            point_settings = [{}] * len(points)
+            point_settings = [{} for _ in range(len(points))]
         elif len(points) != len(point_settings):
             settings_mismatch_err = "Number of points and point_settings do not match."
             raise ValueError(settings_mismatch_err)
 
         # Plot each point
-        for (x, y, z), settings in zip(points, point_settings):
+        for (x, y, z), settings in zip(points, point_settings, strict=False):
             transformed_x = position_transform_axis(map_name, x, "x")
             transformed_y = position_transform_axis(map_name, y, "y")
 
@@ -153,22 +167,23 @@ def plot(  # noqa: PLR0915
                 axes.add_patch(armor_bar)
 
                 # Plot Armor bar (actual armor)
-                armor_bar = Rectangle(
-                    (
-                        transformed_x - bar_length / 2,
-                        transformed_y + vertical_offset + bar_width,
-                    ),
-                    bar_length * armor / 100,
-                    bar_width,
-                    facecolor="grey",
-                    edgecolor="black",
-                    alpha=alpha,
-                    zorder=11,
-                )
-                axes.add_patch(armor_bar)
+                if armor:
+                    armor_bar = Rectangle(
+                        (
+                            transformed_x - bar_length / 2,
+                            transformed_y + vertical_offset + bar_width,
+                        ),
+                        bar_length * armor / 100,
+                        bar_width,
+                        facecolor="grey",
+                        edgecolor="black",
+                        alpha=alpha,
+                        zorder=11,
+                    )
+                    axes.add_patch(armor_bar)
 
             # Plot direction
-            if direction and hp > 0:
+            if direction and hp and hp > 0:
                 pitch, yaw = direction
                 dx = math.cos(math.radians(yaw)) * math.cos(math.radians(pitch))
                 dy = math.sin(math.radians(yaw)) * math.cos(math.radians(pitch))
@@ -204,7 +219,7 @@ def plot(  # noqa: PLR0915
     return figure, axes
 
 
-def _generate_frame_plot(map_name: str, frames_data: List[Dict]) -> list[Image.Image]:
+def _generate_frame_plot(map_name: str, frames_data: list[dict]) -> list[Image.Image]:
     """Generate frames for the animation.
 
     Args:
@@ -232,7 +247,7 @@ def _generate_frame_plot(map_name: str, frames_data: List[Dict]) -> list[Image.I
 
 
 def gif(
-    map_name: str, frames_data: List[Dict], output_filename: str, duration: int = 500
+    map_name: str, frames_data: list[dict], output_filename: str, duration: int = 500
 ) -> None:
     """Create an animated gif from a list of frames.
 
@@ -256,7 +271,7 @@ def gif(
 
 def heatmap(
     map_name: str,
-    points: List[Tuple[float, float, float]],
+    points: list[tuple[float, float, float]],
     method: Literal["hex", "hist", "kde"],
     size: int = 10,
     cmap: str = "RdYlGn",
@@ -265,6 +280,7 @@ def heatmap(
     vary_alpha: bool = False,
     kde_lower_bound: float = 0.1,
 ) -> tuple[Figure, Axes]:
+    # pylint: disable=too-many-locals, redefined-outer-name
     """Create a heatmap of points on a Counter-Strike map.
 
     Args:
@@ -324,7 +340,7 @@ def heatmap(
             # Normalize histogram values
             hist_norm = hist.T / hist.max()
             # Create a color array with variable alpha
-            colors = plt.cm.get_cmap(cmap)(hist_norm)
+            colors = plt.get_cmap(cmap)(hist_norm)
             colors[..., -1] = np.where(np.isnan(hist_norm), 0, hist_norm * alpha)
             # Plot the heatmap
             heatmap = ax.pcolormesh(
@@ -353,7 +369,7 @@ def heatmap(
             # Normalize KDE values
             zi_norm = zi / zi.max()
             # Create a color array with variable alpha
-            colors = plt.cm.get_cmap(cmap)(zi_norm)
+            colors = plt.get_cmap(cmap)(zi_norm)
             colors[..., -1] = np.where(np.isnan(zi_norm), 0, zi_norm * alpha)
             heatmap = ax.pcolormesh(xi, yi, zi, cmap=cmap, alpha=colors)
         else:

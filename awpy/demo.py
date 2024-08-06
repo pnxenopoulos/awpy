@@ -4,7 +4,7 @@ import json
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from demoparser2 import DemoParser
 from loguru import logger
@@ -74,8 +74,8 @@ class Demo:  # pylint: disable=R0902
         verbose: bool = False,
         ticks: bool = True,
         rounds: bool = True,
-        player_props: Optional[list[str]] = None,
-        other_props: Optional[list[str]] = None,
+        player_props: list[str] | None = None,
+        other_props: list[str] | None = None,
     ) -> None:
         """Instantiate a Demo object using the `demoparser2` backend.
 
@@ -101,10 +101,10 @@ class Demo:  # pylint: disable=R0902
         self.parse_rounds = rounds if rounds else False
 
         # Parser & Metadata
-        self.parser: Optional[DemoParser] = None
+        self.parser: DemoParser | None = None
         self.header = None  # DemoHeader
         # Dictionary of [event, dataframe]
-        self.events: Optional[dict[str, pd.DataFrame]] = {}
+        self.events: dict[str, pd.DataFrame] | None = {}
 
         # Set the prop lists. Always include default props
         self.player_props = (
@@ -120,15 +120,15 @@ class Demo:  # pylint: disable=R0902
         )
         self.other_props = list(set(self.other_props))
 
-        self.kills: Optional[pd.DataFrame] = None
-        self.damages: Optional[pd.DataFrame] = None
-        self.bomb: Optional[pd.DataFrame] = None
-        self.smokes: Optional[pd.DataFrame] = None
-        self.infernos: Optional[pd.DataFrame] = None
-        self.weapon_fires: Optional[pd.DataFrame] = None
-        self.rounds: Optional[pd.DataFrame] = None
-        self.grenades: Optional[pd.DataFrame] = None
-        self.ticks: Optional[pd.DataFrame] = None
+        self.kills: pd.DataFrame | None = None
+        self.damages: pd.DataFrame | None = None
+        self.bomb: pd.DataFrame | None = None
+        self.smokes: pd.DataFrame | None = None
+        self.infernos: pd.DataFrame | None = None
+        self.weapon_fires: pd.DataFrame | None = None
+        self.rounds: pd.DataFrame | None = None
+        self.grenades: pd.DataFrame | None = None
+        self.ticks: pd.DataFrame | None = None
 
         if self.path.exists():
             self.parser = DemoParser(str(self.path))
@@ -270,7 +270,7 @@ class Demo:  # pylint: disable=R0902
         else:
             self._debug("Skipping round number parsing for events...")
 
-    def compress(self, outpath: Optional[Path] = None) -> None:
+    def compress(self, outpath: Path | None = None) -> None:
         """Saves the demo data to a zip file.
 
         Args:
@@ -323,7 +323,7 @@ class Demo:  # pylint: disable=R0902
             self._success(f"Zipped demo data to {zip_name}")
 
 
-def parse_header(parsed_header: dict[str, str]) -> dict[str, Union[str, bool]]:
+def parse_header(parsed_header: dict[str, str]) -> dict[str, str | bool]:
     """Parse the header of the demofile to a dictionary.
 
     Args:
@@ -333,7 +333,7 @@ def parse_header(parsed_header: dict[str, str]) -> dict[str, Union[str, bool]]:
     Returns:
         dict: The parsed header of the demofile.
     """
-    header: dict[str, Union[str, bool]] = dict(parsed_header)
+    header: dict[str, str | bool] = dict(parsed_header)
     for key, value in parsed_header.items():
         # Loop through and convert strings to bools
         if value == "true":

@@ -1,13 +1,11 @@
 """Module for round parsing functions."""
 
-from typing import Union
-
 import numpy as np
 import pandas as pd
 from demoparser2 import DemoParser
 
 
-def _find_bomb_plant_tick(row: pd.Series, bomb_ticks: pd.Series) -> Union[int, float]:
+def _find_bomb_plant_tick(row: pd.Series, bomb_ticks: pd.Series) -> int | float:
     """Find the bomb plant tick for a round.
 
     Args:

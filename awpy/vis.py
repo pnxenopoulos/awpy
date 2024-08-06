@@ -1,9 +1,11 @@
 """Module for calculating visibility."""
 
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 from pxr import Usd, UsdGeom
+from typing_extensions import Self
 
 from awpy.data import AWPY_DATA_DIR
 
@@ -55,63 +57,56 @@ class AxisAlignedBoundingBox:
         t_enter = np.max(t_min)
         t_exit = np.min(t_max)
 
-        return t_enter <= t_exit and t_exit >= 0
+        return t_enter <= t_exit and t_exit >= 0  # pyright: ignore[reportReturnType]
 
 
+@dataclass
 class BoundingVolumeHierarchyNode:
-    """Bounding Volume Hierarchy Node class."""
+    """Bounding Volume Hierarchy Node class.
 
-    def __init__(
-        self,
-        aabb: AxisAlignedBoundingBox,
-        mesh: Optional[Dict] = None,
-        left: Optional["BoundingVolumeHierarchyNode"] = None,
-        right: Optional["BoundingVolumeHierarchyNode"] = None,
-    ) -> None:
-        """Initialize BVH node.
+    Attributes:
+        aabb (AxisAlignedBoundingBox): Axis-aligned bounding box for this node.
+        mesh (Optional[Dict]): Mesh data if this is a leaf node.
+        left (Optional[BoundingVolumeHierarchyNode]): Left child node.
+        right (Optional[BoundingVolumeHierarchyNode]): Right child node.
+    """
+
+    aabb: AxisAlignedBoundingBox
+    mesh: dict | None = None
+    left: Optional["BoundingVolumeHierarchyNode"] = None
+    right: Optional["BoundingVolumeHierarchyNode"] = None
+
+    @classmethod
+    def from_meshes(cls: type[Self], meshes: list[dict]) -> Self:
+        """Build a Bounding Volume Hierarchy from a list of meshes.
 
         Args:
-            aabb (AxisAlignedBoundingBox): Axis-aligned bounding box for this node.
-            mesh (Optional[Dict]): Mesh data if this is a leaf node.
-            left (Optional[BoundingVolumeHierarchyNode]): Left child node.
-            right (Optional[BoundingVolumeHierarchyNode]): Right child node.
+            meshes (List[Dict]): List of mesh dictionaries.
+
+        Returns:
+            BoundingVolumeHierarchyNode: Root node of the BVH.
         """
-        self.aabb = aabb
-        self.mesh = mesh
-        self.left = left
-        self.right = right
+        if len(meshes) == 1:
+            return cls(meshes[0]["aabb"], mesh=meshes[0])
 
+        centroids = np.array(
+            [
+                m["aabb"].min_point + (m["aabb"].max_point - m["aabb"].min_point) / 2
+                for m in meshes
+            ]
+        )
+        axis = np.argmax(np.max(centroids, axis=0) - np.min(centroids, axis=0))
+        meshes.sort(key=lambda m: m["aabb"].min_point[axis])
 
-def _build_bvh(meshes: List[Dict]) -> BoundingVolumeHierarchyNode:
-    """Build a Bounding Volume Hierarchy from a list of meshes.
+        mid = len(meshes) // 2
+        left = cls.from_meshes(meshes[:mid])
+        right = cls.from_meshes(meshes[mid:])
 
-    Args:
-        meshes (List[Dict]): List of mesh dictionaries.
+        min_point = np.minimum(left.aabb.min_point, right.aabb.min_point)
+        max_point = np.maximum(left.aabb.max_point, right.aabb.max_point)
+        aabb = AxisAlignedBoundingBox(min_point, max_point)
 
-    Returns:
-        BoundingVolumeHierarchyNode: Root node of the BVH.
-    """
-    if len(meshes) == 1:
-        return BoundingVolumeHierarchyNode(meshes[0]["aabb"], mesh=meshes[0])
-
-    centroids = np.array(
-        [
-            m["aabb"].min_point + (m["aabb"].max_point - m["aabb"].min_point) / 2
-            for m in meshes
-        ]
-    )
-    axis = np.argmax(np.max(centroids, axis=0) - np.min(centroids, axis=0))
-    meshes.sort(key=lambda m: m["aabb"].min_point[axis])
-
-    mid = len(meshes) // 2
-    left = _build_bvh(meshes[:mid])
-    right = _build_bvh(meshes[mid:])
-
-    min_point = np.minimum(left.aabb.min_point, right.aabb.min_point)
-    max_point = np.maximum(left.aabb.max_point, right.aabb.max_point)
-    aabb = AxisAlignedBoundingBox(min_point, max_point)
-
-    return BoundingVolumeHierarchyNode(aabb, left=left, right=right)
+        return cls(aabb, left=left, right=right)
 
 
 def _create_mesh_aabb(points: np.ndarray) -> AxisAlignedBoundingBox:
@@ -176,8 +171,8 @@ def _line_mesh_intersection(
 
 
 def _ray_triangle_intersection(
-    ray_origin: np.ndarray, ray_direction: np.ndarray, triangle: List[np.ndarray]
-) -> Optional[np.ndarray]:
+    ray_origin: np.ndarray, ray_direction: np.ndarray, triangle: list[np.ndarray]
+) -> np.ndarray | None:
     """Find the intersection point between a ray and a triangle.
 
     Args:
@@ -220,7 +215,7 @@ def _ray_triangle_intersection(
 
 
 def _traverse_bvh(
-    node: BoundingVolumeHierarchyNode,
+    node: BoundingVolumeHierarchyNode | None,
     ray_origin: np.ndarray,
     ray_direction: np.ndarray,
     point2: np.ndarray,
@@ -236,6 +231,9 @@ def _traverse_bvh(
     Returns:
         bool: True if there's an intersection, False otherwise.
     """
+    if node is None:
+        return False
+
     if not node.aabb.intersects_ray(ray_origin, ray_direction):
         return False
 
@@ -254,8 +252,8 @@ def _traverse_bvh(
 
 
 def is_visible(
-    point1: Tuple[float, float, float],
-    point2: Tuple[float, float, float],
+    point1: tuple[float, float, float],
+    point2: tuple[float, float, float],
     map_name: str,
 ) -> bool:
     """Check for intersections between a line segment and meshes in a USD file.
@@ -271,6 +269,7 @@ def is_visible(
     Raises:
         FileNotFoundError: If the USD file for the map is not found
     """
+    # pylint: disable=no-member
     usd_path = AWPY_DATA_DIR / "usd" / f"{map_name}.usdc"
     if not usd_path.exists():
         missing_usd_msg = f"USD file {usd_path} not found. Try calling awpy get {map_name} to download the map."  # noqa: E501
@@ -297,16 +296,12 @@ def is_visible(
                 }
             )
 
-    bvh = _build_bvh(meshes)
+    bvh = BoundingVolumeHierarchyNode.from_meshes(meshes)
 
-    point1 = np.array(point1, dtype=float)
-    point2 = np.array(point2, dtype=float)
-    direction = point2 - point1
+    point1_array = np.array(point1, dtype=float)
+    point2_array = np.array(point2, dtype=float)
+    direction = point2_array - point1_array
     direction /= np.linalg.norm(direction)
 
-    intersects = _traverse_bvh(bvh, point1, direction, point2)
-
-    if intersects:
-        return False
-
-    return True
+    intersects = _traverse_bvh(bvh, point1_array, direction, point2_array)
+    return not intersects

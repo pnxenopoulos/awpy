@@ -1,8 +1,8 @@
 """Dictionary that holds map data for Counter-Strike 2."""
 
-from typing import Optional, TypedDict, Union
+from typing import TypedDict
 
-Number = Union[int, float]
+Number = int | float
 
 
 class Selection(TypedDict):
@@ -19,8 +19,8 @@ class MapData(TypedDict):
     pos_x: Number
     pos_y: Number
     scale: Number
-    rotate: Optional[Number]
-    zoom: Optional[Number]
+    rotate: Number | None
+    zoom: Number | None
     selections: list[Selection]
 
 
