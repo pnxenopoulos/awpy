@@ -1,7 +1,7 @@
 """Command-line interface for Awpy."""
 
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import click
 import requests
@@ -23,9 +23,7 @@ def awpy() -> None:
 )
 @click.argument("resource_type", type=click.Choice(["map", "nav", "usd"]))
 @click.argument("resource_name", required=False)
-def get(
-    resource_type: Literal["map", "nav", "usd"], resource_name: Optional[str]
-) -> None:
+def get(resource_type: Literal["map", "nav", "usd"], resource_name: str | None) -> None:
     """Get a resource given its type and name."""
     if not AWPY_DATA_DIR.exists():
         AWPY_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -47,7 +45,7 @@ def get(
             block_size = 1024
             with (
                 tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
-                open(usd_file_path, "wb") as file,
+                usd_file_path.open("wb") as file,
             ):
                 for data in response.iter_content(block_size):
                     progress_bar.update(len(data))
@@ -65,7 +63,7 @@ def get(
                 block_size = 1024
                 with (
                     tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
-                    open(usd_file_path, "wb") as file,
+                    usd_file_path.open("wb") as file,
                 ):
                     for data in response.iter_content(block_size):
                         progress_bar.update(len(data))
@@ -80,8 +78,12 @@ def get(
 
 
 @awpy.command(help="Parse a Counter-Strike 2 demo file.")
-@click.argument("demo", type=click.Path(exists=True))
-@click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
+@click.argument("demo_path", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--outpath",
+    type=click.Path(path_type=Path),
+    help="Path to save the compressed demo.",
+)
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
 @click.option("--noticks", is_flag=True, default=False, help="Disable tick parsing.")
 @click.option(
@@ -97,17 +99,16 @@ def get(
     "--other-props", multiple=True, help="List of other properties to include."
 )
 def parse(
-    demo: Path,
+    demo_path: Path,
     *,
-    outpath: Optional[Path] = None,
+    outpath: Path | None = None,
     verbose: bool = False,
     noticks: bool = False,
     norounds: bool = True,
-    player_props: Optional[tuple[str]] = None,
-    other_props: Optional[tuple[str]] = None,
+    player_props: tuple[str] | None = None,
+    other_props: tuple[str] | None = None,
 ) -> None:
-    """Parse a file given its path."""
-    demo_path = Path(demo)  # Pathify
+    """Parse a file given its path."""  # Pathify
     demo = Demo(
         path=demo_path,
         verbose=verbose,

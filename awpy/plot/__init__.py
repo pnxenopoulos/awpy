@@ -1,5 +1,7 @@
 """Awpy plotting module."""
 
+from awpy.plot.plot import gif, heatmap, plot
+
 PLOT_SETTINGS = {
     "ct": {
         "marker": "o",
@@ -27,7 +29,5 @@ PLOT_SETTINGS = {
         "size": 12,
     },
 }
-
-from awpy.plot.plot import gif, heatmap, plot
 
 __all__ = ["gif", "heatmap", "plot"]

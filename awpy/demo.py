@@ -1,13 +1,12 @@
 """Defines the Demo class."""
 
 import json
-import os
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
 
-from demoparser2 import DemoParser  # pylint: disable=E0611
+from demoparser2 import DemoParser
 from loguru import logger
 
 from awpy.parsers.clock import parse_times
@@ -23,6 +22,9 @@ from awpy.parsers.events import (
 from awpy.parsers.rounds import parse_rounds
 from awpy.parsers.ticks import parse_ticks
 from awpy.utils import apply_round_num
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 PROP_WARNING_LIMIT = 40
 DEFAULT_PLAYER_PROPS = [
@@ -62,7 +64,7 @@ DEFAULT_WORLD_PROPS = [
 ]
 
 
-class Demo:
+class Demo:  # pylint: disable=R0902
     """Class to store a demo's data. Called with `Demo(file="...")`."""
 
     def __init__(
@@ -72,8 +74,8 @@ class Demo:
         verbose: bool = False,
         ticks: bool = True,
         rounds: bool = True,
-        player_props: Optional[list[str]] = None,
-        other_props: Optional[list[str]] = None,
+        player_props: list[str] | None = None,
+        other_props: list[str] | None = None,
     ) -> None:
         """Instantiate a Demo object using the `demoparser2` backend.
 
@@ -99,9 +101,10 @@ class Demo:
         self.parse_rounds = rounds if rounds else False
 
         # Parser & Metadata
-        self.parser = None  # DemoParser
+        self.parser: DemoParser | None = None
         self.header = None  # DemoHeader
-        self.events = {}  # Dictionary of [event, dataframe]
+        # Dictionary of [event, dataframe]
+        self.events: dict[str, pd.DataFrame] | None = {}
 
         # Set the prop lists. Always include default props
         self.player_props = (
@@ -117,16 +120,15 @@ class Demo:
         )
         self.other_props = list(set(self.other_props))
 
-        # Data (pandas dataframes)
-        self.kills = None
-        self.damages = None
-        self.bomb = None
-        self.smokes = None
-        self.infernos = None
-        self.weapon_fires = None
-        self.rounds = None
-        self.grenades = None
-        self.ticks = None
+        self.kills: pd.DataFrame | None = None
+        self.damages: pd.DataFrame | None = None
+        self.bomb: pd.DataFrame | None = None
+        self.smokes: pd.DataFrame | None = None
+        self.infernos: pd.DataFrame | None = None
+        self.weapon_fires: pd.DataFrame | None = None
+        self.rounds: pd.DataFrame | None = None
+        self.grenades: pd.DataFrame | None = None
+        self.ticks: pd.DataFrame | None = None
 
         if self.path.exists():
             self.parser = DemoParser(str(self.path))
@@ -189,6 +191,14 @@ class Demo:
 
     def _parse_events(self) -> None:
         """Process the raw parsed data."""
+        if not self.parser:
+            no_parser_error_msg = "No parser found!"
+            raise ValueError(no_parser_error_msg)
+
+        if self.events is None:
+            event_non_error_msg = "Events not set yet."
+            raise ValueError(event_non_error_msg)
+
         if len(self.events) == 0:
             no_events_error_msg = "No events found!"
             raise ValueError(no_events_error_msg)
@@ -230,7 +240,7 @@ class Demo:
             )
 
         # Parse ticks
-        if self.parse_ticks is True:
+        if self.parse_ticks:
             if len(self.player_props) + len(self.other_props) > PROP_WARNING_LIMIT:
                 self._warn(
                     f"""
@@ -241,7 +251,8 @@ class Demo:
                     dynamically in .player_props and .other_props
                     """
                 )
-            if self.parse_rounds:
+            # Second part should always be true based on logic above
+            if self.parse_rounds and self.rounds is not None:
                 self.ticks = apply_round_num(
                     self.rounds,
                     parse_ticks(self.parser, self.player_props, self.other_props),
@@ -250,7 +261,7 @@ class Demo:
             self._debug("Skipping tick parsing...")
 
         # Get round info for every event
-        if self.parse_rounds is True:
+        if self.parse_rounds and self.rounds is not None:
             for event_name, event in self.events.items():
                 if "tick" in event.columns:
                     self.events[event_name] = apply_round_num(
@@ -259,19 +270,20 @@ class Demo:
         else:
             self._debug("Skipping round number parsing for events...")
 
-    def compress(self, outpath: Optional[Path] = None) -> None:
+    def compress(self, outpath: Path | None = None) -> None:
         """Saves the demo data to a zip file.
 
         Args:
             outpath (Path): Path to save the zip file. Defaults to cwd.
         """
-        outpath = Path.cwd() if outpath is None else Path(outpath)
+        outpath = Path.cwd() if outpath is None else outpath
         zip_name = outpath / Path(self.path.stem + ".zip")
 
         with (
             tempfile.TemporaryDirectory() as tmpdirname,
             zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf,
         ):
+            tmpdirpath = Path(tmpdirname)
             # Get the main dataframes
             if self.parse_rounds:
                 for df_name, df in [
@@ -284,31 +296,34 @@ class Demo:
                     ("rounds", self.rounds),
                     ("grenades", self.grenades),
                 ]:
-                    df_filename = os.path.join(tmpdirname, f"{df_name}.data")
+                    if df is None:
+                        continue
+                    df_filename = tmpdirpath / f"{df_name}.data"
                     df.to_parquet(df_filename, index=False)
                     zipf.write(df_filename, f"{df_name}.data")
 
             # Write all events
-            for event_name, event in self.events.items():
-                event_filename = os.path.join(tmpdirname, f"{event_name}-event.data")
-                event.to_parquet(event_filename, index=False)
-                zipf.write(event_filename, os.path.join("events", f"{event_name}.data"))
+            if self.events is not None:
+                for event_name, event in self.events.items():
+                    event_filename = tmpdirpath / f"{event_name}-event.data"
+                    event.to_parquet(event_filename, index=False)
+                    zipf.write(event_filename, Path("events") / f"{event_name}.data")
 
             # Write ticks
             if self.ticks is not None:
-                ticks_filename = os.path.join(tmpdirname, "ticks.data")
+                ticks_filename = tmpdirpath / "ticks.data"
                 self.ticks.to_parquet(ticks_filename, index=False)
                 zipf.write(ticks_filename, "ticks.data")
 
-            header_filename = os.path.join(tmpdirname, "header.json")
-            with open(header_filename, "w", encoding="utf-8") as f:
+            header_filename = tmpdirpath / "header.json"
+            with header_filename.open("w", encoding="utf-8") as f:
                 json.dump(self.header, f)
             zipf.write(header_filename, "header.json")
 
             self._success(f"Zipped demo data to {zip_name}")
 
 
-def parse_header(parsed_header: dict) -> dict:
+def parse_header(parsed_header: dict[str, str]) -> dict[str, str | bool]:
     """Parse the header of the demofile to a dictionary.
 
     Args:
@@ -318,11 +333,13 @@ def parse_header(parsed_header: dict) -> dict:
     Returns:
         dict: The parsed header of the demofile.
     """
+    header: dict[str, str | bool] = dict(parsed_header)
     for key, value in parsed_header.items():
+        # Loop through and convert strings to bools
         if value == "true":
-            parsed_header[key] = True
+            header[key] = True
         elif value == "false":
-            parsed_header[key] = False
+            header[key] = False
         else:
-            pass  # Loop through and convert strings to bools
-    return parsed_header
+            pass
+    return header

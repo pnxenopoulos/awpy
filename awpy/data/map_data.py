@@ -1,7 +1,31 @@
 """Dictionary that holds map data for Counter-Strike 2."""
 
+from typing import TypedDict
+
+Number = int | float
+
+
+class Selection(TypedDict):
+    """Structure of selections data."""
+
+    name: str
+    altitude_max: Number
+    altitude_min: Number
+
+
+class MapData(TypedDict):
+    """Structure of map data."""
+
+    pos_x: Number
+    pos_y: Number
+    scale: Number
+    rotate: Number | None
+    zoom: Number | None
+    selections: list[Selection]
+
+
 # pos_x is upper left world coordinate
-MAP_DATA = {
+MAP_DATA: dict[str, MapData] = {
     "ar_baggage": {
         "pos_x": -1316,
         "pos_y": 1288,

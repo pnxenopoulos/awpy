@@ -1,20 +1,23 @@
 """Module for time and clock parsing functions."""
 
 import math
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import pandas as pd
+from pandas._libs.missing import NAType  # pylint: disable=no-name-in-module
 
 ROUND_START_DEFAULT_TIME_IN_SECS = 20
 FREEZE_DEFAULT_TIME_IN_SECS = 115
 BOMB_DEFAULT_TIME_IN_SECS = 40
 
+TimeVariants = Literal["start", "freeze", "bomb"]
+
 
 def parse_clock(
     seconds_since_phase_change: int,
-    max_time_ticks: Union[Literal["start", "freeze", "bomb"], int],
+    max_time_ticks: TimeVariants | int,
     tick_rate: int = 64,
-    timings: Optional[dict] = None,
+    timings: dict[str, int] | None = None,
 ) -> str:
     """Parse the remaining time in a round or phase to a clock string.
 
@@ -60,7 +63,7 @@ def parse_clock(
     return f"{int(minutes):02}:{int(seconds):02}"
 
 
-def _find_clock_time(row: pd.Series) -> Union[str, pd._libs.missing.NAType]:
+def _find_clock_time(row: "pd.Series[int]") -> str | NAType:
     """Find the clock time for a row.
 
     Args:
@@ -69,19 +72,23 @@ def _find_clock_time(row: pd.Series) -> Union[str, pd._libs.missing.NAType]:
     Returns:
         str: The clock time in MM:SS format or NA if no valid time is found.
     """
-    times = {
+    times: dict[TimeVariants, int | NAType] = {
         "start": row["ticks_since_round_start"],
         "freeze": row["ticks_since_freeze_time_end"],
         "bomb": row["ticks_since_bomb_plant"],
     }
+
     # Filter out NA values
-    valid_times = {k: v for k, v in times.items() if pd.notna(v)}
+    valid_times: dict[TimeVariants, int] = {
+        k: v for k, v in times.items() if pd.notna(v)
+    }
 
     if not valid_times:
         return pd.NA
 
     # Find the key with the minimum value among valid times
-    min_key = min(valid_times, key=valid_times.get)
+    # (Using valid_times.get causes three separate pyright warnings...)
+    min_key: str = min(valid_times, key=lambda x: valid_times[x])
     return parse_clock(valid_times[min_key], min_key)
 
 
@@ -113,13 +120,19 @@ def parse_times(
         df_with_round_info[tick_col] - df_with_round_info["bomb_plant"]
     )
 
+    def remove_negative_values(x: int | NAType) -> int | NAType:
+        """Handle negative values.
+
+        Needed for type hints.
+        """
+        return pd.NA if pd.isna(x) or x < 0 else x
+
     # Apply the function to the selected columns
     for col in df_with_round_info.columns:
         if col.startswith("ticks_since_"):
-            df_with_round_info[col] = (
-                df_with_round_info[col]
-                .map(lambda x: pd.NA if x < 0 else x)
-                .astype(pd.Int64Dtype())
+            ticks_col: pd.Series[int] = df_with_round_info[col]
+            df_with_round_info[col] = ticks_col.map(remove_negative_values).astype(
+                pd.Int64Dtype()
             )
 
     df_with_round_info = df_with_round_info.drop(
