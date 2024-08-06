@@ -33,6 +33,7 @@ def apply_round_num(
 
     # Add round
     df["round"] = intervals.get_indexer(pd.Index(df[tick_col])) + 1
+    df["round"] = df["round"].replace(0, pd.NA)
 
     return df
 

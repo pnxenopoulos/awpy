@@ -1,7 +1,7 @@
-Visualization
+Visibility
 ====================
 
-This module contains functions for visualization.
+This module contains functions for calculating visibility in Counter-Strike demos.
 
 awpy.vis
 ------------------------------

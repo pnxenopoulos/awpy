@@ -30,6 +30,18 @@ def remove_nonplay_ticks(parsed_df: pd.DataFrame) -> pd.DataFrame:
             error_msg = f"{col} not found in dataframe."
             raise ValueError(error_msg)
 
+    # Fill in missing values
+    for col in [
+        "is_freeze_period",
+        "is_warmup_period",
+        "is_terrorist_timeout",
+        "is_ct_timeout",
+        "is_technical_timeout",
+        "is_waiting_for_resume",
+        "is_match_started",
+    ]:
+        parsed_df[col] = parsed_df[col].fillna(value=False)
+
     # Remove records which do not occur in-play
     parsed_df = parsed_df[
         (~parsed_df["is_freeze_period"])
