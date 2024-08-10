@@ -40,7 +40,7 @@ def remove_nonplay_ticks(parsed_df: pd.DataFrame) -> pd.DataFrame:
         "is_waiting_for_resume",
         "is_match_started",
     ]:
-        parsed_df[col] = parsed_df[col].fillna(value=False)
+        parsed_df.loc[:, col] = parsed_df[col].fillna(value=False)
 
     # Remove records which do not occur in-play
     parsed_df = parsed_df[
