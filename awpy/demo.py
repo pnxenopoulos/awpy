@@ -41,8 +41,6 @@ DEFAULT_PLAYER_PROPS = [
     "has_defuser",
     "has_helmet",
     "flash_duration",
-    "is_strafing",
-    "accuracy_penalty",
     "zoom_lvl",
     "ping",
 ]
@@ -179,13 +177,26 @@ class Demo:
         self._debug(
             f"Found the following game events: {self.parser.list_game_events()}"
         )
-        self.events = dict(
-            self.parser.parse_events(
-                self.parser.list_game_events(),
-                player=self.player_props,
-                other=self.other_props,
+
+        for event_name in self.parser.list_game_events():
+            self._parse_single_event(event_name)
+
+    def _parse_single_event(self, event_name: str) -> None:
+        """Parse a single event from the demo file.
+
+        Args:
+            event_name (str): The name of the event to parse.
+        """
+        if not self.parser:
+            no_parser_error_msg = "No parser found!"
+            raise ValueError(no_parser_error_msg)
+
+        try:
+            self.events[event_name] = self.parser.parse_event(
+                event_name, player=self.player_props, other=self.other_props
             )
-        )
+        except Exception as e:
+            self._warn(f"Error parsing {event_name}: {e}")
 
     def _parse_events(self) -> None:
         """Process the raw parsed data."""
