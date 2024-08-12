@@ -41,9 +41,11 @@ def hltv_events() -> dict[str, pd.DataFrame]:
     Link: https://www.hltv.org/stats/matches/mapstatsid/170716/spirit-vs-mouz
     """
     parser = DemoParser("tests/spirit-vs-mouz-m1-vertigo.dem")
+    game_events = parser.list_game_events()
+    game_events = [e for e in game_events if e != "server_cvar"]
     return dict(
         parser.parse_events(
-            parser.list_game_events(),
+            game_events,
             player=[
                 "X",
                 "Y",
@@ -89,9 +91,11 @@ def faceit_events() -> dict[str, pd.DataFrame]:
     Link: https://www.faceit.com/en/cs2/room/1-a568cd9f-8817-4410-a3f3-2270f89135e2
     """
     parser = DemoParser("tests/faceit-fpl-1-a568cd9f-8817-4410-a3f3-2270f89135e2.dem")
+    game_events = parser.list_game_events()
+    game_events = [e for e in game_events if e != "server_cvar"]
     return dict(
         parser.parse_events(
-            parser.list_game_events(),
+            game_events,
             player=[
                 "X",
                 "Y",
