@@ -41,7 +41,6 @@ DEFAULT_PLAYER_PROPS = [
     "has_defuser",
     "has_helmet",
     "flash_duration",
-    "is_strafing",
     "accuracy_penalty",
     "zoom_lvl",
     "ping",
@@ -179,9 +178,11 @@ class Demo:
         self._debug(
             f"Found the following game events: {self.parser.list_game_events()}"
         )
+        game_events = self.parser.list_game_events()
+        game_events = [e for e in game_events if e != "server_cvar"]
         self.events = dict(
             self.parser.parse_events(
-                self.parser.list_game_events(),
+                game_events,
                 player=self.player_props,
                 other=self.other_props,
             )
