@@ -174,12 +174,10 @@ class Demo:
 
         Returns: pd.DataFrame of the players, their steam IDs and rounds.
         """
-        if not self.ticks:
+        if self.ticks is not None:
             ticks_not_parsed_error_msg = "Ticks are not parsed!"
             raise ValueError(ticks_not_parsed_error_msg)
-        return self.ticks[
-            ["steam_id", "name", "round_num", "side"]
-        ].drop_duplicates()
+        return self.ticks[["steamid", "name", "round", "team_name"]].drop_duplicates()
 
     def _parse_demo(self) -> None:
         """Parse the demo header and file."""
