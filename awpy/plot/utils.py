@@ -115,11 +115,6 @@ def is_position_on_lower_level(
         bool: True if the position on the lower level, False otherwise.
     """
     metadata = MAP_DATA[map_name]
-    if len(metadata["selections"]) == 0:
-        return False
-
-    for level in metadata["selections"]:
-        if position[2] > level["altitude_max"] and position[2] <= level["altitude_min"]:
-            return True
-
+    if position[2] <= metadata["lower_level_max"]:
+        return True
     return False

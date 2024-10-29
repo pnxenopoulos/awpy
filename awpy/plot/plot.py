@@ -3,6 +3,7 @@
 import importlib.resources
 import io
 import math
+import warnings
 from typing import Dict, List, Literal, Optional, Tuple
 
 import matplotlib.image as mpimg
@@ -22,6 +23,7 @@ from awpy.plot.utils import is_position_on_lower_level, position_transform_axis
 def plot(  # noqa: PLR0915
     map_name: str,
     points: Optional[List[Tuple[float, float, float]]] = None,
+    is_lower: Optional[bool] = False,
     point_settings: Optional[List[Dict]] = None,
 ) -> Tuple[Figure, Axes]:
     """Plot a Counter-Strike map with optional points.
@@ -30,6 +32,9 @@ def plot(  # noqa: PLR0915
         map_name (str): Name of the map to plot.
         points (List[Tuple[float, float, float]], optional):
             List of points to plot. Each point is (X, Y, Z). Defaults to None.
+        is_lower (optional, bool): If set to False, will draw lower-level points
+            with alpha = 0.4. If True will draw only lower-level points on the
+            lower-level minimap. Defaults to False.
         point_settings (List[Dict], optional):
             List of dictionaries with settings for each point. Each dictionary
             should contain:
@@ -49,8 +54,13 @@ def plot(  # noqa: PLR0915
     Returns:
         Tuple[Figure, Axes]: Matplotlib Figure and Axes objects.
     """
+    if is_lower:
+        image = f"{map_name}_lower.png"
+    else:
+        image = f"{map_name}.png"
+
     # Check for the main map image
-    with importlib.resources.path("awpy.data.maps", f"{map_name}.png") as map_img_path:
+    with importlib.resources.path("awpy.data.maps", image) as map_img_path:
         if not map_img_path.exists():
             map_img_path_err = f"Map image not found: {map_img_path}"
             raise FileNotFoundError(map_img_path_err)
@@ -71,9 +81,6 @@ def plot(  # noqa: PLR0915
 
         # Plot each point
         for (x, y, z), settings in zip(points, point_settings):
-            transformed_x = position_transform_axis(map_name, x, "x")
-            transformed_y = position_transform_axis(map_name, y, "y")
-
             # Default settings
             marker = settings.get("marker", "o")
             color = settings.get("color", "red")
@@ -85,7 +92,15 @@ def plot(  # noqa: PLR0915
 
             alpha = 0.15 if hp == 0 else 1.0
             if is_position_on_lower_level(map_name, (x, y, z)):
-                alpha *= 0.4
+                # check that user is not drawing lower level map
+                if not is_lower:
+                    alpha *= 0.4
+            elif is_lower:
+                # if drawing lower-level map and point is top-level, don't draw
+                alpha = 0
+
+            transformed_x = position_transform_axis(map_name, x, "x")
+            transformed_y = position_transform_axis(map_name, y, "y")
 
             # Plot the marker
             axes.plot(
@@ -204,20 +219,27 @@ def plot(  # noqa: PLR0915
     return figure, axes
 
 
-def _generate_frame_plot(map_name: str, frames_data: List[Dict]) -> list[Image.Image]:
+def _generate_frame_plot(
+    map_name: str, frames_data: List[Dict], is_lower: Optional[bool] = False
+) -> list[Image.Image]:
     """Generate frames for the animation.
 
     Args:
         map_name (str): Name of the map to plot.
         frames_data (List[Dict]): List of dictionaries, each containing 'points'
             and 'point_settings' for a frame.
+        is_lower (optional, bool): If set to False, will not draw lower-level
+            points with alpha = 0.4. If True will draw only lower-level
+            points on the lower-level minimap. Defaults to False.
 
     Returns:
         List[Image.Image]: List of PIL Image objects representing each frame.
     """
     frames = []
     for frame_data in tqdm(frames_data):
-        fig, _ax = plot(map_name, frame_data["points"], frame_data["point_settings"])
+        fig, _ax = plot(
+            map_name, frame_data["points"], is_lower, frame_data["point_settings"]
+        )
 
         # Convert the matplotlib figure to a PIL Image
         buf = io.BytesIO()
@@ -232,7 +254,11 @@ def _generate_frame_plot(map_name: str, frames_data: List[Dict]) -> list[Image.I
 
 
 def gif(
-    map_name: str, frames_data: List[Dict], output_filename: str, duration: int = 500
+    map_name: str,
+    frames_data: List[Dict],
+    output_filename: str,
+    duration: int = 500,
+    is_lower: Optional[bool] = False,
 ) -> None:
     """Create an animated gif from a list of frames.
 
@@ -243,8 +269,11 @@ def gif(
         frames (List[Image.Image]): List of PIL Image objects.
         output_filename (str): Name of the output GIF file.
         duration (int): Duration of each frame in milliseconds.
+        is_lower (optional, bool): If set to False, will draw lower-level points
+            with alpha = 0.4. If True will draw only lower-level points on the
+            lower-level minimap. Defaults to False.
     """
-    frames = _generate_frame_plot(map_name, frames_data)
+    frames = _generate_frame_plot(map_name, frames_data, is_lower)
     frames[0].save(
         output_filename,
         save_all=True,
@@ -258,6 +287,7 @@ def heatmap(
     map_name: str,
     points: List[Tuple[float, float, float]],
     method: Literal["hex", "hist", "kde"],
+    is_lower: Optional[bool] = False,
     size: int = 10,
     cmap: str = "RdYlGn",
     alpha: float = 0.5,
@@ -271,6 +301,9 @@ def heatmap(
         map_name (str): Name of the map to plot.
         points (List[Tuple[float, float, float]]): List of points to plot.
         method (Literal["hex", "hist", "kde"]): Method to use for the heatmap.
+        is_lower (optional, bool): If set to False, will NOT draw lower-level
+            points. If True will draw only lower-level points on the
+            lower-level minimap. Defaults to False.
         size (int, optional): Size of the heatmap grid. Defaults to 10.
         cmap (str, optional): Colormap to use. Defaults to 'RdYlGn'.
         alpha (float, optional): Transparency of the heatmap. Defaults to 0.5.
@@ -287,10 +320,32 @@ def heatmap(
     """
     fig, ax = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
 
+    if is_lower:
+        image = f"{map_name}_lower.png"
+    else:
+        image = f"{map_name}.png"
+
     # Load and display the map
-    with importlib.resources.path("awpy.data.maps", f"{map_name}.png") as map_img_path:
+    with importlib.resources.path("awpy.data.maps", image) as map_img_path:
         map_bg = mpimg.imread(map_img_path)
         ax.imshow(map_bg, zorder=0, alpha=0.5)
+
+    temp_points = points
+    points = []
+    warning = ""
+    for point in temp_points:
+        is_point_lower = is_position_on_lower_level(map_name, point)
+        # If point level different from provided level by user, ignore point and warn.
+        if is_point_lower == is_lower:
+            points.append(point)
+        else:
+            warning = (
+                "You provided points on the lower level of the map "
+                "but they were ignored! To draw lower level points, "
+                "set is_lower argument to True."
+            )
+    if warning:
+        warnings.warn(warning, UserWarning)
 
     # Transform coordinates
     x = [position_transform_axis(map_name, p[0], "x") for p in points]
