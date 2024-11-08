@@ -293,6 +293,7 @@ def heatmap(
     alpha: float = 0.5,
     *,
     vary_alpha: bool = False,
+    vary_alpha_range: Optional[List[float]] = None,
     kde_lower_bound: float = 0.1,
 ) -> tuple[Figure, Axes]:
     """Create a heatmap of points on a Counter-Strike map.
@@ -309,6 +310,9 @@ def heatmap(
         alpha (float, optional): Transparency of the heatmap. Defaults to 0.5.
         vary_alpha (bool, optional): Vary the alpha based on the density. Defaults
             to False.
+        vary_alpha_range (List[float, float], optional): The min and max transparency
+            variance of points (respectively). Both values should be between `0`
+            and `1`. Defaults to `[]`, meaning min = `0` and max = `alpha`.
         kde_lower_bound (float, optional): Lower bound for KDE density values. Defaults
             to 0.1.
 
@@ -335,7 +339,8 @@ def heatmap(
     warning = ""
     for point in temp_points:
         is_point_lower = is_position_on_lower_level(map_name, point)
-        # If point level different from provided level by user, ignore point and warn.
+        # If point level different from provided level by user,
+        # ignore point and warn.
         if is_point_lower == is_lower:
             points.append(point)
         else:
@@ -351,22 +356,47 @@ def heatmap(
     x = [position_transform_axis(map_name, p[0], "x") for p in points]
     y = [position_transform_axis(map_name, p[1], "y") for p in points]
 
+    # If user set vary_alpha to True, check and/or set vary_alpha_range
+    min_alpha, max_alpha = 0, 1
+    if vary_alpha:
+        if vary_alpha_range is None:
+            vary_alpha_range = [0, alpha]
+        if not isinstance(vary_alpha_range, list):
+            raise ValueError("vary_alpha_range must be a list of length 2.")
+        if len(vary_alpha_range) != 2:
+            raise ValueError("vary_alpha_range must have exactly 2 elements.")
+        min_temp, max_temp = vary_alpha_range[0], vary_alpha_range[1]
+        if not (min_temp >= 0 and min_temp <= 1) or not (
+            max_temp >= 0 and max_temp <= 1
+        ):
+            raise ValueError(
+                "vary_alpha_range must have both values as floats \
+                between 0 and 1."
+            )
+        if min_temp > max_temp:
+            raise ValueError(
+                "vary_alpha_range[0] (min alpha) cannot be greater "
+                "than vary_alpha[1] (max alpha)."
+            )
+        min_alpha, max_alpha = min_temp, max_temp
+
     if method == "hex":
         # Create heatmap
         heatmap = ax.hexbin(x, y, gridsize=size, cmap=cmap, alpha=alpha)
 
         # Get array of counts in each hexbin
         counts = heatmap.get_array()
-        # Set counts of 0 to NaN to make them transparent
-        counts[counts == 0] = np.nan
-        heatmap.set_array(counts)
 
         if vary_alpha:
             # Normalize counts to use as alpha values
             alphas = counts / counts.max()
-            alphas = alphas * alpha
+            alphas = alphas * (max_alpha - min_alpha) + min_alpha
             # Update the color alpha values
             heatmap.set_alpha(alphas)
+
+        # Set counts of 0 to NaN to make them transparent
+        counts[counts == 0] = np.nan
+        heatmap.set_array(counts)
 
     elif method == "hist":
         hist, xedges, yedges = np.histogram2d(x, y, bins=size)
@@ -380,7 +410,11 @@ def heatmap(
             hist_norm = hist.T / hist.max()
             # Create a color array with variable alpha
             colors = plt.cm.get_cmap(cmap)(hist_norm)
-            colors[..., -1] = np.where(np.isnan(hist_norm), 0, hist_norm * alpha)
+            colors[..., -1] = np.where(
+                np.isnan(hist_norm),
+                0,
+                hist_norm * (max_alpha - min_alpha) + min_alpha,
+            )
             # Plot the heatmap
             heatmap = ax.pcolormesh(
                 x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=colors
@@ -409,7 +443,11 @@ def heatmap(
             zi_norm = zi / zi.max()
             # Create a color array with variable alpha
             colors = plt.cm.get_cmap(cmap)(zi_norm)
-            colors[..., -1] = np.where(np.isnan(zi_norm), 0, zi_norm * alpha)
+            colors[..., -1] = np.where(
+                np.isnan(zi_norm),
+                0,
+                zi_norm * (max_alpha - min_alpha) + min_alpha,
+            )
             heatmap = ax.pcolormesh(xi, yi, zi, cmap=cmap, alpha=colors)
         else:
             heatmap = ax.pcolormesh(xi, yi, zi, cmap=cmap, alpha=alpha)
