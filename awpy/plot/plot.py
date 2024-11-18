@@ -25,6 +25,7 @@ def plot(  # noqa: PLR0915
     points: Optional[List[Tuple[float, float, float]]] = None,
     is_lower: Optional[bool] = False,
     point_settings: Optional[List[Dict]] = None,
+    ignore_extreme_points: Optional[bool] = False,
 ) -> Tuple[Figure, Axes]:
     """Plot a Counter-Strike map with optional points.
 
@@ -45,6 +46,10 @@ def plot(  # noqa: PLR0915
             - 'armor': int (0-100)
             - 'direction': Tuple[float, float] (pitch, yaw in degrees)
             - 'label': str (optional)
+        ignore_extreme_points (bool, optional): If set to True, will ignore
+            points that are outside of the map graphic. If set to False, will
+            draw those points, changing the resolution of the ouput image.
+            Defaults to False.
 
     Raises:
         FileNotFoundError: Raises a FileNotFoundError if the map image is not found.
@@ -81,6 +86,18 @@ def plot(  # noqa: PLR0915
 
         # Plot each point
         for (x, y, z), settings in zip(points, point_settings):
+            transformed_x = position_transform_axis(map_name, x, "x")
+            transformed_y = position_transform_axis(map_name, y, "y")
+            
+            if (ignore_extreme_points
+                and (
+                    transformed_x < 0
+                    or transformed_x > 1024
+                    or transformed_y < 0
+                    or transformed_y > 1024
+                )
+            ):
+                continue
             # Default settings
             marker = settings.get("marker", "o")
             color = settings.get("color", "red")
@@ -220,7 +237,10 @@ def plot(  # noqa: PLR0915
 
 
 def _generate_frame_plot(
-    map_name: str, frames_data: List[Dict], is_lower: Optional[bool] = False
+    map_name: str,
+    frames_data: List[Dict],
+    is_lower: Optional[bool] = False,
+    ignore_extreme_points: Optional[bool] = False,
 ) -> list[Image.Image]:
     """Generate frames for the animation.
 
@@ -231,6 +251,10 @@ def _generate_frame_plot(
         is_lower (optional, bool): If set to False, will not draw lower-level
             points with alpha = 0.4. If True will draw only lower-level
             points on the lower-level minimap. Defaults to False.
+        ignore_extreme_points (bool, optional): If set to True, will ignore
+            points that are outside of the map graphic. If set to False, will
+            draw those points, changing the resolution of the ouput image.
+            Defaults to False.
 
     Returns:
         List[Image.Image]: List of PIL Image objects representing each frame.
@@ -238,7 +262,10 @@ def _generate_frame_plot(
     frames = []
     for frame_data in tqdm(frames_data):
         fig, _ax = plot(
-            map_name, frame_data["points"], is_lower, frame_data["point_settings"]
+            map_name,
+            frame_data["points"],
+            is_lower, frame_data["point_settings"],
+            ignore_extreme_points,
         )
 
         # Convert the matplotlib figure to a PIL Image
@@ -259,6 +286,7 @@ def gif(
     output_filename: str,
     duration: int = 500,
     is_lower: Optional[bool] = False,
+    ignore_extreme_points: Optional[bool] = False,
 ) -> None:
     """Create an animated gif from a list of frames.
 
@@ -272,8 +300,17 @@ def gif(
         is_lower (optional, bool): If set to False, will draw lower-level points
             with alpha = 0.4. If True will draw only lower-level points on the
             lower-level minimap. Defaults to False.
+        ignore_extreme_points (bool, optional): If set to True, will ignore
+            points that are outside of the map graphic. If set to False, will
+            draw those points, changing the resolution of the ouput image.
+            Defaults to False.
     """
-    frames = _generate_frame_plot(map_name, frames_data, is_lower)
+    frames = _generate_frame_plot(
+        map_name,
+        frames_data,
+        is_lower,
+        ignore_extreme_points,
+    )
     frames[0].save(
         output_filename,
         save_all=True,
@@ -288,6 +325,7 @@ def heatmap(
     points: List[Tuple[float, float, float]],
     method: Literal["hex", "hist", "kde"],
     is_lower: Optional[bool] = False,
+    ignore_extreme_points: Optional[bool] = False,
     size: int = 10,
     cmap: str = "RdYlGn",
     alpha: float = 0.5,
@@ -305,6 +343,10 @@ def heatmap(
         is_lower (optional, bool): If set to False, will NOT draw lower-level
             points. If True will draw only lower-level points on the
             lower-level minimap. Defaults to False.
+        ignore_extreme_points (bool, optional): If set to True, will ignore
+            points that are outside of the map graphic. If set to False, will
+            draw those points, changing the resolution of the ouput image.
+            Defaults to False.
         size (int, optional): Size of the heatmap grid. Defaults to 10.
         cmap (str, optional): Colormap to use. Defaults to 'RdYlGn'.
         alpha (float, optional): Transparency of the heatmap. Defaults to 0.5.
@@ -352,9 +394,23 @@ def heatmap(
     if warning:
         warnings.warn(warning, UserWarning)
 
-    # Transform coordinates
-    x = [position_transform_axis(map_name, p[0], "x") for p in points]
-    y = [position_transform_axis(map_name, p[1], "y") for p in points]
+    x, y = [], []
+    for point in points:
+        x_point = position_transform_axis(map_name, point[0], "x")
+        y_point = position_transform_axis(map_name, point[1], "y")
+        # Handle extreme points
+        if (ignore_extreme_points
+            and (
+                x_point < 0
+                or x_point > 1024
+                or y_point < 0
+                or y_point > 1024
+            )
+        ):
+            continue
+
+        x.append(x_point)
+        y.append(y_point)
 
     # If user set vary_alpha to True, check and/or set vary_alpha_range
     min_alpha, max_alpha = 0, 1
