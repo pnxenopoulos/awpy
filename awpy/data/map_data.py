@@ -8,7 +8,7 @@ MAP_DATA = {
         "scale": 2.539062,
         "rotate": 1,
         "zoom": 1.3,
-        "lower_level_max": -5.0,
+        "lower_level_max_units": -5.0,
     },
     "ar_shoots": {
         "pos_x": -1368,
@@ -16,7 +16,7 @@ MAP_DATA = {
         "scale": 2.687500,
         "rotate": None,
         "zoom": None,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "cs_office": {
         "pos_x": -1838,
@@ -24,7 +24,7 @@ MAP_DATA = {
         "scale": 4.1,
         "rotate": None,
         "zoom": None,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "cs_italy": {
         "pos_x": -2647,
@@ -32,7 +32,7 @@ MAP_DATA = {
         "scale": 4.6,
         "rotate": 1,
         "zoom": 1.5,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_ancient": {
         "pos_x": -2953,
@@ -40,7 +40,7 @@ MAP_DATA = {
         "scale": 5,
         "rotate": 0,
         "zoom": 0,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_anubis": {
         "pos_x": -2796,
@@ -48,7 +48,7 @@ MAP_DATA = {
         "scale": 5.22,
         "rotate": None,
         "zoom": None,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_dust": {
         "pos_x": -2850,
@@ -56,7 +56,7 @@ MAP_DATA = {
         "scale": 6,
         "rotate": 1,
         "zoom": 1.3,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_dust2": {
         "pos_x": -2476,
@@ -64,7 +64,7 @@ MAP_DATA = {
         "scale": 4.4,
         "rotate": 1,
         "zoom": 1.1,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_inferno": {
         "pos_x": -2087,
@@ -72,7 +72,7 @@ MAP_DATA = {
         "scale": 4.9,
         "rotate": None,
         "zoom": None,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_inferno_s2": {
         "pos_x": -2087,
@@ -80,7 +80,7 @@ MAP_DATA = {
         "scale": 4.9,
         "rotate": None,
         "zoom": None,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_mirage": {
         "pos_x": -3230,
@@ -88,7 +88,7 @@ MAP_DATA = {
         "scale": 5,
         "rotate": 0,
         "zoom": 0,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_nuke": {
         "pos_x": -3453,
@@ -96,7 +96,7 @@ MAP_DATA = {
         "scale": 7,
         "rotate": None,
         "zoom": None,
-        "lower_level_max": -495.0,
+        "lower_level_max_units": -495.0,
     },
     "de_overpass": {
         "pos_x": -4831,
@@ -104,7 +104,7 @@ MAP_DATA = {
         "scale": 5.2,
         "rotate": 0,
         "zoom": 0,
-        "lower_level_max": float("-inf"),
+        "lower_level_max_units": float("-inf"),
     },
     "de_vertigo": {
         "pos_x": -3168,
@@ -112,6 +112,6 @@ MAP_DATA = {
         "scale": 4,
         "rotate": None,
         "zoom": None,
-        "lower_level_max": 11700.0,
+        "lower_level_max_units": 11700.0,
     },
 }
