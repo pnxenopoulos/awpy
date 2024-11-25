@@ -17,7 +17,7 @@ from PIL import Image
 from scipy.stats import gaussian_kde
 from tqdm import tqdm
 
-from awpy.plot.utils import is_position_on_lower_level, position_transform_axis
+from awpy.plot.utils import is_position_on_lower_level, game_to_pixel_axis
 
 
 def plot(  # noqa: PLR0915
@@ -25,7 +25,6 @@ def plot(  # noqa: PLR0915
     points: Optional[List[Tuple[float, float, float]]] = None,
     is_lower: Optional[bool] = False,
     point_settings: Optional[List[Dict]] = None,
-    ignore_extreme_points: Optional[bool] = False,
 ) -> Tuple[Figure, Axes]:
     """Plot a Counter-Strike map with optional points.
 
@@ -46,10 +45,6 @@ def plot(  # noqa: PLR0915
             - 'armor': int (0-100)
             - 'direction': Tuple[float, float] (pitch, yaw in degrees)
             - 'label': str (optional)
-        ignore_extreme_points (bool, optional): If set to True, will ignore
-            points that are outside of the map graphic. If set to False, will
-            draw those points, changing the resolution of the ouput image.
-            Defaults to False.
 
     Raises:
         FileNotFoundError: Raises a FileNotFoundError if the map image is not found.
@@ -86,16 +81,14 @@ def plot(  # noqa: PLR0915
 
         # Plot each point
         for (x, y, z), settings in zip(points, point_settings):
-            transformed_x = position_transform_axis(map_name, x, "x")
-            transformed_y = position_transform_axis(map_name, y, "y")
+            transformed_x = game_to_pixel_axis(map_name, x, "x")
+            transformed_y = game_to_pixel_axis(map_name, y, "y")
             
-            if (ignore_extreme_points
-                and (
-                    transformed_x < 0
-                    or transformed_x > 1024
-                    or transformed_y < 0
-                    or transformed_y > 1024
-                )
+            if (
+                transformed_x < 0
+                or transformed_x > 1024
+                or transformed_y < 0
+                or transformed_y > 1024
             ):
                 continue
             # Default settings
@@ -116,8 +109,8 @@ def plot(  # noqa: PLR0915
                 # if drawing lower-level map and point is top-level, don't draw
                 alpha = 0
 
-            transformed_x = position_transform_axis(map_name, x, "x")
-            transformed_y = position_transform_axis(map_name, y, "y")
+            transformed_x = game_to_pixel_axis(map_name, x, "x")
+            transformed_y = game_to_pixel_axis(map_name, y, "y")
 
             # Plot the marker
             axes.plot(
@@ -240,7 +233,6 @@ def _generate_frame_plot(
     map_name: str,
     frames_data: List[Dict],
     is_lower: Optional[bool] = False,
-    ignore_extreme_points: Optional[bool] = False,
 ) -> list[Image.Image]:
     """Generate frames for the animation.
 
@@ -251,10 +243,6 @@ def _generate_frame_plot(
         is_lower (optional, bool): If set to False, will not draw lower-level
             points with alpha = 0.4. If True will draw only lower-level
             points on the lower-level minimap. Defaults to False.
-        ignore_extreme_points (bool, optional): If set to True, will ignore
-            points that are outside of the map graphic. If set to False, will
-            draw those points, changing the resolution of the ouput image.
-            Defaults to False.
 
     Returns:
         List[Image.Image]: List of PIL Image objects representing each frame.
@@ -265,7 +253,6 @@ def _generate_frame_plot(
             map_name,
             frame_data["points"],
             is_lower, frame_data["point_settings"],
-            ignore_extreme_points,
         )
 
         # Convert the matplotlib figure to a PIL Image
@@ -286,7 +273,6 @@ def gif(
     output_filename: str,
     duration: int = 500,
     is_lower: Optional[bool] = False,
-    ignore_extreme_points: Optional[bool] = False,
 ) -> None:
     """Create an animated gif from a list of frames.
 
@@ -300,16 +286,11 @@ def gif(
         is_lower (optional, bool): If set to False, will draw lower-level points
             with alpha = 0.4. If True will draw only lower-level points on the
             lower-level minimap. Defaults to False.
-        ignore_extreme_points (bool, optional): If set to True, will ignore
-            points that are outside of the map graphic. If set to False, will
-            draw those points, changing the resolution of the ouput image.
-            Defaults to False.
     """
     frames = _generate_frame_plot(
         map_name,
         frames_data,
         is_lower,
-        ignore_extreme_points,
     )
     frames[0].save(
         output_filename,
@@ -325,13 +306,11 @@ def heatmap(
     points: List[Tuple[float, float, float]],
     method: Literal["hex", "hist", "kde"],
     is_lower: Optional[bool] = False,
-    ignore_extreme_points: Optional[bool] = False,
     size: int = 10,
     cmap: str = "RdYlGn",
     alpha: float = 0.5,
     *,
-    vary_alpha: bool = False,
-    vary_alpha_range: Optional[List[float]] = None,
+    alpha_range: Optional[List[float]] = None,
     kde_lower_bound: float = 0.1,
 ) -> tuple[Figure, Axes]:
     """Create a heatmap of points on a Counter-Strike map.
@@ -343,18 +322,13 @@ def heatmap(
         is_lower (optional, bool): If set to False, will NOT draw lower-level
             points. If True will draw only lower-level points on the
             lower-level minimap. Defaults to False.
-        ignore_extreme_points (bool, optional): If set to True, will ignore
-            points that are outside of the map graphic. If set to False, will
-            draw those points, changing the resolution of the ouput image.
-            Defaults to False.
         size (int, optional): Size of the heatmap grid. Defaults to 10.
         cmap (str, optional): Colormap to use. Defaults to 'RdYlGn'.
         alpha (float, optional): Transparency of the heatmap. Defaults to 0.5.
-        vary_alpha (bool, optional): Vary the alpha based on the density. Defaults
-            to False.
-        vary_alpha_range (List[float, float], optional): The min and max transparency
-            variance of points (respectively). Both values should be between `0`
-            and `1`. Defaults to `[]`, meaning min = `0` and max = `alpha`.
+        alpha_range (List[float, float], optional): When value is provided
+            here,  points' transparency will vary based on the density, with
+            min transparency of `alpha_range[0]` and max of `alpha_range[1]`.
+            Defaults to `None`, meaning no variance of transparency.
         kde_lower_bound (float, optional): Lower bound for KDE density values. Defaults
             to 0.1.
 
@@ -396,43 +370,39 @@ def heatmap(
 
     x, y = [], []
     for point in points:
-        x_point = position_transform_axis(map_name, point[0], "x")
-        y_point = position_transform_axis(map_name, point[1], "y")
+        x_point = game_to_pixel_axis(map_name, point[0], "x")
+        y_point = game_to_pixel_axis(map_name, point[1], "y")
         # Handle extreme points
-        if (ignore_extreme_points
-            and (
-                x_point < 0
-                or x_point > 1024
-                or y_point < 0
-                or y_point > 1024
-            )
+        if (
+            x_point < 0
+            or x_point > 1024
+            or y_point < 0
+            or y_point > 1024
         ):
             continue
 
         x.append(x_point)
         y.append(y_point)
 
-    # If user set vary_alpha to True, check and/or set vary_alpha_range
+    # Check and/or set alpha_range
     min_alpha, max_alpha = 0, 1
-    if vary_alpha:
-        if vary_alpha_range is None:
-            vary_alpha_range = [0, alpha]
-        if not isinstance(vary_alpha_range, list):
-            raise ValueError("vary_alpha_range must be a list of length 2.")
-        if len(vary_alpha_range) != 2:
-            raise ValueError("vary_alpha_range must have exactly 2 elements.")
-        min_temp, max_temp = vary_alpha_range[0], vary_alpha_range[1]
+    if alpha_range is not None:
+        if not isinstance(alpha_range, list):
+            raise ValueError("alpha_range must be a list of length 2.")
+        if len(alpha_range) != 2:
+            raise ValueError("alpha_range must have exactly 2 elements.")
+        min_temp, max_temp = alpha_range[0], alpha_range[1]
         if not (min_temp >= 0 and min_temp <= 1) or not (
             max_temp >= 0 and max_temp <= 1
         ):
             raise ValueError(
-                "vary_alpha_range must have both values as floats \
+                "alpha_range must have both values as floats \
                 between 0 and 1."
             )
         if min_temp > max_temp:
             raise ValueError(
-                "vary_alpha_range[0] (min alpha) cannot be greater "
-                "than vary_alpha[1] (max alpha)."
+                "alpha_range[0] (min alpha) cannot be greater "
+                "than alpha[1] (max alpha)."
             )
         min_alpha, max_alpha = min_temp, max_temp
 
@@ -443,7 +413,7 @@ def heatmap(
         # Get array of counts in each hexbin
         counts = heatmap.get_array()
 
-        if vary_alpha:
+        if alpha_range is not None:
             # Normalize counts to use as alpha values
             alphas = counts / counts.max()
             alphas = alphas * (max_alpha - min_alpha) + min_alpha
@@ -461,7 +431,7 @@ def heatmap(
         # Set counts of 0 to NaN to make them transparent
         hist[hist == 0] = np.nan
 
-        if vary_alpha:
+        if alpha_range is not None:
             # Normalize histogram values
             hist_norm = hist.T / hist.max()
             # Create a color array with variable alpha
@@ -494,7 +464,7 @@ def heatmap(
         threshold = zi.max() * kde_lower_bound  # You can adjust this threshold
         zi[zi < threshold] = np.nan
 
-        if vary_alpha:
+        if alpha_range is not None:
             # Normalize KDE values
             zi_norm = zi / zi.max()
             # Create a color array with variable alpha

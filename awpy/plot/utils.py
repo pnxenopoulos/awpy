@@ -1,12 +1,13 @@
 """Utilities for plotting and visualization."""
 
 from typing import Literal
+import warnings
 
 from awpy.data.map_data import MAP_DATA
 
 
 # Position function courtesy of PureSkill.gg
-def position_transform_axis(
+def game_to_pixel_axis(
     map_name: str, position: float, axis: Literal["x", "y"]
 ) -> float:
     """Transforms an X or Y-axis value. CS2 coordinate -> Minimap image pixel value.
@@ -34,7 +35,7 @@ def position_transform_axis(
     return (start - position) / scale
 
 
-def position_revert_axis(
+def pixel_to_game_axis(
     map_name: str, position: float, axis: Literal["x", "y"]
 ) -> float:
     """Reverts an X or Y-axis value. Minimap image pixel value -> CS2 coordinate.
@@ -64,7 +65,7 @@ def position_revert_axis(
     return start - position * scale
 
 
-def position_transform(
+def game_to_pixel(
     map_name: str, position: tuple[float, float, float]
 ) -> tuple[float, float, float]:
     """Transforms an single coordinate (X,Y,Z). CS2 coordinates -> Minimap image pixel values.
@@ -77,13 +78,13 @@ def position_transform(
         Tuple[float, float, float]: Transformed coordinates (X,Y,Z).
     """
     return (
-        position_transform_axis(map_name, position[0], "x"),
-        position_transform_axis(map_name, position[1], "y"),
+        game_to_pixel_axis(map_name, position[0], "x"),
+        game_to_pixel_axis(map_name, position[1], "y"),
         position[2],
     )
 
 
-def position_revert(
+def pixel_to_game(
     map_name: str, position: tuple[float, float, float]
 ) -> tuple[float, float, float]:
     """Transforms an single coordinate (X,Y,Z). Minimap image pixel values -> CS2 coordinates.
@@ -96,8 +97,8 @@ def position_revert(
         Tuple[float, float, float]: Transformed coordinates (X,Y,Z).
     """
     return (
-        position_revert_axis(map_name, position[0], "x"),
-        position_revert_axis(map_name, position[1], "y"),
+        pixel_to_game_axis(map_name, position[0], "x"),
+        pixel_to_game_axis(map_name, position[1], "y"),
         position[2],
     )
 
@@ -115,6 +116,69 @@ def is_position_on_lower_level(
         bool: True if the position on the lower level, False otherwise.
     """
     metadata = MAP_DATA[map_name]
-    if position[2] <= metadata["lower_level_max"]:
+    if position[2] <= metadata["lower_level_max_units"]:
         return True
     return False
+
+
+# Old function names:
+def _renaming_warning(old: str, new: str):
+    return f"""Deprecation warning: Function {old} has been renamed to {new}.
+    Please update your code to avoid future deprecation.
+    """
+
+
+def position_transform_axis(
+    map_name: str, position: float, axis: Literal["x", "y"]
+) -> float:
+    """Calls `game_to_pixel_axis` and sends warning.
+    
+    This is the old name of function `game_to_pixel_axis`. Please update
+    your code to avoid future deprecation.
+    """
+    warnings.warn(
+        _renaming_warning("position_transform_axis()", "game_to_pixel_axis()"),
+        DeprecationWarning)
+    return game_to_pixel_axis(map_name, position, axis)
+
+
+def position_revert_axis(
+    map_name: str, position: float, axis: Literal["x", "y"]
+) -> float:
+    """Calls `pixel_to_game_axis` and sends warning.
+    
+    This is the old name of function `pixel_to_game_axis`. Please update
+    your code to avoid future deprecation.
+    """
+    warnings.warn(
+        _renaming_warning("position_revert_axis()", "pixel_to_game_axis()"),
+        DeprecationWarning)
+    return pixel_to_game_axis(map_name, position, axis)
+
+
+def position_transform(
+    map_name: str, position: tuple[float, float, float]
+) -> tuple[float, float, float]:
+    """Calls `game_to_pixel` and sends warning.
+    
+    This is the old name of function `game_to_pixel`. Please update
+    your code to avoid future deprecation.
+    """
+    warnings.warn(
+        _renaming_warning("position_transform()", "game_to_pixel()"),
+        DeprecationWarning)
+    return game_to_pixel(map_name, position)
+
+
+def position_revert(
+    map_name: str, position: tuple[float, float, float]
+) -> tuple[float, float, float]:
+    """Calls `pixel_to_game` and sends warning.
+    
+    This is the old name of function `pixel_to_game`. Please update
+    your code to avoid future deprecation.
+    """
+    warnings.warn(
+        _renaming_warning("position_revert()", "pixel_to_game()"),
+        DeprecationWarning)
+    return pixel_to_game(map_name, position)
