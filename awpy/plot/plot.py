@@ -4,7 +4,7 @@ import importlib.resources
 import io
 import math
 import warnings
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Literal, Optional
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -17,47 +17,52 @@ from PIL import Image
 from scipy.stats import gaussian_kde
 from tqdm import tqdm
 
-from awpy.plot.utils import is_position_on_lower_level, game_to_pixel_axis
+from awpy.plot.utils import game_to_pixel_axis, is_position_on_lower_level
 
 
 def plot(  # noqa: PLR0915
     map_name: str,
-    points: Optional[List[Tuple[float, float, float]]] = None,
-    is_lower: Optional[bool] = False,
-    point_settings: Optional[List[Dict]] = None,
-) -> Tuple[Figure, Axes]:
+    points: Optional[list[tuple[float, float, float]]] = None,
+    lower_points_frac: Optional[float] = 0.4,
+    point_settings: Optional[list[dict]] = None,
+) -> tuple[Figure, Axes]:
     """Plot a Counter-Strike map with optional points.
 
     Args:
-        map_name (str): Name of the map to plot.
-        points (List[Tuple[float, float, float]], optional):
-            List of points to plot. Each point is (X, Y, Z). Defaults to None.
-        is_lower (optional, bool): If set to False, will draw lower-level points
-            with alpha = 0.4. If True will draw only lower-level points on the
-            lower-level minimap. Defaults to False.
-        point_settings (List[Dict], optional):
-            List of dictionaries with settings for each point. Each dictionary
+        map_name (str): Name of the map to plot. E.g. "de_dust2"
+            ("dust2" or "de_dust2.png" will not work).
+        points (list[tuple[float, float, float]], optional):
+            list of points to plot. Each point is (X, Y, Z). Defaults to None.
+        lower_points_frac (optional, float): The factor by which to multiply
+            the opacity of a given point if it is on the lower level of the
+            map and `map_name` is NOT referencing the lower level (i.e.
+            `map_name` does not end in "_lower"). Defaults to 0.4.
+
+            If `map_name` is referencing the lower level of a map (i.e.
+            ends in "_lower") then this argument is ignored and lower points'
+            alpha is set to 1 and upper points' alpha is set to 0.
+        point_settings (list[dict], optional):
+            list of dictionaries with settings for each point. Each dictionary
             should contain:
             - 'marker': str (default 'o')
             - 'color': str (default 'red')
             - 'size': float (default 10)
             - 'hp': int (0-100)
             - 'armor': int (0-100)
-            - 'direction': Tuple[float, float] (pitch, yaw in degrees)
+            - 'direction': tuple[float, float] (pitch, yaw in degrees)
             - 'label': str (optional)
 
     Raises:
-        FileNotFoundError: Raises a FileNotFoundError if the map image is not found.
+        FileNotFoundError: Raises a FileNotFoundError if the map image is not
+            found.
         ValueError: Raises a ValueError if the number of points and
             point_settings don't match.
 
     Returns:
-        Tuple[Figure, Axes]: Matplotlib Figure and Axes objects.
+        tuple[Figure, Axes]: Matplotlib Figure and Axes objects.
     """
-    if is_lower:
-        image = f"{map_name}_lower.png"
-    else:
-        image = f"{map_name}.png"
+    image = f"{map_name}.png"
+    map_name = map_name.removesuffix("_lower")
 
     # Check for the main map image
     with importlib.resources.path("awpy.data.maps", image) as map_img_path:
@@ -76,14 +81,17 @@ def plot(  # noqa: PLR0915
         if point_settings is None:
             point_settings = [{}] * len(points)
         elif len(points) != len(point_settings):
-            settings_mismatch_err = "Number of points and point_settings do not match."
+            settings_mismatch_err = (
+                "Number of points and point_settings do not match."
+            )
             raise ValueError(settings_mismatch_err)
 
         # Plot each point
         for (x, y, z), settings in zip(points, point_settings):
             transformed_x = game_to_pixel_axis(map_name, x, "x")
             transformed_y = game_to_pixel_axis(map_name, y, "y")
-            
+
+            # Check if the point is within bounds of the map image
             if (
                 transformed_x < 0
                 or transformed_x > 1024
@@ -91,6 +99,7 @@ def plot(  # noqa: PLR0915
                 or transformed_y > 1024
             ):
                 continue
+
             # Default settings
             marker = settings.get("marker", "o")
             color = settings.get("color", "red")
@@ -101,13 +110,16 @@ def plot(  # noqa: PLR0915
             label = settings.get("label")
 
             alpha = 0.15 if hp == 0 else 1.0
-            if is_position_on_lower_level(map_name, (x, y, z)):
-                # check that user is not drawing lower level map
-                if not is_lower:
-                    alpha *= 0.4
-            elif is_lower:
-                # if drawing lower-level map and point is top-level, don't draw
-                alpha = 0
+
+            map_is_lower = map_name.endswith("_lower")
+            point_is_lower = is_position_on_lower_level(map_name, (x, y, z))
+
+            if not map_is_lower and point_is_lower:
+                if lower_points_frac == 0:
+                    continue
+                alpha *= lower_points_frac
+            elif map_is_lower and not point_is_lower:
+                continue
 
             transformed_x = game_to_pixel_axis(map_name, x, "x")
             transformed_y = game_to_pixel_axis(map_name, y, "y")
@@ -231,28 +243,35 @@ def plot(  # noqa: PLR0915
 
 def _generate_frame_plot(
     map_name: str,
-    frames_data: List[Dict],
-    is_lower: Optional[bool] = False,
+    frames_data: list[dict],
+    lower_points_frac: Optional[float] = 0.4,
 ) -> list[Image.Image]:
     """Generate frames for the animation.
 
     Args:
-        map_name (str): Name of the map to plot.
-        frames_data (List[Dict]): List of dictionaries, each containing 'points'
-            and 'point_settings' for a frame.
-        is_lower (optional, bool): If set to False, will not draw lower-level
-            points with alpha = 0.4. If True will draw only lower-level
-            points on the lower-level minimap. Defaults to False.
+        map_name (str): Name of the map to plot. E.g. "de_dust2"
+            ("dust2" or "de_dust2.png" will not work).
+        frames_data (list[dict]): list of dictionaries, each containing
+            'points' and 'point_settings' for a frame.
+        lower_points_frac (optional, float): The factor by which to multiply
+            the opacity of a given point if it is on the lower level of the
+            map and `map_name` is NOT referencing the lower level (i.e.
+            `map_name` does not end in "_lower"). Defaults to 0.4.
+
+            If `map_name` is referencing the lower level of a map (i.e.
+            ends in "_lower") then this argument is ignored and lower points'
+            alpha is set to 1 and upper points' alpha is set to 0.
 
     Returns:
-        List[Image.Image]: List of PIL Image objects representing each frame.
+        list[Image.Image]: list of PIL Image objects representing each frame.
     """
     frames = []
     for frame_data in tqdm(frames_data):
         fig, _ax = plot(
             map_name,
             frame_data["points"],
-            is_lower, frame_data["point_settings"],
+            lower_points_frac,
+            frame_data["point_settings"],
         )
 
         # Convert the matplotlib figure to a PIL Image
@@ -269,28 +288,34 @@ def _generate_frame_plot(
 
 def gif(
     map_name: str,
-    frames_data: List[Dict],
+    frames_data: list[dict],
     output_filename: str,
     duration: int = 500,
-    is_lower: Optional[bool] = False,
+    lower_points_frac: Optional[float] = 0.4,
 ) -> None:
     """Create an animated gif from a list of frames.
 
     Args:
-        map_name (str): Name of the map to plot.
-        frames_data (List[Dict]): List of dictionaries, each containing 'points'
-            and 'point_settings' for a frame.
-        frames (List[Image.Image]): List of PIL Image objects.
+        map_name (str): Name of the map to plot. E.g. "de_dust2"
+            ("dust2" or "de_dust2.png" will not work).
+        frames_data (list[dict]): list of dictionaries, each containing
+            'points' and 'point_settings' for a frame.
+        frames (list[Image.Image]): list of PIL Image objects.
         output_filename (str): Name of the output GIF file.
         duration (int): Duration of each frame in milliseconds.
-        is_lower (optional, bool): If set to False, will draw lower-level points
-            with alpha = 0.4. If True will draw only lower-level points on the
-            lower-level minimap. Defaults to False.
+        lower_points_frac (optional, float): The factor by which to multiply
+            the opacity of a given point if it is on the lower level of the
+            map and `map_name` is NOT referencing the lower level (i.e.
+            `map_name` does not end in "_lower"). Defaults to 0.4.
+
+            If `map_name` is referencing the lower level of a map (i.e.
+            ends in "_lower") then this argument is ignored and lower points'
+            alpha is set to 1 and upper points' alpha is set to 0.
     """
     frames = _generate_frame_plot(
         map_name,
         frames_data,
-        is_lower,
+        lower_points_frac,
     )
     frames[0].save(
         output_filename,
@@ -303,34 +328,31 @@ def gif(
 
 def heatmap(
     map_name: str,
-    points: List[Tuple[float, float, float]],
+    points: list[tuple[float, float, float]],
     method: Literal["hex", "hist", "kde"],
-    is_lower: Optional[bool] = False,
     size: int = 10,
     cmap: str = "RdYlGn",
     alpha: float = 0.5,
     *,
-    alpha_range: Optional[List[float]] = None,
+    alpha_range: Optional[list[float]] = None,
     kde_lower_bound: float = 0.1,
 ) -> tuple[Figure, Axes]:
     """Create a heatmap of points on a Counter-Strike map.
 
     Args:
-        map_name (str): Name of the map to plot.
-        points (List[Tuple[float, float, float]]): List of points to plot.
+        map_name (str): Name of the map to plot. E.g. "de_dust2"
+            ("dust2" or "de_dust2.png" will not work).
+        points (list[tuple[float, float, float]]): list of points to plot.
         method (Literal["hex", "hist", "kde"]): Method to use for the heatmap.
-        is_lower (optional, bool): If set to False, will NOT draw lower-level
-            points. If True will draw only lower-level points on the
-            lower-level minimap. Defaults to False.
         size (int, optional): Size of the heatmap grid. Defaults to 10.
         cmap (str, optional): Colormap to use. Defaults to 'RdYlGn'.
         alpha (float, optional): Transparency of the heatmap. Defaults to 0.5.
-        alpha_range (List[float, float], optional): When value is provided
+        alpha_range (list[float, float], optional): When value is provided
             here,  points' transparency will vary based on the density, with
             min transparency of `alpha_range[0]` and max of `alpha_range[1]`.
             Defaults to `None`, meaning no variance of transparency.
-        kde_lower_bound (float, optional): Lower bound for KDE density values. Defaults
-            to 0.1.
+        kde_lower_bound (float, optional): Lower bound for KDE density
+            values. Defaults to 0.1.
 
     Raises:
         ValueError: Raises a ValueError if an invalid method is provided.
@@ -340,10 +362,11 @@ def heatmap(
     """
     fig, ax = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
 
-    if is_lower:
-        image = f"{map_name}_lower.png"
-    else:
-        image = f"{map_name}.png"
+    image = f"{map_name}.png"
+
+    map_is_lower = map_name.endswith("_lower")
+    if map_is_lower:
+        map_name = map_name.removesuffix("_lower")
 
     # Load and display the map
     with importlib.resources.path("awpy.data.maps", image) as map_img_path:
@@ -354,31 +377,27 @@ def heatmap(
     points = []
     warning = ""
     for point in temp_points:
-        is_point_lower = is_position_on_lower_level(map_name, point)
-        # If point level different from provided level by user,
-        # ignore point and warn.
-        if is_point_lower == is_lower:
+        point_is_lower = is_position_on_lower_level(map_name, point)
+        # If point is on same level as map, then keep, else ignore & warn.
+        if point_is_lower == map_is_lower:
             points.append(point)
         else:
             warning = (
-                "You provided points on the lower level of the map "
-                "but they were ignored! To draw lower level points, "
-                "set is_lower argument to True."
+                f"You are drawing the {"lower" if map_is_lower else "upper"} "
+                "level of the map, but provided some points on the "
+                f"{"lower" if point_is_lower else "upper"} level, "
+                "which were ignored."
             )
     if warning:
-        warnings.warn(warning, UserWarning)
+        warnings.warn(warning, UserWarning, stacklevel=2)
 
     x, y = [], []
     for point in points:
         x_point = game_to_pixel_axis(map_name, point[0], "x")
         y_point = game_to_pixel_axis(map_name, point[1], "y")
-        # Handle extreme points
-        if (
-            x_point < 0
-            or x_point > 1024
-            or y_point < 0
-            or y_point > 1024
-        ):
+
+        # Check if the point is within bounds of the map image
+        if x_point < 0 or x_point > 1024 or y_point < 0 or y_point > 1024:
             continue
 
         x.append(x_point)
@@ -388,22 +407,22 @@ def heatmap(
     min_alpha, max_alpha = 0, 1
     if alpha_range is not None:
         if not isinstance(alpha_range, list):
-            raise ValueError("alpha_range must be a list of length 2.")
+            msg = "alpha_range must be a list of length 2."
+            raise ValueError(msg)
         if len(alpha_range) != 2:
-            raise ValueError("alpha_range must have exactly 2 elements.")
+            msg = "alpha_range must have exactly 2 elements."
+            raise ValueError(msg)
         min_temp, max_temp = alpha_range[0], alpha_range[1]
         if not (min_temp >= 0 and min_temp <= 1) or not (
             max_temp >= 0 and max_temp <= 1
         ):
-            raise ValueError(
-                "alpha_range must have both values as floats \
-                between 0 and 1."
-            )
+            msg = "alpha_range must have both values as floats between \
+                0 and 1."
+            raise ValueError(msg)
         if min_temp > max_temp:
-            raise ValueError(
-                "alpha_range[0] (min alpha) cannot be greater "
-                "than alpha[1] (max alpha)."
-            )
+            msg = "alpha_range[0] (min alpha) cannot be greater than \
+                alpha[1] (max alpha)."
+            raise ValueError(msg)
         min_alpha, max_alpha = min_temp, max_temp
 
     if method == "hex":
