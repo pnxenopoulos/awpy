@@ -70,7 +70,7 @@ def plot(  # noqa: PLR0915
             raise ValueError(settings_mismatch_err)
 
         # Plot each point
-        for (x, y, z), settings in zip(points, point_settings):
+        for (x, y, z), settings in zip(points, point_settings, strict=False):
             transformed_x = position_transform_axis(map_name, x, "x")
             transformed_y = position_transform_axis(map_name, y, "y")
 

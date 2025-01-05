@@ -1,17 +1,11 @@
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry]
+[project]
 name = "awpy"
 version = "2.0.0b5"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
 authors = [
-    "Peter Xenopoulos <xenopoulos@nyu.edu>",
-    "Jan-Eric Nitschke <janericnitschke@gmail.com>"
+    { name = "Peter Xenopoulos", email = "pnxenopoulos@gmail.com" }
 ]
-license = "MIT"
 keywords = ["counter-strike 2", "counter-strike", "csgo", "esports", "sports-analytics"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -23,38 +17,48 @@ classifiers = [
     "Topic :: Games/Entertainment :: First Person Shooters",
     "Topic :: Scientific/Engineering :: Information Analysis"
 ]
-homepage = "https://awpycs.com"
-repository = "https://github.com/pnxenopoulos/awpy"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1.8",
+    "demoparser2>=0.33.1",
+    "loguru>=0.7.3",
+    "matplotlib>=3.10.0",
+    "numpy>=2.2.1",
+    "pandas>=2.2.3",
+    "pillow>=11.1.0",
+    "scipy>=1.15.0",
+    "tqdm>=4.67.1",
+    "usd-core>=24.11",
+]
 
-[tool.poetry.dependencies]
-python = "<3.13,>=3.10"
-click = ">=8.1.7"
-loguru = ">=0.7.2"
-matplotlib = ">=3.9.0"
-numpy = "^1.26.4"
-pandas = ">=2.2.2"
-setuptools = ">=70.1.0"
-demoparser2 = ">=0.33.1"
-tqdm = "^4.66.4"
-usd-core = "^24.8"
-scipy = "^1.14.0"
-pillow = "^10.4.0"
+[project.urls]
+Homepage = "https://awpycs.com"
+Repository = "https://github.com/pnxenopoulos/awpy"
+Docs = "https://awpy.readthedocs.io/en/latest/?badge=latest"
 
-[tool.poetry.dev-dependencies]
-black = { version = "^24.4.2", extras = ["jupyter"] }
-pytest = "^8.2.2"
-requests = "^2.32.3"
-ruff = "^0.4.10"
-pyright = "^1.1.368"
-pylint = "^3.2.3"
-coverage = { version = "^7.5.3", extras = ["toml"] }
-sphinx = "^7.3.7"
-sphinx-rtd-theme = "^2.0.0"
-nbsphinx = "^0.9.3"
-ipykernel = "^6.29.4"
-
-[tool.poetry.scripts]
+[project.scripts]
 awpy = "awpy.cli:awpy"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.14.1",
+    "pre-commit>=4.0.1",
+    "ruff>=0.8.6",
+]
+test = [
+    "coverage>=7.6.10",
+    "pytest>=8.3.4",
+]
+docs = [
+    "ipykernel>=6.29.5",
+    "nbsphinx>=0.9.6",
+    "sphinx>=8.1.3",
+    "sphinx-rtd-theme>=3.0.2",
+]
 
 # Test & Coverage config
 [tool.coverage.run]
@@ -145,7 +149,7 @@ select = [
     "RUF",
     "EM"
 ]
-ignore = ["D208", "ANN101", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001"]
+ignore = ["D208", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.pydocstyle]
@@ -157,80 +161,3 @@ max-args = 17
 [tool.ruff.lint.per-file-ignores]
 "__init__.py"              = ["E402", "F401"]
 "tests/test_*.py"          = ["ANN201", "S101", "SLF001", "PLR2004"]
-
-# Pyright config
-[tool.pyright]
-include = ["awpy"]
-exclude = ["tests"]
-strictListInference = true
-strictDictionaryInference = true
-strictSetInference = true
-useLibraryCodeForTypes = false
-reportPropertyTypeMismatch = "error"
-reportFunctionMemberAccess = "warning"
-reportMissingTypeStubs = "none"
-reportUntypedFunctionDecorator = "error"
-reportUntypedClassDecorator = "error"
-reportUntypedBaseClass = "error"
-reportUntypedNamedTuple = "error"
-reportPrivateUsage = "error"
-reportConstantRedefinition = "error"
-reportOverlappingOverload = "error"
-reportMissingParameterType = "warning"
-reportUnnecessaryIsInstance = "none"
-reportUnnecessaryCast = "error"
-reportUnnecessaryComparison = "error"
-reportUnnecessaryContains = "error"
-reportAssertAlwaysTrue = "error"
-reportUnnecessaryTypeIgnoreComment = "error"
-reportImplicitOverride = "none"
-reportShadowedImports = "error"
-
-# Pylint config
-[tool.pylint.main]
-fail-under = 9.85
-
-[tool.pylint.basic]
-good-names = ["i", "j", "k", "ex", "Run", "_", "x", "y", "z", "e", "PlayerPosition2D"]
-include-naming-hint = true
-
-[tool.pylint.design]
-max-args = 15
-max-attributes = 8
-max-bool-expr = 5
-max-branches = 12
-max-locals = 20
-max-public-methods = 30
-max-returns = 6
-max-statements = 50
-min-public-methods = 1
-
-[tool.pylint.exceptions]
-overgeneral-exceptions = ["builtins.BaseException"]
-
-[tool.pylint.format]
-max-line-length = 88
-max-module-lines = 2000
-
-[tool.pylint."messages control"]
-confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFINED"]
-disable = ["unnecessary-ellipsis"]
-
-[tool.pylint.miscellaneous]
-notes = ["FIXME", "XXX", "TODO"]
-
-[tool.pylint.messages_control]
-disable = ["R0801"]
-
-[tool.pylint.refactoring]
-max-nested-blocks = 5
-never-returning-functions = ["sys.exit", "argparse.parse_error"]
-
-[tool.pylint.reports]
-evaluation = "max(0, 0 if fatal else 10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10))"
-
-[tool.pylint.similarities]
-min-similarity-lines = 4
-
-[tool.pylint.spelling]
-max-spelling-suggestions = 4
