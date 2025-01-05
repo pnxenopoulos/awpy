@@ -11,10 +11,10 @@ import requests
 @pytest.fixture(scope="session", autouse=True)
 def setup():  # noqa: ANN201
     """Sets up testing environment by downloading demofiles."""
-    with open("tests/test_data.json", encoding="utf-8") as file:
-        test_data = json.load(file)
+    with open("tests/test_data.json", encoding="utf-8") as test_data_file:
+        test_data = json.load(test_data_file)
     for file_id in test_data:
-        path = pathlib.Path(f"tests/{file_id}{test_data[file]['extension']}")
+        path = pathlib.Path(f"tests/{file_id}{test_data[file_id]['extension']}")
         if not path.exists():
             _get_test_file(url=test_data[file_id]["url"], path=path)
 
