@@ -3,7 +3,7 @@
 import importlib.resources
 import io
 import math
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Literal, Optional
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -21,9 +21,9 @@ from awpy.plot.utils import is_position_on_lower_level, position_transform_axis
 
 def plot(  # noqa: PLR0915
     map_name: str,
-    points: Optional[List[Tuple[float, float, float]]] = None,
-    point_settings: Optional[List[Dict]] = None,
-) -> Tuple[Figure, Axes]:
+    points: Optional[list[tuple[float, float, float]]] = None,
+    point_settings: Optional[list[dict]] = None,
+) -> tuple[Figure, Axes]:
     """Plot a Counter-Strike map with optional points.
 
     Args:
@@ -70,7 +70,7 @@ def plot(  # noqa: PLR0915
             raise ValueError(settings_mismatch_err)
 
         # Plot each point
-        for (x, y, z), settings in zip(points, point_settings):
+        for (x, y, z), settings in zip(points, point_settings, strict=False):
             transformed_x = position_transform_axis(map_name, x, "x")
             transformed_y = position_transform_axis(map_name, y, "y")
 
@@ -204,7 +204,7 @@ def plot(  # noqa: PLR0915
     return figure, axes
 
 
-def _generate_frame_plot(map_name: str, frames_data: List[Dict]) -> list[Image.Image]:
+def _generate_frame_plot(map_name: str, frames_data: list[dict]) -> list[Image.Image]:
     """Generate frames for the animation.
 
     Args:
@@ -232,7 +232,7 @@ def _generate_frame_plot(map_name: str, frames_data: List[Dict]) -> list[Image.I
 
 
 def gif(
-    map_name: str, frames_data: List[Dict], output_filename: str, duration: int = 500
+    map_name: str, frames_data: list[dict], output_filename: str, duration: int = 500
 ) -> None:
     """Create an animated gif from a list of frames.
 
@@ -256,7 +256,7 @@ def gif(
 
 def heatmap(
     map_name: str,
-    points: List[Tuple[float, float, float]],
+    points: list[tuple[float, float, float]],
     method: Literal["hex", "hist", "kde"],
     size: int = 10,
     cmap: str = "RdYlGn",
