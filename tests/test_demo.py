@@ -10,13 +10,13 @@ import pytest
 from awpy.demo import Demo
 
 
-@pytest.fixture()
+@pytest.fixture
 def parsed_hltv_demo():
     """Fixture that returns a parsed Demo object."""
     return Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem")
 
 
-@pytest.fixture()
+@pytest.fixture
 def parsed_hltv_demo_no_rounds():
     """Fixture that returns a parsed Demo object with rounds disabled."""
     return Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem", rounds=False)

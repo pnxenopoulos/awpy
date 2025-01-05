@@ -15,7 +15,7 @@ class TestCommandLine:
     """Tests the Awpy command line interface."""
 
     @pytest.fixture(autouse=True)
-    def setup_runner(self, setup):  # noqa: ANN001, ARG002, PT004
+    def setup_runner(self, setup):  # noqa: ANN001, ARG002
         """Setup CLI runner. `setup` arg is the pytest setup fixture."""
         self.runner = CliRunner()
 

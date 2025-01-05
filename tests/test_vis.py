@@ -11,7 +11,7 @@ class TestVisibility:
     """Tests the Awpy calculation functions."""
 
     @pytest.fixture(autouse=True)
-    def setup_runner(self):  # noqa: PT004
+    def setup_runner(self):
         """Setup CLI runner."""
         self.runner = CliRunner()
         self.runner.invoke(get, ["usd", "de_dust2"])

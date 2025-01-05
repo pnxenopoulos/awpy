@@ -1,6 +1,6 @@
 """Module for calculating visibility."""
 
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from pxr import Usd, UsdGeom
@@ -64,7 +64,7 @@ class BoundingVolumeHierarchyNode:
     def __init__(
         self,
         aabb: AxisAlignedBoundingBox,
-        mesh: Optional[Dict] = None,
+        mesh: Optional[dict] = None,
         left: Optional["BoundingVolumeHierarchyNode"] = None,
         right: Optional["BoundingVolumeHierarchyNode"] = None,
     ) -> None:
@@ -82,7 +82,7 @@ class BoundingVolumeHierarchyNode:
         self.right = right
 
 
-def _build_bvh(meshes: List[Dict]) -> BoundingVolumeHierarchyNode:
+def _build_bvh(meshes: list[dict]) -> BoundingVolumeHierarchyNode:
     """Build a Bounding Volume Hierarchy from a list of meshes.
 
     Args:
@@ -176,7 +176,7 @@ def _line_mesh_intersection(
 
 
 def _ray_triangle_intersection(
-    ray_origin: np.ndarray, ray_direction: np.ndarray, triangle: List[np.ndarray]
+    ray_origin: np.ndarray, ray_direction: np.ndarray, triangle: list[np.ndarray]
 ) -> Optional[np.ndarray]:
     """Find the intersection point between a ray and a triangle.
 
@@ -254,8 +254,8 @@ def _traverse_bvh(
 
 
 def is_visible(
-    point1: Tuple[float, float, float],
-    point2: Tuple[float, float, float],
+    point1: tuple[float, float, float],
+    point2: tuple[float, float, float],
     map_name: str,
 ) -> bool:
     """Check for intersections between a line segment and meshes in a USD file.
