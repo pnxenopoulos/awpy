@@ -120,7 +120,7 @@ def parse_demo(
 
 
 @awpy.command(help="Parse a Counter-Strike 2 nav file.")
-@click.argument("demo", type=click.Path(exists=True))
+@click.argument("nav_file", type=click.Path(exists=True))
 def parse_nav(nav_file: Path) -> None:
     """Parse a nav file given its path."""
     nav_file = Path(nav_file)
