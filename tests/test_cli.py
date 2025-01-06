@@ -30,8 +30,8 @@ class TestCommandLine:
         result = self.runner.invoke(parse_nav, ["tests/de_dust2.nav"])
         assert result.exit_code == 0
 
-        zip_name = "de_dust2.json"
-        assert os.path.exists(zip_name)
+        json_name = "de_dust2.json"
+        assert os.path.exists(json_name)
 
     def test_parse_demo_invalid_filepath(self):
         """Test the parse command with an invalid filepath."""

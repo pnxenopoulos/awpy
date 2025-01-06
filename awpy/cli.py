@@ -125,5 +125,6 @@ def parse_nav(nav_file: Path) -> None:
     """Parse a nav file given its path."""
     nav_file = Path(nav_file)
     nav_mesh = Nav(path=nav_file)
-    nav_mesh.to_json(path=nav_file.with_suffix(".json"))
-    logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}\n{nav_mesh}")
+    output_path = Path(nav_file.stem + ".json")
+    nav_mesh.to_json(path=output_path)
+    logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
