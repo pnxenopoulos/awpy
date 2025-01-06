@@ -657,41 +657,62 @@ class VisibilityChecker:
         )
 
         # Build octree
+        self.n_triangles = len(triangles)
         self.root = OctreeNode(bounds)
         for triangle in triangles:
             self.root.insert(triangle)
 
+    def __repr__(self) -> str:
+        """String representation of the VisibilityChecker."""
+        return f"VisibilityChecker(n_triangles={self.n_triangles})"
+
     @staticmethod
-    def read_tri_file(tri_file: str | pathlib.Path) -> list[Triangle]:
+    def read_tri_file(
+        tri_file: str | pathlib.Path, buffer_size: int = 1000
+    ) -> list[Triangle]:
         """Reads a .tri file and returns a list of triangles.
 
         Args:
             tri_file (str | pathlib.Path): Path to the .tri file.
+            buffer_size (int): How many triangles to read
+                at a time. Defaults to 1000.
 
         Returns:
             list[Triangle]: List of triangles parsed from the file.
         """
         tri_file = pathlib.Path(tri_file)
-        triangles = []
+        file_size = tri_file.stat().st_size
+        num_triangles = file_size // (9 * 4)
+
+        # Pre-allocate the list
+        triangles = [None] * num_triangles
+
         with open(tri_file, "rb") as f:
+            # Read in larger chunks (e.g., 1000 triangles at a time)
+            chunk_size = buffer_size * 9 * 4  # 1000 triangles * 9 floats * 4 bytes
+
+            triangle_idx = 0
             while True:
-                # Try to read 9 floats (3 vertices * 3 coordinates)
-                data = f.read(9 * 4)  # 4 bytes per float
-                if not data or len(data) < 36:  # EOF or incomplete triangle
+                data = f.read(chunk_size)
+                if not data:
                     break
 
-                # Unpack 9 floats
-                values = struct.unpack("9f", data)
+                # Process all complete triangles in this chunk
+                num_floats = len(data) // 4
+                num_complete_triangles = num_floats // 9
 
-                # Create triangle from values
-                triangle = Triangle(
-                    Vector3(values[0], values[1], values[2]),
-                    Vector3(values[3], values[4], values[5]),
-                    Vector3(values[6], values[7], values[8]),
-                )
-                triangles.append(triangle)
+                for i in range(num_complete_triangles):
+                    offset = i * 36  # 36 = 9 floats * 4 bytes
+                    values = struct.unpack("9f", data[offset : offset + 36])
 
-        return triangles
+                    triangles[triangle_idx] = Triangle(
+                        Vector3(values[0], values[1], values[2]),
+                        Vector3(values[3], values[4], values[5]),
+                        Vector3(values[6], values[7], values[8]),
+                    )
+                    triangle_idx += 1
+
+        return triangles[:triangle_idx]  # In case file size wasn't exact multiple
 
     @staticmethod
     def ray_intersects_triangle(
