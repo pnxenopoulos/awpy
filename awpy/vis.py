@@ -3,12 +3,12 @@
 Reference: https://github.com/AtomicBool/cs2-map-parser
 """
 
+from __future__ import annotations  # Enables postponed evaluation of type hints
+
 import pathlib
 import struct
-from collections import deque
 from dataclasses import dataclass
 
-import numpy.typing as npt
 from loguru import logger
 
 from awpy.vector import Vector3
@@ -27,6 +27,18 @@ class Triangle:
     p1: Vector3
     p2: Vector3
     p3: Vector3
+
+    def get_centroid(self) -> Vector3:
+        """Calculate the centroid of the triangle.
+
+        Returns:
+            Vector3: Centroid of the triangle.
+        """
+        return Vector3(
+            (self.p1.x + self.p2.x + self.p3.x) / 3,
+            (self.p1.y + self.p2.y + self.p3.y) / 3,
+            (self.p1.z + self.p2.z + self.p3.z) / 3,
+        )
 
 
 @dataclass
@@ -441,268 +453,315 @@ class VphysParser:
         )
 
 
-@dataclass
 class AABB:
-    """Represents an axis-aligned bounding box (AABB).
+    """Axis-Aligned Bounding Box for efficient collision detection."""
 
-    An AABB is defined by its minimum and maximum points in 3D space.
-
-    Attributes:
-        min_point (Vector3): The minimum corner of the bounding box.
-        max_point (Vector3): The maximum corner of the bounding box.
-    """
-
-    min_point: Vector3
-    max_point: Vector3
-
-    def intersects_ray(self, origin: Vector3, direction: Vector3) -> bool:
-        """Tests whether a ray intersects with the AABB.
-
-        Uses an efficient ray-AABB intersection algorithm.
+    def __init__(self, min_point: Vector3, max_point: Vector3) -> None:
+        """Initialize the AABB with minimum and maximum points.
 
         Args:
-            origin (Vector3): The origin point of the ray.
-            direction (Vector3): The direction vector of the ray.
+            min_point (Vector3): Minimum point of the AABB.
+            max_point (Vector3): Maximum point of the AABB.
+        """
+        self.min_point = min_point
+        self.max_point = max_point
+
+    @classmethod
+    def from_triangle(cls, triangle: Triangle) -> AABB:
+        """Create an AABB from a triangle.
+
+        Args:
+            triangle (Triangle): Triangle to create the AABB from.
+
+        Returns:
+            AABB: Axis-Aligned Bounding Box encompassing the triangle.
+        """
+        min_point = Vector3(
+            min(triangle.p1.x, triangle.p2.x, triangle.p3.x),
+            min(triangle.p1.y, triangle.p2.y, triangle.p3.y),
+            min(triangle.p1.z, triangle.p2.z, triangle.p3.z),
+        )
+        max_point = Vector3(
+            max(triangle.p1.x, triangle.p2.x, triangle.p3.x),
+            max(triangle.p1.y, triangle.p2.y, triangle.p3.y),
+            max(triangle.p1.z, triangle.p2.z, triangle.p3.z),
+        )
+        return cls(min_point, max_point)
+
+    def intersects_ray(self, ray_origin: Vector3, ray_direction: Vector3) -> bool:
+        """Check if a ray intersects with the AABB.
+
+        Args:
+            ray_origin (Vector3): Ray origin point.
+            ray_direction (Vector3): Ray direction vector.
 
         Returns:
             bool: True if the ray intersects with the AABB, False otherwise.
         """
-        inv_dir = Vector3(
-            1.0 / direction.x if direction.x != 0 else float("inf"),
-            1.0 / direction.y if direction.y != 0 else float("inf"),
-            1.0 / direction.z if direction.z != 0 else float("inf"),
+        epsilon = 1e-6
+
+        def check_axis(
+            origin: float, direction: float, min_val: float, max_val: float
+        ) -> tuple[float, float]:
+            if abs(direction) < epsilon:
+                if origin < min_val or origin > max_val:
+                    return float("inf"), float("-inf")
+                return float("-inf"), float("inf")
+
+            t1 = (min_val - origin) / direction
+            t2 = (max_val - origin) / direction
+            return (min(t1, t2), max(t1, t2))
+
+        tx_min, tx_max = check_axis(
+            ray_origin.x, ray_direction.x, self.min_point.x, self.max_point.x
+        )
+        ty_min, ty_max = check_axis(
+            ray_origin.y, ray_direction.y, self.min_point.y, self.max_point.y
+        )
+        tz_min, tz_max = check_axis(
+            ray_origin.z, ray_direction.z, self.min_point.z, self.max_point.z
         )
 
-        t1 = (self.min_point.x - origin.x) * inv_dir.x
-        t2 = (self.max_point.x - origin.x) * inv_dir.x
-        t3 = (self.min_point.y - origin.y) * inv_dir.y
-        t4 = (self.max_point.y - origin.y) * inv_dir.y
-        t5 = (self.min_point.z - origin.z) * inv_dir.z
-        t6 = (self.max_point.z - origin.z) * inv_dir.z
+        t_enter = max(tx_min, ty_min, tz_min)
+        t_exit = min(tx_max, ty_max, tz_max)
 
-        tmin = max(min(t1, t2), min(t3, t4), min(t5, t6))
-        tmax = min(max(t1, t2), max(t3, t4), max(t5, t6))
-
-        return tmax >= 0 and tmin <= tmax
+        return t_enter <= t_exit and t_exit >= 0
 
 
-class OctreeNode:
-    """Represents a node in an octree for spatial partitioning.
-
-    Each node may contain triangles or have up to 8 child nodes to subdivide the space.
-
-    Attributes:
-        bounds (AABB): The axis-aligned bounding box node region.
-        triangles (list[Triangle]): List of triangles contained in this node.
-        children (list[OctreeNode | None]): List of child nodes, or None if no children.
-        max_triangles (int): Max tri allowed in leaf before splitting.
-        max_depth (int): Maximum depth of the octree to prevent infinite subdivision.
-    """
+class BVHNode:
+    """Node in the Bounding Volume Hierarchy tree."""
 
     def __init__(
-        self, bounds: AABB, max_triangles: int = 32, max_depth: int = 10
+        self,
+        aabb: AABB,
+        triangle: Triangle | None = None,
+        left: BVHNode | None = None,
+        right: BVHNode | None = None,
     ) -> None:
-        """Initializes an octree node.
+        """Initialize a BVHNode with an AABB and optional triangle and children.
 
         Args:
-            bounds (AABB): The bounding box defining the spatial limits of this node.
-            max_triangles (int, optional): Max tri in leaf before split. Defaults to 32.
-            max_depth (int, optional): Maximum depth of the octree. Defaults to 10.
+            aabb (AABB): Axis-Aligned Bounding Box of the node.
+            triangle (Triangle | None, optional): Triangle contained
+                in the node. Defaults to None.
+            left (BVHNode | None, optional): Left child node. Defaults to None.
+            right (BVHNode | None, optional): Right child node. Defaults to None.
         """
-        self.bounds = bounds
-        self.triangles: list[Triangle] = []
-        self.children: list[OctreeNode | None] = [None] * 8
-        self.max_triangles = max_triangles
-        self.max_depth = max_depth
-
-    def insert(self, triangle: Triangle, depth: int = 0) -> None:
-        """Inserts a triangle into the octree node, splitting the node if necessary.
-
-        Args:
-            triangle (Triangle): The triangle to insert.
-            depth (int, optional): Current node depth in the octree. Defaults to 0.
-        """
-        if depth >= self.max_depth:
-            self.triangles.append(triangle)
-            return
-
-        if not self.children[0]:  # Leaf node
-            if len(self.triangles) < self.max_triangles:
-                self.triangles.append(triangle)
-                return
-
-            # Split node
-            center = Vector3(
-                (self.bounds.min_point.x + self.bounds.max_point.x) / 2,
-                (self.bounds.min_point.y + self.bounds.max_point.y) / 2,
-                (self.bounds.min_point.z + self.bounds.max_point.z) / 2,
-            )
-
-            # Create eight children
-            for i in range(8):
-                min_point = Vector3(
-                    self.bounds.min_point.x if (i & 1) == 0 else center.x,
-                    self.bounds.min_point.y if (i & 2) == 0 else center.y,
-                    self.bounds.min_point.z if (i & 4) == 0 else center.z,
-                )
-                max_point = Vector3(
-                    center.x if (i & 1) == 0 else self.bounds.max_point.x,
-                    center.y if (i & 2) == 0 else self.bounds.max_point.y,
-                    center.z if (i & 4) == 0 else self.bounds.max_point.z,
-                )
-                self.children[i] = OctreeNode(
-                    AABB(min_point, max_point), self.max_triangles, self.max_depth
-                )
-
-            # Redistribute existing triangles
-            old_triangles = self.triangles
-            self.triangles = []
-            for tri in old_triangles:
-                self._insert_to_children(tri, depth + 1)
-
-            # Insert new triangle
-            self._insert_to_children(triangle, depth + 1)
-        else:
-            self._insert_to_children(triangle, depth + 1)
-
-    def contains_point(self, point: Vector3) -> bool:
-        """Checks if a point is inside the AABB.
-
-        Args:
-            point (Vector3): The point to test.
-
-        Returns:
-            bool: True if the point is inside the AABB, False otherwise.
-        """
-        return (
-            self.bounds.min_point.x <= point.x <= self.bounds.max_point.x
-            and self.bounds.min_point.y <= point.y <= self.bounds.max_point.y
-            and self.bounds.min_point.z <= point.z <= self.bounds.max_point.z
-        )
-
-    def triangle_intersects(self, triangle: "Triangle") -> bool:
-        """Tests whether a triangle intersects with the AABB.
-
-        Uses a fast, conservative triangle-AABB intersection test.
-
-        Args:
-            triangle (Triangle): The triangle to test for intersection.
-
-        Returns:
-            bool: True if the triangle intersects with the AABB, False otherwise.
-        """
-        # Compute the center of the triangle
-        center = Vector3(
-            (triangle.p1.x + triangle.p2.x + triangle.p3.x) / 3,
-            (triangle.p1.y + triangle.p2.y + triangle.p3.y) / 3,
-            (triangle.p1.z + triangle.p2.z + triangle.p3.z) / 3,
-        )
-
-        # Simple AABB test for the triangle's center
-        if not self.contains_point(center):
-            max_x = max(triangle.p1.x, triangle.p2.x, triangle.p3.x)
-            min_x = min(triangle.p1.x, triangle.p2.x, triangle.p3.x)
-            max_y = max(triangle.p1.y, triangle.p2.y, triangle.p3.y)
-            min_y = min(triangle.p1.y, triangle.p2.y, triangle.p3.y)
-            max_z = max(triangle.p1.z, triangle.p2.z, triangle.p3.z)
-            min_z = min(triangle.p1.z, triangle.p2.z, triangle.p3.z)
-
-            # Check if the triangle's bounds overlap the AABB
-            if (
-                max_x < self.bounds.min_point.x
-                or min_x > self.bounds.max_point.x
-                or max_y < self.bounds.min_point.y
-                or min_y > self.bounds.max_point.y
-                or max_z < self.bounds.min_point.z
-                or min_z > self.bounds.max_point.z
-            ):
-                return False
-
-        return True  # Conservative estimate
-
-    def _insert_to_children(self, triangle: Triangle, depth: int) -> None:
-        """Attempts to insert a triangle into the child nodes of this node.
-
-        Args:
-            triangle (Triangle): The triangle to insert.
-            depth (int): Current depth of the node in the octree.
-        """
-        for child in self.children:
-            if child and self.triangle_intersects(triangle):
-                child.insert(triangle, depth)
+        self.aabb = aabb
+        self.triangle = triangle
+        self.left = left
+        self.right = right
 
 
 class VisibilityChecker:
-    """Class for visibility checking in 3D space using an octree structure."""
+    """Class for visibility checking in 3D space using a BVH structure."""
 
     def __init__(self, triangles: list[Triangle]) -> None:
-        """Initializes the VisibilityChecker with a set of triangles.
+        """Initialize the visibility checker with a list of triangles.
 
         Args:
-            triangles (list[Triangle]): List of triangles representing the 3D scene.
+            triangles (list[Triangle]): List of triangles to build the BVH from.
         """
-        # Find bounds for octree
-        min_x = min(min(tri.p1.x, tri.p2.x, tri.p3.x) for tri in triangles)
-        max_x = max(max(tri.p1.x, tri.p2.x, tri.p3.x) for tri in triangles)
-        min_y = min(min(tri.p1.y, tri.p2.y, tri.p3.y) for tri in triangles)
-        max_y = max(max(tri.p1.y, tri.p2.y, tri.p3.y) for tri in triangles)
-        min_z = min(min(tri.p1.z, tri.p2.z, tri.p3.z) for tri in triangles)
-        max_z = max(max(tri.p1.z, tri.p2.z, tri.p3.z) for tri in triangles)
+        self.n_triangles = len(triangles)
+        self.root = self._build_bvh(triangles)
 
-        # Add some padding
-        padding = 1.0
-        bounds = AABB(
-            Vector3(min_x - padding, min_y - padding, min_z - padding),
-            Vector3(max_x + padding, max_y + padding, max_z + padding),
+    def _build_bvh(self, triangles: list[Triangle]) -> BVHNode:
+        """Build a BVH tree from a list of triangles.
+
+        Args:
+            triangles (list[Triangle]): List of triangles to build the BVH from.
+
+        Returns:
+            BVHNode: Root node of the BVH tree.
+        """
+        if len(triangles) == 1:
+            return BVHNode(AABB.from_triangle(triangles[0]), triangle=triangles[0])
+
+        # Calculate centroids and find split axis
+        centroids = [t.get_centroid() for t in triangles]
+
+        # Find the axis with the largest spread
+        min_x = min(c.x for c in centroids)
+        max_x = max(c.x for c in centroids)
+        min_y = min(c.y for c in centroids)
+        max_y = max(c.y for c in centroids)
+        min_z = min(c.z for c in centroids)
+        max_z = max(c.z for c in centroids)
+
+        x_spread = max_x - min_x
+        y_spread = max_y - min_y
+        z_spread = max_z - min_z
+
+        # Choose split axis
+        if x_spread >= y_spread and x_spread >= z_spread:
+            axis = 0  # x-axis
+        elif y_spread >= z_spread:
+            axis = 1  # y-axis
+        else:
+            axis = 2  # z-axis
+
+        # Sort triangles based on centroid position
+        triangles = sorted(
+            triangles,
+            key=lambda t: (
+                t.get_centroid().x
+                if axis == 0
+                else t.get_centroid().y
+                if axis == 1
+                else t.get_centroid().z
+            ),
         )
 
-        # Build octree
-        self.n_triangles = len(triangles)
-        self.root = OctreeNode(bounds)
-        for triangle in triangles:
-            self.root.insert(triangle)
+        # Split triangles into two groups
+        mid = len(triangles) // 2
+        left = self._build_bvh(triangles[:mid])
+        right = self._build_bvh(triangles[mid:])
 
-    def __repr__(self) -> str:
-        """String representation of the VisibilityChecker."""
-        return f"VisibilityChecker(n_triangles={self.n_triangles})"
+        # Create encompassing AABB
+        min_point = Vector3(
+            min(left.aabb.min_point.x, right.aabb.min_point.x),
+            min(left.aabb.min_point.y, right.aabb.min_point.y),
+            min(left.aabb.min_point.z, right.aabb.min_point.z),
+        )
+        max_point = Vector3(
+            max(left.aabb.max_point.x, right.aabb.max_point.x),
+            max(left.aabb.max_point.y, right.aabb.max_point.y),
+            max(left.aabb.max_point.z, right.aabb.max_point.z),
+        )
+
+        return BVHNode(AABB(min_point, max_point), left=left, right=right)
+
+    def _ray_triangle_intersection(
+        self, ray_origin: Vector3, ray_direction: Vector3, triangle: Triangle
+    ) -> float | None:
+        """Check if a ray intersects with a triangle.
+
+        Args:
+            ray_origin (Vector3): Ray origin point.
+            ray_direction (Vector3): Ray direction vector.
+            triangle (Triangle): Triangle to check intersection with.
+
+        Returns:
+            float | None: Distance to the intersection point, or
+                None if no intersection.
+        """
+        epsilon = 1e-6
+
+        edge1 = triangle.p2 - triangle.p1
+        edge2 = triangle.p3 - triangle.p1
+        h = ray_direction.cross(edge2)
+        a = edge1.dot(h)
+
+        if -epsilon < a < epsilon:
+            return None
+
+        f = 1.0 / a
+        s = ray_origin - triangle.p1
+        u = f * s.dot(h)
+
+        if u < 0.0 or u > 1.0:
+            return None
+
+        q = s.cross(edge1)
+        v = f * ray_direction.dot(q)
+
+        if v < 0.0 or u + v > 1.0:
+            return None
+
+        t = f * edge2.dot(q)
+
+        if t > epsilon:
+            return t
+
+        return None
+
+    def _traverse_bvh(
+        self,
+        node: BVHNode,
+        ray_origin: Vector3,
+        ray_direction: Vector3,
+        max_distance: float,
+    ) -> bool:
+        """Traverse the BVH tree to check for ray-triangle intersections.
+
+        Args:
+            node (BVHNode): Current node in the BVH tree.
+            ray_origin (Vector3): Ray origin point.
+            ray_direction (Vector3): Ray direction vector.
+            max_distance (float): Maximum distance to check for intersections.
+
+        Returns:
+            bool: True if an intersection is found, False otherwise.
+        """
+        if not node.aabb.intersects_ray(ray_origin, ray_direction):
+            return False
+
+        # Leaf node - check triangle intersection
+        if node.triangle:
+            t = self._ray_triangle_intersection(
+                ray_origin, ray_direction, node.triangle
+            )
+            return bool(t is not None and t <= max_distance)
+
+        # Internal node - recurse through children
+        return self._traverse_bvh(
+            node.left, ray_origin, ray_direction, max_distance
+        ) or self._traverse_bvh(node.right, ray_origin, ray_direction, max_distance)
+
+    def is_visible(
+        self,
+        start: Vector3 | tuple | list,
+        end: Vector3 | tuple | list,
+    ) -> bool:
+        """Check if a line segment is visible in the 3D space.
+
+        Args:
+            start (Vector3 | tuple | list): Start point of the line segment.
+            end (Vector3 | tuple | list): End point of the line segment.
+
+        Returns:
+            bool: True if the line segment is visible, False otherwise.
+        """
+        start_vec = Vector3.from_input(start)
+        end_vec = Vector3.from_input(end)
+
+        # Calculate ray direction and length
+        direction = end_vec - start_vec
+        distance = direction.length()
+
+        if distance < 1e-6:
+            return True
+
+        direction = direction.normalize()
+
+        # Check for intersections
+        return not self._traverse_bvh(self.root, start_vec, direction, distance)
 
     @staticmethod
     def read_tri_file(
         tri_file: str | pathlib.Path, buffer_size: int = 1000
     ) -> list[Triangle]:
-        """Reads a .tri file and returns a list of triangles.
-
-        Args:
-            tri_file (str | pathlib.Path): Path to the .tri file.
-            buffer_size (int): How many triangles to read
-                at a time. Defaults to 1000.
-
-        Returns:
-            list[Triangle]: List of triangles parsed from the file.
-        """
+        """Read triangles from a .tri file."""
         tri_file = pathlib.Path(tri_file)
         file_size = tri_file.stat().st_size
         num_triangles = file_size // (9 * 4)
 
-        # Pre-allocate the list
         triangles = [None] * num_triangles
 
         with open(tri_file, "rb") as f:
-            # Read in larger chunks (e.g., 1000 triangles at a time)
-            chunk_size = buffer_size * 9 * 4  # 1000 triangles * 9 floats * 4 bytes
-
+            chunk_size = buffer_size * 9 * 4
             triangle_idx = 0
+
             while True:
                 data = f.read(chunk_size)
                 if not data:
                     break
 
-                # Process all complete triangles in this chunk
                 num_floats = len(data) // 4
                 num_complete_triangles = num_floats // 9
 
                 for i in range(num_complete_triangles):
-                    offset = i * 36  # 36 = 9 floats * 4 bytes
+                    offset = i * 36
                     values = struct.unpack("9f", data[offset : offset + 36])
 
                     triangles[triangle_idx] = Triangle(
@@ -712,111 +771,4 @@ class VisibilityChecker:
                     )
                     triangle_idx += 1
 
-        return triangles[:triangle_idx]  # In case file size wasn't exact multiple
-
-    @staticmethod
-    def ray_intersects_triangle(
-        origin: Vector3, direction: Vector3, triangle: Triangle, epsilon: float = 1e-7
-    ) -> float | None:
-        """Moller-Trumbore ray-triangle intersection algorithm.
-
-        Args:
-            origin (Vector3 | tuple | list | np.ndarray): Ray origin.
-            direction (Vector3 | tuple | list | np.ndarray): Ray direction.
-            triangle (Triangle): The triangle to test intersection with.
-            epsilon (float, optional): Tolerance for comparisons. Defaults to 1e-7.
-
-        Returns:
-            float | None: Distance to intersect point, or None if no intersection.
-        """
-        origin = Vector3.from_input(origin)
-        direction = Vector3.from_input(direction)
-
-        edge1 = Vector3(
-            triangle.p2.x - triangle.p1.x,
-            triangle.p2.y - triangle.p1.y,
-            triangle.p2.z - triangle.p1.z,
-        )
-        edge2 = Vector3(
-            triangle.p3.x - triangle.p1.x,
-            triangle.p3.y - triangle.p1.y,
-            triangle.p3.z - triangle.p1.z,
-        )
-
-        h = Vector3(
-            direction.y * edge2.z - direction.z * edge2.y,
-            direction.z * edge2.x - direction.x * edge2.z,
-            direction.x * edge2.y - direction.y * edge2.x,
-        )
-
-        a = edge1.x * h.x + edge1.y * h.y + edge1.z * h.z
-        if abs(a) < epsilon:
-            return None
-
-        f = 1.0 / a
-        s = Vector3(
-            origin.x - triangle.p1.x, origin.y - triangle.p1.y, origin.z - triangle.p1.z
-        )
-
-        u = f * (s.x * h.x + s.y * h.y + s.z * h.z)
-        if u < 0.0 or u > 1.0:
-            return None
-
-        q = Vector3(
-            s.y * edge1.z - s.z * edge1.y,
-            s.z * edge1.x - s.x * edge1.z,
-            s.x * edge1.y - s.y * edge1.x,
-        )
-
-        v = f * (direction.x * q.x + direction.y * q.y + direction.z * q.z)
-        if v < 0.0 or u + v > 1.0:
-            return None
-
-        t = f * (edge2.x * q.x + edge2.y * q.y + edge2.z * q.z)
-        return t if t > epsilon else None
-
-    def is_visible(
-        self,
-        start: Vector3 | tuple | list | npt.NDArray,
-        end: Vector3 | tuple | list | npt.NDArray,
-    ) -> bool:
-        """Check if there's a clear line of sight between start and end points.
-
-        Args:
-            start (Vector3 | tuple | list | npt.NDArray): Start point of the vis line.
-            end (Vector3 | tuple | list | npt.NDArray): End point of the vis line.
-
-        Returns:
-            bool: True if the line of sight is clear, False otherwise.
-        """
-        start = Vector3.from_input(start)
-        end = Vector3.from_input(end)
-
-        direction = Vector3(end.x - start.x, end.y - start.y, end.z - start.z)
-        length = (direction.x**2 + direction.y**2 + direction.z**2) ** 0.5
-        if length < 1e-7:
-            return True
-
-        # Normalize direction
-        direction.x /= length
-        direction.y /= length
-        direction.z /= length
-
-        # Use queue for iterative traversal instead of recursion
-        queue = deque([(self.root, 0.0, length)])
-        while queue:
-            node, tmin, tmax = queue.popleft()
-
-            # Check node's triangles
-            for triangle in node.triangles:
-                t = self.ray_intersects_triangle(start, direction, triangle)
-                if t is not None and t <= length:
-                    return False
-
-            # Add child nodes that intersect the ray
-            if node.children[0]:  # If this node has children
-                for child in node.children:
-                    if child and child.bounds.intersects_ray(start, direction):
-                        queue.append((child, tmin, tmax))
-
-        return True
+        return triangles[:triangle_idx]
