@@ -77,6 +77,7 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    cli
    data
    demo
+   nav
    plot
    stats
    vis

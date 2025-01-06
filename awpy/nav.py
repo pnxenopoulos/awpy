@@ -1,5 +1,6 @@
 """Module to parse and represent navigation mesh files."""
 
+import json
 import struct
 from dataclasses import dataclass
 from enum import Enum
@@ -92,6 +93,12 @@ class NavArea:
         self.ladders_above: list[int] = []
         self.ladders_below: list[int] = []
 
+    def __repr__(self) -> str:
+        """Returns string representation of NavArea."""
+        connected_ids = sorted({c.area_id for conns in self.connections for c in conns})
+        points = [(c.x, c.y, c.z) for c in self.corners]
+        return f"NavArea(id={self.area_id}, connected_ids={connected_ids}, points={points})"  # noqa: E501
+
     @staticmethod
     def read_connections(br: BinaryIO) -> list[NavMeshConnection]:
         """Reads a list of connections from a binary stream.
@@ -159,11 +166,19 @@ class NavArea:
             ladder_id = struct.unpack("I", br.read(4))[0]
             self.ladders_below.append(ladder_id)
 
-    def __repr__(self) -> str:
-        """Returns string representation of NavArea."""
-        connected_ids = sorted({c.area_id for conns in self.connections for c in conns})
-        points = [(c.x, c.y, c.z) for c in self.corners]
-        return f"NavArea(id={self.area_id}, connected_ids={connected_ids}, points={points})"  # noqa: E501
+    def to_dict(self) -> dict:
+        """Converts the navigation area to a dictionary."""
+        return {
+            "area_id": self.area_id,
+            "hull_index": self.hull_index,
+            "dynamic_attribute_flags": int(self.dynamic_attribute_flags),
+            "corners": [{"x": c.x, "y": c.y, "z": c.z} for c in self.corners],
+            "connections": [
+                conn.area_id for conns in self.connections for conn in conns
+            ],
+            "ladders_above": self.ladders_above,
+            "ladders_below": self.ladders_below,
+        }
 
 
 class Nav:
@@ -194,6 +209,12 @@ class Nav:
         self.areas: dict[int, NavArea] = {}
         self.is_analyzed: bool = False
         self.read(path)
+
+    def __repr__(self) -> str:
+        """Returns string representation of Nav."""
+        return (
+            f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
+        )
 
     def read(self, path: str | Path) -> None:
         """Reads nav mesh data from a file.
@@ -295,8 +316,21 @@ class Nav:
             area.read(br, self, polygons)
             self.areas[area.area_id] = area
 
-    def __repr__(self) -> str:
-        """Returns string representation of Nav."""
-        return (
-            f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
-        )
+    def to_dict(self) -> dict:
+        """Converts the entire navigation mesh to a dictionary."""
+        return {
+            "version": self.version,
+            "sub_version": self.sub_version,
+            "is_analyzed": self.is_analyzed,
+            "areas": {area_id: area.to_dict() for area_id, area in self.areas.items()},
+        }
+
+    def to_json(self, path: str | Path) -> None:
+        """Writes the navigation mesh data to a JSON file.
+
+        Args:
+            path: Path to the JSON file to write.
+        """
+        nav_dict = self.to_dict()
+        with open(path, "w", encoding="utf-8") as json_file:
+            json.dump(nav_dict, json_file)

@@ -8,7 +8,7 @@ import requests
 from loguru import logger
 from tqdm import tqdm
 
-from awpy import Demo
+from awpy import Demo, Nav
 from awpy.data import AWPY_DATA_DIR
 from awpy.data.usd_data import USD_LINKS
 
@@ -96,7 +96,7 @@ def get(
 @click.option(
     "--other-props", multiple=True, help="List of other properties to include."
 )
-def parse(
+def parse_demo(
     demo: Path,
     *,
     outpath: Optional[Path] = None,
@@ -117,3 +117,13 @@ def parse(
         other_props=other_props[0].split(",") if other_props else None,
     )
     demo.compress(outpath=outpath)
+
+
+@awpy.command(help="Parse a Counter-Strike 2 nav file.")
+@click.argument("demo", type=click.Path(exists=True))
+def parse_nav(nav_file: Path) -> None:
+    """Parse a nav file given its path."""
+    nav_file = Path(nav_file)
+    nav_mesh = Nav(path=nav_file)
+    nav_mesh.to_json(path=nav_file.with_suffix(".json"))
+    logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}\n{nav_mesh}")
