@@ -56,7 +56,7 @@ def get(resource_type: Literal["tri"]) -> None:
 
         # Delete the zip file
         tri_file_path.unlink()
-        logger.info(f"Deleted the zip file {tri_file_path}")
+        logger.info(f"Deleted the compressed tris {tri_file_path}")
     elif resource_type == "map":
         map_not_impl_msg = "Map files are not yet implemented."
         raise NotImplementedError(map_not_impl_msg)
