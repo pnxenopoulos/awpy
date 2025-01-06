@@ -455,61 +455,6 @@ class AABB:
     min_point: Vector3
     max_point: Vector3
 
-    def triangle_intersects(self, triangle: "Triangle") -> bool:
-        """Tests whether a triangle intersects with the AABB.
-
-        Uses a fast, conservative triangle-AABB intersection test.
-
-        Args:
-            triangle (Triangle): The triangle to test for intersection.
-
-        Returns:
-            bool: True if the triangle intersects with the AABB, False otherwise.
-        """
-        # Compute the center of the triangle
-        center = Vector3(
-            (triangle.p1.x + triangle.p2.x + triangle.p3.x) / 3,
-            (triangle.p1.y + triangle.p2.y + triangle.p3.y) / 3,
-            (triangle.p1.z + triangle.p2.z + triangle.p3.z) / 3,
-        )
-
-        # Simple AABB test for the triangle's center
-        if not self.contains_point(center):
-            max_x = max(triangle.p1.x, triangle.p2.x, triangle.p3.x)
-            min_x = min(triangle.p1.x, triangle.p2.x, triangle.p3.x)
-            max_y = max(triangle.p1.y, triangle.p2.y, triangle.p3.y)
-            min_y = min(triangle.p1.y, triangle.p2.y, triangle.p3.y)
-            max_z = max(triangle.p1.z, triangle.p2.z, triangle.p3.z)
-            min_z = min(triangle.p1.z, triangle.p2.z, triangle.p3.z)
-
-            # Check if the triangle's bounds overlap the AABB
-            if (
-                max_x < self.min_point.x
-                or min_x > self.max_point.x
-                or max_y < self.min_point.y
-                or min_y > self.max_point.y
-                or max_z < self.min_point.z
-                or min_z > self.max_point.z
-            ):
-                return False
-
-        return True  # Conservative estimate
-
-    def contains_point(self, point: Vector3) -> bool:
-        """Checks if a point is inside the AABB.
-
-        Args:
-            point (Vector3): The point to test.
-
-        Returns:
-            bool: True if the point is inside the AABB, False otherwise.
-        """
-        return (
-            self.min_point.x <= point.x <= self.max_point.x
-            and self.min_point.y <= point.y <= self.max_point.y
-            and self.min_point.z <= point.z <= self.max_point.z
-        )
-
     def intersects_ray(self, origin: Vector3, direction: Vector3) -> bool:
         """Tests whether a ray intersects with the AABB.
 
@@ -620,6 +565,61 @@ class OctreeNode:
         else:
             self._insert_to_children(triangle, depth + 1)
 
+    def contains_point(self, point: Vector3) -> bool:
+        """Checks if a point is inside the AABB.
+
+        Args:
+            point (Vector3): The point to test.
+
+        Returns:
+            bool: True if the point is inside the AABB, False otherwise.
+        """
+        return (
+            self.bounds.min_point.x <= point.x <= self.bounds.max_point.x
+            and self.bounds.min_point.y <= point.y <= self.bounds.max_point.y
+            and self.bounds.min_point.z <= point.z <= self.bounds.max_point.z
+        )
+
+    def triangle_intersects(self, triangle: "Triangle") -> bool:
+        """Tests whether a triangle intersects with the AABB.
+
+        Uses a fast, conservative triangle-AABB intersection test.
+
+        Args:
+            triangle (Triangle): The triangle to test for intersection.
+
+        Returns:
+            bool: True if the triangle intersects with the AABB, False otherwise.
+        """
+        # Compute the center of the triangle
+        center = Vector3(
+            (triangle.p1.x + triangle.p2.x + triangle.p3.x) / 3,
+            (triangle.p1.y + triangle.p2.y + triangle.p3.y) / 3,
+            (triangle.p1.z + triangle.p2.z + triangle.p3.z) / 3,
+        )
+
+        # Simple AABB test for the triangle's center
+        if not self.contains_point(center):
+            max_x = max(triangle.p1.x, triangle.p2.x, triangle.p3.x)
+            min_x = min(triangle.p1.x, triangle.p2.x, triangle.p3.x)
+            max_y = max(triangle.p1.y, triangle.p2.y, triangle.p3.y)
+            min_y = min(triangle.p1.y, triangle.p2.y, triangle.p3.y)
+            max_z = max(triangle.p1.z, triangle.p2.z, triangle.p3.z)
+            min_z = min(triangle.p1.z, triangle.p2.z, triangle.p3.z)
+
+            # Check if the triangle's bounds overlap the AABB
+            if (
+                max_x < self.bounds.min_point.x
+                or min_x > self.bounds.max_point.x
+                or max_y < self.bounds.min_point.y
+                or min_y > self.bounds.max_point.y
+                or max_z < self.bounds.min_point.z
+                or min_z > self.bounds.max_point.z
+            ):
+                return False
+
+        return True  # Conservative estimate
+
     def _insert_to_children(self, triangle: Triangle, depth: int) -> None:
         """Attempts to insert a triangle into the child nodes of this node.
 
@@ -628,7 +628,7 @@ class OctreeNode:
             depth (int): Current depth of the node in the octree.
         """
         for child in self.children:
-            if child and self.bounds.triangle_intersects(triangle, child.bounds):
+            if child and self.triangle_intersects(triangle):
                 child.insert(triangle, depth)
 
 
