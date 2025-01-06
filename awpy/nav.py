@@ -1,11 +1,15 @@
-"""Module to parse and represent navigation mesh files."""
+"""Module to parse and represent navigation mesh files.
+
+Reference: https://github.com/ValveResourceFormat/ValveResourceFormat/tree/master/ValveResourceFormat/NavMesh
+"""
 
 import json
 import struct
-from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, BinaryIO, Optional
+
+from awpy.vector import Vector3
 
 
 class DynamicAttributeFlags(int):
@@ -30,21 +34,6 @@ class NavDirectionType(Enum):
     EAST = 1
     SOUTH = 2
     WEST = 3
-
-
-@dataclass
-class Vector3:
-    """A 3D vector representation.
-
-    Attributes:
-        x: X coordinate.
-        y: Y coordinate.
-        z: Z coordinate.
-    """
-
-    x: float
-    y: float
-    z: float
 
 
 class NavMeshConnection:

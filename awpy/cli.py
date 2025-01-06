@@ -11,6 +11,7 @@ from tqdm import tqdm
 from awpy import Demo, Nav
 from awpy.data import AWPY_DATA_DIR
 from awpy.data.usd_data import USD_LINKS
+from awpy.vis import VphysParser
 
 
 @click.group()
@@ -121,10 +122,22 @@ def parse_demo(
 
 @awpy.command(help="Parse a Counter-Strike 2 nav file.")
 @click.argument("nav_file", type=click.Path(exists=True))
-def parse_nav(nav_file: Path) -> None:
+@click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
+def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
     """Parse a nav file given its path."""
     nav_file = Path(nav_file)
     nav_mesh = Nav(path=nav_file)
-    output_path = Path(nav_file.stem + ".json")
+    if not outpath:
+        output_path = Path(nav_file.stem + ".json")
     nav_mesh.to_json(path=output_path)
     logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
+
+
+@awpy.command(help="Parse a .vphys file into a .tri file.")
+@click.argument("vphys_file", type=click.Path(exists=True))
+@click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
+def generate_tri(vphys_file: Path, *, outpath: Optional[Path] = None) -> None:
+    """Parse a .vphys file into a .tri file."""
+    vphys_file = Path(vphys_file)
+    vphys_parser = VphysParser(vphys_file)
+    vphys_parser.to_tri(path=outpath)

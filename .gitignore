@@ -134,10 +134,12 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
-# counter strike demofiles
+# counter strike files
 *.dem
 *.zip
 *.nav
+*.vphys
+*.tri
 
 # vscode
 *code-workspace
