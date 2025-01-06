@@ -290,7 +290,7 @@ class VphysParser:
                 f"VPhys data already parsed, got {len(self.triangles)} triangles."
             )
             return
-        
+
         logger.debug(f"Parsing vphys file: {self.vphys_file}")
 
         # Read file
@@ -662,11 +662,11 @@ class VisibilityChecker:
             self.root.insert(triangle)
 
     @staticmethod
-    def read_tri_file(tri_file: str) -> list[Triangle]:
+    def read_tri_file(tri_file: str | pathlib.Path) -> list[Triangle]:
         """Reads a .tri file and returns a list of triangles.
 
         Args:
-            tri_file (str): Path to the .tri file.
+            tri_file (str | pathlib.Path): Path to the .tri file.
 
         Returns:
             list[Triangle]: List of triangles parsed from the file.
