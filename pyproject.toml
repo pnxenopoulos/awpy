@@ -23,12 +23,13 @@ dependencies = [
     "demoparser2>=0.33.1",
     "loguru>=0.7.3",
     "matplotlib>=3.10.0",
+    "networkx>=3.4.2",
     "numpy>=2.2.1",
     "pandas>=2.2.3",
     "pillow>=11.1.0",
     "requests>=2.32.3",
     "scipy>=1.15.0",
-    "tqdm>=4.67.1"
+    "tqdm>=4.67.1",
 ]
 
 [project.urls]

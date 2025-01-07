@@ -4,10 +4,13 @@ Reference: https://github.com/ValveResourceFormat/ValveResourceFormat/tree/maste
 """
 
 import json
+import math
 import struct
 from enum import Enum
 from pathlib import Path
-from typing import Any, BinaryIO, Optional
+from typing import Any, BinaryIO, Literal, Optional
+
+import networkx as nx
 
 from awpy.vector import Vector3
 
@@ -82,11 +85,62 @@ class NavArea:
         self.ladders_above: list[int] = []
         self.ladders_below: list[int] = []
 
+    @property
+    def connected_areas(self) -> set[int]:
+        """Returns a set of connected area IDs."""
+        return {c.area_id for conns in self.connections for c in conns}
+
+    @property
+    def size(self) -> float:
+        """Calculates the area of the polygon defined by the corners.
+
+        Returns:
+            The area of the polygon in 2D (ignoring the z-coordinate).
+        """
+        if len(self.corners) < 3:
+            return 0.0  # A polygon must have at least 3 corners to form an area
+
+        x_coords = [corner.x for corner in self.corners]
+        y_coords = [corner.y for corner in self.corners]
+
+        # Close the polygon loop
+        x_coords.append(x_coords[0])
+        y_coords.append(y_coords[0])
+
+        # Shoelace formula
+        area = 0.0
+        for i in range(len(self.corners)):
+            area += x_coords[i] * y_coords[i + 1] - y_coords[i] * x_coords[i + 1]
+
+        return abs(area) / 2.0
+
+    @property
+    def centroid(self) -> Vector3:
+        """Calculates the centroid of the polygon defined by the corners.
+
+        Returns:
+            A Vector3 representing the centroid (geometric center) of the polygon.
+        """
+        if not self.corners:
+            return Vector3(0, 0, 0)  # Return origin if no corners exist
+
+        x_coords = [corner.x for corner in self.corners]
+        y_coords = [corner.y for corner in self.corners]
+
+        centroid_x = sum(x_coords) / len(self.corners)
+        centroid_y = sum(y_coords) / len(self.corners)
+
+        # Assume z is averaged as well for completeness
+        z_coords = [corner.z for corner in self.corners]
+        centroid_z = sum(z_coords) / len(self.corners)
+
+        return Vector3(centroid_x, centroid_y, centroid_z)
+
     def __repr__(self) -> str:
         """Returns string representation of NavArea."""
         connected_ids = sorted({c.area_id for conns in self.connections for c in conns})
         points = [(c.x, c.y, c.z) for c in self.corners]
-        return f"NavArea(id={self.area_id}, connected_ids={connected_ids}, points={points})"  # noqa: E501
+        return f"NavArea(id={self.area_id}, connected_ids={connected_ids}, points={points}, size={self.size})"  # noqa: E501
 
     @staticmethod
     def read_connections(br: BinaryIO) -> list[NavMeshConnection]:
@@ -199,6 +253,29 @@ class Nav:
         self.is_analyzed: bool = False
         self.read(path)
 
+        self.graph = nx.Graph()
+
+        # Add nodes
+        for _aid, area in self.areas.items():
+            self.graph.add_node(
+                area.area_id, node=area
+            )  # Add node with area_id and size as attributes
+
+        # Add edges
+        for _aid, area in self.areas.items():
+            for connected_area_id in area.connected_areas:
+                size_weight = area.size + self.areas[connected_area_id].size
+                dist_weight = math.sqrt(
+                    (area.centroid.x - self.areas[connected_area_id].centroid.x) ** 2
+                    + (area.centroid.y - self.areas[connected_area_id].centroid.y) ** 2
+                )
+                self.graph.add_edge(
+                    area.area_id,
+                    connected_area_id,
+                    size=size_weight,
+                    dist=dist_weight,
+                )  # Add an edge between connected areas
+
     def __repr__(self) -> str:
         """Returns string representation of Nav."""
         return (
@@ -304,6 +381,36 @@ class Nav:
             area = NavArea()
             area.read(br, self, polygons)
             self.areas[area.area_id] = area
+
+    def find_path(
+        self,
+        start_id: int,
+        end_id: int,
+        weight: Literal["size", "dist"] | None = None,
+    ) -> list[NavArea]:
+        """Finds the path between two areas in the graph.
+
+        Args:
+            start_id: The area ID of the starting NavArea.
+            end_id: The area ID of the ending NavArea.
+            weight: The edge attribute to use as weight (optional).
+                    If None, treats edges as unweighted.
+                    Size treats edges as the sum of the areas' sizes.
+                    Dist treats edges as the Euclidean distance between centroids.
+
+        Returns:
+            A list of NavArea objects representing the path from start to end.
+            Returns an empty list if no path exists.
+        """
+        try:
+            # Get the shortest path as a list of area IDs
+            path_ids = nx.shortest_path(
+                self.graph, source=start_id, target=end_id, weight=weight
+            )
+            # Convert area IDs to NavArea objects
+            return [self.graph.nodes[area_id]["node"] for area_id in path_ids]
+        except nx.NetworkXNoPath:
+            return []  # No path exists
 
     def to_dict(self) -> dict:
         """Converts the entire navigation mesh to a dictionary."""

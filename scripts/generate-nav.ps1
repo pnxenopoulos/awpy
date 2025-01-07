@@ -1,4 +1,4 @@
-# This script generates .tri files containing CS2 .vphys_c triangle information.
+# This script generates .json files containing CS2 .nav information.
 
 # Define the directory containing .vpk files
 $sourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps"
@@ -24,19 +24,19 @@ if (Test-Path $sourcePath) {
 
         # Construct and run the Source2Viewer-CLI command
         Write-Host "Processing file: $filePath" -ForegroundColor Green
-        .\Source2Viewer-CLI.exe -i $filePath -e "vphys_c" -o $tempOutputDir -d
+        .\Source2Viewer-CLI.exe -i $filePath -e "nav" -o $tempOutputDir -d
 
         # Move the output file to the current directory and rename it
-        $generatedFile = Join-Path -Path $tempOutputDir -ChildPath "maps\$fileNameWithoutExtension\world_physics.vphys"
-        $newFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.vphys"
+        $generatedFile = Join-Path -Path $tempOutputDir -ChildPath "maps\$fileNameWithoutExtension.nav"
+        $newFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.nav"
 
         if (Test-Path $generatedFile) {
             Move-Item -Path $generatedFile -Destination $newFileName -Force
             Write-Host "Output saved as: $newFileName" -ForegroundColor Cyan
 
             # Run the awpy generate-tri command
-            Write-Host "Running awpy generate-tri on: $newFileName" -ForegroundColor Yellow
-            awpy generate-tri $newFileName
+            Write-Host "Running awpy parse-nav on: $newFileName" -ForegroundColor Yellow
+            awpy parse-nav $newFileName
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }
