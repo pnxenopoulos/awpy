@@ -326,6 +326,140 @@ def gif(
     )
 
 
+def _hex_plot(
+        ax: Axes,
+        x: list[float],
+        y: list[float],
+        size: int,
+        cmap: str,
+        alpha: float,
+        alpha_range: Optional[list[float]],
+        min_alpha: float,
+        max_alpha: float,
+        ) -> Axes:
+    """Returns an `ax` with a hex plot."""
+    # Create heatmap
+    heatmap = ax.hexbin(x, y, gridsize=size, cmap=cmap, alpha=alpha)
+
+    # Get array of counts in each hexbin
+    counts = heatmap.get_array()
+
+    if alpha_range is not None:
+        # Normalize counts to use as alpha values
+        alphas = counts / counts.max()
+        alphas = alphas * (max_alpha - min_alpha) + min_alpha
+        # Update the color alpha values
+        heatmap.set_alpha(alphas)
+
+    # Set counts of 0 to NaN to make them transparent
+    counts[counts == 0] = np.nan
+    heatmap.set_array(counts)
+
+    return ax
+
+
+def _hist_plot(
+        ax: Axes,
+        x: list[float],
+        y: list[float],
+        size: int,
+        cmap: str,
+        alpha: float,
+        alpha_range: Optional[list[float]],
+        min_alpha: float,
+        max_alpha: float,
+        ) -> Axes:
+    """Returns an `ax` with a hist plot."""
+    hist, xedges, yedges = np.histogram2d(x, y, bins=size)
+    x, y = np.meshgrid(xedges[:-1], yedges[:-1])
+
+    # Set counts of 0 to NaN to make them transparent
+    hist[hist == 0] = np.nan
+
+    if alpha_range is not None:
+        # Normalize histogram values
+        hist_norm = hist.T / hist.max()
+        # Create a color array with variable alpha
+        colors = plt.cm.get_cmap(cmap)(hist_norm)
+        colors[..., -1] = np.where(
+            np.isnan(hist_norm),
+            0,
+            hist_norm * (max_alpha - min_alpha) + min_alpha,
+        )
+        # Plot the heatmap
+        _heatmap = ax.pcolormesh(
+            x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=colors
+        )
+    else:
+        _heatmap = ax.pcolormesh(
+            x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=alpha
+        )
+
+    return ax
+
+
+def _kde_plot(
+        ax: Axes,
+        x: list[float],
+        y: list[float],
+        size: int,
+        cmap: str,
+        alpha: float,
+        alpha_range: Optional[list[float]],
+        min_alpha: float,
+        max_alpha: float,
+        kde_lower_bound: float = 0.1,
+        ) -> Axes:
+    """Returns an `ax` with a kde plot."""
+    # Calculate the kernel density estimate
+    xy = np.vstack([x, y])
+    kde = gaussian_kde(xy)
+    # Create a grid and evaluate the KDE on it
+    xmin, xmax = min(x), max(x)
+    ymin, ymax = min(y), max(y)
+    xi, yi = np.mgrid[xmin : xmax : size * 1j, ymin: ymax : size * 1j]
+    zi = kde(np.vstack([xi.flatten(), yi.flatten()])).reshape(xi.shape)
+
+    # Set very low density values to NaN to make them transparent
+    threshold = zi.max() * kde_lower_bound  # You can adjust this threshold
+    zi[zi < threshold] = np.nan
+
+    if alpha_range is not None:
+        # Normalize KDE values
+        zi_norm = zi / zi.max()
+        # Create a color array with variable alpha
+        colors = plt.cm.get_cmap(cmap)(zi_norm)
+        colors[..., -1] = np.where(
+            np.isnan(zi_norm),
+            0,
+            zi_norm * (max_alpha - min_alpha) + min_alpha,
+        )
+        _heatmap = ax.pcolormesh(xi, yi, zi, cmap=cmap, alpha=colors)
+    else:
+        _heatmap = ax.pcolormesh(xi, yi, zi, cmap=cmap, alpha=alpha)
+
+    return ax
+
+
+def verify_alpha_range(alpha_range: list[float]) -> list:
+    """Verify that `alpha_range` is valid."""
+    if len(alpha_range) != 2:
+        msg = "alpha_range must have exactly 2 elements."
+        raise ValueError(msg)
+    min_val, max_val = alpha_range[0], alpha_range[1]
+    if not (min_val >= 0 and min_val <= 1) or not (
+        max_val >= 0 and max_val <= 1
+    ):
+        msg = "alpha_range must have both values as floats between \
+            0 and 1."
+        raise ValueError(msg)
+    if min_val > max_val:
+        msg = "alpha_range[0] (min alpha) cannot be greater than \
+            alpha[1] (max alpha)."
+        raise ValueError(msg)
+    return [min_val, max_val]
+
+
 def heatmap(
     map_name: str,
     points: list[tuple[float, float, float]],
@@ -406,99 +540,47 @@ def heatmap(
     # Check and/or set alpha_range
     min_alpha, max_alpha = 0, 1
     if alpha_range is not None:
-        if not isinstance(alpha_range, list):
-            msg = "alpha_range must be a list of length 2."
-            raise ValueError(msg)
-        if len(alpha_range) != 2:
-            msg = "alpha_range must have exactly 2 elements."
-            raise ValueError(msg)
-        min_temp, max_temp = alpha_range[0], alpha_range[1]
-        if not (min_temp >= 0 and min_temp <= 1) or not (
-            max_temp >= 0 and max_temp <= 1
-        ):
-            msg = "alpha_range must have both values as floats between \
-                0 and 1."
-            raise ValueError(msg)
-        if min_temp > max_temp:
-            msg = "alpha_range[0] (min alpha) cannot be greater than \
-                alpha[1] (max alpha)."
-            raise ValueError(msg)
-        min_alpha, max_alpha = min_temp, max_temp
+        min_alpha, max_alpha = verify_alpha_range(alpha_range)
 
     if method == "hex":
-        # Create heatmap
-        heatmap = ax.hexbin(x, y, gridsize=size, cmap=cmap, alpha=alpha)
-
-        # Get array of counts in each hexbin
-        counts = heatmap.get_array()
-
-        if alpha_range is not None:
-            # Normalize counts to use as alpha values
-            alphas = counts / counts.max()
-            alphas = alphas * (max_alpha - min_alpha) + min_alpha
-            # Update the color alpha values
-            heatmap.set_alpha(alphas)
-
-        # Set counts of 0 to NaN to make them transparent
-        counts[counts == 0] = np.nan
-        heatmap.set_array(counts)
+        ax = _hex_plot(
+            ax,
+            x,
+            y,
+            size,
+            cmap,
+            alpha,
+            alpha_range,
+            min_alpha,
+            max_alpha,
+        )
 
     elif method == "hist":
-        hist, xedges, yedges = np.histogram2d(x, y, bins=size)
-        x, y = np.meshgrid(xedges[:-1], yedges[:-1])
-
-        # Set counts of 0 to NaN to make them transparent
-        hist[hist == 0] = np.nan
-
-        if alpha_range is not None:
-            # Normalize histogram values
-            hist_norm = hist.T / hist.max()
-            # Create a color array with variable alpha
-            colors = plt.cm.get_cmap(cmap)(hist_norm)
-            colors[..., -1] = np.where(
-                np.isnan(hist_norm),
-                0,
-                hist_norm * (max_alpha - min_alpha) + min_alpha,
-            )
-            # Plot the heatmap
-            heatmap = ax.pcolormesh(
-                x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=colors
-            )
-        else:
-            heatmap = ax.pcolormesh(
-                x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=alpha
-            )
+        ax = _hist_plot(
+            ax,
+            x,
+            y,
+            size,
+            cmap,
+            alpha,
+            alpha_range,
+            min_alpha,
+            max_alpha,
+        )
 
     elif method == "kde":
-        # Calculate the kernel density estimate
-        xy = np.vstack([x, y])
-        kde = gaussian_kde(xy)
-        # Create a grid and evaluate the KDE on it
-        xmin, xmax = min(x), max(x)
-        ymin, ymax = min(y), max(y)
-        xi, yi = np.mgrid[xmin : xmax : size * 1j, ymin : ymax : size * 1j]
-        zi = kde(np.vstack([xi.flatten(), yi.flatten()])).reshape(xi.shape)
-
-        # Set very low density values to NaN to make them transparent
-        threshold = zi.max() * kde_lower_bound  # You can adjust this threshold
-        zi[zi < threshold] = np.nan
-
-        if alpha_range is not None:
-            # Normalize KDE values
-            zi_norm = zi / zi.max()
-            # Create a color array with variable alpha
-            colors = plt.cm.get_cmap(cmap)(zi_norm)
-            colors[..., -1] = np.where(
-                np.isnan(zi_norm),
-                0,
-                zi_norm * (max_alpha - min_alpha) + min_alpha,
-            )
-            heatmap = ax.pcolormesh(xi, yi, zi, cmap=cmap, alpha=colors)
-        else:
-            heatmap = ax.pcolormesh(xi, yi, zi, cmap=cmap, alpha=alpha)
-    else:
-        invalid_method_msg = "Invalid method. Choose 'hex', 'hist' or 'kde'."
-        raise ValueError(invalid_method_msg)
+        ax = _kde_plot(
+            ax,
+            x,
+            y,
+            size,
+            cmap,
+            alpha,
+            alpha_range,
+            min_alpha,
+            max_alpha,
+            kde_lower_bound,
+        )
 
     ax.axis("off")
     fig.patch.set_facecolor("black")

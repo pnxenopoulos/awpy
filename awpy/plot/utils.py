@@ -10,7 +10,7 @@ from awpy.data.map_data import MAP_DATA
 def game_to_pixel_axis(
     map_name: str, position: float, axis: Literal["x", "y"]
 ) -> float:
-    """Transforms an X or Y-axis value. CS2 coordinate -> Minimap image pixel value.
+    """Transforms a CS2-coord value to a pixel-coord in the X or Y-axis.
 
     Args:
         map_name (str): Map to search
@@ -38,7 +38,7 @@ def game_to_pixel_axis(
 def pixel_to_game_axis(
     map_name: str, position: float, axis: Literal["x", "y"]
 ) -> float:
-    """Reverts an X or Y-axis value. Minimap image pixel value -> CS2 coordinate.
+    """Transforms a pixel-coord value to a CS2-coord in the X or Y-axis.
 
     Args:
         map_name (str): Map to search
@@ -66,8 +66,7 @@ def pixel_to_game_axis(
 def game_to_pixel(
     map_name: str, position: tuple[float, float, float]
 ) -> tuple[float, float, float]:
-    """Transforms a single coordinate (X, Y, Z). CS2 coordinates -> Minimap
-    image pixel values.
+    """Transforms a `(X, Y, Z)` CS2-coord to pixel coord.
 
     Args:
         map_name (str): Map to transform coordinates.
@@ -86,8 +85,7 @@ def game_to_pixel(
 def pixel_to_game(
     map_name: str, position: tuple[float, float, float]
 ) -> tuple[float, float, float]:
-    """Transforms an single coordinate (X,Y,Z). Minimap image pixel values ->
-    CS2 coordinates.
+    """Transforms a `(X, Y, Z)` pixel coord to CS2-coord.
 
     Args:
         map_name (str): Map to transform coordinates.
