@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
 from demoparser2 import DemoParser  # pylint: disable=E0611
 from loguru import logger
 
@@ -31,6 +32,9 @@ DEFAULT_PLAYER_PROPS = [
     "X",
     "Y",
     "Z",
+    "velocity_X",
+    "velocity_Y",
+    "velocity_Z",
     "pitch",
     "yaw",
     "last_place_name",
@@ -166,6 +170,17 @@ class Demo:
         """
         if self.verbose:
             logger.debug(msg)
+
+    @property
+    def players(self) -> pd.DataFrame:
+        """Get the players in the demo.
+
+        Returns: pd.DataFrame of the players, their steam IDs and rounds.
+        """
+        if self.ticks is not None:
+            ticks_not_parsed_error_msg = "Ticks are not parsed!"
+            raise ValueError(ticks_not_parsed_error_msg)
+        return self.ticks[["steamid", "name", "round", "team_name"]].drop_duplicates()
 
     def _parse_demo(self) -> None:
         """Parse the demo header and file."""

@@ -1,5 +1,6 @@
 """Command-line interface for Awpy."""
 
+import zipfile
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -8,9 +9,9 @@ import requests
 from loguru import logger
 from tqdm import tqdm
 
-from awpy import Demo
-from awpy.data import AWPY_DATA_DIR
-from awpy.data.usd_data import USD_LINKS
+from awpy import Demo, Nav
+from awpy.data import AWPY_DATA_DIR, TRI_URL
+from awpy.vis import VphysParser
 
 
 @click.group()
@@ -21,56 +22,41 @@ def awpy() -> None:
 @awpy.command(
     help="Get Counter-Strike 2 resources like map images, nav meshes or usd files."
 )
-@click.argument("resource_type", type=click.Choice(["map", "nav", "usd"]))
-@click.argument("resource_name", required=False)
-def get(
-    resource_type: Literal["map", "nav", "usd"], resource_name: Optional[str]
-) -> None:
+@click.argument("resource_type", type=click.Choice(["tri"]))
+def get(resource_type: Literal["tri"]) -> None:
     """Get a resource given its type and name."""
     if not AWPY_DATA_DIR.exists():
         AWPY_DATA_DIR.mkdir(parents=True, exist_ok=True)
         awpy_data_dir_creation_msg = f"Created awpy data directory at {AWPY_DATA_DIR}"
         logger.debug(awpy_data_dir_creation_msg)
 
-    if resource_type == "usd":
-        if resource_name:
-            url = USD_LINKS.get(resource_name)
-            if not url:
-                logger.error(f"No USD link found for {resource_name}")
-                return
-            usd_data_dir = AWPY_DATA_DIR / "usd"
-            usd_data_dir.mkdir(parents=True, exist_ok=True)
-            usd_file_path = usd_data_dir / f"{resource_name}.usdc"
-            logger.info(f"Getting USD for {resource_name}...")
-            response = requests.get(url, stream=True, timeout=300)
-            total_size = int(response.headers.get("content-length", 0))
-            block_size = 1024
-            with (
-                tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
-                open(usd_file_path, "wb") as file,
-            ):
-                for data in response.iter_content(block_size):
-                    progress_bar.update(len(data))
-                    file.write(data)
-            logger.info(f"Saved USD for {resource_name} to {usd_file_path}")
-        else:
-            logger.info("Getting all USDs...")
-            for map_name, url in USD_LINKS.items():
-                usd_data_dir = AWPY_DATA_DIR / "usd"
-                usd_data_dir.mkdir(parents=True, exist_ok=True)
-                usd_file_path = usd_data_dir / f"{map_name}.usdc"
-                logger.info(f"Getting USD for {map_name}...")
-                response = requests.get(url, stream=True, timeout=300)
-                total_size = int(response.headers.get("content-length", 0))
-                block_size = 1024
-                with (
-                    tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
-                    open(usd_file_path, "wb") as file,
-                ):
-                    for data in response.iter_content(block_size):
-                        progress_bar.update(len(data))
-                        file.write(data)
-                logger.info(f"Saved USD for {map_name} to {usd_file_path}")
+    if resource_type == "tri":
+        tri_data_dir = AWPY_DATA_DIR / "tri"
+        tri_data_dir.mkdir(parents=True, exist_ok=True)
+        tri_file_path = tri_data_dir / "tris.zip"
+        response = requests.get(TRI_URL, stream=True, timeout=300)
+        total_size = int(response.headers.get("content-length", 0))
+        block_size = 1024
+        with (
+            tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
+            open(tri_file_path, "wb") as file,
+        ):
+            for data in response.iter_content(block_size):
+                progress_bar.update(len(data))
+                file.write(data)
+
+        # Unzip the file
+        try:
+            with zipfile.ZipFile(tri_file_path, "r") as zip_ref:
+                zip_ref.extractall(tri_data_dir)
+            logger.info(f"Extracted contents of {tri_file_path} to {tri_data_dir}")
+        except zipfile.BadZipFile as e:
+            logger.error(f"Failed to unzip {tri_file_path}: {e}")
+            return
+
+        # Delete the zip file
+        tri_file_path.unlink()
+        logger.info(f"Deleted the compressed tris {tri_file_path}")
     elif resource_type == "map":
         map_not_impl_msg = "Map files are not yet implemented."
         raise NotImplementedError(map_not_impl_msg)
@@ -96,7 +82,7 @@ def get(
 @click.option(
     "--other-props", multiple=True, help="List of other properties to include."
 )
-def parse(
+def parse_demo(
     demo: Path,
     *,
     outpath: Optional[Path] = None,
@@ -117,3 +103,26 @@ def parse(
         other_props=other_props[0].split(",") if other_props else None,
     )
     demo.compress(outpath=outpath)
+
+
+@awpy.command(help="Parse a Counter-Strike 2 nav file.")
+@click.argument("nav_file", type=click.Path(exists=True))
+@click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
+def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
+    """Parse a nav file given its path."""
+    nav_file = Path(nav_file)
+    nav_mesh = Nav(path=nav_file)
+    if not outpath:
+        output_path = Path(nav_file.stem + ".json")
+    nav_mesh.to_json(path=output_path)
+    logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
+
+
+@awpy.command(help="Parse a .vphys file into a .tri file.")
+@click.argument("vphys_file", type=click.Path(exists=True))
+@click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
+def generate_tri(vphys_file: Path, *, outpath: Optional[Path] = None) -> None:
+    """Parse a .vphys file into a .tri file."""
+    vphys_file = Path(vphys_file)
+    vphys_parser = VphysParser(vphys_file)
+    vphys_parser.to_tri(path=outpath)

@@ -1,309 +1,774 @@
-"""Module for calculating visibility."""
+"""Module for calculating visibility.
 
-from typing import Dict, List, Optional, Tuple
+Reference: https://github.com/AtomicBool/cs2-map-parser
+"""
 
-import numpy as np
-from pxr import Usd, UsdGeom
+from __future__ import annotations  # Enables postponed evaluation of type hints
 
-from awpy.data import AWPY_DATA_DIR
+import pathlib
+import struct
+from dataclasses import dataclass
+
+from loguru import logger
+
+from awpy.vector import Vector3
 
 
-class AxisAlignedBoundingBox:
-    """Axis-Aligned Bounding Box class."""
+@dataclass
+class Triangle:
+    """A triangle in 3D space defined by three vertices.
 
-    def __init__(self, min_point: np.ndarray, max_point: np.ndarray) -> None:
-        """Initialize AxisAlignedBoundingBox with minimum and maximum points.
+    Attributes:
+        p1: First vertex of the triangle.
+        p2: Second vertex of the triangle.
+        p3: Third vertex of the triangle.
+    """
 
-        Args:
-            min_point (np.ndarray): Minimum point of the bounding box.
-            max_point (np.ndarray): Maximum point of the bounding box.
-        """
-        self.min_point = np.array(min_point)
-        self.max_point = np.array(max_point)
+    p1: Vector3
+    p2: Vector3
+    p3: Vector3
 
-    def intersects_ray(self, ray_origin: np.ndarray, ray_direction: np.ndarray) -> bool:
-        """Check if a ray intersects with the AxisAlignedBoundingBox.
-
-        Args:
-            ray_origin (np.ndarray): Origin of the ray.
-            ray_direction (np.ndarray): Direction of the ray.
+    def get_centroid(self) -> Vector3:
+        """Calculate the centroid of the triangle.
 
         Returns:
-            bool: True if the ray intersects the
-                AxisAlignedBoundingBox, False otherwise.
+            Vector3: Centroid of the triangle.
         """
-        epsilon = 1e-6  # Small value to handle floating point precision
+        return Vector3(
+            (self.p1.x + self.p2.x + self.p3.x) / 3,
+            (self.p1.y + self.p2.y + self.p3.y) / 3,
+            (self.p1.z + self.p2.z + self.p3.z) / 3,
+        )
 
-        t_min = np.zeros(3)
-        t_max = np.zeros(3)
 
-        for i in range(3):
-            if abs(ray_direction[i]) < epsilon:
-                if (
-                    ray_origin[i] < self.min_point[i]
-                    or ray_origin[i] > self.max_point[i]
-                ):
-                    return False
-                t_min[i] = float("-inf")
-                t_max[i] = float("inf")
+@dataclass
+class Edge:
+    """An edge in a triangulated mesh.
+
+    Attributes:
+        next: Index of the next edge in the face.
+        twin: Index of the twin edge in the adjacent face.
+        origin: Index of the vertex where this edge starts.
+        face: Index of the face this edge belongs to.
+    """
+
+    next: int
+    twin: int
+    origin: int
+    face: int
+
+
+class KV3Parser:
+    """Parser for KV3 format files used in Source 2 engine.
+
+    This class provides functionality to parse KV3 files, which are used to store
+    various game data including physics collision meshes.
+
+    Attributes:
+        content: Raw content of the KV3 file.
+        index: Current parsing position in the content.
+        parsed_data: Resulting parsed data structure.
+    """
+
+    def __init__(self) -> None:
+        """Initialize a new KV3Parser instance."""
+        self.content = ""
+        self.index = 0
+        self.parsed_data = None
+
+    def parse(self, content: str) -> None:
+        """Parse the given KV3 content string.
+
+        Args:
+            content: String containing KV3 formatted data.
+        """
+        self.content = content
+        self.index = 0
+        self._skip_until_first_bracket()
+        self.parsed_data = self._parse_value()
+
+    def get_value(self, path: str) -> str:
+        """Get a value from the parsed data using a dot-separated path.
+
+        Args:
+            path: Dot-separated path to the desired value, e.g.,
+                "section.subsection[0].value"
+
+        Returns:
+            String value at the specified path, or empty string
+                if not found.
+        """
+        if not self.parsed_data:
+            return ""
+
+        current = self.parsed_data
+        for segment in path.split("."):
+            key = segment
+            array_index = None
+
+            if "[" in segment:
+                key = segment[: segment.find("[")]
+                array_index = int(segment[segment.find("[") + 1 : segment.find("]")])
+
+            if isinstance(current, dict) and key in current:
+                current = current[key]
             else:
-                t1 = (self.min_point[i] - ray_origin[i]) / ray_direction[i]
-                t2 = (self.max_point[i] - ray_origin[i]) / ray_direction[i]
-                t_min[i] = min(t1, t2)
-                t_max[i] = max(t1, t2)
+                return ""
 
-        t_enter = np.max(t_min)
-        t_exit = np.min(t_max)
+            if array_index is not None:
+                if isinstance(current, list) and array_index < len(current):
+                    current = current[array_index]
+                else:
+                    return ""
+
+        return current if isinstance(current, str) else ""
+
+    def _skip_until_first_bracket(self) -> None:
+        """Skip content until the first opening bracket is found."""
+        while self.index < len(self.content) and self.content[self.index] != "{":
+            self.index = self.content.find("\n", self.index) + 1
+
+    def _skip_whitespace(self) -> None:
+        """Skip all whitespace characters at the current position."""
+        while self.index < len(self.content) and self.content[self.index].isspace():
+            self.index += 1
+
+    def _parse_value(self) -> dict | list | str | None:
+        """Parse a value from the current position.
+
+        Returns:
+            Parsed value which can be a dictionary, list, or string,
+                or None if parsing fails.
+        """
+        self._skip_whitespace()
+        if self.index >= len(self.content):
+            return None
+
+        char = self.content[self.index]
+        if char == "{":
+            return self._parse_object()
+        if char == "[":
+            return self._parse_array()
+        if (
+            char == "#"
+            and self.index + 1 < len(self.content)
+            and self.content[self.index + 1] == "["
+        ):
+            self.index += 1
+            return self._parse_byte_array()
+        return self._parse_string()
+
+    def _parse_object(self) -> dict:
+        """Parse a KV3 object starting at the current position.
+
+        Returns:
+            Dictionary containing the parsed key-value pairs.
+        """
+        self.index += 1  # Skip {
+        obj = {}
+        while self.index < len(self.content):
+            self._skip_whitespace()
+            if self.content[self.index] == "}":
+                self.index += 1
+                return obj
+
+            key = self._parse_string()
+            self._skip_whitespace()
+            if self.content[self.index] == "=":
+                self.index += 1
+
+            value = self._parse_value()
+            if key and value is not None:
+                obj[key] = value
+
+            self._skip_whitespace()
+            if self.content[self.index] == ",":
+                self.index += 1
+
+        return obj
+
+    def _parse_array(self) -> list:
+        """Parse a KV3 array starting at the current position.
+
+        Returns:
+            List containing the parsed values.
+        """
+        self.index += 1  # Skip [
+        arr = []
+        while self.index < len(self.content):
+            self._skip_whitespace()
+            if self.content[self.index] == "]":
+                self.index += 1
+                return arr
+
+            value = self._parse_value()
+            if value is not None:
+                arr.append(value)
+
+            self._skip_whitespace()
+            if self.content[self.index] == ",":
+                self.index += 1
+        return arr
+
+    def _parse_byte_array(self) -> str:
+        """Parse a KV3 byte array starting at the current position.
+
+        Returns:
+            Space-separated string of byte values.
+        """
+        self.index += 1  # Skip [
+        start = self.index
+        while self.index < len(self.content) and self.content[self.index] != "]":
+            self.index += 1
+        byte_str = self.content[start : self.index].strip()
+        self.index += 1  # Skip ]
+        return " ".join(byte_str.split())
+
+    def _parse_string(self) -> str:
+        """Parse a string value at the current position.
+
+        Returns:
+            Parsed string value.
+        """
+        start = self.index
+        while self.index < len(self.content):
+            char = self.content[self.index]
+            if char in "={}[], \n":
+                break
+            self.index += 1
+        return self.content[start : self.index].strip()
+
+
+class VphysParser:
+    """Parser for VPhys collision files.
+
+    This class extracts and processes collision geometry data
+        from VPhys files, converting it into a set of triangles.
+
+    Attributes:
+        vphys_file (Path): Path to the VPhys file.
+        triangles (list[Triangle]): List of parsed triangles from the VPhys file.
+        kv3_parser (KV3Parser): Helper parser for extracting key-value data from
+            the .vphys file.
+    """
+
+    def __init__(self, vphys_file: str | pathlib.Path) -> None:
+        """Initializes the parser with the path to a VPhys file.
+
+        Args:
+            vphys_file (str | pathlib.Path): Path to the VPhys file
+                to parse.
+        """
+        self.vphys_file = pathlib.Path(vphys_file)
+        self.triangles = []
+        self.kv3_parser = KV3Parser()
+        self.parse()
+
+    @staticmethod
+    def bytes_to_vec(byte_str: str, element_size: int) -> list[int | float]:
+        """Converts a space-separated string of byte values into a list of numbers.
+
+        Args:
+            byte_str (str): Space-separated string of hexadecimal byte values.
+            element_size (int): Number of bytes per element (1 for
+                uint8, 4 for float/int32).
+
+        Returns:
+            list[int | float]: List of converted values (integers for
+                uint8, floats for size 4).
+        """
+        bytes_list = [int(b, 16) for b in byte_str.split()]
+        result = []
+
+        if element_size == 1:  # uint8
+            return bytes_list
+
+        # Convert bytes to appropriate type based on size
+        for i in range(0, len(bytes_list), element_size):
+            chunk = bytes(bytes_list[i : i + element_size])
+            if element_size == 4:  # float or int32
+                val = struct.unpack("f", chunk)[0]  # Assume float for size 4
+                result.append(val)
+
+        return result
+
+    def parse(self) -> None:
+        """Parses the VPhys file and extracts collision geometry.
+
+        Processes hulls and meshes in the VPhys file to generate a list of triangles.
+        """
+        if len(self.triangles) > 0:
+            logger.debug(
+                f"VPhys data already parsed, got {len(self.triangles)} triangles."
+            )
+            return
+
+        logger.debug(f"Parsing vphys file: {self.vphys_file}")
+
+        # Read file
+        with open(self.vphys_file) as f:
+            data = f.read()
+
+        # Parse VPhys data
+        self.kv3_parser.parse(data)
+
+        # Process hulls
+        hull_idx = 0
+        hull_count = 0
+        while True:
+            if hull_idx % 1000 == 0:
+                logger.debug(f"Processing hull {hull_idx}...")
+
+            collision_idx = self.kv3_parser.get_value(
+                f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_nCollisionAttributeIndex"
+            )
+            if not collision_idx:
+                break
+
+            if collision_idx == "0":
+                # Get vertices
+                vertex_str = self.kv3_parser.get_value(
+                    f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_VertexPositions"
+                )
+                if not vertex_str:
+                    vertex_str = self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Vertices"
+                    )
+
+                vertex_data = self.bytes_to_vec(vertex_str, 4)
+                vertices = [
+                    Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
+                    for i in range(0, len(vertex_data), 3)
+                ]
+
+                # Get faces and edges
+                faces = self.bytes_to_vec(
+                    self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Faces"
+                    ),
+                    1,
+                )
+                edge_data = self.bytes_to_vec(
+                    self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Edges"
+                    ),
+                    1,
+                )
+
+                edges = [
+                    Edge(
+                        edge_data[i],
+                        edge_data[i + 1],
+                        edge_data[i + 2],
+                        edge_data[i + 3],
+                    )
+                    for i in range(0, len(edge_data), 4)
+                ]
+
+                # Process triangles
+                for start_edge in faces:
+                    edge = edges[start_edge].next
+                    while edge != start_edge:
+                        next_edge = edges[edge].next
+                        self.triangles.append(
+                            Triangle(
+                                vertices[edges[start_edge].origin],
+                                vertices[edges[edge].origin],
+                                vertices[edges[next_edge].origin],
+                            )
+                        )
+                        edge = next_edge
+
+                hull_count += 1
+            hull_idx += 1
+
+        # Process meshes
+        mesh_idx = 0
+        mesh_count = 0
+        while True:
+            collision_idx = self.kv3_parser.get_value(
+                f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_nCollisionAttributeIndex"
+            )
+            if not collision_idx:
+                break
+
+            if collision_idx == "0":
+                # Get triangles and vertices
+                tri_data = self.bytes_to_vec(
+                    self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Triangles"
+                    ),
+                    4,
+                )
+                vertex_data = self.bytes_to_vec(
+                    self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Vertices"
+                    ),
+                    4,
+                )
+
+                vertices = [
+                    Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
+                    for i in range(0, len(vertex_data), 3)
+                ]
+
+                for i in range(0, len(tri_data), 3):
+                    self.triangles.append(
+                        Triangle(
+                            vertices[int(tri_data[i])],
+                            vertices[int(tri_data[i + 1])],
+                            vertices[int(tri_data[i + 2])],
+                        )
+                    )
+
+                mesh_count += 1
+            mesh_idx += 1
+
+    def to_tri(self, path: str | pathlib.Path | None) -> None:
+        """Export parsed triangles to a .tri file.
+
+        Args:
+            path: Path to the output .tri file.
+        """
+        if not path:
+            path = self.vphys_file.with_suffix(".tri")
+        outpath = pathlib.Path(path)
+
+        logger.debug(f"Exporting {len(self.triangles)} triangles to {outpath}")
+        with open(outpath, "wb") as f:
+            for triangle in self.triangles:
+                # Write all Vector3 components as float32
+                f.write(struct.pack("f", triangle.p1.x))
+                f.write(struct.pack("f", triangle.p1.y))
+                f.write(struct.pack("f", triangle.p1.z))
+                f.write(struct.pack("f", triangle.p2.x))
+                f.write(struct.pack("f", triangle.p2.y))
+                f.write(struct.pack("f", triangle.p2.z))
+                f.write(struct.pack("f", triangle.p3.x))
+                f.write(struct.pack("f", triangle.p3.y))
+                f.write(struct.pack("f", triangle.p3.z))
+
+        logger.success(
+            f"Processed {len(self.triangles)} triangles from {self.vphys_file} -> {outpath}"  # noqa: E501
+        )
+
+
+class AABB:
+    """Axis-Aligned Bounding Box for efficient collision detection."""
+
+    def __init__(self, min_point: Vector3, max_point: Vector3) -> None:
+        """Initialize the AABB with minimum and maximum points.
+
+        Args:
+            min_point (Vector3): Minimum point of the AABB.
+            max_point (Vector3): Maximum point of the AABB.
+        """
+        self.min_point = min_point
+        self.max_point = max_point
+
+    @classmethod
+    def from_triangle(cls, triangle: Triangle) -> AABB:
+        """Create an AABB from a triangle.
+
+        Args:
+            triangle (Triangle): Triangle to create the AABB from.
+
+        Returns:
+            AABB: Axis-Aligned Bounding Box encompassing the triangle.
+        """
+        min_point = Vector3(
+            min(triangle.p1.x, triangle.p2.x, triangle.p3.x),
+            min(triangle.p1.y, triangle.p2.y, triangle.p3.y),
+            min(triangle.p1.z, triangle.p2.z, triangle.p3.z),
+        )
+        max_point = Vector3(
+            max(triangle.p1.x, triangle.p2.x, triangle.p3.x),
+            max(triangle.p1.y, triangle.p2.y, triangle.p3.y),
+            max(triangle.p1.z, triangle.p2.z, triangle.p3.z),
+        )
+        return cls(min_point, max_point)
+
+    def intersects_ray(self, ray_origin: Vector3, ray_direction: Vector3) -> bool:
+        """Check if a ray intersects with the AABB.
+
+        Args:
+            ray_origin (Vector3): Ray origin point.
+            ray_direction (Vector3): Ray direction vector.
+
+        Returns:
+            bool: True if the ray intersects with the AABB, False otherwise.
+        """
+        epsilon = 1e-6
+
+        def check_axis(
+            origin: float, direction: float, min_val: float, max_val: float
+        ) -> tuple[float, float]:
+            if abs(direction) < epsilon:
+                if origin < min_val or origin > max_val:
+                    return float("inf"), float("-inf")
+                return float("-inf"), float("inf")
+
+            t1 = (min_val - origin) / direction
+            t2 = (max_val - origin) / direction
+            return (min(t1, t2), max(t1, t2))
+
+        tx_min, tx_max = check_axis(
+            ray_origin.x, ray_direction.x, self.min_point.x, self.max_point.x
+        )
+        ty_min, ty_max = check_axis(
+            ray_origin.y, ray_direction.y, self.min_point.y, self.max_point.y
+        )
+        tz_min, tz_max = check_axis(
+            ray_origin.z, ray_direction.z, self.min_point.z, self.max_point.z
+        )
+
+        t_enter = max(tx_min, ty_min, tz_min)
+        t_exit = min(tx_max, ty_max, tz_max)
 
         return t_enter <= t_exit and t_exit >= 0
 
 
-class BoundingVolumeHierarchyNode:
-    """Bounding Volume Hierarchy Node class."""
+class BVHNode:
+    """Node in the Bounding Volume Hierarchy tree."""
 
     def __init__(
         self,
-        aabb: AxisAlignedBoundingBox,
-        mesh: Optional[Dict] = None,
-        left: Optional["BoundingVolumeHierarchyNode"] = None,
-        right: Optional["BoundingVolumeHierarchyNode"] = None,
+        aabb: AABB,
+        triangle: Triangle | None = None,
+        left: BVHNode | None = None,
+        right: BVHNode | None = None,
     ) -> None:
-        """Initialize BVH node.
+        """Initialize a BVHNode with an AABB and optional triangle and children.
 
         Args:
-            aabb (AxisAlignedBoundingBox): Axis-aligned bounding box for this node.
-            mesh (Optional[Dict]): Mesh data if this is a leaf node.
-            left (Optional[BoundingVolumeHierarchyNode]): Left child node.
-            right (Optional[BoundingVolumeHierarchyNode]): Right child node.
+            aabb (AABB): Axis-Aligned Bounding Box of the node.
+            triangle (Triangle | None, optional): Triangle contained
+                in the node. Defaults to None.
+            left (BVHNode | None, optional): Left child node. Defaults to None.
+            right (BVHNode | None, optional): Right child node. Defaults to None.
         """
         self.aabb = aabb
-        self.mesh = mesh
+        self.triangle = triangle
         self.left = left
         self.right = right
 
 
-def _build_bvh(meshes: List[Dict]) -> BoundingVolumeHierarchyNode:
-    """Build a Bounding Volume Hierarchy from a list of meshes.
+class VisibilityChecker:
+    """Class for visibility checking in 3D space using a BVH structure."""
 
-    Args:
-        meshes (List[Dict]): List of mesh dictionaries.
+    def __init__(self, triangles: list[Triangle]) -> None:
+        """Initialize the visibility checker with a list of triangles.
 
-    Returns:
-        BoundingVolumeHierarchyNode: Root node of the BVH.
-    """
-    if len(meshes) == 1:
-        return BoundingVolumeHierarchyNode(meshes[0]["aabb"], mesh=meshes[0])
+        Args:
+            triangles (list[Triangle]): List of triangles to build the BVH from.
+        """
+        self.n_triangles = len(triangles)
+        self.root = self._build_bvh(triangles)
 
-    centroids = np.array(
-        [
-            m["aabb"].min_point + (m["aabb"].max_point - m["aabb"].min_point) / 2
-            for m in meshes
-        ]
-    )
-    axis = np.argmax(np.max(centroids, axis=0) - np.min(centroids, axis=0))
-    meshes.sort(key=lambda m: m["aabb"].min_point[axis])
+    def _build_bvh(self, triangles: list[Triangle]) -> BVHNode:
+        """Build a BVH tree from a list of triangles.
 
-    mid = len(meshes) // 2
-    left = _build_bvh(meshes[:mid])
-    right = _build_bvh(meshes[mid:])
+        Args:
+            triangles (list[Triangle]): List of triangles to build the BVH from.
 
-    min_point = np.minimum(left.aabb.min_point, right.aabb.min_point)
-    max_point = np.maximum(left.aabb.max_point, right.aabb.max_point)
-    aabb = AxisAlignedBoundingBox(min_point, max_point)
+        Returns:
+            BVHNode: Root node of the BVH tree.
+        """
+        if len(triangles) == 1:
+            return BVHNode(AABB.from_triangle(triangles[0]), triangle=triangles[0])
 
-    return BoundingVolumeHierarchyNode(aabb, left=left, right=right)
+        # Calculate centroids and find split axis
+        centroids = [t.get_centroid() for t in triangles]
 
+        # Find the axis with the largest spread
+        min_x = min(c.x for c in centroids)
+        max_x = max(c.x for c in centroids)
+        min_y = min(c.y for c in centroids)
+        max_y = max(c.y for c in centroids)
+        min_z = min(c.z for c in centroids)
+        max_z = max(c.z for c in centroids)
 
-def _create_mesh_aabb(points: np.ndarray) -> AxisAlignedBoundingBox:
-    """Create an AxisAlignedBoundingBox for a mesh given its points.
+        x_spread = max_x - min_x
+        y_spread = max_y - min_y
+        z_spread = max_z - min_z
 
-    Args:
-        points (np.ndarray): Array of mesh vertices.
+        # Choose split axis
+        if x_spread >= y_spread and x_spread >= z_spread:
+            axis = 0  # x-axis
+        elif y_spread >= z_spread:
+            axis = 1  # y-axis
+        else:
+            axis = 2  # z-axis
 
-    Returns:
-        AxisAlignedBoundingBox: Axis-aligned bounding box for the mesh.
-    """
-    min_point = np.min(points, axis=0)
-    max_point = np.max(points, axis=0)
-    return AxisAlignedBoundingBox(min_point, max_point)
-
-
-def _line_mesh_intersection(
-    start: np.ndarray,
-    end: np.ndarray,
-    points: np.ndarray,
-    face_vertex_counts: np.ndarray,
-    face_vertex_indices: np.ndarray,
-) -> bool:
-    """Check if a line segment intersects with a mesh.
-
-    Args:
-        start (np.ndarray): Start point of the line segment.
-        end (np.ndarray): End point of the line segment.
-        points (np.ndarray): Mesh vertices.
-        face_vertex_counts (np.ndarray): Number of vertices for each face.
-        face_vertex_indices (np.ndarray): Indices of vertices for each face.
-
-    Returns:
-        bool: True if there's an intersection, False otherwise.
-    """
-    start = np.array(start)
-    end = np.array(end)
-    direction = end - start
-    direction /= np.linalg.norm(direction)
-
-    vertex_index = 0
-    for face_vertex_count in face_vertex_counts:
-        face_indices = face_vertex_indices[
-            vertex_index : vertex_index + face_vertex_count
-        ]
-        vertex_index += face_vertex_count
-
-        for i in range(1, face_vertex_count - 1):
-            triangle = [
-                np.array(points[face_indices[0]]),
-                np.array(points[face_indices[i]]),
-                np.array(points[face_indices[i + 1]]),
-            ]
-
-            intersection = _ray_triangle_intersection(start, direction, triangle)
-            if intersection is not None:
-                t = np.dot(intersection - start, direction)
-                if 0 <= t <= np.linalg.norm(end - start):
-                    return True  # Return immediately if an intersection is found
-
-    return False
-
-
-def _ray_triangle_intersection(
-    ray_origin: np.ndarray, ray_direction: np.ndarray, triangle: List[np.ndarray]
-) -> Optional[np.ndarray]:
-    """Find the intersection point between a ray and a triangle.
-
-    Args:
-        ray_origin (np.ndarray): Origin of the ray.
-        ray_direction (np.ndarray): Direction of the ray.
-        triangle (List[np.ndarray]): List of three vertices defining the triangle.
-
-    Returns:
-        Optional[np.ndarray]: Intersection point if it exists, None otherwise.
-    """
-    epsilon = 1e-6
-    vertex0, vertex1, vertex2 = triangle
-    edge1 = vertex1 - vertex0
-    edge2 = vertex2 - vertex0
-    h = np.cross(ray_direction, edge2)
-    a = np.dot(edge1, h)
-
-    if -epsilon < a < epsilon:
-        return None
-
-    f = 1.0 / a
-    s = ray_origin - vertex0
-    u = f * np.dot(s, h)
-
-    if u < 0.0 or u > 1.0:
-        return None
-
-    q = np.cross(s, edge1)
-    v = f * np.dot(ray_direction, q)
-
-    if v < 0.0 or u + v > 1.0:
-        return None
-
-    t = f * np.dot(edge2, q)
-
-    if t > epsilon:
-        return ray_origin + t * ray_direction
-
-    return None
-
-
-def _traverse_bvh(
-    node: BoundingVolumeHierarchyNode,
-    ray_origin: np.ndarray,
-    ray_direction: np.ndarray,
-    point2: np.ndarray,
-) -> bool:
-    """Traverse the BVH to find if there's any intersection with a ray.
-
-    Args:
-        node (BoundingVolumeHierarchyNode): Current BVH node.
-        ray_origin (np.ndarray): Origin of the ray.
-        ray_direction (np.ndarray): Direction of the ray.
-        point2 (np.ndarray): End point of the ray.
-
-    Returns:
-        bool: True if there's an intersection, False otherwise.
-    """
-    if not node.aabb.intersects_ray(ray_origin, ray_direction):
-        return False
-
-    if node.mesh:
-        return _line_mesh_intersection(
-            ray_origin,
-            point2,
-            node.mesh["points"],
-            node.mesh["face_vertex_counts"],
-            node.mesh["face_vertex_indices"],
+        # Sort triangles based on centroid position
+        triangles = sorted(
+            triangles,
+            key=lambda t: (
+                t.get_centroid().x
+                if axis == 0
+                else t.get_centroid().y
+                if axis == 1
+                else t.get_centroid().z
+            ),
         )
 
-    return _traverse_bvh(node.left, ray_origin, ray_direction, point2) or _traverse_bvh(
-        node.right, ray_origin, ray_direction, point2
-    )
+        # Split triangles into two groups
+        mid = len(triangles) // 2
+        left = self._build_bvh(triangles[:mid])
+        right = self._build_bvh(triangles[mid:])
 
+        # Create encompassing AABB
+        min_point = Vector3(
+            min(left.aabb.min_point.x, right.aabb.min_point.x),
+            min(left.aabb.min_point.y, right.aabb.min_point.y),
+            min(left.aabb.min_point.z, right.aabb.min_point.z),
+        )
+        max_point = Vector3(
+            max(left.aabb.max_point.x, right.aabb.max_point.x),
+            max(left.aabb.max_point.y, right.aabb.max_point.y),
+            max(left.aabb.max_point.z, right.aabb.max_point.z),
+        )
 
-def is_visible(
-    point1: Tuple[float, float, float],
-    point2: Tuple[float, float, float],
-    map_name: str,
-) -> bool:
-    """Check for intersections between a line segment and meshes in a USD file.
+        return BVHNode(AABB(min_point, max_point), left=left, right=right)
 
-    Args:
-        point1 (Tuple[float, float, float]): Start point of the line segment.
-        point2 (Tuple[float, float, float]): End point of the line segment.
-        map_name (str): Name of the map to check.
+    def _ray_triangle_intersection(
+        self, ray_origin: Vector3, ray_direction: Vector3, triangle: Triangle
+    ) -> float | None:
+        """Check if a ray intersects with a triangle.
 
-    Returns:
-        bool: True if there's an intersection, False otherwise.
+        Args:
+            ray_origin (Vector3): Ray origin point.
+            ray_direction (Vector3): Ray direction vector.
+            triangle (Triangle): Triangle to check intersection with.
 
-    Raises:
-        FileNotFoundError: If the USD file for the map is not found
-    """
-    usd_path = AWPY_DATA_DIR / "usd" / f"{map_name}.usdc"
-    if not usd_path.exists():
-        missing_usd_msg = f"USD file {usd_path} not found. Try calling awpy get {map_name} to download the map."  # noqa: E501
-        raise FileNotFoundError(missing_usd_msg)
+        Returns:
+            float | None: Distance to the intersection point, or
+                None if no intersection.
+        """
+        epsilon = 1e-6
 
-    stage = Usd.Stage.Open(str(usd_path))
+        edge1 = triangle.p2 - triangle.p1
+        edge2 = triangle.p3 - triangle.p1
+        h = ray_direction.cross(edge2)
+        a = edge1.dot(h)
 
-    meshes = []
-    for prim in stage.Traverse():
-        if prim.IsA(UsdGeom.Mesh):
-            mesh = UsdGeom.Mesh(prim)
-            points = mesh.GetPointsAttr().Get()
-            face_vertex_counts = mesh.GetFaceVertexCountsAttr().Get()
-            face_vertex_indices = mesh.GetFaceVertexIndicesAttr().Get()
+        if -epsilon < a < epsilon:
+            return None
 
-            aabb = _create_mesh_aabb(points)
-            meshes.append(
-                {
-                    "prim": prim,
-                    "points": points,
-                    "face_vertex_counts": face_vertex_counts,
-                    "face_vertex_indices": face_vertex_indices,
-                    "aabb": aabb,
-                }
+        f = 1.0 / a
+        s = ray_origin - triangle.p1
+        u = f * s.dot(h)
+
+        if u < 0.0 or u > 1.0:
+            return None
+
+        q = s.cross(edge1)
+        v = f * ray_direction.dot(q)
+
+        if v < 0.0 or u + v > 1.0:
+            return None
+
+        t = f * edge2.dot(q)
+
+        if t > epsilon:
+            return t
+
+        return None
+
+    def _traverse_bvh(
+        self,
+        node: BVHNode,
+        ray_origin: Vector3,
+        ray_direction: Vector3,
+        max_distance: float,
+    ) -> bool:
+        """Traverse the BVH tree to check for ray-triangle intersections.
+
+        Args:
+            node (BVHNode): Current node in the BVH tree.
+            ray_origin (Vector3): Ray origin point.
+            ray_direction (Vector3): Ray direction vector.
+            max_distance (float): Maximum distance to check for intersections.
+
+        Returns:
+            bool: True if an intersection is found, False otherwise.
+        """
+        if not node.aabb.intersects_ray(ray_origin, ray_direction):
+            return False
+
+        # Leaf node - check triangle intersection
+        if node.triangle:
+            t = self._ray_triangle_intersection(
+                ray_origin, ray_direction, node.triangle
             )
+            return bool(t is not None and t <= max_distance)
 
-    bvh = _build_bvh(meshes)
+        # Internal node - recurse through children
+        return self._traverse_bvh(
+            node.left, ray_origin, ray_direction, max_distance
+        ) or self._traverse_bvh(node.right, ray_origin, ray_direction, max_distance)
 
-    point1 = np.array(point1, dtype=float)
-    point2 = np.array(point2, dtype=float)
-    direction = point2 - point1
-    direction /= np.linalg.norm(direction)
+    def is_visible(
+        self,
+        start: Vector3 | tuple | list,
+        end: Vector3 | tuple | list,
+    ) -> bool:
+        """Check if a line segment is visible in the 3D space.
 
-    intersects = _traverse_bvh(bvh, point1, direction, point2)
+        Args:
+            start (Vector3 | tuple | list): Start point of the line segment.
+            end (Vector3 | tuple | list): End point of the line segment.
 
-    return not intersects
+        Returns:
+            bool: True if the line segment is visible, False otherwise.
+        """
+        start_vec = Vector3.from_input(start)
+        end_vec = Vector3.from_input(end)
+
+        # Calculate ray direction and length
+        direction = end_vec - start_vec
+        distance = direction.length()
+
+        if distance < 1e-6:
+            return True
+
+        direction = direction.normalize()
+
+        # Check for intersections
+        return not self._traverse_bvh(self.root, start_vec, direction, distance)
+
+    @staticmethod
+    def read_tri_file(
+        tri_file: str | pathlib.Path, buffer_size: int = 1000
+    ) -> list[Triangle]:
+        """Read triangles from a .tri file."""
+        tri_file = pathlib.Path(tri_file)
+        file_size = tri_file.stat().st_size
+        num_triangles = file_size // (9 * 4)
+
+        triangles = [None] * num_triangles
+
+        with open(tri_file, "rb") as f:
+            chunk_size = buffer_size * 9 * 4
+            triangle_idx = 0
+
+            while True:
+                data = f.read(chunk_size)
+                if not data:
+                    break
+
+                num_floats = len(data) // 4
+                num_complete_triangles = num_floats // 9
+
+                for i in range(num_complete_triangles):
+                    offset = i * 36
+                    values = struct.unpack("9f", data[offset : offset + 36])
+
+                    triangles[triangle_idx] = Triangle(
+                        Vector3(values[0], values[1], values[2]),
+                        Vector3(values[3], values[4], values[5]),
+                        Vector3(values[6], values[7], values[8]),
+                    )
+                    triangle_idx += 1
+
+        return triangles[:triangle_idx]
