@@ -51,7 +51,7 @@ class TestVisibility:
         """Tests basic visibility for de_dust2."""
         de_dust2_tri = AWPY_DATA_DIR / "tri" / "de_dust2.tri"
         tris = VisibilityChecker.read_tri_file(de_dust2_tri)
-        vc = VisibilityChecker(triangles=tris)
+        vc = VisibilityChecker(path=de_dust2_tri)
 
         test_points = [
             # Structured as (point1, point2, expected_visibility)

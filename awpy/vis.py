@@ -556,14 +556,25 @@ class BVHNode:
 class VisibilityChecker:
     """Class for visibility checking in 3D space using a BVH structure."""
 
-    def __init__(self, triangles: list[Triangle]) -> None:
+    def __init__(
+        self, path: pathlib.Path | None = None, triangles: list[Triangle] | None = None
+    ) -> None:
         """Initialize the visibility checker with a list of triangles.
 
         Args:
-            triangles (list[Triangle]): List of triangles to build the BVH from.
+            path (pathlib.Path | None, optional): Path to a .tri file to read
+                triangles from.
+            triangles (list[Triangle] | None, optional): List of triangles to
+                build the BVH from.
         """
+        if path is not None:
+            triangles = self.read_tri_file(path)
         self.n_triangles = len(triangles)
         self.root = self._build_bvh(triangles)
+
+    def __repr__(self) -> str:
+        """Return a string representation of the VisibilityChecker."""
+        return f"VisibilityChecker(n_triangles={self.n_triangles})"
 
     def _build_bvh(self, triangles: list[Triangle]) -> BVHNode:
         """Build a BVH tree from a list of triangles.
