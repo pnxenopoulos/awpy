@@ -508,12 +508,7 @@ def heatmap(
         if point_is_lower == map_is_lower:
             points.append(point)
         else:
-            warning = (
-                f"You are drawing the {"lower" if map_is_lower else "upper"} "
-                "level of the map, but provided some points on the "
-                f"{"lower" if point_is_lower else "upper"} level, "
-                "which were ignored."
-            )
+            warning = f"You are drawing on the {'lower' if map_is_lower else 'upper'} level of the map, but provided some points on the {'lower' if point_is_lower else 'upper'} level, which were ignored."  # noqa: E501
     if warning:
         warnings.warn(warning, UserWarning, stacklevel=2)
 
