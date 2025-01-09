@@ -1,33 +1,27 @@
-# This script processes and decompiles .vtex_c files to images.
+# Define the command and arguments
+$exePath = ".\Source2Viewer-CLI.exe"
+$inputPath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\pak01_dir.vpk"
+$outputPath = "."
+$folderFilter = "panorama/images/overheadmaps/"
+$extensionFilter = "vtex_c"
 
-# Define the source directory containing the .vtex_c files
-$sourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\panorama\images\overheadmaps"
+# Run the command
+& $exePath -i $inputPath -f $folderFilter -e $extensionFilter -o $outputPath -d
 
-# Get the current directory where the script is run
-$outputDirectory = (Get-Location).Path
+# Set the directory for renaming files
+$targetDirectory = Join-Path $outputPath $folderFilter
 
-# Ensure the path exists
-if (Test-Path $sourcePath) {
-    # Get all .vtex_c files in the directory
-    Get-ChildItem -Path $sourcePath -Filter "*_radar_psd.vtex_c" | ForEach-Object {
-        # Get full path and base name of the file
-        $filePath = $_.FullName
-        $fileNameWithoutExtension = $_.BaseName
+# Check if the target directory exists
+if (Test-Path $targetDirectory) {
+    # Get all files ending with "_radar_psd.png"
+    Get-ChildItem -Path $targetDirectory -Filter "*_radar_psd.png" | ForEach-Object {
+        # Define the new file name by replacing "_radar_psd.png" with ".png"
+        $newFileName = $_.Name -replace "_radar_psd\.png$", ".png"
+        $newFilePath = Join-Path $_.DirectoryName $newFileName
 
-        # Construct and run the Source2Viewer-CLI command
-        Write-Host "Processing file: $filePath" -ForegroundColor Green
-        $outputFileName = "$fileNameWithoutExtension.png"
-        $outputFilePath = Join-Path -Path $outputDirectory -ChildPath $outputFileName
-
-        .\Source2Viewer-CLI.exe -i $filePath -o $outputFilePath
-
-        # Check if the image was successfully created
-        if (Test-Path $outputFilePath) {
-            Write-Host "Output saved as: $outputFilePath" -ForegroundColor Cyan
-        } else {
-            Write-Host "Error: Failed to process $fileNameWithoutExtension" -ForegroundColor Red
-        }
+        # Rename the file
+        Rename-Item -Path $_.FullName -NewName $newFileName
     }
 } else {
-    Write-Host "The specified directory does not exist: $sourcePath" -ForegroundColor Red
+    Write-Host "Target directory '$targetDirectory' does not exist."
 }
