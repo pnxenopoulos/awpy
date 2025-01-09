@@ -81,13 +81,11 @@ def plot(  # noqa: PLR0915
         if point_settings is None:
             point_settings = [{}] * len(points)
         elif len(points) != len(point_settings):
-            settings_mismatch_err = (
-                "Number of points and point_settings do not match."
-            )
+            settings_mismatch_err = "Number of points and point_settings do not match."
             raise ValueError(settings_mismatch_err)
 
         # Plot each point
-        for (x, y, z), settings in zip(points, point_settings):
+        for (x, y, z), settings in zip(points, point_settings, strict=False):
             transformed_x = game_to_pixel_axis(map_name, x, "x")
             transformed_y = game_to_pixel_axis(map_name, y, "y")
 
@@ -327,16 +325,16 @@ def gif(
 
 
 def _hex_plot(
-        ax: Axes,
-        x: list[float],
-        y: list[float],
-        size: int,
-        cmap: str,
-        alpha: float,
-        alpha_range: Optional[list[float]],
-        min_alpha: float,
-        max_alpha: float,
-        ) -> Axes:
+    ax: Axes,
+    x: list[float],
+    y: list[float],
+    size: int,
+    cmap: str,
+    alpha: float,
+    alpha_range: Optional[list[float]],
+    min_alpha: float,
+    max_alpha: float,
+) -> Axes:
     """Returns an `ax` with a hex plot."""
     # Create heatmap
     heatmap = ax.hexbin(x, y, gridsize=size, cmap=cmap, alpha=alpha)
@@ -359,16 +357,16 @@ def _hex_plot(
 
 
 def _hist_plot(
-        ax: Axes,
-        x: list[float],
-        y: list[float],
-        size: int,
-        cmap: str,
-        alpha: float,
-        alpha_range: Optional[list[float]],
-        min_alpha: float,
-        max_alpha: float,
-        ) -> Axes:
+    ax: Axes,
+    x: list[float],
+    y: list[float],
+    size: int,
+    cmap: str,
+    alpha: float,
+    alpha_range: Optional[list[float]],
+    min_alpha: float,
+    max_alpha: float,
+) -> Axes:
     """Returns an `ax` with a hist plot."""
     hist, xedges, yedges = np.histogram2d(x, y, bins=size)
     x, y = np.meshgrid(xedges[:-1], yedges[:-1])
@@ -387,29 +385,25 @@ def _hist_plot(
             hist_norm * (max_alpha - min_alpha) + min_alpha,
         )
         # Plot the heatmap
-        _heatmap = ax.pcolormesh(
-            x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=colors
-        )
+        _heatmap = ax.pcolormesh(x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=colors)
     else:
-        _heatmap = ax.pcolormesh(
-            x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=alpha
-        )
+        _heatmap = ax.pcolormesh(x, y, hist.T, cmap=cmap, norm=LogNorm(), alpha=alpha)
 
     return ax
 
 
 def _kde_plot(
-        ax: Axes,
-        x: list[float],
-        y: list[float],
-        size: int,
-        cmap: str,
-        alpha: float,
-        alpha_range: Optional[list[float]],
-        min_alpha: float,
-        max_alpha: float,
-        kde_lower_bound: float = 0.1,
-        ) -> Axes:
+    ax: Axes,
+    x: list[float],
+    y: list[float],
+    size: int,
+    cmap: str,
+    alpha: float,
+    alpha_range: Optional[list[float]],
+    min_alpha: float,
+    max_alpha: float,
+    kde_lower_bound: float = 0.1,
+) -> Axes:
     """Returns an `ax` with a kde plot."""
     # Calculate the kernel density estimate
     xy = np.vstack([x, y])
@@ -417,7 +411,7 @@ def _kde_plot(
     # Create a grid and evaluate the KDE on it
     xmin, xmax = min(x), max(x)
     ymin, ymax = min(y), max(y)
-    xi, yi = np.mgrid[xmin : xmax : size * 1j, ymin: ymax : size * 1j]
+    xi, yi = np.mgrid[xmin : xmax : size * 1j, ymin : ymax : size * 1j]
     zi = kde(np.vstack([xi.flatten(), yi.flatten()])).reshape(xi.shape)
 
     # Set very low density values to NaN to make them transparent
@@ -447,9 +441,7 @@ def verify_alpha_range(alpha_range: list[float]) -> list:
         msg = "alpha_range must have exactly 2 elements."
         raise ValueError(msg)
     min_val, max_val = alpha_range[0], alpha_range[1]
-    if not (min_val >= 0 and min_val <= 1) or not (
-        max_val >= 0 and max_val <= 1
-    ):
+    if not (min_val >= 0 and min_val <= 1) or not (max_val >= 0 and max_val <= 1):
         msg = "alpha_range must have both values as floats between \
             0 and 1."
         raise ValueError(msg)
