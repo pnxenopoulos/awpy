@@ -7,9 +7,11 @@
 
 **Counter-Strike 2 Demo Parsing, Analytics and Visualization in Python**
 
-- :computer: Parse Counter-Strike demos in Python in one line.
+- :computer: Parse Counter-Strike demos in Python in one line
 - :skull: Access kill, damage, grenade, bomb, player trajectory data, and more
 - :chart: Calculate common statistics, such as ADR, KAST, Rating and win probability
+- :mag_right: Determine player visibility in microseconds
+- :earth_americas: Parse navigation meshes (.nav) and calculate graph distances
 - 🎞️ Visualize Counter-Strike data, including animated round gifs
 - :speaker: Active [Discord](https://discord.gg/W34XjsSs2H) community
 
@@ -22,7 +24,7 @@ pip install --pre awpy
 ```
 
 > [!NOTE]
-> `awpy` requires [Python](https://www.python.org/downloads/) between 3.10, 3.11 or 3.12. 3.13 is _not_ currently supported! To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
+> `awpy` requires [Python](https://www.python.org/downloads/) between 3.10, 3.11, 3.12 and 3.13. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
 
 > [!TIP]
 > Don't worry if you get stuck, visit us [our Discord](https://discord.gg/W34XjsSs2H) for help.
@@ -71,25 +73,6 @@ We welcome any contributions from the community, no matter the skill-level. You 
 
 > [!TIP]
 > We are happy to walk through those that want to contribute, no matter your skill level. There are a diverse set of ways one can contribute to Awpy. We welcome first-time contributors.
-
-## Structure
-
-Awpy is structured as follows:
-
-```
-.
-├── awpy
-│   ├── data                      # Data directory (PLANNED)
-│   ├── stats                     # Stats and analytics module
-│   └── visualization             # Visualization module (PLANNED)
-│   converters.py                 # Utilities for converting to readable strings
-│   demo.py                       # Defines the base Demo class
-│   parsers.py                    # Defines simple parsers for different events
-│   utils.py                      # Utilities used across the project
-├── doc                           # Documentation files
-├── examples                      # Jupyter Notebooks showing example code
-└── tests                         # Tests
-```
 
 ## Acknowledgments
 
