@@ -24,19 +24,19 @@ if (Test-Path $sourcePath) {
 
         # Construct and run the Source2Viewer-CLI command
         Write-Host "Processing file: $filePath" -ForegroundColor Green
-        .\Source2Viewer-CLI.exe -i $filePath -e "nav" -o $tempOutputDir -d
+        .\Source2Viewer-CLI.exe -i $filePath -e "vents_c" -o $tempOutputDir -d
 
         # Move the output file to the current directory and rename it
-        $generatedFile = Join-Path -Path $tempOutputDir -ChildPath "maps\$fileNameWithoutExtension.nav"
-        $newFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.nav"
+        $generatedFile = Join-Path -Path $tempOutputDir -ChildPath "maps\$fileNameWithoutExtension\entities\default_ents.vents"
+        $newFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.vents"
 
         if (Test-Path $generatedFile) {
             Move-Item -Path $generatedFile -Destination $newFileName -Force
             Write-Host "Output saved as: $newFileName" -ForegroundColor Cyan
 
-            # Run the awpy parse-nav command
-            Write-Host "Running awpy parse-nav on: $newFileName" -ForegroundColor Yellow
-            awpy parse-nav $newFileName
+            # Run the awpy parse-spawns command
+            Write-Host "Running awpy parse-spawns on: $newFileName" -ForegroundColor Yellow
+            awpy parse-spawns $newFileName
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }

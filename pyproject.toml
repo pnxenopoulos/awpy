@@ -151,7 +151,7 @@ select = [
     "RUF",
     "EM"
 ]
-ignore = ["D208", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001"]
+ignore = ["D208", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001", "ANN101"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.pydocstyle]
