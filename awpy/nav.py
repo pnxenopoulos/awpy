@@ -437,21 +437,13 @@ class Nav:
 VentsValue = str | int | float | bool | tuple[float, ...]
 
 
-@dataclass
-class Position:
-    """Simple class."""
-
-    x: float
-    y: float
-    z: float
-
 
 @dataclass
 class Spawns:
     """Spawns of a map."""
 
-    CT: list[Position]
-    T: list[Position]
+    CT: list[Vector3]
+    T: list[Vector3]
 
     def to_dict(self) -> dict[str, list[dict[str, float]]]:
         """Converts the spawns to a dictionary."""
@@ -525,8 +517,8 @@ def parse_file_to_dict(file_content: str) -> dict[int, dict[str, VentsValue]]:
 
 def filter_data(data: dict[int, dict[str, VentsValue]]) -> Spawns:
     """Filter the data to get the positions."""
-    ct_spawns: list[Position] = []
-    t_spawns: list[Position] = []
+    ct_spawns: list[Vector3] = []
+    t_spawns: list[Vector3] = []
 
     for properties in data.values():
         if (
@@ -536,7 +528,7 @@ def filter_data(data: dict[int, dict[str, VentsValue]]) -> Spawns:
         ):
             x, y, z = properties["origin"]  # pyright: ignore[reportGeneralTypeIssues]
             t_spawns.append(
-                Position(x=x, y=y, z=z)  # pyright: ignore[reportArgumentType]
+                Vector3(x=x, y=y, z=z)  # pyright: ignore[reportArgumentType]
             )
         elif (
             properties.get("classname") == "info_player_counterterrorist"
@@ -545,7 +537,7 @@ def filter_data(data: dict[int, dict[str, VentsValue]]) -> Spawns:
         ):
             x, y, z = properties["origin"]  # pyright: ignore[reportGeneralTypeIssues]
             ct_spawns.append(
-                Position(x=x, y=y, z=z)  # pyright: ignore[reportArgumentType]
+                Vector3(x=x, y=y, z=z)  # pyright: ignore[reportArgumentType]
             )
 
     return Spawns(CT=ct_spawns, T=t_spawns)
