@@ -1,6 +1,6 @@
 # This workflow will create game artifacts used in the awpy Python library
 
-name: Artifacts
+name: artifacts
 
 env:
   SOURCE2_VERSION: 11.1
@@ -38,17 +38,17 @@ jobs:
                 uv sync --group dev --group test
                 uv tool install .
 
-                - name: Install SteamCMD
-                run: |
-                  curl -sSL ${{ env.STEAMCMD_URL }} -o steamcmd.zip
-                  tar -xf steamcmd.zip -C ${{ github.workspace }}
-                  echo "SteamCMD installed."
+            - name: Install SteamCMD
+              run: |
+                    curl -sSL ${{ env.STEAMCMD_URL }} -o steamcmd.zip
+                    tar -xf steamcmd.zip -C ${{ github.workspace }}
+                    echo "SteamCMD installed."
 
             - name: Log in to Steam and Download CS2
               run: |
                     # Navigate to SteamCMD directory
                     cd ${{ github.workspace }}
-                    ./steamcmd.exe +login <your_steam_username> <your_password> \
+                    ./steamcmd.exe +login ${{ secrets.STEAM_USERNAME }} ${{ secrets.STEAM_PASSWORD }} \
                     +force_install_dir "${{ env.CS2_INSTALL_DIR }}" \
                     +app_update ${{ env.CS2_APP_ID }} validate \
                     +quit
