@@ -2,7 +2,7 @@
 
 # Define the directory containing .vpk files
 $sourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps"
-
+$targetDir = "awpy\data\spawns"
 # Get the current directory where the script is run
 $outputDirectory = (Get-Location).Path
 
@@ -37,10 +37,12 @@ if (Test-Path $sourcePath) {
             # Run the awpy parse-spawns command
             Write-Host "Running awpy parse-spawns on: $newFileName" -ForegroundColor Yellow
             uv run awpy parse-spawns $newFileName
+            $generatedFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.json"
+            Move-Item -Path $generatedFileName -Destination $targetDir -Force
+            Remove-Item -Path $newFileName -Force
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }
-
         # Clean up the temporary directory
         Remove-Item -Path $tempOutputDir -Recurse -Force
     }
