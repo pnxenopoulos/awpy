@@ -4,6 +4,7 @@ $inputPath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Globa
 $outputPath = "."
 $folderFilter = "panorama/images/overheadmaps/"
 $extensionFilter = "vtex_c"
+$targetDirectory = "awpy\data\maps\"
 
 # Run the command
 & $exePath -i $inputPath -f $folderFilter -e $extensionFilter -o $outputPath -d
@@ -21,7 +22,12 @@ if (Test-Path $targetDirectory) {
 
         # Rename the file
         Rename-Item -Path $_.FullName -NewName $newFileName
+        $currentPath = Join-Path $folderFilter $newFileName
+        $targetPath = Join-Path $targetDirectory $newFileName
+        Move-Item -Path $currentPath -Destination $targetPath -Force
     }
+
+    Remove-Item -Path $folderFilter -Recurse -Force
 } else {
     Write-Host "Target directory '$targetDirectory' does not exist."
 }
