@@ -51,6 +51,8 @@ def plot(  # noqa: PLR0915
             - 'armor': int (0-100)
             - 'direction': tuple[float, float] (pitch, yaw in degrees)
             - 'label': str (optional)
+            - 'label_direction': int (default 0, optional) (location in degrees)
+            - 'label_fontsize': int (default 6, optional)
 
     Raises:
         FileNotFoundError: Raises a FileNotFoundError if the map image is not
@@ -106,6 +108,8 @@ def plot(  # noqa: PLR0915
             armor = settings.get("armor")
             direction = settings.get("direction")
             label = settings.get("label")
+            label_direction = settings.get("label_direction", 0)
+            label_fontsize = settings.get("label_fontsize",6)
 
             alpha = 0.15 if hp == 0 else 1.0
 
@@ -219,19 +223,23 @@ def plot(  # noqa: PLR0915
 
             # Add label
             if label:
-                label_offset = vertical_offset + 1.25 * bar_width
+                radians = math.radians(label_direction % 360)
+                label_vertical_offset = 2*(size+label_fontsize)
+                label_horizontal_offset = 1.5*(size+len(label)*label_fontsize)
+                label_offset_x = math.sin(radians) * (label_horizontal_offset)
+                label_offset_y = math.cos(radians) * (label_vertical_offset)
                 axes.annotate(
                     label,
-                    (transformed_x, transformed_y - label_offset),
+                    (transformed_x + label_offset_x, transformed_y - label_offset_y),
                     xytext=(0, 0),
                     textcoords="offset points",
                     color="white",
-                    fontsize=6,
+                    fontsize=label_fontsize,
                     alpha=alpha,
                     zorder=13,
                     ha="center",
-                    va="top",
-                )  # Center the text horizontally
+                    va="center",
+                )  # Center the text horizontally and vertically
 
     figure.patch.set_facecolor("black")
     plt.tight_layout()
