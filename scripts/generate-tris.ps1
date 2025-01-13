@@ -38,9 +38,9 @@ if (Test-Path $sourcePath) {
             # Run the awpy generate-tri command
             Write-Host "Running awpy generate-tri on: $newFileName" -ForegroundColor Yellow
             uv run awpy generate-tri $newFileName
-            # $generatedFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.tri"
-            # Move-Item -Path $generatedFileName -Destination $targetDir -Force
-            # Remove-Item -Path $newFileName -Force
+            $generatedFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.tri"
+            Move-Item -Path $generatedFileName -Destination $targetDir -Force
+            Remove-Item -Path $newFileName -Force
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }
