@@ -6,6 +6,9 @@ env:
   SOURCE2_VERSION: 11.1
   SOURCE2_VIEWER_URL: https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/11.1/cli-windows-x64.zip
   PYTHON_VERSION: 3.13
+  STEAMCMD_URL: https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip
+  CS2_APP_ID: 730
+  CS2_INSTALL_DIR: ${{ github.workspace }}/cs2
 
 on:
     pull_request:
@@ -34,6 +37,22 @@ jobs:
               run: |
                 uv sync --group dev --group test
                 uv tool install .
+
+                - name: Install SteamCMD
+                run: |
+                  curl -sSL ${{ env.STEAMCMD_URL }} -o steamcmd.zip
+                  tar -xf steamcmd.zip -C ${{ github.workspace }}
+                  echo "SteamCMD installed."
+
+            - name: Log in to Steam and Download CS2
+              run: |
+                    # Navigate to SteamCMD directory
+                    cd ${{ github.workspace }}
+                    ./steamcmd.exe +login <your_steam_username> <your_password> \
+                    +force_install_dir "${{ env.CS2_INSTALL_DIR }}" \
+                    +app_update ${{ env.CS2_APP_ID }} validate \
+                    +quit
+                    echo "CS2 downloaded to ${{ env.CS2_INSTALL_DIR }}."
 
             - name: Get Source2ViewerCLI
               run: |
