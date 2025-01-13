@@ -65,7 +65,7 @@ def get(resource_type: Literal["tri"]) -> None:
         raise NotImplementedError(nav_not_impl_msg)
 
 
-@awpy.command(help="Parse a Counter-Strike 2 demo file.")
+@awpy.command(help="Parse a Counter-Strike 2 demo (.dem) file .")
 @click.argument("demo", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
@@ -105,7 +105,7 @@ def parse_demo(
     demo.compress(outpath=outpath)
 
 
-@awpy.command(help="Parse spawns from a Counter-Strike 2 vent file.")
+@awpy.command(help="Parse spawns from a Counter-Strike 2 .vent file.")
 @click.argument("vent_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
@@ -120,7 +120,7 @@ def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
     )
 
 
-@awpy.command(help="Parse a Counter-Strike 2 nav file.")
+@awpy.command(help="Parse a Counter-Strike 2 nav (.nav) file.")
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
@@ -133,7 +133,7 @@ def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
     logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
 
 
-@awpy.command(help="Parse a .vphys file into a .tri file.")
+@awpy.command(help="Parse triangles (*.tri) from a .vphys file.")
 @click.argument("vphys_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def generate_tri(vphys_file: Path, *, outpath: Optional[Path] = None) -> None:
