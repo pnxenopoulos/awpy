@@ -41,13 +41,17 @@ jobs:
               run: |
                     curl -sSL ${{ env.STEAMCMD_URL }} -o steamcmd.zip
                     tar -xf steamcmd.zip -C ${{ github.workspace }}
-                    echo "SteamCMD (${{ env.STEAMCMD_URL }}) installed."
+                    echo "SteamCMD (${{env.STEAMCMD_URL}}) installed."
 
             - name: Log in to Steam and Download CS2
+              shell: bash
               run: |
                     # Navigate to SteamCMD directory
                     cd ${{ github.workspace }}
-                    ./steamcmd.exe +login ${{ secrets.STEAM_USERNAME }} ${{ secrets.STEAM_PASSWORD }} +force_install_dir "${{ env.CS2_INSTALL_DIR }}" +app_update ${{ env.CS2_APP_ID }} validate +quit
+                    ./steamcmd.exe +login ${{ secrets.STEAM_USERNAME }} ${{ secrets.STEAM_PASSWORD }} \
+                    +force_install_dir "${{ env.CS2_INSTALL_DIR }}" \
+                    +app_update ${{ env.CS2_APP_ID }} validate \
+                    +quit
                     echo "CS2 downloaded to ${{ env.CS2_INSTALL_DIR }}."
 
             - name: Get Source2ViewerCLI
