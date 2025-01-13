@@ -106,6 +106,14 @@ MAP_DATA = {
         "zoom": 0,
         "lower_level_max_units": float("-inf"),
     },
+    "de_train": {
+        "pos_x": -2308,
+        "pos_y": 2078,
+        "scale": 4.1,
+        "rotate": None,
+        "zoom": None,
+        "lower_level_max_units": -50.0,
+    },
     "de_vertigo": {
         "pos_x": -3168,
         "pos_y": 1762,
