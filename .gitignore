@@ -140,6 +140,7 @@ dmypy.json
 *.nav
 *.vphys
 *.tri
+awpy/data/nav/
 
 # vscode
 *code-workspace

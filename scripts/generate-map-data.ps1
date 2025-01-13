@@ -10,7 +10,5 @@ $mapDataFile = "awpy\data\map_data.py"
 & $exePath -i $inputPath -f $folderFilter -e $extensionFilter -o $outputPath -d
 $tempOutputDir = Join-Path -Path $outputPath -ChildPath $folderFilter
 uv run awpy parse-overviews $tempOutputDir
-uv run ruff check --fix $mapDataFile
-uv run ruff format $mapDataFile
 $parentPath = Split-Path -Path $tempOutputDir -Parent
 Remove-Item -Path $parentPath -Recurse -Force

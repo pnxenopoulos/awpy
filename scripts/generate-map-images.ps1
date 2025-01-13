@@ -27,7 +27,7 @@ if (Test-Path $targetDirectory) {
         Move-Item -Path $currentPath -Destination $targetPath -Force
     }
 
-    Remove-Item -Path $folderFilter -Recurse -Force
+    Remove-Item -Path "panorama" -Recurse -Force
 } else {
     Write-Host "Target directory '$targetDirectory' does not exist."
 }

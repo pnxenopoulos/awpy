@@ -2,12 +2,13 @@
 
 # Define the directory containing .vpk files
 $sourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps"
-
+$targetDir = "awpy\data\tri"
 # Get the current directory where the script is run
 $outputDirectory = (Get-Location).Path
 
 # Ensure the path exists
 if (Test-Path $sourcePath) {
+    New-Item -Path $targetDir -ItemType Directory -Force | Out-Null
     # Get all .vpk files in the directory
     Get-ChildItem -Path $sourcePath -Filter "*.vpk" | ForEach-Object {
         # Get full path and base name of the file
@@ -37,6 +38,9 @@ if (Test-Path $sourcePath) {
             # Run the awpy generate-tri command
             Write-Host "Running awpy generate-tri on: $newFileName" -ForegroundColor Yellow
             uv run awpy generate-tri $newFileName
+            # $generatedFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.tri"
+            # Move-Item -Path $generatedFileName -Destination $targetDir -Force
+            # Remove-Item -Path $newFileName -Force
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }
