@@ -1,0 +1,42 @@
+# This workflow will create game artifacts used in the awpy Python library
+
+name: Artifacts
+
+env:
+  SOURCE2_VERSION: 11.1
+  SOURCE2_VIEWER_URL: https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/11.1/cli-windows-x64.zip
+  PYTHON_VERSION: 3.13
+
+on:
+    pull_request:
+        branches: [main]
+        paths:
+            - "awpy/**"
+            - "tests/**"
+            - "pyproject.toml"
+
+jobs:
+    generate-artifacts:
+        runs-on: windows-latest
+        steps:
+            - name: Checkout awpy library
+              uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v5
+
+            - name: Set up Python
+              run: |
+                uv python install ${{ env.PYTHON_VERSION }}
+
+            - name: Install awpy
+              shell: bash
+              run: |
+                uv sync --group dev --group test
+                uv tool install .
+
+            - name: Get Source2ViewerCLI
+              run: |
+                curl -L -o cli-windows-x64.zip ${{ env.SOURCE2_VIEWER_URL }}
+                tar -xf cli-windows-x64.zip -C ${{ github.workspace }}
+                echo "Executable downloaded and extracted."
