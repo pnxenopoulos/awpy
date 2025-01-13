@@ -9,7 +9,7 @@ import requests
 from loguru import logger
 from tqdm import tqdm
 
-from awpy import Demo, Nav
+from awpy import Demo, Nav, Spawns
 from awpy.data import AWPY_DATA_DIR, TRI_URL
 from awpy.vis import VphysParser
 
@@ -105,6 +105,21 @@ def parse_demo(
     demo.compress(outpath=outpath)
 
 
+@awpy.command(help="Parse spawns from a Counter-Strike 2 vent file.")
+@click.argument("vent_file", type=click.Path(exists=True))
+@click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
+def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
+    """Parse a nav file given its path."""
+    vent_file = Path(vent_file)
+    if not outpath:
+        output_path = vent_file.with_suffix(".json")
+    spawns_data = Spawns.from_vents_file(vent_file)
+    spawns_data.to_json(path=output_path)
+    logger.success(
+        f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}"
+    )
+
+
 @awpy.command(help="Parse a Counter-Strike 2 nav file.")
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
@@ -113,7 +128,7 @@ def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
     nav_file = Path(nav_file)
     nav_mesh = Nav(path=nav_file)
     if not outpath:
-        output_path = Path(nav_file.stem + ".json")
+        output_path = nav_file.with_suffix(".json")
     nav_mesh.to_json(path=output_path)
     logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
 
