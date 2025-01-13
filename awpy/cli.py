@@ -11,6 +11,7 @@ from tqdm import tqdm
 
 from awpy import Demo, Nav, Spawns
 from awpy.data import AWPY_DATA_DIR, TRI_URL
+from awpy.data.map_data import map_data_from_vdf_files, update_map_data_file
 from awpy.vis import VphysParser
 
 
@@ -118,6 +119,16 @@ def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
     logger.success(
         f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}"
     )
+
+
+@awpy.command(help="Parse Counter-Strike 2 map information.")
+@click.argument("overview_folder", type=click.Path(exists=True))
+def parse_overviews(overview_folder: Path) -> None:
+    """Parse a nav file given its path."""
+    overview_folder = Path(overview_folder)
+    map_data = map_data_from_vdf_files(overview_folder)
+    update_map_data_file(map_data)
+    logger.success(f"Map data updated, {map_data}")
 
 
 @awpy.command(help="Parse a Counter-Strike 2 nav (.nav) file.")

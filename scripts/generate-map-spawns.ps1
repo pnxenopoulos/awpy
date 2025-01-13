@@ -36,7 +36,7 @@ if (Test-Path $sourcePath) {
 
             # Run the awpy parse-spawns command
             Write-Host "Running awpy parse-spawns on: $newFileName" -ForegroundColor Yellow
-            awpy parse-spawns $newFileName
+            uv run awpy parse-spawns $newFileName
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }

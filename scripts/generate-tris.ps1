@@ -36,7 +36,7 @@ if (Test-Path $sourcePath) {
 
             # Run the awpy generate-tri command
             Write-Host "Running awpy generate-tri on: $newFileName" -ForegroundColor Yellow
-            awpy generate-tri $newFileName
+            uv run awpy generate-tri $newFileName
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }

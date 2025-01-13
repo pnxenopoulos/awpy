@@ -36,7 +36,7 @@ if (Test-Path $sourcePath) {
 
             # Run the awpy parse-nav command
             Write-Host "Running awpy parse-nav on: $newFileName" -ForegroundColor Yellow
-            awpy parse-nav $newFileName
+            uv run awpy parse-nav $newFileName
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }

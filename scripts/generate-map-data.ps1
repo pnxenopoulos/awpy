@@ -4,6 +4,13 @@ $inputPath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Globa
 $outputPath = "."
 $folderFilter = "resource/overviews/"
 $extensionFilter = "txt"
+$mapDataFile = "awpy\data\map_data.py"
 
 # Run the command
 & $exePath -i $inputPath -f $folderFilter -e $extensionFilter -o $outputPath -d
+$tempOutputDir = Join-Path -Path $outputPath -ChildPath $folderFilter
+uv run awpy parse-overviews $tempOutputDir
+uv run ruff check --fix $mapDataFile
+uv run ruff format $mapDataFile
+$parentPath = Split-Path -Path $tempOutputDir -Parent
+Remove-Item -Path $parentPath -Recurse -Force
