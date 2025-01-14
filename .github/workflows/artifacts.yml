@@ -31,12 +31,18 @@ jobs:
             - name: Install uv
               uses: astral-sh/setup-uv@v5
 
-            - name: Setup SteaCMD
-              uses: CyberAndrii/setup-steamcmd@v1
-
             - name: Set up Python
               run: |
                 uv python install ${{ env.PYTHON_VERSION }}
+
+            - name: Install awpy
+              shell: bash
+              run: |
+                uv sync --group dev --group test
+                uv tool install .
+
+            - name: Setup SteamCMD
+              uses: CyberAndrii/setup-steamcmd@v1
 
             - name: Install Counter-Strike 2
               run: |
@@ -53,12 +59,6 @@ jobs:
               run: |
                 Invoke-WebRequest -Uri ${{ env.SOURCE2_VIEWER_URL }} -OutFile ".\cli-windows-x64.zip"
                 Expand-Archive -Path .\cli-windows-x64.zip -DestinationPath . -Force
-
-            - name: Install awpy
-              shell: bash
-              run: |
-                uv sync --group dev --group test
-                uv tool install .
 
             - name: Generate Triangles
               run: |
