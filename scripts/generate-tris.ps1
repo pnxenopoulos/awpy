@@ -1,13 +1,12 @@
-# Define a default source path
-$defaultSourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps"
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$sourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps",
 
-# Allow passing a sourcePath as an argument
-param (
-    [string]$sourcePath = $defaultSourcePath
+    [Parameter(Mandatory=$false)]
+    [string]$outputDirectory = (Get-Location).Path
 )
 
-# Get the current directory where the script is run
-$outputDirectory = (Get-Location).Path
+# This script generates .tri files containing CS2 .vphys_c triangle information.
 
 # Ensure the path exists
 if (Test-Path $sourcePath) {

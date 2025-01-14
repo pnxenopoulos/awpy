@@ -20,7 +20,9 @@ def awpy() -> None:
 
 
 @awpy.command(
-    help="Get Counter-Strike 2 resources like map images, nav meshes or usd files."
+    help="""
+    Get Counter-Strike 2 resources like map images, nav meshes or usd files. \n
+    Available choices: 'tri', 'map', 'nav', 'spawn'"""
 )
 @click.argument("resource_type", type=click.Choice(["tri"]))
 def get(resource_type: Literal["tri"]) -> None:
