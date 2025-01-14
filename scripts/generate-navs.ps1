@@ -1,10 +1,12 @@
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$sourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps",
+
+    [Parameter(Mandatory=$false)]
+    [string]$outputDirectory = (Get-Location).Path
+)
+
 # This script generates .json files containing CS2 .nav information.
-
-# Define the directory containing .vpk files
-$sourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps"
-
-# Get the current directory where the script is run
-$outputDirectory = (Get-Location).Path
 
 # Ensure the path exists
 if (Test-Path $sourcePath) {

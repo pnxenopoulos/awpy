@@ -1,7 +1,13 @@
-# Define the command and arguments
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$inputPath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\pak01_dir.vpk",
+
+    [Parameter(Mandatory=$false)]
+    [string]$outputPath = "."
+)
+
+# Define the fixed command and filters
 $exePath = ".\Source2Viewer-CLI.exe"
-$inputPath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\pak01_dir.vpk"
-$outputPath = "."
 $folderFilter = "resource/overviews/"
 $extensionFilter = "txt"
 
