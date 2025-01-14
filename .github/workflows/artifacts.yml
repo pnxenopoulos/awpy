@@ -2,19 +2,19 @@
 
 name: artifacts
 
-# env:
-#   SOURCE2_VIEWER_URL: https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/11.1/cli-windows-x64.zip
-#   PYTHON_VERSION: 3.13
-#   STEAMCMD_URL: https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip
-#   CS2_APP_ID: 730
-#   CS2_INSTALL_DIR: ${{ github.workspace }}/cs2
-
 on:
-  push:
+  pull_request:
     branches: [main]
-  schedule:
-    - cron: "49 1 * * *"
-  workflow_dispatch:
+    paths:
+      - "awpy/**"
+      - "tests/**"
+      - "pyproject.toml"
+# on:
+#   push:
+#     branches: [main]
+#   schedule:
+#     - cron: "49 1 * * *"
+#   workflow_dispatch:
 
 env:
   PYTHON_VERSION: 3.13
