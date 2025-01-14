@@ -22,7 +22,7 @@ import sphinx_rtd_theme
 
 # -- Project information -----------------------------------------------------
 
-project = "awpy"
+project = "Awpy"
 copyright = "2024, Peter Xenopoulos"
 author = "Peter Xenopoulos"
 

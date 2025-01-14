@@ -1,18 +1,18 @@
 <div align="center">
 <h1>Awpy</h1>
 
-[![Awpy Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Awpy Downloads](https://static.pepy.tech/personalized-badge/awpy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads)](https://pepy.tech/project/awpy) [![Build](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml) [![Documentation Status](https://readthedocs.org/projects/awpy/badge/?version=latest)](https://awpy.readthedocs.io/en/latest/?badge=latest) [![MIT License](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/awpy/blob/main/LICENSE)
+[![Awpy Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Awpy Downloads](https://static.pepy.tech/personalized-badge/awpy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads)](https://pepy.tech/project/awpy) [![Build](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml) [![Artifacts](https://github.com/pnxenopoulos/awpy/actions/workflows/artifacts.yml/badge.svg)](https://github.com/pnxenopoulos/awpy/actions/workflows/artifacts.yml) [![Documentation Status](https://readthedocs.org/projects/awpy/badge/?version=latest)](https://awpy.readthedocs.io/en/latest/?badge=latest) [![MIT License](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/awpy/blob/main/LICENSE)
 
 </div>
 
 **Counter-Strike 2 Demo Parsing, Analytics and Visualization in Python**
 
-- :computer: Parse Counter-Strike demos in Python in one line
-- :skull: Access kill, damage, grenade, bomb, player trajectory data, and more
-- :chart: Calculate common statistics, such as ADR, KAST, Rating and win probability
+- :computer: Parse Counter-Strike demos in Python with one line or CLI call
+- :skull: Access tick-level player and event data
+- :chart: Calculate popular statistics, such as ADR, KAST and Rating
 - :mag_right: Determine player visibility in microseconds
 - :earth_americas: Parse navigation meshes (.nav) and calculate graph distances
-- 🎞️ Visualize Counter-Strike data, including animated round gifs
+- 🎞️ Visualize Counter-Strike data, including animated round gifs and heatmaps
 - :speaker: Active [Discord](https://discord.gg/W34XjsSs2H) community
 
 ## Installation
@@ -23,11 +23,10 @@ To install Awpy (it is currently in beta), you can run
 pip install --pre awpy
 ```
 
-> [!NOTE]
-> `awpy` requires [Python](https://www.python.org/downloads/) between 3.10, 3.11, 3.12 and 3.13. To update the library, just run `pip install --upgrade awpy`. To check your current version, run `pip freeze | grep awpy`.
+> [!NOTE] > Awpy requires [Python](https://www.python.org/downloads/) >= 3.10. To update the library, just run `pip install --upgrade awpy`. To check your current Awpy version, run `pip show awpy`.
 
 > [!TIP]
-> Don't worry if you get stuck, visit us [our Discord](https://discord.gg/W34XjsSs2H) for help.
+> Don't worry if you get stuck, visit [our Discord](https://discord.gg/W34XjsSs2H) for help.
 
 ## Example Code
 
@@ -57,7 +56,7 @@ dem.ticks
 
 ### Help! The parser doesn't work or returns weird data
 
-Counter-Strike demos can be a bit troublesome. It is likely you'll see increased error rates in POV demos. To help us address parsing issues, please open a bug report in our [Github issues](https://github.com/pnxenopoulos/awpy/issues) as well as in our [our Discord](https://discord.gg/3JrhKYcEKW). We're committed to increasing parsing coverage rates and appreciate any errors you may find.
+Counter-Strike demos can be a bit troublesome. It is likely you'll see increased error rates in POV demos. To help us address parsing issues, please open a bug report in our [Github issues](https://github.com/pnxenopoulos/awpy/issues) as well as in our [our Discord](https://discord.gg/3JrhKYcEKW). We're committed to increasing parsing coverage rates and appreciate any errors you may find. We use [LaihoE's demoparser](https://github.com/LaihoE/demoparser) as a backend, so you may also check there for any open issues.
 
 ## Examples and Projects
 
@@ -72,7 +71,10 @@ If you use the parser for any public analysis, we kindly ask you to link to the 
 We welcome any contributions from the community, no matter the skill-level. You can visit our [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, the [Awpy project](https://github.com/users/pnxenopoulos/projects/5) for a different view of project priorities, or you can message us on Discord. Some examples of where you can make a difference are in documentation, quality assurance, developing new features, or creating unique content with Awpy. You can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html). If you are interested in contributing to Awpy, learn more [here](https://github.com/pnxenopoulos/awpy/blob/main/CONTRIBUTING.md).
 
 > [!TIP]
-> We are happy to walk through those that want to contribute, no matter your skill level. There are a diverse set of ways one can contribute to Awpy. We welcome first-time contributors.
+> We are happy to walk through those that want to contribute, no matter your skill level. There are a diverse set of ways one can contribute to Awpy. We welcome first-time contributors!
+
+> [!IMPORTANT]
+> If you use Awpy, we'd love if you could link back to our repo!
 
 ## Acknowledgments
 

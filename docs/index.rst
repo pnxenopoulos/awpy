@@ -15,16 +15,19 @@ Awpy
    
 .. |Build| image:: https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg
    :target: https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml
+
+.. |Artifacts| image:: https://github.com/pnxenopoulos/awpy/actions/workflows/artifacts.yml/badge.svg
+   :target: https://github.com/pnxenopoulos/awpy/actions/workflows/artifacts.yml
    
 .. |License| image:: https://img.shields.io/badge/license-MIT-lightgrey
    :target: https://github.com/pnxenopoulos/awpy/blob/main/LICENSE
    
-`Awpy` allows a user to parse, analyze and visualize Counter-Strike 2 demos. You can visit the repository_ to view the source code, examples and data. To install Awpy, run ``pip install awpy`` (Python >= 3.9). Please join the Discord_ server if you would like to join our esports analytics community or to receive help with using Awpy. You can get started with the following example:
+`Awpy` allows a user to parse, analyze and visualize Counter-Strike 2 demos. You can visit the repository_ to view the source code, examples and data. To install Awpy, run ``pip install awpy`` (Python >= 3.10). Please join the Discord_ server if you would like to join our esports analytics community or to receive Awpy support. You can get started with the following example:
 
 .. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-Using Awpy to parse Counter-Strike 2 demos is as easy as the few lines of code shown below. To see what output looks like, check out :doc:`parser_output`.
+You can use Awpy to parse Counter-Strike 2 demos in one line. To see what output looks like, check out :doc:`parser_output`.
 
 .. code-block:: python
 
@@ -54,9 +57,9 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    :maxdepth: 2
    :hidden:
 
-   installation
-   faq
-   license
+   getting-started/installation
+   getting-started/faq
+   getting-started/license
 
 .. toctree::
    :caption: Example Notebooks
@@ -74,13 +77,13 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    :maxdepth: 2
    :hidden:
 
-   cli
-   data
-   demo
-   nav
-   plot
-   stats
-   vis
+   modules/cli
+   modules/data
+   modules/demo
+   modules/nav
+   modules/plot
+   modules/stats
+   modules/vis
 
 .. toctree::
    :caption: Data

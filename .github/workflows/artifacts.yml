@@ -1,4 +1,4 @@
-# This workflow will create game artifacts used in the awpy Python library
+# This workflow will create game artifacts used in Awpy
 
 name: artifacts
 
