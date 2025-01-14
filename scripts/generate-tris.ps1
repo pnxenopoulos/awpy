@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory=$false)]
-    [string]$sourcePath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps",
+    [string]$inputPath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps",
 
     [Parameter(Mandatory=$false)]
     [string]$outputDirectory = (Get-Location).Path
@@ -9,9 +9,9 @@ param(
 # This script generates .tri files containing CS2 .vphys_c triangle information.
 
 # Ensure the path exists
-if (Test-Path $sourcePath) {
+if (Test-Path $inputPath) {
     # Get all .vpk files in the directory
-    Get-ChildItem -Path $sourcePath -Filter "*.vpk" | ForEach-Object {
+    Get-ChildItem -Path $inputPath -Filter "*.vpk" | ForEach-Object {
         # Get full path and base name of the file
         $filePath = $_.FullName
         $fileNameWithoutExtension = $_.BaseName
@@ -47,5 +47,5 @@ if (Test-Path $sourcePath) {
         Remove-Item -Path $tempOutputDir -Recurse -Force
     }
 } else {
-    Write-Host "The specified directory does not exist: $sourcePath" -ForegroundColor Red
+    Write-Host "The specified directory does not exist: $inputPath" -ForegroundColor Red
 }

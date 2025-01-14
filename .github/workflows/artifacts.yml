@@ -10,6 +10,7 @@ on:
       - "tests/**"
       - "pyproject.toml"
   workflow_dispatch:
+
 # on:
 #   push:
 #     branches: [main]
@@ -64,24 +65,24 @@ jobs:
       - name: Generate Triangles
         run: |
           Get-ChildItem -Force
-          .\scripts\generate-tris.ps1 -sourcePath "cs_go\game\csgo\maps"
+          .\scripts\generate-tris.ps1 -inputPath "cs_go\game\csgo\maps"
 
       - name: Generate Map Images
         run: |
           Get-ChildItem -Force
-          .\scripts\generate-map-images.ps1 -sourcePath "cs_go\game\csgo\pak01_dir.vpk"
+          .\scripts\generate-map-images.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
 
       - name: Generate Map Data
         run: |
           Get-ChildItem -Force
-          .\scripts\generate-map-data.ps1 -sourcePath "cs_go\game\csgo\pak01_dir.vpk"
+          .\scripts\generate-map-data.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
 
       - name: Generate Nav
         run: |
           Get-ChildItem -Force
-          .\scripts\generate-navs.ps1 -sourcePath "cs_go\game\csgo\maps"
+          .\scripts\generate-navs.ps1 -inputPath "cs_go\game\csgo\maps"
 
       - name: Generate Spawns
         run: |
           Get-ChildItem -Force
-          .\scripts\generate-spawns.ps1 -sourcePath "cs_go\game\csgo\maps"
+          .\scripts\generate-spawns.ps1 -inputPath "cs_go\game\csgo\maps"

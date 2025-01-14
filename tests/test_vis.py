@@ -6,7 +6,7 @@ from click.testing import CliRunner
 from awpy.cli import get
 from awpy.data import AWPY_DATA_DIR
 from awpy.vector import Vector3
-from awpy.vis import Triangle, VisibilityChecker
+from awpy.visibility import Triangle, VisibilityChecker
 
 
 def check_visibility_brute_force(
