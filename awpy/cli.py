@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from awpy import Demo, Nav, Spawns
 from awpy.data import AWPY_DATA_DIR, TRI_URL
-from awpy.vis import VphysParser
+from awpy.visibility import VphysParser
 
 
 @click.group()
@@ -21,10 +21,10 @@ def awpy() -> None:
 
 @awpy.command(
     help="""
-    Get Counter-Strike 2 resources like map images, nav meshes or usd files. \n
+    Get Counter-Strike 2 resources like parsed nav meshes, spawns or triangle files. \n
     Available choices: 'tri', 'map', 'nav', 'spawn'"""
 )
-@click.argument("resource_type", type=click.Choice(["tri"]))
+@click.argument("resource_type", type=click.Choice(["tri", "nav", "spawn"]))
 def get(resource_type: Literal["tri"]) -> None:
     """Get a resource given its type and name."""
     if not AWPY_DATA_DIR.exists():
@@ -59,30 +59,32 @@ def get(resource_type: Literal["tri"]) -> None:
         # Delete the zip file
         tri_file_path.unlink()
         logger.info(f"Deleted the compressed tris {tri_file_path}")
-    elif resource_type == "map":
-        map_not_impl_msg = "Map files are not yet implemented."
-        raise NotImplementedError(map_not_impl_msg)
+    elif resource_type == "spawn":
+        spawn_not_impl_msg = "Spawn files are not yet implemented."
+        raise NotImplementedError(spawn_not_impl_msg)
     elif resource_type == "nav":
         nav_not_impl_msg = "Nav files are not yet implemented."
         raise NotImplementedError(nav_not_impl_msg)
 
 
-@awpy.command(help="Parse a Counter-Strike 2 demo (.dem) file .")
+@awpy.command(help="Parse a Counter-Strike 2 demo (.dem) file.")
 @click.argument("demo", type=click.Path(exists=True))
-@click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
+@click.option(
+    "--outpath", type=click.Path(), help="Path to save compressed (.zip) parsed demo."
+)
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
 @click.option("--noticks", is_flag=True, default=False, help="Disable tick parsing.")
 @click.option(
     "--norounds",
     is_flag=True,
     default=False,
-    help="Get round information for every event.",
+    help="Finds in which round events occur.",
 )
 @click.option(
-    "--player-props", multiple=True, help="List of player properties to include."
+    "--player-props", multiple=True, help="Comma-separated list of player properties."
 )
 @click.option(
-    "--other-props", multiple=True, help="List of other properties to include."
+    "--other-props", multiple=True, help="Comma-separated list of other properties."
 )
 def parse_demo(
     demo: Path,
@@ -122,7 +124,7 @@ def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
     )
 
 
-@awpy.command(help="Parse a Counter-Strike 2 nav (.nav) file.")
+@awpy.command(help="Parse a Counter-Strike 2 .nav file.")
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
