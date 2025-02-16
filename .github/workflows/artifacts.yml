@@ -1,4 +1,4 @@
-# This workflow will create game artifacts used in the awpy Python library
+# This workflow will create game artifacts used in Awpy
 
 name: artifacts
 
@@ -9,6 +9,8 @@ on:
       - "awpy/**"
       - "tests/**"
       - "pyproject.toml"
+  workflow_dispatch:
+
 # on:
 #   push:
 #     branches: [main]
@@ -22,61 +24,65 @@ env:
   CS2_APP_ID: 730
 
 jobs:
-    generate-artifacts:
-        runs-on: windows-latest
-        steps:
-            - name: Checkout awpy library
-              uses: actions/checkout@v4
+  generate-artifacts:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout awpy library
+        uses: actions/checkout@v4
 
-            - name: Install uv
-              uses: astral-sh/setup-uv@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
-            - name: Set up Python
-              run: |
-                uv python install ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        run: |
+          uv python install ${{ env.PYTHON_VERSION }}
 
-            - name: Install awpy
-              shell: bash
-              run: |
-                uv sync --group dev --group test
-                uv tool install .
+      - name: Install awpy
+        shell: bash
+        run: |
+          uv sync --group dev --group test
+          uv tool install .
 
-            - name: Setup SteamCMD
-              uses: CyberAndrii/setup-steamcmd@v1
+      - name: Setup SteamCMD
+        uses: CyberAndrii/setup-steamcmd@v1
 
-            - name: Install Counter-Strike 2
-              run: |
-                $csDir = Join-Path (Get-Location) "cs_go"
-                steamcmd +force_install_dir $csDir +login anonymous +app_update ${{ env.CS2_APP_ID }} +quit
+      - name: Install Counter-Strike 2
+        run: |
+          $csDir = Join-Path (Get-Location) "cs_go"
+          steamcmd +force_install_dir $csDir +login anonymous +app_update ${{ env.CS2_APP_ID }} +quit
 
-            - name: Get Counter-Strike 2 Version
-              run: |
-                $csDir = Join-Path (Get-Location) "cs_go"
-                $csVersion = Get-Content "$csDir\game\csgo\steam.inf" | Select-String -Pattern "ClientVersion" | ForEach-Object { $_ -replace "ClientVersion=", "" }
-                echo "Counter-Strike 2 Version: $csVersion"
+      - name: Get Counter-Strike 2 Version
+        run: |
+          $csDir = Join-Path (Get-Location) "cs_go"
+          $csVersion = Get-Content "$csDir\game\csgo\steam.inf" | Select-String -Pattern "ClientVersion" | ForEach-Object { $_ -replace "ClientVersion=", "" }
+          echo "Counter-Strike 2 Version: $csVersion"
 
-            - name: Install Source2Viewer-CLI
-              run: |
-                Invoke-WebRequest -Uri ${{ env.SOURCE2_VIEWER_URL }} -OutFile ".\cli-windows-x64.zip"
-                Expand-Archive -Path .\cli-windows-x64.zip -DestinationPath . -Force
+      - name: Install Source2Viewer-CLI
+        run: |
+          Invoke-WebRequest -Uri ${{ env.SOURCE2_VIEWER_URL }} -OutFile ".\cli-windows-x64.zip"
+          Expand-Archive -Path .\cli-windows-x64.zip -DestinationPath . -Force
 
-            - name: Generate Triangles
-              run: |
-                Get-ChildItem -Force
-                .\scripts\generate-tris.ps1 -sourcePath "cs_go\game\csgo\maps"
+      - name: Generate Triangles
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-tris.ps1 -inputPath "cs_go\game\csgo\maps"
 
-            - name: Generate Map Images
-              run: |
-                echo "Generating map images"
+      - name: Generate Map Images
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-map-images.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
 
-            - name: Generate Map Data
-              run: |
-                echo "Generating map data"
+      - name: Generate Map Data
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-map-data.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
 
-            - name: Generate Nav
-              run: |
-                echo "Generating nav"
+      - name: Generate Nav
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-navs.ps1 -inputPath "cs_go\game\csgo\maps"
 
-            - name: Generate Spawns
-              run: |
-                echo "Generating nav"
+      - name: Generate Spawns
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-spawns.ps1 -inputPath "cs_go\game\csgo\maps"

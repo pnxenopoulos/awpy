@@ -1,4 +1,4 @@
-# This workflow will run the tests for the awpy Python library
+# This workflow will run the Awpy test suite
 
 name: build
 

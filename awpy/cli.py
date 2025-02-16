@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from awpy import Demo, Nav, Spawns
 from awpy.data import AWPY_DATA_DIR, TRI_URL
-from awpy.vis import VphysParser
+from awpy.visibility import VphysParser
 
 
 @click.group()
@@ -21,10 +21,10 @@ def awpy() -> None:
 
 @awpy.command(
     help="""
-    Get Counter-Strike 2 resources like map images, nav meshes or usd files. \n
+    Get Counter-Strike 2 resources like parsed nav meshes, spawns or triangle files. \n
     Available choices: 'tri', 'map', 'nav', 'spawn'"""
 )
-@click.argument("resource_type", type=click.Choice(["tri"]))
+@click.argument("resource_type", type=click.Choice(["tri", "nav", "spawn"]))
 def get(resource_type: Literal["tri"]) -> None:
     """Get a resource given its type and name."""
     if not AWPY_DATA_DIR.exists():
@@ -59,9 +59,9 @@ def get(resource_type: Literal["tri"]) -> None:
         # Delete the zip file
         tri_file_path.unlink()
         logger.info(f"Deleted the compressed tris {tri_file_path}")
-    elif resource_type == "map":
-        map_not_impl_msg = "Map files are not yet implemented."
-        raise NotImplementedError(map_not_impl_msg)
+    elif resource_type == "spawn":
+        spawn_not_impl_msg = "Spawn files are not yet implemented."
+        raise NotImplementedError(spawn_not_impl_msg)
     elif resource_type == "nav":
         nav_not_impl_msg = "Nav files are not yet implemented."
         raise NotImplementedError(nav_not_impl_msg)
@@ -71,16 +71,14 @@ def get(resource_type: Literal["tri"]) -> None:
 @click.argument("demo_path", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
-@click.option("--noticks", is_flag=True, default=False, help="Disable tick parsing.")
 @click.option("--events", multuple=True, help="List of events to parse.")
 @click.option("--player-props", multiple=True, help="List of player properties to include.")
 @click.option("--other-props", multiple=True, help="List of other properties to include.")
 def parse_demo(
     demo_path: Path,
     *,
-    outpath: Optional[Path] = None,
+    outpath: Path | None = None,
     verbose: bool = False,
-    noticks: bool = False,
     events: Optional[tuple[str]] = None,
     player_props: Optional[tuple[str]] = None,
     other_props: Optional[tuple[str]] = None,
@@ -90,7 +88,6 @@ def parse_demo(
     demo = Demo(
         path=demo_path,
         verbose=verbose,
-        ticks=not noticks,
         events=events[0].split(",") if events else None,
         player_props=player_props[0].split(",") if player_props else None,
         other_props=other_props[0].split(",") if other_props else None,
@@ -111,7 +108,7 @@ def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
     logger.success(f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}")
 
 
-@awpy.command(help="Parse a Counter-Strike 2 nav (.nav) file.")
+@awpy.command(help="Parse a Counter-Strike 2 .nav file.")
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:

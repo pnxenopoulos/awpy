@@ -21,4 +21,5 @@ This is a nonexhaustive list of frequently asked questions.
 **Q:** How can I contribute to Awpy?
     We are always looking for people to help improve Awpy, no matter the skill-level. Please reach out on `Discord <https://discord.gg/W34XjsSs2H>`_ if you are interested.
 
-
+**Q:** How should I attribute Awpy in my work?
+    If you're posting on a casual site, like Twitter, you can simply link back to the Awpy Github repository. If you're working on an academic paper, you can cite `Analyzing the Differences between Professional and Amateur Esports through Win Probability <https://dl.acm.org/doi/abs/10.1145/3485447.3512277>`_.

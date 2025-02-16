@@ -1,10 +1,9 @@
 ---
 name: Feature request
-about: Suggest a feature for awpy
-title: ''
-labels: ''
-assignees: ''
-
+about: Suggest an Awpy feature
+title: ""
+labels: ""
+assignees: ""
 ---
 
 **Is your feature request related to a problem? Please describe.**

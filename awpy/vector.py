@@ -1,4 +1,4 @@
-"""Simple Vector3 representation."""
+"""Simple Vector3 representation to represent 3D points."""
 
 from __future__ import annotations  # Enables postponed evaluation of type hints
 
