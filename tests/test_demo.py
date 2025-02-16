@@ -13,13 +13,17 @@ from awpy.demo import Demo
 @pytest.fixture
 def parsed_hltv_demo():
     """Fixture that returns a parsed HLTV Demo object."""
-    return Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem")
+    dem = Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem")
+    dem.parse()
+    return dem
 
 
 @pytest.fixture
 def parsed_faceit_demo():
     """Fixture that returns a parsed Faceit Demo object."""
-    return Demo(path="tests/faceit-fpl-1-a568cd9f-8817-4410-a3f3-2270f89135e2.dem")
+    dem = Demo(path="tests/faceit-fpl-1-a568cd9f-8817-4410-a3f3-2270f89135e2.dem")
+    dem.parse()
+    return dem
 
 
 class TestDemo:
