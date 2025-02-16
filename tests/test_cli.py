@@ -66,7 +66,7 @@ class TestCommandLine:
             assert all(Path(file).name in zipped_files for file in expected_files)
 
             # Check if there is an events/ folder and it contains files
-            events_files = [file for file in zipf.namelist() if file.startswith("events/") and not file.endswith("/")]
+            events_files = [file for file in zipf.namelist() if file.endswith(".parquet")]
             assert len(events_files) > 0
 
             # Check content of one file as an example
