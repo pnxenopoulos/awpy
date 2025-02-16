@@ -70,27 +70,27 @@ def get(resource_type: Literal["tri"]) -> None:
 @awpy.command(help="Parse a Counter-Strike 2 demo (.dem) file .")
 @click.argument("demo_path", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
-@click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
 @click.option("--events", multiple=True, help="List of events to parse.")
 @click.option("--player-props", multiple=True, help="List of player properties to include.")
 @click.option("--other-props", multiple=True, help="List of other properties to include.")
+@click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
 def parse_demo(
     demo_path: Path,
     *,
     outpath: Path | None = None,
+    events: tuple[str] | None = None,
+    player_props: tuple[str] | None = None,
+    other_props: tuple[str] | None = None,
     verbose: bool = False,
-    events: Optional[tuple[str]] = None,
-    player_props: Optional[tuple[str]] = None,
-    other_props: Optional[tuple[str]] = None,
 ) -> None:
     """Parse a file given its path."""
     demo_path = Path(demo_path)  # Pathify
     demo = Demo(
         path=demo_path,
         verbose=verbose,
-        events=events[0].split(",") if events else None,
-        player_props=player_props[0].split(",") if player_props else None,
-        other_props=other_props[0].split(",") if other_props else None,
+        events=events[0].split(",") if events is not None else None,
+        player_props=player_props[0].split(",") if player_props is not None else None,
+        other_props=other_props[0].split(",") if other_props is not None else None,
     )
     demo.compress(outpath=outpath)
 

@@ -122,8 +122,15 @@ class Demo:
                 Defaults to awpy.constants.DEFAULT_INFERNO_DURATION_IN_SECS.
             smoke_duration (float, optional): Duration (in seconds) for smokes.
                 Defaults to awpy.constants.DEFAULT_SMOKE_DURATION_IN_SECS.
+
+        Raises:
+            FileNotFoundError: If the specified file path does not exist.
         """
         self.path = Path(path)
+        if not self.path.exists():
+            file_not_found_error_msg = f"File not found: {self.path}"
+            raise FileNotFoundError(file_not_found_error_msg)
+
         self.parser = DemoParser(str(self.path.absolute()))
         self.header = self.parse_header()
         self.ticks: pl.DataFrame = pl.DataFrame()
@@ -562,6 +569,9 @@ class Demo:
                 If None, the compressed file will be saved to the original file path.
         """
         self._raise_if_no_parser()
+        start = time.perf_counter()
+        logger.debug(f"Starting to compress parsed {self.path}")
+
         outpath = Path.cwd() if outpath is None else Path(outpath)
         zip_name = outpath / Path(self.path.stem + ".zip")
 
@@ -590,5 +600,6 @@ class Demo:
             header_filename = Path(tmpdirname) / "header.json"
             with open(header_filename, "w", encoding="utf-8") as f:
                 json.dump(self.header, f)
+            zipf.write(header_filename, arcname="header.json")
 
-            logger.success(f"Compressed demo data saved to {zip_name}")
+            logger.success(f"Compressed demo data saved to {zip_name}, took {time.perf_counter() - start:.2f} seconds")
