@@ -473,7 +473,7 @@ class Demo:
             Polars DataFrames.
         """
         self._raise_if_no_parser()
-        player_props = ["last_place_name"] + (player_props if player_props is not None else [])
+        player_props = ["last_place_name", "X", "Y", "Z", "health"] + (player_props if player_props is not None else [])
         player_props = list(set(player_props))
         events: dict[str, pl.DataFrame] = dict(
             self.parser.parse_events(

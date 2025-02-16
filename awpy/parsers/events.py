@@ -22,7 +22,9 @@ def parse_kills(df: pl.DataFrame) -> pl.DataFrame:
             and a mapped "hitgroup" column.
     """
     return awpy.parsers.utils.rename_col_prefix(df, prefix="user_", new_prefix="victim_").with_columns(
-        pl.col("hitgroup").map_elements(awpy.converters.HITGROUP_MAP).alias("hitgroup")
+        pl.col("hitgroup")
+        .map_elements(lambda h: awpy.converters.HITGROUP_MAP.get(h, h), return_dtype=pl.String)
+        .alias("hitgroup")
     )
 
 
@@ -44,7 +46,7 @@ def parse_damages(df: pl.DataFrame) -> pl.DataFrame:
             replaced "hitgroup" column, and a computed "dmg_health_real" column.
     """
     return awpy.parsers.utils.rename_col_prefix(df, prefix="user_", new_prefix="victim_").with_columns(
-        pl.col("hitgroup").replace(awpy.converters.HITGROUP_MAP),
+        pl.col("hitgroup").map_elements(lambda h: awpy.converters.HITGROUP_MAP.get(h, h), return_dtype=pl.String),
         pl.when(pl.col("dmg_health") > pl.col("victim_health"))
         .then(pl.col("victim_health"))
         .otherwise(pl.col("dmg_health"))
