@@ -85,21 +85,11 @@ def parse_demo(
 ) -> None:
     """Parse a file given its path."""
     demo_path = Path(demo_path)  # Pathify
-    events_to_parse = None
-    if events is not None:
-        events_to_parse = events[0].split(",")
-    player_props_to_parse = None
-    if player_props is not None:
-        player_props_to_parse = player_props[0].split(",")
-    other_props_to_parse = None
-    if other_props is not None:
-        other_props_to_parse = other_props[0].split(",")
-    demo = Demo(
-        path=demo_path,
-        verbose=verbose,
-        events=events_to_parse,
-        player_props=player_props_to_parse,
-        other_props=other_props_to_parse,
+    demo = Demo(path=demo_path, verbose=verbose)
+    demo.parse(
+        events=events[0].split(",") if events else None,
+        player_props=player_props[0].split(",") if player_props else None,
+        other_props=other_props[0].split(",") if other_props else None,
     )
     demo.compress(outpath=outpath)
 
