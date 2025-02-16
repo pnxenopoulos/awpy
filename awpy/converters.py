@@ -12,8 +12,3 @@ HITGROUP_MAP = {
     8: "neck",
     10: "gear",
 }
-
-BOMBSITE_MAP = {
-    220: "A",
-    221: "B",
-}

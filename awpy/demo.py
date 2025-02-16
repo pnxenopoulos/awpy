@@ -578,7 +578,9 @@ class Demo:
                 ("grenades", self.grenades),
                 ("infernos", self.infernos),
                 ("smokes", self.smokes),
+                ("bomb", self.bomb),
                 ("ticks", self.ticks),
+                ("rounds", self.rounds),
             ]:
                 parsed_df_filename = Path(tmpdirname) / f"{df_name}.parquet"
                 parsed_df.write_parquet(parsed_df_filename)

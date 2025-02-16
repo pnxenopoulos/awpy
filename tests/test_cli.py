@@ -50,15 +50,16 @@ class TestCommandLine:
         with zipfile.ZipFile(zip_name, "r") as zipf:
             # Check if all expected files are in the zip
             expected_files = [
-                "kills.data",
-                "damages.data",
-                "bomb.data",
-                "smokes.data",
-                "infernos.data",
-                "weapon_fires.data",
-                "rounds.data",
-                "grenades.data",
-                "ticks.data",
+                "kills.parquet",
+                "damages.parquet",
+                "footsteps.parquet",
+                "shots.parquet",
+                "grenades.parquet",
+                "smokes.parquet",
+                "infernos.parquet",
+                "bomb.parquet",
+                "ticks.parquet",
+                "rounds.parquet",
                 "header.json",
             ]
             zipped_files = [Path(file).name for file in zipf.namelist()]
