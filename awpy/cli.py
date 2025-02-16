@@ -71,7 +71,7 @@ def get(resource_type: Literal["tri"]) -> None:
 @click.argument("demo_path", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
-@click.option("--events", multuple=True, help="List of events to parse.")
+@click.option("--events", multiple=True, help="List of events to parse.")
 @click.option("--player-props", multiple=True, help="List of player properties to include.")
 @click.option("--other-props", multiple=True, help="List of other properties to include.")
 def parse_demo(
