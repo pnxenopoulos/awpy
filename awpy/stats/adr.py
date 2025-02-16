@@ -39,11 +39,7 @@ def adr(
         damages = damages[~damages["attacker_name"].isna()]
 
     # Calculate all/ct/t total damage
-    damages_all = (
-        damages.groupby(["attacker_name", "attacker_steamid"])
-        .dmg_health_real.sum()
-        .reset_index(name="dmg")
-    )
+    damages_all = damages.groupby(["attacker_name", "attacker_steamid"]).dmg_health_real.sum().reset_index(name="dmg")
     damages_all["team_name"] = "all"
     damages_ct = (
         damages[damages["attacker_team_name"] == "CT"]

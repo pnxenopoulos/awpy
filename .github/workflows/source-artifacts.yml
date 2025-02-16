@@ -1,0 +1,76 @@
+# This workflow will create game artifacts used in the awpy Python library
+
+name: artifacts
+
+# env:
+#   SOURCE2_VIEWER_URL: https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/11.1/cli-windows-x64.zip
+#   PYTHON_VERSION: 3.13
+#   STEAMCMD_URL: https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip
+#   CS2_APP_ID: 730
+#   CS2_INSTALL_DIR: ${{ github.workspace }}/cs2
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "49 1 * * *"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: 3.13
+  SOURCE2_VIEWER_URL: https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/11.1/cli-windows-x64.zip
+  CS2_APP_ID: 730
+
+jobs:
+    generate-artifacts:
+        runs-on: windows-latest
+        steps:
+            - name: Checkout awpy library
+              uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v5
+
+            - name: Setup SteaCMD
+              uses: CyberAndrii/setup-steamcmd@v1
+
+            - name: Set up Python
+              run: |
+                uv python install ${{ env.PYTHON_VERSION }}
+
+            - name: Install Counter-Strike 2
+              run: |
+                $csDir = Join-Path (Get-Location) "cs_go"
+                steamcmd +force_install_dir $csDir +login anonymous +app_update ${{ env.CS2_APP_ID }} +quit
+
+            - name: Install Source2Viewer-CLI
+              run: |
+                Invoke-WebRequest -Uri ${{ env.SOURCE2_VIEWER_URL }} -OutFile ".\cli-windows-x64.zip"
+                Expand-Archive -Path .\cli-windows-x64.zip -DestinationPath . -Force
+
+            - name: Install awpy
+              shell: bash
+              run: |
+                uv sync --group dev --group test
+                uv tool install .
+
+            - name: Generate Triangles
+              run: |
+                Get-ChildItem -Force
+                .\scripts\generate-tris.ps1 -sourcePath "cs_go\game\csgo\maps"
+
+            - name: Generate Map Images
+              run: |
+                echo "Generating map images"
+
+            - name: Generate Map Data
+              run: |
+                echo "Generating map data"
+
+            - name: Generate Nav
+              run: |
+                echo "Generating nav"
+
+            - name: Generate Spawns
+              run: |
+                echo "Generating nav"

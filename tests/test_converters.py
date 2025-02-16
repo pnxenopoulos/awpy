@@ -35,9 +35,7 @@ class TestConverters:
 
     def test_map_round_end_reasons(self):
         """Test the map_round_end_reasons method."""
-        series = pd.Series(
-            [0, 1, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, -1]
-        )
+        series = pd.Series([0, 1, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, -1])
         expected = pd.Series(
             [
                 "still_in_progress",

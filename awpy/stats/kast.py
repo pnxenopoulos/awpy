@@ -27,8 +27,7 @@ def calculate_trades(kills: pd.DataFrame, trade_ticks: int = 128 * 5) -> pd.Data
         kills_round = kills[kills["round"] == r]
         for _, row in kills_round.iterrows():
             kills_in_trade_window = kills_round[
-                (kills_round["tick"] >= row["tick"] - trade_ticks)
-                & (kills_round["tick"] <= row["tick"])
+                (kills_round["tick"] >= row["tick"] - trade_ticks) & (kills_round["tick"] <= row["tick"])
             ]
             if row["victim_name"] in kills_in_trade_window["attacker_name"].to_numpy():
                 last_kill_by_attacker = None
@@ -123,8 +122,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     trades_ct = (
         kills_with_trades.loc[
-            (kills_with_trades["victim_team_name"] == "CT")
-            & (kills_with_trades["was_traded"]),
+            (kills_with_trades["victim_team_name"] == "CT") & (kills_with_trades["was_traded"]),
             ["victim_name", "victim_steamid", "round"],
         ]
         .drop_duplicates()
@@ -132,8 +130,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
     )
     trades_t = (
         kills_with_trades.loc[
-            (kills_with_trades["victim_team_name"] == "TERRORIST")
-            & (kills_with_trades["was_traded"]),
+            (kills_with_trades["victim_team_name"] == "TERRORIST") & (kills_with_trades["was_traded"]),
             ["victim_name", "victim_steamid", "round"],
         ]
         .drop_duplicates()
@@ -142,28 +139,19 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
 
     # Find survivals
     survivals = (
-        demo.ticks.sort_values("tick")
-        .groupby(["name", "steamid", "round"])
-        .tail(1)
-        .loc[demo.ticks["health"] > 0]
+        demo.ticks.sort_values("tick").groupby(["name", "steamid", "round"]).tail(1).loc[demo.ticks["health"] > 0]
     )
     survivals_total = survivals[["name", "steamid", "round"]]
     survivals_ct = survivals.loc[survivals["team_name"] == "ct"]
     survivals_t = survivals.loc[survivals["team_name"] == "t"]
 
     # Get total rounds by player
-    player_team_names_by_round = demo.ticks.groupby(
+    player_team_names_by_round = demo.ticks.groupby(["name", "steamid", "team_name", "round"]).head(1)[
         ["name", "steamid", "team_name", "round"]
-    ).head(1)[["name", "steamid", "team_name", "round"]]
-    player_team_name_rounds = (
-        player_team_names_by_round.groupby(["name", "steamid", "team_name"])
-        .size()
-        .reset_index()
-    )
+    ]
+    player_team_name_rounds = player_team_names_by_round.groupby(["name", "steamid", "team_name"]).size().reset_index()
     player_team_name_rounds.columns = ["name", "steamid", "team_name", "n_rounds"]
-    player_total_rounds = (
-        player_team_names_by_round.groupby(["name", "steamid"]).size().reset_index()
-    )
+    player_total_rounds = player_team_names_by_round.groupby(["name", "steamid"]).size().reset_index()
 
     # Tabulate total rounds
     total_kast = (
@@ -207,9 +195,7 @@ def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
         .reset_index()
         .rename(columns={0: "kast_rounds"})
         .merge(
-            player_team_name_rounds[
-                player_team_name_rounds["team_name"] == "TERRORIST"
-            ],
+            player_team_name_rounds[player_team_name_rounds["team_name"] == "TERRORIST"],
             on=["name", "steamid"],
         )
         .rename(columns={0: "n_rounds"})

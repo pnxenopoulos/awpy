@@ -19,7 +19,7 @@ def parsed_hltv_demo():
 @pytest.fixture
 def parsed_hltv_demo_no_rounds():
     """Fixture that returns a parsed Demo object with rounds disabled."""
-    return Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem", rounds=False)
+    return Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem")
 
 
 class TestDemo:
@@ -33,18 +33,6 @@ class TestDemo:
     def test_hltv_demo(self, parsed_hltv_demo: Demo):
         """Test the Demo object with an HLTV demo."""
         assert parsed_hltv_demo.header["map_name"] == "de_vertigo"
-
-    def test_no_rounds(self, parsed_hltv_demo_no_rounds: Demo):
-        """Test that when you do not parse rounds, there are no top-level dataframes."""
-        assert parsed_hltv_demo_no_rounds.rounds is None
-        assert parsed_hltv_demo_no_rounds.kills is None
-        assert parsed_hltv_demo_no_rounds.damages is None
-        assert parsed_hltv_demo_no_rounds.bomb is None
-        assert parsed_hltv_demo_no_rounds.smokes is None
-        assert parsed_hltv_demo_no_rounds.infernos is None
-        assert parsed_hltv_demo_no_rounds.weapon_fires is None
-        assert parsed_hltv_demo_no_rounds.rounds is None
-        assert parsed_hltv_demo_no_rounds.grenades is None
 
     def test_compress(self, parsed_hltv_demo: Demo):
         """Test that the demo is zipped."""
@@ -71,11 +59,7 @@ class TestDemo:
             assert all(Path(file).name in zipped_files for file in expected_files)
 
             # Check if there is an events/ folder and it contains files
-            events_files = [
-                file
-                for file in zipf.namelist()
-                if file.startswith("events/") and not file.endswith("/")
-            ]
+            events_files = [file for file in zipf.namelist() if file.startswith("events/") and not file.endswith("/")]
             assert len(events_files) > 0
 
             # Check content of header as an example
@@ -83,9 +67,9 @@ class TestDemo:
                 header = json.load(f)
                 assert header["map_name"] == "de_vertigo"
 
-    def test_compress_no_rounds(self, parsed_hltv_demo_no_rounds: Demo):
+    def test_compress_no_parse(self, parsed_hltv_demo_no_parse: Demo):
         """Test that the demo is zipped and no top-level dataframes are generated."""
-        parsed_hltv_demo_no_rounds.compress()
+        parsed_hltv_demo_no_parse.compress()
 
         zip_name = "spirit-vs-mouz-m1-vertigo.zip"
         assert os.path.exists(zip_name)
@@ -99,11 +83,7 @@ class TestDemo:
             assert all(Path(file).name in zipped_files for file in expected_files)
 
             # Check if there is an events/ folder and it contains files
-            events_files = [
-                file
-                for file in zipf.namelist()
-                if file.startswith("events/") and not file.endswith("/")
-            ]
+            events_files = [file for file in zipf.namelist() if file.startswith("events/") and not file.endswith("/")]
             assert len(events_files) > 0
 
             # Check content of header as an example

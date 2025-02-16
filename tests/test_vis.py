@@ -29,9 +29,7 @@ def check_visibility_brute_force(
 
     # Check intersection with each triangle
     for triangle in triangles:
-        t = VisibilityChecker._ray_triangle_intersection(
-            None, start_vec, direction, triangle
-        )
+        t = VisibilityChecker._ray_triangle_intersection(None, start_vec, direction, triangle)
         if t is not None and t <= distance:
             return False
 
@@ -87,20 +85,12 @@ class TestVisibility:
             brute_force_result_reverse = check_visibility_brute_force(end, start, tris)
 
             # Assert all results match the expected outcome
-            assert (
-                bvh_result == expected
-            ), f"BVH visibility from {start} to {end} failed"
-            assert (
-                brute_force_result == expected
-            ), f"Brute force visibility from {start} to {end} failed"
-            assert (
-                bvh_result == brute_force_result
-            ), f"BVH and brute force results differ for {start} to {end}"
+            assert bvh_result == expected, f"BVH visibility from {start} to {end} failed"
+            assert brute_force_result == expected, f"Brute force visibility from {start} to {end} failed"
+            assert bvh_result == brute_force_result, f"BVH and brute force results differ for {start} to {end}"
 
             # Assert reverse direction matches
-            assert (
-                bvh_result == bvh_result_reverse
-            ), f"BVH visibility not symmetric for {start} and {end}"
-            assert (
-                brute_force_result == brute_force_result_reverse
-            ), f"Brute force visibility not symmetric for {start} and {end}"
+            assert bvh_result == bvh_result_reverse, f"BVH visibility not symmetric for {start} and {end}"
+            assert brute_force_result == brute_force_result_reverse, (
+                f"Brute force visibility not symmetric for {start} and {end}"
+            )

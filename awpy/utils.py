@@ -5,14 +5,12 @@ from typing import Literal
 import pandas as pd
 
 
-def apply_round_num(
-    rounds_df: pd.DataFrame, df: pd.DataFrame, tick_col: str = "tick"
-) -> pd.DataFrame:
+def apply_round_num(df: pd.DataFrame, rounds_df: pd.DataFrame, tick_col: str = "tick") -> pd.DataFrame:
     """Assigns appropriate round number based on tick.
 
     Args:
-        rounds_df (pd.DataFrame): Parsed rounds from `Demo`.
         df (pd.DataFrame): Desired dataframe to apply round numbers.
+        rounds_df (pd.DataFrame): Parsed rounds from `Demo`.
         tick_col (str, optional): Name of tick column to check. Defaults to "tick".
 
     Raises:
@@ -27,9 +25,7 @@ def apply_round_num(
         raise ValueError(tick_col_does_not_exist_error_msg)
 
     # Create intervals
-    intervals = pd.IntervalIndex.from_arrays(
-        rounds_df["start"], rounds_df["official_end"], closed="right"
-    )
+    intervals = pd.IntervalIndex.from_arrays(rounds_df["start"], rounds_df["official_end"], closed="right")
 
     # Add round
     df["round"] = intervals.get_indexer(df[tick_col]) + 1
@@ -58,13 +54,9 @@ def rename_columns_with_affix(
     new_columns = {}
     for col in df.columns:
         if affix_type == "prefix" and col.startswith(old_affix):
-            new_col = col.replace(
-                old_affix, new_affix, 1
-            )  # Replace only the first occurrence
+            new_col = col.replace(old_affix, new_affix, 1)  # Replace only the first occurrence
             new_columns[col] = new_col
         elif affix_type == "suffix" and col.endswith(old_affix):
-            new_col = col[::-1].replace(old_affix[::-1], new_affix[::-1], 1)[
-                ::-1
-            ]  # Reverse replace
+            new_col = col[::-1].replace(old_affix[::-1], new_affix[::-1], 1)[::-1]  # Reverse replace
             new_columns[col] = new_col
     return df.rename(columns=new_columns)

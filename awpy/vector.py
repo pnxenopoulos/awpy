@@ -38,7 +38,7 @@ class Vector3:
             return cls(*value)
         if isinstance(value, npt.NDArray) and value.shape == (3,):
             return cls(*value.tolist())
-        erroneous_input_msg = "Input must be a Vector3, tuple, list of length 3, or a numpy array of shape (3,)"  # noqa: E501
+        erroneous_input_msg = "Input must be a Vector3, tuple, list of length 3, or a numpy array of shape (3,)"
         raise ValueError(erroneous_input_msg)
 
     def __sub__(self, other: Vector3) -> Vector3:

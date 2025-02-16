@@ -21,7 +21,7 @@ classifiers = [
 requires-python = ">=3.10,<=3.13"
 dependencies = [
     "click>=8.1.8",
-    "demoparser2>=0.34.0",
+    "demoparser2>=0.36.0",
     "loguru>=0.7.3",
     "matplotlib>=3.10.0",
     "networkx>=3.4.2",
@@ -102,7 +102,7 @@ exclude = [
     "venv",
     "docs"
 ]
-line-length = 88
+line-length = 120
 
 [tool.ruff.lint]
 select = [
@@ -151,7 +151,7 @@ select = [
     "RUF",
     "EM"
 ]
-ignore = ["D208", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001", "ANN101"]
+ignore = ["D208", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.pydocstyle]

@@ -90,12 +90,7 @@ def plot(  # noqa: PLR0915
             transformed_y = game_to_pixel_axis(map_name, y, "y")
 
             # Check if the point is within bounds of the map image
-            if (
-                transformed_x < 0
-                or transformed_x > 1024
-                or transformed_y < 0
-                or transformed_y > 1024
-            ):
+            if transformed_x < 0 or transformed_x > 1024 or transformed_y < 0 or transformed_y > 1024:
                 continue
 
             # Default settings

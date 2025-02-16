@@ -68,39 +68,30 @@ def get(resource_type: Literal["tri"]) -> None:
 
 
 @awpy.command(help="Parse a Counter-Strike 2 demo (.dem) file .")
-@click.argument("demo", type=click.Path(exists=True))
+@click.argument("demo_path", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose mode.")
 @click.option("--noticks", is_flag=True, default=False, help="Disable tick parsing.")
-@click.option(
-    "--norounds",
-    is_flag=True,
-    default=False,
-    help="Get round information for every event.",
-)
-@click.option(
-    "--player-props", multiple=True, help="List of player properties to include."
-)
-@click.option(
-    "--other-props", multiple=True, help="List of other properties to include."
-)
+@click.option("--events", multuple=True, help="List of events to parse.")
+@click.option("--player-props", multiple=True, help="List of player properties to include.")
+@click.option("--other-props", multiple=True, help="List of other properties to include.")
 def parse_demo(
-    demo: Path,
+    demo_path: Path,
     *,
     outpath: Optional[Path] = None,
     verbose: bool = False,
     noticks: bool = False,
-    norounds: bool = True,
+    events: Optional[tuple[str]] = None,
     player_props: Optional[tuple[str]] = None,
     other_props: Optional[tuple[str]] = None,
 ) -> None:
     """Parse a file given its path."""
-    demo_path = Path(demo)  # Pathify
+    demo_path = Path(demo_path)  # Pathify
     demo = Demo(
         path=demo_path,
         verbose=verbose,
         ticks=not noticks,
-        rounds=not norounds,
+        events=events[0].split(",") if events else None,
         player_props=player_props[0].split(",") if player_props else None,
         other_props=other_props[0].split(",") if other_props else None,
     )
@@ -117,9 +108,7 @@ def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
         output_path = vent_file.with_suffix(".json")
     spawns_data = Spawns.from_vents_file(vent_file)
     spawns_data.to_json(path=output_path)
-    logger.success(
-        f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}"
-    )
+    logger.success(f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}")
 
 
 @awpy.command(help="Parse a Counter-Strike 2 nav (.nav) file.")

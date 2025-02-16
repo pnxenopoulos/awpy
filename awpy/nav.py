@@ -140,7 +140,7 @@ class NavArea:
         """Returns string representation of NavArea."""
         connected_ids = sorted({c.area_id for conns in self.connections for c in conns})
         points = [(c.x, c.y, c.z) for c in self.corners]
-        return f"NavArea(id={self.area_id}, connected_ids={connected_ids}, points={points}, size={self.size})"  # noqa: E501
+        return f"NavArea(id={self.area_id}, connected_ids={connected_ids}, points={points}, size={self.size})"
 
     @staticmethod
     def read_connections(br: BinaryIO) -> list[NavMeshConnection]:
@@ -174,9 +174,7 @@ class NavArea:
             polygons: Optional list of predefined polygons for version 31+.
         """
         self.area_id = struct.unpack("I", br.read(4))[0]
-        self.dynamic_attribute_flags = DynamicAttributeFlags(
-            struct.unpack("q", br.read(8))[0]
-        )
+        self.dynamic_attribute_flags = DynamicAttributeFlags(struct.unpack("q", br.read(8))[0])
         self.hull_index = br.read(1)[0]
 
         if nav_mesh_file.version >= 31 and polygons is not None:
@@ -216,9 +214,7 @@ class NavArea:
             "hull_index": self.hull_index,
             "dynamic_attribute_flags": int(self.dynamic_attribute_flags),
             "corners": [{"x": c.x, "y": c.y, "z": c.z} for c in self.corners],
-            "connections": [
-                conn.area_id for conns in self.connections for conn in conns
-            ],
+            "connections": [conn.area_id for conns in self.connections for conn in conns],
             "ladders_above": self.ladders_above,
             "ladders_below": self.ladders_below,
         }
@@ -257,9 +253,7 @@ class Nav:
 
         # Add nodes
         for _aid, area in self.areas.items():
-            self.graph.add_node(
-                area.area_id, node=area
-            )  # Add node with area_id and size as attributes
+            self.graph.add_node(area.area_id, node=area)  # Add node with area_id and size as attributes
 
         # Add edges
         for _aid, area in self.areas.items():
@@ -278,9 +272,7 @@ class Nav:
 
     def __repr__(self) -> str:
         """Returns string representation of Nav."""
-        return (
-            f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
-        )
+        return f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
 
     def read(self, path: str | Path) -> None:
         """Reads nav mesh data from a file.
@@ -300,9 +292,7 @@ class Nav:
         with open(nav_path, "rb") as f:
             magic = struct.unpack("I", f.read(4))[0]
             if magic != self.MAGIC:
-                unexpected_magic_msg = (
-                    f"Unexpected magic: {magic:X}, expected {self.MAGIC:X}"
-                )
+                unexpected_magic_msg = f"Unexpected magic: {magic:X}, expected {self.MAGIC:X}"
                 raise ValueError(unexpected_magic_msg)
 
             self.version = struct.unpack("I", f.read(4))[0]
@@ -367,9 +357,7 @@ class Nav:
             br.read(4)  # Skip unk
         return polygon
 
-    def _read_areas(
-        self, br: BinaryIO, polygons: Optional[list[list[Vector3]]]
-    ) -> None:
+    def _read_areas(self, br: BinaryIO, polygons: Optional[list[list[Vector3]]]) -> None:
         """Reads all navigation areas from a binary stream.
 
         Args:
@@ -404,9 +392,7 @@ class Nav:
         """
         try:
             # Get the shortest path as a list of area IDs
-            path_ids = nx.shortest_path(
-                self.graph, source=start_id, target=end_id, weight=weight
-            )
+            path_ids = nx.shortest_path(self.graph, source=start_id, target=end_id, weight=weight)
             # Convert area IDs to NavArea objects
             return [self.graph.nodes[area_id]["node"] for area_id in path_ids]
         except nx.NetworkXNoPath:
