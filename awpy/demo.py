@@ -141,6 +141,8 @@ class Demo:
         if verbose:
             logger.remove()
             logger.add(sys.stdout, level="DEBUG")
+        else:
+            logger.remove()
 
     def __repr__(self) -> str:
         """Return a string representation of the Demo object.

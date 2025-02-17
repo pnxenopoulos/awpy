@@ -37,7 +37,7 @@ You can use Awpy to parse, analyze and visualize Counter-Strike 2 demo files (de
    dem = Demo("natus-vincere-vs-virtus-pro-m1-overpass.dem")
    dem.parse()
 
-   # Access various dictionaries & dataframes
+   # Access various dictionaries & Polars dataframes
    dem.header
    dem.rounds
    dem.grenades
@@ -48,6 +48,9 @@ You can use Awpy to parse, analyze and visualize Counter-Strike 2 demo files (de
    dem.infernos
    dem.shots
    dem.ticks
+
+   # If you need to change to a Pandas dataframe, you can do
+   dem.ticks.to_pandas()
 
 You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo and access the data.
 
@@ -67,11 +70,11 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    :maxdepth: 2
    :hidden:
 
-   examples/parse_demo
-   examples/parse_demo_cli
-   examples/demo_stats
-   examples/plot_demo
-   examples/visibility
+   .. examples/parse_demo
+   .. examples/parse_demo_cli
+   .. examples/demo_stats
+   .. examples/plot_demo
+   .. examples/visibility
 
 .. toctree::
    :caption: Documentation
@@ -85,10 +88,3 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    modules/plot
    modules/stats
    modules/vis
-
-.. toctree::
-   :caption: Data
-   :maxdepth: 2
-   :hidden:
-
-   usd

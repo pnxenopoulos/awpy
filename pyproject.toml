@@ -47,12 +47,12 @@ build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 dev = [
-    "mypy>=1.14.1",
-    "pre-commit>=4.0.1",
-    "ruff>=0.8.6",
+    "mypy>=1.15.0",
+    "pre-commit>=4.1.0",
+    "ruff>=0.9.6",
 ]
 test = [
-    "coverage>=7.6.10",
+    "coverage>=7.6.12",
     "pytest>=8.3.4",
 ]
 docs = [
