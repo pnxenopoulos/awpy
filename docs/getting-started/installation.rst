@@ -1,7 +1,7 @@
 Installation
 ============
 
-To install Awpy, you must have Python >= 3.10, and you can simply run
+To install Awpy, you must have Python >= 3.11, and you can simply run
 
 ``pip install awpy``
 

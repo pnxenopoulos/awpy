@@ -27,14 +27,15 @@ Awpy
 .. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-You can use Awpy to parse Counter-Strike 2 demos in one line. To see what output looks like, check out :doc:`parser_output`.
+You can use Awpy to parse, analyze and visualize Counter-Strike 2 demo files (demos). Awpy is built specifically to analyze competitive Counter-Strike (e.g., demos from HLTV, FACEIT, and competitive matchmaking).
 
 .. code-block:: python
 
    from awpy import Demo
 
-   # Simply call `Demo(path="...")` to parse a demo
+   # Construct and then parse a demo
    dem = Demo("natus-vincere-vs-virtus-pro-m1-overpass.dem")
+   dem.parse()
 
    # Access various dictionaries & dataframes
    dem.header
@@ -45,7 +46,7 @@ You can use Awpy to parse Counter-Strike 2 demos in one line. To see what output
    dem.bomb
    dem.smokes
    dem.infernos
-   dem.weapon_fires
+   dem.shots
    dem.ticks
 
 You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo and access the data.

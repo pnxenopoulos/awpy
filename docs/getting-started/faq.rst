@@ -4,19 +4,22 @@ Frequently Asked Questions (FAQs)
 This is a nonexhaustive list of frequently asked questions.
 
 **Q:** What can I do with Awpy?
-    You can parse Counter-Strike demos, calculate statistics like ADR, KAST or HLTV Rating, and even create animated round visualizations.
+    You can use Awpy to parse, analyze and visualize Counter-Strik 2 demo files (demos).
 
 **Q:** How do I install Awpy?
     You can install Awpy in Python by running ``pip install awpy``.
 
 **Q:** The parser returns weird rounds or data!
-    Please note that Awpy parses *everything* in a demo. This means that you may have rounds from the warmup, rounds that may have ended in a draw, and other odd-looking rounds. We try to clean all of this while also providing new data. If you see erroneous data, ask in the `Discord <https://discord.gg/W34XjsSs2H>`_ or create an issue in `Github <https://github.com/pnxenopoulos/awpy/issues>`_.
+    Please note that Awpy parses, and cleans, data from the demo file assuming the demo is from a competitive Counter-Strike 2 match (e.g., from HLTV, FACEIT or competitive matchmaking).
 
-**Q:** Where can I get documentation for the parsed data contains?
+**Q:** Where can I get documentation for the parsed data?
     Please look at :doc:`parser_output`.
 
 **Q:** Is Awpy available in other languages?
-    Awpy is only available in Python. You can use a :doc:`cli` to interface with Awpy, though.
+    Awpy is only available in Python. However, you can use a :doc:`cli` to parse demos with Awpy via a command-line interface.
+
+**Q:** I want to parse everything in the demo / I have specific parsing needs, can Awpy help?
+    Probably not -- Awpy is focused on competitive play and analysis. Awpy is built on the very flexible `demoparser2 library <https://pypi.org/project/demoparser2/>`_. You may still find Awpy useful for visualization.
 
 **Q:** How can I contribute to Awpy?
     We are always looking for people to help improve Awpy, no matter the skill-level. Please reach out on `Discord <https://discord.gg/W34XjsSs2H>`_ if you are interested.

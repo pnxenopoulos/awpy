@@ -1,7 +1,7 @@
 Nav
 ====================
 
-This module contains the base Nav class.
+This module contains the Nav class, which is used to represent navigation meshes in Counter-Strike 2.
 
 awpy.nav
 ------------------------------

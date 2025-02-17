@@ -20,9 +20,10 @@ def awpy() -> None:
 
 
 @awpy.command(
+    name="get",
     help="""
     Get Counter-Strike 2 resources like parsed nav meshes, spawns or triangle files. \n
-    Available choices: 'tri', 'map', 'nav', 'spawn'"""
+    Available choices: 'tri', 'map', 'nav', 'spawn'""",
 )
 @click.argument("resource_type", type=click.Choice(["tri", "nav", "spawn"]))
 def get(resource_type: Literal["tri"]) -> None:
@@ -67,7 +68,7 @@ def get(resource_type: Literal["tri"]) -> None:
         raise NotImplementedError(nav_not_impl_msg)
 
 
-@awpy.command(help="Parse a Counter-Strike 2 demo (.dem) file .")
+@awpy.command(name="parse", help="Parse a Counter-Strike 2 demo (.dem) file .")
 @click.argument("demo_path", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 @click.option("--events", multiple=True, help="List of events to parse.")
@@ -94,7 +95,7 @@ def parse_demo(
     demo.compress(outpath=outpath)
 
 
-@awpy.command(help="Parse spawns from a Counter-Strike 2 .vent file.")
+@awpy.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.")
 @click.argument("vent_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
@@ -107,7 +108,7 @@ def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
     logger.success(f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}")
 
 
-@awpy.command(help="Parse a Counter-Strike 2 .nav file.")
+@awpy.command(name="nav", help="Parse a Counter-Strike 2 .nav file.")
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
@@ -120,7 +121,7 @@ def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
     logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
 
 
-@awpy.command(help="Parse triangles (*.tri) from a .vphys file.")
+@awpy.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.")
 @click.argument("vphys_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def generate_tri(vphys_file: Path, *, outpath: Optional[Path] = None) -> None:

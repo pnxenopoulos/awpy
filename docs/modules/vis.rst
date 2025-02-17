@@ -1,7 +1,7 @@
 Visibility
 ====================
 
-This module contains functions for calculating visibility in Counter-Strike demos.
+This module contains functions for calculating visibility in Counter-Strike 2 demos.
 
 awpy.vis
 ------------------------------

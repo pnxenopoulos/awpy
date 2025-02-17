@@ -1,7 +1,7 @@
 Demo
 ====================
 
-This module contains the base Demo class.
+This module contains the Demo class, which is used to parse and hold demo file data.
 
 awpy.demo
 ------------------------------
