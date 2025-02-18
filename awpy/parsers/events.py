@@ -21,7 +21,7 @@ def parse_kills(df: pl.DataFrame) -> pl.DataFrame:
         pl.DataFrame: A standardized DataFrame of kill events with "victim_" prefixed columns
             and a mapped "hitgroup" column.
     """
-    return awpy.parsers.utils.rename_col_prefix(df, prefix="user_", new_prefix="victim_").with_columns(
+    return awpy.parsers.utils.rename_columns_with_affix(df, old_affix="user_", new_affix="victim_").with_columns(
         pl.col("hitgroup")
         .map_elements(lambda h: awpy.converters.HITGROUP_MAP.get(h, h), return_dtype=pl.String)
         .alias("hitgroup")
@@ -45,7 +45,7 @@ def parse_damages(df: pl.DataFrame) -> pl.DataFrame:
         pl.DataFrame: A standardized DataFrame of damage events with "victim_" prefixed columns, a
             replaced "hitgroup" column, and a computed "dmg_health_real" column.
     """
-    return awpy.parsers.utils.rename_col_prefix(df, prefix="user_", new_prefix="victim_").with_columns(
+    return awpy.parsers.utils.rename_columns_with_affix(df, old_affix="user_", new_affix="victim_").with_columns(
         pl.col("hitgroup").map_elements(lambda h: awpy.converters.HITGROUP_MAP.get(h, h), return_dtype=pl.String),
         pl.when(pl.col("dmg_health") > pl.col("victim_health"))
         .then(pl.col("victim_health"))
@@ -66,7 +66,7 @@ def parse_footsteps(df: pl.DataFrame) -> pl.DataFrame:
     Returns:
         pl.DataFrame: A standardized DataFrame of footstep events with columns renamed to start with "player_".
     """
-    return awpy.parsers.utils.rename_col_prefix(df, prefix="user_", new_prefix="player_")
+    return awpy.parsers.utils.rename_columns_with_affix(df, old_affix="user_", new_affix="player_")
 
 
 def parse_shots(df: pl.DataFrame) -> pl.DataFrame:
@@ -81,4 +81,4 @@ def parse_shots(df: pl.DataFrame) -> pl.DataFrame:
     Returns:
         pl.DataFrame: A standardized DataFrame of shot events with columns renamed to start with "player_".
     """
-    return awpy.parsers.utils.rename_col_prefix(df, prefix="user_", new_prefix="player_")
+    return awpy.parsers.utils.rename_columns_with_affix(df, old_affix="user_", new_affix="player_")

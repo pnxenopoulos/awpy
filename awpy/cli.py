@@ -2,7 +2,7 @@
 
 import zipfile
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import click
 import requests
@@ -98,7 +98,7 @@ def parse_demo(
 @awpy.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.")
 @click.argument("vent_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
-def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
+def parse_spawns(vent_file: Path, *, outpath: Path | None = None) -> None:
     """Parse a nav file given its path."""
     vent_file = Path(vent_file)
     if not outpath:
@@ -111,7 +111,7 @@ def parse_spawns(vent_file: Path, *, outpath: Optional[Path] = None) -> None:
 @awpy.command(name="nav", help="Parse a Counter-Strike 2 .nav file.")
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
-def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
+def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
     """Parse a nav file given its path."""
     nav_file = Path(nav_file)
     nav_mesh = Nav(path=nav_file)
@@ -124,7 +124,7 @@ def parse_nav(nav_file: Path, *, outpath: Optional[Path] = None) -> None:
 @awpy.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.")
 @click.argument("vphys_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
-def generate_tri(vphys_file: Path, *, outpath: Optional[Path] = None) -> None:
+def generate_tri(vphys_file: Path, *, outpath: Path | None = None) -> None:
     """Parse a .vphys file into a .tri file."""
     vphys_file = Path(vphys_file)
     vphys_parser = VphysParser(vphys_file)

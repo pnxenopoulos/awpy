@@ -8,7 +8,7 @@ import math
 import struct
 from enum import Enum
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, Optional
+from typing import Any, BinaryIO, Literal
 
 import networkx as nx
 
@@ -164,7 +164,7 @@ class NavArea:
         self,
         br: BinaryIO,
         nav_mesh_file: "Nav",
-        polygons: Optional[list[list[Vector3]]] = None,
+        polygons: list[list[Vector3]] | None = None,
     ) -> None:
         """Reads area data from a binary stream.
 
@@ -357,7 +357,7 @@ class Nav:
             br.read(4)  # Skip unk
         return polygon
 
-    def _read_areas(self, br: BinaryIO, polygons: Optional[list[list[Vector3]]]) -> None:
+    def _read_areas(self, br: BinaryIO, polygons: list[list[Vector3]] | None) -> None:
         """Reads all navigation areas from a binary stream.
 
         Args:

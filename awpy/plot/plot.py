@@ -4,7 +4,7 @@ import importlib.resources
 import io
 import math
 import warnings
-from typing import Literal, Optional
+from typing import Literal
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -22,9 +22,9 @@ from awpy.plot.utils import game_to_pixel_axis, is_position_on_lower_level
 
 def plot(  # noqa: PLR0915
     map_name: str,
-    points: Optional[list[tuple[float, float, float]]] = None,
-    lower_points_frac: Optional[float] = 0.4,
-    point_settings: Optional[list[dict]] = None,
+    points: list[tuple[float, float, float]] | None = None,
+    lower_points_frac: float | None = 0.4,
+    point_settings: list[dict] | None = None,
 ) -> tuple[Figure, Axes]:
     """Plot a Counter-Strike map with optional points.
 
@@ -237,7 +237,7 @@ def plot(  # noqa: PLR0915
 def _generate_frame_plot(
     map_name: str,
     frames_data: list[dict],
-    lower_points_frac: Optional[float] = 0.4,
+    lower_points_frac: float | None = 0.4,
 ) -> list[Image.Image]:
     """Generate frames for the animation.
 
@@ -284,7 +284,7 @@ def gif(
     frames_data: list[dict],
     output_filename: str,
     duration: int = 500,
-    lower_points_frac: Optional[float] = 0.4,
+    lower_points_frac: float | None = 0.4,
 ) -> None:
     """Create an animated gif from a list of frames.
 
@@ -326,7 +326,7 @@ def _hex_plot(
     size: int,
     cmap: str,
     alpha: float,
-    alpha_range: Optional[list[float]],
+    alpha_range: list[float] | None,
     min_alpha: float,
     max_alpha: float,
 ) -> Axes:
@@ -358,7 +358,7 @@ def _hist_plot(
     size: int,
     cmap: str,
     alpha: float,
-    alpha_range: Optional[list[float]],
+    alpha_range: list[float] | None,
     min_alpha: float,
     max_alpha: float,
 ) -> Axes:
@@ -394,7 +394,7 @@ def _kde_plot(
     size: int,
     cmap: str,
     alpha: float,
-    alpha_range: Optional[list[float]],
+    alpha_range: list[float] | None,
     min_alpha: float,
     max_alpha: float,
     kde_lower_bound: float = 0.1,
@@ -455,7 +455,7 @@ def heatmap(
     cmap: str = "RdYlGn",
     alpha: float = 0.5,
     *,
-    alpha_range: Optional[list[float]] = None,
+    alpha_range: list[float] | None = None,
     kde_lower_bound: float = 0.1,
 ) -> tuple[Figure, Axes]:
     """Create a heatmap of points on a Counter-Strike map.

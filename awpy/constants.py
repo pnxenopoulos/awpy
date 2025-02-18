@@ -1,5 +1,9 @@
 """Module for constants in Counter-Strike 2."""
 
+# Sides
+CT_SIDE = "ct"
+T_SIDE = "t"
+
 # Server
 DEFAULT_SERVER_TICKRATE = 128
 

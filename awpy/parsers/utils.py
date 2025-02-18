@@ -42,27 +42,6 @@ def validate_required_columns(df: pl.DataFrame, required_columns: set[str], df_n
         raise KeyError(missing_col_err_msg)
 
 
-def rename_col_prefix(df: pl.DataFrame, prefix: str = "prefix_", new_prefix: str = "new_") -> pl.DataFrame:
-    """Rename all columns in the DataFrame that start with a prefix to use a new one.
-
-    For example, if a column is named "prefix_column1" and the prefix is "prefix_" while
-    the new_prefix is "postfix_", the column will be renamed to "postfix_column1".
-    Columns that do not start with the specified prefix remain unchanged.
-
-    Parameters:
-        df (pl.DataFrame): The DataFrame whose columns should be renamed.
-        prefix (str, optional): The prefix to search for in column names.
-            Defaults to "prefix_".
-        new_prefix (str, optional): The new prefix to replace the old prefix.
-            Defaults to "new_".
-
-    Returns:
-        pl.DataFrame: A new DataFrame with columns renamed accordingly.
-    """
-    rename_dict = {col: new_prefix + col[len(prefix) :] for col in df.columns if col.startswith(prefix)}
-    return df.rename(rename_dict)
-
-
 def get_columns_with_prefix(df: pl.DataFrame, prefix: str) -> list[str]:
     """Return a list of column names in the DataFrame that start with the given prefix.
 
@@ -74,3 +53,63 @@ def get_columns_with_prefix(df: pl.DataFrame, prefix: str) -> list[str]:
         list[str]: A list of column names that start with the prefix.
     """
     return [col for col in df.columns if col.startswith(prefix)]
+
+
+def rename_columns_with_affix(
+    df: pl.DataFrame,
+    old_affix: str,
+    new_affix: str,
+    *,
+    is_prefix: bool = True,
+) -> pl.DataFrame:
+    """Rename columns by replacing old_affix with new_affix for a Polars DataFrame.
+
+    If is_prefix is True, the function replaces a prefix; otherwise, it replaces a suffix.
+
+    Args:
+        df (pl.DataFrame): DataFrame whose columns are to be renamed.
+        old_affix (str): Old affix to be replaced.
+        new_affix (str): New affix to replace the old one.
+        is_prefix (bool, optional): If True, perform prefix replacement, else suffix. Defaults to True.
+
+    Returns:
+        pl.DataFrame: DataFrame with renamed columns.
+    """
+    new_columns = {}
+    for col in df.columns:
+        if is_prefix and col.startswith(old_affix):
+            new_columns[col] = new_affix + col[len(old_affix) :]
+        elif not is_prefix and col.endswith(old_affix):
+            new_columns[col] = col[: -len(old_affix)] + new_affix
+    return df.rename(new_columns)
+
+
+def fix_common_names(df: pl.DataFrame) -> pl.DataFrame:
+    """Fixes common column name values and data types.
+
+    Args:
+        df (pl.DataFrame): DataFrame to fix.
+
+    Returns:
+        pl.DataFrame: DataFrame with fixed column names and data types.
+    """
+    # last_place_name -> place
+    renamed_df = rename_columns_with_affix(df, old_affix="last_place_name", new_affix="place", is_prefix=False)
+
+    # steamid to u64
+    for col in renamed_df.columns:
+        if col.endswith("steamid"):
+            renamed_df = renamed_df.with_columns(pl.col(col).cast(pl.UInt64))
+
+    # CT -> ct, TERRORIST -> t
+    for col in renamed_df.columns:
+        if col.endswith("team_name"):
+            renamed_df = renamed_df.with_columns(
+                pl.col(col).map_elements(lambda x: {"CT": "ct", "TERRORIST": "t"}.get(x, x), return_dtype=pl.String)
+            )
+
+    # team_name -> side
+    renamed_df = rename_columns_with_affix(renamed_df, old_affix="team_name", new_affix="side", is_prefix=False)
+
+    # armor_value -> armor
+    return rename_columns_with_affix(renamed_df, old_affix="armor_value", new_affix="armor", is_prefix=False)

@@ -1,206 +1,201 @@
 """Calculates the Kill, Assist, Survival, Trade %."""
 
-import pandas as pd
+import polars as pl
 
-from awpy import Demo
+import awpy.constants
+import awpy.demo
 
 
-def calculate_trades(kills: pd.DataFrame, trade_ticks: int = 128 * 5) -> pd.DataFrame:
+def calculate_trades(demo: awpy.demo.Demo, trade_length_in_seconds: float = 5.0) -> pl.DataFrame:
     """Calculates if kills are trades.
 
     A trade is a kill where the attacker of a player who recently died was
     killed shortly after the initial victim was killed.
 
     Args:
-        kills (pd.DataFrame): A parsed Awpy kills dataframe.
-        trade_ticks (int, optional): Length of trade time in ticks. Defaults to 128*5.
+        demo (awpy.demo.Demo): A parsed Demo.
+        trade_length_in_seconds (float, optional): Length of trade time in
+                                                   seconds. Defaults to 5.0.
 
     Returns:
-        pd.DataFrame: Adds `was_traded` columns to kills.
+        pl.DataFrame: The input DataFrame with an additional boolean column `was_traded`
+                      indicating whether the kill was traded.
     """
-    # Get all rounds
-    rounds = kills["round"].unique()
+    # Calculate trade ticks
+    trade_ticks = demo.tickrate * trade_length_in_seconds
 
-    was_traded = []
+    # Add a row index so we can later mark specific rows
+    kills = demo.kills.with_row_index("row_idx")
+    trade_indices = []
 
+    # Get unique rounds as a list
+    rounds = kills.select("round_num").unique().to_series().to_list()
+
+    # For each round, iterate over kills in that round and check for trade conditions.
     for r in rounds:
-        kills_round = kills[kills["round"] == r]
-        for _, row in kills_round.iterrows():
-            kills_in_trade_window = kills_round[
-                (kills_round["tick"] >= row["tick"] - trade_ticks) & (kills_round["tick"] <= row["tick"])
-            ]
-            if row["victim_name"] in kills_in_trade_window["attacker_name"].to_numpy():
-                last_kill_by_attacker = None
-                for __, attacker_row in kills_in_trade_window.iterrows():
-                    if attacker_row["attacker_name"] == row["victim_name"]:
-                        last_kill_by_attacker = attacker_row.name
-                was_traded.append(last_kill_by_attacker)
+        kills_round = kills.filter(pl.col("round_num") == r)
+        # Convert the round's DataFrame to dictionaries for row-wise iteration.
+        for row in kills_round.to_dicts():
+            tick = row["tick"]
+            victim_name = row["victim_name"]
+            # Filter kills in the trade window for this round.
+            kills_in_window = kills_round.filter((pl.col("tick") >= (tick - trade_ticks)) & (pl.col("tick") <= tick))
+            # Get the list of attacker names in the window.
+            attacker_names = kills_in_window.select("attacker_name").to_series().to_list()
+            if victim_name in attacker_names:
+                last_trade_row = None
+                # Iterate over the window rows to get the last kill where the attacker equals the victim.
+                for win_row in kills_in_window.to_dicts():
+                    if win_row["attacker_name"] == victim_name:
+                        last_trade_row = win_row["row_idx"]
+                if last_trade_row is not None:
+                    trade_indices.append(last_trade_row)
 
-    kills["was_traded"] = False
-    kills.loc[was_traded, "was_traded"] = True
+    # Mark rows whose row_idx is in our trade_indices list.
+    trade_set = set(trade_indices)
+    kills = kills.with_columns(pl.col("row_idx").is_in(list(trade_set)).alias("was_traded"))
+    # Drop the temporary row index column.
+    return kills.drop("row_idx")
 
-    return kills
 
-
-def kast(demo: Demo, trade_ticks: int = 128 * 5) -> pd.DataFrame:
-    """Calculates Kill-Assist-Survival-Trade %.
+def kast(demo: awpy.demo.Demo, trade_length_in_seconds: float = 5.0) -> pl.DataFrame:
+    """Calculates Kill-Assist-Survival-Trade % (KAST) using Polars.
 
     Args:
-        demo (awpy.demo.Demo): A parsed Awpy demo.
-        trade_ticks (int, optional): Length of trade time in ticks. Defaults to 128*5.
+        demo (awpy.demo.Demo): A parsed Awpy demo with kills and ticks as Polars DataFrames.
+        trade_length_in_seconds (float, optional): Length of trade time in seconds. Defaults to 5.0.
 
     Returns:
-        pd.DataFrame: A dataframe of the player info + kast.
+        pl.DataFrame: A DataFrame of player info with KAST statistics. The returned DataFrame
+                      contains the following columns:
+                        - name: The player's name.
+                        - steamid: The player's Steam ID.
+                        - side: The team ("all", "ct", or "t").
+                        - kast_rounds: Number of rounds contributing to KAST.
+                        - n_rounds: Total rounds played.
+                        - kast: The KAST percentage.
 
     Raises:
         ValueError: If kills or ticks are missing in the parsed demo.
     """
-    if demo.kills is None:
-        missing_kills_error_msg = "Kills is missing in the parsed demo!"
-        raise ValueError(missing_kills_error_msg)
+    # Mark trade kills
+    kills_with_trades = calculate_trades(demo, trade_length_in_seconds)
 
-    if demo.ticks is None:
-        missing_ticks_error_msg = "Ticks is missing in the parsed demo!"
-        raise ValueError(missing_ticks_error_msg)
+    # --- Kills & Assists ---
 
-    kills_with_trades = calculate_trades(demo.kills, trade_ticks)
-
-    # Get rounds where a player had a kill
+    # Total kills
     kills_total = (
-        kills_with_trades.loc[:, ["attacker_name", "attacker_steamid", "round"]]
-        .drop_duplicates()
-        .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
+        kills_with_trades.select(["attacker_name", "attacker_steamid", "round_num"])
+        .unique()
+        .rename({"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_ct = (
-        kills_with_trades.loc[
-            kills_with_trades["attacker_team_name"] == "CT",
-            ["attacker_name", "attacker_steamid", "round"],
-        ]
-        .drop_duplicates()
-        .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
+        kills_with_trades.filter(pl.col("attacker_side") == awpy.constants.CT_SIDE)
+        .select(["attacker_name", "attacker_steamid", "round_num"])
+        .unique()
+        .rename({"attacker_name": "name", "attacker_steamid": "steamid"})
     )
     kills_t = (
-        kills_with_trades.loc[
-            kills_with_trades["attacker_team_name"] == "TERRORIST",
-            ["attacker_name", "attacker_steamid", "round"],
-        ]
-        .drop_duplicates()
-        .rename(columns={"attacker_name": "name", "attacker_steamid": "steamid"})
+        kills_with_trades.filter(pl.col("attacker_side") == awpy.constants.T_SIDE)
+        .select(["attacker_name", "attacker_steamid", "round_num"])
+        .unique()
+        .rename({"attacker_name": "name", "attacker_steamid": "steamid"})
     )
 
-    # Get rounds where a player had an assist
+    # Total assists
     assists_total = (
-        kills_with_trades.loc[:, ["assister_name", "assister_steamid", "round"]]
-        .drop_duplicates()
-        .rename(columns={"assister_name": "name", "assister_steamid": "steamid"})
+        kills_with_trades.select(["assister_name", "assister_steamid", "round_num"])
+        .unique()
+        .rename({"assister_name": "name", "assister_steamid": "steamid"})
     )
     assists_ct = (
-        kills_with_trades.loc[
-            kills_with_trades["assister_team_name"] == "CT",
-            ["assister_name", "assister_steamid", "round"],
-        ]
-        .drop_duplicates()
-        .rename(columns={"assister_name": "name", "assister_steamid": "steamid"})
+        kills_with_trades.filter(pl.col("assister_side") == awpy.constants.CT_SIDE)
+        .select(["assister_name", "assister_steamid", "round_num"])
+        .unique()
+        .rename({"assister_name": "name", "assister_steamid": "steamid"})
     )
     assists_t = (
-        kills_with_trades.loc[
-            kills_with_trades["assister_team_name"] == "TERRORIST",
-            ["assister_name", "assister_steamid", "round"],
-        ]
-        .drop_duplicates()
-        .rename(columns={"assister_name": "name", "assister_steamid": "steamid"})
+        kills_with_trades.filter(pl.col("assister_side") == awpy.constants.T_SIDE)
+        .select(["assister_name", "assister_steamid", "round_num"])
+        .unique()
+        .rename({"assister_name": "name", "assister_steamid": "steamid"})
     )
 
-    # Get rounds where a player was traded
+    # --- Trades ---
+
     trades_total = (
-        kills_with_trades.loc[
-            kills_with_trades["was_traded"],
-            ["victim_name", "victim_steamid", "round"],
-        ]
-        .drop_duplicates()
-        .rename(columns={"victim_name": "name", "victim_steamid": "steamid"})
+        kills_with_trades.filter(pl.col("was_traded"))
+        .select(["victim_name", "victim_steamid", "round_num"])
+        .unique()
+        .rename({"victim_name": "name", "victim_steamid": "steamid"})
     )
     trades_ct = (
-        kills_with_trades.loc[
-            (kills_with_trades["victim_team_name"] == "CT") & (kills_with_trades["was_traded"]),
-            ["victim_name", "victim_steamid", "round"],
-        ]
-        .drop_duplicates()
-        .rename(columns={"victim_name": "name", "victim_steamid": "steamid"})
+        kills_with_trades.filter((pl.col("victim_side") == awpy.constants.CT_SIDE) & (pl.col("was_traded")))
+        .select(["victim_name", "victim_steamid", "round_num"])
+        .unique()
+        .rename({"victim_name": "name", "victim_steamid": "steamid"})
     )
     trades_t = (
-        kills_with_trades.loc[
-            (kills_with_trades["victim_team_name"] == "TERRORIST") & (kills_with_trades["was_traded"]),
-            ["victim_name", "victim_steamid", "round"],
-        ]
-        .drop_duplicates()
-        .rename(columns={"victim_name": "name", "victim_steamid": "steamid"})
+        kills_with_trades.filter((pl.col("victim_side") == awpy.constants.T_SIDE) & (pl.col("was_traded")))
+        .select(["victim_name", "victim_steamid", "round_num"])
+        .unique()
+        .rename({"victim_name": "name", "victim_steamid": "steamid"})
     )
 
-    # Find survivals
-    survivals = (
-        demo.ticks.sort_values("tick").groupby(["name", "steamid", "round"]).tail(1).loc[demo.ticks["health"] > 0]
+    # --- Survivals ---
+    # Get the last tick of each round per player, then only keep those with health > 0.
+    survivals = demo.ticks.sort("tick").group_by(["name", "steamid", "round_num"]).tail(1).filter(pl.col("health") > 0)
+    survivals_total = survivals.select(["name", "steamid", "round_num"]).unique()
+    # Depending on your data, team names might be lowercase; adjust as needed.
+    survivals_ct = (
+        survivals.filter(pl.col("side") == awpy.constants.CT_SIDE).select(["name", "steamid", "round_num"]).unique()
     )
-    survivals_total = survivals[["name", "steamid", "round"]]
-    survivals_ct = survivals.loc[survivals["team_name"] == "ct"]
-    survivals_t = survivals.loc[survivals["team_name"] == "t"]
+    survivals_t = (
+        survivals.filter(pl.col("side") == awpy.constants.T_SIDE).select(["name", "steamid", "round_num"]).unique()
+    )
 
-    # Get total rounds by player
-    player_team_names_by_round = demo.ticks.groupby(["name", "steamid", "team_name", "round"]).head(1)[
-        ["name", "steamid", "team_name", "round"]
-    ]
-    player_team_name_rounds = player_team_names_by_round.groupby(["name", "steamid", "team_name"]).size().reset_index()
-    player_team_name_rounds.columns = ["name", "steamid", "team_name", "n_rounds"]
-    player_total_rounds = player_team_names_by_round.groupby(["name", "steamid"]).size().reset_index()
-
-    # Tabulate total rounds
+    # --- Tabulate KAST ---
+    # Overall ("all"): combine kills, assists, trades, and survivals.
     total_kast = (
-        pd.concat([kills_total, assists_total, trades_total, survivals_total])
-        .drop_duplicates()
-        .reset_index(drop=True)
-        .groupby(["name", "steamid"])
-        .size()
-        .reset_index()
-        .rename(columns={0: "kast_rounds"})
-        .merge(player_total_rounds, on=["name", "steamid"])
-        .rename(columns={0: "n_rounds"})
+        pl.concat([kills_total, assists_total, trades_total, survivals_total])
+        .unique()
+        .drop_nulls()
+        .group_by(["name", "steamid"])
+        .agg(pl.count("round_num").alias("kast_rounds"))
+        .join(demo.player_round_totals.filter(pl.col("side") == "all"), on=["name", "steamid"], how="left")
+        .with_columns((pl.col("kast_rounds") * 100 / pl.col("n_rounds")).alias("kast"))
     )
-    total_kast["team_name"] = "all"
-    total_kast["kast"] = total_kast["kast_rounds"] * 100 / total_kast["n_rounds"]
 
-    # CT
+    # ct side
     ct_kast = (
-        pd.concat([kills_ct, assists_ct, trades_ct, survivals_ct])
-        .drop_duplicates()
-        .reset_index(drop=True)
-        .groupby(["name", "steamid"])
-        .size()
-        .reset_index()
-        .rename(columns={0: "kast_rounds"})
-        .merge(
-            player_team_name_rounds[player_team_name_rounds["team_name"] == "CT"],
+        pl.concat([kills_ct, assists_ct, trades_ct, survivals_ct])
+        .unique()
+        .drop_nulls()
+        .group_by(["name", "steamid"])
+        .agg(pl.count("round_num").alias("kast_rounds"))
+        .join(
+            demo.player_round_totals.filter(pl.col("side") == awpy.constants.CT_SIDE),
             on=["name", "steamid"],
+            how="left",
         )
-        .rename(columns={0: "n_rounds"})
+        .with_columns((pl.col("kast_rounds") * 100 / pl.col("n_rounds")).alias("kast"))
+        .with_columns(pl.lit(awpy.constants.CT_SIDE).alias("side"))
     )
-    ct_kast["kast"] = ct_kast["kast_rounds"] * 100 / ct_kast["n_rounds"]
 
-    # T
+    # t side
     t_kast = (
-        pd.concat([kills_t, assists_t, trades_t, survivals_t])
-        .drop_duplicates()
-        .reset_index(drop=True)
-        .groupby(["name", "steamid"])
-        .size()
-        .reset_index()
-        .rename(columns={0: "kast_rounds"})
-        .merge(
-            player_team_name_rounds[player_team_name_rounds["team_name"] == "TERRORIST"],
-            on=["name", "steamid"],
+        pl.concat([kills_t, assists_t, trades_t, survivals_t])
+        .unique()
+        .drop_nulls()
+        .group_by(["name", "steamid"])
+        .agg(pl.count("round_num").alias("kast_rounds"))
+        .join(
+            demo.player_round_totals.filter(pl.col("side") == awpy.constants.T_SIDE), on=["name", "steamid"], how="left"
         )
-        .rename(columns={0: "n_rounds"})
+        .with_columns((pl.col("kast_rounds") * 100 / pl.col("n_rounds")).alias("kast"))
+        .with_columns(pl.lit(awpy.constants.T_SIDE).alias("side"))
     )
-    t_kast["kast"] = t_kast["kast_rounds"] * 100 / t_kast["n_rounds"]
 
-    kast_df = pd.concat([total_kast, ct_kast, t_kast])
-    return kast_df[["name", "steamid", "team_name", "kast_rounds", "n_rounds", "kast"]]
+    # Combine all KAST stats
+    kast_df = pl.concat([total_kast, ct_kast, t_kast])
+    return kast_df.select(["name", "steamid", "side", "kast_rounds", "n_rounds", "kast"])

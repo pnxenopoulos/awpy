@@ -215,6 +215,12 @@ class Demo:
         start = time.perf_counter()
         logger.debug(f"Starting to parse {self.path}")
 
+        # Get player props
+        player_props = ["last_place_name", "X", "Y", "Z", "health", "team_name"] + (
+            player_props if player_props is not None else []
+        )
+        player_props = list(set(player_props))
+
         # Parse events from demo
         events_to_parse = events if events is not None else self.default_events
         self.events = self.parse_events(
@@ -249,6 +255,7 @@ class Demo:
         self.ticks = awpy.parsers.rounds.apply_round_num(df=self.ticks, rounds_df=self.rounds, tick_col="tick").filter(
             pl.col("round_num").is_not_null()
         )
+        self.ticks = awpy.parsers.utils.fix_common_names(self.ticks)
 
         # Parse, filter, and apply round number to grenades
         self.grenades = self.parse_grenades()
@@ -313,7 +320,10 @@ class Demo:
                     that the demo has not been parsed yet. In this case, please run the .parse() method.
         """
         kills = awpy.parsers.utils.get_event_from_parsed_events(self.events, "player_death")
-        return awpy.parsers.events.parse_kills(kills)
+        kills = awpy.parsers.events.parse_kills(kills)
+        return awpy.parsers.rounds.apply_round_num(df=kills, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def damages(self) -> pl.DataFrame:
@@ -399,6 +409,50 @@ class Demo:
         return awpy.parsers.bomb.parse_bomb(self.events, self.in_play_ticks)
 
     @cached_property
+    def player_round_totals(self) -> pl.DataFrame:
+        """Cached property that calculates and returns player round totals.
+
+        This property computes the total number of rounds played by each player, both for each specific side
+        (e.g., ct or t) and overall (regardless of side). It uses data from the ticks and rounds
+        DataFrames available on the demo object.
+
+        The process is as follows:
+          1. Select unique combinations of player name, steamid, side, and round number from the ticks DataFrame.
+          2. Join these unique records with the rounds DataFrame on the round number to filter and validate rounds.
+          3. Group the joined data by name, steamid, and side to count rounds per player for each team side.
+          4. Additionally, group by name and steamid to compute the total rounds played by each player,
+             regardless of side, and label these records with side as "all".
+          5. Concatenate the per-side and overall aggregates into a single DataFrame.
+
+        Returns:
+            pl.DataFrame: A DataFrame with the following columns:
+                - name (str): The player's name.
+                - steamid (str): The player's Steam ID.
+                - side (str): The team side ("ct", "t", or "all" for total rounds).
+                - n_rounds (int): The number of rounds played by the player on the given side.
+        """
+        player_sides_by_round = self.ticks.select(["name", "steamid", "side", "round_num"]).unique()
+
+        # Merge with rounds DataFrame on "round".
+        player_sides_by_round = player_sides_by_round.join(self.rounds, on="round_num", how="inner")
+
+        # Aggregate rounds by player and team (i.e. side).
+        player_side_rounds = player_sides_by_round.group_by(["name", "steamid", "side"]).agg(
+            pl.count("round_num").alias("n_rounds")
+        )
+
+        # Aggregate total rounds by player (regardless of team) and label as "all".
+        player_total_rounds = (
+            player_sides_by_round.group_by(["name", "steamid"])
+            .agg(pl.count("round_num").alias("n_rounds"))
+            .with_columns(pl.lit("all").alias("side"))
+            .select(["name", "steamid", "side", "n_rounds"])
+        )
+
+        # Concatenate the two results into one DataFrame.
+        return pl.concat([player_side_rounds, player_total_rounds])
+
+    @cached_property
     def server_cvars(self) -> pl.DataFrame:
         """Cached property that returns a Polars DataFrame of server configuration variable events.
 
@@ -425,8 +479,6 @@ class Demo:
         return [
             "round_freeze_end",  # Freeze time ends
             "round_officially_ended",  # Round officially declared over
-            "round_start",  # Round start (imputed event)
-            "round_end",  # Round end (imputed event)
             "player_spawn",  # Players spawn
             "player_given_c4",  # C4 is given to a player
             "bomb_pickup",  # Bomb is picked up
@@ -482,8 +534,6 @@ class Demo:
             Polars DataFrames.
         """
         self._raise_if_no_parser()
-        player_props = ["last_place_name", "X", "Y", "Z", "health"] + (player_props if player_props is not None else [])
-        player_props = list(set(player_props))
         events: dict[str, pl.DataFrame] = dict(
             self.parser.parse_events(
                 events_to_parse,
@@ -494,9 +544,11 @@ class Demo:
         # Explicitly parse round start and round end events
         events["round_start"] = self.parser.parse_event("round_start")
         events["round_end"] = self.parser.parse_event("round_end")
+
+        # Loop through and process each event
         for event_name, event in events.items():
             # Convert the event from a pandas DataFrame to a Polars DataFrame.
-            events[event_name] = pl.from_pandas(event)
+            events[event_name] = awpy.parsers.utils.fix_common_names(pl.from_pandas(event))
             if event_name == "round_start":
                 # Label the event as 'start'
                 events[event_name] = events[event_name].with_columns(pl.lit("start").alias("event"))
