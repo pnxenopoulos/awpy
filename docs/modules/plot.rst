@@ -1,5 +1,5 @@
 Visualization & Plotting
-====================
+========================
 
 This module contains functions for visualizing Counter-Strike 2 demo files.
 

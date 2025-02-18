@@ -64,6 +64,7 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    getting-started/installation
    getting-started/faq
    getting-started/license
+   modules/parser_output
 
 .. toctree::
    :caption: Example Notebooks
