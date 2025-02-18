@@ -48,7 +48,7 @@ def parse_timed_grenade_entity(
 
     # Rename columns in start_df to match the desired output.
     # First, rename columns starting with "user_" to "thrower_"
-    sd = awpy.parsers.utils.rename_col_prefix(sd, prefix="user_", new_prefix="thrower_").rename(
+    sd = awpy.parsers.utils.rename_columns_with_affix(sd, old_affix="user_", new_affix="thrower_").rename(
         {"entityid": "entity_id", "tick": "start_tick", "x": "X", "y": "Y", "z": "Z"}
     )
 
