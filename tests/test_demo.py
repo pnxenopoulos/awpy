@@ -80,6 +80,7 @@ class TestDemo:
             "ct_killed",
             "ct_killed",
             "t_killed",
+            "ct_killed",
             "bomb_exploded",
             "t_killed",
             "time_ran_out",

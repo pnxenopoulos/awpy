@@ -3,12 +3,15 @@
 import polars as pl
 
 
-def get_event_from_parsed_events(events: dict[str, pl.DataFrame], key: str) -> pl.DataFrame:
+def get_event_from_parsed_events(
+    events: dict[str, pl.DataFrame], key: str, *, empty_if_not_found: bool = False
+) -> pl.DataFrame:
     """Retrieve a required event DataFrame from the events dictionary.
 
     Args:
         events: Dictionary of event DataFrames.
         key: The key for the required event.
+        empty_if_not_found: If True, return an empty DataFrame if the event is not found.
 
     Returns:
         The corresponding polars DataFrame for the event.
@@ -18,6 +21,8 @@ def get_event_from_parsed_events(events: dict[str, pl.DataFrame], key: str) -> p
     """
     event_df = events.get(key)
     if event_df is None:
+        if empty_if_not_found:
+            return pl.DataFrame()
         missing_key_err_msg = f"Required event '{key}' is missing from the events dictionary."
         raise KeyError(missing_key_err_msg)
     return event_df
