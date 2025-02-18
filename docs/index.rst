@@ -22,7 +22,7 @@ Awpy
 .. |License| image:: https://img.shields.io/badge/license-MIT-lightgrey
    :target: https://github.com/pnxenopoulos/awpy/blob/main/LICENSE
    
-`Awpy` allows a user to parse, analyze and visualize Counter-Strike 2 demos. You can visit the repository_ to view the source code, examples and data. To install Awpy, run ``pip install awpy`` (Python >= 3.10). Please join the Discord_ server if you would like to join our esports analytics community or to receive Awpy support. You can get started with the following example:
+`Awpy` allows a user to parse, analyze and visualize Counter-Strike 2 demos. You can visit the repository_ to view the source code, examples and data. To install Awpy, run ``pip install awpy`` (Python >= 3.11). Please join the Discord_ server if you would like to join our esports analytics community or to receive Awpy support. You can get started with the following example:
 
 .. _repository: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
