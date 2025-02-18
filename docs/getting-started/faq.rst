@@ -13,10 +13,10 @@ This is a nonexhaustive list of frequently asked questions.
     Please note that Awpy parses, and cleans, data from the demo file assuming the demo is from a competitive Counter-Strike 2 match (e.g., from HLTV, FACEIT or competitive matchmaking).
 
 **Q:** Where can I get documentation for the parsed data?
-    Please look at :doc:`parser_output`.
+    Please look at :doc:`../modules/parser_output`.
 
 **Q:** Is Awpy available in other languages?
-    Awpy is only available in Python. However, you can use a :doc:`cli` to parse demos with Awpy via a command-line interface.
+    Awpy is only available in Python. However, you can use a :doc:`../modules/cli` to parse demos with Awpy via a command-line interface.
 
 **Q:** I want to parse everything in the demo / I have specific parsing needs, can Awpy help?
     Probably not -- Awpy is focused on competitive play and analysis. Awpy is built on the very flexible `demoparser2 library <https://pypi.org/project/demoparser2/>`_. You may still find Awpy useful for visualization.

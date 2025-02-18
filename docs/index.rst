@@ -70,11 +70,11 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    :maxdepth: 2
    :hidden:
 
-   .. examples/parse_demo
-   .. examples/parse_demo_cli
-   .. examples/demo_stats
-   .. examples/plot_demo
-   .. examples/visibility
+   examples/parse_demo
+   examples/parse_demo_cli
+   examples/demo_stats
+   examples/plot_demo
+   examples/visibility
 
 .. toctree::
    :caption: Documentation
