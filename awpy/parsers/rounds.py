@@ -2,6 +2,7 @@
 
 import polars as pl
 
+import awpy.constants
 import awpy.parsers.utils
 
 
@@ -157,6 +158,12 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
 
     # Join additional round details (such as winner and reason) from the round_end events.
     rounds_df = rounds_df.join(round_end[["tick", "winner", "reason"]], left_on="end", right_on="tick")
+
+    # Replace winner with constants
+    rounds_df = rounds_df.with_columns(
+        pl.col("winner").str.replace("CT", awpy.constants.CT_SIDE),
+        pl.col("winner").str.replace("TERRORIST", awpy.constants.T_SIDE),
+    )
 
     # Replace round number with row index (starting at 1) and coalesce official_end data.
     rounds_df = (

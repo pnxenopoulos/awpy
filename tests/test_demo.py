@@ -11,14 +11,6 @@ from awpy.demo import Demo
 
 
 @pytest.fixture
-def parsed_hltv_demo():
-    """Fixture that returns a parsed HLTV Demo object."""
-    dem = Demo(path="tests/vitality-vs-spirit-m2-nuke.dem")
-    dem.parse()
-    return dem
-
-
-@pytest.fixture
 def parsed_faceit_demo():
     """Fixture that returns a parsed Faceit Demo object."""
     dem = Demo(path="tests/faceit-fpl-1-a568cd9f-8817-4410-a3f3-2270f89135e2.dem")
@@ -91,6 +83,7 @@ class TestDemo:
             "t_killed",
             "t_killed",
             "bomb_exploded",
+            "t_killed",
             "t_killed",
             "t_killed",
         ]

@@ -8,17 +8,6 @@ from awpy.demo import Demo
 
 
 @pytest.fixture
-def hltv_demo() -> Demo:
-    """Fixture that returns a parsed HLTV Demo object.
-
-    https://www.hltv.org/matches/2378917/vitality-vs-spirit-iem-katowice-2025
-    """
-    dem = Demo(path="tests/vitality-vs-spirit-m2-nuke.dem")
-    dem.parse()
-    return dem
-
-
-@pytest.fixture
 def adr_results(hltv_demo: Demo) -> pl.DataFrame:
     """Fixture that returns ADR results filtered for the 'all' side."""
     adr_df = awpy.stats.adr(hltv_demo, team_dmg=True)

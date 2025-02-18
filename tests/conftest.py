@@ -7,6 +7,8 @@ import pathlib
 import pytest
 import requests
 
+import awpy.demo
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():  # noqa: ANN201
@@ -26,6 +28,17 @@ def teardown():  # noqa: ANN201
     for file in os.listdir():
         if file.endswith((".json", ".dem", ".zip", ".nav")):
             os.remove(file)
+
+
+@pytest.fixture
+def parsed_hltv_demo() -> awpy.demo.Demo:
+    """Fixture that returns a parsed HLTV Demo object.
+
+    https://www.hltv.org/matches/2378917/vitality-vs-spirit-iem-katowice-2025
+    """
+    dem = awpy.demo.Demo(path="tests/vitality-vs-spirit-m2-nuke.dem")
+    dem.parse()
+    return dem
 
 
 def _get_test_file(url: str, path: pathlib.Path) -> None:
