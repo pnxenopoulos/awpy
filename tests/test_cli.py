@@ -41,10 +41,10 @@ class TestCommandLine:
 
     def test_parse_demo_zip_creation(self):
         """Test that the parse command produces a zip file."""
-        result = self.runner.invoke(parse_demo, ["tests/spirit-vs-mouz-m1-vertigo.dem"])
+        result = self.runner.invoke(parse_demo, ["tests/vitality-vs-spirit-m2-nuke.dem"])
         assert result.exit_code == 0
 
-        zip_name = "spirit-vs-mouz-m1-vertigo.zip"
+        zip_name = "vitality-vs-spirit-m2-nuke.zip"
         assert os.path.exists(zip_name)
 
         with zipfile.ZipFile(zip_name, "r") as zipf:
@@ -72,4 +72,4 @@ class TestCommandLine:
             # Check content of one file as an example
             with zipf.open("header.json") as f:
                 header = json.load(f)
-                assert header["map_name"] == "de_vertigo"
+                assert header["map_name"] == "de_nuke"

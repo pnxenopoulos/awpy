@@ -58,12 +58,12 @@ def calculate_trades(demo: awpy.demo.Demo, trade_length_in_seconds: float = 5.0)
     return kills.drop("row_idx")
 
 
-def kast(demo: awpy.demo.Demo, trade_length_in_seconds: float = 5.0) -> pl.DataFrame:
+def kast(demo: awpy.demo.Demo, trade_length_in_seconds: float = 3.0) -> pl.DataFrame:
     """Calculates Kill-Assist-Survival-Trade % (KAST) using Polars.
 
     Args:
         demo (awpy.demo.Demo): A parsed Awpy demo with kills and ticks as Polars DataFrames.
-        trade_length_in_seconds (float, optional): Length of trade time in seconds. Defaults to 5.0.
+        trade_length_in_seconds (float, optional): Length of trade time in seconds. Defaults to 3.0.
 
     Returns:
         pl.DataFrame: A DataFrame of player info with KAST statistics. The returned DataFrame

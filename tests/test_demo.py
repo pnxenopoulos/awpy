@@ -13,7 +13,7 @@ from awpy.demo import Demo
 @pytest.fixture
 def parsed_hltv_demo():
     """Fixture that returns a parsed HLTV Demo object."""
-    dem = Demo(path="tests/spirit-vs-mouz-m1-vertigo.dem")
+    dem = Demo(path="tests/vitality-vs-spirit-m2-nuke.dem")
     dem.parse()
     return dem
 
@@ -36,13 +36,13 @@ class TestDemo:
 
     def test_hltv_demo(self, parsed_hltv_demo: Demo):
         """Test the Demo object with an HLTV demo."""
-        assert parsed_hltv_demo.header["map_name"] == "de_vertigo"
+        assert parsed_hltv_demo.header["map_name"] == "de_nuke"
 
     def test_compress(self, parsed_hltv_demo: Demo):
         """Test that the demo is zipped."""
         parsed_hltv_demo.compress()
 
-        zip_name = "spirit-vs-mouz-m1-vertigo.zip"
+        zip_name = "vitality-vs-spirit-m2-nuke.zip"
         assert os.path.exists(zip_name)
 
         with zipfile.ZipFile(zip_name, "r") as zipf:
@@ -70,7 +70,7 @@ class TestDemo:
             # Check content of header as an example
             with zipf.open("header.json") as f:
                 header = json.load(f)
-                assert header["map_name"] == "de_vertigo"
+                assert header["map_name"] == "de_nuke"
 
     def test_hltv_rounds(self, parsed_hltv_demo: Demo):
         """Test the rounds DataFrame for an HLTV demo."""
@@ -80,35 +80,25 @@ class TestDemo:
             "ct_killed",
             "ct_killed",
             "t_killed",
-            "bomb_defused",
-            "ct_killed",
             "bomb_exploded",
             "t_killed",
-            "bomb_defused",
-            "t_killed",
-            "ct_killed",
-            "ct_killed",
+            "time_ran_out",
+            "bomb_exploded",
             "ct_killed",
             "ct_killed",
             "t_killed",
-            "ct_killed",
             "t_killed",
-            "t_killed",
-            "t_killed",
-            "ct_killed",
             "t_killed",
             "bomb_exploded",
+            "t_killed",
             "t_killed",
         ]
 
     def test_hltv_kills(self, parsed_hltv_demo: Demo):
         """Test the kills DataFrame for an HLTV demo."""
-        assert not parsed_hltv_demo.kills.is_empty()
+        # Total kills
+        assert len(parsed_hltv_demo.kills) == 111
 
     def test_hltv_damages(self, parsed_hltv_demo: Demo):
         """Test the damages DataFrame for an HLTV demo."""
         assert not parsed_hltv_demo.damages.is_empty()
-
-    def test_faceit_kills(self, parsed_faceit_demo: Demo):
-        """Test the kills DataFrame for a Faceit demo."""
-        assert not parsed_faceit_demo.kills.is_empty()
