@@ -38,7 +38,7 @@ if (Test-Path $inputPath) {
 
             # Run the awpy spawns command
             Write-Host "Running awpy spawns on: $newFileName" -ForegroundColor Yellow
-            awpy spawns $newFileName
+            awpy spawn $newFileName
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }
