@@ -1,1 +1,1 @@
-"""Module for testing awpy."""
+"""Module for testing Awpy."""

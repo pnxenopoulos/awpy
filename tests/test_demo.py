@@ -2,20 +2,13 @@
 
 import json
 import os
+import pathlib
 import zipfile
-from pathlib import Path
 
+import polars as pl
 import pytest
 
 from awpy.demo import Demo
-
-
-@pytest.fixture
-def parsed_faceit_demo():
-    """Fixture that returns a parsed Faceit Demo object."""
-    dem = Demo(path="tests/faceit-fpl-1-a568cd9f-8817-4410-a3f3-2270f89135e2.dem")
-    dem.parse()
-    return dem
 
 
 class TestDemo:
@@ -29,6 +22,14 @@ class TestDemo:
     def test_hltv_demo(self, parsed_hltv_demo: Demo):
         """Test the Demo object with an HLTV demo."""
         assert parsed_hltv_demo.header["map_name"] == "de_nuke"
+
+    def test_faceit_demo(self, parsed_faceit_demo: Demo):
+        """Test the Demo object with a FACEIT demo."""
+        assert parsed_faceit_demo.header["map_name"] == "de_mirage"
+
+    def test_mm_demo(self, parsed_mm_demo: Demo):
+        """Test the Demo object with an MM demo."""
+        assert parsed_mm_demo.header["map_name"] == "de_ancient"
 
     def test_compress(self, parsed_hltv_demo: Demo):
         """Test that the demo is zipped."""
@@ -52,8 +53,8 @@ class TestDemo:
                 "rounds.parquet",
                 "header.json",
             ]
-            zipped_files = [Path(file).name for file in zipf.namelist()]
-            assert all(Path(file).name in zipped_files for file in expected_files)
+            zipped_files = [pathlib.Path(file).name for file in zipf.namelist()]
+            assert all(pathlib.Path(file).name in zipped_files for file in expected_files)
 
             # Check if there is an events/ folder and it contains files
             events_files = [file for file in zipf.namelist() if file.endswith(".parquet")]
@@ -66,7 +67,6 @@ class TestDemo:
 
     def test_hltv_rounds(self, parsed_hltv_demo: Demo):
         """Test the rounds DataFrame for an HLTV demo."""
-        assert not parsed_hltv_demo.rounds.is_empty()
         assert parsed_hltv_demo.rounds["reason"].to_list() == [
             "ct_killed",
             "ct_killed",
@@ -96,3 +96,27 @@ class TestDemo:
     def test_hltv_damages(self, parsed_hltv_demo: Demo):
         """Test the damages DataFrame for an HLTV demo."""
         assert not parsed_hltv_demo.damages.is_empty()
+
+    def test_faceit_rounds(self, parsed_faceit_demo: Demo):
+        """Test the rounds DataFrame for a FACEIT demo."""
+        assert len(parsed_faceit_demo.rounds) == 24
+
+    def test_faceit_kills(self, parsed_faceit_demo: Demo):
+        """Test the kills DataFrame for a FACEIT demo."""
+        assert len(parsed_faceit_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 163
+
+    def test_mm_rounds(self, parsed_mm_demo: Demo):
+        """Test the rounds DataFrame for an MM demo."""
+        assert parsed_mm_demo.rounds["reason"].to_list() == [
+            "ct_killed",
+            "t_killed",
+            "t_killed",
+            "t_killed",
+            "t_killed",
+            "t_killed",
+            "t_surrender",
+        ]
+
+    def test_mm_kills(self, parsed_mm_demo: Demo):
+        """Test the kills DataFrame for an MM demo."""
+        assert len(parsed_mm_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 42

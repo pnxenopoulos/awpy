@@ -12,7 +12,11 @@ def _find_valid_round_indices(rounds_df: pl.DataFrame, full_sequence: list[str])
     A valid sequence is defined as either:
       - A full sequence matching: ["start", "freeze_end", "end", "official_end"]
       - An incomplete sequence matching either:
-          ["start", "freeze_end", "end"] or ["start", "end", "official_end"]
+          ["start", "freeze_end", "end"],
+          ["start", "end", "official_end"], or
+          ["start", "end"] (typically occurring when there's a surrender vote)
+      - If at the end of the DataFrame only the first 3 events of full_sequence are present
+        (i.e. ["start", "freeze_end", "end"]), consider that valid.
 
     Args:
         rounds_df: DataFrame containing event rows with an "event" column.
@@ -25,21 +29,33 @@ def _find_valid_round_indices(rounds_df: pl.DataFrame, full_sequence: list[str])
     sequence_length_full = len(full_sequence)  # Expected full sequence length (4)
     alt_sequence1 = ["start", "freeze_end", "end"]
     alt_sequence2 = ["start", "end", "official_end"]
+    alt_sequence3 = ["start", "end"]  # For surrender vote
 
     n_rows = len(rounds_df)
     for i in range(n_rows):
-        # Extract a slice of events with length equal to the full sequence.
+        # Extract a slice of events; if we're near the end, this may be shorter than full_sequence.
         current_sequence = rounds_df["event"].slice(i, sequence_length_full).to_list()
 
-        # Check for a complete round sequence.
+        # 1. Check for a complete round sequence.
         if current_sequence == full_sequence:
             valid_indices.extend(range(i, i + sequence_length_full))
-        # Check for an incomplete sequence matching alt_sequence1.
+        # 2. Check for a 3-event sequence: ["start", "freeze_end", "end"].
         elif current_sequence == alt_sequence1:
             valid_indices.extend(range(i, i + len(alt_sequence1)))
-        # Check for an incomplete sequence matching alt_sequence2 (even if extra event is present).
+        # 3. Check for a 3-event sequence: ["start", "end", "official_end"].
         elif len(current_sequence) >= len(alt_sequence2) and current_sequence[: len(alt_sequence2)] == alt_sequence2:
             valid_indices.extend(range(i, i + len(alt_sequence2)))
+        # 4. Check for a 2-event sequence: ["start", "end"].
+        elif len(current_sequence) == len(alt_sequence3) and current_sequence == alt_sequence3:
+            valid_indices.extend(range(i, i + len(alt_sequence3)))
+        # 5. Lastly, if we're at the very end and only have 3 events, check if they match the first three events of full
+        elif (
+            len(current_sequence) < sequence_length_full
+            and len(current_sequence) == 3
+            and current_sequence == full_sequence[:3]
+        ):
+            valid_indices.extend(range(i, i + len(current_sequence)))
+
     return valid_indices
 
 
@@ -145,7 +161,8 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
     # Identify the indices of rows that form valid round sequences.
     valid_indices = _find_valid_round_indices(rounds_df, expected_full_sequence)
     if not valid_indices:
-        raise ValueError("No valid round sequences found in the event data.")  # noqa: EM101
+        no_valid_sequences_err_msg = "No valid round sequences found in the event data."
+        raise ValueError(no_valid_sequences_err_msg)
 
     # Filter the DataFrame to include only rows that are part of valid round sequences.
     rounds_df = rounds_df[valid_indices]
@@ -162,6 +179,7 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
     # Replace winner with constants
     rounds_df = rounds_df.with_columns(
         pl.col("winner").str.replace("CT", awpy.constants.CT_SIDE),
+    ).with_columns(
         pl.col("winner").str.replace("TERRORIST", awpy.constants.T_SIDE),
     )
 

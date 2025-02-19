@@ -30,13 +30,35 @@ def teardown():  # noqa: ANN201
             os.remove(file)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def parsed_hltv_demo() -> awpy.demo.Demo:
     """Fixture that returns a parsed HLTV Demo object.
 
     https://www.hltv.org/matches/2378917/vitality-vs-spirit-iem-katowice-2025
     """
     dem = awpy.demo.Demo(path="tests/vitality-vs-spirit-m2-nuke.dem")
+    dem.parse()
+    return dem
+
+
+@pytest.fixture(scope="session")
+def parsed_faceit_demo() -> awpy.demo.Demo:
+    """Fixture that returns a parsed FACEIT Demo object.
+
+    https://www.faceit.com/en/cs2/room/1-efdaace4-2fd4-4884-babf-1a5a2c83e344
+    """
+    dem = awpy.demo.Demo(path="tests/1-efdaace4-2fd4-4884-babf-1a5a2c83e344.dem")
+    dem.parse()
+    return dem
+
+
+@pytest.fixture(scope="session")
+def parsed_mm_demo() -> awpy.demo.Demo:
+    """Fixture that returns a parsed Matchmaking Demo object.
+
+    https://csstats.gg/match/249286425
+    """
+    dem = awpy.demo.Demo(path="tests/match730_003736456444682174484_1173793269_201.dem")
     dem.parse()
     return dem
 
