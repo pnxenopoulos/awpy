@@ -5,14 +5,14 @@ Reference: https://github.com/ValveResourceFormat/ValveResourceFormat/tree/maste
 
 import json
 import math
+import pathlib
 import struct
 from enum import Enum
-from pathlib import Path
 from typing import Any, BinaryIO, Literal
 
 import networkx as nx
 
-from awpy.vector import Vector3
+import awpy.vector
 
 
 class DynamicAttributeFlags(int):
@@ -80,7 +80,7 @@ class NavArea:
         self.area_id: int = 0
         self.hull_index: int = 0
         self.dynamic_attribute_flags: DynamicAttributeFlags = DynamicAttributeFlags(0)
-        self.corners: list[Vector3] = []
+        self.corners: list[awpy.vector.Vector3] = []
         self.connections: list[list[NavMeshConnection]] = []
         self.ladders_above: list[int] = []
         self.ladders_below: list[int] = []
@@ -115,14 +115,14 @@ class NavArea:
         return abs(area) / 2.0
 
     @property
-    def centroid(self) -> Vector3:
+    def centroid(self) -> awpy.vector.Vector3:
         """Calculates the centroid of the polygon defined by the corners.
 
         Returns:
             A Vector3 representing the centroid (geometric center) of the polygon.
         """
         if not self.corners:
-            return Vector3(0, 0, 0)  # Return origin if no corners exist
+            return awpy.vector.Vector3(0, 0, 0)  # Return origin if no corners exist
 
         x_coords = [corner.x for corner in self.corners]
         y_coords = [corner.y for corner in self.corners]
@@ -134,7 +134,7 @@ class NavArea:
         z_coords = [corner.z for corner in self.corners]
         centroid_z = sum(z_coords) / len(self.corners)
 
-        return Vector3(centroid_x, centroid_y, centroid_z)
+        return awpy.vector.Vector3(centroid_x, centroid_y, centroid_z)
 
     def __repr__(self) -> str:
         """Returns string representation of NavArea."""
@@ -164,7 +164,7 @@ class NavArea:
         self,
         br: BinaryIO,
         nav_mesh_file: "Nav",
-        polygons: list[list[Vector3]] | None = None,
+        polygons: list[list[awpy.vector.Vector3]] | None = None,
     ) -> None:
         """Reads area data from a binary stream.
 
@@ -185,7 +185,7 @@ class NavArea:
             self.corners = []
             for _ in range(corner_count):
                 x, y, z = struct.unpack("fff", br.read(12))
-                self.corners.append(Vector3(x, y, z))
+                self.corners.append(awpy.vector.Vector3(x, y, z))
 
         br.read(4)  # Skip almost always 0
 
@@ -233,7 +233,7 @@ class Nav:
 
     MAGIC: int = 0xFEEDFACE
 
-    def __init__(self, path: str | Path) -> None:
+    def __init__(self, path: str | pathlib.Path) -> None:
         """Initializes and reads a navigation mesh from a file.
 
         Args:
@@ -274,7 +274,7 @@ class Nav:
         """Returns string representation of Nav."""
         return f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
 
-    def read(self, path: str | Path) -> None:
+    def read(self, path: str | pathlib.Path) -> None:
         """Reads nav mesh data from a file.
 
         Args:
@@ -284,7 +284,7 @@ class Nav:
             FileNotFoundError: If the nav mesh file does not exist.
             ValueError: If the file format is invalid or unsupported.
         """
-        nav_path = Path(path)
+        nav_path = pathlib.Path(path)
         if not nav_path.exists():
             nav_path_not_found_msg = f"Nav mesh file not found: {nav_path}"
             raise FileNotFoundError(nav_path_not_found_msg)
@@ -317,7 +317,7 @@ class Nav:
 
             self._read_areas(f, polygons)
 
-    def _read_polygons(self, br: BinaryIO) -> list[list[Vector3]]:
+    def _read_polygons(self, br: BinaryIO) -> list[list[awpy.vector.Vector3]]:
         """Reads polygon data from a binary stream.
 
         Args:
@@ -330,7 +330,7 @@ class Nav:
         corners = []
         for _ in range(corner_count):
             x, y, z = struct.unpack("fff", br.read(12))
-            corners.append(Vector3(x, y, z))
+            corners.append(awpy.vector.Vector3(x, y, z))
 
         polygon_count = struct.unpack("I", br.read(4))[0]
         polygons = []
@@ -338,7 +338,7 @@ class Nav:
             polygons.append(self._read_polygon(br, corners))
         return polygons
 
-    def _read_polygon(self, br: BinaryIO, corners: list[Vector3]) -> list[Vector3]:
+    def _read_polygon(self, br: BinaryIO, corners: list[awpy.vector.Vector3]) -> list[awpy.vector.Vector3]:
         """Reads a single polygon from a binary stream.
 
         Args:
@@ -357,7 +357,7 @@ class Nav:
             br.read(4)  # Skip unk
         return polygon
 
-    def _read_areas(self, br: BinaryIO, polygons: list[list[Vector3]] | None) -> None:
+    def _read_areas(self, br: BinaryIO, polygons: list[list[awpy.vector.Vector3]] | None) -> None:
         """Reads all navigation areas from a binary stream.
 
         Args:
@@ -407,7 +407,7 @@ class Nav:
             "areas": {area_id: area.to_dict() for area_id, area in self.areas.items()},
         }
 
-    def to_json(self, path: str | Path) -> None:
+    def to_json(self, path: str | pathlib.Path) -> None:
         """Writes the navigation mesh data to a JSON file.
 
         Args:

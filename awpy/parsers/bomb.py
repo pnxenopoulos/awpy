@@ -166,4 +166,5 @@ def parse_bomb(events: dict[str, pl.DataFrame], valid_ticks: pl.Series) -> pl.Da
     )
 
     # Combine all bomb events into one DataFrame and sort by tick.
-    return pl.concat([bd, bp, bpnt, bexp, bdef]).sort("tick")
+    nonempty_dfs = [df for df in [bd, bp, bpnt, bexp, bdef] if not df.is_empty()]
+    return pl.concat(nonempty_dfs).sort("tick")

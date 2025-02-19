@@ -5,7 +5,7 @@ import pathlib
 import re
 from dataclasses import dataclass
 
-from awpy.vector import Vector3
+import awpy.vector
 
 VentsValue = str | int | float | bool | tuple[float, ...]
 
@@ -14,8 +14,8 @@ VentsValue = str | int | float | bool | tuple[float, ...]
 class Spawns:
     """Spawns of a map."""
 
-    CT: list[Vector3]
-    T: list[Vector3]
+    CT: list[awpy.vector.Vector3]
+    T: list[awpy.vector.Vector3]
 
     def to_dict(self) -> dict[str, list[dict[str, float]]]:
         """Converts the spawns to a dictionary."""
@@ -110,8 +110,8 @@ def parse_vents_file_to_dict(file_content: str) -> dict[int, dict[str, VentsValu
 
 def filter_vents_data(data: dict[int, dict[str, VentsValue]]) -> Spawns:
     """Filter the data to get the positions."""
-    ct_spawns: list[Vector3] = []
-    t_spawns: list[Vector3] = []
+    ct_spawns: list[awpy.vector.Vector3] = []
+    t_spawns: list[awpy.vector.Vector3] = []
 
     for properties in data.values():
         if (
@@ -120,13 +120,13 @@ def filter_vents_data(data: dict[int, dict[str, VentsValue]]) -> Spawns:
             and properties.get("priority") == 0
         ):
             x, y, z = properties["origin"]
-            t_spawns.append(Vector3(x=x, y=y, z=z))
+            t_spawns.append(awpy.vector.Vector3(x=x, y=y, z=z))
         elif (
             properties.get("classname") == "info_player_counterterrorist"
             and properties.get("enabled")
             and properties.get("priority") == 0
         ):
             x, y, z = properties["origin"]
-            ct_spawns.append(Vector3(x=x, y=y, z=z))
+            ct_spawns.append(awpy.vector.Vector3(x=x, y=y, z=z))
 
     return Spawns(CT=ct_spawns, T=t_spawns)

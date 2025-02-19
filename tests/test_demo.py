@@ -114,6 +114,7 @@ class TestDemo:
             "t_killed",
             "t_killed",
             "t_killed",
+            "ct_killed",
             "t_surrender",
         ]
 
