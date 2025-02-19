@@ -9,15 +9,15 @@ from typing import Literal
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats
+import tqdm
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PIL import Image
-from scipy.stats import gaussian_kde
-from tqdm import tqdm
 
-from awpy.plot.utils import game_to_pixel_axis, is_position_on_lower_level
+import awpy.plot.utils
 
 
 def plot(  # noqa: PLR0915
@@ -86,8 +86,8 @@ def plot(  # noqa: PLR0915
 
         # Plot each point
         for (x, y, z), settings in zip(points, point_settings, strict=False):
-            transformed_x = game_to_pixel_axis(map_name, x, "x")
-            transformed_y = game_to_pixel_axis(map_name, y, "y")
+            transformed_x = awpy.plot.utils.game_to_pixel_axis(map_name, x, "x")
+            transformed_y = awpy.plot.utils.game_to_pixel_axis(map_name, y, "y")
 
             # Check if the point is within bounds of the map image
             if transformed_x < 0 or transformed_x > 1024 or transformed_y < 0 or transformed_y > 1024:
@@ -105,7 +105,7 @@ def plot(  # noqa: PLR0915
             alpha = 0.15 if hp == 0 else 1.0
 
             map_is_lower = map_name.endswith("_lower")
-            point_is_lower = is_position_on_lower_level(map_name, (x, y, z))
+            point_is_lower = awpy.plot.utils.is_position_on_lower_level(map_name, (x, y, z))
 
             if not map_is_lower and point_is_lower:
                 if lower_points_frac == 0:
@@ -114,8 +114,8 @@ def plot(  # noqa: PLR0915
             elif map_is_lower and not point_is_lower:
                 continue
 
-            transformed_x = game_to_pixel_axis(map_name, x, "x")
-            transformed_y = game_to_pixel_axis(map_name, y, "y")
+            transformed_x = awpy.plot.utils.game_to_pixel_axis(map_name, x, "x")
+            transformed_y = awpy.plot.utils.game_to_pixel_axis(map_name, y, "y")
 
             # Plot the marker
             axes.plot(
@@ -259,7 +259,7 @@ def _generate_frame_plot(
         list[Image.Image]: list of PIL Image objects representing each frame.
     """
     frames = []
-    for frame_data in tqdm(frames_data):
+    for frame_data in tqdm.tqdm(frames_data):
         fig, _ax = plot(
             map_name,
             frame_data["points"],
@@ -402,7 +402,8 @@ def _kde_plot(
     """Returns an `ax` with a kde plot."""
     # Calculate the kernel density estimate
     xy = np.vstack([x, y])
-    kde = gaussian_kde(xy)
+    kde = scipy.stats.gaussian_kde(xy)
+
     # Create a grid and evaluate the KDE on it
     xmin, xmax = min(x), max(x)
     ymin, ymax = min(y), max(y)
@@ -416,6 +417,7 @@ def _kde_plot(
     if alpha_range is not None:
         # Normalize KDE values
         zi_norm = zi / zi.max()
+
         # Create a color array with variable alpha
         colors = plt.cm.get_cmap(cmap)(zi_norm)
         colors[..., -1] = np.where(
@@ -498,7 +500,7 @@ def heatmap(
     points = []
     warning = ""
     for point in temp_points:
-        point_is_lower = is_position_on_lower_level(map_name, point)
+        point_is_lower = awpy.plot.utils.is_position_on_lower_level(map_name, point)
         # If point is on same level as map, then keep, else ignore & warn.
         if point_is_lower == map_is_lower:
             points.append(point)
@@ -509,8 +511,8 @@ def heatmap(
 
     x, y = [], []
     for point in points:
-        x_point = game_to_pixel_axis(map_name, point[0], "x")
-        y_point = game_to_pixel_axis(map_name, point[1], "y")
+        x_point = awpy.plot.utils.game_to_pixel_axis(map_name, point[0], "x")
+        y_point = awpy.plot.utils.game_to_pixel_axis(map_name, point[1], "y")
 
         # Check if the point is within bounds of the map image
         if x_point < 0 or x_point > 1024 or y_point < 0 or y_point > 1024:

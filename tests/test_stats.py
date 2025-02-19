@@ -80,9 +80,9 @@ class TestStats:
             f"KAST for {name} is {round(actual_kast, 1)}, expected {expected_kast}"
         )
 
-    def test_rating(self, hltv_demo: Demo):
+    def test_rating(self, parsed_hltv_demo: Demo):
         """Test the rating function. Checks that ordering is correct."""
-        rating_df = awpy.stats.rating(hltv_demo).filter(pl.col("side") == "all").sort("rating")
+        rating_df = awpy.stats.rating(parsed_hltv_demo).filter(pl.col("side") == "all").sort("rating")
         assert len(rating_df) == 10, f"Expected 10 players, got {len(rating_df)}"
 
         assert rating_df["name"].to_list() == [

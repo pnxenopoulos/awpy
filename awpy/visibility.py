@@ -3,7 +3,7 @@
 Reference: https://github.com/AtomicBool/cs2-map-parser
 """
 
-from __future__ import annotations  # Enables postponed evaluation of type hints
+from __future__ import annotations
 
 import pathlib
 import struct
@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from loguru import logger
 
-from awpy.vector import Vector3
+import awpy.vector
 
 
 @dataclass
@@ -24,17 +24,17 @@ class Triangle:
         p3: Third vertex of the triangle.
     """
 
-    p1: Vector3
-    p2: Vector3
-    p3: Vector3
+    p1: awpy.vector.Vector3
+    p2: awpy.vector.Vector3
+    p3: awpy.vector.Vector3
 
-    def get_centroid(self) -> Vector3:
+    def get_centroid(self) -> awpy.vector.Vector3:
         """Calculate the centroid of the triangle.
 
         Returns:
-            Vector3: Centroid of the triangle.
+            awpy.vector.Vector3: Centroid of the triangle.
         """
-        return Vector3(
+        return awpy.vector.Vector3(
             (self.p1.x + self.p2.x + self.p3.x) / 3,
             (self.p1.y + self.p2.y + self.p3.y) / 3,
             (self.p1.z + self.p2.z + self.p3.z) / 3,
@@ -331,7 +331,7 @@ class VphysParser:
 
                 vertex_data = self.bytes_to_vec(vertex_str, 4)
                 vertices = [
-                    Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
+                    awpy.vector.Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
                     for i in range(0, len(vertex_data), 3)
                 ]
 
@@ -394,7 +394,7 @@ class VphysParser:
                 )
 
                 vertices = [
-                    Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
+                    awpy.vector.Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
                     for i in range(0, len(vertex_data), 3)
                 ]
 
@@ -423,7 +423,7 @@ class VphysParser:
         logger.debug(f"Exporting {len(self.triangles)} triangles to {outpath}")
         with open(outpath, "wb") as f:
             for triangle in self.triangles:
-                # Write all Vector3 components as float32
+                # Write all awpy.vector.Vector3 components as float32
                 f.write(struct.pack("f", triangle.p1.x))
                 f.write(struct.pack("f", triangle.p1.y))
                 f.write(struct.pack("f", triangle.p1.z))
@@ -440,12 +440,12 @@ class VphysParser:
 class AABB:
     """Axis-Aligned Bounding Box for efficient collision detection."""
 
-    def __init__(self, min_point: Vector3, max_point: Vector3) -> None:
+    def __init__(self, min_point: awpy.vector.Vector3, max_point: awpy.vector.Vector3) -> None:
         """Initialize the AABB with minimum and maximum points.
 
         Args:
-            min_point (Vector3): Minimum point of the AABB.
-            max_point (Vector3): Maximum point of the AABB.
+            min_point (awpy.vector.Vector3): Minimum point of the AABB.
+            max_point (awpy.vector.Vector3): Maximum point of the AABB.
         """
         self.min_point = min_point
         self.max_point = max_point
@@ -460,24 +460,24 @@ class AABB:
         Returns:
             AABB: Axis-Aligned Bounding Box encompassing the triangle.
         """
-        min_point = Vector3(
+        min_point = awpy.vector.Vector3(
             min(triangle.p1.x, triangle.p2.x, triangle.p3.x),
             min(triangle.p1.y, triangle.p2.y, triangle.p3.y),
             min(triangle.p1.z, triangle.p2.z, triangle.p3.z),
         )
-        max_point = Vector3(
+        max_point = awpy.vector.Vector3(
             max(triangle.p1.x, triangle.p2.x, triangle.p3.x),
             max(triangle.p1.y, triangle.p2.y, triangle.p3.y),
             max(triangle.p1.z, triangle.p2.z, triangle.p3.z),
         )
         return cls(min_point, max_point)
 
-    def intersects_ray(self, ray_origin: Vector3, ray_direction: Vector3) -> bool:
+    def intersects_ray(self, ray_origin: awpy.vector.Vector3, ray_direction: awpy.vector.Vector3) -> bool:
         """Check if a ray intersects with the AABB.
 
         Args:
-            ray_origin (Vector3): Ray origin point.
-            ray_direction (Vector3): Ray direction vector.
+            ray_origin (awpy.vector.Vector3): Ray origin point.
+            ray_direction (awpy.vector.Vector3): Ray direction vector.
 
         Returns:
             bool: True if the ray intersects with the AABB, False otherwise.
@@ -599,12 +599,12 @@ class VisibilityChecker:
         right = self._build_bvh(triangles[mid:])
 
         # Create encompassing AABB
-        min_point = Vector3(
+        min_point = awpy.vector.Vector3(
             min(left.aabb.min_point.x, right.aabb.min_point.x),
             min(left.aabb.min_point.y, right.aabb.min_point.y),
             min(left.aabb.min_point.z, right.aabb.min_point.z),
         )
-        max_point = Vector3(
+        max_point = awpy.vector.Vector3(
             max(left.aabb.max_point.x, right.aabb.max_point.x),
             max(left.aabb.max_point.y, right.aabb.max_point.y),
             max(left.aabb.max_point.z, right.aabb.max_point.z),
@@ -613,13 +613,16 @@ class VisibilityChecker:
         return BVHNode(AABB(min_point, max_point), left=left, right=right)
 
     def _ray_triangle_intersection(
-        self, ray_origin: Vector3, ray_direction: Vector3, triangle: Triangle
+        self,
+        ray_origin: awpy.vector.Vector3,
+        ray_direction: awpy.vector.Vector3,
+        triangle: Triangle,
     ) -> float | None:
         """Check if a ray intersects with a triangle.
 
         Args:
-            ray_origin (Vector3): Ray origin point.
-            ray_direction (Vector3): Ray direction vector.
+            ray_origin (awpy.vector.Vector3): Ray origin point.
+            ray_direction (awpy.vector.Vector3): Ray direction vector.
             triangle (Triangle): Triangle to check intersection with.
 
         Returns:
@@ -659,16 +662,16 @@ class VisibilityChecker:
     def _traverse_bvh(
         self,
         node: BVHNode,
-        ray_origin: Vector3,
-        ray_direction: Vector3,
+        ray_origin: awpy.vector.Vector3,
+        ray_direction: awpy.vector.Vector3,
         max_distance: float,
     ) -> bool:
         """Traverse the BVH tree to check for ray-triangle intersections.
 
         Args:
             node (BVHNode): Current node in the BVH tree.
-            ray_origin (Vector3): Ray origin point.
-            ray_direction (Vector3): Ray direction vector.
+            ray_origin (awpy.vector.Vector3): Ray origin point.
+            ray_direction (awpy.vector.Vector3): Ray direction vector.
             max_distance (float): Maximum distance to check for intersections.
 
         Returns:
@@ -689,20 +692,20 @@ class VisibilityChecker:
 
     def is_visible(
         self,
-        start: Vector3 | tuple | list,
-        end: Vector3 | tuple | list,
+        start: awpy.vector.Vector3 | tuple | list,
+        end: awpy.vector.Vector3 | tuple | list,
     ) -> bool:
         """Check if a line segment is visible in the 3D space.
 
         Args:
-            start (Vector3 | tuple | list): Start point of the line segment.
-            end (Vector3 | tuple | list): End point of the line segment.
+            start (awpy.vector.Vector3 | tuple | list): Start point of the line segment.
+            end (awpy.vector.Vector3 | tuple | list): End point of the line segment.
 
         Returns:
             bool: True if the line segment is visible, False otherwise.
         """
-        start_vec = Vector3.from_input(start)
-        end_vec = Vector3.from_input(end)
+        start_vec = awpy.vector.Vector3.from_input(start)
+        end_vec = awpy.vector.Vector3.from_input(end)
 
         # Calculate ray direction and length
         direction = end_vec - start_vec
@@ -742,9 +745,9 @@ class VisibilityChecker:
                     values = struct.unpack("9f", data[offset : offset + 36])
 
                     triangles[triangle_idx] = Triangle(
-                        Vector3(values[0], values[1], values[2]),
-                        Vector3(values[3], values[4], values[5]),
-                        Vector3(values[6], values[7], values[8]),
+                        awpy.vector.Vector3(values[0], values[1], values[2]),
+                        awpy.vector.Vector3(values[3], values[4], values[5]),
+                        awpy.vector.Vector3(values[6], values[7], values[8]),
                     )
                     triangle_idx += 1
 

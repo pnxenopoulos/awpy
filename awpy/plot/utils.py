@@ -3,7 +3,7 @@
 import warnings
 from typing import Literal
 
-from awpy.data.map_data import MAP_DATA
+import awpy.data.map_data
 
 
 # Position function courtesy of PureSkill.gg
@@ -25,8 +25,8 @@ def game_to_pixel_axis(map_name: str, position: float, axis: Literal["x", "y"]) 
     if axis not in ["x", "y"]:
         msg = f"'axis' has to be 'x' or 'y', not {axis}"
         raise ValueError(msg)
-    start = MAP_DATA[map_name]["pos_" + axis]
-    scale = MAP_DATA[map_name]["scale"]
+    start = awpy.data.map_data.MAP_DATA[map_name]["pos_" + axis]
+    scale = awpy.data.map_data.MAP_DATA[map_name]["scale"]
 
     if axis == "x":
         return (position - start) / scale
@@ -51,8 +51,8 @@ def pixel_to_game_axis(map_name: str, position: float, axis: Literal["x", "y"]) 
     if axis not in ["x", "y"]:
         msg = f"'axis' has to be 'x' or 'y', not {axis}"
         raise ValueError(msg)
-    start = MAP_DATA[map_name]["pos_" + axis]
-    scale = MAP_DATA[map_name]["scale"]
+    start = awpy.data.map_data.MAP_DATA[map_name]["pos_" + axis]
+    scale = awpy.data.map_data.MAP_DATA[map_name]["scale"]
 
     if axis == "x":
         return position * scale + start
@@ -103,7 +103,7 @@ def is_position_on_lower_level(map_name: str, position: tuple[float, float, floa
     Returns:
         bool: True if the position on the lower level, False otherwise.
     """
-    metadata = MAP_DATA[map_name]
+    metadata = awpy.data.map_data.MAP_DATA[map_name]
     return position[2] <= metadata["lower_level_max_units"]
 
 

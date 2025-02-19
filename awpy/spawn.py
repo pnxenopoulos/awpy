@@ -1,9 +1,14 @@
 """Module to parse .vents files to get map spawns."""
 
+from __future__ import annotations
+
 import json
-import pathlib
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pathlib
 
 import awpy.vector
 
@@ -35,7 +40,7 @@ class Spawns:
             json.dump(spawns_dict, json_file)
 
     @staticmethod
-    def from_vents_content(vents_content: str) -> "Spawns":
+    def from_vents_content(vents_content: str) -> Spawns:
         """Parse the content of a vents file into Spawns information.
 
         Args:
@@ -49,7 +54,7 @@ class Spawns:
         return filter_vents_data(parsed_data)
 
     @staticmethod
-    def from_vents_file(vents_file: str | pathlib.Path) -> "Spawns":
+    def from_vents_file(vents_file: str | pathlib.Path) -> Spawns:
         """Parse the content of a vents file into Spawns information.
 
         Args:
