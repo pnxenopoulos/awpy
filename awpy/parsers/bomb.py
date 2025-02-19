@@ -111,7 +111,7 @@ def parse_bomb(events: dict[str, pl.DataFrame], valid_ticks: pl.Series) -> pl.Da
                     pl.col("user_Z").alias("Z"),
                     pl.col("user_steamid").alias("steamid"),
                     pl.col("user_name").alias("name"),
-                    pl.col("user_last_place_name").alias("bombsite").cast(pl.Utf8),
+                    pl.col("user_place").alias("bombsite").cast(pl.Utf8),
                 ]
             )
         )
