@@ -36,9 +36,9 @@ if (Test-Path $inputPath) {
             Move-Item -Path $generatedFile -Destination $newFileName -Force
             Write-Host "Output saved as: $newFileName" -ForegroundColor Cyan
 
-            # Run the awpy parse-nav command
-            Write-Host "Running awpy parse-nav on: $newFileName" -ForegroundColor Yellow
-            awpy parse-nav $newFileName
+            # Run the awpy nav command
+            Write-Host "Running awpy nav on: $newFileName" -ForegroundColor Yellow
+            awpy nav $newFileName
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }
