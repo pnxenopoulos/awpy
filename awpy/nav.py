@@ -217,8 +217,8 @@ class NavArea:
 
         connections = [
             conn.area_id
-            for conn in cls.read_connections(br)
             for _ in range(len(corners))
+            for conn in cls.read_connections(br)
         ]
 
         br.read(5)  # Skip LegacyHidingSpotData count and LegacySpotEncounterData count
