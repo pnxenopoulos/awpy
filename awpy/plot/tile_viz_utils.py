@@ -1,6 +1,6 @@
 """
    Utilities for plotting tiles on a map specifically.
-   credit: @JanEric
+   credit: @JanEricNitschke
 """
 
 import importlib.resources
@@ -15,11 +15,12 @@ from matplotlib import patches
 from matplotlib.axes import Axes
 
 from awpy.data.map_data import MAP_DATA
-from awpy.plot.utils import game_to_pixel, position_transform
+from awpy.plot.utils import game_to_pixel
 from awpy import Nav
 
 NAV = {}
 MAP_DIR = "../data/nav"
+# TODO: Change hardcoded de_dust2
 NAV['de_dust2'] = Nav(path="../../awpy/data/de_dust2")
 
 def plot_map(map_name: str):
@@ -35,7 +36,7 @@ def plot_map(map_name: str):
 
 def _tile_polygon(area_dict: dict) -> list:
     """Convert an area’s corner coordinates to pixel coordinates."""
-    # Note: 'de_dust2' is hard-coded as in your original code.
+    # TODO: Change hardcoded de_dust2
     return [game_to_pixel('de_dust2', (c["x"], c["y"], c["z"]))[0:2] for c in area_dict["corners"]]
 
 def _plot_tile(axis: Axes, polygon: list, edgecolor: str, facecolor: str, linewidth: int = 1) -> None:
@@ -81,7 +82,7 @@ def _plot_selected_tiles(map_dict: 'Nav', axis: Axes, selected_tiles: list, fill
             edgecolor = "yellow"
         _plot_tile(axis, polygon, edgecolor=edgecolor, facecolor=facecolor)
 
-def plot_map_tiles(output_path: str, map_name: str = "de_ancient", map_type: str = "original",
+def plot_map_tiles(map_name: str = "de_ancient", map_type: str = "original", output_path: str = "", 
                    *, dark: bool = False, dpi: int = 1000, fill: str = "None") -> None:
     """
     Plot all navigation mesh tiles in a given map.
@@ -93,19 +94,20 @@ def plot_map_tiles(output_path: str, map_name: str = "de_ancient", map_type: str
     _plot_all_tiles(NAV[map_name], axis, default_fill=fill)
     plt.show()
     # Optionally save the figure:
-    # plt.savefig(os.path.join(output_path, f"tiles_{map_name}.png"), bbox_inches="tight", dpi=dpi)
+    if output_path != "":
+        plt.savefig(os.path.join(output_path, f"tiles_{map_name}.png"), bbox_inches="tight", dpi=dpi)
     fig.clear()
     plt.close()
 
-def plot_map_tiles_selected(output_path: str, map_name: str, selected_tiles: list, *,
-                            fill: str = "red", dpi: int = 1000) -> None:
+def plot_map_tiles_selected(map_name: str, selected_tiles: list, *,
+                            output_path: str = "", fill: str = "red", dpi: int = 1000) -> None:
     """
     Plot navigation mesh tiles with selected tiles highlighted.
     
     Args:
-        output_path (str): Path to the output folder.
         map_name (str): Name of the map.
         selected_tiles (list): List of tile IDs to be highlighted.
+        output_path (str, optional): Path to the output folder if user wants it saved to file.
         fill (str, optional): Fill color for selected tiles (default is "red").
         dpi (int, optional): DPI for the output image.
     
@@ -120,6 +122,7 @@ def plot_map_tiles_selected(output_path: str, map_name: str, selected_tiles: lis
     _plot_selected_tiles(NAV[map_name], axis, selected_tiles, fill)
     plt.show()
     # Optionally save the figure:
-    # plt.savefig(os.path.join(output_path, f"selected_tiles_{map_name}.png"), bbox_inches="tight", dpi=dpi)
+    if output_path != "":
+        plt.savefig(os.path.join(output_path, f"selected_tiles_{map_name}.png"), bbox_inches="tight", dpi=dpi)
     fig.clear()
     plt.close()
