@@ -9,17 +9,18 @@ import requests
 from loguru import logger
 from tqdm import tqdm
 
+import awpy.data.map_data
 from awpy import Demo, Nav, Spawns
 from awpy.data import AWPY_DATA_DIR, TRI_URL
 from awpy.visibility import VphysParser
 
 
 @click.group()
-def awpy() -> None:
+def awpy_cli() -> None:
     """A simple CLI interface for Awpy."""
 
 
-@awpy.command(
+@awpy_cli.command(
     name="get",
     help="""
     Get Counter-Strike 2 resources like parsed nav meshes, spawns or triangle files. \n
@@ -68,7 +69,7 @@ def get(resource_type: Literal["tri"]) -> None:
         raise NotImplementedError(nav_not_impl_msg)
 
 
-@awpy.command(name="parse", help="Parse a Counter-Strike 2 demo (.dem) file .")
+@awpy_cli.command(name="parse", help="Parse a Counter-Strike 2 demo (.dem) file .")
 @click.argument("demo_path", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 @click.option("--events", multiple=True, help="List of events to parse.")
@@ -95,7 +96,7 @@ def parse_demo(
     demo.compress(outpath=outpath)
 
 
-@awpy.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.")
+@awpy_cli.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.")
 @click.argument("vent_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def parse_spawns(vent_file: Path, *, outpath: Path | None = None) -> None:
@@ -108,7 +109,7 @@ def parse_spawns(vent_file: Path, *, outpath: Path | None = None) -> None:
     logger.success(f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}")
 
 
-@awpy.command(name="nav", help="Parse a Counter-Strike 2 .nav file.")
+@awpy_cli.command(name="nav", help="Parse a Counter-Strike 2 .nav file.")
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
@@ -121,7 +122,20 @@ def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
     logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
 
 
-@awpy.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.")
+@awpy_cli.command(name="mapdata", help="Parse Counter-Strike 2 map images.")
+@click.argument("overview_dir", type=click.Path(exists=True))
+def parse_mapdata(overview_dir: Path) -> None:
+    """Parse radar overview images given an overview."""
+    overview_dir = Path(overview_dir)
+    if not overview_dir.is_dir():
+        overview_dir_err_msg = f"{overview_dir} is not a directory."
+        raise NotADirectoryError(overview_dir_err_msg)
+    map_data = awpy.data.map_data.map_data_from_vdf_files(overview_dir)
+    awpy.data.map_data.update_map_data_file(map_data, awpy.data.map_data.MAP_DATA_PATH)
+    logger.success(f"Map data saved to {awpy.data.map_data.MAP_DATA_PATH}")
+
+
+@awpy_cli.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.")
 @click.argument("vphys_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 def generate_tri(vphys_file: Path, *, outpath: Path | None = None) -> None:
@@ -129,3 +143,4 @@ def generate_tri(vphys_file: Path, *, outpath: Path | None = None) -> None:
     vphys_file = Path(vphys_file)
     vphys_parser = VphysParser(vphys_file)
     vphys_parser.to_tri(path=outpath)
+    logger.success(f"Tri file saved to {outpath}")

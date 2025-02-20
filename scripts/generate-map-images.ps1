@@ -10,6 +10,7 @@ param(
 $exePath = ".\Source2Viewer-CLI.exe"
 $folderFilter = "panorama/images/overheadmaps/"
 $extensionFilter = "vtex_c"
+$targetDir = "awpy\data\maps\"
 
 # Run the command
 & $exePath -i $inputPath -f $folderFilter -e $extensionFilter -o $outputPath -d
@@ -27,7 +28,13 @@ if (Test-Path $targetDirectory) {
 
         # Rename the file
         Rename-Item -Path $_.FullName -NewName $newFileName
+        $currentPath = Join-Path $folderFilter $newFileName
+        $targetPath = Join-Path $targetDir $newFileName
+        Write-Host $currentPath
+        Write-Host $targetPath
+        Move-Item -Path $currentPath -Destination $targetPath -Force
     }
+    Remove-Item -Path "panorama" -Recurse -Force
 } else {
     Write-Host "Target directory '$targetDirectory' does not exist."
 }

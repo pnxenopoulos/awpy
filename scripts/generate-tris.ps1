@@ -7,6 +7,7 @@ param(
 )
 
 # This script generates .tri files containing CS2 .vphys_c triangle information.
+$targetDir = "awpy\data\tri"
 
 # Ensure the path exists
 if (Test-Path $inputPath) {
@@ -38,7 +39,10 @@ if (Test-Path $inputPath) {
 
             # Run the awpy generate-tri command
             Write-Host "Running awpy generate-tri on: $newFileName" -ForegroundColor Yellow
-            awpy generate-tri $newFileName
+            uv run awpy tri $newFileName
+            $generatedFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.tri"
+            Move-Item -Path $generatedFileName -Destination $targetDir -Force
+            Remove-Item -Path $newFileName -Force
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }

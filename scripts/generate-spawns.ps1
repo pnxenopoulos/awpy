@@ -7,6 +7,7 @@ param(
 )
 
 # This script generates .json files containing CS2 .nav information.
+$targetDir = "awpy\data\spawns"
 
 # Ensure the path exists
 if (Test-Path $inputPath) {
@@ -38,7 +39,10 @@ if (Test-Path $inputPath) {
 
             # Run the awpy spawns command
             Write-Host "Running awpy spawns on: $newFileName" -ForegroundColor Yellow
-            awpy spawn $newFileName
+            uv run awpy spawn $newFileName
+            $generatedFileName = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.json"
+            Move-Item -Path $generatedFileName -Destination $targetDir -Force
+            Remove-Item -Path $newFileName -Force
         } else {
             Write-Host "Error: Expected output file not found for $fileNameWithoutExtension" -ForegroundColor Red
         }

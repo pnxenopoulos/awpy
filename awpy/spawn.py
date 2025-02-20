@@ -38,6 +38,7 @@ class Spawns:
         spawns_dict = self.to_dict()
         with open(path, "w", encoding="utf-8") as json_file:
             json.dump(spawns_dict, json_file)
+            json_file.write("\n")
 
     @staticmethod
     def from_vents_content(vents_content: str) -> Spawns:

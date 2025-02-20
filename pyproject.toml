@@ -35,15 +35,15 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://awpycs.com"
+Homepage   = "https://awpycs.com"
 Repository = "https://github.com/pnxenopoulos/awpy"
-Docs = "https://awpy.readthedocs.io/en/latest/?badge=latest"
+Docs       = "https://awpy.readthedocs.io/en/latest/?badge=latest"
 
 [project.scripts]
 awpy = "awpy.cli:awpy"
 
 [build-system]
-requires = ["setuptools"]
+requires      = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
@@ -51,6 +51,7 @@ dev = [
     "mypy>=1.15.0",
     "pre-commit>=4.1.0",
     "ruff>=0.9.6",
+    "vdf>=3.4",
 ]
 test = [
     "coverage>=7.6.12",

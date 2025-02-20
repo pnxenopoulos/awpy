@@ -10,6 +10,11 @@ param(
 $exePath = ".\Source2Viewer-CLI.exe"
 $folderFilter = "resource/overviews/"
 $extensionFilter = "txt"
+$mapDataFile = "awpy\data\map_data.py"
 
 # Run the command
 & $exePath -i $inputPath -f $folderFilter -e $extensionFilter -o $outputPath -d
+$tempOutputDir = Join-Path -Path $outputPath -ChildPath $folderFilter
+uv run awpy mapdata $tempOutputDir
+$parentPath = Split-Path -Path $tempOutputDir -Parent
+Remove-Item -Path $parentPath -Recurse -Force
