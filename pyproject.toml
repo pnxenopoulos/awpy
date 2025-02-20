@@ -40,7 +40,7 @@ Repository = "https://github.com/pnxenopoulos/awpy"
 Docs       = "https://awpy.readthedocs.io/en/latest/?badge=latest"
 
 [project.scripts]
-awpy = "awpy.cli:awpy"
+awpy = "awpy.cli:awpy_cli"
 
 [build-system]
 requires      = ["setuptools"]
@@ -75,6 +75,7 @@ testpaths = ["tests"]
 # Setuptools
 [tool.setuptools]
 include-package-data = true
+packages = ["awpy"]
 
 [tool.setuptools.package-data]
 "*" = ["data/maps/*.png"]

@@ -144,3 +144,9 @@ dmypy.json
 # vscode
 *code-workspace
 .vscode/
+
+# windows executable
+*.exe
+
+# exceptions txt files
+*.txt

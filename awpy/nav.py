@@ -416,3 +416,4 @@ class Nav:
         nav_dict = self.to_dict()
         with open(path, "w", encoding="utf-8") as json_file:
             json.dump(nav_dict, json_file)
+            json_file.write("\n")

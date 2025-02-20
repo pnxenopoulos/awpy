@@ -40,7 +40,9 @@ def map_data_from_vdf_files(vdf_folder: Path) -> dict[str, MapData]:
             "rotate": int(rotate) if (rotate := map_data.get("rotate")) else None,
             "zoom": float(zoom) if (zoom := map_data.get("zoom")) else None,
             "lower_level_max_units": float(
-                map_data.get("verticalsections", {}).get("lower", {}).get("AltitudeMax", float("-inf"))
+                map_data.get("verticalsections", {})
+                .get("lower", {})
+                .get("AltitudeMax", -1000000)  # Use instead of infinity
             ),
         }
     return dict(sorted(new_map_data.items()))

@@ -1,3 +1,4 @@
+# Note: This requires installing Skia
 param(
     [Parameter(Mandatory=$false)]
     [string]$inputPath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\pak01_dir.vpk",

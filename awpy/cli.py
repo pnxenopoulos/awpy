@@ -15,7 +15,7 @@ from awpy.data import AWPY_DATA_DIR, TRI_URL
 from awpy.visibility import VphysParser
 
 
-@click.group()
+@click.group(name="awpy")
 def awpy_cli() -> None:
     """A simple CLI interface for Awpy."""
 
@@ -99,7 +99,7 @@ def parse_demo(
 @awpy_cli.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.")
 @click.argument("vent_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
-def parse_spawns(vent_file: Path, *, outpath: Path | None = None) -> None:
+def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
     """Parse a nav file given its path."""
     vent_file = Path(vent_file)
     if not outpath:
