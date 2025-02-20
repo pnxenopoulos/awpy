@@ -515,7 +515,7 @@ class Nav:
             version=nav_dict["version"],
             sub_version=nav_dict["sub_version"],
             areas={
-                area_id: NavArea.from_dict(area_dict)
+                int(area_id): NavArea.from_dict(area_dict)
                 for area_id, area_dict in nav_dict["areas"].items()
             },
             is_analyzed=nav_dict["is_analyzed"],
