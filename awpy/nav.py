@@ -5,14 +5,14 @@ Reference: https://github.com/ValveResourceFormat/ValveResourceFormat/tree/maste
 
 import json
 import math
-import pathlib
 import struct
 from enum import Enum
-from typing import Any, BinaryIO, Literal
+from pathlib import Path
+from typing import Any, BinaryIO, Literal, Self, TypedDict
 
 import networkx as nx
 
-import awpy.vector
+from awpy.vector import Vector3, Vector3Dict
 
 
 class DynamicAttributeFlags(int):
@@ -47,19 +47,36 @@ class NavMeshConnection:
         edge_id: ID of the connecting edge.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, area_id: int = 0, edge_id: int = 0) -> None:
         """Constructs an empty NavMeshConnection."""
-        self.area_id: int = 0
-        self.edge_id: int = 0
+        self.area_id = area_id
+        self.edge_id = edge_id
 
-    def read(self, br: BinaryIO) -> None:
-        """Reads connection data from a binary stream.
+    @classmethod
+    def from_binary(cls, br: BinaryIO) -> Self:
+        """Creates a NavMeshConnection from a binary stream.
 
         Args:
             br: Binary reader stream to read from.
+
+        Returns:
+            A new NavMeshConnection object.
         """
-        self.area_id = struct.unpack("I", br.read(4))[0]
-        self.edge_id = struct.unpack("I", br.read(4))[0]
+        area_id = struct.unpack("I", br.read(4))[0]
+        edge_id = struct.unpack("I", br.read(4))[0]
+        return cls(area_id, edge_id)
+
+
+class NavAreaDict(TypedDict):
+    """Typed dict representation of a NavArea."""
+
+    area_id: int
+    hull_index: int
+    dynamic_attribute_flags: int
+    corners: list[Vector3Dict]
+    connections: list[int]
+    ladders_above: list[int]
+    ladders_below: list[int]
 
 
 class NavArea:
@@ -75,20 +92,31 @@ class NavArea:
         ladders_below: List of ladder IDs below this area.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        area_id: int = 0,
+        hull_index: int = 0,
+        dynamic_attribute_flags: DynamicAttributeFlags = DynamicAttributeFlags(  # noqa: B008
+            0
+        ),
+        corners: list[Vector3] | None = None,
+        connections: list[int] | None = None,
+        ladders_above: list[int] | None = None,
+        ladders_below: list[int] | None = None,
+    ) -> None:
         """Constructs an empty NavArea."""
-        self.area_id: int = 0
-        self.hull_index: int = 0
-        self.dynamic_attribute_flags: DynamicAttributeFlags = DynamicAttributeFlags(0)
-        self.corners: list[awpy.vector.Vector3] = []
-        self.connections: list[list[NavMeshConnection]] = []
-        self.ladders_above: list[int] = []
-        self.ladders_below: list[int] = []
+        self.area_id = area_id
+        self.hull_index = hull_index
+        self.dynamic_attribute_flags = dynamic_attribute_flags
+        self.corners: list[Vector3] = corners or []
+        self.connections: list[int] = connections or []
+        self.ladders_above: list[int] = ladders_above or []
+        self.ladders_below: list[int] = ladders_below or []
 
     @property
     def connected_areas(self) -> set[int]:
         """Returns a set of connected area IDs."""
-        return {c.area_id for conns in self.connections for c in conns}
+        return set(self.connections)
 
     @property
     def size(self) -> float:
@@ -115,14 +143,14 @@ class NavArea:
         return abs(area) / 2.0
 
     @property
-    def centroid(self) -> awpy.vector.Vector3:
+    def centroid(self) -> Vector3:
         """Calculates the centroid of the polygon defined by the corners.
 
         Returns:
             A Vector3 representing the centroid (geometric center) of the polygon.
         """
         if not self.corners:
-            return awpy.vector.Vector3(0, 0, 0)  # Return origin if no corners exist
+            return Vector3(0, 0, 0)  # Return origin if no corners exist
 
         x_coords = [corner.x for corner in self.corners]
         y_coords = [corner.y for corner in self.corners]
@@ -134,12 +162,12 @@ class NavArea:
         z_coords = [corner.z for corner in self.corners]
         centroid_z = sum(z_coords) / len(self.corners)
 
-        return awpy.vector.Vector3(centroid_x, centroid_y, centroid_z)
+        return Vector3(centroid_x, centroid_y, centroid_z)
 
     def __repr__(self) -> str:
         """Returns string representation of NavArea."""
-        connected_ids = sorted({c.area_id for conns in self.connections for c in conns})
-        points = [(c.x, c.y, c.z) for c in self.corners]
+        connected_ids = sorted(set(self.connections))
+        points = [c.to_tuple() for c in self.corners]
         return f"NavArea(id={self.area_id}, connected_ids={connected_ids}, points={points}, size={self.size})"
 
     @staticmethod
@@ -153,71 +181,104 @@ class NavArea:
             List of NavMeshConnection objects.
         """
         connection_count = struct.unpack("I", br.read(4))[0]
-        connections = []
-        for _ in range(connection_count):
-            connection = NavMeshConnection()
-            connection.read(br)
-            connections.append(connection)
-        return connections
+        return [NavMeshConnection.from_binary(br) for _ in range(connection_count)]
 
-    def read(
-        self,
+    @classmethod
+    def from_data(
+        cls,
         br: BinaryIO,
-        nav_mesh_file: "Nav",
-        polygons: list[list[awpy.vector.Vector3]] | None = None,
-    ) -> None:
+        nav_mesh_version: int,
+        polygons: list[list[Vector3]] | None = None,
+    ) -> Self:
         """Reads area data from a binary stream.
 
         Args:
             br: Binary reader stream to read from.
-            nav_mesh_file: Parent Nav object containing this area.
+            nav_mesh_version: Version of the nav mesh file.
             polygons: Optional list of predefined polygons for version 31+.
         """
-        self.area_id = struct.unpack("I", br.read(4))[0]
-        self.dynamic_attribute_flags = DynamicAttributeFlags(struct.unpack("q", br.read(8))[0])
-        self.hull_index = br.read(1)[0]
+        area_id = struct.unpack("I", br.read(4))[0]
+        dynamic_attribute_flags = DynamicAttributeFlags(
+            struct.unpack("q", br.read(8))[0]
+        )
+        hull_index = br.read(1)[0]
 
-        if nav_mesh_file.version >= 31 and polygons is not None:
-            polygon_index = struct.unpack("I", br.read(4))[0]
-            self.corners = polygons[polygon_index]
+        corners: list[Vector3] = []
+        if nav_mesh_version >= 31 and polygons is not None:
+            polygon_index: int = struct.unpack("I", br.read(4))[0]
+            corners = polygons[polygon_index]
         else:
             corner_count = struct.unpack("I", br.read(4))[0]
-            self.corners = []
             for _ in range(corner_count):
                 x, y, z = struct.unpack("fff", br.read(12))
-                self.corners.append(awpy.vector.Vector3(x, y, z))
+                corners.append(Vector3(x, y, z))
 
         br.read(4)  # Skip almost always 0
 
-        self.connections = []
-        for _ in range(len(self.corners)):
-            self.connections.append(self.read_connections(br))
+        connections = [
+            conn.area_id
+            for conn in cls.read_connections(br)
+            for _ in range(len(corners))
+        ]
 
         br.read(5)  # Skip LegacyHidingSpotData count and LegacySpotEncounterData count
 
         ladder_above_count = struct.unpack("I", br.read(4))[0]
-        self.ladders_above = []
+        ladders_above: list[int] = []
         for _ in range(ladder_above_count):
             ladder_id = struct.unpack("I", br.read(4))[0]
-            self.ladders_above.append(ladder_id)
+            ladders_above.append(ladder_id)
 
         ladder_below_count = struct.unpack("I", br.read(4))[0]
-        self.ladders_below = []
+        ladders_below: list[int] = []
         for _ in range(ladder_below_count):
             ladder_id = struct.unpack("I", br.read(4))[0]
-            self.ladders_below.append(ladder_id)
+            ladders_below.append(ladder_id)
+        return cls(
+            area_id=area_id,
+            hull_index=hull_index,
+            dynamic_attribute_flags=dynamic_attribute_flags,
+            corners=corners,
+            connections=connections,
+            ladders_above=ladders_above,
+            ladders_below=ladders_below,
+        )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> NavAreaDict:
         """Converts the navigation area to a dictionary."""
         return {
             "area_id": self.area_id,
             "hull_index": self.hull_index,
             "dynamic_attribute_flags": int(self.dynamic_attribute_flags),
-            "corners": [{"x": c.x, "y": c.y, "z": c.z} for c in self.corners],
-            "connections": [conn.area_id for conns in self.connections for conn in conns],
+            "corners": [c.to_dict() for c in self.corners],
+            "connections": self.connections,
             "ladders_above": self.ladders_above,
             "ladders_below": self.ladders_below,
         }
+
+    @classmethod
+    def from_dict(cls, data: NavAreaDict) -> Self:
+        """Load a NavArea from a dictionary."""
+        return cls(
+            area_id=data["area_id"],
+            hull_index=data["hull_index"],
+            dynamic_attribute_flags=DynamicAttributeFlags(
+                data["dynamic_attribute_flags"]
+            ),
+            corners=[Vector3.from_dict(c) for c in data["corners"]],
+            connections=data["connections"],
+            ladders_above=data["ladders_above"],
+            ladders_below=data["ladders_below"],
+        )
+
+
+class NavDict(TypedDict):
+    """Typed dict representation of a Nav."""
+
+    version: int
+    sub_version: int
+    is_analyzed: bool
+    areas: dict[int, NavAreaDict]
 
 
 class Nav:
@@ -233,27 +294,27 @@ class Nav:
 
     MAGIC: int = 0xFEEDFACE
 
-    def __init__(self, path: str | pathlib.Path) -> None:
-        """Initializes and reads a navigation mesh from a file.
-
-        Args:
-            path: Path to the nav mesh file to read.
-
-
-        Raises:
-            FileNotFoundError: If the nav mesh file does not exist.
-        """
-        self.version: int = 0
-        self.sub_version: int = 0
-        self.areas: dict[int, NavArea] = {}
-        self.is_analyzed: bool = False
-        self.read(path)
+    def __init__(
+        self,
+        *,
+        version: int = 0,
+        sub_version: int = 0,
+        areas: dict[int, NavArea] | None = None,
+        is_analyzed: bool = False,
+    ) -> None:
+        """Initialize a Nav object from existing areas."""
+        self.version = version
+        self.sub_version = sub_version
+        self.areas = areas or {}
+        self.is_analyzed = is_analyzed
 
         self.graph = nx.Graph()
 
         # Add nodes
         for _aid, area in self.areas.items():
-            self.graph.add_node(area.area_id, node=area)  # Add node with area_id and size as attributes
+            self.graph.add_node(
+                area.area_id, node=area
+            )  # Add node with area_id and size as attributes
 
         # Add edges
         for _aid, area in self.areas.items():
@@ -270,105 +331,127 @@ class Nav:
                     dist=dist_weight,
                 )  # Add an edge between connected areas
 
-    def __repr__(self) -> str:
-        """Returns string representation of Nav."""
-        return f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
-
-    def read(self, path: str | pathlib.Path) -> None:
-        """Reads nav mesh data from a file.
+    @classmethod
+    def from_path(cls, path: str | Path) -> Self:
+        """Initializes and reads a navigation mesh from a file.
 
         Args:
             path: Path to the nav mesh file to read.
 
+
         Raises:
             FileNotFoundError: If the nav mesh file does not exist.
-            ValueError: If the file format is invalid or unsupported.
         """
-        nav_path = pathlib.Path(path)
+        nav_path = Path(path)
         if not nav_path.exists():
             nav_path_not_found_msg = f"Nav mesh file not found: {nav_path}"
             raise FileNotFoundError(nav_path_not_found_msg)
 
         with open(nav_path, "rb") as f:
             magic = struct.unpack("I", f.read(4))[0]
-            if magic != self.MAGIC:
-                unexpected_magic_msg = f"Unexpected magic: {magic:X}, expected {self.MAGIC:X}"
+            if magic != cls.MAGIC:
+                unexpected_magic_msg = (
+                    f"Unexpected magic: {magic:X}, expected {cls.MAGIC:X}"
+                )
                 raise ValueError(unexpected_magic_msg)
 
-            self.version = struct.unpack("I", f.read(4))[0]
-            if self.version < 30 or self.version > 35:
-                unsupported_version_msg = f"Unsupported nav version: {self.version}"
+            version = struct.unpack("I", f.read(4))[0]
+            if version < 30 or version > 35:
+                unsupported_version_msg = f"Unsupported nav version: {version}"
                 raise ValueError(unsupported_version_msg)
 
-            self.sub_version = struct.unpack("I", f.read(4))[0]
+            sub_version = struct.unpack("I", f.read(4))[0]
 
             unk1 = struct.unpack("I", f.read(4))[0]
-            self.is_analyzed = (unk1 & 0x00000001) > 0
+            is_analyzed = (unk1 & 0x00000001) > 0
 
             polygons = None
-            if self.version >= 31:
-                polygons = self._read_polygons(f)
+            if version >= 31:
+                polygons = cls._read_polygons(f, version)
 
-            if self.version >= 32:
+            if version >= 32:
                 f.read(4)  # Skip unk2
 
-            if self.version >= 35:
+            if version >= 35:
                 f.read(4)  # Skip unk3
 
-            self._read_areas(f, polygons)
+            areas = cls._read_areas(f, polygons, version)
+            return cls(
+                version=version,
+                sub_version=sub_version,
+                areas=areas,
+                is_analyzed=is_analyzed,
+            )
 
-    def _read_polygons(self, br: BinaryIO) -> list[list[awpy.vector.Vector3]]:
+    def __repr__(self) -> str:
+        """Returns string representation of Nav."""
+        return (
+            f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
+        )
+
+    @classmethod
+    def _read_polygons(cls, br: BinaryIO, version: int) -> list[list[Vector3]]:
         """Reads polygon data from a binary stream.
 
         Args:
             br: Binary reader stream to read from.
+            version: Version of the nav mesh file.
 
         Returns:
             List of polygons, where each polygon is a list of Vector3 vertices.
         """
         corner_count = struct.unpack("I", br.read(4))[0]
-        corners = []
+        corners: list[Vector3] = []
         for _ in range(corner_count):
             x, y, z = struct.unpack("fff", br.read(12))
-            corners.append(awpy.vector.Vector3(x, y, z))
+            corners.append(Vector3(x, y, z))
 
         polygon_count = struct.unpack("I", br.read(4))[0]
-        polygons = []
+        polygons: list[list[Vector3]] = []
         for _ in range(polygon_count):
-            polygons.append(self._read_polygon(br, corners))
+            polygons.append(cls._read_polygon(br, corners, version))
         return polygons
 
-    def _read_polygon(self, br: BinaryIO, corners: list[awpy.vector.Vector3]) -> list[awpy.vector.Vector3]:
+    @classmethod
+    def _read_polygon(
+        cls, br: BinaryIO, corners: list[Vector3], version: int
+    ) -> list[Vector3]:
         """Reads a single polygon from a binary stream.
 
         Args:
             br: Binary reader stream to read from.
             corners: List of corner vertices to reference.
+            version: Version of the nav mesh file.
 
         Returns:
             List of Vector3 vertices forming the polygon.
         """
         corner_count = br.read(1)[0]
-        polygon = []
+        polygon: list[Vector3] = []
         for _ in range(corner_count):
-            corner_index = struct.unpack("I", br.read(4))[0]
+            corner_index: int = struct.unpack("I", br.read(4))[0]
             polygon.append(corners[corner_index])
-        if self.version >= 35:
+        if version >= 35:
             br.read(4)  # Skip unk
         return polygon
 
-    def _read_areas(self, br: BinaryIO, polygons: list[list[awpy.vector.Vector3]] | None) -> None:
+    @classmethod
+    def _read_areas(
+        cls, br: BinaryIO, polygons: list[list[Vector3]] | None, version: int
+    ) -> dict[int, NavArea]:
         """Reads all navigation areas from a binary stream.
 
         Args:
             br: Binary reader stream to read from.
             polygons: Optional list of predefined polygons for version 31+.
+            version: Version of the nav mesh file.
         """
+        areas: dict[int, NavArea] = {}
         area_count = struct.unpack("I", br.read(4))[0]
         for _ in range(area_count):
-            area = NavArea()
-            area.read(br, self, polygons)
-            self.areas[area.area_id] = area
+            area = NavArea.from_data(br, version, polygons)
+            areas[area.area_id] = area
+        return areas
 
     def find_path(
         self,
@@ -392,13 +475,15 @@ class Nav:
         """
         try:
             # Get the shortest path as a list of area IDs
-            path_ids = nx.shortest_path(self.graph, source=start_id, target=end_id, weight=weight)
+            path_ids = nx.shortest_path(
+                self.graph, source=start_id, target=end_id, weight=weight
+            )
             # Convert area IDs to NavArea objects
             return [self.graph.nodes[area_id]["node"] for area_id in path_ids]
         except nx.NetworkXNoPath:
             return []  # No path exists
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> NavDict:
         """Converts the entire navigation mesh to a dictionary."""
         return {
             "version": self.version,
@@ -407,7 +492,7 @@ class Nav:
             "areas": {area_id: area.to_dict() for area_id, area in self.areas.items()},
         }
 
-    def to_json(self, path: str | pathlib.Path) -> None:
+    def to_json(self, path: str | Path) -> None:
         """Writes the navigation mesh data to a JSON file.
 
         Args:
@@ -417,3 +502,26 @@ class Nav:
         with open(path, "w", encoding="utf-8") as json_file:
             json.dump(nav_dict, json_file)
             json_file.write("\n")
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> "Nav":
+        """Reads the navigation mesh data from a JSON file.
+
+        Args:
+            path: Path to the JSON file to read from.
+        """
+        nav_dict: NavDict = json.loads(Path(path).read_text())
+        return cls(
+            version=nav_dict["version"],
+            sub_version=nav_dict["sub_version"],
+            areas={
+                area_id: NavArea.from_dict(area_dict)
+                for area_id, area_dict in nav_dict["areas"].items()
+            },
+            is_analyzed=nav_dict["is_analyzed"],
+        )
+
+
+NAV_DATA: dict[str, Nav] = {}
+for map_info in (Path(__file__).parent / "data/nav").iterdir():
+    NAV_DATA[map_info.stem] = Nav.from_json(map_info)

@@ -166,3 +166,30 @@ max-args = 17
 [tool.ruff.lint.per-file-ignores]
 "__init__.py"              = ["E402", "F401"]
 "tests/test_*.py"          = ["ANN201", "S101", "SLF001", "PLR2004"]
+
+[tool.pyright]
+include                            = ["awpy"]
+exclude                            = ["tests"]
+typeCheckingMode                   = "strict"
+strictListInference                = true
+strictDictionaryInference          = true
+reportDeprecated                   = "warning"
+reportPropertyTypeMismatch         = "error"
+reportFunctionMemberAccess         = "error"
+reportMissingTypeStubs             = "error"
+reportUntypedFunctionDecorator     = "error"
+reportUntypedClassDecorator        = "error"
+reportUntypedBaseClass             = "error"
+reportUntypedNamedTuple            = "error"
+reportPrivateUsage                 = "error"
+reportConstantRedefinition         = "error"
+reportOverlappingOverload          = "error"
+reportMissingParameterType         = "error"
+reportUnnecessaryIsInstance        = "error"
+reportUnnecessaryCast              = "error"
+reportUnnecessaryComparison        = "error"
+reportUnnecessaryContains          = "error"
+reportAssertAlwaysTrue             = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportImplicitOverride             = "none"
+reportShadowedImports              = "error"
