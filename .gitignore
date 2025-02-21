@@ -147,6 +147,7 @@ dmypy.json
 
 # windows executable
 *.exe
+*.dll
 
 # exceptions txt files
 *.txt
