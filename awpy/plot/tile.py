@@ -141,12 +141,12 @@ def plot_map_tiles(
     Returns:
     --------
     None
-        This function displays the plot and optionally saves it if `output_path` is provided.
+        This function either displays or saves the plot if `output_dir` is provided.
 
     Example:
     --------
     >>> plot_map_tiles(map_name="de_dust2", output_dir="./maps", dpi=800, fill="blue")
-    # Saves the plot to './maps/tiles_de_dust2.png'
+    # Saves the plot to file at './maps/tiles_de_dust2.png'
     """
     fig, axis = plot_map(map_name=map_name)
     fig.set_size_inches(19.2, 21.6)
@@ -191,7 +191,7 @@ def plot_map_tiles_selected(
     Returns:
     --------
     None
-        This function displays the plot and optionally saves it if `output_path` is provided.
+        This function displays the plot and optionally saves it if `output_dir` is provided.
 
     Behavior:
     ---------
@@ -205,10 +205,10 @@ def plot_map_tiles_selected(
     >>> plot_map_tiles_selected(
     ...     map_name="de_dust2",
     ...     selected_tiles=[5, 12, 18],
-    ...     output_path="./maps",
+    ...     output_dir="./maps",
     ...     dpi=800
     ... )
-    # Displays the plot and saves it as './maps/selected_tiles_de_dust2.png'
+    # Saves the plot to file at './maps/selected_tiles_de_dust2.png'
     """
     fig, axis = plot_map(map_name=map_name)
     fig.set_size_inches(19.2, 21.6)
