@@ -69,7 +69,7 @@ def _plot_all_tiles(map_name: str, axis: Axes, default_fill: str = "None") -> No
         None
 
     Example:
-        >>> _plot_all_tiles(nav_data, ax, default_fill="gray")
+        >>> _plot_all_tiles(map_name, ax, default_fill="gray")
     """
     map_dict = NAV[map_name]
     for area in map_dict.areas.values():
@@ -97,7 +97,7 @@ def _plot_selected_tiles(map_name: str, axis: Axes, selected_tiles: list) -> Non
 
     Example:
         >>> selected = [101, 102, 103]
-        >>> _plot_selected_tiles(nav_data, ax, selected)
+        >>> _plot_selected_tiles(map_name, ax, selected)
     """
     # Using a set for quick membership tests.
     selected_set = set(selected_tiles)
