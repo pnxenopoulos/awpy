@@ -5,100 +5,107 @@ credit: @JanEricNitschke.
 
 from pathlib import Path
 
-import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from matplotlib.axes import Axes
 
 import awpy.nav
+import awpy.plot
 import awpy.plot.utils
 
 NAV = {}
 MAP_DIR = "../data/nav"
-# TODO: Change hardcoded de_dust2
+DEFAULT_FIG_SIZE = (19, 21)
+# TODO: Change hardcoded de_dust2 to contain data for all maps
 NAV["de_dust2"] = awpy.nav.Nav(path="../../awpy/data/de_dust2")
 
 
-def plot_map(map_name: str) -> tuple:
-    """Plots a map background based on the provided map name and returns the figure and axes objects.
+def _tile_polygon(area_dict: dict, map_name: str) -> list:
+    """Converts an area's corner coordinates to pixel coordinates.
 
-    This function loads a PNG image corresponding to the given map name and displays it using matplotlib.
-    If the map name ends with "_lower", that suffix is removed before loading the image.
-
-    Parameters:
-    -----------
-    map_name : str
-        The name of the map (without the .png extension). If the map name ends with "_lower",
-        the suffix will be removed before loading the image.
+    Args:
+        area_dict (dict): Dictionary with a "corners" key containing a list of
+        coordinates (each with "x", "y", and "z" values).
+        map_name (str): The map name used for coordinate conversion.
 
     Returns:
-    --------
-    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
-        A tuple containing:
-        - `fig`: The matplotlib Figure object containing the plot.
-        - `ax`: The matplotlib Axes object where the map is displayed.
+        list: List of (x, y) pixel coordinates.
 
     Example:
-    --------
-    >>> fig, ax = plot_map("de_dust2")
-    >>> plt.show()
+        >>> _tile_polygon(area_dict, map_name="de_mirage")
     """
-    fig, ax = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
-    image = f"{map_name}.png"
-
-    if map_name.endswith("_lower"):
-        map_name = map_name.removesuffix("_lower")
-
-    # Use pathlib.Path to locate the image
-    # Use .parent.parent to move path back to awpy folder
-    resource_dir = Path(__file__).parent.parent / "data" / "maps"
-    map_img_path = resource_dir / image
-
-    if not map_img_path.exists():
-        exception_message = f"Map image '{image}' not found in '{resource_dir}'"
-        raise FileNotFoundError(exception_message)
-
-    # Load and display the map background
-    map_bg = mpimg.imread(map_img_path)
-    ax.imshow(map_bg, zorder=0, alpha=0.5)
-
-    return fig, ax
-
-
-def _tile_polygon(area_dict: dict) -> list:
-    """Convert an area's corner coordinates to pixel coordinates."""
-    # TODO: Change hardcoded de_dust2
-    return [awpy.plot.utils.game_to_pixel("de_dust2", (c["x"], c["y"], c["z"]))[0:2] for c in area_dict["corners"]]
+    return [awpy.plot.utils.game_to_pixel(map_name, (c["x"], c["y"], c["z"]))[0:2] for c in area_dict["corners"]]
 
 
 def _plot_tile(axis: Axes, polygon: list, edgecolor: str, facecolor: str, linewidth: int = 1) -> None:
-    """Add a single tile patch to the axis."""
+    """Adds a single tile patch to the given axis.
+
+    Args:
+        axis (matplotlib.axes.Axes): The matplotlib axis to add the tile to.
+        polygon (list): List of (x, y) pixel coordinates representing the tile's corners.
+        edgecolor (str): Color of the tile's border.
+        facecolor (str): Fill color of the tile.
+        linewidth (int, optional): Width of the tile's border. Defaults to 1.
+
+    Returns:
+        None
+
+    Example:
+        >>> _plot_tile(ax, [(0, 0), (1, 0), (1, 1), (0, 1)], edgecolor="blue", facecolor="red")
+    """
     patch = patches.Polygon(polygon, linewidth=linewidth, edgecolor=edgecolor, facecolor=facecolor)
     axis.add_patch(patch)
 
 
-def _plot_all_tiles(map_dict: "awpy.nav.Nav", axis: Axes, default_fill: str = "None") -> None:
-    """Plot every tile with a yellow outline and optional fill color."""
+def _plot_all_tiles(map_name: str, axis: Axes, default_fill: str = "None") -> None:
+    """Plots all tiles from the map with a yellow outline and optional fill color.
+
+    Args:
+        map_name (str): The name of the map for plotting.
+        axis (matplotlib.axes.Axes): The matplotlib axis to plot the tiles on.
+        default_fill (str, optional): Fill color for the tiles. Defaults to "None".
+
+    Returns:
+        None
+
+    Example:
+        >>> _plot_all_tiles(nav_data, ax, default_fill="gray")
+    """
+    map_dict = NAV[map_name]
     for area in map_dict.areas.values():
         area_dict = area.to_dict()
-        polygon = _tile_polygon(area_dict)
+        polygon = _tile_polygon(area_dict, map_name)
         _plot_tile(axis, polygon, edgecolor="yellow", facecolor=default_fill)
 
 
-def _plot_selected_tiles(map_dict: "awpy.nav.Nav", axis: Axes, selected_tiles: list) -> None:
-    """Plot all tiles, highlighting the selected ones.
+def _plot_selected_tiles(map_name: str, axis: Axes, selected_tiles: list) -> None:
+    """Plots all tiles on the map, highlighting the selected ones.
 
     - Tiles not in the selected list are drawn with a yellow outline and no fill.
-    - Tiles in the selected list are filled with red and black outlines.
-    - If multiple tiles are selected (a path), the first and last tiles are filled in green and
-      outlined in black.
+    - Tiles in the selected list are filled with red and have black outlines.
+    - If multiple tiles are selected (representing a path), the first and last tiles are
+      filled in green with black outlines.
+
+    Args:
+        map_name (str): The name of the map for plotting.
+        axis (matplotlib.axes.Axes): The matplotlib axis to plot the tiles on.
+        selected_tiles (list): List of tile IDs to highlight. Can represent a path if multiple
+        tiles are included.
+
+    Returns:
+        None
+
+    Example:
+        >>> selected = [101, 102, 103]
+        >>> _plot_selected_tiles(nav_data, ax, selected)
     """
     # Using a set for quick membership tests.
     selected_set = set(selected_tiles)
 
+    map_dict = NAV[map_name]
     for tile_id, area in map_dict.areas.items():
         area_dict = area.to_dict()
-        polygon = _tile_polygon(area_dict)
+        polygon = _tile_polygon(area_dict, map_name)
         if tile_id in selected_set:
             """
             - If just one tile is passed in to visualize, it is filled in red with black edges.
@@ -119,46 +126,59 @@ def _plot_selected_tiles(map_dict: "awpy.nav.Nav", axis: Axes, selected_tiles: l
 
 
 def plot_map_tiles(
-    map_name: str = "de_ancient", output_dir: Path | None = None, dpi: int = 300, fill: str = "None"
+    map_name: str,
+    outpath: str | Path | None = None,
+    dpi: int = 300,
+    fill: str = "None",
+    figure_size: tuple[float, float] = DEFAULT_FIG_SIZE,
 ) -> None:
-    """Plot all navigation mesh tiles for a given map.
+    """Plots all navigation mesh tiles for a given map.
 
     This function overlays navigation mesh tiles onto a specified map and highlights them.
-    Non-selected tiles are drawn with a yellow outline. The resulting plot can be either
+    Non-selected tiles are drawn with a yellow outline. The resulting plot can either be
     displayed or saved to a file.
 
-    Parameters:
-    -----------
-    map_name : str, optional
-        The name of the map to plot (default is "de_ancient").
-    output_dir : Path, optional
-        Directory to save the plotted image. If left as an None, the figure won't be saved (default is None).
-    dpi : int, optional
-        Dots per inch for the saved figure. Higher values result in better image quality (default is 1000).
-    fill : str, optional
-        The fill color for the tiles. Use "None" for no fill or specify a valid color (default is "None").
+    Args:
+        map_name (str): The name of the map to plot.
+        outpath (str | pathlib.Path | None, optional): The file path to save the plotted image.
+            Accepts both string and Path objects. If None, the figure will be displayed instead
+            of saved. Defaults to None.
+        dpi (int, optional): Dots per inch for the saved figure. Higher values result in
+            better image quality. Defaults to 300.
+        fill (str, optional): The fill color for the tiles. Use "None" for no fill or specify
+            a valid color. Defaults to "None".
+        figure_size (tuple[float, float], optional): Tuple representing the figure size in inches
+            (width, height). Defaults to `DEFAULT_FIG_SIZE`.
 
     Returns:
-    --------
-    None
-        This function either displays or saves the plot if `output_dir` is provided.
+        None
 
     Example:
-    --------
-    >>> plot_map_tiles(map_name="de_dust2", output_dir="./maps", dpi=800, fill="blue")
-    # Saves the plot to file at './maps/tiles_de_dust2.png'
-    """
-    fig, axis = plot_map(map_name=map_name)
-    fig.set_size_inches(19.2, 21.6)
-    _plot_all_tiles(NAV[map_name], axis, default_fill=fill)
+        >>> plot_map_tiles(
+        ...     map_name="de_dust2",
+        ...     outpath="./maps/tiles_de_dust2.png",
+        ...     dpi=800,
+        ...     fill="blue",
+        ...     figure_size=(15, 20)
+        ... )
+        # Saves the plot to './maps/tiles_de_dust2.png'
 
-    # If an output directory is not passed in, then show the graphic
-    # If it is passed in, do not show and save the graphic to file
-    if output_dir is not None:
-        output_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
-        save_path = output_dir / f"tiles_{map_name}.png"
-        plt.savefig(save_path, bbox_inches="tight", dpi=dpi)
-        print(f"The visualization has been saved at {save_path.resolve()}")
+        >>> plot_map_tiles(
+        ...     map_name="de_dust2",
+        ...     fill="green"
+        ... )
+        # Displays the plot with the default figure size
+    """
+    fig, axis = awpy.plot.plot(map_name=map_name)
+    fig.set_size_inches(*figure_size)
+    _plot_all_tiles(map_name, axis, default_fill=fill)
+
+    # Handle outpath for both str and Path inputs
+    if outpath is not None:
+        outpath = Path(outpath)
+        outpath.parent.mkdir(parents=True, exist_ok=True)  # Ensure parent directory exists
+        plt.savefig(outpath, bbox_inches="tight", dpi=dpi)
+        print(f"The visualization has been saved at {outpath.resolve()}")
     else:
         plt.show()
 
@@ -167,60 +187,66 @@ def plot_map_tiles(
 
 
 def plot_map_tiles_selected(
-    map_name: str, selected_tiles: list, output_dir: Path | None = None, dpi: int = 300
+    map_name: str,
+    selected_tiles: list,
+    outpath: str | Path | None = None,
+    dpi: int = 300,
+    figure_size: tuple[float, float] = DEFAULT_FIG_SIZE,
 ) -> None:
-    """Plot navigation mesh tiles for a given map with selected tiles highlighted.
+    """Plots navigation mesh tiles for a given map with selected tiles highlighted.
 
     This function overlays navigation mesh tiles onto the specified map and highlights the
     selected tiles. Non-selected tiles are drawn with a yellow outline, while selected tiles
-    are filled with a default color (green) and outlined in black. If a path is selected (more
-    than one tile), the first and last tiles (source and destination) are filled with red
-    and outlined in black.
+    are filled with a default color (red) and outlined in black. If multiple tiles are selected
+    (e.g., representing a path), the first and last tiles are filled with green and outlined
+    in black to denote the source and destination.
 
-    Parameters:
-    -----------
-    map_name : str
-        The name of the map to plot.
-    selected_tiles : list
-        A list of tile IDs to be highlighted on the map.
-    output_dir : str, optional
-        Directory to save the plotted image. If left as None, the figure won't be saved (default is None).
-    dpi : int, optional
-        Dots per inch for the saved figure. Higher values result in better image quality (default is 1000).
+    Args:
+        map_name (str): The name of the map to plot.
+        selected_tiles (list): List of tile IDs to be highlighted on the map.
+        outpath (str | pathlib.Path | None, optional): The file path to save the plotted image.
+            Accepts both string and Path objects. If None, the figure will be displayed
+            instead of saved. Defaults to None.
+        dpi (int, optional): Dots per inch for the saved figure. Higher values result in
+            better image quality. Defaults to 300.
+        figure_size (tuple[float, float], optional): Tuple representing the figure size in inches
+            (width, height). Defaults to `DEFAULT_FIG_SIZE`.
 
     Returns:
-    --------
-    None
-        This function displays the plot and optionally saves it if `output_dir` is provided.
+        None
 
     Behavior:
-    ---------
-    - Non-selected tiles are drawn with a yellow outline.
-    - Selected tiles are filled with a default color (usually red).
-    - If multiple tiles are selected (e.g., a path), the first and last tiles (source and destination)
-      are outlined in black.
+        - Non-selected tiles are drawn with a yellow outline.
+        - Selected tiles are filled with red and outlined in black.
+        - If multiple tiles are selected (e.g., a path), the first and last tiles are filled
+          with green and outlined in black.
 
     Example:
-    --------
-    >>> plot_map_tiles_selected(
-    ...     map_name="de_dust2",
-    ...     selected_tiles=[5, 12, 18],
-    ...     output_dir="./maps",
-    ...     dpi=800
-    ... )
-    # Saves the plot to file at './maps/selected_tiles_de_dust2.png'
-    """
-    fig, axis = plot_map(map_name=map_name)
-    fig.set_size_inches(19.2, 21.6)
-    _plot_selected_tiles(NAV[map_name], axis, selected_tiles)
+        >>> plot_map_tiles_selected(
+        ...     map_name="de_dust2",
+        ...     selected_tiles=[5, 12, 18],
+        ...     outpath="./maps/selected_tiles_de_dust2.png",
+        ...     dpi=800,
+        ...     figure_size=(15, 20)
+        ... )
+        # Saves the plot to './maps/selected_tiles_de_dust2.png'
 
-    # If an output directory is not passed in, then show the graphic
-    # If it is passed in, do not show and save the graphic to file
-    if output_dir is not None:
-        output_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
-        save_path = output_dir / f"selected_tiles_{map_name}.png"
-        plt.savefig(save_path, bbox_inches="tight", dpi=dpi)
-        print(f"The visualization has been saved at {save_path.resolve()}")
+        >>> plot_map_tiles_selected(
+        ...     map_name="de_dust2",
+        ...     selected_tiles=[5, 12, 18]
+        ... )
+        # Displays the plot with the default figure size
+    """
+    fig, axis = awpy.plot.plot(map_name=map_name)
+    fig.set_size_inches(*figure_size)
+    _plot_selected_tiles(map_name, axis, selected_tiles)
+
+    # Handle outpath for both str and Path inputs
+    if outpath is not None:
+        outpath = Path(outpath)
+        outpath.parent.mkdir(parents=True, exist_ok=True)  # Ensure parent directory exists
+        plt.savefig(outpath, bbox_inches="tight", dpi=dpi)
+        print(f"The visualization has been saved at {outpath.resolve()}")
     else:
         plt.show()
 
