@@ -3,8 +3,7 @@
 credit: @JanEricNitschke.
 """
 
-import importlib.resources
-import os
+from pathlib import Path
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -46,12 +45,23 @@ def plot_map(map_name: str) -> tuple:
     """
     fig, ax = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
     image = f"{map_name}.png"
+
     if map_name.endswith("_lower"):
         map_name = map_name.removesuffix("_lower")
+
+    # Use pathlib.Path to locate the image
+    # Use .parent.parent to move path back to awpy folder
+    resource_dir = Path(__file__).parent.parent / "data" / "maps"
+    map_img_path = resource_dir / image
+
+    if not map_img_path.exists():
+        exception_message = f"Map image '{image}' not found in '{resource_dir}'"
+        raise FileNotFoundError(exception_message)
+
     # Load and display the map background
-    with importlib.resources.path("awpy.data.maps", image) as map_img_path:
-        map_bg = mpimg.imread(map_img_path)
-        ax.imshow(map_bg, zorder=0, alpha=0.5)
+    map_bg = mpimg.imread(map_img_path)
+    ax.imshow(map_bg, zorder=0, alpha=0.5)
+
     return fig, ax
 
 
@@ -103,24 +113,26 @@ def _plot_selected_tiles(map_dict: "awpy.nav.Nav", axis: Axes, selected_tiles: l
                 edgecolor = "black"
                 facecolor = "red"
         else:
-            facecolor = "None"
             edgecolor = "yellow"
+            facecolor = "None"
         _plot_tile(axis, polygon, edgecolor=edgecolor, facecolor=facecolor)
 
 
-def plot_map_tiles(map_name: str = "de_ancient", output_path: str = "", dpi: int = 1000, fill: str = "None") -> None:
+def plot_map_tiles(
+    map_name: str = "de_ancient", output_dir: Path | None = None, dpi: int = 300, fill: str = "None"
+) -> None:
     """Plot all navigation mesh tiles for a given map.
 
     This function overlays navigation mesh tiles onto a specified map and highlights them.
-    Non-selected tiles are drawn with a yellow outline. The resulting plot can be displayed
-    and optionally saved to a file.
+    Non-selected tiles are drawn with a yellow outline. The resulting plot can be either
+    displayed or saved to a file.
 
     Parameters:
     -----------
     map_name : str, optional
         The name of the map to plot (default is "de_ancient").
-    output_path : str, optional
-        Path to save the plotted image. If left as an empty string (""), the figure won't be saved (default is "").
+    output_dir : Path, optional
+        Directory to save the plotted image. If left as an None, the figure won't be saved (default is None).
     dpi : int, optional
         Dots per inch for the saved figure. Higher values result in better image quality (default is 1000).
     fill : str, optional
@@ -133,21 +145,30 @@ def plot_map_tiles(map_name: str = "de_ancient", output_path: str = "", dpi: int
 
     Example:
     --------
-    >>> plot_map_tiles(map_name="de_dust2", output_path="./maps", dpi=800, fill="blue")
-    # Displays the plot and saves it as './maps/tiles_de_dust2.png'
+    >>> plot_map_tiles(map_name="de_dust2", output_dir="./maps", dpi=800, fill="blue")
+    # Saves the plot to './maps/tiles_de_dust2.png'
     """
     fig, axis = plot_map(map_name=map_name)
     fig.set_size_inches(19.2, 21.6)
     _plot_all_tiles(NAV[map_name], axis, default_fill=fill)
-    plt.show()
-    # Optionally save the figure:
-    if output_path != "":
-        plt.savefig(os.path.join(output_path, f"tiles_{map_name}.png"), bbox_inches="tight", dpi=dpi)
+
+    # If an output directory is not passed in, then show the graphic
+    # If it is passed in, do not show and save the graphic to file
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
+        save_path = output_dir / f"tiles_{map_name}.png"
+        plt.savefig(save_path, bbox_inches="tight", dpi=dpi)
+        print(f"The visualization has been saved at {save_path.resolve()}")
+    else:
+        plt.show()
+
     fig.clear()
     plt.close()
 
 
-def plot_map_tiles_selected(map_name: str, selected_tiles: list, output_path: str = "", dpi: int = 1000) -> None:
+def plot_map_tiles_selected(
+    map_name: str, selected_tiles: list, output_dir: Path | None = None, dpi: int = 300
+) -> None:
     """Plot navigation mesh tiles for a given map with selected tiles highlighted.
 
     This function overlays navigation mesh tiles onto the specified map and highlights the
@@ -162,8 +183,8 @@ def plot_map_tiles_selected(map_name: str, selected_tiles: list, output_path: st
         The name of the map to plot.
     selected_tiles : list
         A list of tile IDs to be highlighted on the map.
-    output_path : str, optional
-        Path to save the plotted image. If left as an empty string (""), the figure won't be saved (default is "").
+    output_dir : str, optional
+        Directory to save the plotted image. If left as None, the figure won't be saved (default is None).
     dpi : int, optional
         Dots per inch for the saved figure. Higher values result in better image quality (default is 1000).
 
@@ -192,9 +213,15 @@ def plot_map_tiles_selected(map_name: str, selected_tiles: list, output_path: st
     fig, axis = plot_map(map_name=map_name)
     fig.set_size_inches(19.2, 21.6)
     _plot_selected_tiles(NAV[map_name], axis, selected_tiles)
-    plt.show()
-    # Optionally save the figure:
-    if output_path != "":
-        plt.savefig(os.path.join(output_path, f"selected_tiles_{map_name}.png"), bbox_inches="tight", dpi=dpi)
-    fig.clear()
+
+    # If an output directory is not passed in, then show the graphic
+    # If it is passed in, do not show and save the graphic to file
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
+        save_path = output_dir / f"selected_tiles_{map_name}.png"
+        plt.savefig(save_path, bbox_inches="tight", dpi=dpi)
+        print(f"The visualization has been saved at {save_path.resolve()}")
+    else:
+        plt.show()
+
     plt.close()
