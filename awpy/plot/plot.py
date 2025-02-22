@@ -1,6 +1,5 @@
 """Module for plotting Counter-Strike data."""
 
-import importlib.resources
 import io
 import math
 import warnings
@@ -17,6 +16,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from PIL import Image
 
+import awpy.data
 import awpy.plot.utils
 
 
@@ -65,15 +65,15 @@ def plot(  # noqa: PLR0915
     map_name = map_name.removesuffix("_lower")
 
     # Check for the main map image
-    with importlib.resources.path("awpy.data.maps", image) as map_img_path:
-        if not map_img_path.exists():
-            map_img_path_err = f"Map image not found: {map_img_path}"
-            raise FileNotFoundError(map_img_path_err)
+    map_img_path = awpy.data.AWPY_DATA_DIR / "maps" / image
+    if not map_img_path.exists():
+        map_img_path_err = f"Map image not found: {map_img_path}. Might need to call `awpy get maps`"
+        raise FileNotFoundError(map_img_path_err)
 
-        map_bg = mpimg.imread(map_img_path)
-        figure, axes = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
-        axes.imshow(map_bg, zorder=0)
-        axes.axis("off")
+    map_bg = mpimg.imread(map_img_path)
+    figure, axes = plt.subplots(figsize=(1024 / 300, 1024 / 300), dpi=300)
+    axes.imshow(map_bg, zorder=0)
+    axes.axis("off")
 
     # Plot points if provided
     if points is not None:
@@ -492,9 +492,13 @@ def heatmap(
         map_name = map_name.removesuffix("_lower")
 
     # Load and display the map
-    with importlib.resources.path("awpy.data.maps", image) as map_img_path:
-        map_bg = mpimg.imread(map_img_path)
-        ax.imshow(map_bg, zorder=0, alpha=0.5)
+    map_img_path = awpy.data.AWPY_DATA_DIR / "maps" / image
+    if not map_img_path.exists():
+        map_img_path_err = f"Map image not found: {map_img_path}. Might need to call `awpy get maps`"
+        raise FileNotFoundError(map_img_path_err)
+
+    map_bg = mpimg.imread(map_img_path)
+    ax.imshow(map_bg, zorder=0, alpha=0.5)
 
     temp_points = points
     points = []
