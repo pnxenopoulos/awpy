@@ -27,7 +27,7 @@ jobs:
       - name: Install awpy
         shell: bash
         run: |
-          uv sync --group dev --group test
+          uv sync --group docs
           uv tool install .
 
       - name: Build Documentation
