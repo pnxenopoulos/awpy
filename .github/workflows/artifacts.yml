@@ -67,15 +67,10 @@ jobs:
           Get-ChildItem -Force
           .\scripts\generate-tris.ps1 -inputPath "cs_go\game\csgo\maps"
 
-      - name: Generate Map Images
-        run: |
-          Get-ChildItem -Force
-          .\scripts\generate-map-images.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
-
       - name: Generate Map Data
         run: |
           Get-ChildItem -Force
-          .\scripts\generate-map-data.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
+          .\scripts\generate-maps.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
 
       - name: Generate Nav
         run: |
