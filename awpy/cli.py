@@ -42,7 +42,9 @@ def artifacts() -> None:
     """Print information on Awpy artifacts."""
     print("Current patch:", awpy.data.CURRENT_BUILD_ID)
     for patch, patch_data in awpy.data.AVAILABLE_PATCHES.items():
-        print(f"Patch {patch} ({patch_data['datetime']}, {patch_data['url']}). Available artifacts: {patch_data['available']}\n")
+        print(
+            f"Patch {patch} ({patch_data['datetime']}, {patch_data['url']}). Available artifacts: {patch_data['available']}\n"  # noqa: E501
+        )
 
 
 @awpy_cli.command(name="parse", help="Parse a Counter-Strike 2 demo (.dem) file .")
