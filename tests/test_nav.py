@@ -11,7 +11,7 @@ import awpy.nav
 @pytest.fixture
 def parsed_nav():
     """Fixture that returns a parsed Nav object."""
-    return awpy.nav.Nav(path="tests/de_dust2.nav")
+    return awpy.nav.Nav.from_path(path="tests/de_dust2.nav")
 
 
 class TestNav:
@@ -20,7 +20,7 @@ class TestNav:
     def test_invalid_filepath(self):
         """Test the Nav object with an invalid filepath."""
         with pytest.raises(FileNotFoundError):
-            awpy.nav.Nav("xyz.nav")
+            awpy.nav.Nav.from_path("xyz.nav")
 
     def test_nav_areas(self, parsed_nav: awpy.nav.Nav):
         """Test the Demo object with an HLTV demo."""
