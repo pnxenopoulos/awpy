@@ -11,6 +11,29 @@ on:
       - "pyproject.toml"
 
 jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout awpy library
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: |
+          uv python install 3.13
+
+      - name: Install awpy
+        shell: bash
+        run: |
+          uv sync --group dev --group test
+          uv tool install .
+
+      - name: Build Documentation
+        shell: bash
+        run: |
+          uv run make -C docs html
   build:
     runs-on: ${{ matrix.os }}
     strategy:
