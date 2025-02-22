@@ -6,6 +6,7 @@ from typing import Literal
 import click
 from loguru import logger
 
+import awpy.data
 import awpy.data.map_data
 import awpy.data.utils
 from awpy import Demo, Nav, Spawns
@@ -34,6 +35,14 @@ def get(resource_type: Literal["maps", "navs", "tris"], *, patch: int = 17459940
     else:
         resource_not_impl_err_msg = f"Resource type {resource_type} is not yet implemented."
         raise NotImplementedError(resource_not_impl_err_msg)
+
+
+@awpy_cli.command(name="artifacts", help="Information on Awpy artifacts.")
+def artifacts() -> None:
+    """Print information on Awpy artifacts."""
+    print("Current patch:", awpy.data.CURRENT_BUILD_ID)
+    for patch, patch_data in awpy.data.AVAILABLE_PATCHES.items():
+        print(f"Patch {patch} ({patch_data['datetime']}, {patch_data['url']}). Available artifacts: {patch_data['available']}\n")
 
 
 @awpy_cli.command(name="parse", help="Parse a Counter-Strike 2 demo (.dem) file .")
