@@ -4,7 +4,8 @@ import importlib.resources
 import io
 import math
 import warnings
-from typing import Literal
+from dataclasses import dataclass
+from typing import Any, Literal, Optional
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -20,7 +21,130 @@ from PIL import Image
 import awpy.plot.utils
 
 
-def plot(  # noqa: PLR0915
+@dataclass
+class PointSettings:
+    """Dataclass for point settings used in plotting.
+
+    Provides default values and type validation for each attribute. Raises ValueError
+    if unexpected keys are passed or if wrong types are provided.
+
+    Attributes:
+        marker (str): Marker style for plotting. Defaults to 'o'.
+        color (str): Color of the marker. Defaults to 'red'.
+        size (int): Size of the marker. Defaults to 10.
+        hp (Optional[int]): Health points (0-100). Defaults to None.
+        armor (Optional[int]): Armor points (0-100). Defaults to None.
+        direction (Optional[Tuple[float, float]]): (pitch, yaw) angles. Defaults to None.
+        label (Optional[str]): Text label for the point. Defaults to None.
+        alpha (float): Transparency level (0.0 - 1.0). Defaults to 1.0.
+    """
+
+    marker: str = "o"
+    color: str = "red"
+    size: int = 10
+    hp: Optional[int] = None
+    armor: Optional[int] = None
+    direction: Optional[tuple[float, float]] = None
+    label: Optional[str] = None
+    alpha: float = 1.0
+
+    def __post_init__(self) -> None:
+        """Validates the types and values of the attributes after initialization.
+
+        Ensures that each attribute matches its expected type and that values fall within
+        valid ranges. Raises appropriate exceptions if validation fails.
+
+        Raises:
+            TypeError: If an attribute has an incorrect type.
+            ValueError: If `alpha` is not between 0.0 and 1.0.
+        """
+        # Type validation for marker
+        if not isinstance(self.marker, str):
+            err_msg = f"marker must be a str, got {type(self.marker).__name__}"
+            raise TypeError(err_msg)
+
+        # Type validation for color
+        if not isinstance(self.color, str):
+            err_msg = f"color must be a str, got {type(self.color).__name__}"
+            raise TypeError(err_msg)
+
+        # Type validation for size
+        if not isinstance(self.size, int):
+            err_msg = f"size must be an int, got {type(self.size).__name__}"
+            raise TypeError(err_msg)
+
+        # Type validation for hp
+        if self.hp is not None and not isinstance(self.hp, int):
+            err_msg = f"hp must be an int or None, got {type(self.hp).__name__}"
+            raise TypeError(err_msg)
+
+        # Type validation for armor
+        if self.armor is not None and not isinstance(self.armor, int):
+            err_msg = f"armor must be an int or None, got {type(self.armor).__name__}"
+            raise TypeError(err_msg)
+
+        # Type validation for direction
+        if self.direction is not None and (
+            not isinstance(self.direction, tuple)
+            or len(self.direction) != 2
+            or not all(isinstance(d, int | float) for d in self.direction)
+        ):
+            err_msg = "direction must be a tuple of two floats or ints"
+            raise TypeError(err_msg)
+
+        # Type validation for label
+        if self.label is not None and not isinstance(self.label, str):
+            err_msg = f"label must be a str or None, got {type(self.label).__name__}"
+            raise TypeError(err_msg)
+
+        # Type validation for alpha
+        if not isinstance(self.alpha, int | float):
+            err_msg = f"alpha must be a float, got {type(self.alpha).__name__}"
+            raise TypeError(err_msg)
+
+        # Value validation for alpha range
+        if not (0.0 <= self.alpha <= 1.0):
+            err_msg = "alpha must be between 0.0 and 1.0"
+            raise ValueError(err_msg)
+
+    @classmethod
+    def from_dict(cls: type["PointSettings"], settings: dict[str, Any]) -> "PointSettings":
+        """Create a PointSettings instance from a dictionary, ignoring unknown keys.
+
+        Args:
+            settings (dict): Dictionary of settings.
+
+        Returns:
+            PointSettings: Validated instance.
+
+        Raises:
+            ValueError: If unknown keys are provided.
+        """
+        allowed_keys = {f.name for f in cls.__dataclass_fields__.values()}
+        unknown_keys = set(settings) - allowed_keys
+        if unknown_keys:
+            err_msg = f"Unknown keys provided: {unknown_keys}"
+            raise ValueError(err_msg)
+
+        return cls(**settings)
+
+
+@dataclass
+class PlotPositionMetadata:
+    """Data structure for holding transformed plotting data.
+
+    Attributes:
+        x_pos (list[tuple[float, float]]): List of transformed x coordinates.
+        y_pos (list[tuple[float, float]]): List of transformed y coordinates.
+        plot_settings (list[PointSettings]): PointSettings for each plotted pair.
+    """
+
+    x_pos: list[tuple[float, float]]
+    y_pos: list[tuple[float, float]]
+    plot_settings: list[PointSettings]
+
+
+def plot(
     map_name: str,
     points: list[tuple[float, float, float]] | None = None,
     lower_points_frac: float | None = 0.4,
@@ -77,161 +201,258 @@ def plot(  # noqa: PLR0915
 
     # Plot points if provided
     if points is not None:
-        # Ensure points and settings have the same length
-        if point_settings is None:
-            point_settings = [{}] * len(points)
-        elif len(points) != len(point_settings):
-            settings_mismatch_err = "Number of points and point_settings do not match."
-            raise ValueError(settings_mismatch_err)
-
-        # Plot each point
-        for (x, y, z), settings in zip(points, point_settings, strict=False):
-            transformed_x = awpy.plot.utils.game_to_pixel_axis(map_name, x, "x")
-            transformed_y = awpy.plot.utils.game_to_pixel_axis(map_name, y, "y")
-
-            # Check if the point is within bounds of the map image
-            if transformed_x < 0 or transformed_x > 1024 or transformed_y < 0 or transformed_y > 1024:
-                continue
-
-            # Default settings
-            marker = settings.get("marker", "o")
-            color = settings.get("color", "red")
-            size = settings.get("size", 10)
-            hp = settings.get("hp")
-            armor = settings.get("armor")
-            direction = settings.get("direction")
-            label = settings.get("label")
-
-            alpha = 0.15 if hp == 0 else 1.0
-
-            map_is_lower = map_name.endswith("_lower")
-            point_is_lower = awpy.plot.utils.is_position_on_lower_level(map_name, (x, y, z))
-
-            if not map_is_lower and point_is_lower:
-                if lower_points_frac == 0:
-                    continue
-                alpha *= lower_points_frac
-            elif map_is_lower and not point_is_lower:
-                continue
-
-            transformed_x = awpy.plot.utils.game_to_pixel_axis(map_name, x, "x")
-            transformed_y = awpy.plot.utils.game_to_pixel_axis(map_name, y, "y")
-
-            # Plot the marker
-            axes.plot(
-                transformed_x,
-                transformed_y,
-                marker=marker,
-                color="black",
-                markersize=size,
-                alpha=alpha,
-                zorder=10,
-            )  # Black outline
-            axes.plot(
-                transformed_x,
-                transformed_y,
-                marker=marker,
-                color=color,
-                markersize=size * 0.9,
-                alpha=alpha,
-                zorder=11,
-            )  # Inner color
-
-            # Set bar sizes and offsets
-            bar_width = size * 2
-            bar_length = size * 6
-            vertical_offset = size * 3.5
-
-            if hp and hp > 0:
-                # Plot HP bar (red background)
-                hp_bar_full = Rectangle(
-                    (transformed_x - bar_length / 2, transformed_y + vertical_offset),
-                    bar_length,
-                    bar_width,
-                    facecolor="red",
-                    edgecolor="black",
-                    alpha=alpha,
-                    zorder=11,
-                )
-                axes.add_patch(hp_bar_full)
-
-                # Plot HP bar (actual health)
-                hp_bar = Rectangle(
-                    (transformed_x - bar_length / 2, transformed_y + vertical_offset),
-                    bar_length * hp / 100,
-                    bar_width,
-                    facecolor="green",
-                    edgecolor="black",
-                    alpha=alpha,
-                    zorder=11,
-                )
-                axes.add_patch(hp_bar)
-
-                # Plot Armor bar (lightgrey background)
-                armor_bar = Rectangle(
-                    (
-                        transformed_x - bar_length / 2,
-                        transformed_y + vertical_offset + bar_width,
-                    ),
-                    bar_length,
-                    bar_width,
-                    facecolor="lightgrey",
-                    edgecolor="black",
-                    alpha=alpha,
-                    zorder=11,
-                )
-                axes.add_patch(armor_bar)
-
-                # Plot Armor bar (actual armor)
-                armor_bar = Rectangle(
-                    (
-                        transformed_x - bar_length / 2,
-                        transformed_y + vertical_offset + bar_width,
-                    ),
-                    bar_length * armor / 100,
-                    bar_width,
-                    facecolor="grey",
-                    edgecolor="black",
-                    alpha=alpha,
-                    zorder=11,
-                )
-                axes.add_patch(armor_bar)
-
-            # Plot direction
-            if direction and hp > 0:
-                pitch, yaw = direction
-                dx = math.cos(math.radians(yaw)) * math.cos(math.radians(pitch))
-                dy = math.sin(math.radians(yaw)) * math.cos(math.radians(pitch))
-                line_length = size * 2
-                axes.plot(
-                    [transformed_x, transformed_x + dx * line_length],
-                    [transformed_y, transformed_y + dy * line_length],
-                    color="black",
-                    alpha=alpha,
-                    linewidth=1,
-                    zorder=12,
-                )
-
-            # Add label
-            if label:
-                label_offset = vertical_offset + 1.25 * bar_width
-                axes.annotate(
-                    label,
-                    (transformed_x, transformed_y - label_offset),
-                    xytext=(0, 0),
-                    textcoords="offset points",
-                    color="white",
-                    fontsize=6,
-                    alpha=alpha,
-                    zorder=13,
-                    ha="center",
-                    va="top",
-                )  # Center the text horizontally
+        _plot_positions(map_name, axes, points, lower_points_frac, point_settings)
 
     figure.patch.set_facecolor("black")
     plt.tight_layout()
 
     return figure, axes
+
+
+def _generate_plot_metadata(
+    map_name: str,
+    points: list[tuple[float, float, float]],
+    point_settings: list[PointSettings],
+    lower_points_frac: float = 0.4,
+) -> PlotPositionMetadata:
+    """Processes points and their settings to prepare plotting metadata.
+
+    Args:
+        map_name (str): Name of the map.
+        points (list[tuple[float, float, float]]): List of (x, y, z) points.
+        point_settings (list[PointSettings]): List of settings for each point.
+        lower_points_frac (float, optional): Opacity scaling for lower-level points. Defaults to 0.4.
+
+    Returns:
+        PlotPositionMetadata: Object containing transformed coordinates and updated PointSettings.
+    """
+    x_pos = []
+    y_pos = []
+    updated_settings = []
+
+    map_is_lower = map_name.endswith("_lower")
+
+    for (x, y, z), settings in zip(points, point_settings, strict=False):
+        transformed_x = awpy.plot.utils.game_to_pixel_axis(map_name, x, "x")
+        transformed_y = awpy.plot.utils.game_to_pixel_axis(map_name, y, "y")
+
+        # Skip points outside map bounds
+        if transformed_x < 0 or transformed_x > 1024 or transformed_y < 0 or transformed_y > 1024:
+            continue
+
+        # Calculate alpha
+        alpha = 0.15 if settings.hp == 0 else 1.0
+        point_is_lower = awpy.plot.utils.is_position_on_lower_level(map_name, (x, y, z))
+
+        if not map_is_lower and point_is_lower:
+            if lower_points_frac == 0:
+                continue
+            alpha *= lower_points_frac
+        elif map_is_lower and not point_is_lower:
+            continue
+
+        # Create a new PointSettings instance with updated alpha
+        updated_point = PointSettings(
+            marker=settings.marker,
+            color=settings.color,
+            size=settings.size,
+            hp=settings.hp,
+            armor=settings.armor,
+            direction=settings.direction,
+            label=settings.label,
+            alpha=alpha,
+        )
+
+        # Store transformed coordinates and updated settings
+        x_pos.append(transformed_x)
+        y_pos.append(transformed_y)
+        updated_settings.append(updated_point)
+
+    return PlotPositionMetadata(x_pos=x_pos, y_pos=y_pos, plot_settings=updated_settings)
+
+
+def _plot_positions(
+    map_name: str,
+    axes: Axes,
+    points: list[tuple[float, float, float]] | None = None,
+    lower_points_frac: float | None = 0.4,
+    point_settings: list[PointSettings] | None = None,
+) -> None:
+    """Plots points on a map, optionally customizing plotting settings.
+
+    This function plots player positions or any set of 3D coordinates onto a 2D map. It supports
+    customizations for each point, including marker style, size, color, labels, health (HP) bars,
+    armor bars, and directional indicators. It also adjusts transparency for points on different
+    map levels (upper/lower) based on the `lower_points_frac` parameter.
+
+    Args:
+        map_name (str): Name of the map to plot. E.g. "de_dust2"
+            ("dust2" or "de_dust2.png" will not work).
+        axes (matplotlib.axes.Axes): The matplotlib axes object to plot the points onto.
+        points (list[tuple[float, float, float]], optional):
+            list of points to plot. Each point is (X, Y, Z). Defaults to None.
+        lower_points_frac (optional, float): The factor by which to multiply
+            the opacity of a given point if it is on the lower level of the
+            map and `map_name` is NOT referencing the lower level (i.e.
+            `map_name` does not end in "_lower"). Defaults to 0.4.
+
+            If `map_name` is referencing the lower level of a map (i.e.
+            ends in "_lower") then this argument is ignored and lower points'
+            alpha is set to 1 and upper points' alpha is set to 0.
+        point_settings (list[dict], optional):
+            list of dictionaries with settings for each point. Each dictionary
+            should contain:
+            - 'marker': str (default 'o')
+            - 'color': str (default 'red')
+            - 'size': float (default 10)
+            - 'hp': int (0-100)
+            - 'armor': int (0-100)
+            - 'direction': tuple[float, float] (pitch, yaw in degrees)
+            - 'label': str (optional)
+
+    Raises:
+        ValueError: If the number of points does not match the number of `point_settings` entries.
+
+    Returns:
+        None
+    """
+    # Ensure points and settings have the same length
+    if point_settings is None:
+        point_settings = [PointSettings.from_dict({})] * len(points)
+    elif len(points) != len(point_settings):
+        settings_mismatch_err = "Number of points and point_settings do not match."
+        raise ValueError(settings_mismatch_err)
+    else:
+        point_settings = [PointSettings.from_dict(setting) for setting in point_settings]
+
+    plot_metadata = _generate_plot_metadata(map_name, points, point_settings, lower_points_frac)
+    _plot_positions_helper(plot_metadata, axes)
+
+
+def _plot_positions_helper(player_pos_settings: PlotPositionMetadata, axes: Axes) -> None:
+    for transformed_x, transformed_y, settings in zip(
+        player_pos_settings.x_pos, player_pos_settings.y_pos, player_pos_settings.plot_settings, strict=False
+    ):
+        # Get settings
+        marker = settings.marker
+        color = settings.color
+        size = settings.size
+        hp = settings.hp
+        armor = settings.armor
+        direction = settings.direction
+        label = settings.label
+        alpha = settings.alpha
+
+        # Plot the marker
+        axes.plot(
+            transformed_x,
+            transformed_y,
+            marker=marker,
+            color="black",
+            markersize=size,
+            alpha=alpha,
+            zorder=10,
+        )  # Black outline
+        axes.plot(
+            transformed_x,
+            transformed_y,
+            marker=marker,
+            color=color,
+            markersize=size * 0.9,
+            alpha=alpha,
+            zorder=11,
+        )  # Inner color
+
+        # Set bar sizes and offsets
+        bar_width = size * 2
+        bar_length = size * 6
+        vertical_offset = size * 3.5
+
+        if hp and hp > 0:
+            # Plot HP bar (red background)
+            hp_bar_full = Rectangle(
+                (transformed_x - bar_length / 2, transformed_y + vertical_offset),
+                bar_length,
+                bar_width,
+                facecolor="red",
+                edgecolor="black",
+                alpha=alpha,
+                zorder=11,
+            )
+            axes.add_patch(hp_bar_full)
+
+            # Plot HP bar (actual health)
+            hp_bar = Rectangle(
+                (transformed_x - bar_length / 2, transformed_y + vertical_offset),
+                bar_length * hp / 100,
+                bar_width,
+                facecolor="green",
+                edgecolor="black",
+                alpha=alpha,
+                zorder=11,
+            )
+            axes.add_patch(hp_bar)
+
+            # Plot Armor bar (lightgrey background)
+            armor_bar = Rectangle(
+                (
+                    transformed_x - bar_length / 2,
+                    transformed_y + vertical_offset + bar_width,
+                ),
+                bar_length,
+                bar_width,
+                facecolor="lightgrey",
+                edgecolor="black",
+                alpha=alpha,
+                zorder=11,
+            )
+            axes.add_patch(armor_bar)
+
+            # Plot Armor bar (actual armor)
+            armor_bar = Rectangle(
+                (
+                    transformed_x - bar_length / 2,
+                    transformed_y + vertical_offset + bar_width,
+                ),
+                bar_length * armor / 100,
+                bar_width,
+                facecolor="grey",
+                edgecolor="black",
+                alpha=alpha,
+                zorder=11,
+            )
+            axes.add_patch(armor_bar)
+
+        # Plot direction
+        if direction and hp > 0:
+            pitch, yaw = direction
+            dx = math.cos(math.radians(yaw)) * math.cos(math.radians(pitch))
+            dy = math.sin(math.radians(yaw)) * math.cos(math.radians(pitch))
+            line_length = size * 2
+            axes.plot(
+                [transformed_x, transformed_x + dx * line_length],
+                [transformed_y, transformed_y + dy * line_length],
+                color="black",
+                alpha=alpha,
+                linewidth=1,
+                zorder=12,
+            )
+
+        # Add label
+        if label:
+            label_offset = vertical_offset + 1.25 * bar_width
+            axes.annotate(
+                label,
+                (transformed_x, transformed_y - label_offset),
+                xytext=(0, 0),
+                textcoords="offset points",
+                color="white",
+                fontsize=6,
+                alpha=alpha,
+                zorder=13,
+                ha="center",
+                va="top",
+            )  # Center the text horizontally
 
 
 def _generate_frame_plot(
