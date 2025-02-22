@@ -20,17 +20,17 @@ def awpy_cli() -> None:
 
 @awpy_cli.command(
     name="get",
-    help="""
-    Get Counter-Strike 2 resources like parsed nav meshes, spawns or triangle files. \n
-    Available choices: 'maps', 'navs', 'tris'""",
+    help=f"""
+    Get Counter-Strike 2 resources like parsed map data or nav meshes. \n
+    Available choices: {awpy.data.POSSIBLE_ARTIFACTS}""",
 )
-@click.argument("resource_type", type=click.Choice(["maps", "navs", "tris"]))
-@click.option("--patch", type=int, help="Patch number to fetch the resources from.", default=17459940)
+@click.argument("resource_type", type=click.Choice(awpy.data.POSSIBLE_ARTIFACTS))
+@click.option("--patch", type=int, help="Patch number to fetch the resources.", default=17459940)
 def get(resource_type: Literal["maps", "navs", "tris"], *, patch: int = 17459940) -> None:
     """Get a resource given its type and name."""
     awpy.data.utils.create_data_dir_if_not_exists()
 
-    if resource_type in ["maps", "navs", "tris"]:
+    if resource_type in awpy.data.POSSIBLE_ARTIFACTS:
         awpy.data.utils.fetch_resource(resource_type, patch)
     else:
         resource_not_impl_err_msg = f"Resource type {resource_type} is not yet implemented."
@@ -74,7 +74,7 @@ def parse_demo(
     demo.compress(outpath=outpath)
 
 
-@awpy_cli.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.")
+@awpy_cli.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.", hidden=True)
 @click.argument("vent_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the spawns.")
 def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
@@ -87,7 +87,7 @@ def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
     logger.success(f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}")
 
 
-@awpy_cli.command(name="nav", help="Parse a Counter-Strike 2 .nav file.")
+@awpy_cli.command(name="nav", help="Parse a Counter-Strike 2 .nav file.", hidden=True)
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the nav file.")
 def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
@@ -100,7 +100,7 @@ def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
     logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
 
 
-@awpy_cli.command(name="mapdata", help="Parse Counter-Strike 2 map images.")
+@awpy_cli.command(name="mapdata", help="Parse Counter-Strike 2 map images.", hidden=True)
 @click.argument("overview_dir", type=click.Path(exists=True))
 def parse_mapdata(overview_dir: Path) -> None:
     """Parse radar overview images given an overview."""
@@ -113,7 +113,7 @@ def parse_mapdata(overview_dir: Path) -> None:
     logger.success("Map data saved to map_data.json")
 
 
-@awpy_cli.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.")
+@awpy_cli.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.", hidden=True)
 @click.argument("vphys_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the parsed triangle.")
 def generate_tri(vphys_file: Path, *, outpath: Path | None = None) -> None:

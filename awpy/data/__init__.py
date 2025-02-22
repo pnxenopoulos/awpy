@@ -10,6 +10,7 @@ NAVS_DIR = AWPY_DATA_DIR / "navs"
 TRIS_DIR = AWPY_DATA_DIR / "tris"
 
 # Uses build id from https://steamdb.info/app/730/patchnotes/
+POSSIBLE_ARTIFACTS = ["maps", "navs", "tris"]
 CURRENT_BUILD_ID = 17459940
 AVAILABLE_PATCHES = {
     17459940: {

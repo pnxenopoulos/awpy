@@ -5,4 +5,4 @@ You can also use Awpy in command-line form. This is useful for automating tasks 
 
 .. code-block:: bash
 
-   awpy parse natus-vincere-vs-virtus-pro-m1-overpass.dem --verbose --noticks --norounds --player-props X,Y,Z --other-props is_bomb_planted
+   awpy parse natus-vincere-vs-virtus-pro-m1-overpass.dem --player-props X,Y,Z --other-props is_bomb_planted --verbose
