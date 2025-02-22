@@ -77,9 +77,6 @@ testpaths = ["tests"]
 include-package-data = true
 packages = ["awpy"]
 
-[tool.setuptools.package-data]
-"*" = ["data/maps/*.png"]
-
 # Ruff config
 [tool.ruff]
 exclude = [

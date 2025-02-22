@@ -4,4 +4,5 @@ from pathlib import Path
 
 AWPY_DATA_DIR = Path.home() / ".awpy"
 
-TRI_URL = "https://figshare.com/ndownloader/files/51490514"
+# Uses build id from https://steamdb.info/app/730/patchnotes/
+CURRENT_BUILD_ID = 17459940

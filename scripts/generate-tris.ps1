@@ -58,7 +58,7 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | ForEach-Object {
 }
 
 # Create a zip archive of the output .tri files.
-$zipPath = Join-Path (Split-Path $outputDirectory) "tri.zip"
+$zipPath = Join-Path (Split-Path $outputDirectory) "tris.zip"
 Compress-Archive -Path (Join-Path $outputDirectory "*") -DestinationPath $zipPath -Force
 
 if (Test-Path $zipPath) {
@@ -96,6 +96,10 @@ function Get-DirectoryContentHash {
     $hashHex = [BitConverter]::ToString($hashBytes) -replace '-', ''
     return $hashHex
 }
+
+# Compute and print the hash of the zip archive using SHA256.
+$fileHash = Get-FileHash -Path $zipPath -Algorithm SHA256
+Write-Host "Zip file hash (SHA256): $($fileHash.Hash)" -ForegroundColor Cyan
 
 # Compute and print the hash of the contents of the output directory (the .tri files).
 $contentHash = Get-DirectoryContentHash -DirectoryPath $outputDirectory
