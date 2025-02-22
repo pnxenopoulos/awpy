@@ -198,9 +198,7 @@ class NavArea:
             polygons: Optional list of predefined polygons for version 31+.
         """
         area_id = struct.unpack("I", br.read(4))[0]
-        dynamic_attribute_flags = DynamicAttributeFlags(
-            struct.unpack("q", br.read(8))[0]
-        )
+        dynamic_attribute_flags = DynamicAttributeFlags(struct.unpack("q", br.read(8))[0])
         hull_index = br.read(1)[0]
 
         corners: list[Vector3] = []
@@ -215,11 +213,7 @@ class NavArea:
 
         br.read(4)  # Skip almost always 0
 
-        connections = [
-            conn.area_id
-            for _ in range(len(corners))
-            for conn in cls.read_connections(br)
-        ]
+        connections = [conn.area_id for _ in range(len(corners)) for conn in cls.read_connections(br)]
 
         br.read(5)  # Skip LegacyHidingSpotData count and LegacySpotEncounterData count
 
@@ -262,9 +256,7 @@ class NavArea:
         return cls(
             area_id=data["area_id"],
             hull_index=data["hull_index"],
-            dynamic_attribute_flags=DynamicAttributeFlags(
-                data["dynamic_attribute_flags"]
-            ),
+            dynamic_attribute_flags=DynamicAttributeFlags(data["dynamic_attribute_flags"]),
             corners=[Vector3.from_dict(c) for c in data["corners"]],
             connections=data["connections"],
             ladders_above=data["ladders_above"],
@@ -312,9 +304,7 @@ class Nav:
 
         # Add nodes
         for _aid, area in self.areas.items():
-            self.graph.add_node(
-                area.area_id, node=area
-            )  # Add node with area_id and size as attributes
+            self.graph.add_node(area.area_id, node=area)  # Add node with area_id and size as attributes
 
         # Add edges
         for _aid, area in self.areas.items():
@@ -350,9 +340,7 @@ class Nav:
         with open(nav_path, "rb") as f:
             magic = struct.unpack("I", f.read(4))[0]
             if magic != cls.MAGIC:
-                unexpected_magic_msg = (
-                    f"Unexpected magic: {magic:X}, expected {cls.MAGIC:X}"
-                )
+                unexpected_magic_msg = f"Unexpected magic: {magic:X}, expected {cls.MAGIC:X}"
                 raise ValueError(unexpected_magic_msg)
 
             version = struct.unpack("I", f.read(4))[0]
@@ -385,9 +373,7 @@ class Nav:
 
     def __repr__(self) -> str:
         """Returns string representation of Nav."""
-        return (
-            f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
-        )
+        return f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
 
     @classmethod
     def _read_polygons(cls, br: BinaryIO, version: int) -> list[list[Vector3]]:
@@ -413,9 +399,7 @@ class Nav:
         return polygons
 
     @classmethod
-    def _read_polygon(
-        cls, br: BinaryIO, corners: list[Vector3], version: int
-    ) -> list[Vector3]:
+    def _read_polygon(cls, br: BinaryIO, corners: list[Vector3], version: int) -> list[Vector3]:
         """Reads a single polygon from a binary stream.
 
         Args:
@@ -436,9 +420,7 @@ class Nav:
         return polygon
 
     @classmethod
-    def _read_areas(
-        cls, br: BinaryIO, polygons: list[list[Vector3]] | None, version: int
-    ) -> dict[int, NavArea]:
+    def _read_areas(cls, br: BinaryIO, polygons: list[list[Vector3]] | None, version: int) -> dict[int, NavArea]:
         """Reads all navigation areas from a binary stream.
 
         Args:
@@ -475,9 +457,7 @@ class Nav:
         """
         try:
             # Get the shortest path as a list of area IDs
-            path_ids = nx.shortest_path(
-                self.graph, source=start_id, target=end_id, weight=weight
-            )
+            path_ids = nx.shortest_path(self.graph, source=start_id, target=end_id, weight=weight)
             # Convert area IDs to NavArea objects
             return [self.graph.nodes[area_id]["node"] for area_id in path_ids]
         except nx.NetworkXNoPath:
@@ -514,14 +494,6 @@ class Nav:
         return cls(
             version=nav_dict["version"],
             sub_version=nav_dict["sub_version"],
-            areas={
-                int(area_id): NavArea.from_dict(area_dict)
-                for area_id, area_dict in nav_dict["areas"].items()
-            },
+            areas={int(area_id): NavArea.from_dict(area_dict) for area_id, area_dict in nav_dict["areas"].items()},
             is_analyzed=nav_dict["is_analyzed"],
         )
-
-
-NAV_DATA: dict[str, Nav] = {}
-for map_info in (Path(__file__).parent / "data/nav").iterdir():
-    NAV_DATA[map_info.stem] = Nav.from_json(map_info)
