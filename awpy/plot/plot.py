@@ -208,6 +208,62 @@ def plot(
 
     return figure, axes
 
+def _plot_positions(
+    map_name: str,
+    axes: Axes,
+    points: list[tuple[float, float, float]] | None = None,
+    lower_points_frac: float | None = 0.4,
+    point_settings: list[PointSettings] | None = None,
+) -> None:
+    """Plots points on a map, optionally customizing plotting settings.
+
+    This function plots player positions or any set of 3D coordinates onto a 2D map. It supports
+    customizations for each point, including marker style, size, color, labels, health (HP) bars,
+    armor bars, and directional indicators. It also adjusts transparency for points on different
+    map levels (upper/lower) based on the `lower_points_frac` parameter.
+
+    Args:
+        map_name (str): Name of the map to plot. E.g. "de_dust2"
+            ("dust2" or "de_dust2.png" will not work).
+        axes (matplotlib.axes.Axes): The matplotlib axes object to plot the points onto.
+        points (list[tuple[float, float, float]], optional):
+            list of points to plot. Each point is (X, Y, Z). Defaults to None.
+        lower_points_frac (optional, float): The factor by which to multiply
+            the opacity of a given point if it is on the lower level of the
+            map and `map_name` is NOT referencing the lower level (i.e.
+            `map_name` does not end in "_lower"). Defaults to 0.4.
+
+            If `map_name` is referencing the lower level of a map (i.e.
+            ends in "_lower") then this argument is ignored and lower points'
+            alpha is set to 1 and upper points' alpha is set to 0.
+        point_settings (list[dict], optional):
+            list of dictionaries with settings for each point. Each dictionary
+            should contain:
+            - 'marker': str (default 'o')
+            - 'color': str (default 'red')
+            - 'size': float (default 10)
+            - 'hp': int (0-100)
+            - 'armor': int (0-100)
+            - 'direction': tuple[float, float] (pitch, yaw in degrees)
+            - 'label': str (optional)
+
+    Raises:
+        ValueError: If the number of points does not match the number of `point_settings` entries.
+
+    Returns:
+        None
+    """
+    # Ensure points and settings have the same length
+    if point_settings is None:
+        point_settings = [PointSettings.from_dict({})] * len(points)
+    elif len(points) != len(point_settings):
+        settings_mismatch_err = "Number of points and point_settings do not match."
+        raise ValueError(settings_mismatch_err)
+    else:
+        point_settings = [PointSettings.from_dict(setting) for setting in point_settings]
+
+    plot_metadata = _generate_plot_metadata(map_name, points, point_settings, lower_points_frac)
+    _plot_positions_helper(plot_metadata, axes)
 
 def _generate_plot_metadata(
     map_name: str,
@@ -270,66 +326,28 @@ def _generate_plot_metadata(
 
     return PlotPositionMetadata(x_pos=x_pos, y_pos=y_pos, plot_settings=updated_settings)
 
+def _plot_positions_helper(player_pos_settings: PlotPositionMetadata, axes: Axes) -> None:
+    """Plots player positions and associated metadata on a given matplotlib axes.
 
-def _plot_positions(
-    map_name: str,
-    axes: Axes,
-    points: list[tuple[float, float, float]] | None = None,
-    lower_points_frac: float | None = 0.4,
-    point_settings: list[PointSettings] | None = None,
-) -> None:
-    """Plots points on a map, optionally customizing plotting settings.
-
-    This function plots player positions or any set of 3D coordinates onto a 2D map. It supports
-    customizations for each point, including marker style, size, color, labels, health (HP) bars,
-    armor bars, and directional indicators. It also adjusts transparency for points on different
-    map levels (upper/lower) based on the `lower_points_frac` parameter.
+    This function visualizes player positions on the map using the provided plot metadata.
+    It handles the plotting of markers, health (HP) bars, armor bars, directional arrows,
+    and optional labels for each player or point.
 
     Args:
-        map_name (str): Name of the map to plot. E.g. "de_dust2"
-            ("dust2" or "de_dust2.png" will not work).
-        axes (matplotlib.axes.Axes): The matplotlib axes object to plot the points onto.
-        points (list[tuple[float, float, float]], optional):
-            list of points to plot. Each point is (X, Y, Z). Defaults to None.
-        lower_points_frac (optional, float): The factor by which to multiply
-            the opacity of a given point if it is on the lower level of the
-            map and `map_name` is NOT referencing the lower level (i.e.
-            `map_name` does not end in "_lower"). Defaults to 0.4.
-
-            If `map_name` is referencing the lower level of a map (i.e.
-            ends in "_lower") then this argument is ignored and lower points'
-            alpha is set to 1 and upper points' alpha is set to 0.
-        point_settings (list[dict], optional):
-            list of dictionaries with settings for each point. Each dictionary
-            should contain:
-            - 'marker': str (default 'o')
-            - 'color': str (default 'red')
-            - 'size': float (default 10)
-            - 'hp': int (0-100)
-            - 'armor': int (0-100)
-            - 'direction': tuple[float, float] (pitch, yaw in degrees)
-            - 'label': str (optional)
-
-    Raises:
-        ValueError: If the number of points does not match the number of `point_settings` entries.
+        player_pos_settings (PlotPositionMetadata):
+            Contains the transformed (x, y) positions and plotting settings for each point.
+            Includes attributes such as marker style, color, size, HP, armor, direction,
+            label, and transparency (alpha).
+        axes (matplotlib.axes.Axes):
+            The matplotlib axes object where the positions and related visual elements
+            will be plotted.
 
     Returns:
         None
+
+    Raises:
+        ValueError: If data in `PlotPositionMetadata` is malformed or missing required fields.
     """
-    # Ensure points and settings have the same length
-    if point_settings is None:
-        point_settings = [PointSettings.from_dict({})] * len(points)
-    elif len(points) != len(point_settings):
-        settings_mismatch_err = "Number of points and point_settings do not match."
-        raise ValueError(settings_mismatch_err)
-    else:
-        point_settings = [PointSettings.from_dict(setting) for setting in point_settings]
-
-    plot_metadata = _generate_plot_metadata(map_name, points, point_settings, lower_points_frac)
-    _plot_positions_helper(plot_metadata, axes)
-
-
-def _plot_positions_helper(player_pos_settings: PlotPositionMetadata, axes: Axes) -> None:
     for transformed_x, transformed_y, settings in zip(
         player_pos_settings.x_pos, player_pos_settings.y_pos, player_pos_settings.plot_settings, strict=False
     ):
