@@ -3,8 +3,17 @@
 from __future__ import annotations  # Enables postponed evaluation of type hints
 
 from dataclasses import dataclass
+from typing import Self, TypedDict
 
 import numpy.typing as npt
+
+
+class Vector3Dict(TypedDict):
+    """Typed dictionary for Vector3."""
+
+    x: float
+    y: float
+    z: float
 
 
 @dataclass
@@ -71,3 +80,21 @@ class Vector3:
         if length == 0:
             return Vector3(0, 0, 0)
         return Vector3(self.x / length, self.y / length, self.z / length)
+
+    def to_dict(self) -> Vector3Dict:
+        """Convert Vector3 to dictionary."""
+        return {"x": self.x, "y": self.y, "z": self.z}
+
+    @classmethod
+    def from_dict(cls, data: Vector3Dict) -> Vector3:
+        """Create a Vector3 instance from a dictionary."""
+        return cls(data["x"], data["y"], data["z"])
+
+    def to_tuple(self) -> tuple[float, float, float]:
+        """Convert Vector3 to tuple."""
+        return (self.x, self.y, self.z)
+
+    @classmethod
+    def from_tuple(cls, data: tuple[float, float, float]) -> Self:
+        """Create a Vector3 instance from a tuple."""
+        return cls(data[0], data[1], data[2])

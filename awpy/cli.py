@@ -93,7 +93,7 @@ def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
 def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
     """Parse a nav file given its path."""
     nav_file = Path(nav_file)
-    nav_mesh = Nav(path=nav_file)
+    nav_mesh = Nav.from_path(path=nav_file)
     if not outpath:
         outpath = nav_file.with_suffix(".json")
     nav_mesh.to_json(path=outpath)
