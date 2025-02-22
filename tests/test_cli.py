@@ -2,13 +2,13 @@
 
 import json
 import os
+import pathlib
 import zipfile
-from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
 
-from awpy.cli import parse_demo, parse_nav
+import awpy.cli
 
 
 class TestCommandLine:
@@ -21,13 +21,13 @@ class TestCommandLine:
 
     def test_parse_nav_invalid_filepath(self):
         """Test the nav command with an invalid filepath."""
-        result = self.runner.invoke(parse_nav, ["xyz.nav"])
+        result = self.runner.invoke(awpy.cli.parse_nav, ["xyz.nav"])
         assert result.exit_code != 0
         assert isinstance(result.exception, SystemExit)
 
     def test_parse_nav(self):
         """Test that the nav command produces a json file."""
-        result = self.runner.invoke(parse_nav, ["tests/de_dust2.nav"])
+        result = self.runner.invoke(awpy.cli.parse_nav, ["tests/de_dust2.nav"])
         assert result.exit_code == 0
 
         json_name = "tests/de_dust2.json"
@@ -35,13 +35,13 @@ class TestCommandLine:
 
     def test_parse_demo_invalid_filepath(self):
         """Test the parse command with an invalid filepath."""
-        result = self.runner.invoke(parse_demo, ["xyz.dem"])
+        result = self.runner.invoke(awpy.cli.parse_demo, ["xyz.dem"])
         assert result.exit_code != 0
         assert isinstance(result.exception, SystemExit)
 
     def test_parse_demo_zip_creation(self):
         """Test that the parse command produces a zip file."""
-        result = self.runner.invoke(parse_demo, ["tests/vitality-vs-spirit-m2-nuke.dem"])
+        result = self.runner.invoke(awpy.cli.parse_demo, ["tests/vitality-vs-spirit-m2-nuke.dem"])
         assert result.exit_code == 0
 
         zip_name = "vitality-vs-spirit-m2-nuke.zip"
@@ -62,8 +62,8 @@ class TestCommandLine:
                 "rounds.parquet",
                 "header.json",
             ]
-            zipped_files = [Path(file).name for file in zipf.namelist()]
-            assert all(Path(file).name in zipped_files for file in expected_files)
+            zipped_files = [pathlib.Path(file).name for file in zipf.namelist()]
+            assert all(pathlib.Path(file).name in zipped_files for file in expected_files)
 
             # Check if there is an events/ folder and it contains files
             events_files = [file for file in zipf.namelist() if file.endswith(".parquet")]

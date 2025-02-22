@@ -8,7 +8,7 @@ import zipfile
 import polars as pl
 import pytest
 
-from awpy.demo import Demo
+import awpy.demo
 
 
 class TestDemo:
@@ -17,21 +17,21 @@ class TestDemo:
     def test_invalid_filepath(self):
         """Test the Demo object with an invalid filepath."""
         with pytest.raises(FileNotFoundError):
-            Demo("xyz.dem")
+            awpy.demo.Demo("xyz.dem")
 
-    def test_hltv_demo(self, parsed_hltv_demo: Demo):
+    def test_hltv_demo(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the Demo object with an HLTV demo."""
         assert parsed_hltv_demo.header["map_name"] == "de_nuke"
 
-    def test_faceit_demo(self, parsed_faceit_demo: Demo):
+    def test_faceit_demo(self, parsed_faceit_demo: awpy.demo.Demo):
         """Test the Demo object with a FACEIT demo."""
         assert parsed_faceit_demo.header["map_name"] == "de_mirage"
 
-    def test_mm_demo(self, parsed_mm_demo: Demo):
+    def test_mm_demo(self, parsed_mm_demo: awpy.demo.Demo):
         """Test the Demo object with an MM demo."""
         assert parsed_mm_demo.header["map_name"] == "de_ancient"
 
-    def test_compress(self, parsed_hltv_demo: Demo):
+    def test_compress(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test that the demo is zipped."""
         parsed_hltv_demo.compress()
 
@@ -65,7 +65,7 @@ class TestDemo:
                 header = json.load(f)
                 assert header["map_name"] == "de_nuke"
 
-    def test_hltv_rounds(self, parsed_hltv_demo: Demo):
+    def test_hltv_rounds(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an HLTV demo."""
         assert parsed_hltv_demo.rounds["reason"].to_list() == [
             "ct_killed",
@@ -88,24 +88,24 @@ class TestDemo:
             "t_killed",
         ]
 
-    def test_hltv_kills(self, parsed_hltv_demo: Demo):
+    def test_hltv_kills(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the kills DataFrame for an HLTV demo."""
         # Total kills
         assert len(parsed_hltv_demo.kills) == 111
 
-    def test_hltv_damages(self, parsed_hltv_demo: Demo):
+    def test_hltv_damages(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the damages DataFrame for an HLTV demo."""
         assert not parsed_hltv_demo.damages.is_empty()
 
-    def test_faceit_rounds(self, parsed_faceit_demo: Demo):
+    def test_faceit_rounds(self, parsed_faceit_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for a FACEIT demo."""
         assert len(parsed_faceit_demo.rounds) == 24
 
-    def test_faceit_kills(self, parsed_faceit_demo: Demo):
+    def test_faceit_kills(self, parsed_faceit_demo: awpy.demo.Demo):
         """Test the kills DataFrame for a FACEIT demo."""
         assert len(parsed_faceit_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 163
 
-    def test_mm_rounds(self, parsed_mm_demo: Demo):
+    def test_mm_rounds(self, parsed_mm_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an MM demo."""
         assert parsed_mm_demo.rounds["reason"].to_list() == [
             "ct_killed",
@@ -118,6 +118,6 @@ class TestDemo:
             "t_surrender",
         ]
 
-    def test_mm_kills(self, parsed_mm_demo: Demo):
+    def test_mm_kills(self, parsed_mm_demo: awpy.demo.Demo):
         """Test the kills DataFrame for an MM demo."""
         assert len(parsed_mm_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 42

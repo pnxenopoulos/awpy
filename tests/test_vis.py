@@ -3,20 +3,20 @@
 import pytest
 from click.testing import CliRunner
 
-from awpy.cli import get
-from awpy.data import AWPY_DATA_DIR
-from awpy.vector import Vector3
-from awpy.visibility import Triangle, VisibilityChecker
+import awpy.cli
+import awpy.data
+import awpy.vector
+import awpy.visibility
 
 
 def check_visibility_brute_force(
-    start: Vector3 | tuple | list,
-    end: Vector3 | tuple | list,
-    triangles: list[Triangle],
+    start: awpy.vector.Vector3 | tuple | list,
+    end: awpy.vector.Vector3 | tuple | list,
+    triangles: list[awpy.visibility.Triangle],
 ) -> bool:
     """Check visibility by testing against all triangles directly."""
-    start_vec = Vector3.from_input(start)
-    end_vec = Vector3.from_input(end)
+    start_vec = awpy.vector.Vector3.from_input(start)
+    end_vec = awpy.vector.Vector3.from_input(end)
 
     # Calculate ray direction and length
     direction = end_vec - start_vec
@@ -29,7 +29,7 @@ def check_visibility_brute_force(
 
     # Check intersection with each triangle
     for triangle in triangles:
-        t = VisibilityChecker._ray_triangle_intersection(None, start_vec, direction, triangle)
+        t = awpy.visibility.VisibilityChecker._ray_triangle_intersection(None, start_vec, direction, triangle)
         if t is not None and t <= distance:
             return False
 
@@ -43,13 +43,13 @@ class TestVisibility:
     def setup_runner(self):
         """Setup CLI runner."""
         self.runner = CliRunner()
-        self.runner.invoke(get, ["usd", "de_dust2"])
+        self.runner.invoke(awpy.cli.get, ["usd", "de_dust2"])
 
     def test_basic_visibility(self):
         """Tests basic visibility for de_dust2."""
-        de_dust2_tri = AWPY_DATA_DIR / "tri" / "de_dust2.tri"
-        tris = VisibilityChecker.read_tri_file(de_dust2_tri)
-        vc = VisibilityChecker(path=de_dust2_tri)
+        de_dust2_tri = awpy.data.TRIS_DIR / "de_dust2.tri"
+        tris = awpy.visibility.VisibilityChecker.read_tri_file(de_dust2_tri)
+        vc = awpy.visibility.VisibilityChecker(path=de_dust2_tri)
 
         test_points = [
             # Structured as (point1, point2, expected_visibility)

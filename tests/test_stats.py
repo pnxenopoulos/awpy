@@ -3,19 +3,19 @@
 import polars as pl
 import pytest
 
+import awpy.demo
 import awpy.stats
-from awpy.demo import Demo
 
 
 @pytest.fixture
-def adr_results(parsed_hltv_demo: Demo) -> pl.DataFrame:
+def adr_results(parsed_hltv_demo: awpy.demo.Demo) -> pl.DataFrame:
     """Fixture that returns ADR results filtered for the 'all' side."""
     adr_df = awpy.stats.adr(parsed_hltv_demo, team_dmg=True)
     return adr_df.filter(pl.col("side") == "all")
 
 
 @pytest.fixture
-def kast_results(parsed_hltv_demo: Demo) -> pl.DataFrame:
+def kast_results(parsed_hltv_demo: awpy.demo.Demo) -> pl.DataFrame:
     """Fixture that returns ADR results filtered for the 'all' side."""
     kast_df = awpy.stats.kast(parsed_hltv_demo)
     return kast_df.filter(pl.col("side") == "all")
@@ -80,7 +80,7 @@ class TestStats:
             f"KAST for {name} is {round(actual_kast, 1)}, expected {expected_kast}"
         )
 
-    def test_rating(self, parsed_hltv_demo: Demo):
+    def test_rating(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the rating function. Checks that ordering is correct."""
         rating_df = awpy.stats.rating(parsed_hltv_demo).filter(pl.col("side") == "all").sort("rating")
         assert len(rating_df) == 10, f"Expected 10 players, got {len(rating_df)}"

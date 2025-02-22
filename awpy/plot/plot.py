@@ -65,7 +65,7 @@ def plot(  # noqa: PLR0915
     map_name = map_name.removesuffix("_lower")
 
     # Check for the main map image
-    map_img_path = awpy.data.AWPY_DATA_DIR / "maps" / image
+    map_img_path = awpy.data.MAPS_DIR / image
     if not map_img_path.exists():
         map_img_path_err = f"Map image not found: {map_img_path}. Might need to call `awpy get maps`"
         raise FileNotFoundError(map_img_path_err)
@@ -492,7 +492,7 @@ def heatmap(
         map_name = map_name.removesuffix("_lower")
 
     # Load and display the map
-    map_img_path = awpy.data.AWPY_DATA_DIR / "maps" / image
+    map_img_path = awpy.data.MAPS_DIR / image
     if not map_img_path.exists():
         map_img_path_err = f"Map image not found: {map_img_path}. Might need to call `awpy get maps`"
         raise FileNotFoundError(map_img_path_err)
