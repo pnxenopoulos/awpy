@@ -17,14 +17,26 @@ $newPatch = @"
 #    This regex finds the block starting with AVAILABLE_PATCHES = { and ending with the matching closing brace.
 $contents = Get-Content $initFile -Raw
 $pattern = '(?s)(AVAILABLE_PATCHES\s*=\s*\{)(.*?)(\n\})'
-$contents = [regex]::Replace($contents, $pattern, {
+
+# Initialize a flag to track if an update was made.
+$patchUpdated = $false
+
+$contentsUpdated = [regex]::Replace($contents, $pattern, {
     param($match)
-    # If the patch key already exists, don’t add it again.
+    # If the patch key already exists, don't add it again.
     if ($match.Groups[2].Value -match $env:latestPatchId) {
         return $match.Value
     } else {
-        # Insert the new patch entry before the final closing brace of the dict.
+        $patchUpdated = $true
+        # Insert the new patch entry before the closing brace.
         return $match.Groups[1].Value + $match.Groups[2].Value + "`n$newPatch" + $match.Groups[3].Value
     }
 })
-Set-Content $initFile -Value $contents
+Set-Content $initFile -Value $contentsUpdated
+
+# Return true if patch was updated, false otherwise.
+if ($patchUpdated) {
+    Write-Output $true
+} else {
+    Write-Output $false
+}

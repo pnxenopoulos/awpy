@@ -3,6 +3,8 @@
 name: artifacts
 
 on:
+  schedule:
+    - cron: '0 0 * * *'   # runs daily at midnight UTC
   pull_request:
     branches: [main]
     paths:
@@ -10,13 +12,6 @@ on:
       - "tests/**"
       - "pyproject.toml"
   workflow_dispatch:
-
-# on:
-#   push:
-#     branches: [main]
-#   schedule:
-#     - cron: "49 1 * * *"
-#   workflow_dispatch:
 
 env:
   PYTHON_VERSION: 3.13
@@ -46,54 +41,71 @@ jobs:
       - name: Setup SteamCMD
         uses: CyberAndrii/setup-steamcmd@v1
 
-      - name: Install Counter-Strike 2
-        run: |
-          $csDir = Join-Path (Get-Location) "cs_go"
-          steamcmd +force_install_dir $csDir +login anonymous +app_update ${{ env.CS2_APP_ID }} +quit
-
       - name: Get Counter-Strike 2 Version
         run: |
           $appInfoOutput = steamcmd +login anonymous +app_info_print 730 +logoff +quit | Out-String
           if ($appInfoOutput -match '"branches"\s*\{\s*"public"\s*\{\s*"buildid"\s*"(\d+)"\s*"timeupdated"\s*"(\d+)"') {
               $latestPatchId = $matches[1]
               $latestPatchTimestamp = $matches[2]
-              Write-Output "BuildID: $buildid, Timestamp: $timestamp"
+              # Export the variables for later steps:
+              echo "LATEST_PATCH_ID=$latestPatchId" >> $env:GITHUB_ENV
+              echo "LATEST_PATCH_TIMESTAMP=$latestPatchTimestamp" >> $env:GITHUB_ENV
           } else {
               throw "Error: buildid and timestamp not found in CS2 app info output."
           }
-          echo "Current Counter-Strike 2 Version: $latestPatchId (Updated: $latestPatchTimestamp)"
+          Write-Host "Current Counter-Strike 2 Version: $latestPatchId (Updated: $latestPatchTimestamp)"
+
+      - name: Update Latest Patch
+        id: update_patch
+        run: |
+          # Run the update script and capture its output (expected "true" or "false")
+          $wasPatchUpdated = .\scripts\update-latest-patch.ps1
+          Write-Host "Patch updated? $wasPatchUpdated"
+          # Set a step output so subsequent steps can conditionally run
+          echo "wasPatchUpdated=$wasPatchUpdated" >> $env:GITHUB_OUTPUT
+      
+      - name: Install Counter-Strike 2
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          $csDir = Join-Path (Get-Location) "cs_go"
+          steamcmd +force_install_dir $csDir +login anonymous +app_update ${{ env.CS2_APP_ID }} +quit
 
       - name: Install Source2Viewer-CLI
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
         run: |
-          Invoke-WebRequest -Uri ${{ env.SOURCE2_VIEWER_URL }} -OutFile ".\cli-windows-x64.zip"
+          Invoke-WebRequest -Uri $env:SOURCE2_VIEWER_URL -OutFile ".\cli-windows-x64.zip"
           Expand-Archive -Path .\cli-windows-x64.zip -DestinationPath . -Force
 
       - name: Generate Triangles
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
         run: |
           Get-ChildItem -Force
           .\scripts\generate-tris.ps1 -inputPath "cs_go\game\csgo\maps"
 
       - name: Generate Map Data
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
         run: |
           Get-ChildItem -Force
           .\scripts\generate-maps.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
 
       - name: Generate Nav
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
         run: |
           Get-ChildItem -Force
           .\scripts\generate-navs.ps1 -inputPath "cs_go\game\csgo\maps"
 
       - name: Generate Spawns
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
         run: |
           Get-ChildItem -Force
           .\scripts\generate-spawns.ps1 -inputPath "cs_go\game\csgo\maps"
 
       - name: Upload Artifacts to Blob Storage
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          echo "Uploading artifacts to Blob Storage..."
-
-      - name: Update Latest Patch
-        run: |
-          .\scripts\update-latest-patch.ps1
-          uv run ruff format .
-          uv run awpy artifacts
+          # Use the environment variable exported earlier (in PowerShell, use $env:LATEST_PATCH_ID)
+          # wrangler r2 object put "$env:LATEST_PATCH_ID/dataset.csv" --file=dataset.csv
+          echo "Uploading artifacts for patch $env:LATEST_PATCH_ID
