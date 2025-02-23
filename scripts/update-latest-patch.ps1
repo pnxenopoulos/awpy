@@ -1,42 +1,50 @@
 # Path to the file you want to update
 $initFile = "awpy\data\__init__.py"
 
-# 1. Update the CURRENT_BUILD_ID line.
-(Get-Content $initFile) -replace 'CURRENT_BUILD_ID\s*=\s*\d+', "CURRENT_BUILD_ID = $env:latestPatchId" | Set-Content $initFile
+# Read the file contents once.
+$contents = Get-Content $initFile -Raw
 
-# 2. Define the new patch entry as a multiline string.
+# Extract the current build id using a regex.
+$currentBuildIdMatch = [regex]::Match($contents, 'CURRENT_BUILD_ID\s*=\s*(\d+)')
+if ($currentBuildIdMatch.Success -and $currentBuildIdMatch.Groups[1].Value -eq $env:LATEST_PATCH_ID) {
+    # If the build ids are the same, no update is needed.
+    Write-Output $false
+    exit
+}
+
+# Update the CURRENT_BUILD_ID line.
+$contents = $contents -replace 'CURRENT_BUILD_ID\s*=\s*\d+', "CURRENT_BUILD_ID = $env:LATEST_PATCH_ID"
+
+# Define the new patch entry as a multiline string.
 $newPatch = @"
-    $env:latestPatchId: {
-        "url": "https://steamdb.info/patchnotes/$env:latestPatchId/",
-        "datetime": datetime.datetime.fromtimestamp($env:latestPatchTimestamp, datetime.UTC),
-        "available": POSSIBLE_ARTIFACTS,
-    },
+    ${env:LATEST_PATCH_ID}: {
+        "url": "https://steamdb.info/patchnotes/${env:LATEST_PATCH_ID}/",
+        "datetime": datetime.datetime.fromtimestamp(${env:LATEST_PATCH_TIMESTAMP}, datetime.UTC),
+        "available": POSSIBLE_ARTIFACTS
+    }
 "@.Trim()
 
-# 3. Insert the new patch entry into the AVAILABLE_PATCHES dictionary.
-#    This regex finds the block starting with AVAILABLE_PATCHES = { and ending with the matching closing brace.
-$contents = Get-Content $initFile -Raw
-$pattern = '(?s)(AVAILABLE_PATCHES\s*=\s*\{)(.*?)(\n\})'
-
-# Initialize a flag to track if an update was made.
-$patchUpdated = $false
-
-$contentsUpdated = [regex]::Replace($contents, $pattern, {
+# Insert the new patch entry into the AVAILABLE_PATCHES dictionary.
+$pattern = '(?s)(AVAILABLE_PATCHES\s*=\s*\{)(.*?)(\})'
+$contents = [regex]::Replace($contents, $pattern, {
     param($match)
-    # If the patch key already exists, don't add it again.
-    if ($match.Groups[2].Value -match $env:latestPatchId) {
+    # If the patch key already exists, return the original match.
+    if ($match.Groups[2].Value -match ${env:LATEST_PATCH_ID}) {
         return $match.Value
     } else {
-        $patchUpdated = $true
-        # Insert the new patch entry before the closing brace.
-        return $match.Groups[1].Value + $match.Groups[2].Value + "`n$newPatch" + $match.Groups[3].Value
+        # Always add the new patch first, followed by existing content (if any)
+        $existingContent = $match.Groups[2].Value.Trim()
+        if ($existingContent -eq "") {
+            $insert = "`n$newPatch`n"
+        } else {
+            $insert = "`n$newPatch,`n$existingContent"
+        }
+        return $match.Groups[1].Value + $insert + $match.Groups[3].Value
     }
 })
-Set-Content $initFile -Value $contentsUpdated
 
-# Return true if patch was updated, false otherwise.
-if ($patchUpdated) {
-    Write-Output $true
-} else {
-    Write-Output $false
-}
+# Write the updated content back to the file.
+Set-Content $initFile -Value $contents
+
+# Return true to indicate a change was made.
+Write-Output $true
