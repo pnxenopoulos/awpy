@@ -53,9 +53,15 @@ jobs:
 
       - name: Get Counter-Strike 2 Version
         run: |
-          $csDir = Join-Path (Get-Location) "cs_go"
-          $csVersion = Get-Content "$csDir\game\csgo\steam.inf" | Select-String -Pattern "ClientVersion" | ForEach-Object { $_ -replace "ClientVersion=", "" }
-          echo "Counter-Strike 2 Version: $csVersion"
+          $appInfoOutput = steamcmd +login anonymous +app_info_print 730 +logoff +quit | Out-String
+          if ($appInfoOutput -match '"branches"\s*\{\s*"public"\s*\{\s*"buildid"\s*"(\d+)"\s*"timeupdated"\s*"(\d+)"') {
+              $latestPatchId = $matches[1]
+              $latestPatchTimestamp = $matches[2]
+              Write-Output "BuildID: $buildid, Timestamp: $timestamp"
+          } else {
+              throw "Error: buildid and timestamp not found in CS2 app info output."
+          }
+          echo "Current Counter-Strike 2 Version: $latestPatchId (Updated: $latestPatchTimestamp)"
 
       - name: Install Source2Viewer-CLI
         run: |
@@ -81,3 +87,13 @@ jobs:
         run: |
           Get-ChildItem -Force
           .\scripts\generate-spawns.ps1 -inputPath "cs_go\game\csgo\maps"
+
+      - name: Upload Artifacts to Blob Storage
+        run: |
+          echo "Uploading artifacts to Blob Storage..."
+
+      - name: Update Latest Patch
+        run: |
+          .\scripts\update-latest-patch.ps1
+          uv run ruff format .
+          uv run awpy artifacts
