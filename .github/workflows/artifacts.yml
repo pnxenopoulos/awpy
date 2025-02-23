@@ -60,7 +60,7 @@ jobs:
         run: |
           # Run the update script and capture its output (expected "true" or "false")
           $wasPatchUpdated = .\scripts\update-latest-patch.ps1
-          Write-Host "Patch updated? $wasPatchUpdated"
+          Write-Host "Patch needs to be updated? $wasPatchUpdated"
           # Set a step output so subsequent steps can conditionally run
           echo "wasPatchUpdated=$wasPatchUpdated" >> $env:GITHUB_OUTPUT
       
@@ -107,5 +107,16 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: |
             # Use the environment variable exported earlier (in PowerShell, use $env:LATEST_PATCH_ID)
-            # wrangler r2 object put "$env:LATEST_PATCH_ID/dataset.csv" --file=dataset.csv
-            echo "Uploading artifacts for patch $env:LATEST_PATCH_ID
+            wrangler r2 object put "$env:LATEST_PATCH_ID/maps.zip" --file=maps.zip
+            wrangler r2 object put "$env:LATEST_PATCH_ID/navs.zip" --file=navs.zip
+            wrangler r2 object put "$env:LATEST_PATCH_ID/tris.zip" --file=tris.zip
+            echo "Uploading artifacts for patch $env:LATEST_PATCH_ID"
+
+      - name: Push changes to GitHub
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add awpy/data/__init__.py
+          git commit -m "Update awpy/data/__init__.py with latest patch info ($env:LATEST_PATCH_ID)" || echo "No changes detected"
+          git push origin HEAD:${{ github.head_ref }}  # Make it main otherwise
