@@ -105,7 +105,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        command: |
-          # Use the environment variable exported earlier (in PowerShell, use $env:LATEST_PATCH_ID)
-          # wrangler r2 object put "$env:LATEST_PATCH_ID/dataset.csv" --file=dataset.csv
-          echo "Uploading artifacts for patch $env:LATEST_PATCH_ID
+          command: |
+            # Use the environment variable exported earlier (in PowerShell, use $env:LATEST_PATCH_ID)
+            # wrangler r2 object put "$env:LATEST_PATCH_ID/dataset.csv" --file=dataset.csv
+            echo "Uploading artifacts for patch $env:LATEST_PATCH_ID
