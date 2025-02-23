@@ -106,10 +106,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: |
-            wrangler r2 object put "$env:LATEST_PATCH_ID/maps.zip" --file=maps.zip
-            wrangler r2 object put "$env:LATEST_PATCH_ID/navs.zip" --file=navs.zip
-            wrangler r2 object put "$env:LATEST_PATCH_ID/tris.zip" --file=tris.zip
-            echo "Uploading artifacts for patch $env:LATEST_PATCH_ID"
+            wrangler r2 object put "${{ env.LATEST_PATCH_ID }}/maps.zip" --file=maps.zip
+            wrangler r2 object put "${{ env.LATEST_PATCH_ID }}/navs.zip" --file=navs.zip
+            wrangler r2 object put "${{ env.LATEST_PATCH_ID }}/tris.zip" --file=tris.zip
 
       - name: Log R2 Upload Message
         if: steps.update_patch.outputs.wasPatchUpdated == 'true'
