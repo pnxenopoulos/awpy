@@ -100,17 +100,21 @@ jobs:
           Get-ChildItem -Force
           .\scripts\generate-spawns.ps1 -inputPath "cs_go\game\csgo\maps"
 
-      - name: Upload Artifacts to Blob Storage
+      - name: Upload Artifacts to R2
         if: steps.update_patch.outputs.wasPatchUpdated == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: |
-            # Use the environment variable exported earlier (in PowerShell, use $env:LATEST_PATCH_ID)
             wrangler r2 object put "$env:LATEST_PATCH_ID/maps.zip" --file=maps.zip
             wrangler r2 object put "$env:LATEST_PATCH_ID/navs.zip" --file=navs.zip
             wrangler r2 object put "$env:LATEST_PATCH_ID/tris.zip" --file=tris.zip
             echo "Uploading artifacts for patch $env:LATEST_PATCH_ID"
+
+      - name: Log R2 Upload Message
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          echo "Uploading artifacts for patch $LATEST_PATCH_ID"
 
       - name: Push changes to GitHub
         if: steps.update_patch.outputs.wasPatchUpdated == 'true'
