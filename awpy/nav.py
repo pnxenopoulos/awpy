@@ -220,9 +220,7 @@ class NavArea:
             polygons: Optional list of predefined polygons for version 31+.
         """
         area_id = struct.unpack("I", br.read(4))[0]
-        dynamic_attribute_flags = DynamicAttributeFlags(
-            struct.unpack("q", br.read(8))[0]
-        )
+        dynamic_attribute_flags = DynamicAttributeFlags(struct.unpack("q", br.read(8))[0])
         hull_index = br.read(1)[0]
 
         corners: list[Vector3] = []
@@ -237,11 +235,7 @@ class NavArea:
 
         br.read(4)  # Skip almost always 0
 
-        connections = [
-            conn.area_id
-            for _ in range(len(corners))
-            for conn in cls.read_connections(br)
-        ]
+        connections = [conn.area_id for _ in range(len(corners)) for conn in cls.read_connections(br)]
 
         br.read(5)  # Skip LegacyHidingSpotData count and LegacySpotEncounterData count
 
@@ -292,9 +286,7 @@ class NavArea:
         return cls(
             area_id=data["area_id"],
             hull_index=data["hull_index"],
-            dynamic_attribute_flags=DynamicAttributeFlags(
-                data["dynamic_attribute_flags"]
-            ),
+            dynamic_attribute_flags=DynamicAttributeFlags(data["dynamic_attribute_flags"]),
             corners=[Vector3.from_dict(c) for c in data["corners"]],
             connections=data["connections"],
             ladders_above=data["ladders_above"],
@@ -356,7 +348,6 @@ class Nav:
                 center_2d=(area.centroid.x, area.centroid.y),
             )  # Add node with area_id and size as attributes
 
-
         # Add edges
         for _aid, area in self.areas.items():
             for connected_area_id in area.connected_areas:
@@ -380,17 +371,14 @@ class Nav:
 
                 # Smaller relative speed increases the effective distance
                 area_time_adjusted_distance = dist_weight / area_relative_speed
-                connected_area_time_adjusted_distance = (
-                    dist_weight / connected_area_relative_speed
-                )
+                connected_area_time_adjusted_distance = dist_weight / connected_area_relative_speed
 
                 self.graph.add_edge(
                     area.area_id,
                     connected_area_id,
                     size=size_weight,
                     dist=dist_weight,
-                    time_adjusted=area_time_adjusted_distance / 2
-                    + connected_area_time_adjusted_distance / 2,
+                    time_adjusted=area_time_adjusted_distance / 2 + connected_area_time_adjusted_distance / 2,
                 )  # Add an edge between connected areas
 
     @classmethod
@@ -412,9 +400,7 @@ class Nav:
         with open(nav_path, "rb") as f:
             magic = struct.unpack("I", f.read(4))[0]
             if magic != cls.MAGIC:
-                unexpected_magic_msg = (
-                    f"Unexpected magic: {magic:X}, expected {cls.MAGIC:X}"
-                )
+                unexpected_magic_msg = f"Unexpected magic: {magic:X}, expected {cls.MAGIC:X}"
                 raise ValueError(unexpected_magic_msg)
 
             version = struct.unpack("I", f.read(4))[0]
@@ -447,9 +433,7 @@ class Nav:
 
     def __repr__(self) -> str:
         """Returns string representation of Nav."""
-        return (
-            f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
-        )
+        return f"Nav(version={self.version}.{self.sub_version}, areas={len(self.areas)})"
 
     @classmethod
     def _read_polygons(cls, br: BinaryIO, version: int) -> list[list[Vector3]]:
@@ -475,9 +459,7 @@ class Nav:
         return polygons
 
     @classmethod
-    def _read_polygon(
-        cls, br: BinaryIO, corners: list[Vector3], version: int
-    ) -> list[Vector3]:
+    def _read_polygon(cls, br: BinaryIO, corners: list[Vector3], version: int) -> list[Vector3]:
         """Reads a single polygon from a binary stream.
 
         Args:
@@ -498,9 +480,7 @@ class Nav:
         return polygon
 
     @classmethod
-    def _read_areas(
-        cls, br: BinaryIO, polygons: list[list[Vector3]] | None, version: int
-    ) -> dict[int, NavArea]:
+    def _read_areas(cls, br: BinaryIO, polygons: list[list[Vector3]] | None, version: int) -> dict[int, NavArea]:
         """Reads all navigation areas from a binary stream.
 
         Args:
@@ -534,9 +514,7 @@ class Nav:
         return min(self.areas.values(), key=lambda area: area.edge_distance(position))
 
     def find_closest_area_centroid(self, position: Vector3) -> NavArea:
-        return min(
-            self.areas.values(), key=lambda area: area.centroid_distance(position)
-        )
+        return min(self.areas.values(), key=lambda area: area.centroid_distance(position))
 
     def find_path(
         self,
@@ -601,9 +579,7 @@ class Nav:
                             self.graph.nodes[end_id]["center_2d"],
                         )
                     case int(), Vector3():
-                        total_distance = distance.euclidean(
-                            self.graph.nodes[start_id]["center_2d"], end_id
-                        )
+                        total_distance = distance.euclidean(self.graph.nodes[start_id]["center_2d"], end_id)
             else:
                 # Calculate start and end distances
                 start_distance = (
@@ -615,14 +591,9 @@ class Nav:
                     else self.graph[start_area][path_ids[1]][weight]
                 )
                 # Calculate middle path distance (excluding first and last)
-                middle_distance = sum(
-                    self.graph[u][v][weight]
-                    for u, v in itertools.pairwise(path_ids[1:-1])
-                )
+                middle_distance = sum(self.graph[u][v][weight] for u, v in itertools.pairwise(path_ids[1:-1]))
                 end_distance = (
-                    distance.euclidean(
-                        end_id.to_tuple_2d(), self.graph.nodes[-2]["center_2d"]
-                    )
+                    distance.euclidean(end_id.to_tuple_2d(), self.graph.nodes[-2]["center_2d"])
                     if isinstance(end_id, Vector3)
                     else self.graph[path_ids[-2]][end_area][weight]
                 )
@@ -667,10 +638,7 @@ class Nav:
         return cls(
             version=nav_dict["version"],
             sub_version=nav_dict["sub_version"],
-            areas={
-                int(area_id): NavArea.from_dict(area_dict)
-                for area_id, area_dict in nav_dict["areas"].items()
-            },
+            areas={int(area_id): NavArea.from_dict(area_dict) for area_id, area_dict in nav_dict["areas"].items()},
             is_analyzed=nav_dict["is_analyzed"],
         )
 
