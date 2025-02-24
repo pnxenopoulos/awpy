@@ -1,24 +1,26 @@
 Data
 ===========
 
-This module contains both data, primarily related to map (e.g., images, navigation meshes and USD files). For example, you can get basic map information with `MAP_DATA`:
+Awpy packages data artifacts (map images, parsed navigation meshes, map triangles, etc.) separately from the code.
+These artifacts are liable to change with game updates. We try to maintain as much history as we can, but we can't guarantee that we have all the data for all game versions.
+Data is stored on `awpycs.com` as `awpycs.com/{patch}/{artifact}.{filetype}`. Most things like map images, parsed navigation meshes and map triangles are stored as `.zip` files.
+The triangles are the largest (roughly 20MB), but most are a few MB compressed.
+To see what artifacts are available and what the current patch is, you can run
 
-.. code-block:: python
+.. code-block:: bash
 
-    from awpy.data.map_data import MAP_DATA
+    awpy artifacts
 
-`MAP_DATA` is a dictionary where the top-level keys are map names (strings) and the next-level keys are scaling properties for the map. Below, we show an example for one map.
+To get a specific artifact, you can run something like the following, which will grab all the triangles for the current patch.
 
-.. code-block:: json
+.. code-block:: bash
 
-    "ar_baggage": {
-        "pos_x": -1316,
-        "pos_y": 1288,
-        "scale": 2.539062,
-        "rotate": 1,
-        "zoom": 1.3,
-        "selections": [
-            {"name": "default", "altitude_max": 10000, "altitude_min": -5},
-            {"name": "lower", "altitude_max": -5, "altitude_min": -10000},
-        ],
-    }
+    awpy get tris
+
+If you want to specify a patch, you can do so with the `--patch` flag.
+
+.. code-block:: bash
+
+    awpy get tris --patch 123456789
+
+The data is stored in the Awpy directory, which is `$HOME/.awpy`

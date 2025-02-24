@@ -20,7 +20,7 @@ if (-not (Test-Path $inputPath)) {
 
 # Process each .vpk file found in the input directory, skipping those with unwanted substrings.
 Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
-    $_.Name -notlike "*_preview*" -and $_.Name -notlike "*_vanity*" -and $_.Name -notlike "*lobby_*"
+    $_.Name -notlike "*_preview*" -and $_.Name -notlike "*_vanity*" -and $_.Name -notlike "*lobby_*"  -and $_.Name -notlike "*graphics_*"
 } | ForEach-Object {
     $filePath = $_.FullName
     $fileNameWithoutExtension = $_.BaseName
@@ -98,6 +98,10 @@ function Get-DirectoryContentHash {
     $hashHex = [BitConverter]::ToString($hashBytes) -replace '-', ''
     return $hashHex
 }
+
+# Compute and print the hash of the zip archive using SHA256.
+$fileHash = Get-FileHash -Path $zipPath -Algorithm SHA256
+Write-Host "Zip file hash (SHA256): $($fileHash.Hash)" -ForegroundColor Cyan
 
 # Compute and print the hash of the contents of the output directory (the spawn JSON files).
 $contentHash = Get-DirectoryContentHash -DirectoryPath $outputDirectory

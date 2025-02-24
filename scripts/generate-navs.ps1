@@ -60,7 +60,7 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
 }
 
 # Create a zip archive of the output JSON files.
-$zipPath = Join-Path (Split-Path $outputDirectory) "nav.zip"
+$zipPath = Join-Path (Split-Path $outputDirectory) "navs.zip"
 Compress-Archive -Path (Join-Path $outputDirectory "*") -DestinationPath $zipPath -Force
 
 if (Test-Path $zipPath) {
@@ -102,6 +102,10 @@ function Get-DirectoryContentHash {
     $hashHex = [BitConverter]::ToString($hashBytes) -replace '-', ''
     return $hashHex
 }
+
+# Compute and print the hash of the zip archive using SHA256.
+$fileHash = Get-FileHash -Path $zipPath -Algorithm SHA256
+Write-Host "Zip file hash (SHA256): $($fileHash.Hash)" -ForegroundColor Cyan
 
 # Compute and print the hash of the contents of the output directory (ignoring zip metadata).
 $contentHash = Get-DirectoryContentHash -DirectoryPath $outputDirectory

@@ -3,8 +3,10 @@ name = "awpy"
 version = "2.0.0b5"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
-authors = [{ name = "Peter Xenopoulos", email = "pnxenopoulos@gmail.com" }]
-keywords = ["counter-strike 2", "counter-strike", "csgo", "esports", "sports-analytics"]
+authors = [
+    { name = "Peter Xenopoulos", email = "pnxenopoulos@gmail.com" }
+]
+keywords = ["counter-strike 2", "counter-strike", "counter strike 2", "counter strike", "cs2", "csgo", "esports", "sports-analytics"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Intended Audience :: Science/Research",
@@ -67,9 +69,6 @@ testpaths = ["tests"]
 [tool.setuptools]
 include-package-data = true
 packages             = ["awpy"]
-
-[tool.setuptools.package-data]
-"*" = ["data/maps/*.png"]
 
 # Ruff config
 [tool.ruff]

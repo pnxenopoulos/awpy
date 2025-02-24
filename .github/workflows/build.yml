@@ -59,6 +59,8 @@ jobs:
       - name: Test
         shell: bash
         run: |
-          uv run awpy get tri
+          uv run awpy get maps
+          uv run awpy get navs
+          uv run awpy get tris
           uv run coverage run -m pytest --durations=10
           uv run coverage report -m

@@ -17,10 +17,10 @@
 
 ## Installation
 
-To install Awpy (it is currently in beta), you can run
+To install Awpy, you can run
 
 ```
-pip install --pre awpy
+pip install awpy
 ```
 
 > [!NOTE] > Awpy requires [Python](https://www.python.org/downloads/) >= 3.10. To update the library, just run `pip install --upgrade awpy`. To check your current Awpy version, run `pip show awpy`.
@@ -35,8 +35,9 @@ Using Awpy is easy. Just find a demo you want to analyze and use the example bel
 ```python
 from awpy import Demo
 
-# Simply call `Demo(path="...")` to parse a demo
-dem = Demo("natus-vincere-vs-virtus-pro-m1-overpass.dem")
+# Create and parse demo
+dem = Demo("g2-vs-navi.dem")
+dem.parse()
 
 # Access various dictionaries & dataframes
 dem.header
@@ -47,8 +48,13 @@ dem.damages
 dem.bomb
 dem.smokes
 dem.infernos
-dem.weapon_fires
+dem.shots
+dem.footsteps
 dem.ticks
+
+# The dataframes are Polars dataframes
+# to transform to Pandas, just do .to_pandas()
+dem.ticks.to_pandas()
 ```
 
 > [!TIP]

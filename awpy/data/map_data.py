@@ -6,8 +6,6 @@ from typing import TypedDict
 
 import vdf
 
-MAP_DATA_PATH = Path(__file__).parent / "maps/map_data.json"
-
 
 class MapData(TypedDict):
     """Type of the data for a map. `pos_x` is upper left world coordinate."""
@@ -53,7 +51,3 @@ def update_map_data_file(new_map_data: dict[str, MapData], filepath: Path) -> No
     with open(filepath, "w") as json_file:
         json.dump(new_map_data, json_file)
         json_file.write("\n")
-
-
-with open(MAP_DATA_PATH) as json_file:
-    MAP_DATA: dict[str, MapData] = json.load(json_file)

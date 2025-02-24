@@ -1,17 +1,15 @@
 """Command-line interface for Awpy."""
 
-import zipfile
 from pathlib import Path
 from typing import Literal
 
 import click
-import requests
 from loguru import logger
-from tqdm import tqdm
 
+import awpy.data
 import awpy.data.map_data
+import awpy.data.utils
 from awpy import Demo, Nav, Spawns
-from awpy.data import AWPY_DATA_DIR, TRI_URL
 from awpy.visibility import VphysParser
 
 
@@ -22,51 +20,31 @@ def awpy_cli() -> None:
 
 @awpy_cli.command(
     name="get",
-    help="""
-    Get Counter-Strike 2 resources like parsed nav meshes, spawns or triangle files. \n
-    Available choices: 'tri', 'map', 'nav', 'spawn'""",
+    help=f"""
+    Get Counter-Strike 2 resources like parsed map data or nav meshes. \n
+    Available choices: {awpy.data.POSSIBLE_ARTIFACTS}""",
 )
-@click.argument("resource_type", type=click.Choice(["tri", "nav", "spawn"]))
-def get(resource_type: Literal["tri"]) -> None:
+@click.argument("resource_type", type=click.Choice(awpy.data.POSSIBLE_ARTIFACTS))
+@click.option("--patch", type=int, help="Patch number to fetch the resources.", default=17459940)
+def get(resource_type: Literal["maps", "navs", "tris"], *, patch: int = 17459940) -> None:
     """Get a resource given its type and name."""
-    if not AWPY_DATA_DIR.exists():
-        AWPY_DATA_DIR.mkdir(parents=True, exist_ok=True)
-        awpy_data_dir_creation_msg = f"Created awpy data directory at {AWPY_DATA_DIR}"
-        logger.debug(awpy_data_dir_creation_msg)
+    awpy.data.utils.create_data_dir_if_not_exists()
 
-    if resource_type == "tri":
-        tri_data_dir = AWPY_DATA_DIR / "tri"
-        tri_data_dir.mkdir(parents=True, exist_ok=True)
-        tri_file_path = tri_data_dir / "tris.zip"
-        response = requests.get(TRI_URL, stream=True, timeout=300)
-        total_size = int(response.headers.get("content-length", 0))
-        block_size = 1024
-        with (
-            tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar,
-            open(tri_file_path, "wb") as file,
-        ):
-            for data in response.iter_content(block_size):
-                progress_bar.update(len(data))
-                file.write(data)
+    if resource_type in awpy.data.POSSIBLE_ARTIFACTS:
+        awpy.data.utils.fetch_resource(resource_type, patch)
+    else:
+        resource_not_impl_err_msg = f"Resource type {resource_type} is not yet implemented."
+        raise NotImplementedError(resource_not_impl_err_msg)
 
-        # Unzip the file
-        try:
-            with zipfile.ZipFile(tri_file_path, "r") as zip_ref:
-                zip_ref.extractall(tri_data_dir)
-            logger.info(f"Extracted contents of {tri_file_path} to {tri_data_dir}")
-        except zipfile.BadZipFile as e:
-            logger.error(f"Failed to unzip {tri_file_path}: {e}")
-            return
 
-        # Delete the zip file
-        tri_file_path.unlink()
-        logger.info(f"Deleted the compressed tris {tri_file_path}")
-    elif resource_type == "spawn":
-        spawn_not_impl_msg = "Spawn files are not yet implemented."
-        raise NotImplementedError(spawn_not_impl_msg)
-    elif resource_type == "nav":
-        nav_not_impl_msg = "Nav files are not yet implemented."
-        raise NotImplementedError(nav_not_impl_msg)
+@awpy_cli.command(name="artifacts", help="Information on Awpy artifacts.")
+def artifacts() -> None:
+    """Print information on Awpy artifacts."""
+    print("Current patch:", awpy.data.CURRENT_BUILD_ID)
+    for patch, patch_data in awpy.data.AVAILABLE_PATCHES.items():
+        print(
+            f"Patch {patch} ({patch_data['datetime']}, {patch_data['url']}). Available artifacts: {patch_data['available']}\n"  # noqa: E501
+        )
 
 
 @awpy_cli.command(name="parse", help="Parse a Counter-Strike 2 demo (.dem) file .")
@@ -96,7 +74,7 @@ def parse_demo(
     demo.compress(outpath=outpath)
 
 
-@awpy_cli.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.")
+@awpy_cli.command(name="spawn", help="Parse spawns from a Counter-Strike 2 .vent file.", hidden=True)
 @click.argument("vent_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the spawns.")
 def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
@@ -109,7 +87,7 @@ def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
     logger.success(f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}")
 
 
-@awpy_cli.command(name="nav", help="Parse a Counter-Strike 2 .nav file.")
+@awpy_cli.command(name="nav", help="Parse a Counter-Strike 2 .nav file.", hidden=True)
 @click.argument("nav_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the nav file.")
 def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
@@ -122,7 +100,7 @@ def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
     logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
 
 
-@awpy_cli.command(name="mapdata", help="Parse Counter-Strike 2 map images.")
+@awpy_cli.command(name="mapdata", help="Parse Counter-Strike 2 map images.", hidden=True)
 @click.argument("overview_dir", type=click.Path(exists=True))
 def parse_mapdata(overview_dir: Path) -> None:
     """Parse radar overview images given an overview."""
@@ -131,11 +109,11 @@ def parse_mapdata(overview_dir: Path) -> None:
         overview_dir_err_msg = f"{overview_dir} is not a directory."
         raise NotADirectoryError(overview_dir_err_msg)
     map_data = awpy.data.map_data.map_data_from_vdf_files(overview_dir)
-    awpy.data.map_data.update_map_data_file(map_data, awpy.data.map_data.MAP_DATA_PATH)
-    logger.success(f"Map data saved to {awpy.data.map_data.MAP_DATA_PATH}")
+    awpy.data.map_data.update_map_data_file(map_data, "map-data.json")
+    logger.success("Map data saved to map_data.json")
 
 
-@awpy_cli.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.")
+@awpy_cli.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.", hidden=True)
 @click.argument("vphys_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the parsed triangle.")
 def generate_tri(vphys_file: Path, *, outpath: Path | None = None) -> None:
