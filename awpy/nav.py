@@ -3,14 +3,18 @@
 Reference: https://github.com/ValveResourceFormat/ValveResourceFormat/tree/master/ValveResourceFormat/NavMesh
 """
 
+import itertools
 import json
 import math
 import struct
 from enum import Enum
+from functools import cached_property
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, Self, TypedDict
+from typing import Any, BinaryIO, Literal, NamedTuple, Self, TypedDict
 
 import networkx as nx
+from scipy.spatial import distance
+from shapely import Polygon
 
 from awpy.vector import Vector3, Vector3Dict
 
@@ -118,7 +122,7 @@ class NavArea:
         """Returns a set of connected area IDs."""
         return set(self.connections)
 
-    @property
+    @cached_property
     def size(self) -> float:
         """Calculates the area of the polygon defined by the corners.
 
@@ -142,7 +146,7 @@ class NavArea:
 
         return abs(area) / 2.0
 
-    @property
+    @cached_property
     def centroid(self) -> Vector3:
         """Calculates the centroid of the polygon defined by the corners.
 
@@ -163,6 +167,23 @@ class NavArea:
         centroid_z = sum(z_coords) / len(self.corners)
 
         return Vector3(centroid_x, centroid_y, centroid_z)
+
+    def __contains__(self, point: Vector3) -> bool:
+        """Checks if a point is inside the area.
+
+        Args:
+            point: The point to check.
+
+        Returns:
+            True if the point is inside the area, False otherwise.
+        """
+        return self.to_polygon_2d().contains(point.to_point_2d())
+
+    def edge_distance(self, point: Vector3) -> float:
+        return self.to_polygon_2d().distance(point.to_point_2d())
+
+    def centroid_distance(self, point: Vector3) -> float:
+        return self.centroid.distance(point)
 
     def __repr__(self) -> str:
         """Returns string representation of NavArea."""
@@ -256,6 +277,14 @@ class NavArea:
             "ladders_below": self.ladders_below,
         }
 
+    def to_polygon(self) -> Polygon:
+        """Converts the navigation area to a Shapely Polygon."""
+        return Polygon([c.to_tuple() for c in self.corners])
+
+    def to_polygon_2d(self) -> Polygon:
+        """Converts the navigation area to a 2D Shapely Polygon."""
+        return Polygon([(c.x, c.y) for c in self.corners])
+
     @classmethod
     def from_dict(cls, data: NavAreaDict) -> Self:
         """Load a NavArea from a dictionary."""
@@ -279,6 +308,13 @@ class NavDict(TypedDict):
     sub_version: int
     is_analyzed: bool
     areas: dict[int, NavAreaDict]
+
+
+class PathResult(NamedTuple):
+    """Result of a pathfinding operation."""
+
+    path: list[NavArea]
+    distance: float
 
 
 class Nav:
@@ -308,13 +344,20 @@ class Nav:
         self.areas = areas or {}
         self.is_analyzed = is_analyzed
 
-        self.graph = nx.Graph()
+        self.graph = nx.DiGraph()
 
         # Add nodes
         for _aid, area in self.areas.items():
             self.graph.add_node(
-                area.area_id, node=area
+                area.area_id,
+                node=area,
+                center=area.centroid.to_tuple(),
+                center_2d=(area.centroid.x, area.centroid.y),
             )  # Add node with area_id and size as attributes
+
+        running_speed = 250
+        crouching_speed = 85
+        crouching_attribute_flag = DynamicAttributeFlags(65536)
 
         # Add edges
         for _aid, area in self.areas.items():
@@ -324,11 +367,32 @@ class Nav:
                     (area.centroid.x - self.areas[connected_area_id].centroid.x) ** 2
                     + (area.centroid.y - self.areas[connected_area_id].centroid.y) ** 2
                 )
+
+                area_relative_speed = (
+                    crouching_speed
+                    if crouching_attribute_flag == area.dynamic_attribute_flags
+                    else running_speed
+                ) / running_speed
+                connected_area_relative_speed = (
+                    crouching_speed
+                    if crouching_attribute_flag
+                    == self.areas[connected_area_id].dynamic_attribute_flags
+                    else running_speed
+                ) / running_speed
+
+                # Smaller relative speed increases the effective distance
+                area_time_adjusted_distance = dist_weight / area_relative_speed
+                connected_area_time_adjusted_distance = (
+                    dist_weight / connected_area_relative_speed
+                )
+
                 self.graph.add_edge(
                     area.area_id,
                     connected_area_id,
                     size=size_weight,
                     dist=dist_weight,
+                    time_adjusted=area_time_adjusted_distance / 2
+                    + connected_area_time_adjusted_distance / 2,
                 )  # Add an edge between connected areas
 
     @classmethod
@@ -453,12 +517,35 @@ class Nav:
             areas[area.area_id] = area
         return areas
 
+    def find_area(self, position: Vector3) -> NavArea | None:
+        """Finds the navigation area containing the given position.
+
+        Args:
+            position: The position to search for.
+
+        Returns:
+            The NavArea containing the position, or None if not found.
+        """
+        return min(
+            (area for area in self.areas.values() if position in area),
+            key=lambda area: abs(area.centroid.z - position.z),
+            default=None,
+        )
+
+    def find_closest_area_edge(self, position: Vector3) -> NavArea:
+        return min(self.areas.values(), key=lambda area: area.edge_distance(position))
+
+    def find_closest_area_centroid(self, position: Vector3) -> NavArea:
+        return min(
+            self.areas.values(), key=lambda area: area.centroid_distance(position)
+        )
+
     def find_path(
         self,
-        start_id: int,
-        end_id: int,
-        weight: Literal["size", "dist"] | None = None,
-    ) -> list[NavArea]:
+        start_id: int | Vector3,
+        end_id: int | Vector3,
+        weight: Literal["size", "dist", "weight"] = "weight",
+    ) -> PathResult:
         """Finds the path between two areas in the graph.
 
         Args:
@@ -473,15 +560,83 @@ class Nav:
             A list of NavArea objects representing the path from start to end.
             Returns an empty list if no path exists.
         """
+
+        def dist_heuristic(node_a: int, node_b: int) -> float:
+            return distance.euclidean(
+                self.graph.nodes[node_a]["center_2d"],
+                self.graph.nodes[node_b]["center_2d"],
+            )
+
+        if isinstance(start_id, Vector3):
+            area = self.find_area(start_id) or self.find_closest_area_centroid(start_id)
+            start_area = area.area_id
+        else:
+            start_area = start_id
+
+        if isinstance(end_id, Vector3):
+            area = self.find_area(end_id) or self.find_closest_area_centroid(end_id)
+            end_area = area.area_id
+        else:
+            end_area = end_id
+
         try:
             # Get the shortest path as a list of area IDs
-            path_ids = nx.shortest_path(
-                self.graph, source=start_id, target=end_id, weight=weight
+            path_ids = nx.astar_path(
+                self.graph,
+                source=start_area,
+                target=end_area,
+                weight=weight or "weight",
+                heuristic=dist_heuristic,
             )
+
+            if len(path_ids) == 1:
+                total_distance = 0
+            elif len(path_ids) == 2:
+                match start_id, end_id:
+                    case Vector3(), Vector3():
+                        total_distance = start_id.distance(end_id)
+                    case int(), int():
+                        total_distance = self.graph[start_id][end_id][weight]
+                    case Vector3(), int():
+                        total_distance = distance.euclidean(
+                            start_id.to_tuple_2d(),
+                            self.graph.nodes[end_id]["center_2d"],
+                        )
+                    case int(), Vector3():
+                        total_distance = distance.euclidean(
+                            self.graph.nodes[start_id]["center_2d"], end_id
+                        )
+            else:
+                # Calculate start and end distances
+                start_distance = (
+                    distance.euclidean(
+                        start_id.to_tuple_2d(),
+                        self.graph.nodes[path_ids[1]]["center_2d"],
+                    )
+                    if isinstance(start_id, Vector3)
+                    else self.graph[start_area][path_ids[1]][weight]
+                )
+                # Calculate middle path distance (excluding first and last)
+                middle_distance = sum(
+                    self.graph[u][v][weight]
+                    for u, v in itertools.pairwise(path_ids[1:-1])
+                )
+                end_distance = (
+                    distance.euclidean(
+                        end_id.to_tuple_2d(), self.graph.nodes[-2]["center_2d"]
+                    )
+                    if isinstance(end_id, Vector3)
+                    else self.graph[path_ids[-2]][end_area][weight]
+                )
+                total_distance = start_distance + middle_distance + end_distance
+
             # Convert area IDs to NavArea objects
-            return [self.graph.nodes[area_id]["node"] for area_id in path_ids]
+            return PathResult(
+                path=[self.graph.nodes[area_id]["node"] for area_id in path_ids],
+                distance=total_distance,
+            )
         except nx.NetworkXNoPath:
-            return []  # No path exists
+            return PathResult(path=[], distance=float("inf"))  # No path exists
 
     def to_dict(self) -> NavDict:
         """Converts the entire navigation mesh to a dictionary."""

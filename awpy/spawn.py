@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import json
+import pathlib
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import pathlib
 
 import awpy.vector
 
@@ -39,6 +36,20 @@ class Spawns:
         with open(path, "w", encoding="utf-8") as json_file:
             json.dump(spawns_dict, json_file)
             json_file.write("\n")
+
+    @staticmethod
+    def from_json(path: str | pathlib.Path) -> Spawns:
+        """Reads the spawns data from a JSON file.
+
+        Args:
+            path: Path to the JSON file to read.
+        """
+        with open(path, encoding="utf-8") as json_file:
+            spawns_dict = json.load(json_file)
+            ct_spawns = [awpy.vector.Vector3(**ct) for ct in spawns_dict["CT"]]
+            t_spawns = [awpy.vector.Vector3(**t) for t in spawns_dict["T"]]
+
+        return Spawns(CT=ct_spawns, T=t_spawns)
 
     @staticmethod
     def from_vents_content(vents_content: str) -> Spawns:
@@ -136,3 +147,8 @@ def filter_vents_data(data: dict[int, dict[str, VentsValue]]) -> Spawns:
             ct_spawns.append(awpy.vector.Vector3(x=x, y=y, z=z))
 
     return Spawns(CT=ct_spawns, T=t_spawns)
+
+
+SPAWNS_DATA: dict[str, Spawns] = {}
+for spawn_info in (pathlib.Path(__file__).parent / "data/spawns").iterdir():
+    SPAWNS_DATA[spawn_info.stem] = Spawns.from_json(spawn_info)

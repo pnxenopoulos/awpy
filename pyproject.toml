@@ -3,9 +3,7 @@ name = "awpy"
 version = "2.0.0b5"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
-authors = [
-    { name = "Peter Xenopoulos", email = "pnxenopoulos@gmail.com" }
-]
+authors = [{ name = "Peter Xenopoulos", email = "pnxenopoulos@gmail.com" }]
 keywords = ["counter-strike 2", "counter-strike", "csgo", "esports", "sports-analytics"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -16,7 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Games/Entertainment",
     "Topic :: Games/Entertainment :: First Person Shooters",
-    "Topic :: Scientific/Engineering :: Information Analysis"
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 requires-python = ">=3.11,<3.14"
 dependencies = [
@@ -31,6 +29,7 @@ dependencies = [
     "polars>=1.22.0",
     "requests>=2.32.3",
     "scipy>=1.15.0",
+    "shapely>=2.0.7",
     "tqdm>=4.67.1",
 ]
 
@@ -47,16 +46,8 @@ requires      = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
-dev = [
-    "mypy>=1.15.0",
-    "pre-commit>=4.1.0",
-    "ruff>=0.9.6",
-    "vdf>=3.4",
-]
-test = [
-    "coverage>=7.6.12",
-    "pytest>=8.3.4",
-]
+dev = ["mypy>=1.15.0", "pre-commit>=4.1.0", "ruff>=0.9.6", "vdf>=3.4"]
+test = ["coverage>=7.6.12", "pytest>=8.3.4"]
 docs = [
     "ipykernel>=6.29.5",
     "nbsphinx>=0.9.6",
@@ -75,7 +66,7 @@ testpaths = ["tests"]
 # Setuptools
 [tool.setuptools]
 include-package-data = true
-packages = ["awpy"]
+packages             = ["awpy"]
 
 [tool.setuptools.package-data]
 "*" = ["data/maps/*.png"]
@@ -103,7 +94,7 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
-    "docs"
+    "docs",
 ]
 line-length = 120
 
@@ -115,7 +106,6 @@ select = [
     "W",
     "I",
     "N",
-    "D",
     "UP",
     "YTT",
     "ANN",
@@ -152,9 +142,9 @@ select = [
     "TRY",
     "NPY",
     "RUF",
-    "EM"
+    "EM",
 ]
-ignore = ["D208", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001"]
+ignore = ["D208", "T20", "PTH", "TRY003", "BLE001", "PLR2004", "UP007", "ISC001", "D"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.pydocstyle]
@@ -164,5 +154,33 @@ convention = "google"
 max-args = 17
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py"              = ["E402", "F401"]
-"tests/test_*.py"          = ["ANN201", "S101", "SLF001", "PLR2004"]
+"__init__.py"     = ["E402", "F401"]
+"tests/test_*.py" = ["ANN201", "S101", "SLF001", "PLR2004"]
+"plot_tiles.py"   = ["D", "ERA001"]
+
+# [tool.pyright]
+# include                            = ["awpy"]
+# exclude                            = ["tests"]
+# typeCheckingMode                   = "strict"
+# strictListInference                = true
+# strictDictionaryInference          = true
+# reportDeprecated                   = "warning"
+# reportPropertyTypeMismatch         = "error"
+# reportFunctionMemberAccess         = "error"
+# reportMissingTypeStubs             = "error"
+# reportUntypedFunctionDecorator     = "error"
+# reportUntypedClassDecorator        = "error"
+# reportUntypedBaseClass             = "error"
+# reportUntypedNamedTuple            = "error"
+# reportPrivateUsage                 = "error"
+# reportConstantRedefinition         = "error"
+# reportOverlappingOverload          = "error"
+# reportMissingParameterType         = "error"
+# reportUnnecessaryIsInstance        = "error"
+# reportUnnecessaryCast              = "error"
+# reportUnnecessaryComparison        = "error"
+# reportUnnecessaryContains          = "error"
+# reportAssertAlwaysTrue             = "error"
+# reportUnnecessaryTypeIgnoreComment = "error"
+# reportImplicitOverride             = "none"
+# reportShadowedImports              = "error"

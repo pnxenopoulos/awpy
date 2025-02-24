@@ -4,10 +4,13 @@ import warnings
 from typing import Literal
 
 import awpy.data.map_data
+import awpy.vector
 
 
 # Position function courtesy of PureSkill.gg
-def game_to_pixel_axis(map_name: str, position: float, axis: Literal["x", "y"]) -> float:
+def game_to_pixel_axis(
+    map_name: str, position: float, axis: Literal["x", "y"]
+) -> float:
     """Transforms a CS2-coord value to a pixel-coord in the X or Y-axis.
 
     Args:
@@ -33,7 +36,9 @@ def game_to_pixel_axis(map_name: str, position: float, axis: Literal["x", "y"]) 
     return (start - position) / scale
 
 
-def pixel_to_game_axis(map_name: str, position: float, axis: Literal["x", "y"]) -> float:
+def pixel_to_game_axis(
+    map_name: str, position: float, axis: Literal["x", "y"]
+) -> float:
     """Transforms a pixel-coord value to a CS2-coord in the X or Y-axis.
 
     Args:
@@ -59,7 +64,9 @@ def pixel_to_game_axis(map_name: str, position: float, axis: Literal["x", "y"]) 
     return start - position * scale
 
 
-def game_to_pixel(map_name: str, position: tuple[float, float, float]) -> tuple[float, float, float]:
+def game_to_pixel(
+    map_name: str, position: tuple[float, float, float] | awpy.vector.Vector3
+) -> tuple[float, float, float]:
     """Transforms a `(X, Y, Z)` CS2-coord to pixel coord.
 
     Args:
@@ -69,6 +76,8 @@ def game_to_pixel(map_name: str, position: tuple[float, float, float]) -> tuple[
     Returns:
         Tuple[float, float, float]: Transformed coordinates (X,Y,Z).
     """
+    if isinstance(position, awpy.vector.Vector3):
+        position = position.to_tuple()
     return (
         game_to_pixel_axis(map_name, position[0], "x"),
         game_to_pixel_axis(map_name, position[1], "y"),
@@ -76,7 +85,9 @@ def game_to_pixel(map_name: str, position: tuple[float, float, float]) -> tuple[
     )
 
 
-def pixel_to_game(map_name: str, position: tuple[float, float, float]) -> tuple[float, float, float]:
+def pixel_to_game(
+    map_name: str, position: tuple[float, float, float] | awpy.vector.Vector3
+) -> tuple[float, float, float]:
     """Transforms a `(X, Y, Z)` pixel coord to CS2-coord.
 
     Args:
@@ -86,6 +97,8 @@ def pixel_to_game(map_name: str, position: tuple[float, float, float]) -> tuple[
     Returns:
         Tuple[float, float, float]: Transformed coordinates (X,Y,Z).
     """
+    if isinstance(position, awpy.vector.Vector3):
+        position = position.to_tuple()
     return (
         pixel_to_game_axis(map_name, position[0], "x"),
         pixel_to_game_axis(map_name, position[1], "y"),
@@ -93,7 +106,9 @@ def pixel_to_game(map_name: str, position: tuple[float, float, float]) -> tuple[
     )
 
 
-def is_position_on_lower_level(map_name: str, position: tuple[float, float, float]) -> bool:
+def is_position_on_lower_level(
+    map_name: str, position: tuple[float, float, float]
+) -> bool:
     """Check if a position is on a lower level of a map.
 
     Args:
@@ -107,7 +122,9 @@ def is_position_on_lower_level(map_name: str, position: tuple[float, float, floa
     return position[2] <= metadata["lower_level_max_units"]
 
 
-def position_transform_axis(map_name: str, position: float, axis: Literal["x", "y"]) -> float:
+def position_transform_axis(
+    map_name: str, position: float, axis: Literal["x", "y"]
+) -> float:
     """Calls `game_to_pixel_axis` and sends warning.
 
     This is the old name of function `game_to_pixel_axis`. Please update
@@ -125,7 +142,9 @@ def position_transform_axis(map_name: str, position: float, axis: Literal["x", "
     return game_to_pixel_axis(map_name, position, axis)
 
 
-def position_revert_axis(map_name: str, position: float, axis: Literal["x", "y"]) -> float:
+def position_revert_axis(
+    map_name: str, position: float, axis: Literal["x", "y"]
+) -> float:
     """Calls `pixel_to_game_axis` and sends warning.
 
     This is the old name of function `pixel_to_game_axis`. Please update
@@ -143,7 +162,9 @@ def position_revert_axis(map_name: str, position: float, axis: Literal["x", "y"]
     return pixel_to_game_axis(map_name, position, axis)
 
 
-def position_transform(map_name: str, position: tuple[float, float, float]) -> tuple[float, float, float]:
+def position_transform(
+    map_name: str, position: tuple[float, float, float]
+) -> tuple[float, float, float]:
     """Calls `game_to_pixel` and sends warning.
 
     This is the old name of function `game_to_pixel`. Please update
@@ -161,7 +182,9 @@ def position_transform(map_name: str, position: tuple[float, float, float]) -> t
     return game_to_pixel(map_name, position)
 
 
-def position_revert(map_name: str, position: tuple[float, float, float]) -> tuple[float, float, float]:
+def position_revert(
+    map_name: str, position: tuple[float, float, float]
+) -> tuple[float, float, float]:
     """Calls `pixel_to_game` and sends warning.
 
     This is the old name of function `pixel_to_game`. Please update

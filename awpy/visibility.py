@@ -149,7 +149,11 @@ class KV3Parser:
             return self._parse_object()
         if char == "[":
             return self._parse_array()
-        if char == "#" and self.index + 1 < len(self.content) and self.content[self.index + 1] == "[":
+        if (
+            char == "#"
+            and self.index + 1 < len(self.content)
+            and self.content[self.index + 1] == "["
+        ):
             self.index += 1
             return self._parse_byte_array()
         return self._parse_string()
@@ -294,7 +298,9 @@ class VphysParser:
         Processes hulls and meshes in the VPhys file to generate a list of triangles.
         """
         if len(self.triangles) > 0:
-            logger.debug(f"VPhys data already parsed, got {len(self.triangles)} triangles.")
+            logger.debug(
+                f"VPhys data already parsed, got {len(self.triangles)} triangles."
+            )
             return
 
         logger.debug(f"Parsing vphys file: {self.vphys_file}")
@@ -331,17 +337,23 @@ class VphysParser:
 
                 vertex_data = self.bytes_to_vec(vertex_str, 4)
                 vertices = [
-                    awpy.vector.Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
+                    awpy.vector.Vector3(
+                        vertex_data[i], vertex_data[i + 1], vertex_data[i + 2]
+                    )
                     for i in range(0, len(vertex_data), 3)
                 ]
 
                 # Get faces and edges
                 faces = self.bytes_to_vec(
-                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Faces"),
+                    self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Faces"
+                    ),
                     1,
                 )
                 edge_data = self.bytes_to_vec(
-                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Edges"),
+                    self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Edges"
+                    ),
                     1,
                 )
 
@@ -385,16 +397,22 @@ class VphysParser:
             if collision_idx == "0":
                 # Get triangles and vertices
                 tri_data = self.bytes_to_vec(
-                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Triangles"),
+                    self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Triangles"
+                    ),
                     4,
                 )
                 vertex_data = self.bytes_to_vec(
-                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Vertices"),
+                    self.kv3_parser.get_value(
+                        f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Vertices"
+                    ),
                     4,
                 )
 
                 vertices = [
-                    awpy.vector.Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
+                    awpy.vector.Vector3(
+                        vertex_data[i], vertex_data[i + 1], vertex_data[i + 2]
+                    )
                     for i in range(0, len(vertex_data), 3)
                 ]
 
@@ -434,13 +452,17 @@ class VphysParser:
                 f.write(struct.pack("f", triangle.p3.y))
                 f.write(struct.pack("f", triangle.p3.z))
 
-        logger.success(f"Processed {len(self.triangles)} triangles from {self.vphys_file} -> {outpath}")
+        logger.success(
+            f"Processed {len(self.triangles)} triangles from {self.vphys_file} -> {outpath}"
+        )
 
 
 class AABB:
     """Axis-Aligned Bounding Box for efficient collision detection."""
 
-    def __init__(self, min_point: awpy.vector.Vector3, max_point: awpy.vector.Vector3) -> None:
+    def __init__(
+        self, min_point: awpy.vector.Vector3, max_point: awpy.vector.Vector3
+    ) -> None:
         """Initialize the AABB with minimum and maximum points.
 
         Args:
@@ -472,7 +494,9 @@ class AABB:
         )
         return cls(min_point, max_point)
 
-    def intersects_ray(self, ray_origin: awpy.vector.Vector3, ray_direction: awpy.vector.Vector3) -> bool:
+    def intersects_ray(
+        self, ray_origin: awpy.vector.Vector3, ray_direction: awpy.vector.Vector3
+    ) -> bool:
         """Check if a ray intersects with the AABB.
 
         Args:
@@ -484,7 +508,9 @@ class AABB:
         """
         epsilon = 1e-6
 
-        def check_axis(origin: float, direction: float, min_val: float, max_val: float) -> tuple[float, float]:
+        def check_axis(
+            origin: float, direction: float, min_val: float, max_val: float
+        ) -> tuple[float, float]:
             if abs(direction) < epsilon:
                 if origin < min_val or origin > max_val:
                     return float("inf"), float("-inf")
@@ -494,9 +520,15 @@ class AABB:
             t2 = (max_val - origin) / direction
             return (min(t1, t2), max(t1, t2))
 
-        tx_min, tx_max = check_axis(ray_origin.x, ray_direction.x, self.min_point.x, self.max_point.x)
-        ty_min, ty_max = check_axis(ray_origin.y, ray_direction.y, self.min_point.y, self.max_point.y)
-        tz_min, tz_max = check_axis(ray_origin.z, ray_direction.z, self.min_point.z, self.max_point.z)
+        tx_min, tx_max = check_axis(
+            ray_origin.x, ray_direction.x, self.min_point.x, self.max_point.x
+        )
+        ty_min, ty_max = check_axis(
+            ray_origin.y, ray_direction.y, self.min_point.y, self.max_point.y
+        )
+        tz_min, tz_max = check_axis(
+            ray_origin.z, ray_direction.z, self.min_point.z, self.max_point.z
+        )
 
         t_enter = max(tx_min, ty_min, tz_min)
         t_exit = min(tx_max, ty_max, tz_max)
@@ -532,7 +564,9 @@ class BVHNode:
 class VisibilityChecker:
     """Class for visibility checking in 3D space using a BVH structure."""
 
-    def __init__(self, path: pathlib.Path | None = None, triangles: list[Triangle] | None = None) -> None:
+    def __init__(
+        self, path: pathlib.Path | None = None, triangles: list[Triangle] | None = None
+    ) -> None:
         """Initialize the visibility checker with a list of triangles.
 
         Args:
@@ -589,7 +623,9 @@ class VisibilityChecker:
         triangles = sorted(
             triangles,
             key=lambda t: (
-                t.get_centroid().x if axis == 0 else t.get_centroid().y if axis == 1 else t.get_centroid().z
+                t.get_centroid().x
+                if axis == 0
+                else t.get_centroid().y if axis == 1 else t.get_centroid().z
             ),
         )
 
@@ -682,13 +718,15 @@ class VisibilityChecker:
 
         # Leaf node - check triangle intersection
         if node.triangle:
-            t = self._ray_triangle_intersection(ray_origin, ray_direction, node.triangle)
+            t = self._ray_triangle_intersection(
+                ray_origin, ray_direction, node.triangle
+            )
             return bool(t is not None and t <= max_distance)
 
         # Internal node - recurse through children
-        return self._traverse_bvh(node.left, ray_origin, ray_direction, max_distance) or self._traverse_bvh(
-            node.right, ray_origin, ray_direction, max_distance
-        )
+        return self._traverse_bvh(
+            node.left, ray_origin, ray_direction, max_distance
+        ) or self._traverse_bvh(node.right, ray_origin, ray_direction, max_distance)
 
     def is_visible(
         self,
@@ -720,7 +758,9 @@ class VisibilityChecker:
         return not self._traverse_bvh(self.root, start_vec, direction, distance)
 
     @staticmethod
-    def read_tri_file(tri_file: str | pathlib.Path, buffer_size: int = 1000) -> list[Triangle]:
+    def read_tri_file(
+        tri_file: str | pathlib.Path, buffer_size: int = 1000
+    ) -> list[Triangle]:
         """Read triangles from a .tri file."""
         tri_file = pathlib.Path(tri_file)
         file_size = tri_file.stat().st_size
@@ -752,3 +792,10 @@ class VisibilityChecker:
                     triangle_idx += 1
 
         return triangles[:triangle_idx]
+
+
+VIS_CHECKERS: dict[str, VisibilityChecker] = {}
+for map_info in (pathlib.Path(__file__).parent / "data/tri").iterdir():
+    if map_info.stem != "de_dust2":
+        continue
+    VIS_CHECKERS[map_info.stem] = VisibilityChecker(map_info)

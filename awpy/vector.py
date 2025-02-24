@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Self, TypedDict
 
 import numpy.typing as npt
+from shapely import Point
 
 
 class Vector3Dict(TypedDict):
@@ -16,7 +17,7 @@ class Vector3Dict(TypedDict):
     z: float
 
 
-@dataclass
+@dataclass(frozen=True)
 class Vector3:
     """A 3D vector representation.
 
@@ -70,6 +71,10 @@ class Vector3:
             self.x * other.y - self.y * other.x,
         )
 
+    def distance(self, other: Vector3) -> float:
+        """Compute distance between two vectors."""
+        return (self - other).length()
+
     def length(self) -> float:
         """Compute vector length."""
         return (self.x * self.x + self.y * self.y + self.z * self.z) ** 0.5
@@ -94,7 +99,19 @@ class Vector3:
         """Convert Vector3 to tuple."""
         return (self.x, self.y, self.z)
 
+    def to_tuple_2d(self) -> tuple[float, float]:
+        """Convert Vector3 to 2D-tuple."""
+        return (self.x, self.y)
+
     @classmethod
     def from_tuple(cls, data: tuple[float, float, float]) -> Self:
         """Create a Vector3 instance from a tuple."""
         return cls(data[0], data[1], data[2])
+
+    def to_point(self) -> Point:
+        """Convert Vector3 to 3D-Point."""
+        return Point(self.x, self.y, self.z)
+
+    def to_point_2d(self) -> Point:
+        """Convert Vector3 to 2D-Point."""
+        return Point(self.x, self.y)
