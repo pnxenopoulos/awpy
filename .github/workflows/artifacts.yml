@@ -4,7 +4,7 @@ name: artifacts
 
 on:
   schedule:
-    - cron: '0 0 * * *'   # runs daily at midnight UTC
+    - cron: "0 0 * * *" # runs daily at midnight UTC
   pull_request:
     branches: [main]
     paths:
@@ -63,7 +63,7 @@ jobs:
           Write-Host "Patch needs to be updated? $wasPatchUpdated"
           # Set a step output so subsequent steps can conditionally run
           echo "wasPatchUpdated=$wasPatchUpdated" >> $env:GITHUB_OUTPUT
-      
+
       - name: Install Counter-Strike 2
         if: steps.update_patch.outputs.wasPatchUpdated == 'true'
         run: |
@@ -106,9 +106,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: |
-            r2 object put "${{ env.LATEST_PATCH_ID }}/maps.zip" --file=maps.zip
-            r2 object put "${{ env.LATEST_PATCH_ID }}/navs.zip" --file=navs.zip
-            r2 object put "${{ env.LATEST_PATCH_ID }}/tris.zip" --file=tris.zip
+            r2 object put "awpy/${{ env.LATEST_PATCH_ID }}/maps.zip" --file=maps.zip
+            r2 object put "awpy/${{ env.LATEST_PATCH_ID }}/navs.zip" --file=navs.zip
+            r2 object put "awpy/${{ env.LATEST_PATCH_ID }}/tris.zip" --file=tris.zip
 
       - name: Log R2 Upload Message
         if: steps.update_patch.outputs.wasPatchUpdated == 'true'
