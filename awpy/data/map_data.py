@@ -51,3 +51,6 @@ def update_map_data_file(new_map_data: dict[str, MapData], filepath: Path) -> No
     with open(filepath, "w") as json_file:
         json.dump(new_map_data, json_file)
         json_file.write("\n")
+
+
+MAP_DATA: dict[str, MapData] = json.loads((Path(__file__).parent / "maps/map_data.json").read_bytes())

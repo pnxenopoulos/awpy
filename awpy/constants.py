@@ -25,3 +25,7 @@ JUMP_HEIGHT = 65
 # 0.5m * v^2 = m * g * h
 # v = sqrt(2 * g * h)  # noqa: ERA001
 JUMP_SPEED = (2 * GRAVITY * JUMP_HEIGHT) ** 0.5
+
+# https://developer.valvesoftware.com/wiki/Counter-Strike:_Global_Offensive/Mapper%27s_Reference
+PLAYER_HEIGHT = 72
+PLAYER_EYE_LEVEL = 64.093811

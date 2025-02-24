@@ -17,6 +17,7 @@ from matplotlib.axes import Axes
 from shapely import Point, Polygon
 from tqdm import tqdm
 
+from awpy.constants import JUMP_HEIGHT
 from awpy.data.map_data import MAP_DATA
 from awpy.nav import NAV_DATA, Nav, NavArea, PathResult
 from awpy.plot.utils import game_to_pixel
@@ -26,6 +27,7 @@ from awpy.visibility import VIS_CHECKERS
 
 print("Finished imports, starting script", flush=True)
 
+print(MAP_DATA, flush=True)
 
 @dataclass(frozen=True)
 class PathPoints:
@@ -216,7 +218,7 @@ class NewNavArea:
 def regularize_nav_areas(  # noqa: PLR0912, PLR0915
     nav_areas: dict[int, NavArea],
     grid_granularity: int,
-    dz_tolerance: float = 66.0,
+    map_name: str,
 ) -> dict[int, NavArea]:
     # Collect all x,y coordinates over all nav areas
     xs: list[float] = []
@@ -268,11 +270,7 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
                 ]
             )
 
-            primary_origs = {
-                area_id
-                for area_id, poly in area_polygons.items()
-                if poly.contains(center_point)
-            }
+            primary_origs = {area_id for area_id, poly in area_polygons.items() if poly.contains(center_point)}
 
             extra_orig_ids: set[int] = set()
             for area_id, poly in area_polygons.items():
@@ -295,7 +293,7 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
                 for other in extra_orig_ids:
                     if other == primary:
                         continue
-                    if abs(primary_z - area_levels[other]) <= dz_tolerance:
+                    if abs(primary_z - area_levels[other]) <= JUMP_HEIGHT:
                         cell_orig_ids.add(other)
                 rep_level = round(primary_z, 2)
                 corners = [
@@ -313,12 +311,19 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
         for orig_id in new_cell.orig_ids:
             old_to_new_children[orig_id].add(idx)
 
-    # TODO: Build connectivity based on more global info
-    # Two tiles are connected additionally if they are not further then JUMP_DISTANCE
-    # apart and the height difference is lower than JUMP_HEIGHT (Signed) AND there is
-    # no obstacle between them. (raycasting?)
-
-    # TODO: Include ladders
+    for area1 in nav_areas.values():
+        for area2 in nav_areas.values():
+            if area1 == area2 or area2.area_id in area1.connections:
+                continue
+            if (
+                (set(area1.ladders_above) & set(area2.ladders_below))
+                or (set(area1.ladders_below) & set(area2.ladders_above))
+                or (
+                    area1.centroid.can_jump_to(area2.centroid)
+                    and areas_visible(area1, area2, map_name)
+                )
+            ):
+                area1.connections.append(area2.area_id)
 
     # Build connectivity based solely on the new cell's orig_ids.
     # For a new cell A with orig set A_orig, connect to new cell B with orig set B_orig if:
@@ -327,9 +332,7 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
         parent_areas = new_area.orig_ids
         for parent_area in parent_areas:
             siblings = old_to_new_children[parent_area]
-            new_area.connections.update(
-                sibling for sibling in siblings if sibling != idx_a
-            )
+            new_area.connections.update(sibling for sibling in siblings if sibling != idx_a)
 
     for a_idx, area_a in nav_areas.items():
         children_of_a = old_to_new_children[a_idx]
@@ -351,19 +354,13 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
 
                 closest_childrens = sorted(
                     pairs_of_children,
-                    key=lambda pair: new_nav_areas[pair[0]].distance(
-                        new_nav_areas[pair[1]]
-                    ),
+                    key=lambda pair: new_nav_areas[pair[0]].distance(new_nav_areas[pair[1]]),
                 )[:5]
                 for closest_children in closest_childrens:
-                    new_nav_areas[closest_children[0]].connections.add(
-                        closest_children[1]
-                    )
+                    new_nav_areas[closest_children[0]].connections.add(closest_children[1])
 
     return {
-        idx: NavArea(
-            area_id=idx, corners=area.corners, connections=list(area.connections)
-        )
+        idx: NavArea(area_id=idx, corners=area.corners, connections=list(area.connections))
         for idx, area in new_nav_areas.items()
     }
 
@@ -407,15 +404,9 @@ def plot_path(
     _plot_tiles({0: start_area}, map_name, axis, color="green")
     _plot_tiles({1: end_area}, map_name, axis, color="red")
     _plot_points([start, end], map_name, axis)
-    shortest_path, direct_distance = map_nav.find_path(
-        start_area.area_id, end_area.area_id, weight="dist"
-    )
-    shortest_path_reversed, reversed_distance = map_nav.find_path(
-        end_area.area_id, start_area.area_id, weight="dist"
-    )
-    print(
-        f"Distances between {start_area.area_id}-{start} and {end_area.area_id}-{end}"
-    )
+    shortest_path, direct_distance = map_nav.find_path(start_area.area_id, end_area.area_id, weight="dist")
+    shortest_path_reversed, reversed_distance = map_nav.find_path(end_area.area_id, start_area.area_id, weight="dist")
+    print(f"Distances between {start_area.area_id}-{start} and {end_area.area_id}-{end}")
     print(f"Direct distance: {direct_distance}")
     print(f"Reversed distance: {reversed_distance}", flush=True)
 
@@ -445,9 +436,7 @@ def check_straight_and_reversed_distance(
             " the distances in both directions are not close."
         )
 
-        print(
-            f"Deviation: {deviation}; Direct: {distances.direct}; Reversed: {distances.reversed}"
-        )
+        print(f"Deviation: {deviation}; Direct: {distances.direct}; Reversed: {distances.reversed}")
 
 
 def check_100_200_distances(
@@ -460,13 +449,9 @@ def check_100_200_distances(
         return
     deviation_direct = abs((dist_100.direct / dist_200.direct) - 1)
     if deviation_direct > 0.05:
-        print(
-            f"At map: {map_name} for path: {path_points} the between 100 and 200 granularity are not close."
-        )
+        print(f"At map: {map_name} for path: {path_points} the between 100 and 200 granularity are not close.")
 
-        print(
-            f"Deviation: {deviation_direct}; 100: {dist_100.direct}; 200: {dist_200.direct}"
-        )
+        print(f"Deviation: {deviation_direct}; 100: {dist_100.direct}; 200: {dist_200.direct}")
 
 
 def de_ancient_spawns() -> list[Vector3]:
@@ -605,18 +590,12 @@ def get_distances_from_spawns(map_areas: Nav, spawns: Spawns) -> SpawnDistances:
     t_distances: list[SpawnDistance] = []
     for area in tqdm(map_areas.areas.values()):
         ct_path = min(
-            (
-                map_areas.find_path(spawn_point, area.area_id, weight="dist")
-                for spawn_point in spawns.CT
-            ),
+            (map_areas.find_path(spawn_point, area.area_id, weight="dist") for spawn_point in spawns.CT),
             default=PathResult(distance=float("inf"), path=[]),
             key=lambda path_result: path_result.distance,
         )
         t_path = min(
-            (
-                map_areas.find_path(spawn_point, area.area_id, weight="dist")
-                for spawn_point in spawns.T
-            ),
+            (map_areas.find_path(spawn_point, area.area_id, weight="dist") for spawn_point in spawns.T),
             default=PathResult(distance=float("inf"), path=[]),
             key=lambda path_result: path_result.distance,
         )
@@ -642,21 +621,9 @@ def get_distances_from_spawns(map_areas: Nav, spawns: Spawns) -> SpawnDistances:
 
 def areas_visible(area1: NavArea, area2: NavArea, map_name: str) -> bool:
     player_height = 64
-    used_centroid1 = Vector3(
-        area1.centroid.x, area1.centroid.y, area1.centroid.z + player_height
-    )
-    used_centroid2 = Vector3(
-        area2.centroid.x, area2.centroid.y, area2.centroid.z + player_height
-    )
-    print(f"Checking visibility between {area1.area_id} and {area2.area_id}")
-    print(f"Centroids: {used_centroid1} and {used_centroid2}")
-    result = VIS_CHECKERS[map_name].is_visible(used_centroid1, used_centroid2)
-    alt_result = VIS_CHECKERS[map_name].is_visible(area1.centroid, area2.centroid)
-    print(f"Result: {result}")
-    if alt_result != result:
-        print(f"Result without height adjustment: {alt_result}")
-    print("-" * 100)
-    return result
+    used_centroid1 = Vector3(area1.centroid.x, area1.centroid.y, area1.centroid.z + player_height)
+    used_centroid2 = Vector3(area2.centroid.x, area2.centroid.y, area2.centroid.z + player_height)
+    return VIS_CHECKERS[map_name].is_visible(used_centroid1, used_centroid2)
 
 
 def newly_visible(
@@ -692,9 +659,7 @@ def _plot_visibility_connection(
     lw: float = 1.0,
 ) -> None:
     _plot_tiles({0: area1.area, 1: area2.area}, map_name, axis, color=color)
-    _plot_connection(
-        area1.area, area2.area, map_name, axis, with_arrows=False, color=color, lw=lw
-    )
+    _plot_connection(area1.area, area2.area, map_name, axis, with_arrows=False, color=color, lw=lw)
     _plot_path(
         [map_nav.areas[path_id] for path_id in area1.path],
         axis,
@@ -748,9 +713,7 @@ while True:
         opposing_spotted_areas = spotted_areas_t
         own_spotted_areas = spotted_areas_ct
         opposing_previous_areas = [
-            area
-            for area in d2_spawn_distances.T
-            if area.area.area_id in (marked_areas_t | new_marked_areas_t)
+            area for area in d2_spawn_distances.T if area.area.area_id in (marked_areas_t | new_marked_areas_t)
         ]
         ct_index += 1
     else:
@@ -759,9 +722,7 @@ while True:
         opposing_spotted_areas = spotted_areas_ct
         own_spotted_areas = spotted_areas_t
         opposing_previous_areas = [
-            area
-            for area in d2_spawn_distances.CT
-            if area.area.area_id in (marked_areas_ct | new_marked_areas_ct)
+            area for area in d2_spawn_distances.CT if area.area.area_id in (marked_areas_ct | new_marked_areas_ct)
         ]
         t_index += 1
 
@@ -792,19 +753,13 @@ while True:
     fig.set_size_inches(19.2, 21.6)
 
     _plot_tiles(
-        {
-            area_id: d2_nav.areas[area_id]
-            for area_id in (marked_areas_ct | marked_areas_t)
-        },
+        {area_id: d2_nav.areas[area_id] for area_id in (marked_areas_ct | marked_areas_t)},
         map_name=map_name,
         axis=axis,
         color="olive",
     )
     _plot_tiles(
-        {
-            area_id: d2_nav.areas[area_id]
-            for area_id in (new_marked_areas_ct | new_marked_areas_t)
-        },
+        {area_id: d2_nav.areas[area_id] for area_id in (new_marked_areas_ct | new_marked_areas_t)},
         map_name=map_name,
         axis=axis,
         color="green",
@@ -813,8 +768,7 @@ while True:
     _plot_tiles(
         {
             area_id: d2_nav.areas[area_id]
-            for area_id in (marked_areas_t | new_marked_areas_t)
-            & (marked_areas_ct | new_marked_areas_ct)
+            for area_id in (marked_areas_t | new_marked_areas_t) & (marked_areas_ct | new_marked_areas_ct)
         },
         map_name=map_name,
         axis=axis,
@@ -836,9 +790,7 @@ while True:
     )
 
     for area1, area2 in visibility_connections:
-        _plot_visibility_connection(
-            area1, area2, d2_nav, map_name, axis, color="red", lw=1.0
-        )
+        _plot_visibility_connection(area1, area2, d2_nav, map_name, axis, color="red", lw=1.0)
 
     plt.savefig(
         output_dir / f"spread_{map_name}_{current_area.distance}.png",
@@ -893,7 +845,7 @@ while True:
 #             modified_nav = Nav.from_json(target_path)
 #         else:
 #             map_areas = regularize_nav_areas(
-#                 NAV_DATA[map_name].areas, grid_granularity=granularity
+#                 NAV_DATA[map_name].areas, grid_granularity=granularity, map_name=map_name
 #             )
 #             modified_nav = Nav(areas=map_areas)
 #             modified_nav.to_json(target_path)

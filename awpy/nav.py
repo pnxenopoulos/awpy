@@ -340,16 +340,16 @@ class Nav:
         self.graph = nx.DiGraph()
 
         # Add nodes
-        for _aid, area in self.areas.items():
+        for area_id, area in self.areas.items():
             self.graph.add_node(
-                area.area_id,
+                area_id,
                 node=area,
                 center=area.centroid.to_tuple(),
                 center_2d=(area.centroid.x, area.centroid.y),
             )  # Add node with area_id and size as attributes
 
         # Add edges
-        for _aid, area in self.areas.items():
+        for area_id, area in self.areas.items():
             for connected_area_id in area.connected_areas:
                 size_weight = area.size + self.areas[connected_area_id].size
                 dist_weight = math.sqrt(
@@ -374,7 +374,7 @@ class Nav:
                 connected_area_time_adjusted_distance = dist_weight / connected_area_relative_speed
 
                 self.graph.add_edge(
-                    area.area_id,
+                    area_id,
                     connected_area_id,
                     size=size_weight,
                     dist=dist_weight,
