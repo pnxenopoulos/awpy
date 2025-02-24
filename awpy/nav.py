@@ -16,6 +16,7 @@ import networkx as nx
 from scipy.spatial import distance
 from shapely import Polygon
 
+from awpy.constants import CROUCHING_ATTRIBUTE_FLAG, CROUCHING_SPEED, RUNNING_SPEED
 from awpy.vector import Vector3, Vector3Dict
 
 
@@ -355,9 +356,6 @@ class Nav:
                 center_2d=(area.centroid.x, area.centroid.y),
             )  # Add node with area_id and size as attributes
 
-        running_speed = 250
-        crouching_speed = 85
-        crouching_attribute_flag = DynamicAttributeFlags(65536)
 
         # Add edges
         for _aid, area in self.areas.items():
@@ -369,16 +367,16 @@ class Nav:
                 )
 
                 area_relative_speed = (
-                    crouching_speed
-                    if crouching_attribute_flag == area.dynamic_attribute_flags
-                    else running_speed
-                ) / running_speed
+                    CROUCHING_SPEED
+                    if DynamicAttributeFlags(CROUCHING_ATTRIBUTE_FLAG) == area.dynamic_attribute_flags
+                    else RUNNING_SPEED
+                ) / RUNNING_SPEED
                 connected_area_relative_speed = (
-                    crouching_speed
-                    if crouching_attribute_flag
+                    CROUCHING_SPEED
+                    if DynamicAttributeFlags(CROUCHING_ATTRIBUTE_FLAG)
                     == self.areas[connected_area_id].dynamic_attribute_flags
-                    else running_speed
-                ) / running_speed
+                    else RUNNING_SPEED
+                ) / RUNNING_SPEED
 
                 # Smaller relative speed increases the effective distance
                 area_time_adjusted_distance = dist_weight / area_relative_speed

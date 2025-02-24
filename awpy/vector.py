@@ -8,6 +8,8 @@ from typing import Self, TypedDict
 import numpy.typing as npt
 from shapely import Point
 
+from awpy.constants import GRAVITY, JUMP_SPEED, RUNNING_SPEED
+
 
 class Vector3Dict(TypedDict):
     """Typed dictionary for Vector3."""
@@ -75,6 +77,10 @@ class Vector3:
         """Compute distance between two vectors."""
         return (self - other).length()
 
+    def distance_2d(self, other: Vector3) -> float:
+        """Compute 2D distance between two vectors."""
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
+
     def length(self) -> float:
         """Compute vector length."""
         return (self.x * self.x + self.y * self.y + self.z * self.z) ** 0.5
@@ -115,3 +121,18 @@ class Vector3:
     def to_point_2d(self) -> Point:
         """Convert Vector3 to 2D-Point."""
         return Point(self.x, self.y)
+
+    def can_jump_to(self, other: Vector3) -> bool:
+        """Check if a jump is possible between two points."""
+        h_distance = self.distance_2d(other)
+        if h_distance <= 0:
+            return True
+
+        # Time to travel the horizontal distance between self and other
+        # with running speed
+        t = h_distance / RUNNING_SPEED
+        # In my jump, at which height am i when i reach the desitantion x-y distance.
+        z_at_dest = self.z + JUMP_SPEED * t - 0.5 * GRAVITY * t * t
+
+        # Am i at or above my target height?
+        return z_at_dest >= other.z
