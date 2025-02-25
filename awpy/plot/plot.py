@@ -48,65 +48,6 @@ class PointSettings:
     label: Optional[str] = None
     alpha: float = 1.0
 
-    def __post_init__(self) -> None:
-        """Validates the types and values of the attributes after initialization.
-
-        Ensures that each attribute matches its expected type and that values fall within
-        valid ranges. Raises appropriate exceptions if validation fails.
-
-        Raises:
-            TypeError: If an attribute has an incorrect type.
-            ValueError: If `alpha` is not between 0.0 and 1.0.
-        """
-        # Type validation for marker
-        if not isinstance(self.marker, str):
-            err_msg = f"marker must be a str, got {type(self.marker).__name__}"
-            raise TypeError(err_msg)
-
-        # Type validation for color
-        if not isinstance(self.color, str):
-            err_msg = f"color must be a str, got {type(self.color).__name__}"
-            raise TypeError(err_msg)
-
-        # Type validation for size
-        if not isinstance(self.size, int):
-            err_msg = f"size must be an int, got {type(self.size).__name__}"
-            raise TypeError(err_msg)
-
-        # Type validation for hp
-        if self.hp is not None and not isinstance(self.hp, int):
-            err_msg = f"hp must be an int or None, got {type(self.hp).__name__}"
-            raise TypeError(err_msg)
-
-        # Type validation for armor
-        if self.armor is not None and not isinstance(self.armor, int):
-            err_msg = f"armor must be an int or None, got {type(self.armor).__name__}"
-            raise TypeError(err_msg)
-
-        # Type validation for direction
-        if self.direction is not None and (
-            not isinstance(self.direction, tuple)
-            or len(self.direction) != 2
-            or not all(isinstance(d, int | float) for d in self.direction)
-        ):
-            err_msg = "direction must be a tuple of two floats or ints"
-            raise TypeError(err_msg)
-
-        # Type validation for label
-        if self.label is not None and not isinstance(self.label, str):
-            err_msg = f"label must be a str or None, got {type(self.label).__name__}"
-            raise TypeError(err_msg)
-
-        # Type validation for alpha
-        if not isinstance(self.alpha, int | float):
-            err_msg = f"alpha must be a float, got {type(self.alpha).__name__}"
-            raise TypeError(err_msg)
-
-        # Value validation for alpha range
-        if not (0.0 <= self.alpha <= 1.0):
-            err_msg = "alpha must be between 0.0 and 1.0"
-            raise ValueError(err_msg)
-
     @classmethod
     def from_dict(cls: type["PointSettings"], settings: dict[str, Any]) -> "PointSettings":
         """Create a PointSettings instance from a dictionary, ignoring unknown keys.
@@ -134,14 +75,14 @@ class PlotPositionMetadata:
     """Data structure for holding transformed plotting data.
 
     Attributes:
-        x_pos (list[tuple[float, float]]): List of transformed x coordinates.
-        y_pos (list[tuple[float, float]]): List of transformed y coordinates.
-        plot_settings (list[PointSettings]): PointSettings for each plotted pair.
+        x_pos (list[tuple[float, float]]): Transformed x coordinates.
+        y_pos (list[tuple[float, float]]): Transformed y coordinates.
+        plot_settings (list[PointSettings]): PointSettings for the plotted pair.
     """
 
-    x_pos: list[tuple[float, float]]
-    y_pos: list[tuple[float, float]]
-    plot_settings: list[PointSettings]
+    x_pos: tuple[float, float]
+    y_pos: tuple[float, float]
+    plot_settings: PointSettings
 
 
 def plot(
@@ -213,7 +154,7 @@ def _plot_positions(
     axes: Axes,
     points: list[tuple[float, float, float]] | None = None,
     lower_points_frac: float | None = 0.4,
-    point_settings: list[PointSettings] | None = None,
+    point_settings: list[PointSettings] | list[dict] | None = None,
 ) -> None:
     """Plots points on a map, optionally customizing plotting settings.
 
@@ -236,8 +177,8 @@ def _plot_positions(
             If `map_name` is referencing the lower level of a map (i.e.
             ends in "_lower") then this argument is ignored and lower points'
             alpha is set to 1 and upper points' alpha is set to 0.
-        point_settings (list[dict], optional):
-            list of dictionaries with settings for each point. Each dictionary
+        point_settings (list[PointSettings], list[dict], optional):
+            list of PointSettings or dictionaries with settings for each point. Each dictionary
             should contain:
             - 'marker': str (default 'o')
             - 'color': str (default 'red')
@@ -260,20 +201,24 @@ def _plot_positions(
         settings_mismatch_err = "Number of points and point_settings do not match."
         raise ValueError(settings_mismatch_err)
     else:
-        point_settings = [PointSettings.from_dict(setting) for setting in point_settings]
+        # If dicts are passed into the function
+        # convert them to PointSettings objects
+        for i in range(len(point_settings)):
+            if type(point_settings[i]) is dict:
+                point_settings[i] = PointSettings.from_dict(point_settings[i])
 
     plot_metadata = _generate_plot_metadata(map_name, points, point_settings, lower_points_frac)
-    _plot_positions_helper(plot_metadata, axes)
+    _plot_positions_from_metadata(plot_metadata, axes)
 
 def _generate_plot_metadata(
     map_name: str,
     points: list[tuple[float, float, float]],
     point_settings: list[PointSettings],
     lower_points_frac: float = 0.4,
-) -> PlotPositionMetadata:
+) -> list[PlotPositionMetadata]:
     """Processes points and their settings to prepare plotting metadata.
 
-    Args:
+    Args:0
         map_name (str): Name of the map.
         points (list[tuple[float, float, float]]): List of (x, y, z) points.
         point_settings (list[PointSettings]): List of settings for each point.
@@ -282,9 +227,7 @@ def _generate_plot_metadata(
     Returns:
         PlotPositionMetadata: Object containing transformed coordinates and updated PointSettings.
     """
-    x_pos = []
-    y_pos = []
-    updated_settings = []
+    plot_position_metadata_list = []
 
     map_is_lower = map_name.endswith("_lower")
 
@@ -308,7 +251,7 @@ def _generate_plot_metadata(
             continue
 
         # Create a new PointSettings instance with updated alpha
-        updated_point = PointSettings(
+        updated_point_settings = PointSettings(
             marker=settings.marker,
             color=settings.color,
             size=settings.size,
@@ -319,14 +262,15 @@ def _generate_plot_metadata(
             alpha=alpha,
         )
 
-        # Store transformed coordinates and updated settings
-        x_pos.append(transformed_x)
-        y_pos.append(transformed_y)
-        updated_settings.append(updated_point)
+        # Store transformed coordinates and updated settings in PlotPositionMetadata obj
+        # and add it to the list
+        plot_position_metadata_list.append(PlotPositionMetadata(x_pos=transformed_x,
+                                                          y_pos=transformed_y,
+                                                          plot_settings=updated_point_settings))
 
-    return PlotPositionMetadata(x_pos=x_pos, y_pos=y_pos, plot_settings=updated_settings)
+    return plot_position_metadata_list
 
-def _plot_positions_helper(player_pos_settings: PlotPositionMetadata, axes: Axes) -> None:
+def _plot_positions_from_metadata(player_pos_settings: list[PlotPositionMetadata], axes: Axes) -> None:
     """Plots player positions and associated metadata on a given matplotlib axes.
 
     This function visualizes player positions on the map using the provided plot metadata.
@@ -348,9 +292,11 @@ def _plot_positions_helper(player_pos_settings: PlotPositionMetadata, axes: Axes
     Raises:
         ValueError: If data in `PlotPositionMetadata` is malformed or missing required fields.
     """
-    for transformed_x, transformed_y, settings in zip(
-        player_pos_settings.x_pos, player_pos_settings.y_pos, player_pos_settings.plot_settings, strict=False
-    ):
+    for metadata in player_pos_settings:
+        transformed_x = metadata.x_pos
+        transformed_y = metadata.y_pos
+        settings = metadata.plot_settings
+
         # Get settings
         marker = settings.marker
         color = settings.color
