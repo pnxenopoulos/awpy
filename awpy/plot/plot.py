@@ -23,10 +23,7 @@ import awpy.plot.utils
 
 @dataclass
 class PointSettings:
-    """Dataclass for point settings used in plotting.
-
-    Provides default values and type validation for each attribute. Raises ValueError
-    if unexpected keys are passed or if wrong types are provided.
+    """Dataclass for settings used in plotting with default values for each attribute.
 
     Attributes:
         marker (str): Marker style for plotting. Defaults to 'o'.
@@ -37,6 +34,9 @@ class PointSettings:
         direction (Optional[Tuple[float, float]]): (pitch, yaw) angles. Defaults to None.
         label (Optional[str]): Text label for the point. Defaults to None.
         alpha (float): Transparency level (0.0 - 1.0). Defaults to 1.0.
+
+    from_dict: Creates PointSettings object from a dictionary. Raises ValueError
+        if unexpected keys are passed or if wrong types are provided.
     """
 
     marker: str = "o"
@@ -50,16 +50,16 @@ class PointSettings:
 
     @classmethod
     def from_dict(cls: type["PointSettings"], settings: dict[str, Any]) -> "PointSettings":
-        """Create a PointSettings instance from a dictionary, ignoring unknown keys.
+        """Create a PointSettings instance from a dictionary, throwing ValueError for unknown keys.
 
         Args:
             settings (dict): Dictionary of settings.
 
-        Returns:
-            PointSettings: Validated instance.
-
         Raises:
             ValueError: If unknown keys are provided.
+
+        Returns:
+            PointSettings: Validated instance.
         """
         allowed_keys = {f.name for f in cls.__dataclass_fields__.values()}
         unknown_keys = set(settings) - allowed_keys
@@ -72,12 +72,12 @@ class PointSettings:
 
 @dataclass
 class PlotPositionMetadata:
-    """Data structure for holding transformed plotting data.
+    """Data structure holding transformed plotting data for a player's position.
 
     Attributes:
-        x_pos (list[tuple[float, float]]): Transformed x coordinates.
-        y_pos (list[tuple[float, float]]): Transformed y coordinates.
-        plot_settings (list[PointSettings]): PointSettings for the plotted pair.
+        x_pos (tuple[float, float]): Transformed x coordinates.
+        y_pos (tuple[float, float]): Transformed y coordinates.
+        plot_settings (PointSettings): PointSettings for the plotted pair.
     """
 
     x_pos: tuple[float, float]
@@ -89,7 +89,7 @@ def plot(
     map_name: str,
     points: list[tuple[float, float, float]] | None = None,
     lower_points_frac: float | None = 0.4,
-    point_settings: list[dict] | None = None,
+    point_settings: list[PointSettings] | list[dict] | None = None,
 ) -> tuple[Figure, Axes]:
     """Plot a Counter-Strike map with optional points.
 
@@ -107,8 +107,9 @@ def plot(
             ends in "_lower") then this argument is ignored and lower points'
             alpha is set to 1 and upper points' alpha is set to 0.
         point_settings (list[dict], optional):
-            list of dictionaries with settings for each point. Each dictionary
-            should contain:
+            list of PointSettings objects or dictionaries with settings for each point.
+
+            Each dictionary should contain:
             - 'marker': str (default 'o')
             - 'color': str (default 'red')
             - 'size': float (default 10)
@@ -148,6 +149,7 @@ def plot(
     plt.tight_layout()
 
     return figure, axes
+
 
 def _plot_positions(
     map_name: str,
@@ -210,6 +212,7 @@ def _plot_positions(
     plot_metadata = _generate_plot_metadata(map_name, points, point_settings, lower_points_frac)
     _plot_positions_from_metadata(plot_metadata, axes)
 
+
 def _generate_plot_metadata(
     map_name: str,
     points: list[tuple[float, float, float]],
@@ -218,7 +221,7 @@ def _generate_plot_metadata(
 ) -> list[PlotPositionMetadata]:
     """Processes points and their settings to prepare plotting metadata.
 
-    Args:0
+    Args:
         map_name (str): Name of the map.
         points (list[tuple[float, float, float]]): List of (x, y, z) points.
         point_settings (list[PointSettings]): List of settings for each point.
@@ -264,11 +267,12 @@ def _generate_plot_metadata(
 
         # Store transformed coordinates and updated settings in PlotPositionMetadata obj
         # and add it to the list
-        plot_position_metadata_list.append(PlotPositionMetadata(x_pos=transformed_x,
-                                                          y_pos=transformed_y,
-                                                          plot_settings=updated_point_settings))
+        plot_position_metadata_list.append(
+            PlotPositionMetadata(x_pos=transformed_x, y_pos=transformed_y, plot_settings=updated_point_settings)
+        )
 
     return plot_position_metadata_list
+
 
 def _plot_positions_from_metadata(player_pos_settings: list[PlotPositionMetadata], axes: Axes) -> None:
     """Plots player positions and associated metadata on a given matplotlib axes.
@@ -278,7 +282,7 @@ def _plot_positions_from_metadata(player_pos_settings: list[PlotPositionMetadata
     and optional labels for each player or point.
 
     Args:
-        player_pos_settings (PlotPositionMetadata):
+        player_pos_settings (list[PlotPositionMetadata]):
             Contains the transformed (x, y) positions and plotting settings for each point.
             Includes attributes such as marker style, color, size, HP, armor, direction,
             label, and transparency (alpha).
@@ -286,11 +290,11 @@ def _plot_positions_from_metadata(player_pos_settings: list[PlotPositionMetadata
             The matplotlib axes object where the positions and related visual elements
             will be plotted.
 
-    Returns:
-        None
-
     Raises:
         ValueError: If data in `PlotPositionMetadata` is malformed or missing required fields.
+
+    Returns:
+        None
     """
     for metadata in player_pos_settings:
         transformed_x = metadata.x_pos
