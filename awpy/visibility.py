@@ -3,11 +3,18 @@
 Reference: https://github.com/AtomicBool/cs2-map-parser
 """
 
+# TODO: Change vphys output to use
+# Source2Viewer-CLI-i "...maps/MAP_NAME.vpk" --block "PHYS" -f "maps/MAP_NAME/world_physics.vmdl_c"
+# And only take output after the line:
+# `--- Data for block "PHYS" ---`
+
 from __future__ import annotations
 
 import pathlib
+import pickle
 import struct
 from dataclasses import dataclass
+from typing import Literal, overload
 
 from loguru import logger
 
@@ -256,12 +263,20 @@ class VphysParser:
                 to parse.
         """
         self.vphys_file = pathlib.Path(vphys_file)
-        self.triangles = []
+        self.triangles: list[Triangle] = []
         self.kv3_parser = KV3Parser()
         self.parse()
 
+    @overload
     @staticmethod
-    def bytes_to_vec(byte_str: str, element_size: int) -> list[int | float]:
+    def bytes_to_vec(byte_str: str, element_type: Literal["uint8", "int32"]) -> list[int]: ...
+
+    @overload
+    @staticmethod
+    def bytes_to_vec(byte_str: str, element_type: Literal["float"]) -> list[float]: ...
+
+    @staticmethod
+    def bytes_to_vec(byte_str: str, element_type: Literal["uint8", "int32", "float"]) -> list[int] | list[float]:
         """Converts a space-separated string of byte values into a list of numbers.
 
         Args:
@@ -276,16 +291,20 @@ class VphysParser:
         bytes_list = [int(b, 16) for b in byte_str.split()]
         result = []
 
-        if element_size == 1:  # uint8
+        if element_type == "uint8":
             return bytes_list
+
+        element_size = 4  # For int and float
 
         # Convert bytes to appropriate type based on size
         for i in range(0, len(bytes_list), element_size):
             chunk = bytes(bytes_list[i : i + element_size])
-            if element_size == 4:  # float or int32
-                val = struct.unpack("f", chunk)[0]  # Assume float for size 4
+            if element_type == "float":  # float
+                val = struct.unpack("f", chunk)[0]
                 result.append(val)
-
+            else:  # int32
+                val = struct.unpack("i", chunk)[0]
+                result.append(val)
         return result
 
     def parse(self) -> None:
@@ -329,7 +348,7 @@ class VphysParser:
                         f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Vertices"
                     )
 
-                vertex_data = self.bytes_to_vec(vertex_str, 4)
+                vertex_data = self.bytes_to_vec(vertex_str, "float")
                 vertices = [
                     awpy.vector.Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
                     for i in range(0, len(vertex_data), 3)
@@ -338,11 +357,11 @@ class VphysParser:
                 # Get faces and edges
                 faces = self.bytes_to_vec(
                     self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Faces"),
-                    1,
+                    "uint8",
                 )
                 edge_data = self.bytes_to_vec(
                     self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Edges"),
-                    1,
+                    "uint8",
                 )
 
                 edges = [
@@ -376,21 +395,25 @@ class VphysParser:
         mesh_idx = 0
         mesh_count = 0
         while True:
+            logger.debug(f"Processing mesh {mesh_idx}...")
             collision_idx = self.kv3_parser.get_value(
                 f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_nCollisionAttributeIndex"
             )
+
             if not collision_idx:
                 break
 
             if collision_idx == "0":
                 # Get triangles and vertices
+
                 tri_data = self.bytes_to_vec(
-                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Triangles"),
-                    4,
+                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_Mesh.m_Triangles"),
+                    "int32",
                 )
+
                 vertex_data = self.bytes_to_vec(
-                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Vertices"),
-                    4,
+                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_Mesh.m_Vertices"),
+                    "float",
                 )
 
                 vertices = [
@@ -437,18 +460,20 @@ class VphysParser:
         logger.success(f"Processed {len(self.triangles)} triangles from {self.vphys_file} -> {outpath}")
 
 
+@dataclass
 class AABB:
-    """Axis-Aligned Bounding Box for efficient collision detection."""
+    """Axis-Aligned Bounding Box for efficient collision detection.
 
-    def __init__(self, min_point: awpy.vector.Vector3, max_point: awpy.vector.Vector3) -> None:
-        """Initialize the AABB with minimum and maximum points.
+    Attributes:
+        min_point (awpy.vector.Vector3): Minimum point of the AABB.
+        max_point (awpy.vector.Vector3): Maximum point of the AABB."""
 
-        Args:
-            min_point (awpy.vector.Vector3): Minimum point of the AABB.
-            max_point (awpy.vector.Vector3): Maximum point of the AABB.
-        """
-        self.min_point = min_point
-        self.max_point = max_point
+    min_point: awpy.vector.Vector3
+    max_point: awpy.vector.Vector3
+
+    def __repr__(self) -> str:
+        """Return a string representation of the AABB."""
+        return f"AABB(min_point={self.min_point}, max_point={self.max_point})"
 
     @classmethod
     def from_triangle(cls, triangle: Triangle) -> AABB:
@@ -504,29 +529,22 @@ class AABB:
         return t_enter <= t_exit and t_exit >= 0
 
 
+@dataclass
 class BVHNode:
-    """Node in the Bounding Volume Hierarchy tree."""
+    """Node in the Bounding Volume Hierarchy tree.
 
-    def __init__(
-        self,
-        aabb: AABB,
-        triangle: Triangle | None = None,
-        left: BVHNode | None = None,
-        right: BVHNode | None = None,
-    ) -> None:
-        """Initialize a BVHNode with an AABB and optional triangle and children.
+    Attributes:
+        aabb (AABB): Axis-Aligned Bounding Box of the node.
+        triangle (Triangle | None, optional): Triangle contained
+            in the node. Defaults to None.
+        left (BVHNode | None, optional): Left child node. Defaults to None.
+        right (BVHNode | None, optional): Right child node. Defaults to None.
+    """
 
-        Args:
-            aabb (AABB): Axis-Aligned Bounding Box of the node.
-            triangle (Triangle | None, optional): Triangle contained
-                in the node. Defaults to None.
-            left (BVHNode | None, optional): Left child node. Defaults to None.
-            right (BVHNode | None, optional): Right child node. Defaults to None.
-        """
-        self.aabb = aabb
-        self.triangle = triangle
-        self.left = left
-        self.right = right
+    aabb: AABB
+    triangle: Triangle | None = None
+    left: BVHNode | None = None
+    right: BVHNode | None = None
 
 
 class VisibilityChecker:
@@ -723,14 +741,11 @@ class VisibilityChecker:
     def read_tri_file(tri_file: str | pathlib.Path, buffer_size: int = 1000) -> list[Triangle]:
         """Read triangles from a .tri file."""
         tri_file = pathlib.Path(tri_file)
-        file_size = tri_file.stat().st_size
-        num_triangles = file_size // (9 * 4)
 
-        triangles = [None] * num_triangles
+        triangles: list[Triangle] = []
 
         with open(tri_file, "rb") as f:
             chunk_size = buffer_size * 9 * 4
-            triangle_idx = 0
 
             while True:
                 data = f.read(chunk_size)
@@ -744,18 +759,28 @@ class VisibilityChecker:
                     offset = i * 36
                     values = struct.unpack("9f", data[offset : offset + 36])
 
-                    triangles[triangle_idx] = Triangle(
-                        awpy.vector.Vector3(values[0], values[1], values[2]),
-                        awpy.vector.Vector3(values[3], values[4], values[5]),
-                        awpy.vector.Vector3(values[6], values[7], values[8]),
+                    triangles.append(
+                        Triangle(
+                            awpy.vector.Vector3(values[0], values[1], values[2]),
+                            awpy.vector.Vector3(values[3], values[4], values[5]),
+                            awpy.vector.Vector3(values[6], values[7], values[8]),
+                        )
                     )
-                    triangle_idx += 1
 
-        return triangles[:triangle_idx]
+        return triangles
 
 
 VIS_CHECKERS: dict[str, VisibilityChecker] = {}
 for map_info in (pathlib.Path(__file__).parent / "data/tri").iterdir():
-    if map_info.stem != "de_dust2":
+    if not map_info.is_file() or map_info.suffix != ".tri":
         continue
-    VIS_CHECKERS[map_info.stem] = VisibilityChecker(map_info)
+    if map_info.stem not in ("de_dust2",):
+        continue
+    pickle_path = map_info.with_suffix(".pickle")
+    if pickle_path.exists():
+        print(f"Loading from pickle: {map_info.stem}", flush=True)
+        VIS_CHECKERS[map_info.stem] = pickle.loads(pickle_path.read_bytes())  # noqa: S301
+    else:
+        print(f"Building from tri: {map_info.stem}", flush=True)
+        VIS_CHECKERS[map_info.stem] = VisibilityChecker(map_info)
+        pickle_path.write_bytes(pickle.dumps(VIS_CHECKERS[map_info.stem]))
