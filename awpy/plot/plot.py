@@ -89,7 +89,7 @@ def plot(
     map_name: str,
     points: list[tuple[float, float, float]] | None = None,
     lower_points_frac: float | None = 0.4,
-    point_settings: list[PointSettings] | list[dict] | None = None,
+    point_settings: list[PointSettings] | list[dict[str, Any]] | None = None,
 ) -> tuple[Figure, Axes]:
     """Plot a Counter-Strike map with optional points.
 
@@ -106,7 +106,7 @@ def plot(
             If `map_name` is referencing the lower level of a map (i.e.
             ends in "_lower") then this argument is ignored and lower points'
             alpha is set to 1 and upper points' alpha is set to 0.
-        point_settings (list[dict], optional):
+        point_settings (list[PointSettings], list[dict[str, Any]], optional):
             list of PointSettings objects or dictionaries with settings for each point.
 
             Each dictionary should contain:
@@ -156,7 +156,7 @@ def _plot_positions(
     axes: Axes,
     points: list[tuple[float, float, float]] | None = None,
     lower_points_frac: float | None = 0.4,
-    point_settings: list[PointSettings] | list[dict] | None = None,
+    point_settings: list[PointSettings] | list[dict[str, Any]] | None = None,
 ) -> None:
     """Plots points on a map, optionally customizing plotting settings.
 
@@ -179,7 +179,7 @@ def _plot_positions(
             If `map_name` is referencing the lower level of a map (i.e.
             ends in "_lower") then this argument is ignored and lower points'
             alpha is set to 1 and upper points' alpha is set to 0.
-        point_settings (list[PointSettings], list[dict], optional):
+        point_settings (list[PointSettings], list[dict[str, Any]], optional):
             list of PointSettings or dictionaries with settings for each point. Each dictionary
             should contain:
             - 'marker': str (default 'o')
@@ -206,7 +206,7 @@ def _plot_positions(
         # If dicts are passed into the function
         # convert them to PointSettings objects
         for i in range(len(point_settings)):
-            if type(point_settings[i]) is dict:
+            if isinstance(point_settings[i], dict):
                 point_settings[i] = PointSettings.from_dict(point_settings[i])
 
     plot_metadata = _generate_plot_metadata(map_name, points, point_settings, lower_points_frac)
