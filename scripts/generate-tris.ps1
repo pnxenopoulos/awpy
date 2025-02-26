@@ -29,11 +29,35 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | ForEach-Object {
     $tempOutputDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
     New-Item -ItemType Directory -Path $tempOutputDir | Out-Null
 
-    # Run Source2Viewer-CLI to generate the .vphys file into the temporary folder.
-    .\Source2Viewer-CLI.exe -i $filePath -e "vphys_c" -o $tempOutputDir -d
+    # Run Source2Viewer-CLI and capture stdout
+    $output = .\Source2Viewer-CLI.exe -i $filePath --block "PHYS" -f "maps/$fileNameWithoutExtension/world_physics.vmdl_c" 2>&1
 
-    # Expected path for the generated vphys file.
+    # Convert output to an array of lines
+    $outputLines = $output -split "`r?`n"
+
+    # Find the index where the actual data starts
+    $startIndex = $outputLines.IndexOf('--- Data for block "PHYS" ---') + 1
+
+    if ($startIndex -eq 0 -or $startIndex -ge $outputLines.Count) {
+        Write-Host "Error: Expected PHYS data block not found for $fileNameWithoutExtension" -ForegroundColor Red
+        return
+    }
+
+    # Extract the relevant lines after the marker
+    $physData = $outputLines[$startIndex..($outputLines.Count - 1)] -join "`n"
+
+    # Define the expected output path
     $vphysFilePath = Join-Path -Path $tempOutputDir -ChildPath "maps\$fileNameWithoutExtension\world_physics.vphys"
+
+    # Ensure the output directory exists
+    $parentDir = Split-Path -Path $vphysFilePath -Parent
+    if (!(Test-Path $parentDir)) {
+        New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
+    }
+
+    # Write the extracted data to the file
+    $physData | Out-File -FilePath $vphysFilePath -Encoding utf8
+
     if (-not (Test-Path $vphysFilePath)) {
         Write-Host "Error: Expected vphys file not found for $fileNameWithoutExtension" -ForegroundColor Red
         Remove-Item -Path $tempOutputDir -Recurse -Force

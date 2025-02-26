@@ -520,7 +520,7 @@ class Nav:
         self,
         start_id: int | Vector3,
         end_id: int | Vector3,
-        weight: Literal["size", "dist", "weight"] = "weight",
+        weight: Literal["size", "dist", "time_adjusted"] = "dist",
     ) -> PathResult:
         """Finds the path between two areas in the graph.
 
@@ -536,6 +536,7 @@ class Nav:
             A list of NavArea objects representing the path from start to end.
             Returns an empty list if no path exists.
         """
+        print(f"Called with {start_id=} {end_id=} {weight=}")
 
         def dist_heuristic(node_a: int, node_b: int) -> float:
             return distance.euclidean(
@@ -564,48 +565,44 @@ class Nav:
                 weight=weight or "weight",
                 heuristic=dist_heuristic,
             )
-
-            if len(path_ids) == 1:
-                total_distance = 0
-            elif len(path_ids) == 2:
-                match start_id, end_id:
-                    case Vector3(), Vector3():
-                        total_distance = start_id.distance(end_id)
-                    case int(), int():
-                        total_distance = self.graph[start_id][end_id][weight]
-                    case Vector3(), int():
-                        total_distance = distance.euclidean(
-                            start_id.to_tuple_2d(),
-                            self.graph.nodes[end_id]["center_2d"],
-                        )
-                    case int(), Vector3():
-                        total_distance = distance.euclidean(self.graph.nodes[start_id]["center_2d"], end_id)
-            else:
-                # Calculate start and end distances
-                start_distance = (
-                    distance.euclidean(
-                        start_id.to_tuple_2d(),
-                        self.graph.nodes[path_ids[1]]["center_2d"],
-                    )
-                    if isinstance(start_id, Vector3)
-                    else self.graph[start_area][path_ids[1]][weight]
-                )
-                # Calculate middle path distance (excluding first and last)
-                middle_distance = sum(self.graph[u][v][weight] for u, v in itertools.pairwise(path_ids[1:-1]))
-                end_distance = (
-                    distance.euclidean(end_id.to_tuple_2d(), self.graph.nodes[-2]["center_2d"])
-                    if isinstance(end_id, Vector3)
-                    else self.graph[path_ids[-2]][end_area][weight]
-                )
-                total_distance = start_distance + middle_distance + end_distance
-
-            # Convert area IDs to NavArea objects
-            return PathResult(
-                path=[self.graph.nodes[area_id]["node"] for area_id in path_ids],
-                distance=total_distance,
-            )
         except nx.NetworkXNoPath:
             return PathResult(path=[], distance=float("inf"))  # No path exists
+
+        if len(path_ids) in (1, 2):
+            match start_id, end_id:
+                case Vector3(), Vector3():
+                    total_distance = start_id.distance(end_id)
+                case int(), int():
+                    total_distance = self.graph[start_id][end_id][weight]
+                case Vector3(), int():
+                    total_distance = distance.euclidean(
+                        start_id.to_tuple_2d(),
+                        self.graph.nodes[end_id]["center_2d"],
+                    )
+                case int(), Vector3():
+                    total_distance = distance.euclidean(self.graph.nodes[start_id]["center_2d"], end_id)
+        else:
+            # Calculate start and end distances
+            start_distance = (
+                distance.euclidean(start_id.to_tuple_2d(), self.graph.nodes[path_ids[1]]["center_2d"])
+                if isinstance(start_id, Vector3)
+                else self.graph[start_area][path_ids[1]][weight]
+            )
+            # Calculate middle path distance (excluding first and last)
+            middle_distance = sum(self.graph[u][v][weight] for u, v in itertools.pairwise(path_ids[1:-1]))
+            end_distance = (
+                distance.euclidean(end_id.to_tuple_2d(), self.graph.nodes[path_ids[-2]]["center_2d"])
+                if isinstance(end_id, Vector3)
+                else self.graph[path_ids[-2]][end_area][weight]
+            )
+            total_distance = start_distance + middle_distance + end_distance
+
+        # Convert area IDs to NavArea objects
+        print(f"Distance: {total_distance=}")
+        return PathResult(
+            path=[self.graph.nodes[area_id]["node"] for area_id in path_ids],
+            distance=total_distance,
+        )
 
     def to_dict(self) -> NavDict:
         """Converts the entire navigation mesh to a dictionary."""

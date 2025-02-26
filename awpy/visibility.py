@@ -307,6 +307,23 @@ class VphysParser:
                 result.append(val)
         return result
 
+    def get_collision_attribute_indices_for_default_group(self) -> list[str]:
+        """Get collision attribute indices for the default group.
+
+        Returns:
+            list[int]: List of collision attribute indices for the default group.
+        """
+        collision_attribute_indices = []
+        idx = 0
+        while True:
+            collision_group_string = self.kv3_parser.get_value(f"m_collisionAttributes[{idx}].m_CollisionGroupString")
+            if not collision_group_string:
+                break
+            if collision_group_string.lower() == '"default"':
+                collision_attribute_indices.append(str(idx))
+            idx += 1
+        return collision_attribute_indices
+
     def parse(self) -> None:
         """Parses the VPhys file and extracts collision geometry.
 
@@ -325,6 +342,10 @@ class VphysParser:
         # Parse VPhys data
         self.kv3_parser.parse(data)
 
+        collision_attribute_indices = self.get_collision_attribute_indices_for_default_group()
+
+        logger.debug(f"Extracted collision attribute indices: {collision_attribute_indices}")
+
         # Process hulls
         hull_idx = 0
         hull_count = 0
@@ -338,7 +359,7 @@ class VphysParser:
             if not collision_idx:
                 break
 
-            if collision_idx == "0":
+            if collision_idx in collision_attribute_indices:
                 # Get vertices
                 vertex_str = self.kv3_parser.get_value(
                     f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_VertexPositions"
@@ -403,7 +424,7 @@ class VphysParser:
             if not collision_idx:
                 break
 
-            if collision_idx == "0":
+            if collision_idx in collision_attribute_indices:
                 # Get triangles and vertices
 
                 tri_data = self.bytes_to_vec(
@@ -770,17 +791,14 @@ class VisibilityChecker:
         return triangles
 
 
-VIS_CHECKERS: dict[str, VisibilityChecker] = {}
-for map_info in (pathlib.Path(__file__).parent / "data/tri").iterdir():
-    if not map_info.is_file() or map_info.suffix != ".tri":
-        continue
-    if map_info.stem not in ("de_dust2",):
-        continue
-    pickle_path = map_info.with_suffix(".pickle")
+def load_vis_checker(map_name: str) -> VisibilityChecker:
+    tri_path = pathlib.Path(__file__).parent / "data/tri" / f"{map_name}.tri"
+    pickle_path = tri_path.with_suffix(".pickle")
     if pickle_path.exists():
-        print(f"Loading from pickle: {map_info.stem}", flush=True)
-        VIS_CHECKERS[map_info.stem] = pickle.loads(pickle_path.read_bytes())  # noqa: S301
-    else:
-        print(f"Building from tri: {map_info.stem}", flush=True)
-        VIS_CHECKERS[map_info.stem] = VisibilityChecker(map_info)
-        pickle_path.write_bytes(pickle.dumps(VIS_CHECKERS[map_info.stem]))
+        print(f"Loading from pickle: {tri_path.stem}", flush=True)
+        return pickle.loads(pickle_path.read_bytes())  # noqa: S301
+
+    print(f"Building from tri: {tri_path.stem}", flush=True)
+    vis_checker = VisibilityChecker(tri_path)
+    pickle_path.write_bytes(pickle.dumps(vis_checker))
+    return vis_checker

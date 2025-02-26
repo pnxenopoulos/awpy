@@ -6,15 +6,18 @@ import logging
 import math
 import os
 import pickle
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.collections import PatchCollection
+from PIL import Image
 from shapely import Point, Polygon
 from tqdm import tqdm
 
@@ -24,7 +27,7 @@ from awpy.nav import NAV_DATA, Nav, NavArea, PathResult
 from awpy.plot.utils import game_to_pixel
 from awpy.spawn import SPAWNS_DATA, Spawns
 from awpy.vector import Vector3
-from awpy.visibility import VIS_CHECKERS, BVHNode
+from awpy.visibility import BVHNode, VisibilityChecker, load_vis_checker
 
 print("Finished imports, starting script", flush=True)
 
@@ -41,6 +44,10 @@ SUPPORTED_MAPS = {
     # "de_vertigo",
 }
 GRANULARITIES = (100, 200)
+
+MeetingStyle = Literal["fine", "rough"]
+
+ReachabilityMode = Literal["visibility", "jumpability", "reachability"]
 
 
 @dataclass(frozen=True)
@@ -134,15 +141,17 @@ def _plot_tiles(
     )
 
 
-def _plot_points(points: list[Vector3], map_name: str, axis: Axes) -> None:
+def _plot_points(
+    points: list[Vector3], map_name: str, axis: Axes, color: str = "green", marker_size: float = 5, marker: str = "o"
+) -> None:
     for point in points:
         x, y, _ = game_to_pixel(map_name, point)
         axis.plot(
             x,
             y,
-            marker="o",
-            color="green",
-            markersize=5,
+            marker=marker,
+            color=color,
+            markersize=marker_size,
             alpha=1.0,
             zorder=10,
         )
@@ -246,6 +255,7 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
     ys: list[float] = []
     area_polygons: dict[int, Polygon] = {}
     area_levels: dict[int, float] = {}
+    vis_checker = load_vis_checker(map_name)
 
     # Precompute the 2D polygon projection and an average-z for each nav area.
     for area_id, area in nav_areas.items():
@@ -332,17 +342,6 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
         for orig_id in new_cell.orig_ids:
             old_to_new_children[orig_id].add(idx)
 
-    for area1 in nav_areas.values():
-        for area2 in nav_areas.values():
-            if area1 == area2 or area2.area_id in area1.connections:
-                continue
-            if (
-                (set(area1.ladders_above) & set(area2.ladders_below))
-                or (set(area1.ladders_below) & set(area2.ladders_above))
-                or (area1.centroid.can_jump_to(area2.centroid) and areas_visible(area1, area2, map_name))
-            ):
-                area1.connections.append(area2.area_id)
-
     # Build connectivity based solely on the new cell's orig_ids.
     # For a new cell A with orig set A_orig, connect to new cell B with orig set B_orig if:
     # ∃ a in A_orig and b in B_orig with a == b or b in nav_areas[a].connections
@@ -377,6 +376,17 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
                 for closest_children in closest_childrens:
                     new_nav_areas[closest_children[0]].connections.add(closest_children[1])
 
+    for area1 in nav_areas.values():
+        for area2 in nav_areas.values():
+            if area1.area_id == area2.area_id or area2.area_id in area1.connections:
+                continue
+            if (
+                (set(area1.ladders_above) & set(area2.ladders_below))
+                or (set(area1.ladders_below) & set(area2.ladders_above))
+                or (area1.centroid.can_jump_to(area2.centroid) and areas_visible(area1, area2, vis_checker))
+            ):
+                area1.connections.append(area2.area_id)
+
     return {
         idx: NavArea(area_id=idx, corners=area.corners, connections=list(area.connections))
         for idx, area in new_nav_areas.items()
@@ -405,6 +415,7 @@ def plot_path(
     output_dir: str | Path,
     granularity: str = "nom",
     dpi: int = 300,
+    weight: Literal["dist", "time_adjusted"] = "time_adjusted",
 ) -> tuple[float, float]:
     output_dir = Path(output_dir) / map_name / granularity
     Path(output_dir).mkdir(exist_ok=True, parents=True)
@@ -413,8 +424,8 @@ def plot_path(
     except FileNotFoundError:
         return float("inf"), float("inf")
     fig.set_size_inches(19.2, 21.6)
-    start_area = map_nav.find_area(start)
-    end_area = map_nav.find_area(end)
+    start_area = map_nav.find_area(start) or map_nav.find_closest_area_centroid(start)
+    end_area = map_nav.find_area(end) or map_nav.find_closest_area_centroid(end)
 
     if not start_area or not end_area:
         print(f"Didnt find start {start_area}-{start} or end area {end_area}-{end}")
@@ -423,8 +434,8 @@ def plot_path(
     _plot_tiles({0: start_area}, map_name, axis, color="green")
     _plot_tiles({1: end_area}, map_name, axis, color="red")
     _plot_points([start, end], map_name, axis)
-    shortest_path, direct_distance = map_nav.find_path(start_area.area_id, end_area.area_id, weight="dist")
-    shortest_path_reversed, reversed_distance = map_nav.find_path(end_area.area_id, start_area.area_id, weight="dist")
+    shortest_path, direct_distance = map_nav.find_path(start_area.area_id, end_area.area_id, weight=weight)
+    shortest_path_reversed, reversed_distance = map_nav.find_path(end_area.area_id, start_area.area_id, weight=weight)
     print(f"Distances between {start_area.area_id}-{start} and {end_area.area_id}-{end}")
     print(f"Direct distance: {direct_distance}")
     print(f"Reversed distance: {reversed_distance}", flush=True)
@@ -491,6 +502,7 @@ def de_anubis_spawns() -> list[Vector3]:
     ct_spawn = Vector3(-476, 2216, 88)
     t_spawn = Vector3(-202, -1575, 52)
     mid = Vector3(-166, 455, 64)
+
     return [ct_spawn, t_spawn, mid]
 
 
@@ -500,7 +512,9 @@ def de_anubis_meetings() -> list[Vector3]:
     water = Vector3(410, 122, -85)
     b_site = Vector3(-1500, 464, 63)
     tarp = Vector3(1410, 350, 64)
-    return [a_site, mid, water, b_site, tarp]
+    tarp2 = Vector3(1301.03, 329.97, 63.89)
+    tarp3 = Vector3(1283.45, 489.03, 65.87)
+    return [a_site, mid, water, b_site, tarp, tarp2, tarp3]
 
 
 def de_dust2_spawns() -> list[Vector3]:
@@ -520,13 +534,14 @@ def de_dust2_meetings() -> list[Vector3]:
 def de_inferno_spawns() -> list[Vector3]:
     ct_spawn = Vector3(2472, 2005, 198)
     t_spawn = Vector3(-1646, 321, 0)
-    return [ct_spawn, t_spawn]
+    mid = Vector3(476, 585, 148)
+    return [ct_spawn, t_spawn, mid]
 
 
 def de_inferno_meetings() -> list[Vector3]:
     b_site = Vector3(40, 2837, 225)
     mid = Vector3(476, 585, 148)
-    second = Vector3(595, -94, 136)
+    second = Vector3(467, -132, 133)
     apps = Vector3(1434, -286, 320)
     return [b_site, mid, second, apps]
 
@@ -534,7 +549,8 @@ def de_inferno_meetings() -> list[Vector3]:
 def de_mirage_spawns() -> list[Vector3]:
     ct_spawn = Vector3(-1776, -1800, -203)
     t_spawn = Vector3(1278, -350, -104)
-    return [ct_spawn, t_spawn]
+    a_site = Vector3(-252.69, -2065.91, 26.87)
+    return [ct_spawn, t_spawn, a_site]
 
 
 def de_mirage_meetings() -> list[Vector3]:
@@ -544,7 +560,8 @@ def de_mirage_meetings() -> list[Vector3]:
     conn = Vector3(-663, -1152, -104)
     ramp = Vector3(335, -1565, -121)
     palace = Vector3(443, -2292, 24)
-    return [apps, short, mid, conn, ramp, palace]
+    balcony = Vector3(-28.80, -2110.89, 23.87)
+    return [apps, short, mid, conn, ramp, palace, balcony]
 
 
 def de_nuke_spawns() -> list[Vector3]:
@@ -565,7 +582,8 @@ def de_nuke_meetings() -> list[Vector3]:
 def de_overpass_spawns() -> list[Vector3]:
     ct_spawn = Vector3(-2200, 740, 540)
     t_spawn = Vector3(-1338, -3138, 320)
-    return [ct_spawn, t_spawn]
+    heaven = Vector3(-1693.83, 485.76, 323.86)
+    return [ct_spawn, t_spawn, heaven]
 
 
 def de_overpass_meetings() -> list[Vector3]:
@@ -580,7 +598,8 @@ def de_overpass_meetings() -> list[Vector3]:
 def de_train_spawns() -> list[Vector3]:
     ct_spawn = Vector3(1493, -1269, -264)
     t_spawn = Vector3(-2029, 1382, -108)
-    return [ct_spawn, t_spawn]
+    oil = Vector3(17.94, -1529.98, -113.13)
+    return [ct_spawn, t_spawn, oil]
 
 
 def de_train_meetings() -> list[Vector3]:
@@ -588,7 +607,9 @@ def de_train_meetings() -> list[Vector3]:
     a_site = Vector3(391, 109, -152)
     pop = Vector3(-901, -308, -149)
     b_halls = Vector3(-987, -1004, -90)
-    return [ivy, a_site, pop, b_halls]
+    oil = Vector3(265.37, -1549.95, -113.13)
+    upper = Vector3(-173.73, -1653.94, -103.13)
+    return [ivy, a_site, pop, b_halls, oil, upper]
 
 
 @dataclass
@@ -609,12 +630,12 @@ def get_distances_from_spawns(map_areas: Nav, spawns: Spawns) -> SpawnDistances:
     t_distances: list[SpawnDistance] = []
     for area in tqdm(map_areas.areas.values()):
         ct_path = min(
-            (map_areas.find_path(spawn_point, area.area_id, weight="dist") for spawn_point in spawns.CT),
+            (map_areas.find_path(spawn_point, area.area_id, weight="time_adjusted") for spawn_point in spawns.CT),
             default=PathResult(distance=float("inf"), path=[]),
             key=lambda path_result: path_result.distance,
         )
         t_path = min(
-            (map_areas.find_path(spawn_point, area.area_id, weight="dist") for spawn_point in spawns.T),
+            (map_areas.find_path(spawn_point, area.area_id, weight="time_adjusted") for spawn_point in spawns.T),
             default=PathResult(distance=float("inf"), path=[]),
             key=lambda path_result: path_result.distance,
         )
@@ -638,32 +659,49 @@ def get_distances_from_spawns(map_areas: Nav, spawns: Spawns) -> SpawnDistances:
     )
 
 
-def areas_visible(area1: NavArea, area2: NavArea, map_name: str) -> bool:
-    used_centroid1 = Vector3(area1.centroid.x, area1.centroid.y, area1.centroid.z + PLAYER_EYE_LEVEL)
-    used_centroid2 = Vector3(area2.centroid.x, area2.centroid.y, area2.centroid.z + PLAYER_EYE_LEVEL)
-    return VIS_CHECKERS[map_name].is_visible(used_centroid1, used_centroid2)
+def areas_visible(
+    area1: NavArea, area2: NavArea, vis_checker: VisibilityChecker, *, correct_height: bool = False
+) -> bool:
+    height_correction = PLAYER_EYE_LEVEL if correct_height else PLAYER_EYE_LEVEL / 2
+    used_centroid1 = Vector3(area1.centroid.x, area1.centroid.y, area1.centroid.z + height_correction)
+    used_centroid2 = Vector3(area2.centroid.x, area2.centroid.y, area2.centroid.z + height_correction)
+    return vis_checker.is_visible(used_centroid1, used_centroid2)
 
 
-def establish_visibilities(
+def newly_visible(
     current_area: SpawnDistance,
     previous_opposing_areas: list[SpawnDistance],
-    map_name: str,
+    vis_checker: VisibilityChecker,
     *,
     own_spotted_areas: set[int],
     opposing_spotted_areas: set[int],
+    style: MeetingStyle = "fine",
 ) -> list[SpawnDistance]:
-    result: list[SpawnDistance] = []
-    for opposing_area in sorted(previous_opposing_areas, key=lambda area: area.distance, reverse=True):
-        # Skip this if both areas come from ones that have already been spotted.
-        if any(path_id in own_spotted_areas for path_id in current_area.path) and any(
-            path_id in opposing_spotted_areas for path_id in opposing_area.path
-        ):
-            continue
-        if areas_visible(current_area.area, opposing_area.area, map_name):
+    # Fine is the semantically correct one.
+    # For every area we take the first time that a player who goes and waits there can be seen.
+    if style == "fine":
+        return [
+            opposing_area
+            for opposing_area in previous_opposing_areas
+            if not (
+                current_area.area.area_id in own_spotted_areas and opposing_area.area.area_id in opposing_spotted_areas
+            )
+            and areas_visible(current_area.area, opposing_area.area, vis_checker)
+        ]
+    # Rough
+    # Here if an part of the path has been seen at any time we exclude the area.
+    # This means that we might not correctly mark areas (particularly D2 B-site CTs)
+    # But it significantly reduces the number of lines and for most maps structures
+    # it should be enough.
+    results: list[SpawnDistance] = []
+    if any(path_id in own_spotted_areas for path_id in current_area.path):
+        return []
+    for opposing_area in sorted(previous_opposing_areas, key=lambda area: area.distance):
+        if areas_visible(current_area.area, opposing_area.area, vis_checker):
             own_spotted_areas.add(current_area.area.area_id)
             opposing_spotted_areas.add(opposing_area.area.area_id)
-            result.append(opposing_area)
-    return result
+            results.append(opposing_area)
+    return results
 
 
 def round_up_to_next_100(n: float) -> int:
@@ -676,9 +714,13 @@ def _plot_visibility_connection(
     map_nav: Nav,
     map_name: str,
     axis: Axes,
+    *,
     color: str = "red",
     lw: float = 1.0,
+    highlight_area1: bool = False,
 ) -> None:
+    if highlight_area1:
+        _plot_points([area1.area.centroid], map_name, axis, color="yellow")
     _plot_tiles({0: area1.area, 1: area2.area}, map_name, axis, color=color)
     _plot_connection(area1.area, area2.area, map_name, axis, with_arrows=False, color=color, lw=lw)
     _plot_path(
@@ -718,17 +760,18 @@ def _plot_node(node: BVHNode, axis: Axes, map_name: str) -> None:
     )
 
 
-def _plot_collision_triangles(map_name: str, axis: Axes) -> None:
-    vis_checker = VIS_CHECKERS[map_name]
+def _plot_collision_triangles(map_name: str, axis: Axes, vis_checker: VisibilityChecker) -> None:
     _plot_node(vis_checker.root, axis, map_name)
 
 
 def plot_triangles() -> None:
     print("Plotting triangles.", flush=True)
-    for map_name in VIS_CHECKERS:
+    for map_name in SUPPORTED_MAPS:
         print(f"Plotting triangles for {map_name}.", flush=True)
         output_dir = Path("triangles")
         output_dir.mkdir(exist_ok=True, parents=True)
+
+        vis_checker = load_vis_checker(map_name)
 
         try:
             fig, axis = plot_map(map_name)
@@ -749,7 +792,7 @@ def plot_triangles() -> None:
             )
             axis.plot([x1, x2], [y1, y2], color="red", lw=1.0)
 
-        _plot_collision_triangles(map_name, axis)
+        _plot_collision_triangles(map_name, axis, vis_checker)
 
         if map_name == "de_dust2":
             _plot_tiles(
@@ -777,20 +820,21 @@ def plot_triangles() -> None:
         plt.close(fig)
 
 
-def plot_spread() -> None:  # noqa: PLR0915
+def plot_spread(map_name: str, style: MeetingStyle = "fine") -> None:  # noqa: PLR0915
     print("Plotting spreads.", flush=True)
-    map_name = "de_dust2"
-    d2_nav = NAV_DATA[map_name]
-    d2_spawns = SPAWNS_DATA[map_name]
-    d2_spawn_distances_path = Path("awpy/data/spawn_distances.pkl")
+    nav = NAV_DATA[map_name]
+    spawns = SPAWNS_DATA[map_name]
+    spawn_distances_path = Path("awpy/data") / f"{map_name}_spawn_distances.pkl"
 
-    if d2_spawn_distances_path.is_file():
-        with d2_spawn_distances_path.open("rb") as f:
-            d2_spawn_distances: SpawnDistances = pickle.load(f)  # noqa: S301
+    vis_checker = load_vis_checker(map_name)
+
+    if spawn_distances_path.is_file():
+        with spawn_distances_path.open("rb") as f:
+            spawn_distances: SpawnDistances = pickle.load(f)  # noqa: S301
     else:
-        d2_spawn_distances = get_distances_from_spawns(d2_nav, d2_spawns)
-        with d2_spawn_distances_path.open("wb") as f:
-            pickle.dump(d2_spawn_distances, f)
+        spawn_distances = get_distances_from_spawns(nav, spawns)
+        with spawn_distances_path.open("wb") as f:
+            pickle.dump(spawn_distances, f)
 
     ct_index = 0
     marked_areas_ct: set[int] = set()
@@ -798,7 +842,7 @@ def plot_spread() -> None:  # noqa: PLR0915
     new_marked_areas_ct: set[int] = set()
     new_marked_areas_t: set[int] = set()
     t_index = 0
-    output_dir = Path("spread") / map_name
+    output_dir = Path("spread") / map_name / style
     output_dir.mkdir(exist_ok=True, parents=True)
 
     last_plotted = float("-inf")
@@ -808,15 +852,15 @@ def plot_spread() -> None:  # noqa: PLR0915
     spotted_areas_ct: set[int] = set()
 
     while True:
-        if (current_ct_area := d2_spawn_distances.CT[ct_index]).distance < (
-            current_t_area := d2_spawn_distances.T[t_index]
+        if (current_ct_area := spawn_distances.CT[ct_index]).distance < (
+            current_t_area := spawn_distances.T[t_index]
         ).distance:
             current_area = current_ct_area
             new_marked_areas_ct.add(current_ct_area.area.area_id)
             opposing_spotted_areas = spotted_areas_t
             own_spotted_areas = spotted_areas_ct
             opposing_previous_areas = [
-                area for area in d2_spawn_distances.T if area.area.area_id in (marked_areas_t | new_marked_areas_t)
+                area for area in spawn_distances.T if area.area.area_id in (marked_areas_t | new_marked_areas_t)
             ]
             ct_index += 1
         else:
@@ -825,24 +869,33 @@ def plot_spread() -> None:  # noqa: PLR0915
             opposing_spotted_areas = spotted_areas_ct
             own_spotted_areas = spotted_areas_t
             opposing_previous_areas = [
-                area for area in d2_spawn_distances.CT if area.area.area_id in (marked_areas_ct | new_marked_areas_ct)
+                area for area in spawn_distances.CT if area.area.area_id in (marked_areas_ct | new_marked_areas_ct)
             ]
             t_index += 1
+
+        print(current_area.area.area_id, flush=True)
 
         if current_area.distance == float("inf"):
             print(ct_index, t_index, current_area.distance)
             break
 
-        visible_areas = establish_visibilities(
+        if any(path_id in own_spotted_areas for path_id in current_area.path[-2:]):
+            own_spotted_areas.add(current_area.area.area_id)
+
+        visible_areas = newly_visible(
             current_area,
             opposing_previous_areas,
-            map_name=map_name,
+            vis_checker=vis_checker,
             own_spotted_areas=own_spotted_areas,
             opposing_spotted_areas=opposing_spotted_areas,
+            style=style,
         )
 
-        for spotted_by_area in visible_areas:
-            visibility_connections.append((current_area, spotted_by_area))
+        if visible_areas:
+            own_spotted_areas.add(current_area.area.area_id)
+            for spotted_by_area in visible_areas:
+                opposing_spotted_areas.add(spotted_by_area.area.area_id)
+                visibility_connections.append((current_area, spotted_by_area))
 
         if not (visible_areas or current_area.distance > (last_plotted + 100)):
             continue
@@ -856,13 +909,13 @@ def plot_spread() -> None:  # noqa: PLR0915
         fig.set_size_inches(19.2, 21.6)
 
         _plot_tiles(
-            {area_id: d2_nav.areas[area_id] for area_id in (marked_areas_ct | marked_areas_t)},
+            {area_id: nav.areas[area_id] for area_id in (marked_areas_ct | marked_areas_t)},
             map_name=map_name,
             axis=axis,
             color="olive",
         )
         _plot_tiles(
-            {area_id: d2_nav.areas[area_id] for area_id in (new_marked_areas_ct | new_marked_areas_t)},
+            {area_id: nav.areas[area_id] for area_id in (new_marked_areas_ct | new_marked_areas_t)},
             map_name=map_name,
             axis=axis,
             color="green",
@@ -870,7 +923,7 @@ def plot_spread() -> None:  # noqa: PLR0915
 
         _plot_tiles(
             {
-                area_id: d2_nav.areas[area_id]
+                area_id: nav.areas[area_id]
                 for area_id in (marked_areas_t | new_marked_areas_t) & (marked_areas_ct | new_marked_areas_ct)
             },
             map_name=map_name,
@@ -884,7 +937,7 @@ def plot_spread() -> None:  # noqa: PLR0915
         _plot_tiles(
             {
                 area_id: area
-                for area_id, area in d2_nav.areas.items()
+                for area_id, area in nav.areas.items()
                 if area_id not in marked_areas_ct and area_id not in marked_areas_t
             },
             map_name=map_name,
@@ -893,7 +946,9 @@ def plot_spread() -> None:  # noqa: PLR0915
         )
 
         for area1, area2 in visibility_connections:
-            _plot_visibility_connection(area1, area2, d2_nav, map_name, axis, color="red", lw=1.0)
+            _plot_visibility_connection(
+                area1, area2, nav, map_name, axis, color="red", lw=1.0, highlight_area1=style == "rough"
+            )
 
         plt.savefig(
             output_dir / f"spread_{map_name}_{current_area.distance}.png",
@@ -902,6 +957,28 @@ def plot_spread() -> None:  # noqa: PLR0915
         )
         fig.clear()
         plt.close(fig)
+
+
+def generate_spread_gif(map_name: str, style: MeetingStyle) -> None:
+    output_dir = Path("spread") / map_name / style
+
+    num_pattern = re.compile(r"_([\d\.]+)\.png$")
+
+    # Function to extract the number from filename
+    def extract_number(filename: Path) -> float:
+        match = num_pattern.search(filename.name)
+        return float(match.group(1)) if match else float("inf")
+
+    image_files = sorted(output_dir.glob("*.png"), key=extract_number)
+
+    # Open images and convert them to a list of frames
+    frames = [Image.open(img) for img in image_files]
+
+    if frames:
+        frames[0].save(output_dir / "spread.gif", save_all=True, append_images=frames[1:], duration=200, disposal=2)
+        print(f"GIF saved at {output_dir / 'spread.gif'}")
+    else:
+        print("No PNG files found in the directory.")
 
 
 def generate_grids() -> None:
@@ -1039,7 +1116,57 @@ def plot_paths() -> None:
             )
 
 
-# plot_triangles()
-plot_spread()
+def _plot_areas_reachable_from(
+    areas: list[NavArea], map_name: str, nav: Nav, mode: ReachabilityMode = "visibility"
+) -> None:
+    print("Plotting selected area visibilities.", flush=True)
+    vis_checker = load_vis_checker(map_name)
+    output_dir = Path(mode) / map_name
+    output_dir.mkdir(exist_ok=True, parents=True)
+    for area in areas:
+        try:
+            fig, axis = plot_map(map_name)
+        except FileNotFoundError:
+            return
+        fig.set_size_inches(19.2, 21.6)
+        _plot_tiles(nav.areas, map_name, axis)
+        visible_areas = [
+            other
+            for other in nav.areas.values()
+            if other.area_id != area.area_id
+            and (areas_visible(area, other, vis_checker) if mode != "jumpability" else True)
+            and (area.centroid.can_jump_to(other.centroid) if mode != "visibility" else True)
+        ]
+        _plot_tiles({area.area_id: area}, map_name, axis, color="green")
+        _plot_tiles({other.area_id: other for other in visible_areas}, map_name, axis, color="red")
+        for other in visible_areas:
+            _plot_connection(area, other, map_name, axis, with_arrows=False, color="red")
+        plt.savefig(
+            output_dir / f"{mode}_{map_name}_{area.area_id}.png",
+            bbox_inches="tight",
+            dpi=300,
+        )
+        fig.clear()
+        plt.close(fig)
+
+
+def plot_map_reachability_examples(mode: ReachabilityMode = "visibility") -> None:
+    for map_name in STARTS:  # noqa: PLC0206
+        nav = Nav.from_json(f"awpy/data/nav_100/{map_name}.json")
+        _plot_areas_reachable_from(
+            [(nav.find_area(pos) or nav.find_closest_area_centroid(pos)) for pos in STARTS[map_name] + ENDS[map_name]],
+            map_name,
+            nav,
+            mode=mode,
+        )
+
+
+plot_triangles()
 # generate_grids()
 # plot_paths()
+# style = "fine"
+# plot_spread("de_dust2", style)
+# generate_spread_gif("de_dust2", style)
+plot_map_reachability_examples(mode="visibility")
+plot_map_reachability_examples(mode="reachability")
+plot_map_reachability_examples(mode="jumpability")
