@@ -21,10 +21,12 @@ RUNNING_SPEED = 250
 GRAVITY = 800
 CROUCHING_SPEED = 85
 CROUCHING_ATTRIBUTE_FLAG = 65536
-JUMP_HEIGHT = 65
+JUMP_HEIGHT = 55.83
 # 0.5m * v^2 = m * g * h
 # v = sqrt(2 * g * h)  # noqa: ERA001
 JUMP_SPEED = (2 * GRAVITY * JUMP_HEIGHT) ** 0.5
+CROUCH_JUMP_HEIGHT_GAIN = 66.02 - JUMP_HEIGHT
+PLAYER_WIDTH = 32
 
 # https://developer.valvesoftware.com/wiki/Counter-Strike:_Global_Offensive/Mapper%27s_Reference
 PLAYER_HEIGHT = 72

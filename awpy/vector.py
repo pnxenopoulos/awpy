@@ -8,7 +8,7 @@ from typing import Self, TypedDict
 import numpy.typing as npt
 from shapely import Point
 
-from awpy.constants import GRAVITY, JUMP_SPEED, RUNNING_SPEED
+from awpy.constants import CROUCH_JUMP_HEIGHT_GAIN, GRAVITY, JUMP_SPEED, PLAYER_WIDTH, RUNNING_SPEED
 
 
 class Vector3Dict(TypedDict):
@@ -124,15 +124,14 @@ class Vector3:
 
     def can_jump_to(self, other: Vector3) -> bool:
         """Check if a jump is possible between two points."""
-        h_distance = self.distance_2d(other)
+        h_distance = self.distance_2d(other) - (PLAYER_WIDTH * 2**0.5)
         if h_distance <= 0:
             return True
 
         # Time to travel the horizontal distance between self and other
         # with running speed
         t = h_distance / RUNNING_SPEED
-        # In my jump, at which height am i when i reach the desitantion x-y distance.
-        z_at_dest = self.z + JUMP_SPEED * t - 0.5 * GRAVITY * t * t
-
+        # In my jump, at which height am i when i reach the destination x-y distance.
+        z_at_dest = self.z + JUMP_SPEED * t - 0.5 * GRAVITY * t * t + CROUCH_JUMP_HEIGHT_GAIN
         # Am i at or above my target height?
         return z_at_dest >= other.z

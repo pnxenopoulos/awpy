@@ -43,7 +43,7 @@ SUPPORTED_MAPS = {
     "de_train",
     # "de_vertigo",
 }
-GRANULARITIES = (100, 200)
+GRANULARITIES = ("nom", "100", "200")
 
 MeetingStyle = Literal["fine", "rough"]
 
@@ -599,7 +599,8 @@ def de_train_spawns() -> list[Vector3]:
     ct_spawn = Vector3(1493, -1269, -264)
     t_spawn = Vector3(-2029, 1382, -108)
     oil = Vector3(17.94, -1529.98, -113.13)
-    return [ct_spawn, t_spawn, oil]
+    oil2 = Vector3(19.895721, -1560.909424, -113.12875)
+    return [ct_spawn, t_spawn, oil, oil2]
 
 
 def de_train_meetings() -> list[Vector3]:
@@ -820,11 +821,13 @@ def plot_triangles() -> None:
         plt.close(fig)
 
 
-def plot_spread(map_name: str, style: MeetingStyle = "fine") -> None:  # noqa: PLR0915
+def plot_spread(map_name: str, granularity: str, style: MeetingStyle = "fine") -> None:  # noqa: PLR0915
     print("Plotting spreads.", flush=True)
-    nav = NAV_DATA[map_name]
+    target_dir = Path(f"awpy/data/nav_{granularity}")
+    target_path = target_dir / f"{map_name}.json"
+    nav = Nav.from_json(target_path)
     spawns = SPAWNS_DATA[map_name]
-    spawn_distances_path = Path("awpy/data") / f"{map_name}_spawn_distances.pkl"
+    spawn_distances_path = Path("awpy/data") / f"{map_name}_spawn_distances_{granularity}.pkl"
 
     vis_checker = load_vis_checker(map_name)
 
@@ -842,7 +845,7 @@ def plot_spread(map_name: str, style: MeetingStyle = "fine") -> None:  # noqa: P
     new_marked_areas_ct: set[int] = set()
     new_marked_areas_t: set[int] = set()
     t_index = 0
-    output_dir = Path("spread") / map_name / style
+    output_dir = Path("spread") / map_name / style / granularity
     output_dir.mkdir(exist_ok=True, parents=True)
 
     last_plotted = float("-inf")
@@ -951,7 +954,7 @@ def plot_spread(map_name: str, style: MeetingStyle = "fine") -> None:  # noqa: P
             )
 
         plt.savefig(
-            output_dir / f"spread_{map_name}_{current_area.distance}.png",
+            output_dir / f"spread_{map_name}_{granularity}_{current_area.distance}.png",
             bbox_inches="tight",
             dpi=300,
         )
@@ -959,9 +962,8 @@ def plot_spread(map_name: str, style: MeetingStyle = "fine") -> None:  # noqa: P
         plt.close(fig)
 
 
-def generate_spread_gif(map_name: str, style: MeetingStyle) -> None:
-    output_dir = Path("spread") / map_name / style
-
+def generate_spread_gif(map_name: str, granularity: str, style: MeetingStyle) -> None:
+    output_dir = Path("spread") / map_name / style / granularity
     num_pattern = re.compile(r"_([\d\.]+)\.png$")
 
     # Function to extract the number from filename
@@ -983,28 +985,12 @@ def generate_spread_gif(map_name: str, style: MeetingStyle) -> None:
 
 def generate_grids() -> None:
     print("Generating grids.", flush=True)
-    print("Nom:")
-    for map_name in NAV_DATA:
-        if map_name not in SUPPORTED_MAPS:
-            continue
-        print(f"At map: {map_name}")
-        map_areas = NAV_DATA[map_name].areas
-        plot_map_connections(
-            "connections",
-            map_areas,
-            map_name=map_name,
-            with_arrows=True,
-            granularity="nom",
-        )
-
     for granularity in GRANULARITIES:
         print(f"Grid {granularity}:")
         target_dir = Path(f"awpy/data/nav_{granularity}")
         target_dir.mkdir(exist_ok=True, parents=True)
 
-        for map_name in NAV_DATA:
-            if map_name not in SUPPORTED_MAPS:
-                continue
+        for map_name in SUPPORTED_MAPS:
             print(f"At map: {map_name}")
 
             target_path = target_dir / f"{map_name}.json"
@@ -1012,7 +998,7 @@ def generate_grids() -> None:
                 modified_nav = Nav.from_json(target_path)
             else:
                 map_areas = regularize_nav_areas(
-                    NAV_DATA[map_name].areas, grid_granularity=granularity, map_name=map_name
+                    NAV_DATA[map_name].areas, grid_granularity=int(granularity), map_name=map_name
                 )
                 modified_nav = Nav(areas=map_areas)
                 modified_nav.to_json(target_path)
@@ -1022,7 +1008,7 @@ def generate_grids() -> None:
                 modified_nav.areas,
                 map_name=map_name,
                 extra_areas=NAV_DATA[map_name].areas,
-                with_arrows=granularity < 150,
+                with_arrows=granularity == "nom" or int(granularity) < 150,
                 granularity=str(granularity),
             )
 
@@ -1061,7 +1047,7 @@ def plot_paths() -> None:
             distances = pickle.load(f)  # noqa: S301
     else:
         distances: dict[str, MapDistances] = {}
-        for map_name in STARTS.keys() & ENDS.keys():
+        for map_name in SUPPORTED_MAPS:
             distances[map_name] = {}
             print(f"At map: {map_name}")
             for start, end in itertools.product(STARTS[map_name], ENDS[map_name]):
@@ -1117,11 +1103,11 @@ def plot_paths() -> None:
 
 
 def _plot_areas_reachable_from(
-    areas: list[NavArea], map_name: str, nav: Nav, mode: ReachabilityMode = "visibility"
+    areas: list[NavArea], map_name: str, nav: Nav, mode: ReachabilityMode = "visibility", granularity: str = "100"
 ) -> None:
-    print("Plotting selected area visibilities.", flush=True)
+    print(f"Plotting selected area {mode}.", flush=True)
     vis_checker = load_vis_checker(map_name)
-    output_dir = Path(mode) / map_name
+    output_dir = Path(mode) / map_name / granularity
     output_dir.mkdir(exist_ok=True, parents=True)
     for area in areas:
         try:
@@ -1142,7 +1128,7 @@ def _plot_areas_reachable_from(
         for other in visible_areas:
             _plot_connection(area, other, map_name, axis, with_arrows=False, color="red")
         plt.savefig(
-            output_dir / f"{mode}_{map_name}_{area.area_id}.png",
+            output_dir / f"{mode}_{map_name}_{granularity}_{area.area_id}.png",
             bbox_inches="tight",
             dpi=300,
         )
@@ -1150,23 +1136,27 @@ def _plot_areas_reachable_from(
         plt.close(fig)
 
 
-def plot_map_reachability_examples(mode: ReachabilityMode = "visibility") -> None:
-    for map_name in STARTS:  # noqa: PLC0206
-        nav = Nav.from_json(f"awpy/data/nav_100/{map_name}.json")
+def plot_map_reachability_examples(mode: ReachabilityMode = "visibility", granularity: str = "100") -> None:
+    for map_name in SUPPORTED_MAPS:
+        nav = Nav.from_json(f"awpy/data/nav_{granularity}/{map_name}.json")
         _plot_areas_reachable_from(
             [(nav.find_area(pos) or nav.find_closest_area_centroid(pos)) for pos in STARTS[map_name] + ENDS[map_name]],
             map_name,
             nav,
             mode=mode,
+            granularity=granularity,
         )
 
 
-plot_triangles()
-# generate_grids()
+# plot_triangles()
+generate_grids()
 # plot_paths()
-# style = "fine"
-# plot_spread("de_dust2", style)
-# generate_spread_gif("de_dust2", style)
-plot_map_reachability_examples(mode="visibility")
-plot_map_reachability_examples(mode="reachability")
-plot_map_reachability_examples(mode="jumpability")
+# for map_name in SUPPORTED_MAPS:
+#     for style in ("fine", "rough"):
+#         for granularity in GRANULARITIES:
+#             plot_spread(map_name, granularity, style)
+#             generate_spread_gif(map_name, granularity, style)
+# for granularity in GRANULARITIES:
+#     plot_map_reachability_examples(mode="visibility", granularity=granularity)
+#     plot_map_reachability_examples(mode="reachability", granularity=granularity)
+#     plot_map_reachability_examples(mode="jumpability", granularity=granularity)
