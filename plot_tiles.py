@@ -9,6 +9,7 @@ import pickle
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
 from typing import Literal
 
@@ -33,17 +34,17 @@ print("Finished imports, starting script", flush=True)
 
 print(NAV_DATA.keys())
 SUPPORTED_MAPS = {
-    "de_ancient",
+    # "de_ancient",
     "de_anubis",
-    "de_dust2",
-    "de_inferno",
-    "de_mirage",
-    "de_nuke",
-    "de_overpass",
+    # "de_dust2",
+    # "de_inferno",
+    # "de_mirage",
+    # "de_nuke",
+    # "de_overpass",
     "de_train",
     # "de_vertigo",
 }
-GRANULARITIES = ("nom", "100", "200")
+GRANULARITIES = ("200",)  # "nom", "100",
 
 MeetingStyle = Literal["fine", "rough"]
 
@@ -236,7 +237,11 @@ def plot_map_connections(
 class NewNavArea:
     corners: list[Vector3]
     orig_ids: set[int]
+    dynamic_attribute_flags: int
     connections: set[int] = field(default_factory=set)
+    ladders_above: list[int] = field(default_factory=list)
+    ladders_below: list[int] = field(default_factory=list)
+    area_id: int = 0
 
     def polygon(self) -> Polygon:
         return Polygon([(c.x, c.y) for c in self.corners])
@@ -244,12 +249,35 @@ class NewNavArea:
     def distance(self, other: "NewNavArea") -> float:
         return self.polygon().centroid.distance(other.polygon().centroid)
 
+    @cached_property
+    def centroid(self) -> Vector3:
+        """Calculates the centroid of the polygon defined by the corners.
+
+        Returns:
+            A Vector3 representing the centroid (geometric center) of the polygon.
+        """
+        if not self.corners:
+            return Vector3(0, 0, 0)  # Return origin if no corners exist
+
+        x_coords = [corner.x for corner in self.corners]
+        y_coords = [corner.y for corner in self.corners]
+
+        centroid_x = sum(x_coords) / len(self.corners)
+        centroid_y = sum(y_coords) / len(self.corners)
+
+        # Assume z is averaged as well for completeness
+        z_coords = [corner.z for corner in self.corners]
+        centroid_z = sum(z_coords) / len(self.corners)
+
+        return Vector3(centroid_x, centroid_y, centroid_z)
+
 
 def regularize_nav_areas(  # noqa: PLR0912, PLR0915
     nav_areas: dict[int, NavArea],
     grid_granularity: int,
     map_name: str,
 ) -> dict[int, NavArea]:
+    print(f"Regularizing nav areas for {map_name}")
     # Collect all x,y coordinates over all nav areas
     xs: list[float] = []
     ys: list[float] = []
@@ -333,11 +361,21 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
                     Vector3(cell_max_x, cell_max_y, rep_level),
                     Vector3(cell_min_x, cell_max_y, rep_level),
                 ]
-                new_cells.append(NewNavArea(corners=corners, orig_ids=cell_orig_ids))
+                primary_area = nav_areas[primary]
+                new_cells.append(
+                    NewNavArea(
+                        corners=corners,
+                        orig_ids=cell_orig_ids,
+                        ladders_above=primary_area.ladders_above,
+                        ladders_below=primary_area.ladders_below,
+                        dynamic_attribute_flags=primary_area.dynamic_attribute_flags,
+                    )
+                )
 
     new_nav_areas: dict[int, NewNavArea] = {}
     old_to_new_children: dict[int, set[int]] = defaultdict(set)
     for idx, new_cell in enumerate(new_cells):
+        new_cell.area_id = idx
         new_nav_areas[idx] = new_cell
         for orig_id in new_cell.orig_ids:
             old_to_new_children[orig_id].add(idx)
@@ -351,7 +389,20 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
             siblings = old_to_new_children[parent_area]
             new_area.connections.update(sibling for sibling in siblings if sibling != idx_a)
 
-    for a_idx, area_a in nav_areas.items():
+    # Connect to reachable areas
+    for area1 in tqdm(new_nav_areas.values(), desc="Adding connections by visibility and jumpability"):
+        for area2 in new_nav_areas.values():
+            if area1.area_id == area2.area_id or area2.area_id in area1.connections:
+                continue
+            if (
+                (set(area1.ladders_above) & set(area2.ladders_below))
+                or (set(area1.ladders_below) & set(area2.ladders_above))
+                or (area1.centroid.can_jump_to(area2.centroid) and areas_visible(area1, area2, vis_checker))
+            ):
+                area1.connections.add(area2.area_id)
+
+    # Ensure old connections are maintained
+    for a_idx, area_a in tqdm(nav_areas.items(), desc="Ensuring old connections"):
         children_of_a = old_to_new_children[a_idx]
         for neighbor_of_a_idx in area_a.connections:
             children_of_neighbor_of_a = old_to_new_children[neighbor_of_a_idx]
@@ -372,23 +423,20 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
                 closest_childrens = sorted(
                     pairs_of_children,
                     key=lambda pair: new_nav_areas[pair[0]].distance(new_nav_areas[pair[1]]),
-                )[:5]
+                )[:1]
                 for closest_children in closest_childrens:
                     new_nav_areas[closest_children[0]].connections.add(closest_children[1])
 
-    for area1 in nav_areas.values():
-        for area2 in nav_areas.values():
-            if area1.area_id == area2.area_id or area2.area_id in area1.connections:
-                continue
-            if (
-                (set(area1.ladders_above) & set(area2.ladders_below))
-                or (set(area1.ladders_below) & set(area2.ladders_above))
-                or (area1.centroid.can_jump_to(area2.centroid) and areas_visible(area1, area2, vis_checker))
-            ):
-                area1.connections.append(area2.area_id)
 
     return {
-        idx: NavArea(area_id=idx, corners=area.corners, connections=list(area.connections))
+        idx: NavArea(
+            area_id=idx,
+            corners=area.corners,
+            connections=list(area.connections),
+            ladders_above=area.ladders_above,
+            ladders_below=area.ladders_below,
+            dynamic_attribute_flags=area.dynamic_attribute_flags,
+        )
         for idx, area in new_nav_areas.items()
     }
 
@@ -1007,7 +1055,7 @@ def generate_grids() -> None:
                 "connections",
                 modified_nav.areas,
                 map_name=map_name,
-                extra_areas=NAV_DATA[map_name].areas,
+                extra_areas={} if granularity == "nom" else NAV_DATA[map_name].areas,
                 with_arrows=granularity == "nom" or int(granularity) < 150,
                 granularity=str(granularity),
             )

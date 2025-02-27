@@ -124,13 +124,16 @@ class Vector3:
 
     def can_jump_to(self, other: Vector3) -> bool:
         """Check if a jump is possible between two points."""
-        h_distance = self.distance_2d(other) - (PLAYER_WIDTH * 2**0.5)
+        h_distance = self.distance_2d(other)
         if h_distance <= 0:
             return True
+        h_distance = max(h_distance - (PLAYER_WIDTH * 2**0.5), 0)
 
         # Time to travel the horizontal distance between self and other
         # with running speed
-        t = h_distance / RUNNING_SPEED
+        # Or if we are closer than the apex, then take the time to the apex
+        # Equivalent to setting z_at_dest = self.z + JUMP_HEIGHT + CROUCH_JUMP_HEIGHT_GAIN
+        t = max(h_distance / RUNNING_SPEED, JUMP_SPEED / GRAVITY)
         # In my jump, at which height am i when i reach the destination x-y distance.
         z_at_dest = self.z + JUMP_SPEED * t - 0.5 * GRAVITY * t * t + CROUCH_JUMP_HEIGHT_GAIN
         # Am i at or above my target height?

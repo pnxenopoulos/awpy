@@ -536,7 +536,6 @@ class Nav:
             A list of NavArea objects representing the path from start to end.
             Returns an empty list if no path exists.
         """
-        print(f"Called with {start_id=} {end_id=} {weight=}")
 
         def dist_heuristic(node_a: int, node_b: int) -> float:
             return distance.euclidean(
@@ -573,7 +572,7 @@ class Nav:
                 case Vector3(), Vector3():
                     total_distance = start_id.distance(end_id)
                 case int(), int():
-                    total_distance = self.graph[start_id][end_id][weight]
+                    total_distance = self.graph[start_id][end_id][weight] if start_id != end_id else 0
                 case Vector3(), int():
                     total_distance = distance.euclidean(
                         start_id.to_tuple_2d(),
