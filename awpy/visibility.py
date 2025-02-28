@@ -255,7 +255,7 @@ class VphysParser:
             the .vphys file.
     """
 
-    def __init__(self, vphys_file: str | pathlib.Path) -> None:
+    def __init__(self, vphys_file: str | pathlib.Path, *, including_player_clippings: bool = False) -> None:
         """Initializes the parser with the path to a VPhys file.
 
         Args:
@@ -265,7 +265,7 @@ class VphysParser:
         self.vphys_file = pathlib.Path(vphys_file)
         self.triangles: list[Triangle] = []
         self.kv3_parser = KV3Parser()
-        self.parse()
+        self.parse(including_player_clippings=including_player_clippings)
 
     @overload
     @staticmethod
@@ -307,7 +307,9 @@ class VphysParser:
                 result.append(val)
         return result
 
-    def get_collision_attribute_indices_for_default_group(self) -> list[str]:
+    def get_collision_attribute_indices_for_default_group(
+        self, *, including_player_clippings: bool = False
+    ) -> list[str]:
         """Get collision attribute indices for the default group.
 
         Returns:
@@ -321,14 +323,34 @@ class VphysParser:
                 break
             if collision_group_string.lower() == '"default"':
                 collision_attribute_indices.append(str(idx))
+            elif including_player_clippings:
+                relevant_interactions = ['"playerclip"']
+                interacts_as: list[str] = []
+                interact_idx = 0
+                while True:
+                    interaction = self.kv3_parser.get_value(
+                        f"m_collisionAttributes[{idx}].m_InteractAsStrings[{interact_idx}]"
+                    )
+                    if not interaction:
+                        break
+                    interacts_as.append(interaction)
+                    interact_idx += 1
+                if any(interaction.lower() in relevant_interactions for interaction in interacts_as):
+                    logger.debug(f"Adding additional index {idx} because of {interacts_as=!r}")
+                    collision_attribute_indices.append(str(idx))
+                else:
+                    logger.debug(f"Skipping index {idx} with {interacts_as=!r}")
             idx += 1
         return collision_attribute_indices
 
-    def parse(self) -> None:
+    def parse(self, *, including_player_clippings: bool = False) -> None:  # noqa: PLR0912
         """Parses the VPhys file and extracts collision geometry.
 
         Processes hulls and meshes in the VPhys file to generate a list of triangles.
         """
+        if including_player_clippings:
+            logger.debug("Including player clippings in tri generation.")
+
         if len(self.triangles) > 0:
             logger.debug(f"VPhys data already parsed, got {len(self.triangles)} triangles.")
             return
@@ -342,7 +364,9 @@ class VphysParser:
         # Parse VPhys data
         self.kv3_parser.parse(data)
 
-        collision_attribute_indices = self.get_collision_attribute_indices_for_default_group()
+        collision_attribute_indices = self.get_collision_attribute_indices_for_default_group(
+            including_player_clippings=including_player_clippings
+        )
 
         logger.debug(f"Extracted collision attribute indices: {collision_attribute_indices}")
 
@@ -791,8 +815,8 @@ class VisibilityChecker:
         return triangles
 
 
-def load_vis_checker(map_name: str) -> VisibilityChecker:
-    tri_path = pathlib.Path(__file__).parent / "data/tri" / f"{map_name}.tri"
+def load_vis_checker(map_name: str, suffix: str = "") -> VisibilityChecker:
+    tri_path = pathlib.Path(__file__).parent / "data/tri" / f"{map_name}{suffix}.tri"
     pickle_path = tri_path.with_suffix(".pickle")
     if pickle_path.exists():
         print(f"Loading from pickle: {tri_path.stem}", flush=True)

@@ -31,3 +31,6 @@ PLAYER_WIDTH = 32
 # https://developer.valvesoftware.com/wiki/Counter-Strike:_Global_Offensive/Mapper%27s_Reference
 PLAYER_HEIGHT = 72
 PLAYER_EYE_LEVEL = 64.093811
+
+PLAYER_CROUCH_HEIGHT = 54.0
+PLAYER_CROUCH_EYE_LEVEL = 46.076_218

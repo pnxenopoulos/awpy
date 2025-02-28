@@ -2,16 +2,18 @@
 
 import importlib.resources
 import itertools
+import json
 import logging
 import math
 import os
 import pickle
 import re
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, Self
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -22,9 +24,16 @@ from PIL import Image
 from shapely import Point, Polygon
 from tqdm import tqdm
 
-from awpy.constants import JUMP_HEIGHT, PLAYER_EYE_LEVEL
+from awpy.constants import (
+    CROUCHING_ATTRIBUTE_FLAG,
+    JUMP_HEIGHT,
+    PLAYER_CROUCH_HEIGHT,
+    PLAYER_EYE_LEVEL,
+    PLAYER_HEIGHT,
+    PLAYER_WIDTH,
+)
 from awpy.data.map_data import MAP_DATA
-from awpy.nav import NAV_DATA, Nav, NavArea, PathResult
+from awpy.nav import NAV_DATA, DynamicAttributeFlags, Nav, NavArea, PathResult
 from awpy.plot.utils import game_to_pixel
 from awpy.spawn import SPAWNS_DATA, Spawns
 from awpy.vector import Vector3
@@ -34,21 +43,23 @@ print("Finished imports, starting script", flush=True)
 
 print(NAV_DATA.keys())
 SUPPORTED_MAPS = {
-    # "de_ancient",
+    "de_ancient",
     "de_anubis",
-    # "de_dust2",
-    # "de_inferno",
-    # "de_mirage",
-    # "de_nuke",
-    # "de_overpass",
+    "de_dust2",
+    "de_inferno",
+    "de_mirage",
+    "de_nuke",
+    "de_overpass",
     "de_train",
     # "de_vertigo",
 }
-GRANULARITIES = ("200",)  # "nom", "100",
+GRANULARITIES = (
+    "nom",
+    "100",
+    "200",
+)
 
 MeetingStyle = Literal["fine", "rough"]
-
-ReachabilityMode = Literal["visibility", "jumpability", "reachability"]
 
 
 @dataclass(frozen=True)
@@ -125,7 +136,13 @@ def _plot_tiles(
     color: str = "yellow",
     facecolor: str = "None",
     zorder: int = 1,
+    *,
+    show_z: bool = False,
 ) -> None:
+    if show_z:
+        for area in map_areas.values():
+            x, y, _ = game_to_pixel(map_name, area.centroid)
+            axis.text(x, y, str(round(area.centroid.z)), fontsize=2, color="black", ha="center")
     axis.add_collection(
         PatchCollection(
             [
@@ -215,14 +232,14 @@ def plot_map_connections(
     _plot_tiles(map_areas, map_name, axis)
     if extra_areas:
         _plot_tiles(extra_areas, map_name, axis, color="green")
-    # networkX type hints suck. So pyright does not know that we only
-    # get a two sized tuple for our case.
-    for area in tqdm(map_areas.values(), desc="Plot area"):
-        for connections_id in area.connections:
-            if connections_id not in map_areas:
-                continue
-            connection = map_areas[connections_id]
-            _plot_connection(area, connection, map_name, axis, with_arrows=with_arrows)
+
+    if granularity == "nom":
+        for area in tqdm(map_areas.values(), desc="Plot area"):
+            for connections_id in area.connections:
+                if connections_id not in map_areas:
+                    continue
+                connection = map_areas[connections_id]
+                _plot_connection(area, connection, map_name, axis, with_arrows=with_arrows)
 
     plt.savefig(
         os.path.join(output_path, f"connections_{map_name}_{granularity}.png"),
@@ -233,11 +250,15 @@ def plot_map_connections(
     plt.close(fig)
 
 
+def in_box(pos: Vector3) -> bool:
+    return -1067 < pos.x < -920 and 671 < pos.y < 1126
+
+
 @dataclass
 class NewNavArea:
     corners: list[Vector3]
     orig_ids: set[int]
-    dynamic_attribute_flags: int
+    dynamic_attribute_flags: DynamicAttributeFlags
     connections: set[int] = field(default_factory=set)
     ladders_above: list[int] = field(default_factory=list)
     ladders_below: list[int] = field(default_factory=list)
@@ -248,6 +269,9 @@ class NewNavArea:
 
     def distance(self, other: "NewNavArea") -> float:
         return self.polygon().centroid.distance(other.polygon().centroid)
+
+    def requires_crouch(self) -> bool:
+        return DynamicAttributeFlags(CROUCHING_ATTRIBUTE_FLAG) == self.dynamic_attribute_flags
 
     @cached_property
     def centroid(self) -> Vector3:
@@ -397,7 +421,7 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
             if (
                 (set(area1.ladders_above) & set(area2.ladders_below))
                 or (set(area1.ladders_below) & set(area2.ladders_above))
-                or (area1.centroid.can_jump_to(area2.centroid) and areas_visible(area1, area2, vis_checker))
+                or (area1.centroid.can_jump_to(area2.centroid) and areas_walkable(area1, area2, vis_checker))
             ):
                 area1.connections.add(area2.area_id)
 
@@ -411,22 +435,23 @@ def regularize_nav_areas(  # noqa: PLR0912, PLR0915
             for child_of_a in children_of_a:
                 neighbors_of_children_of_a.update(new_nav_areas[child_of_a].connections)
 
-            if not children_of_neighbor_of_a & neighbors_of_children_of_a:
-                pairs_of_children = [
-                    (child_of_a, child_of_neighbor_of_a)
-                    for child_of_a in children_of_a
-                    for child_of_neighbor_of_a in children_of_neighbor_of_a
-                ]
-                if not pairs_of_children:
-                    continue
+            if children_of_neighbor_of_a & neighbors_of_children_of_a:
+                continue
 
-                closest_childrens = sorted(
-                    pairs_of_children,
-                    key=lambda pair: new_nav_areas[pair[0]].distance(new_nav_areas[pair[1]]),
-                )[:1]
-                for closest_children in closest_childrens:
-                    new_nav_areas[closest_children[0]].connections.add(closest_children[1])
+            pairs_of_children = [
+                (child_of_a, child_of_neighbor_of_a)
+                for child_of_a in children_of_a
+                for child_of_neighbor_of_a in children_of_neighbor_of_a
+            ]
+            if not pairs_of_children:
+                continue
 
+            closest_childrens = sorted(
+                pairs_of_children,
+                key=lambda pair: new_nav_areas[pair[0]].distance(new_nav_areas[pair[1]]),
+            )[:1]
+            for closest_children in closest_childrens:
+                new_nav_areas[closest_children[0]].connections.add(closest_children[1])
 
     return {
         idx: NavArea(
@@ -507,6 +532,10 @@ def plot_path(
 def check_straight_and_reversed_distance(
     distances: PathDistances, map_name: str, path_points: PathPoints, granularity: str
 ) -> None:
+    if distances.reversed == 0:
+        print(f"At map: {map_name} for path: {path_points} and granularity {granularity} the reversed distance was 0.")
+        print(f"Direct: {distances.direct}; Reversed: {distances.reversed}")
+        return
     deviation = abs((distances.direct / distances.reversed) - 1)
     if deviation > 0.05:
         print(
@@ -527,7 +556,7 @@ def check_100_200_distances(
         return
     deviation_direct = abs((dist_100.direct / dist_200.direct) - 1)
     if deviation_direct > 0.05:
-        print(f"At map: {map_name} for path: {path_points} the between 100 and 200 granularity are not close.")
+        print(f"At map: {map_name} for path: {path_points} between the 100 and 200 granularity are not close.")
 
         print(f"Deviation: {deviation_direct}; 100: {dist_100.direct}; 200: {dist_200.direct}")
 
@@ -646,9 +675,8 @@ def de_overpass_meetings() -> list[Vector3]:
 def de_train_spawns() -> list[Vector3]:
     ct_spawn = Vector3(1493, -1269, -264)
     t_spawn = Vector3(-2029, 1382, -108)
-    oil = Vector3(17.94, -1529.98, -113.13)
-    oil2 = Vector3(19.895721, -1560.909424, -113.12875)
-    return [ct_spawn, t_spawn, oil, oil2]
+    ct_spawn2 = Vector3(1626.8, -1498.7, -264)
+    return [ct_spawn, t_spawn, ct_spawn2]
 
 
 def de_train_meetings() -> list[Vector3]:
@@ -658,7 +686,9 @@ def de_train_meetings() -> list[Vector3]:
     b_halls = Vector3(-987, -1004, -90)
     oil = Vector3(265.37, -1549.95, -113.13)
     upper = Vector3(-173.73, -1653.94, -103.13)
-    return [ivy, a_site, pop, b_halls, oil, upper]
+    halls_drop = Vector3(-976, -455, 82)
+    hall_after_drop = Vector3(-978, -604, 24.5)
+    return [ivy, a_site, pop, b_halls, oil, upper, halls_drop, hall_after_drop]
 
 
 @dataclass
@@ -667,11 +697,55 @@ class SpawnDistance:
     distance: float
     path: list[int] = field(default_factory=list)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            area=NavArea.from_dict(data["area"]),
+            distance=data["distance"],
+            path=data["path"],
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "area": self.area.to_dict(),
+            "distance": self.distance,
+            "path": self.path,
+        }
+
 
 @dataclass
 class SpawnDistances:
     CT: list[SpawnDistance]
     T: list[SpawnDistance]
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> Self:
+        """Reads the navigation mesh data from a JSON file.
+
+        Args:
+            path: Path to the JSON file to read from.
+        """
+        spawn_distances_dict = json.loads(Path(path).read_text())
+        return cls(
+            CT=[SpawnDistance.from_dict(spawn_distance) for spawn_distance in spawn_distances_dict["CT"]],
+            T=[SpawnDistance.from_dict(spawn_distance) for spawn_distance in spawn_distances_dict["T"]],
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "CT": [spawn_distance.to_dict() for spawn_distance in self.CT],
+            "T": [spawn_distance.to_dict() for spawn_distance in self.T],
+        }
+
+    def to_json(self, path: str | Path) -> None:
+        """Writes the navigation mesh data to a JSON file.
+
+        Args:
+            path: Path to the JSON file to write.
+        """
+        with open(path, "w", encoding="utf-8") as json_file:
+            json.dump(self.to_dict(), json_file)
+            json_file.write("\n")
 
 
 def get_distances_from_spawns(map_areas: Nav, spawns: Spawns) -> SpawnDistances:
@@ -708,8 +782,34 @@ def get_distances_from_spawns(map_areas: Nav, spawns: Spawns) -> SpawnDistances:
     )
 
 
+def areas_walkable(
+    area1: NavArea | NewNavArea,
+    area2: NavArea | NewNavArea,
+    vis_checker: VisibilityChecker,
+) -> bool:
+    height = PLAYER_CROUCH_HEIGHT if (area1.requires_crouch() or area2.requires_crouch()) else PLAYER_HEIGHT
+    width = 0.9 * PLAYER_WIDTH
+
+    dx = area2.centroid.x - area1.centroid.x
+    dy = area2.centroid.y - area1.centroid.y
+    angle = math.atan2(dy, dx)
+
+    for width_correction in (width / 2, -width / 2):
+        dx_corr = width_correction * math.cos(angle)
+        dy_corr = width_correction * math.sin(angle)
+        used_centroid1 = Vector3(area1.centroid.x + dx_corr, area1.centroid.y + dy_corr, area1.centroid.z + height)
+        used_centroid2 = Vector3(area2.centroid.x + dx_corr, area2.centroid.y + dy_corr, area2.centroid.z + height)
+        if not vis_checker.is_visible(used_centroid1, used_centroid2):
+            return False
+    return True
+
+
 def areas_visible(
-    area1: NavArea, area2: NavArea, vis_checker: VisibilityChecker, *, correct_height: bool = False
+    area1: NavArea | NewNavArea,
+    area2: NavArea | NewNavArea,
+    vis_checker: VisibilityChecker,
+    *,
+    correct_height: bool = False,
 ) -> bool:
     height_correction = PLAYER_EYE_LEVEL if correct_height else PLAYER_EYE_LEVEL / 2
     used_centroid1 = Vector3(area1.centroid.x, area1.centroid.y, area1.centroid.z + height_correction)
@@ -813,14 +913,15 @@ def _plot_collision_triangles(map_name: str, axis: Axes, vis_checker: Visibility
     _plot_node(vis_checker.root, axis, map_name)
 
 
-def plot_triangles() -> None:
+def plot_triangles(*, with_clipping: bool = False) -> None:
     print("Plotting triangles.", flush=True)
+    suffix = "-clippings" if with_clipping else ""
     for map_name in SUPPORTED_MAPS:
         print(f"Plotting triangles for {map_name}.", flush=True)
         output_dir = Path("triangles")
         output_dir.mkdir(exist_ok=True, parents=True)
 
-        vis_checker = load_vis_checker(map_name)
+        vis_checker = load_vis_checker(map_name, suffix=suffix)
 
         try:
             fig, axis = plot_map(map_name)
@@ -861,7 +962,7 @@ def plot_triangles() -> None:
             )
 
         plt.savefig(
-            output_dir / f"triangles_{map_name}.png",
+            output_dir / f"triangles_{map_name}{suffix}.png",
             bbox_inches="tight",
             dpi=300,
         )
@@ -875,17 +976,15 @@ def plot_spread(map_name: str, granularity: str, style: MeetingStyle = "fine") -
     target_path = target_dir / f"{map_name}.json"
     nav = Nav.from_json(target_path)
     spawns = SPAWNS_DATA[map_name]
-    spawn_distances_path = Path("awpy/data") / f"{map_name}_spawn_distances_{granularity}.pkl"
+    spawn_distances_path = Path("awpy/data") / f"{map_name}_spawn_distances_{granularity}.json"
 
     vis_checker = load_vis_checker(map_name)
 
     if spawn_distances_path.is_file():
-        with spawn_distances_path.open("rb") as f:
-            spawn_distances: SpawnDistances = pickle.load(f)  # noqa: S301
+        spawn_distances = SpawnDistances.from_json(spawn_distances_path)
     else:
         spawn_distances = get_distances_from_spawns(nav, spawns)
-        with spawn_distances_path.open("wb") as f:
-            pickle.dump(spawn_distances, f)
+        spawn_distances.to_json(spawn_distances_path)
 
     ct_index = 0
     marked_areas_ct: set[int] = set()
@@ -1100,26 +1199,13 @@ def plot_paths() -> None:
             print(f"At map: {map_name}")
             for start, end in itertools.product(STARTS[map_name], ENDS[map_name]):
                 distances[map_name][PathPoints(start, end)] = {}
-                print("Nom:")
-                direct, rev = plot_path(
-                    map_name,
-                    NAV_DATA[map_name],
-                    start,
-                    end,
-                    "paths",
-                    granularity="nom",
-                )
-                distances[map_name][PathPoints(start, end)]["nom"] = PathDistances(direct, rev)
-
                 for granularity in GRANULARITIES:
-                    distances[map_name][PathPoints(start, end)][str(granularity)] = PathDistances(direct, rev)
                     print(f"Grid {granularity}:")
                     target_dir = Path(f"awpy/data/nav_{granularity}")
                     target_dir.mkdir(exist_ok=True, parents=True)
 
                     nav = Nav.from_json(target_dir / f"{map_name}.json")
-
-                    plot_path(
+                    direct, rev = plot_path(
                         map_name,
                         nav,
                         start,
@@ -1127,84 +1213,103 @@ def plot_paths() -> None:
                         "paths",
                         granularity=str(granularity),
                     )
+                    distances[map_name][PathPoints(start, end)][str(granularity)] = PathDistances(direct, rev)
+
         with distances_data_path.open("wb") as f:
             pickle.dump(distances, f)
 
-    for map_name, map_distances in distances.items():
-        for path_points, granularity_distances in map_distances.items():
-            # check_straight_and_reversed_distance(
-            #     granularity_distances["nom"], map_name, path_points, "nom"
-            # )
-            # check_straight_and_reversed_distance(
-            #     granularity_distances["100"], map_name, path_points, "100"
-            # )
-            # check_straight_and_reversed_distance(
-            #     granularity_distances["200"], map_name, path_points, "200"
-            # )
+    # for map_name, map_distances in distances.items():
+    #     for path_points, granularity_distances in map_distances.items():
+    #         check_straight_and_reversed_distance(granularity_distances["nom"], map_name, path_points, "nom")
+    #         check_straight_and_reversed_distance(granularity_distances["100"], map_name, path_points, "100")
+    #         check_straight_and_reversed_distance(granularity_distances["200"], map_name, path_points, "200")
 
-            check_100_200_distances(
-                granularity_distances["100"],
-                granularity_distances["200"],
-                map_name,
-                path_points,
-            )
+    #         check_100_200_distances(
+    #             granularity_distances["100"],
+    #             granularity_distances["200"],
+    #             map_name,
+    #             path_points,
+    #         )
 
 
 def _plot_areas_reachable_from(
-    areas: list[NavArea], map_name: str, nav: Nav, mode: ReachabilityMode = "visibility", granularity: str = "100"
+    areas: Iterable[NavArea], map_name: str, nav: Nav, vis_checker: VisibilityChecker, granularity: str = "100"
 ) -> None:
-    print(f"Plotting selected area {mode}.", flush=True)
-    vis_checker = load_vis_checker(map_name)
-    output_dir = Path(mode) / map_name / granularity
-    output_dir.mkdir(exist_ok=True, parents=True)
+    print(f"Plotting selected areas {map_name=} {granularity=}.", flush=True)
     for area in areas:
-        try:
-            fig, axis = plot_map(map_name)
-        except FileNotFoundError:
-            return
-        fig.set_size_inches(19.2, 21.6)
-        _plot_tiles(nav.areas, map_name, axis)
-        visible_areas = [
-            other
-            for other in nav.areas.values()
-            if other.area_id != area.area_id
-            and (areas_visible(area, other, vis_checker) if mode != "jumpability" else True)
-            and (area.centroid.can_jump_to(other.centroid) if mode != "visibility" else True)
-        ]
-        _plot_tiles({area.area_id: area}, map_name, axis, color="green")
-        _plot_tiles({other.area_id: other for other in visible_areas}, map_name, axis, color="red")
-        for other in visible_areas:
-            _plot_connection(area, other, map_name, axis, with_arrows=False, color="red")
-        plt.savefig(
-            output_dir / f"{mode}_{map_name}_{granularity}_{area.area_id}.png",
-            bbox_inches="tight",
-            dpi=300,
-        )
-        fig.clear()
-        plt.close(fig)
+        reachable_areas: dict[str, list[NavArea]] = {
+            "visibility": [],
+            "reachability": [],
+            "jumpability": [],
+            "connectivity": [],
+        }
+        for other in nav.areas.values():
+            if other.area_id == area.area_id:
+                continue
+            area_visible = areas_walkable(area, other, vis_checker)
+            area_jumpable = area.centroid.can_jump_to(other.centroid)
+            if area_visible:
+                reachable_areas["visibility"].append(other)
+            if area_jumpable:
+                reachable_areas["jumpability"].append(other)
+            if area_visible and area_jumpable:
+                reachable_areas["reachability"].append(other)
+            if other.area_id in area.connections:
+                reachable_areas["connectivity"].append(other)
+
+        for mode in ["visibility", "reachability", "jumpability", "connectivity"]:
+            # print(f"Plotting selected area {area.area_id}: {map_name=} {granularity=} {mode=}.", flush=True)
+            output_dir = Path(mode) / map_name / granularity
+            output_dir.mkdir(exist_ok=True, parents=True)
+            try:
+                fig, axis = plot_map(map_name)
+            except FileNotFoundError:
+                return
+            fig.set_size_inches(19.2, 21.6)
+            _plot_tiles(nav.areas, map_name, axis)
+            _plot_tiles({area.area_id: area}, map_name, axis, color="green")
+            _plot_tiles({other.area_id: other for other in reachable_areas[mode]}, map_name, axis, color="red")
+            for other in reachable_areas[mode]:
+                _plot_connection(area, other, map_name, axis, with_arrows=False, color="red")
+            plt.savefig(
+                output_dir / f"{mode}_{map_name}_{granularity}_{area.area_id}.png",
+                bbox_inches="tight",
+                dpi=300,
+            )
+            fig.clear()
+            plt.close(fig)
 
 
-def plot_map_reachability_examples(mode: ReachabilityMode = "visibility", granularity: str = "100") -> None:
+def plot_map_reachability_examples() -> None:
     for map_name in SUPPORTED_MAPS:
-        nav = Nav.from_json(f"awpy/data/nav_{granularity}/{map_name}.json")
-        _plot_areas_reachable_from(
-            [(nav.find_area(pos) or nav.find_closest_area_centroid(pos)) for pos in STARTS[map_name] + ENDS[map_name]],
-            map_name,
-            nav,
-            mode=mode,
-            granularity=granularity,
-        )
+        vis_checker = load_vis_checker(map_name, suffix="-clippings")
+        for granularity in GRANULARITIES:
+            nav = Nav.from_json(f"awpy/data/nav_{granularity}/{map_name}.json")
+            total_areas = len(nav.areas)
+            n_points = 13
+            _plot_areas_reachable_from(
+                {
+                    (nav.find_area(pos) or nav.find_closest_area_centroid(pos))
+                    for pos in STARTS[map_name] + ENDS[map_name]
+                }
+                | (
+                    set()
+                    if granularity == "nom"
+                    else {nav.areas[idx] for idx in (range(0, total_areas, round(total_areas / n_points)))}
+                ),
+                map_name,
+                nav,
+                vis_checker,
+                granularity=granularity,
+            )
 
 
-# plot_triangles()
+plot_triangles(with_clipping=True)
 generate_grids()
-# plot_paths()
+plot_paths()
+plot_map_reachability_examples()
 # for map_name in SUPPORTED_MAPS:
 #     for style in ("fine", "rough"):
 #         for granularity in GRANULARITIES:
 #             plot_spread(map_name, granularity, style)
-#             generate_spread_gif(map_name, granularity, style)
-# for granularity in GRANULARITIES:
-#     plot_map_reachability_examples(mode="visibility", granularity=granularity)
-#     plot_map_reachability_examples(mode="reachability", granularity=granularity)
-#     plot_map_reachability_examples(mode="jumpability", granularity=granularity)
+#               generate_spread_gif(map_name, granularity, style)

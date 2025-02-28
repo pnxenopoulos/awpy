@@ -127,7 +127,7 @@ class Vector3:
         h_distance = self.distance_2d(other)
         if h_distance <= 0:
             return True
-        h_distance = max(h_distance - (PLAYER_WIDTH * 2**0.5), 0)
+        h_distance = max(h_distance - (PLAYER_WIDTH * 1.15), 0)
 
         # Time to travel the horizontal distance between self and other
         # with running speed

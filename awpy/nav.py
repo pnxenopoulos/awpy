@@ -123,6 +123,9 @@ class NavArea:
         """Returns a set of connected area IDs."""
         return set(self.connections)
 
+    def requires_crouch(self) -> bool:
+        return DynamicAttributeFlags(CROUCHING_ATTRIBUTE_FLAG) == self.dynamic_attribute_flags
+
     @cached_property
     def size(self) -> float:
         """Calculates the area of the polygon defined by the corners.
@@ -357,16 +360,9 @@ class Nav:
                     + (area.centroid.y - self.areas[connected_area_id].centroid.y) ** 2
                 )
 
-                area_relative_speed = (
-                    CROUCHING_SPEED
-                    if DynamicAttributeFlags(CROUCHING_ATTRIBUTE_FLAG) == area.dynamic_attribute_flags
-                    else RUNNING_SPEED
-                ) / RUNNING_SPEED
+                area_relative_speed = (CROUCHING_SPEED if area.requires_crouch() else RUNNING_SPEED) / RUNNING_SPEED
                 connected_area_relative_speed = (
-                    CROUCHING_SPEED
-                    if DynamicAttributeFlags(CROUCHING_ATTRIBUTE_FLAG)
-                    == self.areas[connected_area_id].dynamic_attribute_flags
-                    else RUNNING_SPEED
+                    CROUCHING_SPEED if self.areas[connected_area_id].requires_crouch() else RUNNING_SPEED
                 ) / RUNNING_SPEED
 
                 # Smaller relative speed increases the effective distance
@@ -579,7 +575,7 @@ class Nav:
                         self.graph.nodes[end_id]["center_2d"],
                     )
                 case int(), Vector3():
-                    total_distance = distance.euclidean(self.graph.nodes[start_id]["center_2d"], end_id)
+                    total_distance = distance.euclidean(self.graph.nodes[start_id]["center_2d"], end_id.to_tuple_2d())
         else:
             # Calculate start and end distances
             start_distance = (
