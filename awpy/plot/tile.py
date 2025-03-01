@@ -12,6 +12,7 @@ from matplotlib.axes import Axes
 import awpy.nav
 import awpy.plot
 import awpy.plot.utils
+import awpy.vector.Vector3
 
 NAV = {}
 MAP_DIR = "../data/nav"
@@ -20,29 +21,28 @@ DEFAULT_FIG_SIZE = (19, 21)
 NAV["de_dust2"] = awpy.nav.Nav(path="../../awpy/data/de_dust2")
 
 
-def _tile_polygon(area_dict: dict, map_name: str) -> list:
-    """Converts an area's corner coordinates to pixel coordinates.
+def _tile_polygon(area_corners: list[awpy.vector.Vector3], map_name: str) -> list:
+    """Converts a Nav Area's corner coordinates to pixel coordinates.
 
     Args:
-        area_dict (dict): Dictionary with a "corners" key containing a list of
-        coordinates (each with "x", "y", and "z" values).
+        area_corners (awpy.vector.Vector3): List of corner positions
+            (see NavArea.corners for more info)
         map_name (str): The map name used for coordinate conversion.
 
     Returns:
         list: List of (x, y) pixel coordinates.
-
-    Example:
-        >>> _tile_polygon(area_dict, map_name="de_mirage")
     """
-    return [awpy.plot.utils.game_to_pixel(map_name, (c["x"], c["y"], c["z"]))[0:2] for c in area_dict["corners"]]
+    return [awpy.plot.utils.game_to_pixel(map_name, (c["x"], c["y"], c["z"]))[0:2] for c in area_corners]
 
 
-def _plot_tile(axis: Axes, polygon: list, edgecolor: str, facecolor: str, linewidth: int = 1) -> None:
+def _plot_tile(
+    axis: Axes, polygon: list[tuple[float, float]], edgecolor: str, facecolor: str, linewidth: int = 1
+) -> None:
     """Adds a single tile patch to the given axis.
 
     Args:
         axis (matplotlib.axes.Axes): The matplotlib axis to add the tile to.
-        polygon (list): List of (x, y) pixel coordinates representing the tile's corners.
+        polygon (list[tuple[float, float]]): List of (x, y) pixel coordinates representing the tile's corners.
         edgecolor (str): Color of the tile's border.
         facecolor (str): Fill color of the tile.
         linewidth (int, optional): Width of the tile's border. Defaults to 1.
@@ -73,12 +73,11 @@ def _plot_all_tiles(map_name: str, axis: Axes, default_fill: str = "None") -> No
     """
     map_dict = NAV[map_name]
     for area in map_dict.areas.values():
-        area_dict = area.to_dict()
-        polygon = _tile_polygon(area_dict, map_name)
+        polygon = _tile_polygon(area.corners, map_name)
         _plot_tile(axis, polygon, edgecolor="yellow", facecolor=default_fill)
 
 
-def _plot_selected_tiles(map_name: str, axis: Axes, selected_tiles: list) -> None:
+def _plot_selected_tiles(map_name: str, axis: Axes, selected_tiles: list[int]) -> None:
     """Plots all tiles on the map, highlighting the selected ones.
 
     - Tiles not in the selected list are drawn with a yellow outline and no fill.
@@ -89,7 +88,7 @@ def _plot_selected_tiles(map_name: str, axis: Axes, selected_tiles: list) -> Non
     Args:
         map_name (str): The name of the map for plotting.
         axis (matplotlib.axes.Axes): The matplotlib axis to plot the tiles on.
-        selected_tiles (list): List of tile IDs to highlight. Can represent a path if multiple
+        selected_tiles (list[int]): List of tile IDs to highlight. Can represent a path if multiple
         tiles are included.
 
     Returns:
@@ -104,8 +103,7 @@ def _plot_selected_tiles(map_name: str, axis: Axes, selected_tiles: list) -> Non
 
     map_dict = NAV[map_name]
     for tile_id, area in map_dict.areas.items():
-        area_dict = area.to_dict()
-        polygon = _tile_polygon(area_dict, map_name)
+        polygon = _tile_polygon(area.corners, map_name)
         if tile_id in selected_set:
             """
             - If just one tile is passed in to visualize, it is filled in red with black edges.
@@ -129,7 +127,7 @@ def plot_map_tiles(
     map_name: str,
     outpath: str | Path | None = None,
     dpi: int = 300,
-    fill: str = "None",
+    fill: str | None = None,
     figure_size: tuple[float, float] = DEFAULT_FIG_SIZE,
 ) -> None:
     """Plots all navigation mesh tiles for a given map.
