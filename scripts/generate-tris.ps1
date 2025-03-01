@@ -18,8 +18,10 @@ if (-not (Test-Path $inputPath)) {
     exit
 }
 
-# Process each .vpk file in the input directory.
-Get-ChildItem -Path $inputPath -Filter "*.vpk" | ForEach-Object {
+# Process each .vpk file, excluding files with unwanted substrings.
+Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
+    $_.Name -notlike "*_preview*" -and $_.Name -notlike "*_vanity*" -and $_.Name -notlike "*lobby_*"
+} | ForEach-Object {
     $filePath = $_.FullName
     $fileNameWithoutExtension = $_.BaseName
 

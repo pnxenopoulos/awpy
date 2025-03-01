@@ -117,9 +117,31 @@ jobs:
 
       - name: Push changes to GitHub
         if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Determine target branch: for PR events use the PR branch, otherwise default to "main"
+          if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
+            $targetBranch = $env:GITHUB_HEAD_REF
+          }
+          else {
+            $targetBranch = "main"
+          }
+
+          # Check out the target branch and update it with remote changes
+          git checkout $targetBranch
+          git pull origin $targetBranch --rebase
+
+          # Stage the changes
           git add awpy/data/__init__.py
-          git commit -m "Update awpy/data/__init__.py with latest patch info ($env:LATEST_PATCH_ID)" || echo "No changes detected"
-          git push origin HEAD:${{ github.head_ref }}  # Make it main otherwise
+
+          # Attempt to commit; if no changes are detected, output a message instead of failing.
+          git commit -m "Update data with latest patch info ($env:LATEST_PATCH_ID)"
+          if ($LASTEXITCODE -eq 0) {
+            git push origin $targetBranch
+          }
+          else {
+            Write-Host "No changes detected; skipping push."
+          }
