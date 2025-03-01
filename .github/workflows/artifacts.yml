@@ -122,7 +122,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Determine target branch: for PR events use the PR branch, otherwise default to "main"
+          # Determine target branch: for pull request events use the PR branch, otherwise default to "main"
           if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
             $targetBranch = $env:GITHUB_HEAD_REF
           }
@@ -130,17 +130,25 @@ jobs:
             $targetBranch = "main"
           }
 
-          # Check out the target branch and update it with remote changes
-          git checkout $targetBranch
+          # Stash any unstaged changes (e.g., due to LF/CRLF differences)
+          git stash --include-untracked
+
+          # Check out the target branch (creating or resetting it as needed)
+          git checkout -B $targetBranch
+
+          # Pull the latest remote changes and rebase local commits
           git pull origin $targetBranch --rebase
 
-          # Stage the changes
-          git add awpy/data/__init__.py
+          # Restore any stashed changes (if present)
+          git stash pop || true
 
-          # Attempt to commit; if no changes are detected, output a message instead of failing.
+          # Stage and commit your changes
+          git add awpy/data/__init__.py
           git commit -m "Update data with latest patch info ($env:LATEST_PATCH_ID)"
+          
           if ($LASTEXITCODE -eq 0) {
-            git push origin $targetBranch
+            # Push changes and set upstream if necessary
+            git push --set-upstream origin $targetBranch
           }
           else {
             Write-Host "No changes detected; skipping push."

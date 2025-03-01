@@ -20,7 +20,7 @@ if (-not (Test-Path $inputPath)) {
 
 # Process each .vpk file, excluding files with unwanted substrings.
 Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
-    $_.Name -notlike "*_preview*" -and $_.Name -notlike "*_vanity*" -and $_.Name -notlike "*lobby_*"
+    $_.Name -notlike "*_preview*" -and $_.Name -notlike "*_vanity*" -and $_.Name -notlike "*lobby_*" -and $_.Name -notlike "*graphics_*"
 } | ForEach-Object {
     $filePath = $_.FullName
     $fileNameWithoutExtension = $_.BaseName
