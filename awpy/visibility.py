@@ -288,6 +288,23 @@ class VphysParser:
 
         return result
 
+    def get_collision_attribute_indices_for_default_group(self) -> list[str]:
+        """Get collision attribute indices for the default group.
+
+        Returns:
+            list[int]: List of collision attribute indices for the default group.
+        """
+        collision_attribute_indices = []
+        idx = 0
+        while True:
+            collision_group_string = self.kv3_parser.get_value(f"m_collisionAttributes[{idx}].m_CollisionGroupString")
+            if not collision_group_string:
+                break
+            if collision_group_string.lower() == '"default"':
+                collision_attribute_indices.append(str(idx))
+            idx += 1
+        return collision_attribute_indices
+
     def parse(self) -> None:
         """Parses the VPhys file and extracts collision geometry.
 
@@ -306,6 +323,10 @@ class VphysParser:
         # Parse VPhys data
         self.kv3_parser.parse(data)
 
+        collision_attribute_indices = self.get_collision_attribute_indices_for_default_group()
+
+        logger.debug(f"Extracted collision attribute indices: {collision_attribute_indices}")
+
         # Process hulls
         hull_idx = 0
         hull_count = 0
@@ -319,7 +340,7 @@ class VphysParser:
             if not collision_idx:
                 break
 
-            if collision_idx == "0":
+            if collision_idx in collision_attribute_indices:
                 # Get vertices
                 vertex_str = self.kv3_parser.get_value(
                     f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_VertexPositions"
@@ -376,20 +397,21 @@ class VphysParser:
         mesh_idx = 0
         mesh_count = 0
         while True:
+            logger.debug(f"Processing mesh {mesh_idx}...")
             collision_idx = self.kv3_parser.get_value(
                 f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_nCollisionAttributeIndex"
             )
             if not collision_idx:
                 break
 
-            if collision_idx == "0":
+            if collision_idx in collision_attribute_indices:
                 # Get triangles and vertices
                 tri_data = self.bytes_to_vec(
-                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Triangles"),
+                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_Mesh.m_Triangles"),
                     4,
                 )
                 vertex_data = self.bytes_to_vec(
-                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes.[{mesh_idx}].m_Mesh.m_Vertices"),
+                    self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_Mesh.m_Vertices"),
                     4,
                 )
 
