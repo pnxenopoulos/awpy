@@ -25,8 +25,8 @@ def awpy_cli() -> None:
     Available choices: {awpy.data.POSSIBLE_ARTIFACTS}""",
 )
 @click.argument("resource_type", type=click.Choice(awpy.data.POSSIBLE_ARTIFACTS))
-@click.option("--patch", type=int, help="Patch number to fetch the resources.", default=17459940)
-def get(resource_type: Literal["maps", "navs", "tris"], *, patch: int = 17459940) -> None:
+@click.option("--patch", type=int, help="Patch number to fetch the resources.", default=awpy.data.CURRENT_BUILD_ID)
+def get(resource_type: Literal["maps", "navs", "tris"], *, patch: int = awpy.data.CURRENT_BUILD_ID) -> None:
     """Get a resource given its type and name."""
     awpy.data.utils.create_data_dir_if_not_exists()
 
