@@ -748,6 +748,29 @@ class SpawnDistances:
             json_file.write("\n")
 
 
+@dataclass
+class SpreadResult:
+    new_marked_areas_ct: set[int]
+    new_marked_areas_t: set[int]
+
+    visibility_connections: list[tuple[SpawnDistance, SpawnDistance]]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            new_marked_areas_ct=set(data["new_marked_areas_ct"]),
+            new_marked_areas_t=set(data["new_marked_areas_t"]),
+            visibility_connections=[
+                (SpawnDistance.from_dict(origin), SpawnDistance.from_dict(target))
+                for origin, target in data["visibility_connections"]
+            ],
+        )
+
+    @classmethod
+    def list_from_json(cls, path: str | Path) -> list[Self]:
+        return [cls.from_dict(entry) for entry in json.loads(Path(path).read_text())]
+
+
 def get_distances_from_spawns(map_areas: Nav, spawns: Spawns) -> SpawnDistances:
     ct_distances: list[SpawnDistance] = []
     t_distances: list[SpawnDistance] = []
@@ -963,6 +986,79 @@ def plot_triangles(*, with_clipping: bool = False) -> None:
 
         plt.savefig(
             output_dir / f"triangles_{map_name}{suffix}.png",
+            bbox_inches="tight",
+            dpi=300,
+        )
+        fig.clear()
+        plt.close(fig)
+
+
+def plot_spread_from_input(map_name: str, granularity: str, style: MeetingStyle, nav: Nav) -> None:
+    print("Loading spread input.", flush=True)
+    spread_input = SpreadResult.list_from_json(Path("awpy/data") / f"{map_name}_{style}_spreads_{granularity}.json")
+    print("Finished loading spread input.", flush=True)
+    marked_areas_ct: set[int] = set()
+    marked_areas_t: set[int] = set()
+
+    output_dir = Path("spread") / map_name / style / granularity
+    output_dir.mkdir(exist_ok=True, parents=True)
+
+    for idx, spread_point in enumerate(tqdm(spread_input, desc="Plotting spreads.")):
+        contains_new_connection = bool(spread_point.visibility_connections)
+        new_conn_str = "_new" if contains_new_connection else ""
+
+        try:
+            fig, axis = plot_map(map_name)
+        except FileNotFoundError:
+            return
+        fig.set_size_inches(19.2, 21.6)
+
+        _plot_tiles(
+            {area_id: nav.areas[area_id] for area_id in (marked_areas_ct | marked_areas_t)},
+            map_name=map_name,
+            axis=axis,
+            color="olive",
+        )
+        _plot_tiles(
+            {
+                area_id: nav.areas[area_id]
+                for area_id in (spread_point.new_marked_areas_ct | spread_point.new_marked_areas_t)
+            },
+            map_name=map_name,
+            axis=axis,
+            color="green",
+        )
+
+        _plot_tiles(
+            {
+                area_id: nav.areas[area_id]
+                for area_id in (marked_areas_t | spread_point.new_marked_areas_t)
+                & (marked_areas_ct | spread_point.new_marked_areas_ct)
+            },
+            map_name=map_name,
+            axis=axis,
+            color="purple",
+        )
+        marked_areas_ct |= spread_point.new_marked_areas_ct
+        marked_areas_t |= spread_point.new_marked_areas_t
+        _plot_tiles(
+            {
+                area_id: area
+                for area_id, area in nav.areas.items()
+                if area_id not in marked_areas_ct and area_id not in marked_areas_t
+            },
+            map_name=map_name,
+            axis=axis,
+            color="yellow",
+        )
+
+        for area1, area2 in spread_point.visibility_connections:
+            _plot_visibility_connection(
+                area1, area2, nav, map_name, axis, color="red", lw=1.0, highlight_area1=style == "rough"
+            )
+
+        plt.savefig(
+            output_dir / f"spread_{map_name}_{granularity}{new_conn_str}_{idx}.png",
             bbox_inches="tight",
             dpi=300,
         )
@@ -1304,12 +1400,15 @@ def plot_map_reachability_examples() -> None:
             )
 
 
-plot_triangles(with_clipping=True)
-generate_grids()
-plot_paths()
-plot_map_reachability_examples()
+# plot_triangles(with_clipping=True)
+# generate_grids()
+# plot_paths()
+# plot_map_reachability_examples()
 # for map_name in SUPPORTED_MAPS:
 #     for style in ("fine", "rough"):
 #         for granularity in GRANULARITIES:
 #             plot_spread(map_name, granularity, style)
 #               generate_spread_gif(map_name, granularity, style)
+
+plot_spread_from_input("de_ancient", "200", "fine", Nav.from_json("awpy/data/nav_200/de_ancient.json"))
+plot_spread_from_input("de_ancient", "200", "rough", Nav.from_json("awpy/data/nav_200/de_ancient.json"))
