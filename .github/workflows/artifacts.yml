@@ -143,6 +143,7 @@ jobs:
           git stash pop || true
 
           # Stage and commit your changes
+          uv run ruff format .
           git add awpy/data/__init__.py
           git commit -m "Update data with latest patch info ($env:LATEST_PATCH_ID)"
           

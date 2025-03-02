@@ -1,27 +1,21 @@
-"""Utilities for plotting tiles on a map specifically.
-
-credit: @JanEricNitschke.
-"""
+"""Module for plotting navigation mesh tiles on a map."""
 
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from loguru import logger
 from matplotlib import patches
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
+import awpy.data
 import awpy.nav
 import awpy.plot
 import awpy.plot.utils
-import awpy.vector.Vector3
-
-NAV = {}
-MAP_DIR = "../data/nav"
-DEFAULT_FIG_SIZE = (19, 21)
-# TODO: Change hardcoded de_dust2 to contain data for all maps
-NAV["de_dust2"] = awpy.nav.Nav(path="../../awpy/data/de_dust2")
+import awpy.vector
 
 
-def _tile_polygon(area_corners: list[awpy.vector.Vector3], map_name: str) -> list:
+def _tile_polygon(area_corners: list[awpy.vector.Vector3], map_name: str) -> list[tuple[float, float]]:
     """Converts a Nav Area's corner coordinates to pixel coordinates.
 
     Args:
@@ -32,7 +26,7 @@ def _tile_polygon(area_corners: list[awpy.vector.Vector3], map_name: str) -> lis
     Returns:
         list: List of (x, y) pixel coordinates.
     """
-    return [awpy.plot.utils.game_to_pixel(map_name, (c["x"], c["y"], c["z"]))[0:2] for c in area_corners]
+    return [awpy.plot.utils.game_to_pixel(map_name, (c.x, c.y, c.z))[0:2] for c in area_corners]
 
 
 def _plot_tile(
@@ -71,8 +65,8 @@ def _plot_all_tiles(map_name: str, axis: Axes, default_fill: str = "None") -> No
     Example:
         >>> _plot_all_tiles(map_name, ax, default_fill="gray")
     """
-    map_dict = NAV[map_name]
-    for area in map_dict.areas.values():
+    map_nav = awpy.nav.Nav.from_json(awpy.data.NAVS_DIR / f"{map_name}.json")
+    for area in map_nav.areas.values():
         polygon = _tile_polygon(area.corners, map_name)
         _plot_tile(axis, polygon, edgecolor="yellow", facecolor=default_fill)
 
@@ -101,8 +95,8 @@ def _plot_selected_tiles(map_name: str, axis: Axes, selected_tiles: list[int]) -
     # Using a set for quick membership tests.
     selected_set = set(selected_tiles)
 
-    map_dict = NAV[map_name]
-    for tile_id, area in map_dict.areas.items():
+    map_nav = awpy.nav.Nav.from_json(awpy.data.NAVS_DIR / f"{map_name}.json")
+    for tile_id, area in map_nav.areas.items():
         polygon = _tile_polygon(area.corners, map_name)
         if tile_id in selected_set:
             """
@@ -128,8 +122,8 @@ def plot_map_tiles(
     outpath: str | Path | None = None,
     dpi: int = 300,
     fill: str | None = None,
-    figure_size: tuple[float, float] = DEFAULT_FIG_SIZE,
-) -> None:
+    figure_size: tuple[float, float] = (19, 21),
+) -> tuple[Figure, Axes]:
     """Plots all navigation mesh tiles for a given map.
 
     This function overlays navigation mesh tiles onto a specified map and highlights them.
@@ -146,10 +140,10 @@ def plot_map_tiles(
         fill (str, optional): The fill color for the tiles. Use "None" for no fill or specify
             a valid color. Defaults to "None".
         figure_size (tuple[float, float], optional): Tuple representing the figure size in inches
-            (width, height). Defaults to `DEFAULT_FIG_SIZE`.
+            (width, height). Defaults to `(19, 21)`.
 
     Returns:
-        None
+        tuple[Figure, Axes]: Matplotlib Figure and Axes objects.
 
     Example:
         >>> plot_map_tiles(
@@ -176,12 +170,9 @@ def plot_map_tiles(
         outpath = Path(outpath)
         outpath.parent.mkdir(parents=True, exist_ok=True)  # Ensure parent directory exists
         plt.savefig(outpath, bbox_inches="tight", dpi=dpi)
-        print(f"The visualization has been saved at {outpath.resolve()}")
-    else:
-        plt.show()
+        logger.debug(f"The visualization has been saved at {outpath.resolve()}")
 
-    fig.clear()
-    plt.close()
+    return fig, axis
 
 
 def plot_map_tiles_selected(
@@ -189,8 +180,8 @@ def plot_map_tiles_selected(
     selected_tiles: list,
     outpath: str | Path | None = None,
     dpi: int = 300,
-    figure_size: tuple[float, float] = DEFAULT_FIG_SIZE,
-) -> None:
+    figure_size: tuple[float, float] = (19, 21),
+) -> tuple[Figure, Axes]:
     """Plots navigation mesh tiles for a given map with selected tiles highlighted.
 
     This function overlays navigation mesh tiles onto the specified map and highlights the
@@ -208,10 +199,10 @@ def plot_map_tiles_selected(
         dpi (int, optional): Dots per inch for the saved figure. Higher values result in
             better image quality. Defaults to 300.
         figure_size (tuple[float, float], optional): Tuple representing the figure size in inches
-            (width, height). Defaults to `DEFAULT_FIG_SIZE`.
+            (width, height). Defaults to `(19, 21)`.
 
     Returns:
-        None
+        tuple[Figure, Axes]: Matplotlib Figure and Axes objects.
 
     Behavior:
         - Non-selected tiles are drawn with a yellow outline.
@@ -244,8 +235,6 @@ def plot_map_tiles_selected(
         outpath = Path(outpath)
         outpath.parent.mkdir(parents=True, exist_ok=True)  # Ensure parent directory exists
         plt.savefig(outpath, bbox_inches="tight", dpi=dpi)
-        print(f"The visualization has been saved at {outpath.resolve()}")
-    else:
-        plt.show()
+        logger.debug(f"The visualization has been saved at {outpath.resolve()}")
 
-    plt.close()
+    return fig, axis
