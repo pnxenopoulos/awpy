@@ -87,3 +87,5 @@ We welcome any contributions from the community, no matter the skill-level. You 
 The name "Awpy" is due to [Nick Wan](https://www.twitch.tv/nickwan_datasci) -- we recommend his stream for sports data analytics enthusiasts.
 
 Awpy was first built on the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) Golang library. We now rely on [demoparser2](https://github.com/LaihoE/demoparser) for parsing, which is another fantastic parsing project, built specifically for Python.
+
+Awpy's team includes JanEric, adi and hojlund, who you can find in the Awpy discord.

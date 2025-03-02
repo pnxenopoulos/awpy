@@ -5,6 +5,17 @@ from pathlib import Path
 from typing import TypedDict
 
 import vdf
+from loguru import logger
+
+try:
+    from awpy.data import MAPS_DIR
+
+    map_data_file = MAPS_DIR / "map-data.json"
+    with open(map_data_file) as map_data_file:
+        MAP_DATA = json.load(map_data_file)
+except Exception as _e:
+    logger.warning(f"Failed to load map data from {map_data_file}.")
+    MAP_DATA = {}
 
 
 class MapData(TypedDict):
