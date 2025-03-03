@@ -29,7 +29,7 @@ author = "Peter Xenopoulos"
 # The short X.Y version
 version = "2.0"
 # The full version, including alpha/beta/rc tags
-release = "2.0.0rc6"
+release = "2.0.0rc7"
 
 
 # -- General configuration ---------------------------------------------------

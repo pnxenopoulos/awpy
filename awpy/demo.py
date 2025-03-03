@@ -137,6 +137,7 @@ class Demo:
         self.tickrate = tickrate
         self.inferno_duration = inferno_duration
         self.smoke_duration = smoke_duration
+        self.in_play_ticks = None
 
         if verbose:
             logger.remove()
@@ -153,6 +154,8 @@ class Demo:
         Returns:
             str: A string summarizing the Demo object.
         """
+        if self.in_play_ticks is None:
+            return f"Demo(path={self.path}, map={self.header.get('map_name')})"
         return f"Demo(path={self.path}, map={self.header.get('map_name')}, ticks={len(self.in_play_ticks)})"
 
     def _raise_if_no_parser(self) -> None:

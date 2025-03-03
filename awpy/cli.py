@@ -21,8 +21,7 @@ def awpy_cli() -> None:
 @awpy_cli.command(
     name="get",
     help=f"""
-    Get Counter-Strike 2 resources like parsed map data or nav meshes. \n
-    Available choices: {awpy.data.POSSIBLE_ARTIFACTS}""",
+    Get Counter-Strike 2 resources like parsed map data or nav meshes. Available choices: {awpy.data.POSSIBLE_ARTIFACTS}""",  # noqa: E501
 )
 @click.argument("resource_type", type=click.Choice(awpy.data.POSSIBLE_ARTIFACTS))
 @click.option("--patch", type=int, help="Patch number to fetch the resources.", default=awpy.data.CURRENT_BUILD_ID)
@@ -47,7 +46,7 @@ def artifacts() -> None:
         )
 
 
-@awpy_cli.command(name="parse", help="Parse a Counter-Strike 2 demo (.dem) file .")
+@awpy_cli.command(name="parse", help="Parse a Counter-Strike 2 demo (.dem) file.")
 @click.argument("demo_path", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the compressed demo.")
 @click.option("--events", multiple=True, help="List of events to parse.")
