@@ -15,25 +15,28 @@ Awpy
    
 .. |Build| image:: https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg
    :target: https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml
+
+.. |Artifacts| image:: https://github.com/pnxenopoulos/awpy/actions/workflows/artifacts.yml/badge.svg
+   :target: https://github.com/pnxenopoulos/awpy/actions/workflows/artifacts.yml
    
 .. |License| image:: https://img.shields.io/badge/license-MIT-lightgrey
    :target: https://github.com/pnxenopoulos/awpy/blob/main/LICENSE
    
-`Awpy` allows a user to parse, analyze and visualize Counter-Strike 2 demos. You can visit the repository_ to view the source code, examples and data. To install Awpy, run ``pip install awpy`` (Python >= 3.9). Please join the Discord_ server if you would like to join our esports analytics community or to receive help with using Awpy. You can get started with the following example:
+`Awpy` (GitHub_) allows a user to parse, analyze and visualize Counter-Strike 2 demos, specifically those from competitive Counter-Strike (e.g., demos from HLTV, FACEIT, and competitive matchmaking). To install Awpy, run ``pip install awpy`` (Python >= 3.11). Please join the Discord_ server if you would like to discuss Awpy or esports analytics. You can get started with the following example:
 
-.. _repository: https://github.com/pnxenopoulos/awpy
+.. _GitHub: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-Using Awpy to parse Counter-Strike 2 demos is as easy as the few lines of code shown below. To see what output looks like, check out :doc:`parser_output`.
 
 .. code-block:: python
 
    from awpy import Demo
 
-   # Simply call `Demo(path="...")` to parse a demo
+   # Construct and then parse a demo
    dem = Demo("natus-vincere-vs-virtus-pro-m1-overpass.dem")
+   dem.parse()
 
-   # Access various dictionaries & dataframes
+   # Access various dictionaries & Polars dataframes
    dem.header
    dem.rounds
    dem.grenades
@@ -42,8 +45,11 @@ Using Awpy to parse Counter-Strike 2 demos is as easy as the few lines of code s
    dem.bomb
    dem.smokes
    dem.infernos
-   dem.weapon_fires
+   dem.shots
    dem.ticks
+
+   # If you need to change to a Pandas dataframe, you can do
+   dem.ticks.to_pandas()
 
 You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo and access the data.
 
@@ -54,9 +60,10 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    :maxdepth: 2
    :hidden:
 
-   installation
-   faq
-   license
+   getting-started/installation
+   getting-started/faq
+   getting-started/license
+   modules/parser_output
 
 .. toctree::
    :caption: Example Notebooks
@@ -68,22 +75,17 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    examples/demo_stats
    examples/plot_demo
    examples/visibility
+   examples/nav
 
 .. toctree::
    :caption: Documentation
    :maxdepth: 2
    :hidden:
 
-   cli
-   data
-   demo
-   plot
-   stats
-   vis
-
-.. toctree::
-   :caption: Data
-   :maxdepth: 2
-   :hidden:
-
-   usd
+   modules/cli
+   modules/data
+   modules/demo
+   modules/nav
+   modules/plot
+   modules/stats
+   modules/visibility

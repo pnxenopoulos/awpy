@@ -22,14 +22,14 @@ import sphinx_rtd_theme
 
 # -- Project information -----------------------------------------------------
 
-project = "awpy"
+project = "Awpy"
 copyright = "2024, Peter Xenopoulos"
 author = "Peter Xenopoulos"
 
 # The short X.Y version
-version = ""
+version = "2.0"
 # The full version, including alpha/beta/rc tags
-release = "2.0.0b4"
+release = "2.0.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -97,7 +97,7 @@ html_theme = "sphinx_rtd_theme"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -113,7 +113,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "awpydoc"
+htmlhelp_basename = "awpy_docs"
 
 
 # -- Options for LaTeX output ------------------------------------------------

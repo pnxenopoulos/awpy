@@ -1,153 +1,238 @@
 """Module for round parsing functions."""
 
-from typing import Union
+import polars as pl
 
-import numpy as np
-import pandas as pd
-from demoparser2 import DemoParser  # pylint: disable=E0611
-
-
-def _find_bomb_plant_tick(row: pd.Series, bomb_ticks: pd.Series) -> Union[int, float]:
-    """Find the bomb plant tick for a round.
-
-    Args:
-        row: A row from a dataframe
-        bomb_ticks: A series of bomb ticks
-
-    Returns:
-        The bomb plant tick for the round, or NaN if no bomb plant was found.
-    """
-    # Filter the bomb ticks that fall within the round's start and end
-    plant_ticks = bomb_ticks[(bomb_ticks >= row["start"]) & (bomb_ticks <= row["end"])]
-    # Return the first bomb plant tick if it exists, otherwise NaN
-    return plant_ticks.iloc[0] if not plant_ticks.empty else np.nan
+import awpy.constants
+import awpy.parsers.utils
 
 
-def parse_rounds(parser: DemoParser, events: dict[str, pd.DataFrame]) -> pd.DataFrame:
-    """Parse the rounds of the demofile.
+def _find_valid_round_indices(rounds_df: pl.DataFrame, full_sequence: list[str]) -> list[int]:
+    """Identify indices in the rounds DataFrame that form a valid round sequence.
+
+    A valid sequence is defined as either:
+      - A full sequence matching: ["start", "freeze_end", "end", "official_end"]
+      - An incomplete sequence matching either:
+          ["start", "freeze_end", "end"],
+          ["start", "end", "official_end"], or
+          ["start", "end"] (typically occurring when there's a surrender vote)
+      - If at the end of the DataFrame only the first 3 events of full_sequence are present
+        (i.e. ["start", "freeze_end", "end"]), consider that valid.
 
     Args:
-        parser: The parser object.
-        events: A dictionary of parsed events.
+        rounds_df: DataFrame containing event rows with an "event" column.
+        full_sequence: The expected full sequence of events.
 
     Returns:
-        The rounds for the demofile.
-
-    Raises:
-        KeyError: If a round-related event is not found in the events.
+        A list of row indices in rounds_df that are part of a valid sequence.
     """
-    round_start = parser.parse_event("round_start")
-    if len(round_start) == 0:
-        round_start_missing_msg = "round_start not found in events."
-        raise KeyError(round_start_missing_msg)
-    round_start["event"] = "start"
+    valid_indices = []
+    sequence_length_full = len(full_sequence)  # Expected full sequence length (4)
+    alt_sequence1 = ["start", "freeze_end", "end"]
+    alt_sequence2 = ["start", "end", "official_end"]
+    alt_sequence3 = ["start", "end"]  # For surrender vote
 
-    round_end = parser.parse_event("round_end")
-    if len(round_end) == 0:
-        round_end_missing_msg = "round_end not found in events."
-        raise KeyError(round_end_missing_msg)
-    round_end = round_end[~round_end["winner"].isna()]  # Remove None round ends
-    round_end["event"] = "end"
+    n_rows = len(rounds_df)
+    for i in range(n_rows):
+        # Extract a slice of events; if we're near the end, this may be shorter than full_sequence.
+        current_sequence = rounds_df["event"].slice(i, sequence_length_full).to_list()
 
-    round_end_official = parser.parse_event("round_officially_ended")
-    if len(round_end_official) == 0:
-        round_end_official_missing_msg = "round_officially_ended not found in events."
-        raise KeyError(round_end_official_missing_msg)
-    round_end_official["event"] = "official_end"
+        # 1. Check for a complete round sequence.
+        if current_sequence == full_sequence:
+            valid_indices.extend(range(i, i + sequence_length_full))
+        # 2. Check for a 3-event sequence: ["start", "freeze_end", "end"].
+        elif current_sequence == alt_sequence1:
+            valid_indices.extend(range(i, i + len(alt_sequence1)))
+        # 3. Check for a 3-event sequence: ["start", "end", "official_end"].
+        elif len(current_sequence) >= len(alt_sequence2) and current_sequence[: len(alt_sequence2)] == alt_sequence2:
+            valid_indices.extend(range(i, i + len(alt_sequence2)))
+        # 4. Check for a 2-event sequence: ["start", "end"].
+        elif len(current_sequence) == len(alt_sequence3) and current_sequence == alt_sequence3:
+            valid_indices.extend(range(i, i + len(alt_sequence3)))
+        # 5. Lastly, if we're at the very end and only have 3 events, check if they match the first three events of full
+        elif (
+            len(current_sequence) < sequence_length_full
+            and len(current_sequence) == 3
+            and current_sequence == full_sequence[:3]
+        ):
+            valid_indices.extend(range(i, i + len(current_sequence)))
 
-    round_freeze_end = parser.parse_event("round_freeze_end")
-    if len(round_freeze_end) == 0:
-        round_freeze_end_missing_msg = "round_freeze_end not found in events."
-        raise KeyError(round_freeze_end_missing_msg)
-    round_freeze_end["event"] = "freeze_end"
+    return valid_indices
 
-    rounds = pd.concat(
+
+def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> pl.DataFrame:
+    """Add bomb plant tick and site information to the rounds DataFrame.
+
+    For each round, this function looks for bomb plant events occurring between
+    the round's start and end ticks. It then adds two new columns:
+      - bomb_plant: The tick at which the bomb was planted (if any).
+      - bomb_site: "bombsite_a" or "bombsite_b" based on the site value, or "not_planted"
+        if no bomb plant occurred.
+
+    Args:
+        rounds_df: DataFrame containing round information with "start" and "end" columns.
+        bomb_plants: DataFrame of bomb planted events.
+
+    Returns:
+        Updated rounds_df with additional bomb plant information.
+    """
+    n_rounds = len(rounds_df)
+    bomb_plant_ticks = [None] * n_rounds
+    bomb_plant_sites = ["not_planted"] * n_rounds
+
+    # If no bomb plant events are provided, return the rounds DataFrame as is.
+    if bomb_plants.is_empty():
+        return rounds_df
+
+    for i in range(n_rounds):
+        start_tick = rounds_df["start"][i]
+        end_tick = rounds_df["end"][i]
+        # Filter bomb plant events that occur within the current round's tick range.
+        plant_events = bomb_plants.filter((pl.col("tick") >= start_tick) & (pl.col("tick") <= end_tick))
+        if len(plant_events) > 0:
+            # Use the first bomb plant event for this round.
+            bomb_plant_ticks[i] = plant_events["tick"][0]
+            bomb_plant_sites[i] = "bombsite_a" if plant_events["site"][0] == 220 else "bombsite_b"
+
+    # Add the bomb plant information as new columns.
+    return rounds_df.with_columns(
         [
-            round_start[["event", "tick"]],
-            round_freeze_end[["event", "tick"]],
-            round_end[["event", "tick"]],
-            round_end_official[["event", "tick"]],
+            pl.Series(name="bomb_plant", values=bomb_plant_ticks),
+            pl.Series(name="bomb_site", values=bomb_plant_sites),
         ]
     )
 
-    # Remove everything that happen on tick 0, except starts
-    rounds = rounds[~((rounds["tick"] == 0) & (rounds["event"] != "start"))]
 
-    # Then, order
-    event_order = ["official_end", "start", "freeze_end", "end"]
-    rounds["event"] = pd.Categorical(
-        rounds["event"], categories=event_order, ordered=True
-    )
-    rounds = (
-        rounds.sort_values(by=["tick", "event"])
-        .drop_duplicates()
-        .reset_index(drop=True)
-    )
+def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
+    """Create a consolidated rounds DataFrame from a dictionary of event DataFrames.
 
-    # Initialize an empty list to store the indices of rows to keep
-    indices_to_keep = []
+    This function processes round events (start, freeze_end, end, official_end) from the input,
+    filters and validates the event sequence, and pivots the data to create a structured round
+    DataFrame. It also integrates bomb plant events to add bomb planting tick and site information.
 
-    # Loop through the DataFrame and check for the correct order of events
-    full_sequence_offset = len(event_order)
-    for i in range(len(rounds)):
-        # Extract the current sequence of events
-        current_sequence = rounds["event"].iloc[i : i + full_sequence_offset].tolist()
-        # Check if the current sequence matches the correct order
-        if current_sequence == ["start", "freeze_end", "end", "official_end"]:
-            # If it does, add the indices of these rows to the list
-            indices_to_keep.extend(range(i, i + full_sequence_offset))
-        # Case for end of match where we might not get a round official end
-        # Case for start of match where we might not get a freeze end
-        elif current_sequence == ["start", "freeze_end", "end"] or current_sequence[
-            0 : full_sequence_offset - 1
-        ] == [
-            "start",
-            "end",
-            "official_end",
-        ]:
-            indices_to_keep.extend(range(i, i + full_sequence_offset - 1))
+    Args:
+        events (dict[str, pl.DataFrame]): A dictionary containing event DataFrames with keys:
+            - "round_start"
+            - "round_end"
+            - "round_end_official"
+            - "round_freeze_end"
+            Optionally:
+            - "bomb_planted"
 
-    # Filter the DataFrame to keep only the rows with the correct sequence
-    rounds_filtered = rounds.loc[indices_to_keep].reset_index(drop=True)
-    rounds_filtered["round"] = (rounds_filtered["event"] == "start").cumsum()
-    rounds_reshaped = rounds_filtered.pivot_table(
-        index="round", columns="event", values="tick", aggfunc="first", observed=False
-    ).reset_index(drop=True)
-    rounds_reshaped = rounds_reshaped[
-        ["start", "freeze_end", "end", "official_end"]
-    ].astype("Int32")
-    rounds_reshaped.columns = ["start", "freeze_end", "end", "official_end"]
-    rounds_reshaped = rounds_reshaped.merge(
-        round_end[
-            [
-                "tick",
-                "winner",
-                "reason",
-            ]
-        ],
-        left_on="end",
-        right_on="tick",
-        how="left",
-    )
-    rounds_reshaped["round"] = rounds_reshaped.index + 1
-    rounds_reshaped["official_end"] = rounds_reshaped["official_end"].fillna(
-        rounds_reshaped["end"]
-    )
+    Returns:
+        pl.DataFrame: A DataFrame representing consolidated round information.
 
-    # Subset round columns
-    rounds_df = rounds_reshaped[
-        ["round", "start", "freeze_end", "end", "official_end", "winner", "reason"]
+    Raises:
+        KeyError: If any required event key is missing from the events dictionary.
+        ValueError: If no valid round sequences are found in the processed event data.
+    """
+    # Retrieve required event DataFrames.
+    round_start = awpy.parsers.utils.get_event_from_parsed_events(events, "round_start")
+    round_end = awpy.parsers.utils.get_event_from_parsed_events(events, "round_end")
+    round_end_official = awpy.parsers.utils.get_event_from_parsed_events(events, "round_officially_ended")
+    round_freeze_end = awpy.parsers.utils.get_event_from_parsed_events(events, "round_freeze_end")
+
+    # Retrieve optional bomb planted events; default to empty DataFrame if missing.
+    bomb_plants = events.get("bomb_planted", pl.DataFrame())
+
+    # Extract only the 'event' and 'tick' columns from each round event DataFrame.
+    event_dfs = [
+        round_start[["event", "tick"]],
+        round_freeze_end[["event", "tick"]],
+        round_end[["event", "tick"]],
+        round_end_official[["event", "tick"]],
     ]
-    rounds_df["bomb_plant"] = pd.NA
-    rounds_df["bomb_plant"] = rounds_df["bomb_plant"].astype(pd.Int64Dtype())
 
-    # Find the bomb plant ticks
-    bomb_planted = events.get("bomb_planted")
-    if (bomb_planted is None) or (bomb_planted.empty):
-        return rounds_df
+    # Concatenate event DataFrames and filter out rows with tick==0 (unless event is "start").
+    rounds_df = pl.concat(event_dfs).filter(~((pl.col("tick") == 0) & (pl.col("event") != "start")))
 
-    rounds_df["bomb_plant"] = rounds_df.apply(
-        _find_bomb_plant_tick, bomb_ticks=bomb_planted["tick"], axis=1
-    ).astype(pd.Int64Dtype())
+    # Define an enumeration for event types.
+    round_events_enum = pl.Enum(["official_end", "start", "freeze_end", "end"])
 
-    return rounds_df
+    # Reconstruct the DataFrame with the event type override, remove duplicates, and sort.
+    rounds_df = (
+        pl.DataFrame(rounds_df, schema_overrides={"event": round_events_enum})
+        .unique(subset=["tick", "event"])
+        .sort(by=["tick", "event"])
+    )
+
+    # Define the expected full event sequence.
+    expected_full_sequence = ["start", "freeze_end", "end", "official_end"]
+
+    # Identify the indices of rows that form valid round sequences.
+    valid_indices = _find_valid_round_indices(rounds_df, expected_full_sequence)
+    if not valid_indices:
+        no_valid_sequences_err_msg = "No valid round sequences found in the event data."
+        raise ValueError(no_valid_sequences_err_msg)
+
+    # Filter the DataFrame to include only rows that are part of valid round sequences.
+    rounds_df = rounds_df[valid_indices]
+
+    # Create a round number column by cumulatively summing "start" events.
+    rounds_df = rounds_df.with_columns(round_num=(pl.col("event") == "start").cast(pl.Int8).cum_sum())
+
+    # Pivot the DataFrame so that each round is one row with columns for each event type.
+    rounds_df = rounds_df.pivot(index="round_num", on="event", values="tick", aggregate_function="first")
+
+    # Join additional round details (such as winner and reason) from the round_end events.
+    rounds_df = rounds_df.join(round_end[["tick", "winner", "reason"]], left_on="end", right_on="tick")
+
+    # Replace winner with constants
+    rounds_df = rounds_df.with_columns(
+        pl.col("winner").str.replace("CT", awpy.constants.CT_SIDE),
+    ).with_columns(
+        pl.col("winner").str.replace("TERRORIST", awpy.constants.T_SIDE),
+    )
+
+    # Replace round number with row index (starting at 1) and coalesce official_end data.
+    rounds_df = (
+        rounds_df.drop("round_num")
+        .with_columns(pl.coalesce(pl.col("official_end"), pl.col("end")).alias("official_end"))
+        .with_row_index("round_num", offset=1)
+    )
+
+    # Integrate bomb plant information into the rounds DataFrame.
+    return _add_bomb_plant_info(rounds_df, bomb_plants)
+
+
+def apply_round_num(df: pl.DataFrame, rounds_df: pl.DataFrame, tick_col: str = "tick") -> pl.DataFrame:
+    """Assign a round number to each event based on its tick value.
+
+    For each row in `df`, this function finds the round from `rounds_df`
+    in which the event's tick falls. A round is defined by the interval
+    [start, end] given in `rounds_df`. If an event's tick does not fall within
+    any round interval, the new column will contain null.
+
+    This function uses an asof join on the 'start' column of the rounds DataFrame.
+    After joining, it validates that the tick is less than or equal to the round's 'end' tick.
+
+    Args:
+        df (pl.DataFrame): Input DataFrame containing an event tick column.
+        rounds_df (pl.DataFrame): DataFrame containing round boundaries with at least
+            the columns:
+                - 'round_num': The round number.
+                - 'start': The starting tick of the round.
+                - 'end': The ending tick of the round.
+            This DataFrame should be sorted in ascending order by the 'start' column.
+        tick_col (str, optional): Name of the tick column in `df`. Defaults to "tick".
+
+    Returns:
+        pl.DataFrame: A new DataFrame with all the original columns and an added
+        "round_num" column that indicates the round in which the event occurs. If no
+        matching round is found, "round_num" will be null.
+    """
+    # Use join_asof to get the round where round.start <= event.tick.
+    # This join will add the columns 'round_num', 'start', and 'end' from rounds_df.
+    df_with_round = df.join_asof(
+        rounds_df.select(["round_num", "start", "end"]),
+        left_on=tick_col,
+        right_on="start",
+        strategy="backward",
+    )
+
+    # Validate that the event tick is within the round boundaries.
+    # If the tick is greater than the round's 'end', then set round_num to null.
+    df_with_round = df_with_round.with_columns(
+        pl.when(pl.col(tick_col) <= pl.col("end")).then(pl.col("round_num")).otherwise(None).alias("round_num")
+    )
+
+    return df_with_round.drop(["start", "end"])

@@ -1,0 +1,156 @@
+# This workflow will create game artifacts used in Awpy
+
+name: artifacts
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # runs daily at midnight UTC
+  pull_request:
+    branches: [main]
+    paths:
+      - "awpy/**"
+      - "tests/**"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: 3.13
+  SOURCE2_VIEWER_URL: https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/11.1/cli-windows-x64.zip
+  CS2_APP_ID: 730
+
+jobs:
+  generate-artifacts:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout awpy library
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: |
+          uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install awpy
+        shell: bash
+        run: |
+          uv sync --group dev --group test
+          uv tool install .
+
+      - name: Setup SteamCMD
+        uses: CyberAndrii/setup-steamcmd@v1
+
+      - name: Get Counter-Strike 2 Version
+        run: |
+          $appInfoOutput = steamcmd +login anonymous +app_info_print 730 +logoff +quit | Out-String
+          if ($appInfoOutput -match '"branches"\s*\{\s*"public"\s*\{\s*"buildid"\s*"(\d+)"\s*"timeupdated"\s*"(\d+)"') {
+              $latestPatchId = $matches[1]
+              $latestPatchTimestamp = $matches[2]
+              # Export the variables for later steps:
+              echo "LATEST_PATCH_ID=$latestPatchId" >> $env:GITHUB_ENV
+              echo "LATEST_PATCH_TIMESTAMP=$latestPatchTimestamp" >> $env:GITHUB_ENV
+          } else {
+              throw "Error: buildid and timestamp not found in CS2 app info output."
+          }
+          Write-Host "Current Counter-Strike 2 Version: $latestPatchId (Updated: $latestPatchTimestamp)"
+
+      - name: Update Latest Patch
+        id: update_patch
+        run: |
+          # Run the update script and capture its output (expected "true" or "false")
+          $wasPatchUpdated = .\scripts\update-latest-patch.ps1
+          Write-Host "Patch needs to be updated? $wasPatchUpdated"
+          # Set a step output so subsequent steps can conditionally run
+          echo "wasPatchUpdated=$wasPatchUpdated" >> $env:GITHUB_OUTPUT
+
+      - name: Install Counter-Strike 2
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          $csDir = Join-Path (Get-Location) "cs_go"
+          steamcmd +force_install_dir $csDir +login anonymous +app_update ${{ env.CS2_APP_ID }} +quit
+
+      - name: Install Source2Viewer-CLI
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          Invoke-WebRequest -Uri $env:SOURCE2_VIEWER_URL -OutFile ".\cli-windows-x64.zip"
+          Expand-Archive -Path .\cli-windows-x64.zip -DestinationPath . -Force
+
+      - name: Generate Triangles
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-tris.ps1 -inputPath "cs_go\game\csgo\maps"
+
+      - name: Generate Map Data
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-maps.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
+
+      - name: Generate Nav
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-navs.ps1 -inputPath "cs_go\game\csgo\maps"
+
+      - name: Generate Spawns
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          Get-ChildItem -Force
+          .\scripts\generate-spawns.ps1 -inputPath "cs_go\game\csgo\maps"
+
+      - name: Upload Artifacts to R2
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: |
+            r2 object put "awpy/${{ env.LATEST_PATCH_ID }}/maps.zip" --file=maps.zip
+            r2 object put "awpy/${{ env.LATEST_PATCH_ID }}/navs.zip" --file=navs.zip
+            r2 object put "awpy/${{ env.LATEST_PATCH_ID }}/tris.zip" --file=tris.zip
+
+      - name: Log R2 Upload Message
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        run: |
+          echo "Uploading artifacts for patch $LATEST_PATCH_ID"
+
+      - name: Push changes to GitHub
+        if: steps.update_patch.outputs.wasPatchUpdated == 'true'
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Determine target branch: for pull request events use the PR branch, otherwise default to "main"
+          if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
+            $targetBranch = $env:GITHUB_HEAD_REF
+          }
+          else {
+            $targetBranch = "main"
+          }
+
+          # Stash any unstaged changes (e.g., due to LF/CRLF differences)
+          git stash --include-untracked
+
+          # Check out the target branch (creating or resetting it as needed)
+          git checkout -B $targetBranch
+
+          # Pull the latest remote changes and rebase local commits
+          git pull origin $targetBranch --rebase
+
+          # Restore any stashed changes (if present)
+          git stash pop || true
+
+          # Stage and commit your changes
+          uv run ruff format .
+          git add awpy/data/__init__.py
+          git commit -m "Update data with latest patch info ($env:LATEST_PATCH_ID)"
+          
+          if ($LASTEXITCODE -eq 0) {
+            # Push changes and set upstream if necessary
+            git push --set-upstream origin $targetBranch
+          }
+          else {
+            Write-Host "No changes detected; skipping push."
+          }
