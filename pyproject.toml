@@ -34,9 +34,6 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
-[project.license]
-file = "LICENSE"
-
 [project.urls]
 Homepage   = "https://awpycs.com"
 Repository = "https://github.com/pnxenopoulos/awpy"
