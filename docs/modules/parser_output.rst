@@ -1,4 +1,4 @@
-Example Parser JSON
+Example Parser Output
 ===================
 
 When you use `.parse()` on the `Demo` file, you populate a series of properties on the `Demo` class. The following are available properties after parsing:

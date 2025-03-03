@@ -1,6 +1,6 @@
 # Contributing to Awpy
 
-Hi! We're happy to have you here. Thank you for considering contributing to Awpy.
+Hi! We're happy to have you here. Thank you for considering making a contribution to Awpy. Contributions come in various forms -- from bug reports, to writing example documentation, to proposing and implementin gnew features. This is a guide on how to make contributions to Awpy. If you have any bugs or feature requests, please use [GitHub Issues](https://github.com/pnxenopoulos/awpy/issues). Otherwise, please keep reading.
 
 ## Python code
 
@@ -42,11 +42,10 @@ If you are fixing a bug or adding a new feature, we highly recommend you add [un
 
 If you are adding a test that requires a specific demo, please let us know so that we can include them in our set of testing demos, which is located in the [test_data.json](/tests/test_data.json) file.
 
-A note that you need `pandoc` to build the documentation locally. On Linux, you can install it with `sudo apt install pandoc`.
+You need `pandoc` to build the documentation locally. On Linux, you can install it with `sudo apt install pandoc`.
 
 ### Game Updates
-During game updates, we may need to update .nav, .tri, map images and map data. The scripts to do these are located in `scripts/` and depend on the [Source2Viewer CLI](https://valveresourceformat.github.io/).
+During game updates, we may need to update .nav, .tri, map images and map data. The scripts to do these are located in `scripts/` and depend on the [Source2Viewer CLI](https://valveresourceformat.github.io/). Specifically, you can look at the `artifacts.yml` workflow to see how this process is automated.
 
 ## Thanks
-
-With all this you are now ready to make contributions to Awpy. Many users depend on your contributions! We look forward to your help!
+With all this, you are now ready to make contributions to Awpy. Many users depend on your contributions. We look forward to your help!

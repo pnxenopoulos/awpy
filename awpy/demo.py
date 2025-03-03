@@ -203,6 +203,7 @@ class Demo:
           5. It parses grenade events.
           7. It filters the data to include only valid ticks during match play.
 
+
         Args:
             events (list[str] | None, optional): List of event names to parse. If None,
                 a default set of events defined by `default_events` is used.

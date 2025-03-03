@@ -3,10 +3,11 @@ Visibility
 
 This module contains functions for calculating visibility in Counter-Strike 2 demos.
 
-awpy.vis
+awpy.visibility
 ------------------------------
 
-.. automodule:: awpy.vis
+.. automodule:: awpy.visibility
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: Edge, Triangle

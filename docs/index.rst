@@ -22,12 +22,11 @@ Awpy
 .. |License| image:: https://img.shields.io/badge/license-MIT-lightgrey
    :target: https://github.com/pnxenopoulos/awpy/blob/main/LICENSE
    
-`Awpy` allows a user to parse, analyze and visualize Counter-Strike 2 demos. You can visit the repository_ to view the source code, examples and data. To install Awpy, run ``pip install awpy`` (Python >= 3.11). Please join the Discord_ server if you would like to join our esports analytics community or to receive Awpy support. You can get started with the following example:
+`Awpy` (GitHub_) allows a user to parse, analyze and visualize Counter-Strike 2 demos, specifically those from competitive Counter-Strike (e.g., demos from HLTV, FACEIT, and competitive matchmaking). To install Awpy, run ``pip install awpy`` (Python >= 3.11). Please join the Discord_ server if you would like to discuss Awpy or esports analytics. You can get started with the following example:
 
-.. _repository: https://github.com/pnxenopoulos/awpy
+.. _GitHub: https://github.com/pnxenopoulos/awpy
 .. _Discord: https://discord.gg/W34XjsSs2H
 
-You can use Awpy to parse, analyze and visualize Counter-Strike 2 demo files (demos). Awpy is built specifically to analyze competitive Counter-Strike (e.g., demos from HLTV, FACEIT, and competitive matchmaking).
 
 .. code-block:: python
 
@@ -76,6 +75,7 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    examples/demo_stats
    examples/plot_demo
    examples/visibility
+   examples/nav
 
 .. toctree::
    :caption: Documentation
@@ -88,4 +88,4 @@ You can take a look at the :doc:`examples/parse_demo` to see how to parse a demo
    modules/nav
    modules/plot
    modules/stats
-   modules/vis
+   modules/visibility
