@@ -28,8 +28,8 @@ jobs:
 
       - name: Publish to TestPyPI
         run: |
-          uv publish --publish-url https://test.pypi.org/legacy/ --check-url https://test.pypi.org/simple/ --trusted-publishing always --verbose 
+          uv publish --publish-url https://test.pypi.org/legacy/ --check-url https://test.pypi.org/simple/ --trusted-publishing always --no-cache --verbose
 
       - name: Publish to PyPI
         run: |
-          uv publish --check-url https://pypi.org/simple/ --trusted-publishing always --verbose
+          uv publish --check-url https://pypi.org/simple/ --trusted-publishing always --no-cache --verbose
