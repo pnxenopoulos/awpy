@@ -48,7 +48,6 @@ awpy = "awpy.cli:awpy_cli"
 [build-system]
 requires      = ["setuptools"]
 build-backend = "setuptools.build_meta"
-license-files = []
 
 [dependency-groups]
 dev = [
@@ -80,6 +79,7 @@ testpaths = ["tests"]
 [tool.setuptools]
 include-package-data = true
 packages = ["awpy"]
+license-files = []
 
 # Ruff config
 [tool.ruff]
