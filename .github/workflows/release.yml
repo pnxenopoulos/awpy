@@ -28,7 +28,7 @@ jobs:
 
       - name: Publish to TestPyPI
         run: |
-          uv publish --publish-url https://test.pypi.org/legacy/ --trusted-publishing always --verbose 
+          uv publish --publish-url https://test.pypi.org/legacy/ --check-url https://test.pypi.org/simple/ --trusted-publishing always --verbose 
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
@@ -49,4 +49,4 @@ jobs:
 
       - name: Publish to PyPI
         run: |
-          uv publish --trusted-publishing always --verbose
+          uv publish --check-url https://pypi.org/simple/ --trusted-publishing always --verbose
