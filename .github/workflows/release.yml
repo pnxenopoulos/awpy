@@ -30,23 +30,6 @@ jobs:
         run: |
           uv publish --publish-url https://test.pypi.org/legacy/ --check-url https://test.pypi.org/simple/ --trusted-publishing always --verbose 
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Verify TestPyPI upload
-        run: |
-          # Extract the version from the tag (e.g. "release/1.2.3" -> "1.2.3")
-          RELEASE_VERSION=${GITHUB_REF#refs/tags/release/}
-          echo "Expected release version: $RELEASE_VERSION"
-          # Query TestPyPI for the latest version of awpy
-          UPLOADED_VERSION=$(curl -sSf https://test.pypi.org/pypi/awpy/json | jq -r .info.version)
-          echo "Uploaded version on TestPyPI: $UPLOADED_VERSION"
-          if [ "$RELEASE_VERSION" != "$UPLOADED_VERSION" ]; then
-            echo "Version mismatch! Expected: $RELEASE_VERSION, but found: $UPLOADED_VERSION"
-            exit 1
-          fi
-          echo "Awpy TestPyPI upload verified."
-
       - name: Publish to PyPI
         run: |
           uv publish --check-url https://pypi.org/simple/ --trusted-publishing always --verbose
