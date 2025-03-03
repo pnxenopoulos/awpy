@@ -8,11 +8,6 @@ on:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    environment:
-      name: prod-release-pypi
-    permissions:
-      id-token: write
-
     steps:
       - name: Checkout Awpy library
         uses: actions/checkout@v4
