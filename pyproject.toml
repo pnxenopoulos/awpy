@@ -76,6 +76,7 @@ testpaths = ["tests"]
 [tool.setuptools]
 include-package-data = true
 packages = ["awpy"]
+license-files = ["LICENSE"]
 
 # Ruff config
 [tool.ruff]
