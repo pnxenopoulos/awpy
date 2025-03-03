@@ -4,7 +4,11 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
-import vdf
+try:
+    import vdf
+except (ImportError, ModuleNotFoundError):
+    pass  # This is only used for map data parsing
+
 from loguru import logger
 
 try:
