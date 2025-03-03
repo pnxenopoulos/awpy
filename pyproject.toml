@@ -34,6 +34,9 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
+[project.license]
+file = "LICENSE"
+
 [project.urls]
 Homepage   = "https://awpycs.com"
 Repository = "https://github.com/pnxenopoulos/awpy"
@@ -43,8 +46,8 @@ Docs       = "https://awpy.readthedocs.io/en/latest/?badge=latest"
 awpy = "awpy.cli:awpy_cli"
 
 [build-system]
-requires      = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
@@ -76,7 +79,6 @@ testpaths = ["tests"]
 [tool.setuptools]
 include-package-data = true
 packages = ["awpy"]
-license-files = []
 
 # Ruff config
 [tool.ruff]
