@@ -3,7 +3,6 @@ name = "awpy"
 version = "2.0.0"
 description = "Counter-Strike 2 demo parsing, analysis and visualization"
 readme = "README.md"
-license = "MIT"
 authors = [
     { name = "Peter Xenopoulos", email = "pnxenopoulos@gmail.com" }
 ]
@@ -34,6 +33,9 @@ dependencies = [
     "scipy>=1.15.0",
     "tqdm>=4.67.1",
 ]
+
+[project.license]
+file = "LICENSE"
 
 [project.urls]
 Homepage   = "https://awpycs.com"
