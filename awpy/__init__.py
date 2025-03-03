@@ -4,5 +4,5 @@ from awpy.demo import Demo
 from awpy.nav import Nav
 from awpy.spawn import Spawns
 
-__version__ = "2.0.0rc8"
+__version__ = "2.0.0"
 __all__ = ["Demo", "Nav", "Spawns"]
