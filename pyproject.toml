@@ -48,6 +48,7 @@ awpy = "awpy.cli:awpy_cli"
 [build-system]
 requires      = ["setuptools"]
 build-backend = "setuptools.build_meta"
+license-files = []
 
 [dependency-groups]
 dev = [
