@@ -79,6 +79,19 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
         Write-Host "Error: .tri output not created for $fileNameWithoutExtension" -ForegroundColor Red
     }
 
+    # Run the awpy tri command to generate a .tri file, outputting to a temporary file.
+    $triTempPath = Join-Path -Path $tempOutputDir -ChildPath "$fileNameWithoutExtension-clippings.tri"
+    Write-Host "Running awpy generate-tri on: $vphysFilePath" -ForegroundColor Yellow
+    uv run awpy tri $vphysFilePath --outpath $triTempPath --include_player_clippings
+
+    if (Test-Path $triTempPath) {
+        $finalTriPath = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension-clippings.tri"
+        Move-Item -Path $triTempPath -Destination $finalTriPath -Force
+        Write-Host "Output saved as: $finalTriPath" -ForegroundColor Cyan
+    } else {
+        Write-Host "Error: .tri output not created for $fileNameWithoutExtension" -ForegroundColor Red
+    }
+
     # Clean up the temporary directory.
     Remove-Item -Path $tempOutputDir -Recurse -Force
 }
