@@ -115,9 +115,12 @@ def parse_mapdata(overview_dir: Path) -> None:
 @awpy_cli.command(name="tri", help="Parse triangles (*.tri) from a .vphys file.", hidden=True)
 @click.argument("vphys_file", type=click.Path(exists=True))
 @click.option("--outpath", type=click.Path(), help="Path to save the parsed triangle.")
-def generate_tri(vphys_file: Path, *, outpath: Path | None = None) -> None:
+@click.option(
+    "--include_player_clippings", is_flag=True, default=False, help="Include player clippings in tri generation."
+)
+def generate_tri(vphys_file: Path, *, outpath: Path | None = None, include_player_clippings: bool) -> None:
     """Parse a .vphys file into a .tri file."""
     vphys_file = Path(vphys_file)
-    vphys_parser = VphysParser(vphys_file)
+    vphys_parser = VphysParser(vphys_file, including_player_clippings=include_player_clippings)
     vphys_parser.to_tri(path=outpath)
     logger.success(f"Tri file saved to {outpath}")
