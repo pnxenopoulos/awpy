@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import json
 import re
 from dataclasses import dataclass
@@ -114,25 +115,48 @@ def parse_vents_file_to_dict(file_content: str) -> dict[int, dict[str, VentsValu
     return parsed_data
 
 
+@dataclass
+class SpawnPoint:
+    """Representation of the relevant information for spawn points."""
+
+    priority: int
+    origin: awpy.vector.Vector3
+
+    @staticmethod
+    def collect_by_priority(spawn_points: list[SpawnPoint], *, n: int = 5) -> list[SpawnPoint]:
+        """Collects the spawn points with the highest priority.
+
+        Args:
+            spawn_points (list[SpawnPoint]): List of spawn points.
+            n (int, optional): Number of spawn points to collect. Defaults to 5.
+
+        Returns:
+            list[SpawnPoint]: List of the spawn points with the highest priority.
+        """
+        spawn_points_sorted = sorted(spawn_points, key=lambda sp: sp.priority)
+
+        collected: list[SpawnPoint] = []
+        for _priority, group in itertools.groupby(spawn_points_sorted, key=lambda sp: sp.priority):
+            collected.extend(list(group))
+            if len(collected) >= n:
+                break
+        return collected
+
+
 def filter_vents_data(data: dict[int, dict[str, VentsValue]]) -> Spawns:
     """Filter the data to get the positions."""
-    ct_spawns: list[awpy.vector.Vector3] = []
-    t_spawns: list[awpy.vector.Vector3] = []
+    ct_candidates: list[SpawnPoint] = []
+    t_candidates: list[SpawnPoint] = []
 
     for properties in data.values():
-        if (
-            properties.get("classname") == "info_player_terrorist"
-            and properties.get("enabled")
-            and properties.get("priority") == 0
-        ):
+        if properties.get("classname") == "info_player_terrorist" and properties.get("enabled"):
             x, y, z = properties["origin"]
-            t_spawns.append(awpy.vector.Vector3(x=x, y=y, z=z))
-        elif (
-            properties.get("classname") == "info_player_counterterrorist"
-            and properties.get("enabled")
-            and properties.get("priority") == 0
-        ):
+            t_candidates.append(SpawnPoint(priority=properties["priority"], origin=awpy.vector.Vector3(x=x, y=y, z=z)))
+        elif properties.get("classname") == "info_player_counterterrorist" and properties.get("enabled"):
             x, y, z = properties["origin"]
-            ct_spawns.append(awpy.vector.Vector3(x=x, y=y, z=z))
+            ct_candidates.append(SpawnPoint(priority=properties["priority"], origin=awpy.vector.Vector3(x=x, y=y, z=z)))
+
+    ct_spawns = [spawn.origin for spawn in SpawnPoint.collect_by_priority(ct_candidates, n=5)]
+    t_spawns = [spawn.origin for spawn in SpawnPoint.collect_by_priority(t_candidates, n=5)]
 
     return Spawns(CT=ct_spawns, T=t_spawns)
