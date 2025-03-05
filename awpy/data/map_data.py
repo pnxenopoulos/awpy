@@ -21,6 +21,13 @@ except Exception as _e:
     MAP_DATA = {}
 
 
+class VerticalSection(TypedDict):
+    """Type for a specified vertical section of a map."""
+
+    altitude_min: float
+    altitude_max: float
+
+
 class MapData(TypedDict):
     """Type of the data for a map. `pos_x` is upper left world coordinate."""
 
@@ -29,6 +36,7 @@ class MapData(TypedDict):
     scale: float
     rotate: int | None
     zoom: float | None
+    vertical_sections: dict[str, VerticalSection]
     lower_level_max_units: float
 
 
@@ -56,6 +64,13 @@ def map_data_from_vdf_files(vdf_folder: Path) -> dict[str, MapData]:
                 .get("lower", {})
                 .get("AltitudeMax", -1000000)  # Use instead of infinity
             ),
+            "vertical_sections": {
+                section_name: {
+                    "altitude_min": float(section["AltitudeMin"]),
+                    "altitude_max": float(section["AltitudeMax"]),
+                }
+                for section_name, section in map_data.get("verticalsections", {}).items()
+            },
         }
     return dict(sorted(new_map_data.items()))
 
