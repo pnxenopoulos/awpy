@@ -151,3 +151,7 @@ dmypy.json
 
 # exceptions txt files
 *.txt
+
+# github actions
+cs_go/
+node_modules/
