@@ -287,7 +287,10 @@ class Demo:
         starts = awpy.parsers.utils.get_event_from_parsed_events(self.events, "inferno_startburn")
         ends = awpy.parsers.utils.get_event_from_parsed_events(self.events, "inferno_expire")
         duration_in_ticks = self.tickrate * self.inferno_duration
-        return awpy.parsers.grenades.parse_timed_grenade_entity(starts, ends, duration_in_ticks)
+        infernos = awpy.parsers.grenades.parse_timed_grenade_entity(starts, ends, duration_in_ticks)
+        return awpy.parsers.rounds.apply_round_num(df=infernos, rounds_df=self.rounds, tick_col="start_tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def smokes(self) -> pl.DataFrame:
@@ -306,7 +309,10 @@ class Demo:
         starts = awpy.parsers.utils.get_event_from_parsed_events(self.events, "smokegrenade_detonate")
         ends = awpy.parsers.utils.get_event_from_parsed_events(self.events, "smokegrenade_expired")
         duration_in_ticks = self.tickrate * self.smoke_duration
-        return awpy.parsers.grenades.parse_timed_grenade_entity(starts, ends, duration_in_ticks)
+        smokes = awpy.parsers.grenades.parse_timed_grenade_entity(starts, ends, duration_in_ticks)
+        return awpy.parsers.rounds.apply_round_num(df=smokes, rounds_df=self.rounds, tick_col="start_tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def kills(self) -> pl.DataFrame:
@@ -345,7 +351,10 @@ class Demo:
                     that the demo has not been parsed yet. In this case, please run the .parse() method.
         """
         damages = awpy.parsers.utils.get_event_from_parsed_events(self.events, "player_hurt")
-        return awpy.parsers.events.parse_damages(damages)
+        damages = awpy.parsers.events.parse_damages(damages)
+        return awpy.parsers.rounds.apply_round_num(df=damages, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def footsteps(self) -> pl.DataFrame:
@@ -364,7 +373,10 @@ class Demo:
                     indicate that the demo has not been parsed yet. Please run the .parse() method.
         """
         footsteps = awpy.parsers.utils.get_event_from_parsed_events(self.events, "player_sound")
-        return awpy.parsers.events.parse_footsteps(footsteps)
+        footsteps = awpy.parsers.events.parse_footsteps(footsteps)
+        return awpy.parsers.rounds.apply_round_num(df=footsteps, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def shots(self) -> pl.DataFrame:
@@ -384,7 +396,10 @@ class Demo:
                     indicate that the demo has not been parsed yet. Please run the .parse() method.
         """
         shots = awpy.parsers.utils.get_event_from_parsed_events(self.events, "weapon_fire")
-        return awpy.parsers.events.parse_shots(shots)
+        shots = awpy.parsers.events.parse_shots(shots)
+        return awpy.parsers.rounds.apply_round_num(df=shots, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def bomb(self) -> pl.DataFrame:
@@ -410,7 +425,10 @@ class Demo:
         Raises:
             KeyError: If the necessary bomb event data is missing from the parsed events.
         """
-        return awpy.parsers.bomb.parse_bomb(self.events, self.in_play_ticks)
+        bomb = awpy.parsers.bomb.parse_bomb(self.events, self.in_play_ticks)
+        return awpy.parsers.rounds.apply_round_num(df=bomb, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def player_round_totals(self) -> pl.DataFrame:
