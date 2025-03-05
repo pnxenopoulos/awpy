@@ -86,7 +86,7 @@ jobs:
         if: steps.update_patch.outputs.wasPatchUpdated == 'true'
         run: |
           Get-ChildItem -Force
-          .\scripts\generate-maps.ps1 -inputPath "cs_go\game\csgo\pak01_dir.vpk"
+          .\scripts\generate-maps.ps1 -inputPath "cs_go\game\csgo\"
 
       - name: Generate Nav
         if: steps.update_patch.outputs.wasPatchUpdated == 'true'
@@ -146,7 +146,7 @@ jobs:
           uv run ruff format .
           git add awpy/data/__init__.py
           git commit -m "Update data with latest patch info ($env:LATEST_PATCH_ID)"
-          
+
           if ($LASTEXITCODE -eq 0) {
             # Push changes and set upstream if necessary
             git push --set-upstream origin $targetBranch
