@@ -8,6 +8,7 @@ from __future__ import annotations
 import pathlib
 import struct
 from dataclasses import dataclass
+from typing import Literal, overload
 
 from loguru import logger
 
@@ -256,18 +257,25 @@ class VphysParser:
                 to parse.
         """
         self.vphys_file = pathlib.Path(vphys_file)
-        self.triangles = []
+        self.triangles: list[Triangle] = []
         self.kv3_parser = KV3Parser()
         self.parse()
 
+    @overload
     @staticmethod
-    def bytes_to_vec(byte_str: str, element_size: int) -> list[int | float]:
+    def bytes_to_vec(byte_str: str, element_type: Literal["uint8", "int32"]) -> list[int]: ...
+
+    @overload
+    @staticmethod
+    def bytes_to_vec(byte_str: str, element_type: Literal["float"]) -> list[float]: ...
+
+    @staticmethod
+    def bytes_to_vec(byte_str: str, element_type: Literal["uint8", "int32", "float"]) -> list[int] | list[float]:
         """Converts a space-separated string of byte values into a list of numbers.
 
         Args:
             byte_str (str): Space-separated string of hexadecimal byte values.
-            element_size (int): Number of bytes per element (1 for
-                uint8, 4 for float/int32).
+            element_type (int): Types represented by the bytes (uint8, int32, float).
 
         Returns:
             list[int | float]: List of converted values (integers for
@@ -276,16 +284,20 @@ class VphysParser:
         bytes_list = [int(b, 16) for b in byte_str.split()]
         result = []
 
-        if element_size == 1:  # uint8
+        if element_type == "uint8":
             return bytes_list
+
+        element_size = 4  # For int and float
 
         # Convert bytes to appropriate type based on size
         for i in range(0, len(bytes_list), element_size):
             chunk = bytes(bytes_list[i : i + element_size])
-            if element_size == 4:  # float or int32
-                val = struct.unpack("f", chunk)[0]  # Assume float for size 4
+            if element_type == "float":  # float
+                val = struct.unpack("f", chunk)[0]
                 result.append(val)
-
+            else:  # int32
+                val = struct.unpack("i", chunk)[0]
+                result.append(val)
         return result
 
     def get_collision_attribute_indices_for_default_group(self) -> list[str]:
@@ -350,7 +362,7 @@ class VphysParser:
                         f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Vertices"
                     )
 
-                vertex_data = self.bytes_to_vec(vertex_str, 4)
+                vertex_data = self.bytes_to_vec(vertex_str, "float")
                 vertices = [
                     awpy.vector.Vector3(vertex_data[i], vertex_data[i + 1], vertex_data[i + 2])
                     for i in range(0, len(vertex_data), 3)
@@ -359,11 +371,11 @@ class VphysParser:
                 # Get faces and edges
                 faces = self.bytes_to_vec(
                     self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Faces"),
-                    1,
+                    "uint8",
                 )
                 edge_data = self.bytes_to_vec(
                     self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_Edges"),
-                    1,
+                    "uint8",
                 )
 
                 edges = [
@@ -408,11 +420,11 @@ class VphysParser:
                 # Get triangles and vertices
                 tri_data = self.bytes_to_vec(
                     self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_Mesh.m_Triangles"),
-                    4,
+                    "int32",
                 )
                 vertex_data = self.bytes_to_vec(
                     self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_Mesh.m_Vertices"),
-                    4,
+                    "float",
                 )
 
                 vertices = [
@@ -745,14 +757,11 @@ class VisibilityChecker:
     def read_tri_file(tri_file: str | pathlib.Path, buffer_size: int = 1000) -> list[Triangle]:
         """Read triangles from a .tri file."""
         tri_file = pathlib.Path(tri_file)
-        file_size = tri_file.stat().st_size
-        num_triangles = file_size // (9 * 4)
 
-        triangles = [None] * num_triangles
+        triangles: list[Triangle] = []
 
         with open(tri_file, "rb") as f:
             chunk_size = buffer_size * 9 * 4
-            triangle_idx = 0
 
             while True:
                 data = f.read(chunk_size)
@@ -766,11 +775,12 @@ class VisibilityChecker:
                     offset = i * 36
                     values = struct.unpack("9f", data[offset : offset + 36])
 
-                    triangles[triangle_idx] = Triangle(
-                        awpy.vector.Vector3(values[0], values[1], values[2]),
-                        awpy.vector.Vector3(values[3], values[4], values[5]),
-                        awpy.vector.Vector3(values[6], values[7], values[8]),
+                    triangles.append(
+                        Triangle(
+                            awpy.vector.Vector3(values[0], values[1], values[2]),
+                            awpy.vector.Vector3(values[3], values[4], values[5]),
+                            awpy.vector.Vector3(values[6], values[7], values[8]),
+                        )
                     )
-                    triangle_idx += 1
 
-        return triangles[:triangle_idx]
+        return triangles

@@ -1,13 +1,12 @@
 """Module to create the map data."""
 
+import contextlib
 import json
 from pathlib import Path
 from typing import TypedDict
 
-try:
-    import vdf
-except (ImportError, ModuleNotFoundError):
-    pass  # This is only used for map data parsing
+with contextlib.suppress(ImportError, ModuleNotFoundError):
+    import vdf  # This is only used for map data parsing
 
 from loguru import logger
 
