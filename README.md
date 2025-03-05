@@ -24,7 +24,7 @@ pip install awpy
 ```
 
 > [!NOTE]
-> Awpy requires [Python](https://www.python.org/downloads/) >= 3.11. To update the library, just run `pip install --upgrade awpy`. To check your current Awpy version, run `pip show awpy`.
+> Awpy requires [Python](https://www.python.org/downloads/) >= 3.11. To update the library, just run `pip install --upgrade awpy`. To check your current Awpy version, run `pip show awpy`. If you want to see what data is available for download, run `awpy get --help`.
 
 > [!TIP]
 > Don't worry if you get stuck, visit [our Discord](https://discord.gg/W34XjsSs2H) for help.
