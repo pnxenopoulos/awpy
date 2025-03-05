@@ -21,12 +21,11 @@ classifiers = [
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "click>=8.1.8",
-    "demoparser2>=0.36.0",
+    "demoparser2>=0.37.0",
     "loguru>=0.7.3",
     "matplotlib>=3.10.0",
     "networkx>=3.4.2",
-    "numpy>=2.2.1",
-    "pandas>=2.2.3",
+    "numpy>=2.0.0",
     "pillow>=11.1.0",
     "polars>=1.22.0",
     "requests>=2.32.3",

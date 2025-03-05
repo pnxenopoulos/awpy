@@ -15,7 +15,7 @@ When you use `.parse()` on the `Demo` file, you populate a series of properties 
 - :ref:`footsteps`
 - :ref:`ticks`
 
-Their contents depend on the `player_props` and `other_props` that are passed in during parsing. Keep in mind that these are _Polars_ (`import polars as pl`) dataframes. To convert them to Pandas, you can do `df.to_pandas()`.
+Their contents depend on the ``player_props`` and ``other_props`` that are passed in during parsing. Keep in mind that these are Polars (``import polars as pl``) dataframes. To convert them to Pandas, you can do `df.to_pandas()`.
 
 header
 ------
