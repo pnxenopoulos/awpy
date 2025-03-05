@@ -80,9 +80,9 @@ if (Test-Path $sourceDir) {
 
     # Optionally, remove the 'panorama' folder if it's no longer needed.
     $panoramaPath = Join-Path $outputPath "panorama"
-    # if (Test-Path $panoramaPath) {
-    #     Remove-Item -Path $panoramaPath -Recurse -Force
-    # }
+    if (Test-Path $panoramaPath) {
+        Remove-Item -Path $panoramaPath -Recurse -Force
+    }
 } else {
     Write-Host "Source directory '$sourceDir' does not exist." -ForegroundColor Red
     exit
