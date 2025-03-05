@@ -11,5 +11,11 @@ TRIS_DIR = AWPY_DATA_DIR / "tris"
 
 # Uses build id from https://steamdb.info/app/730/patchnotes/
 POSSIBLE_ARTIFACTS = ["maps", "navs", "tris"]
-CURRENT_BUILD_ID = 0
-AVAILABLE_PATCHES = {}
+CURRENT_BUILD_ID = 17595823
+AVAILABLE_PATCHES = {
+    17595823: {
+        "url": "https://steamdb.info/patchnotes/17595823/",
+        "datetime": datetime.datetime.fromtimestamp(1741128785, datetime.UTC),
+        "available": POSSIBLE_ARTIFACTS,
+    }
+}
