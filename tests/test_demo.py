@@ -65,6 +65,15 @@ class TestDemo:
                 header = json.load(f)
                 assert header["map_name"] == "de_nuke"
 
+    def test_hltv_ticks(self, parsed_hltv_demo: awpy.demo.Demo):
+        """Test the ticks DataFrame for an HLTV demo."""
+        for end, official_end in zip(
+            parsed_hltv_demo.ticks["end_tick"].to_list(),
+            parsed_hltv_demo.ticks["official_end_tick"].to_list(),
+            strict=False,
+        ):
+            assert not parsed_hltv_demo.ticks.filter(pl.col("tick") >= end, pl.col("tick") < official_end).is_empty()
+
     def test_hltv_rounds(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an HLTV demo."""
         assert parsed_hltv_demo.rounds["reason"].to_list() == [

@@ -66,7 +66,7 @@ def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> 
     For each round, this function looks for bomb plant events occurring between
     the round's start and end ticks. It then adds two new columns:
       - bomb_plant: The tick at which the bomb was planted (if any).
-      - bomb_site: "bombsite a" or "bombsite b" based on the site value, or "not planted"
+      - bomb_site: "bombsite_a" or "bombsite_b" based on the site value, or "not planted"
         if no bomb plant occurred.
 
     Args:
@@ -78,7 +78,7 @@ def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> 
     """
     n_rounds = len(rounds_df)
     bomb_plant_ticks = [None] * n_rounds
-    bomb_plant_sites = ["not planted"] * n_rounds
+    bomb_plant_sites = ["not_planted"] * n_rounds
 
     # If no bomb plant events are provided, return the rounds DataFrame as is.
     if bomb_plants.is_empty():
@@ -92,7 +92,7 @@ def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> 
         if len(plant_events) > 0:
             # Use the first bomb plant event for this round.
             bomb_plant_ticks[i] = plant_events["tick"][0]
-            bomb_plant_sites[i] = "bombsite a" if plant_events["site"][0] == 220 else "bombsite b"
+            bomb_plant_sites[i] = "bombsite_a" if plant_events["site"][0] == 220 else "bombsite_b"
 
     # Add the bomb plant information as new columns.
     return rounds_df.with_columns(
@@ -224,7 +224,7 @@ def apply_round_num(df: pl.DataFrame, rounds_df: pl.DataFrame, tick_col: str = "
     # Use join_asof to get the round where round.start <= event.tick.
     # This join will add the columns 'round_num', 'start', and 'end' from rounds_df.
     df_with_round = df.join_asof(
-        rounds_df.select(["round_num", "start", "end"]),
+        rounds_df.select(["round_num", "start", "official_end"]),
         left_on=tick_col,
         right_on="start",
         strategy="backward",
@@ -233,7 +233,7 @@ def apply_round_num(df: pl.DataFrame, rounds_df: pl.DataFrame, tick_col: str = "
     # Validate that the event tick is within the round boundaries.
     # If the tick is greater than the round's 'end', then set round_num to null.
     df_with_round = df_with_round.with_columns(
-        pl.when(pl.col(tick_col) <= pl.col("end")).then(pl.col("round_num")).otherwise(None).alias("round_num")
+        pl.when(pl.col(tick_col) < pl.col("official_end")).then(pl.col("round_num")).otherwise(None).alias("round_num")
     )
 
-    return df_with_round.drop(["start", "end"])
+    return df_with_round.drop(["start", "official_end"])
