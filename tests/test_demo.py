@@ -108,14 +108,14 @@ class TestDemo:
     def test_mm_rounds(self, parsed_mm_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an MM demo."""
         assert parsed_mm_demo.rounds["reason"].to_list() == [
-            "ct eliminated",
-            "t eliminated",
-            "t eliminated",
-            "t eliminated",
-            "t eliminated",
-            "t eliminated",
-            "ct eliminated",
-            "t surrender",
+            "ct_killed",
+            "t_killed",
+            "t_killed",
+            "t_killed",
+            "t_killed",
+            "t_killed",
+            "ct_killed",
+            "t_surrender",
         ]
 
     def test_mm_kills(self, parsed_mm_demo: awpy.demo.Demo):

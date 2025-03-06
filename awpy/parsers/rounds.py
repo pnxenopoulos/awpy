@@ -179,10 +179,9 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
 
     # Replace winner and reason with constants
     rounds_df = rounds_df.with_columns(
-        pl.col("winner").map_elements(lambda x: awpy.converters.TEAM_MAP.get(x, "none"), return_dtype=pl.String),
-        pl.col("reason").map_elements(
-            lambda x: awpy.converters.ROUND_END_REASON_MAP.get(x, "none"), return_dtype=pl.String
-        ),
+        pl.col("winner").str.replace("CT", awpy.constants.CT_SIDE),
+    ).with_columns(
+        pl.col("winner").str.replace("TERRORIST", awpy.constants.T_SIDE),
     )
 
     # Replace round number with row index (starting at 1) and coalesce official_end data.
