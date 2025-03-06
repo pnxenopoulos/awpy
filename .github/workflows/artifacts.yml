@@ -7,10 +7,6 @@ on:
     - cron: "0 0 * * *" # runs daily at midnight UTC
   pull_request:
     branches: [main]
-    paths:
-      - "awpy/**"
-      - "tests/**"
-      - "pyproject.toml"
   workflow_dispatch:
 
 env:
@@ -146,7 +142,7 @@ jobs:
           uv run ruff format .
           git add awpy/data/__init__.py
           git commit -m "Update data with latest patch info ($env:LATEST_PATCH_ID)"
-          
+
           if ($LASTEXITCODE -eq 0) {
             # Push changes and set upstream if necessary
             git push --set-upstream origin $targetBranch

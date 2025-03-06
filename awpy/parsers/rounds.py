@@ -3,6 +3,7 @@
 import polars as pl
 
 import awpy.constants
+import awpy.converters
 import awpy.parsers.utils
 
 
@@ -65,7 +66,7 @@ def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> 
     For each round, this function looks for bomb plant events occurring between
     the round's start and end ticks. It then adds two new columns:
       - bomb_plant: The tick at which the bomb was planted (if any).
-      - bomb_site: "bombsite_a" or "bombsite_b" based on the site value, or "not_planted"
+      - bomb_site: "bombsite a" or "bombsite b" based on the site value, or "not planted"
         if no bomb plant occurred.
 
     Args:
@@ -77,7 +78,7 @@ def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> 
     """
     n_rounds = len(rounds_df)
     bomb_plant_ticks = [None] * n_rounds
-    bomb_plant_sites = ["not_planted"] * n_rounds
+    bomb_plant_sites = ["not planted"] * n_rounds
 
     # If no bomb plant events are provided, return the rounds DataFrame as is.
     if bomb_plants.is_empty():
@@ -91,7 +92,7 @@ def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> 
         if len(plant_events) > 0:
             # Use the first bomb plant event for this round.
             bomb_plant_ticks[i] = plant_events["tick"][0]
-            bomb_plant_sites[i] = "bombsite_a" if plant_events["site"][0] == 220 else "bombsite_b"
+            bomb_plant_sites[i] = "bombsite a" if plant_events["site"][0] == 220 else "bombsite b"
 
     # Add the bomb plant information as new columns.
     return rounds_df.with_columns(
@@ -176,7 +177,7 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
     # Join additional round details (such as winner and reason) from the round_end events.
     rounds_df = rounds_df.join(round_end[["tick", "winner", "reason"]], left_on="end", right_on="tick")
 
-    # Replace winner with constants
+    # Replace winner and reason with constants
     rounds_df = rounds_df.with_columns(
         pl.col("winner").str.replace("CT", awpy.constants.CT_SIDE),
     ).with_columns(

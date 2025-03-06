@@ -54,12 +54,12 @@ class TestVisibility:
         test_points = [
             # Structured as (point1, point2, expected_visibility)
             (
-                (-680, 834, 180),  # t_spawn_pos_1
-                (-1349, 814, 180),  # t_spawn_pos_2
+                (-651, -831, 179),  # t_spawn_pos_1
+                (-992, -766, 181),  # t_spawn_pos_2
                 True,
             ),
             (
-                (-680, 834, 180),  # t_spawn_pos_1
+                (-651, -831, 179),  # t_spawn_pos_1
                 (15, 2168, -65),  # ct_spawn_pos
                 False,
             ),
@@ -69,8 +69,8 @@ class TestVisibility:
                 False,
             ),
             (
-                (-670.19, 2253.08, -56.78),  # ct_spawn_towards_b
-                (1320.44, 2012.22, 61.44),  # long_a_near_site
+                (-515.23, 2251.36, -55.76),  # ct_spawn_towards_b
+                (1318.11, 2027.95, 62.41),  # long_a_near_site
                 True,
             ),
             (
