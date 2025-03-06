@@ -69,8 +69,8 @@ class TestVisibility:
                 False,
             ),
             (
-                (-670.19, 2253.08, -56.78),  # ct_spawn_towards_b
-                (1320.44, 2012.22, 61.44),  # long_a_near_site
+                (-515.23, 2251.36, -55.76),  # ct_spawn_towards_b
+                (1318.11, 2027.95, 62.41),  # long_a_near_site
                 True,
             ),
             (
