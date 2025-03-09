@@ -8,7 +8,10 @@ from awpy.stats import adr, kast
 
 
 def impact(
-    demo: awpy.demo.Demo, kills_coef: float = 2.13, assists_coef: float = 0.42, intercept: float = -0.41
+    demo: awpy.demo.Demo,
+    kills_coef: float = 2.13,
+    assists_coef: float = 0.42,
+    intercept: float = -0.41,
 ) -> pl.DataFrame:
     """Calculates impact rating using Polars.
 
@@ -84,20 +87,20 @@ def impact(
 
     stats_total = (
         demo.player_round_totals.filter(pl.col("side") == "all")
-        .join(kills_total, on=["name", "steamid"], how="left")
-        .join(assists_total, on=["name", "steamid"], how="left")
+        .join(kills_total, on=["name", "steamid"], how="left", suffix="_kills")
+        .join(assists_total, on=["name", "steamid"], how="left", suffix="_assists")
         .fill_null(0)
     )
     stats_ct = (
         demo.player_round_totals.filter(pl.col("side") == "ct")
-        .join(kills_ct, on=["name", "steamid"], how="left")
-        .join(assists_ct, on=["name", "steamid"], how="left")
+        .join(kills_ct, on=["name", "steamid"], how="left", suffix="_kills")
+        .join(assists_ct, on=["name", "steamid"], how="left", suffix="_assists")
         .fill_null(0)
     )
     stats_t = (
         demo.player_round_totals.filter(pl.col("side") == "t")
-        .join(kills_t, on=["name", "steamid"], how="left")
-        .join(assists_t, on=["name", "steamid"], how="left")
+        .join(kills_t, on=["name", "steamid"], how="left", suffix="_kills")
+        .join(assists_t, on=["name", "steamid"], how="left", suffix="_assists")
         .fill_null(0)
     )
 
@@ -201,10 +204,18 @@ def rating(
     # --- Merge all stats ---
     rating_df = (
         demo.player_round_totals.join(
-            kast_df.select(["name", "steamid", "side", "kast"]), on=["name", "steamid", "side"], how="left"
+            kast_df.select(["name", "steamid", "side", "kast"]),
+            on=["name", "steamid", "side"],
+            how="left",
         )
-        .join(adr_df.select(["name", "steamid", "side", "adr"]), on=["name", "steamid", "side"])
-        .join(impact_df.select(["name", "steamid", "side", "impact"]), on=["name", "steamid", "side"])
+        .join(
+            adr_df.select(["name", "steamid", "side", "adr"]),
+            on=["name", "steamid", "side"],
+        )
+        .join(
+            impact_df.select(["name", "steamid", "side", "impact"]),
+            on=["name", "steamid", "side"],
+        )
         .join(kills, on=["name", "steamid", "side"])
         .join(deaths, on=["name", "steamid", "side"])
     )
