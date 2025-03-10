@@ -37,7 +37,7 @@ if (Test-Path $sourceDir) {
 
         # Define the new file name by replacing "_radar_psd.png" with ".png"
         $newFileName = $_.Name -replace "_radar_psd\.png$", ".png"
-        
+
         # Rename the file within the source directory.
         Rename-Item -Path $_.FullName -NewName $newFileName
 

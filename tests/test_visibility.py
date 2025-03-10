@@ -29,7 +29,7 @@ def check_visibility_brute_force(
 
     # Check intersection with each triangle
     for triangle in triangles:
-        t = awpy.visibility.VisibilityChecker._ray_triangle_intersection(None, start_vec, direction, triangle)
+        t = awpy.visibility.VisibilityChecker._ray_triangle_intersection(start_vec, direction, triangle)
         if t is not None and t <= distance:
             return False
 
