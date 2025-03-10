@@ -20,7 +20,6 @@ class NavDirectionType(Enum):
     WEST = 3
 
 
-
 class NavAreaDict(TypedDict):
     """Typed dict representation of a NavArea."""
 
@@ -31,8 +30,6 @@ class NavAreaDict(TypedDict):
     connections: list[int]
     ladders_above: list[int]
     ladders_below: list[int]
-
-
 
 
 class NavDict(TypedDict):
