@@ -81,7 +81,7 @@ function Get-DirectoryContentHash {
 
     # Initialize the hasher.
     $hasher = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
-    
+
     # Create a memory stream to accumulate the data.
     $ms = New-Object System.IO.MemoryStream
 

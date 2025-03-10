@@ -101,7 +101,7 @@ def _plot_selected_tiles(map_name: str, axis: Axes, selected_tiles: list[int]) -
         if tile_id in selected_set:
             """
             - If just one tile is passed in to visualize, it is filled in red with black edges.
-            - If a list of lenth > 1 is passed in (a path), then the first and last tiles are
+            - If a list of length > 1 is passed in (a path), then the first and last tiles are
               filled in green with white edges. All other tiles are filled in red with white edges.
             - All tiles not in the passed in list are colored with no fill and yellow edges.
             """
