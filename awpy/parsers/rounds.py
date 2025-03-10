@@ -7,9 +7,7 @@ import awpy.converters
 import awpy.parsers.utils
 
 
-def _find_valid_round_indices(
-    rounds_df: pl.DataFrame, full_sequence: list[str]
-) -> list[int]:
+def _find_valid_round_indices(rounds_df: pl.DataFrame, full_sequence: list[str]) -> list[int]:
     """Identify indices in the rounds DataFrame that form a valid round sequence.
 
     A valid sequence is defined as either:
@@ -46,16 +44,10 @@ def _find_valid_round_indices(
         elif current_sequence == alt_sequence1:
             valid_indices.extend(range(i, i + len(alt_sequence1)))
         # 3. Check for a 3-event sequence: ["start", "end", "official_end"].
-        elif (
-            len(current_sequence) >= len(alt_sequence2)
-            and current_sequence[: len(alt_sequence2)] == alt_sequence2
-        ):
+        elif len(current_sequence) >= len(alt_sequence2) and current_sequence[: len(alt_sequence2)] == alt_sequence2:
             valid_indices.extend(range(i, i + len(alt_sequence2)))
         # 4. Check for a 2-event sequence: ["start", "end"].
-        elif (
-            len(current_sequence) == len(alt_sequence3)
-            and current_sequence == alt_sequence3
-        ):
+        elif len(current_sequence) == len(alt_sequence3) and current_sequence == alt_sequence3:
             valid_indices.extend(range(i, i + len(alt_sequence3)))
         # 5. Lastly, if we're at the very end and only have 3 events, check if they match the first three events of full
         elif (
@@ -68,9 +60,7 @@ def _find_valid_round_indices(
     return valid_indices
 
 
-def _add_bomb_plant_info(
-    rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame
-) -> pl.DataFrame:
+def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> pl.DataFrame:
     """Add bomb plant tick and site information to the rounds DataFrame.
 
     For each round, this function looks for bomb plant events occurring between
@@ -98,15 +88,11 @@ def _add_bomb_plant_info(
         start_tick = rounds_df["start"][i]
         end_tick = rounds_df["end"][i]
         # Filter bomb plant events that occur within the current round's tick range.
-        plant_events = bomb_plants.filter(
-            (pl.col("tick") >= start_tick) & (pl.col("tick") <= end_tick)
-        )
+        plant_events = bomb_plants.filter((pl.col("tick") >= start_tick) & (pl.col("tick") <= end_tick))
         if len(plant_events) > 0:
             # Use the first bomb plant event for this round.
             bomb_plant_ticks[i] = plant_events["tick"][0]
-            bomb_plant_sites[i] = (
-                "bombsite_a" if plant_events["site"][0] == 220 else "bombsite_b"
-            )
+            bomb_plant_sites[i] = "bombsite_a" if plant_events["site"][0] == 220 else "bombsite_b"
 
     # Add the bomb plant information as new columns.
     return rounds_df.with_columns(
@@ -143,12 +129,8 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
     # Retrieve required event DataFrames.
     round_start = awpy.parsers.utils.get_event_from_parsed_events(events, "round_start")
     round_end = awpy.parsers.utils.get_event_from_parsed_events(events, "round_end")
-    round_end_official = awpy.parsers.utils.get_event_from_parsed_events(
-        events, "round_officially_ended"
-    )
-    round_freeze_end = awpy.parsers.utils.get_event_from_parsed_events(
-        events, "round_freeze_end"
-    )
+    round_end_official = awpy.parsers.utils.get_event_from_parsed_events(events, "round_officially_ended")
+    round_freeze_end = awpy.parsers.utils.get_event_from_parsed_events(events, "round_freeze_end")
 
     # Retrieve optional bomb planted events; default to empty DataFrame if missing.
     bomb_plants = events.get("bomb_planted", pl.DataFrame())
@@ -162,9 +144,7 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
     ]
 
     # Concatenate event DataFrames and filter out rows with tick==0 (unless event is "start").
-    rounds_df = pl.concat(event_dfs).filter(
-        ~((pl.col("tick") == 0) & (pl.col("event") != "start"))
-    )
+    rounds_df = pl.concat(event_dfs).filter(~((pl.col("tick") == 0) & (pl.col("event") != "start")))
 
     # Define an enumeration for event types.
     round_events_enum = pl.Enum(["official_end", "start", "freeze_end", "end"])
@@ -189,19 +169,13 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
     rounds_df = rounds_df[valid_indices]
 
     # Create a round number column by cumulatively summing "start" events.
-    rounds_df = rounds_df.with_columns(
-        round_num=(pl.col("event") == "start").cast(pl.Int8).cum_sum()
-    )
+    rounds_df = rounds_df.with_columns(round_num=(pl.col("event") == "start").cast(pl.Int8).cum_sum())
 
     # Pivot the DataFrame so that each round is one row with columns for each event type.
-    rounds_df = rounds_df.pivot(
-        index="round_num", on="event", values="tick", aggregate_function="first"
-    )
+    rounds_df = rounds_df.pivot(index="round_num", on="event", values="tick", aggregate_function="first")
 
     # Join additional round details (such as winner and reason) from the round_end events.
-    rounds_df = rounds_df.join(
-        round_end[["tick", "winner", "reason"]], left_on="end", right_on="tick"
-    )
+    rounds_df = rounds_df.join(round_end[["tick", "winner", "reason"]], left_on="end", right_on="tick")
 
     # Replace winner and reason with constants
     rounds_df = (
@@ -219,9 +193,7 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
     # Replace round number with row index (starting at 1) and coalesce official_end data.
     rounds_df = (
         rounds_df.drop("round_num")
-        .with_columns(
-            pl.coalesce(pl.col("official_end"), pl.col("end")).alias("official_end")
-        )
+        .with_columns(pl.coalesce(pl.col("official_end"), pl.col("end")).alias("official_end"))
         .with_row_index("round_num", offset=1)
     )
 
@@ -229,9 +201,7 @@ def create_round_df(events: dict[str, pl.DataFrame]) -> pl.DataFrame:
     return _add_bomb_plant_info(rounds_df, bomb_plants)
 
 
-def apply_round_num(
-    df: pl.DataFrame, rounds_df: pl.DataFrame, tick_col: str = "tick"
-) -> pl.DataFrame:
+def apply_round_num(df: pl.DataFrame, rounds_df: pl.DataFrame, tick_col: str = "tick") -> pl.DataFrame:
     """Assign a round number to each event based on its tick value.
 
     For each row in `df`, this function finds the round from `rounds_df`
@@ -269,10 +239,7 @@ def apply_round_num(
     # Validate that the event tick is within the round boundaries.
     # If the tick is greater than the round's 'end', then set round_num to null.
     df_with_round = df_with_round.with_columns(
-        pl.when(pl.col(tick_col) <= pl.col("official_end"))
-        .then(pl.col("round_num"))
-        .otherwise(None)
-        .alias("round_num")
+        pl.when(pl.col(tick_col) <= pl.col("official_end")).then(pl.col("round_num")).otherwise(None).alias("round_num")
     )
 
     return df_with_round.drop(["start", "official_end"])
