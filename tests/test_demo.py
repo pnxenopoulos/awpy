@@ -67,12 +67,17 @@ class TestDemo:
 
     def test_hltv_ticks_end_official_end(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the ticks DataFrame for an HLTV demo (end to official end)."""
+        max_round_num = parsed_hltv_demo.rounds["round_num"].max()
         for end, official_end in zip(
             parsed_hltv_demo.rounds["end"].to_list(),
             parsed_hltv_demo.rounds["official_end"].to_list(),
             strict=False,
         ):
-            assert not parsed_hltv_demo.ticks.filter(pl.col("tick") >= end, pl.col("tick") < official_end).is_empty()
+            assert not parsed_hltv_demo.ticks.filter(
+                pl.col("tick") >= end,
+                pl.col("tick") < official_end,
+                pl.col("round_num") < max_round_num,
+            ).is_empty()
 
     def test_hltv_ticks_start_freeze(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the ticks DataFrame for an HLTV demo (start to freeze end)."""
