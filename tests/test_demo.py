@@ -54,14 +54,10 @@ class TestDemo:
                 "header.json",
             ]
             zipped_files = [pathlib.Path(file).name for file in zipf.namelist()]
-            assert all(
-                pathlib.Path(file).name in zipped_files for file in expected_files
-            )
+            assert all(pathlib.Path(file).name in zipped_files for file in expected_files)
 
             # Check if there is an events/ folder and it contains files
-            events_files = [
-                file for file in zipf.namelist() if file.endswith(".parquet")
-            ]
+            events_files = [file for file in zipf.namelist() if file.endswith(".parquet")]
             assert len(events_files) > 0
 
             # Check content of header as an example
@@ -71,16 +67,15 @@ class TestDemo:
 
     def test_hltv_ticks_end_official_end(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the ticks DataFrame for an HLTV demo (end to official end)."""
-        max_round_num = parsed_hltv_demo.rounds["round_num"].max()
         for end, official_end in zip(
-            parsed_hltv_demo.rounds["end"].to_list(),
-            parsed_hltv_demo.rounds["official_end"].to_list(),
+            # Do not parse the last element, which is the last round
+            parsed_hltv_demo.rounds["end"].to_list()[:-1],
+            parsed_hltv_demo.rounds["official_end"].to_list()[:-1],
             strict=False,
         ):
             assert not parsed_hltv_demo.ticks.filter(
                 pl.col("tick") >= end,
                 pl.col("tick") <= official_end,
-                pl.col("round_num") < max_round_num,
             ).is_empty()
 
     def test_hltv_ticks_start_freeze(self, parsed_hltv_demo: awpy.demo.Demo):
@@ -90,9 +85,7 @@ class TestDemo:
             parsed_hltv_demo.rounds["freeze_end"].to_list(),
             strict=False,
         ):
-            assert not parsed_hltv_demo.ticks.filter(
-                pl.col("tick") >= start, pl.col("tick") < freeze_end
-            ).is_empty()
+            assert not parsed_hltv_demo.ticks.filter(pl.col("tick") >= start, pl.col("tick") < freeze_end).is_empty()
 
     def test_hltv_ticks_freeze_end(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the ticks DataFrame for an HLTV demo (freeze end to end)."""
@@ -101,9 +94,7 @@ class TestDemo:
             parsed_hltv_demo.rounds["end"].to_list(),
             strict=False,
         ):
-            assert not parsed_hltv_demo.ticks.filter(
-                pl.col("tick") >= freeze_end, pl.col("tick") < end
-            ).is_empty()
+            assert not parsed_hltv_demo.ticks.filter(pl.col("tick") >= freeze_end, pl.col("tick") < end).is_empty()
 
     def test_hltv_rounds(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an HLTV demo."""
@@ -143,14 +134,7 @@ class TestDemo:
 
     def test_faceit_kills(self, parsed_faceit_demo: awpy.demo.Demo):
         """Test the kills DataFrame for a FACEIT demo."""
-        assert (
-            len(
-                parsed_faceit_demo.kills.filter(
-                    pl.col("attacker_side") != pl.col("victim_side")
-                )
-            )
-            == 165
-        )
+        assert len(parsed_faceit_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 165
 
     def test_mm_rounds(self, parsed_mm_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an MM demo."""
@@ -167,11 +151,4 @@ class TestDemo:
 
     def test_mm_kills(self, parsed_mm_demo: awpy.demo.Demo):
         """Test the kills DataFrame for an MM demo."""
-        assert (
-            len(
-                parsed_mm_demo.kills.filter(
-                    pl.col("attacker_side") != pl.col("victim_side")
-                )
-            )
-            == 42
-        )
+        assert len(parsed_mm_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 42
