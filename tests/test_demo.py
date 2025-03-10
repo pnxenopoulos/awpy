@@ -65,6 +65,37 @@ class TestDemo:
                 header = json.load(f)
                 assert header["map_name"] == "de_nuke"
 
+    def test_hltv_ticks_end_official_end(self, parsed_hltv_demo: awpy.demo.Demo):
+        """Test the ticks DataFrame for an HLTV demo (end to official end)."""
+        for end, official_end in zip(
+            # Do not parse the last element, which is the last round
+            parsed_hltv_demo.rounds["end"].to_list()[:-1],
+            parsed_hltv_demo.rounds["official_end"].to_list()[:-1],
+            strict=False,
+        ):
+            assert not parsed_hltv_demo.ticks.filter(
+                pl.col("tick") >= end,
+                pl.col("tick") <= official_end,
+            ).is_empty()
+
+    def test_hltv_ticks_start_freeze(self, parsed_hltv_demo: awpy.demo.Demo):
+        """Test the ticks DataFrame for an HLTV demo (start to freeze end)."""
+        for start, freeze_end in zip(
+            parsed_hltv_demo.rounds["start"].to_list(),
+            parsed_hltv_demo.rounds["freeze_end"].to_list(),
+            strict=False,
+        ):
+            assert not parsed_hltv_demo.ticks.filter(pl.col("tick") >= start, pl.col("tick") < freeze_end).is_empty()
+
+    def test_hltv_ticks_freeze_end(self, parsed_hltv_demo: awpy.demo.Demo):
+        """Test the ticks DataFrame for an HLTV demo (freeze end to end)."""
+        for freeze_end, end in zip(
+            parsed_hltv_demo.rounds["freeze_end"].to_list(),
+            parsed_hltv_demo.rounds["end"].to_list(),
+            strict=False,
+        ):
+            assert not parsed_hltv_demo.ticks.filter(pl.col("tick") >= freeze_end, pl.col("tick") < end).is_empty()
+
     def test_hltv_rounds(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an HLTV demo."""
         assert parsed_hltv_demo.rounds["reason"].to_list() == [
@@ -103,7 +134,7 @@ class TestDemo:
 
     def test_faceit_kills(self, parsed_faceit_demo: awpy.demo.Demo):
         """Test the kills DataFrame for a FACEIT demo."""
-        assert len(parsed_faceit_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 163
+        assert len(parsed_faceit_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 165
 
     def test_mm_rounds(self, parsed_mm_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an MM demo."""
