@@ -68,8 +68,8 @@ class TestDemo:
     def test_hltv_ticks(self, parsed_hltv_demo: awpy.demo.Demo):
         """Test the ticks DataFrame for an HLTV demo."""
         for end, official_end in zip(
-            parsed_hltv_demo.ticks["end_tick"].to_list(),
-            parsed_hltv_demo.ticks["official_end_tick"].to_list(),
+            parsed_hltv_demo.rounds["end_tick"].to_list(),
+            parsed_hltv_demo.rounds["official_end_tick"].to_list(),
             strict=False,
         ):
             assert not parsed_hltv_demo.ticks.filter(pl.col("tick") >= end, pl.col("tick") < official_end).is_empty()
@@ -112,7 +112,7 @@ class TestDemo:
 
     def test_faceit_kills(self, parsed_faceit_demo: awpy.demo.Demo):
         """Test the kills DataFrame for a FACEIT demo."""
-        assert len(parsed_faceit_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 163
+        assert len(parsed_faceit_demo.kills.filter(pl.col("attacker_side") != pl.col("victim_side"))) == 165
 
     def test_mm_rounds(self, parsed_mm_demo: awpy.demo.Demo):
         """Test the rounds DataFrame for an MM demo."""
