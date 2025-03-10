@@ -621,7 +621,16 @@ class Demo:
         """
         self._raise_if_no_parser()
         grenade_df = self.parser.parse_grenades()
-        grenade_df = grenade_df.rename(columns={"name": "thrower", "steamid": "thrower_steamid"})
+        grenade_df = grenade_df.rename(
+            columns={
+                "name": "thrower",
+                "steamid": "thrower_steamid",
+                "x": "X",
+                "y": "Y",
+                "z": "Z",
+                "grenade_entity_id": "entity_id",
+            }
+        )
         grenade_df = pl.from_pandas(grenade_df)
         return grenade_df.select(
             [
