@@ -256,9 +256,9 @@ class Demo:
         # Parse, filter, and apply round number to ticks
         self.ticks = self.parse_ticks(player_props=player_props)
         self.ticks = self.ticks.filter(pl.col("tick").is_in(self.in_play_ticks))
-        self.ticks = awpy.parsers.rounds.apply_round_num(
-            df=self.ticks, rounds_df=self.rounds, tick_col="tick"
-        ).filter(pl.col("round_num").is_not_null())
+        self.ticks = awpy.parsers.rounds.apply_round_num(df=self.ticks, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
         self.ticks = awpy.parsers.utils.fix_common_names(self.ticks)
 
         # Parse, filter, and apply round number to grenades
@@ -268,9 +268,7 @@ class Demo:
             df=self.grenades, rounds_df=self.rounds, tick_col="tick"
         ).filter(pl.col("round_num").is_not_null())
 
-        logger.success(
-            f"Finished parsing {self.path}, took {time.perf_counter() - start:.2f} seconds"
-        )
+        logger.success(f"Finished parsing {self.path}, took {time.perf_counter() - start:.2f} seconds")
 
     @cached_property
     def infernos(self) -> pl.DataFrame:
@@ -286,19 +284,13 @@ class Demo:
             KeyError: If the necessary inferno events ("inferno_startburn" or "inferno_expire")
                         are not found in the parsed events.
         """
-        starts = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "inferno_startburn"
-        )
-        ends = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "inferno_expire"
-        )
+        starts = awpy.parsers.utils.get_event_from_parsed_events(self.events, "inferno_startburn")
+        ends = awpy.parsers.utils.get_event_from_parsed_events(self.events, "inferno_expire")
         duration_in_ticks = self.tickrate * self.inferno_duration
-        infernos = awpy.parsers.grenades.parse_timed_grenade_entity(
-            starts, ends, duration_in_ticks
+        infernos = awpy.parsers.grenades.parse_timed_grenade_entity(starts, ends, duration_in_ticks)
+        return awpy.parsers.rounds.apply_round_num(df=infernos, rounds_df=self.rounds, tick_col="start_tick").filter(
+            pl.col("round_num").is_not_null()
         )
-        return awpy.parsers.rounds.apply_round_num(
-            df=infernos, rounds_df=self.rounds, tick_col="start_tick"
-        ).filter(pl.col("round_num").is_not_null())
 
     @cached_property
     def smokes(self) -> pl.DataFrame:
@@ -314,19 +306,13 @@ class Demo:
             KeyError: If the necessary smoke grenade events ("smokegrenade_detonate" or "smokegrenade_expired")
                         are not found in the parsed events.
         """
-        starts = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "smokegrenade_detonate"
-        )
-        ends = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "smokegrenade_expired"
-        )
+        starts = awpy.parsers.utils.get_event_from_parsed_events(self.events, "smokegrenade_detonate")
+        ends = awpy.parsers.utils.get_event_from_parsed_events(self.events, "smokegrenade_expired")
         duration_in_ticks = self.tickrate * self.smoke_duration
-        smokes = awpy.parsers.grenades.parse_timed_grenade_entity(
-            starts, ends, duration_in_ticks
+        smokes = awpy.parsers.grenades.parse_timed_grenade_entity(starts, ends, duration_in_ticks)
+        return awpy.parsers.rounds.apply_round_num(df=smokes, rounds_df=self.rounds, tick_col="start_tick").filter(
+            pl.col("round_num").is_not_null()
         )
-        return awpy.parsers.rounds.apply_round_num(
-            df=smokes, rounds_df=self.rounds, tick_col="start_tick"
-        ).filter(pl.col("round_num").is_not_null())
 
     @cached_property
     def kills(self) -> pl.DataFrame:
@@ -343,13 +329,11 @@ class Demo:
             KeyError: If 'player_death' events are not found in the parsed events, which likely indicates
                     that the demo has not been parsed yet. In this case, please run the .parse() method.
         """
-        kills = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "player_death"
-        )
+        kills = awpy.parsers.utils.get_event_from_parsed_events(self.events, "player_death")
         kills = awpy.parsers.events.parse_kills(kills)
-        return awpy.parsers.rounds.apply_round_num(
-            df=kills, rounds_df=self.rounds, tick_col="tick"
-        ).filter(pl.col("round_num").is_not_null())
+        return awpy.parsers.rounds.apply_round_num(df=kills, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def damages(self) -> pl.DataFrame:
@@ -366,13 +350,11 @@ class Demo:
             KeyError: If 'player_hurt' events are not found in the parsed events, which likely indicates
                     that the demo has not been parsed yet. In this case, please run the .parse() method.
         """
-        damages = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "player_hurt"
-        )
+        damages = awpy.parsers.utils.get_event_from_parsed_events(self.events, "player_hurt")
         damages = awpy.parsers.events.parse_damages(damages)
-        return awpy.parsers.rounds.apply_round_num(
-            df=damages, rounds_df=self.rounds, tick_col="tick"
-        ).filter(pl.col("round_num").is_not_null())
+        return awpy.parsers.rounds.apply_round_num(df=damages, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def footsteps(self) -> pl.DataFrame:
@@ -390,13 +372,11 @@ class Demo:
             KeyError: If 'player_sound' events are not found in the parsed events. This may
                     indicate that the demo has not been parsed yet. Please run the .parse() method.
         """
-        footsteps = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "player_sound"
-        )
+        footsteps = awpy.parsers.utils.get_event_from_parsed_events(self.events, "player_sound")
         footsteps = awpy.parsers.events.parse_footsteps(footsteps)
-        return awpy.parsers.rounds.apply_round_num(
-            df=footsteps, rounds_df=self.rounds, tick_col="tick"
-        ).filter(pl.col("round_num").is_not_null())
+        return awpy.parsers.rounds.apply_round_num(df=footsteps, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def shots(self) -> pl.DataFrame:
@@ -415,13 +395,11 @@ class Demo:
             KeyError: If 'weapon_fire' events are not found in the parsed events. This may
                     indicate that the demo has not been parsed yet. Please run the .parse() method.
         """
-        shots = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "weapon_fire"
-        )
+        shots = awpy.parsers.utils.get_event_from_parsed_events(self.events, "weapon_fire")
         shots = awpy.parsers.events.parse_shots(shots)
-        return awpy.parsers.rounds.apply_round_num(
-            df=shots, rounds_df=self.rounds, tick_col="tick"
-        ).filter(pl.col("round_num").is_not_null())
+        return awpy.parsers.rounds.apply_round_num(df=shots, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def bomb(self) -> pl.DataFrame:
@@ -448,9 +426,9 @@ class Demo:
             KeyError: If the necessary bomb event data is missing from the parsed events.
         """
         bomb = awpy.parsers.bomb.parse_bomb(self.events, self.in_play_ticks)
-        return awpy.parsers.rounds.apply_round_num(
-            df=bomb, rounds_df=self.rounds, tick_col="tick"
-        ).filter(pl.col("round_num").is_not_null())
+        return awpy.parsers.rounds.apply_round_num(df=bomb, rounds_df=self.rounds, tick_col="tick").filter(
+            pl.col("round_num").is_not_null()
+        )
 
     @cached_property
     def player_round_totals(self) -> pl.DataFrame:
@@ -475,19 +453,15 @@ class Demo:
                 - side (str): The team side ("ct", "t", or "all" for total rounds).
                 - n_rounds (int): The number of rounds played by the player on the given side.
         """
-        player_sides_by_round = self.ticks.select(
-            ["name", "steamid", "side", "round_num"]
-        ).unique()
+        player_sides_by_round = self.ticks.select(["name", "steamid", "side", "round_num"]).unique()
 
         # Merge with rounds DataFrame on "round".
-        player_sides_by_round = player_sides_by_round.join(
-            self.rounds, on="round_num", how="inner"
-        )
+        player_sides_by_round = player_sides_by_round.join(self.rounds, on="round_num", how="inner")
 
         # Aggregate rounds by player and team (i.e. side).
-        player_side_rounds = player_sides_by_round.group_by(
-            ["name", "steamid", "side"]
-        ).agg(pl.count("round_num").alias("n_rounds"))
+        player_side_rounds = player_sides_by_round.group_by(["name", "steamid", "side"]).agg(
+            pl.count("round_num").alias("n_rounds")
+        )
 
         # Aggregate total rounds by player (regardless of team) and label as "all".
         player_total_rounds = (
@@ -596,31 +570,21 @@ class Demo:
         # Loop through and process each event
         for event_name, event in events.items():
             # Convert the event from a pandas DataFrame to a Polars DataFrame.
-            events[event_name] = awpy.parsers.utils.fix_common_names(
-                pl.from_pandas(event)
-            )
+            events[event_name] = awpy.parsers.utils.fix_common_names(pl.from_pandas(event))
             if event_name == "round_start":
                 # Label the event as 'start'
-                events[event_name] = events[event_name].with_columns(
-                    pl.lit("start").alias("event")
-                )
+                events[event_name] = events[event_name].with_columns(pl.lit("start").alias("event"))
             elif event_name == "round_end":
                 # Label the event as 'end' and filter for rows with a valid winner.
                 events[event_name] = (
-                    events[event_name]
-                    .with_columns(pl.lit("end").alias("event"))
-                    .filter(pl.col("winner").is_not_null())
+                    events[event_name].with_columns(pl.lit("end").alias("event")).filter(pl.col("winner").is_not_null())
                 )
             elif event_name == "round_officially_ended":
                 # Label the event as 'official_end'
-                events[event_name] = events[event_name].with_columns(
-                    pl.lit("official_end").alias("event")
-                )
+                events[event_name] = events[event_name].with_columns(pl.lit("official_end").alias("event"))
             elif event_name == "round_freeze_end":
                 # Label the event as 'freeze_end'
-                events[event_name] = events[event_name].with_columns(
-                    pl.lit("freeze_end").alias("event")
-                )
+                events[event_name] = events[event_name].with_columns(pl.lit("freeze_end").alias("event"))
         return events
 
     def parse_ticks(
@@ -644,9 +608,7 @@ class Demo:
         self._raise_if_no_parser()
         player_props = player_props if player_props is not None else []
         other_props = other_props if other_props is not None else []
-        return pl.from_pandas(
-            self.parser.parse_ticks(wanted_props=player_props + other_props)
-        )
+        return pl.from_pandas(self.parser.parse_ticks(wanted_props=player_props + other_props))
 
     def parse_grenades(self) -> pl.DataFrame:
         """Parse grenade event data from the demo file.
@@ -659,7 +621,7 @@ class Demo:
         """
         self._raise_if_no_parser()
         grenade_df = self.parser.parse_grenades()
-        grenade_df = grenade_df.rename(columns={"name": "thrower"})
+        grenade_df = grenade_df.rename(columns={"name": "thrower", "steamid": "thrower_steamid"})
         grenade_df = pl.from_pandas(grenade_df)
         return grenade_df.select(
             [
@@ -715,6 +677,4 @@ class Demo:
                 json.dump(self.header, f)
             zipf.write(header_filename, arcname="header.json")
 
-            logger.success(
-                f"Compressed demo data saved to {zip_name}, took {time.perf_counter() - start:.2f} seconds"
-            )
+            logger.success(f"Compressed demo data saved to {zip_name}, took {time.perf_counter() - start:.2f} seconds")
