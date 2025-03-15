@@ -204,7 +204,7 @@ class Demo:
           3. It extracts and filters valid in-play ticks.
           4. It parses player-specific tick data.
           5. It parses grenade events.
-          7. It filters the data to include only valid ticks during match play.
+          6. It filters the data to include only valid ticks during match play.
 
 
         Args:
