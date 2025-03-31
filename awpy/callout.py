@@ -56,7 +56,7 @@ class Callout:
             json_file.write("\n")
 
     @staticmethod
-    def callout_from_position(player_pos: awpy.vector.Vector3, places: list[Callout]) -> str:
+    def callout_from_position(player_pos: awpy.vector.Vector3, places: list[Callout]) -> str | None:
         """Get the callout from a position.
 
         Args:
@@ -67,7 +67,7 @@ class Callout:
             collision_checker = VisibilityChecker(triangles=place.triangles)
             if collision_checker.is_visible(player_pos, place.inside_point):
                 return place.callout
-        return "Unknown"
+        return None
 
     @staticmethod
     def extract_phys_blocks(content: str) -> dict[str, str]:
