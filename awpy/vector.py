@@ -54,6 +54,17 @@ class Vector3:
         """Subtract two vectors."""
         return Vector3(self.x - other.x, self.y - other.y, self.z - other.z)
 
+    def __truediv__(self, scalar: float) -> Vector3:
+        """Divide vector by a scalar."""
+        if scalar == 0:
+            msg = "Cannot divide by zero"
+            raise ValueError(msg)
+        return Vector3(self.x / scalar, self.y / scalar, self.z / scalar)
+
+    def __mul__(self, scalar: float) -> Vector3:
+        """Multiply vector by a scalar."""
+        return Vector3(self.x * scalar, self.y * scalar, self.z * scalar)
+
     def __add__(self, other: Vector3) -> Vector3:
         """Add two vectors."""
         return Vector3(self.x + other.x, self.y + other.y, self.z + other.z)

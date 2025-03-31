@@ -19,6 +19,7 @@ class CalloutDict(TypedDict):
     """Typed dictionary for callout."""
 
     callout: str
+    inside_point: awpy.vector.Vector3Dict
     origin: awpy.vector.Vector3Dict
     triangles: list[dict[str, awpy.vector.Vector3Dict]]
 
@@ -28,6 +29,7 @@ class Callout:
     """Callout."""
 
     callout: str
+    inside_point: awpy.vector.Vector3
     origin: awpy.vector.Vector3
     triangles: list[Triangle]
 
@@ -39,6 +41,7 @@ class Callout:
         """Converts the spawns to a dictionary."""
         return {
             "callout": self.callout,
+            "inside_point": self.inside_point.to_dict(),
             "origin": self.origin.to_dict(),
             "triangles": [triangle.to_dict() for triangle in self.triangles],
         }
@@ -64,8 +67,7 @@ class Callout:
         """
         for place in places:
             collision_checker = VisibilityChecker(triangles=place.triangles)
-            if collision_checker.is_visible(player_pos, place.origin):
-                print(place)
+            if collision_checker.is_visible(player_pos, place.inside_point):
                 return place.callout
         return "Unknown"
 
@@ -142,7 +144,13 @@ class Callout:
                 for triangle in triangles
             ]
 
-            callouts.append(Callout(callout=callout_name, origin=origin, triangles=triangles))
+            inside_point = sum(
+                (triangle.p1 + triangle.p2 + triangle.p3 for triangle in triangles), awpy.vector.Vector3(0, 0, 0)
+            ) / (3 * len(triangles))
+
+            callouts.append(
+                Callout(callout=callout_name, origin=origin, inside_point=inside_point, triangles=triangles)
+            )
 
         return callouts
 
@@ -172,6 +180,7 @@ class Callout:
         return Callout(
             callout=callout_dict["callout"],
             origin=awpy.vector.Vector3.from_dict(callout_dict["origin"]),
+            inside_point=awpy.vector.Vector3.from_dict(callout_dict["inside_point"]),
             triangles=[Triangle.from_dict(triangle) for triangle in callout_dict["triangles"]],
         )
 
