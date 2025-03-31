@@ -137,6 +137,11 @@ class Callout:
                 vphys_file=None, vphys_data=phys_block, include_everything=True
             ).triangles
 
+            triangles = [
+                Triangle(p1=triangle.p1 + origin, p2=triangle.p2 + origin, p3=triangle.p3 + origin)
+                for triangle in triangles
+            ]
+
             callouts.append(Callout(callout=callout_name, origin=origin, triangles=triangles))
 
         return callouts
