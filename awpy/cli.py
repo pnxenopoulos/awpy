@@ -9,7 +9,7 @@ from loguru import logger
 import awpy.data
 import awpy.data.map_data
 import awpy.data.utils
-from awpy import Demo, Nav, Spawns
+from awpy import Callout, Demo, Nav, Spawns
 from awpy.visibility import VphysParser
 
 
@@ -83,7 +83,24 @@ def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
         outpath = vent_file.with_suffix(".json")
     spawns_data = Spawns.from_vents_file(vent_file)
     spawns_data.to_json(path=outpath)
-    logger.success(f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}")
+    logger.success(f"Spawns file saved to {outpath}, {spawns_data}")
+
+
+@awpy_cli.command(
+    name="callouts", help="Parse callouts from a Counter-Strike 2 .vent file and physics volumes.", hidden=True
+)
+@click.option("--vent_file", type=click.Path(exists=True), required=True)
+@click.option("--models_file", type=click.Path(exists=True), required=True)
+@click.option("--outpath", type=click.Path(), help="Path to save the spawns.")
+def parse_callouts(*, vent_file: Path, models_file: Path, outpath: Path | None = None) -> None:
+    """Parse callouts from a Counter-Strike 2 .vent file and physics volumes."""
+    vent_file = Path(vent_file)
+    models_file = Path(models_file)
+    if not outpath:
+        outpath = Path("callouts.json")
+    callout_data = Callout.from_data(vent_file, models_file)
+    Callout.multiple_to_json(callout_data, path=outpath)
+    logger.success(f"Callouts file saved to {outpath}, {callout_data}")
 
 
 @awpy_cli.command(name="nav", help="Parse a Counter-Strike 2 .nav file.", hidden=True)
@@ -96,7 +113,7 @@ def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
     if not outpath:
         outpath = nav_file.with_suffix(".json")
     nav_mesh.to_json(path=outpath)
-    logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
+    logger.success(f"Nav mesh saved to {outpath}, {nav_mesh}")
 
 
 @awpy_cli.command(name="mapdata", help="Parse Counter-Strike 2 map images.", hidden=True)
@@ -108,7 +125,7 @@ def parse_mapdata(overview_dir: Path) -> None:
         overview_dir_err_msg = f"{overview_dir} is not a directory."
         raise NotADirectoryError(overview_dir_err_msg)
     map_data = awpy.data.map_data.map_data_from_vdf_files(overview_dir)
-    awpy.data.map_data.update_map_data_file(map_data, "map-data.json")
+    awpy.data.map_data.update_map_data_file(map_data, Path("map-data.json"))
     logger.success("Map data saved to map_data.json")
 
 

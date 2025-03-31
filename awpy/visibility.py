@@ -41,6 +41,34 @@ class Triangle:
             (self.p1.z + self.p2.z + self.p3.z) / 3,
         )
 
+    def to_dict(self) -> dict[str, awpy.vector.Vector3Dict]:
+        """Convert the triangle to a dictionary representation.
+
+        Returns:
+            dict[str, list[float]]: Dictionary representation of the triangle.
+        """
+        return {
+            "p1": self.p1.to_dict(),
+            "p2": self.p2.to_dict(),
+            "p3": self.p3.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, awpy.vector.Vector3Dict]) -> Triangle:
+        """Create a Triangle from a dictionary representation.
+
+        Args:
+            data (dict[str, list[float]]): Dictionary representation of the triangle.
+
+        Returns:
+            Triangle: Triangle object created from the dictionary.
+        """
+        return Triangle(
+            awpy.vector.Vector3.from_dict(data["p1"]),
+            awpy.vector.Vector3.from_dict(data["p2"]),
+            awpy.vector.Vector3.from_dict(data["p3"]),
+        )
+
 
 @dataclass
 class Edge:
@@ -249,19 +277,38 @@ class VphysParser:
             the .vphys file.
     """
 
-    def __init__(self, vphys_file: str | pathlib.Path, *, including_player_clippings: bool = False) -> None:
+    def __init__(
+        self,
+        vphys_file: str | pathlib.Path | None,
+        *,
+        vphys_data: str | None = None,
+        including_player_clippings: bool = False,
+        include_everything: bool = False,
+    ) -> None:
         """Initializes the parser with the path to a VPhys file.
 
         Args:
             vphys_file (str | pathlib.Path): Path to the VPhys file
                 to parse.
+            vphys_data (str | None, optional): VPhys data as a string.
             including_player_clippings (bool, optional): Whether to include
                 player clippings in the generated triangles. Defaults to False.
+            include_everything (bool, optional): Whether to include all
+                meshes and hulls in the VPhys file regardless of attributes.
+                Defaults to False.
         """
-        self.vphys_file = pathlib.Path(vphys_file)
+        if vphys_file:
+            self.vphys_file = pathlib.Path(vphys_file)
+            self.vphys_data = self.vphys_file.read_text(encoding="utf-8")
+        elif vphys_data:
+            self.vphys_file = None
+            self.vphys_data = vphys_data
+        else:
+            msg = "Either vphys_file or vphys_data must be provided."
+            raise ValueError(msg)
         self.triangles: list[Triangle] = []
         self.kv3_parser = KV3Parser()
-        self.parse(including_player_clippings=including_player_clippings)
+        self.parse(including_player_clippings=including_player_clippings, include_everything=include_everything)
 
     @overload
     @staticmethod
@@ -335,7 +382,7 @@ class VphysParser:
             idx += 1
         return collision_attribute_indices
 
-    def parse(self, *, including_player_clippings: bool = False) -> None: # noqa: PLR0912
+    def parse(self, *, including_player_clippings: bool = False, include_everything: bool = False) -> None:  # noqa: PLR0912
         """Parses the VPhys file and extracts collision geometry.
 
         Processes hulls and meshes in the VPhys file to generate a list of triangles.
@@ -347,14 +394,13 @@ class VphysParser:
             logger.debug(f"VPhys data already parsed, got {len(self.triangles)} triangles.")
             return
 
-        logger.debug(f"Parsing vphys file: {self.vphys_file}")
-
-        # Read file
-        with open(self.vphys_file) as f:
-            data = f.read()
+        if self.vphys_file:
+            logger.debug(f"Parsing vphys file: {self.vphys_file}")
+        else:
+            logger.debug("Parsing vphys data from string.")
 
         # Parse VPhys data
-        self.kv3_parser.parse(data)
+        self.kv3_parser.parse(self.vphys_data)
 
         collision_attribute_indices = self.get_collision_attribute_indices_for_default_group(
             including_player_clippings=including_player_clippings
@@ -375,7 +421,7 @@ class VphysParser:
             if not collision_idx:
                 break
 
-            if collision_idx in collision_attribute_indices:
+            if collision_idx in collision_attribute_indices or include_everything:
                 # Get vertices
                 vertex_str = self.kv3_parser.get_value(
                     f"m_parts[0].m_rnShape.m_hulls[{hull_idx}].m_Hull.m_VertexPositions"
@@ -439,7 +485,7 @@ class VphysParser:
             if not collision_idx:
                 break
 
-            if collision_idx in collision_attribute_indices:
+            if collision_idx in collision_attribute_indices or include_everything:
                 # Get triangles and vertices
                 tri_data = self.bytes_to_vec(
                     self.kv3_parser.get_value(f"m_parts[0].m_rnShape.m_meshes[{mesh_idx}].m_Mesh.m_Triangles"),
@@ -474,7 +520,7 @@ class VphysParser:
             path: Path to the output .tri file.
         """
         if not path:
-            path = self.vphys_file.with_suffix(".tri")
+            path = self.vphys_file.with_suffix(".tri") if self.vphys_file else pathlib.Path("output.tri")
         outpath = pathlib.Path(path)
 
         logger.debug(f"Exporting {len(self.triangles)} triangles to {outpath}")
@@ -491,7 +537,10 @@ class VphysParser:
                 f.write(struct.pack("f", triangle.p3.y))
                 f.write(struct.pack("f", triangle.p3.z))
 
-        logger.success(f"Processed {len(self.triangles)} triangles from {self.vphys_file} -> {outpath}")
+        logger.success(
+            f"Processed {len(self.triangles)} triangles from"
+            f" {self.vphys_file if self.vphys_file else 'data'} -> {outpath}"
+        )
 
 
 class AABB:
