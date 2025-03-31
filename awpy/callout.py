@@ -12,8 +12,6 @@ import awpy.vector
 from awpy.spawn import parse_vents_file_to_dict
 from awpy.visibility import Triangle, VisibilityChecker, VphysParser
 
-VentsValue = str | int | float | bool | tuple[float, ...]
-
 
 class CalloutDict(TypedDict):
     """Typed dictionary for callout."""
