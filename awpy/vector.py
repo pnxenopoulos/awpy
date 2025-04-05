@@ -57,8 +57,8 @@ class Vector3:
     def __truediv__(self, scalar: float) -> Vector3:
         """Divide vector by a scalar."""
         if scalar == 0:
-            msg = "Cannot divide by zero"
-            raise ValueError(msg)
+            msg = "Division by zero"
+            raise ZeroDivisionError(msg)
         return Vector3(self.x / scalar, self.y / scalar, self.z / scalar)
 
     def __mul__(self, scalar: float) -> Vector3:
