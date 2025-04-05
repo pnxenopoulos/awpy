@@ -53,8 +53,8 @@ jobs:
       - name: Formatting + Lint
         shell: bash
         run: |
-          uv run ruff check . --fix --exit-zero
-          uv run ruff check .
+          uv run ruff format --check .  # Check formatting, fail if changes are needed
+          uv run ruff check .           # Linting, fail if issues are found
 
       - name: Test
         shell: bash
