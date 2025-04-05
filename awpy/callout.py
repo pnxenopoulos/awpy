@@ -6,6 +6,7 @@ import json
 import pathlib
 import re
 from dataclasses import dataclass
+from functools import cached_property
 from typing import TypedDict, cast
 
 import awpy.vector
@@ -34,6 +35,11 @@ class Callout:
     def __repr__(self) -> str:
         """String representation of the callout."""
         return f"Callout(callout={self.callout}, origin={self.origin}, triangles={len(self.triangles)})"
+
+    @cached_property
+    def collision_checker(self) -> VisibilityChecker:
+        """Visibility checker for the callout."""
+        return VisibilityChecker(triangles=self.triangles)
 
     def to_dict(self) -> CalloutDict:
         """Converts the spawns to a dictionary."""
@@ -64,8 +70,7 @@ class Callout:
             places (list[Callout]): The list of callouts to check against.
         """
         for place in places:
-            collision_checker = VisibilityChecker(triangles=place.triangles)
-            if collision_checker.is_visible(player_pos, place.inside_point):
+            if place.collision_checker.is_visible(player_pos, place.inside_point):
                 return place.callout
         return None
 
