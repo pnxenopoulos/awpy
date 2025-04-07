@@ -12,8 +12,8 @@ from awpy.visibility import Triangle, VphysParser
 from awpy.volume import VentData, Volume, VolumeDict
 
 
-class BombsiteDict(VolumeDict):
-    """Typed dictionary for bombsite."""
+class PlantzoneDict(VolumeDict):
+    """Typed dictionary for plantzone."""
 
     designation: str
 
@@ -51,16 +51,16 @@ class BombsiteDesignation(Enum):
 
 
 @dataclass
-class Bombsite(Volume):
-    """Bombsite."""
+class Plantzone(Volume):
+    """plantzone."""
 
     designation: BombsiteDesignation
 
     def __repr__(self) -> str:
         """String representation of the callout."""
-        return f"Bombsite(designation={self.designation}, origin={self.origin}, triangles={len(self.triangles)})"
+        return f"Plantzone(designation={self.designation}, origin={self.origin}, triangles={len(self.triangles)})"
 
-    def to_dict(self) -> BombsiteDict:
+    def to_dict(self) -> PlantzoneDict:
         """Converts the spawns to a dictionary."""
         return {
             "designation": self.designation.value,
@@ -70,24 +70,24 @@ class Bombsite(Volume):
         }
 
     @staticmethod
-    def from_dict(bombsite_dict: BombsiteDict) -> Bombsite:
+    def from_dict(plantzone_dict: PlantzoneDict) -> Plantzone:
         """Convert a dictionary to a Callout object.
 
         Args:
-            bombsite_dict (BombsiteDict): Dictionary representation of a Bombsite.
+            plantzone_dict (PlantzoneDict): Dictionary representation of a plantzone.
 
         Returns:
-            Bomnbsite: Bombsite object created from the dictionary.
+            Bomnbsite: plantzone object created from the dictionary.
         """
-        return Bombsite(
-            designation=BombsiteDesignation(bombsite_dict["designation"]),
-            origin=awpy.vector.Vector3.from_dict(bombsite_dict["origin"]),
-            inside_point=awpy.vector.Vector3.from_dict(bombsite_dict["inside_point"]),
-            triangles=[Triangle.from_dict(triangle) for triangle in bombsite_dict["triangles"]],
+        return Plantzone(
+            designation=BombsiteDesignation(plantzone_dict["designation"]),
+            origin=awpy.vector.Vector3.from_dict(plantzone_dict["origin"]),
+            inside_point=awpy.vector.Vector3.from_dict(plantzone_dict["inside_point"]),
+            triangles=[Triangle.from_dict(triangle) for triangle in plantzone_dict["triangles"]],
         )
 
     @classmethod
-    def from_data(cls, vents_data: VentData, phys_blocks: dict[str, str]) -> list[Bombsite]:
+    def from_data(cls, vents_data: VentData, phys_blocks: dict[str, str]) -> list[Plantzone]:
         """Parse the content of a vents file into Spawns information.
 
         Args:
@@ -97,7 +97,7 @@ class Bombsite(Volume):
         Returns:
             Spawns: A Spawns object with the parsed data.
         """
-        bombsites: list[Bombsite] = []
+        plantzones: list[Plantzone] = []
         specified_a = False
         for properties in vents_data.values():
             if properties.get("classname") != "func_bomb_target":
@@ -132,8 +132,8 @@ class Bombsite(Volume):
 
             inside_point = cls.get_inside_point(triangles)
 
-            bombsites.append(
-                Bombsite(designation=designation, origin=origin, inside_point=inside_point, triangles=triangles)
+            plantzones.append(
+                Plantzone(designation=designation, origin=origin, inside_point=inside_point, triangles=triangles)
             )
 
-        return bombsites
+        return plantzones

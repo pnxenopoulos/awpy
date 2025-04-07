@@ -9,7 +9,7 @@ from loguru import logger
 import awpy.data
 import awpy.data.map_data
 import awpy.data.utils
-from awpy import Bombsite, Buyzone, Callout, Demo, Nav, Spawns
+from awpy import Buyzone, Callout, Demo, Nav, Plantzone, Spawns
 from awpy.visibility import VphysParser
 from awpy.volume import extract_phys_blocks, parse_vents_file_to_dict
 
@@ -108,10 +108,10 @@ def parse_volumes(*, vent_file: Path, models_file: Path, outdir: Path | str, out
     callout_data = Callout.from_data(vents_data, phys_blocks)
     Callout.multiple_to_json(callout_data, path=callout_dir / f"{outname}.json")
 
-    bombsite_dir = Path(outdir) / "bombsites"
-    bombsite_dir.mkdir(parents=True, exist_ok=True)
-    bombsite_data = Bombsite.from_data(vents_data, phys_blocks)
-    Bombsite.multiple_to_json(bombsite_data, path=bombsite_dir / f"{outname}.json")
+    plantzone_dir = Path(outdir) / "plantzones"
+    plantzone_dir.mkdir(parents=True, exist_ok=True)
+    plantzone_data = Plantzone.from_data(vents_data, phys_blocks)
+    Plantzone.multiple_to_json(plantzone_data, path=plantzone_dir / f"{outname}.json")
 
     buyzone_dir = Path(outdir) / "buyzones"
     buyzone_dir.mkdir(parents=True, exist_ok=True)
