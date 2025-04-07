@@ -2,9 +2,9 @@ param(
     [Parameter(Mandatory=$false)]
     [string]$inputPath = "C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\maps",
 
-    # Final output folder for callouts JSONs; defaults to a folder named "callouts" in the current directory.
+    # Final output folder for volumes JSONs; defaults to a folder named "volumes" in the current directory.
     [Parameter(Mandatory=$false)]
-    [string]$outputDirectory = (Join-Path (Get-Location).Path "callouts")
+    [string]$outputDirectory = (Join-Path (Get-Location).Path "volumes")
 )
 
 # Ensure the output directory exists; create it if it doesn't.
@@ -57,24 +57,30 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
     }
 
     # Run the awpy callouts command to create a .json file, outputting to a temporary file.
-    $calloutJsonTempPath = Join-Path -Path $tempOutputDir -ChildPath "$fileNameWithoutExtension.json"
     Write-Host "Running awpy callouts on: $ventsFilePath and $vphysFilePath" -ForegroundColor Yellow
-    uv run awpy callouts --vent_file $ventsFilePath --models_file $vphysFilePath --outpath $calloutJsonTempPath
+    uv run awpy volumes --vent_file $ventsFilePath --models_file $vphysFilePath --outdir $tempOutputDir --outname $fileNameWithoutExtension
 
-    if (Test-Path $calloutJsonTempPath) {
-        $finalJsonPath = Join-Path -Path $outputDirectory -ChildPath "$fileNameWithoutExtension.json"
-        Move-Item -Path $calloutJsonTempPath -Destination $finalJsonPath -Force
-        Write-Host "Output saved as: $finalJsonPath" -ForegroundColor Cyan
+    if (Test-Path $tempOutputDir) {
+        Get-ChildItem -Path $tempOutputDir | ForEach-Object {
+            # Skip the 'maps' directory
+            if ($_.Name -eq 'maps') {
+                Write-Host "Skipping directory: maps" -ForegroundColor DarkYellow
+                return
+            }
+
+            # Move the whole directory (overwrite if needed)
+            Move-Item -Path $_.FullName -Destination $outputDirectory -Force
+        }
     } else {
-        Write-Host "Error: .json output not created for $fileNameWithoutExtension" -ForegroundColor Red
+        Write-Host "Error: No outputs created for $fileNameWithoutExtension" -ForegroundColor Red
     }
 
     # Clean up the temporary directory.
     Remove-Item -Path $tempOutputDir -Recurse -Force
 }
 
-# Create a zip archive of the output callouts JSON files.
-$zipPath = Join-Path (Split-Path $outputDirectory) "callouts.zip"
+# Create a zip archive of the output volumes JSON files.
+$zipPath = Join-Path (Split-Path $outputDirectory) "volumes.zip"
 Compress-Archive -Path (Join-Path $outputDirectory "*") -DestinationPath $zipPath -Force
 
 if (Test-Path $zipPath) {
@@ -117,6 +123,6 @@ function Get-DirectoryContentHash {
 $fileHash = Get-FileHash -Path $zipPath -Algorithm SHA256
 Write-Host "Zip file hash (SHA256): $($fileHash.Hash)" -ForegroundColor Cyan
 
-# Compute and print the hash of the contents of the output directory (the callouts JSON files).
+# Compute and print the hash of the contents of the output directory (the volumes JSON files).
 $contentHash = Get-DirectoryContentHash -DirectoryPath $outputDirectory
 Write-Host "Combined content hash of output files: $contentHash" -ForegroundColor Cyan

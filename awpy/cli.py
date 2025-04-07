@@ -9,8 +9,9 @@ from loguru import logger
 import awpy.data
 import awpy.data.map_data
 import awpy.data.utils
-from awpy import Callout, Demo, Nav, Spawns
+from awpy import Bombsite, Buyzone, Callout, Demo, Nav, Spawns
 from awpy.visibility import VphysParser
+from awpy.volume import extract_phys_blocks, parse_vents_file_to_dict
 
 
 @click.group(name="awpy")
@@ -87,20 +88,36 @@ def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
 
 
 @awpy_cli.command(
-    name="callouts", help="Parse callouts from a Counter-Strike 2 .vent file and physics volumes.", hidden=True
+    name="volumes",
+    help="Parse volumes such as callouts, bombsites, buyzones from a Counter-Strike 2 .vent file and physics volumes.",
+    hidden=True,
 )
 @click.option("--vent_file", type=click.Path(exists=True), required=True)
 @click.option("--models_file", type=click.Path(exists=True), required=True)
-@click.option("--outpath", type=click.Path(), help="Path to save the spawns.")
-def parse_callouts(*, vent_file: Path, models_file: Path, outpath: Path | None = None) -> None:
+@click.option("--outdir", type=click.Path(), help="Base directory to save the volumes to.")
+@click.option("--outname", type=str, help="Filename to save the volumes with.")
+def parse_volumes(*, vent_file: Path, models_file: Path, outdir: Path | str, outname: str) -> None:
     """Parse callouts from a Counter-Strike 2 .vent file and physics volumes."""
     vent_file = Path(vent_file)
     models_file = Path(models_file)
-    if not outpath:
-        outpath = Path("callouts.json")
-    callout_data = Callout.from_data(vent_file, models_file)
-    Callout.multiple_to_json(callout_data, path=outpath)
-    logger.success(f"Callouts file saved to {outpath}, {callout_data}")
+    vents_data = parse_vents_file_to_dict(Path(vent_file).read_text())
+    phys_blocks = extract_phys_blocks(Path(models_file).read_text())
+
+    callout_dir = Path(outdir) / "callouts"
+    callout_dir.mkdir(parents=True, exist_ok=True)
+    callout_data = Callout.from_data(vents_data, phys_blocks)
+    Callout.multiple_to_json(callout_data, path=callout_dir / f"{outname}.json")
+
+    bombsite_dir = Path(outdir) / "bombsites"
+    bombsite_dir.mkdir(parents=True, exist_ok=True)
+    bombsite_data = Bombsite.from_data(vents_data, phys_blocks)
+    Bombsite.multiple_to_json(bombsite_data, path=bombsite_dir / f"{outname}.json")
+
+    buyzone_dir = Path(outdir) / "buyzones"
+    buyzone_dir.mkdir(parents=True, exist_ok=True)
+    buyzone_data = Buyzone.from_data(vents_data, phys_blocks)
+    Buyzone.multiple_to_json(buyzone_data, path=buyzone_dir / f"{outname}.json")
+    logger.success("Volume files saved.")
 
 
 @awpy_cli.command(name="nav", help="Parse a Counter-Strike 2 .nav file.", hidden=True)
