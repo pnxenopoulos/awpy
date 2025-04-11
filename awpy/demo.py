@@ -372,7 +372,9 @@ class Demo:
             KeyError: If 'player_sound' events are not found in the parsed events. This may
                     indicate that the demo has not been parsed yet. Please run the .parse() method.
         """
-        footsteps = awpy.parsers.utils.get_event_from_parsed_events(self.events, "player_sound")
+        footsteps = awpy.parsers.utils.get_event_from_parsed_events(
+            self.events, "player_sound", empty_if_not_found=True
+        )
         footsteps = awpy.parsers.events.parse_footsteps(footsteps)
         return awpy.parsers.rounds.apply_round_num(df=footsteps, rounds_df=self.rounds, tick_col="tick").filter(
             pl.col("round_num").is_not_null()
@@ -535,7 +537,7 @@ class Demo:
 
     def parse_events(
         self,
-        events_to_parse: list[str] | None = None,
+        events_to_parse: list[str],
         player_props: list[str] | None = None,
         other_props: list[str] | None = None,
     ) -> dict[str, pl.DataFrame]:
