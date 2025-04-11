@@ -66,9 +66,9 @@ def parse_demo(
     demo_path = Path(demo_path)  # Pathify
     demo = Demo(path=demo_path, verbose=verbose)
     demo.parse(
-        events=events[0].split(",") if events else None,
-        player_props=player_props[0].split(",") if player_props else None,
-        other_props=other_props[0].split(",") if other_props else None,
+        events=events[0].split(",") + list(events)[1:] if events else None,
+        player_props=player_props[0].split(",") + list(player_props)[1:] if player_props else None,
+        other_props=other_props[0].split(",") + list(other_props)[1:] if other_props else None,
     )
     demo.compress(outpath=outpath)
 

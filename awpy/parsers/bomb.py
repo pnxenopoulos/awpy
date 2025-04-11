@@ -167,4 +167,11 @@ def parse_bomb(events: dict[str, pl.DataFrame], valid_ticks: pl.Series) -> pl.Da
 
     # Combine all bomb events into one DataFrame and sort by tick.
     nonempty_dfs = [df for df in [bd, bp, bpnt, bexp, bdef] if not df.is_empty()]
+    if not nonempty_dfs:
+        msg = (
+            "At least one of the keys"
+            " 'bomb_dropped', 'bomb_pickup', 'bomb_planted', 'bomb_exploded', or 'bomb_defused'"
+            " must be present in the events dictionary."
+        )
+        raise KeyError(msg)
     return pl.concat(nonempty_dfs).sort("tick")

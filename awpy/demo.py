@@ -499,8 +499,6 @@ class Demo:
             list[str]: A list of default event names.
         """
         return [
-            "round_freeze_end",  # Freeze time ends
-            "round_officially_ended",  # Round officially declared over
             "player_spawn",  # Players spawn
             "player_given_c4",  # C4 is given to a player
             "bomb_pickup",  # Bomb is picked up
@@ -566,6 +564,8 @@ class Demo:
         # Explicitly parse round start and round end events
         events["round_start"] = self.parser.parse_event("round_start")
         events["round_end"] = self.parser.parse_event("round_end")
+        events["round_freeze_end"] = self.parser.parse_event("round_freeze_end")
+        events["round_officially_ended"] = self.parser.parse_event("round_officially_ended")
 
         # Loop through and process each event
         for event_name, event in events.items():
