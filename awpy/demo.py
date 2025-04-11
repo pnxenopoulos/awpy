@@ -372,9 +372,7 @@ class Demo:
             KeyError: If 'player_sound' events are not found in the parsed events. This may
                     indicate that the demo has not been parsed yet. Please run the .parse() method.
         """
-        footsteps = awpy.parsers.utils.get_event_from_parsed_events(
-            self.events, "player_sound", empty_if_not_found=True
-        )
+        footsteps = awpy.parsers.utils.get_event_from_parsed_events(self.events, "player_sound")
         footsteps = awpy.parsers.events.parse_footsteps(footsteps)
         return awpy.parsers.rounds.apply_round_num(df=footsteps, rounds_df=self.rounds, tick_col="tick").filter(
             pl.col("round_num").is_not_null()
@@ -666,18 +664,23 @@ class Demo:
             zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf,
         ):
             # Get the main dataframes
-            for df_name, parsed_df in [
-                ("kills", self.kills),
-                ("damages", self.damages),
-                ("footsteps", self.footsteps),
-                ("shots", self.shots),
-                ("grenades", self.grenades),
-                ("infernos", self.infernos),
-                ("smokes", self.smokes),
-                ("bomb", self.bomb),
-                ("ticks", self.ticks),
-                ("rounds", self.rounds),
+            for df_name in [
+                "kills",
+                "damages",
+                "footsteps",
+                "shots",
+                "grenades",
+                "infernos",
+                "smokes",
+                "bomb",
+                "ticks",
+                "rounds",
             ]:
+                try:
+                    parsed_df: pl.DataFrame = getattr(self, df_name)
+                except KeyError as e:
+                    logger.warning(f"Got KeyError: {e} while trying to get '{df_name}'.")
+                    continue
                 parsed_df_filename = Path(tmpdirname) / f"{df_name}.parquet"
                 parsed_df.write_parquet(parsed_df_filename)
                 zipf.write(parsed_df_filename, arcname=f"{df_name}.parquet")
