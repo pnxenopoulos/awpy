@@ -70,7 +70,7 @@ class Buyzone(Volume):
 
     @staticmethod
     def from_dict(buyzone_dict: BuyzoneDict) -> Buyzone:
-        """Convert a dictionary to a Callout object.
+        """Convert a dictionary to a Buyzone object.
 
         Args:
             buyzone_dict (BuyzoneDict): Dictionary representation of a Buyzone.

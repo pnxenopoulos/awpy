@@ -71,13 +71,13 @@ class Plantzone(Volume):
 
     @staticmethod
     def from_dict(plantzone_dict: PlantzoneDict) -> Plantzone:
-        """Convert a dictionary to a Callout object.
+        """Convert a dictionary to a Plantzone object.
 
         Args:
             plantzone_dict (PlantzoneDict): Dictionary representation of a plantzone.
 
         Returns:
-            Bomnbsite: plantzone object created from the dictionary.
+            Plantzone: Plantzone object created from the dictionary.
         """
         return Plantzone(
             designation=BombsiteDesignation(plantzone_dict["designation"]),

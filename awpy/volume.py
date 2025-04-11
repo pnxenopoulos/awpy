@@ -57,7 +57,7 @@ class Volume:
 
     @classmethod
     def from_dict(cls, callout_dict: VolumeDict) -> Self:
-        """Convert a dictionary to a Callout object.
+        """Convert a dictionary to a Volume object.
 
         Args:
             callout_dict (CalloutDict): Dictionary representation of a Callout.
