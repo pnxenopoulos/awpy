@@ -499,8 +499,6 @@ class Demo:
             list[str]: A list of default event names.
         """
         return [
-            "round_freeze_end",  # Freeze time ends
-            "round_officially_ended",  # Round officially declared over
             "player_spawn",  # Players spawn
             "player_given_c4",  # C4 is given to a player
             "bomb_pickup",  # Bomb is picked up
@@ -535,7 +533,7 @@ class Demo:
 
     def parse_events(
         self,
-        events_to_parse: list[str] | None = None,
+        events_to_parse: list[str],
         player_props: list[str] | None = None,
         other_props: list[str] | None = None,
     ) -> dict[str, pl.DataFrame]:
@@ -566,6 +564,8 @@ class Demo:
         # Explicitly parse round start and round end events
         events["round_start"] = self.parser.parse_event("round_start")
         events["round_end"] = self.parser.parse_event("round_end")
+        events["round_freeze_end"] = self.parser.parse_event("round_freeze_end")
+        events["round_officially_ended"] = self.parser.parse_event("round_officially_ended")
 
         # Loop through and process each event
         for event_name, event in events.items():
@@ -664,18 +664,23 @@ class Demo:
             zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf,
         ):
             # Get the main dataframes
-            for df_name, parsed_df in [
-                ("kills", self.kills),
-                ("damages", self.damages),
-                ("footsteps", self.footsteps),
-                ("shots", self.shots),
-                ("grenades", self.grenades),
-                ("infernos", self.infernos),
-                ("smokes", self.smokes),
-                ("bomb", self.bomb),
-                ("ticks", self.ticks),
-                ("rounds", self.rounds),
+            for df_name in [
+                "kills",
+                "damages",
+                "footsteps",
+                "shots",
+                "grenades",
+                "infernos",
+                "smokes",
+                "bomb",
+                "ticks",
+                "rounds",
             ]:
+                try:
+                    parsed_df: pl.DataFrame = getattr(self, df_name)
+                except KeyError as e:
+                    logger.warning(f"Got KeyError: {e} while trying to get '{df_name}'.")
+                    continue
                 parsed_df_filename = Path(tmpdirname) / f"{df_name}.parquet"
                 parsed_df.write_parquet(parsed_df_filename)
                 zipf.write(parsed_df_filename, arcname=f"{df_name}.parquet")

@@ -1,6 +1,7 @@
 """Module for parsing utils."""
 
 import polars as pl
+from loguru import logger
 
 
 def get_event_from_parsed_events(
@@ -22,6 +23,7 @@ def get_event_from_parsed_events(
     event_df = events.get(key)
     if event_df is None:
         if empty_if_not_found:
+            logger.warning(f"Event '{key}' not found in events dictionary. Returning empty DataFrame.")
             return pl.DataFrame()
         missing_key_err_msg = f"Required event '{key}' is missing from the events dictionary."
         raise KeyError(missing_key_err_msg)
