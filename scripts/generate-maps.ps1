@@ -9,6 +9,8 @@ param(
 
 $generalInputPath = Join-Path $inputPath "pak01_dir.vpk"
 $mapsInputPath = Join-Path $inputPath "maps"
+$inputPathWithoutCsgo = Split-Path $inputPath -Parent
+$communityAddonsPath = Join-Path $inputPathWithoutCsgo "csgo_community_addons"
 
 # Define the fixed command and filters
 $exePath = ".\Source2Viewer-CLI.exe"
@@ -32,11 +34,34 @@ Get-ChildItem -Path $mapsInputPath -Filter "*.vpk" | Where-Object {
 
     Write-Host "Processing file: $filePath" -ForegroundColor Green
 
-    # Generate the overview image
+    Write-Host "& `"$exePath`" -i `"$filePath`" -f `"$folderFilter`" -e `"$extensionFilter`" -o `"$outputPath`" -d" -ForegroundColor Cyan
     & $exePath -i $filePath -f $folderFilter -e $extensionFilter -o $outputPath -d
     # Extract the map data
+    Write-Host "& `"$exePath`" -i `"$filePath`" -f `"$resourceFolder`" -e `"txt`" -o `"$outputPath`" -d" -ForegroundColor Cyan
     & $exePath -i $filePath -f $resourceFolder -e "txt" -o $outputPath -d
 }
+
+# Generate image and overview for all extra maps in csgo_community_addons
+Get-ChildItem -Path $communityAddonsPath -Directory | ForEach-Object {
+    $subdir = $_.FullName
+    Get-ChildItem -Path $subdir -Filter "*_dir.vpk" | Where-Object {
+        $_.Name -notlike "*_preview*" -and $_.Name -notlike "*_vanity*" -and $_.Name -notlike "*lobby_*" -and $_.Name -notlike "*graphics_*"
+    } | ForEach-Object {
+        $filePath = $_.FullName
+        $fileNameWithoutExtension = $_.BaseName
+
+        Write-Host "Processing file: $filePath" -ForegroundColor Green
+
+        # Generate the overview image
+        Write-Host "& `"$exePath`" -i `"$filePath`" -f `"$folderFilter`" -e `"$extensionFilter`" -o `"$outputPath`" -d" -ForegroundColor Cyan
+        & $exePath -i $filePath -f $folderFilter -e $extensionFilter -o $outputPath -d
+        # Extract the map data
+        Write-Host "& `"$exePath`" -i `"$filePath`" -f `"$resourceFolder`" -e `"txt`" -o `"$outputPath`" -d" -ForegroundColor Cyan
+        & $exePath -i $filePath -f $resourceFolder -e "txt" -o $outputPath -d
+    }
+}
+
+
 
 # Define the source directory (where the extracted files are)
 $sourceDir = Join-Path $outputPath $folderFilter
