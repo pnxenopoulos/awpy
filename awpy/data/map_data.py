@@ -48,7 +48,12 @@ def map_data_from_vdf_files(vdf_folder: Path) -> dict[str, MapData]:
         if vdf_file.stem.endswith("vanity") or "_preview_" in vdf_file.stem:
             continue
         # Fix for dogtown resource file
-        parsed_data = vdf.loads(vdf_file.read_text().replace("}}", "}\n}"))
+        try:
+            parsed_data = vdf.loads(vdf_file.read_text().replace("}}", "}\n}"))
+        except SyntaxError as e:
+            print(f"Skipping {vdf_file.stem} because of a syntax error.")
+            print(f"Syntax error: {e}")
+            continue
         if vdf_file.stem not in parsed_data:
             print(f"Skipping {vdf_file.stem} because the file name is not a valid key.")
             print(f"Keys: {list(parsed_data.keys())}")
