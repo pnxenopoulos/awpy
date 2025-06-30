@@ -227,6 +227,9 @@ def apply_round_num(df: pl.DataFrame, rounds_df: pl.DataFrame, tick_col: str = "
         "round_num" column that indicates the round in which the event occurs. If no
         matching round is found, "round_num" will be null.
     """
+    # prevents InvalidOperationError on some demos in which the tick column isn't pre-sorted
+    df = df.sort(tick_col)
+
     # Use join_asof to get the round where round.start <= event.tick.
     # This join will add the columns 'round_num', 'start', and 'end' from rounds_df.
     df_with_round = df.join_asof(
