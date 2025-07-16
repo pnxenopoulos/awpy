@@ -92,7 +92,7 @@ def _add_bomb_plant_info(rounds_df: pl.DataFrame, bomb_plants: pl.DataFrame) -> 
         if len(plant_events) > 0:
             # Use the first bomb plant event for this round.
             bomb_plant_ticks[i] = plant_events["tick"][0]
-            bomb_plant_sites[i] = "bombsite_a" if plant_events["site"][0] == 220 else "bombsite_b"
+            bomb_plant_sites[i] = "bombsite_a" if plant_events["user_place"][0] == "BombsiteA" else "bombsite_b"
 
     # Add the bomb plant information as new columns.
     return rounds_df.with_columns(
