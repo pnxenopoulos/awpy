@@ -31,34 +31,45 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
     $tempOutputDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
     New-Item -ItemType Directory -Path $tempOutputDir | Out-Null
 
-    # Run Source2Viewer-CLI and capture stdout
-    $output = .\Source2Viewer-CLI.exe -i $filePath --block "PHYS" -f "maps/$fileNameWithoutExtension/world_physics.vmdl_c" 2>&1
-
-    # Convert output to an array of lines
-    $outputLines = $output -split "`r?`n"
-
-    # Find the index where the actual data starts
-    $startIndex = $outputLines.IndexOf('--- Data for block "PHYS" ---') + 1
-
-    if ($startIndex -eq 0 -or $startIndex -ge $outputLines.Count) {
-        Write-Host "Error: Expected PHYS data block not found for $fileNameWithoutExtension" -ForegroundColor Red
-        return
-    }
-
-    # Extract the relevant lines after the marker
-    $physData = $outputLines[$startIndex..($outputLines.Count - 1)] -join "`n"
-
-    # Define the expected output path
-    $vphysFilePath = Join-Path -Path $tempOutputDir -ChildPath "maps\$fileNameWithoutExtension\world_physics.vphys"
-
-    # Ensure the output directory exists
-    $parentDir = Split-Path -Path $vphysFilePath -Parent
+    $vphysFilePath = Join-Path $tempOutputDir "maps\$fileNameWithoutExtension\world_physics.vphys"
+    $parentDir = Split-Path $vphysFilePath -Parent
     if (!(Test-Path $parentDir)) {
         New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
     }
 
-    # Write the extracted data to the file
-    $physData | Out-File -FilePath $vphysFilePath -Encoding utf8
+    try {
+        $tempFile = [System.IO.Path]::GetTempFileName()
+
+        $process = Start-Process -FilePath ".\Source2Viewer-CLI.exe" -ArgumentList @("-i", "`"$filePath`"", "--block `"PHYS`"", "-f `"maps/$fileNameWithoutExtension/world_physics.vmdl_c`"") -NoNewWindow -RedirectStandardOutput $tempFile -PassThru -Wait
+
+        $stream = [System.IO.File]::OpenRead($tempFile)
+        $reader = New-Object System.IO.StreamReader($stream)
+        $fileStream = [System.IO.File]::Create($vphysFilePath)
+        $writer = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
+
+        $foundMarker = $false
+
+        while ($null -ne ($line = $reader.ReadLine())) {
+            if (-not $foundMarker) {
+                if ($line -eq '--- Data for block "PHYS" ---') {
+                    $foundMarker = $true
+                }
+                continue
+            }
+            $writer.WriteLine($line)
+        }
+
+        if (-not $foundMarker) {
+            Write-Host "Error: PHYS data block not found" -ForegroundColor Red
+        }
+    }
+    finally {
+        if ($writer) { $writer.Dispose()}
+        if ($fileStream) { $fileStream.Dispose() }
+        if ($reader) { $reader.Dispose() }
+        if ($stream) { $stream.Dispose() }
+        if ($tempFile) { Remove-Item $tempFile -ErrorAction SilentlyContinue }
+    }
 
     if (-not (Test-Path $vphysFilePath)) {
         Write-Host "Error: Expected vphys file not found for $fileNameWithoutExtension" -ForegroundColor Red
