@@ -38,38 +38,62 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
     }
 
     try {
+        # Try fast in-memory method first
+        $output = .\Source2Viewer-CLI.exe -i $filePath --block "PHYS" -f "maps/$fileNameWithoutExtension/world_physics.vmdl_c" 2>&1
+        $outputLines = $output -split "`r?`n"
+
+        $startIndex = $outputLines.IndexOf('--- Data for block "PHYS" ---') + 1
+        if ($startIndex -le 0 -or $startIndex -ge $outputLines.Count) {
+            throw "PHYS data block not found"
+        }
+
+        $physData = $outputLines[$startIndex..($outputLines.Count - 1)] -join "`n"
+        $physData | Out-File -FilePath $vphysFilePath -Encoding utf8
+    }
+    catch [System.OutOfMemoryException] {
+        # Fall back to stream processing if OOM occurs
+        Write-Warning "Falling back to streaming method due to memory constraints"
+
         $tempFile = [System.IO.Path]::GetTempFileName()
+        try {
+            $process = Start-Process -FilePath ".\Source2Viewer-CLI.exe" -ArgumentList @(
+                "-i", "`"$filePath`"",
+                "--block `"PHYS`"",
+                "-f `"maps/$fileNameWithoutExtension/world_physics.vmdl_c`""
+            ) -NoNewWindow -RedirectStandardOutput $tempFile -PassThru -Wait
 
-        $process = Start-Process -FilePath ".\Source2Viewer-CLI.exe" -ArgumentList @("-i", "`"$filePath`"", "--block `"PHYS`"", "-f `"maps/$fileNameWithoutExtension/world_physics.vmdl_c`"") -NoNewWindow -RedirectStandardOutput $tempFile -PassThru -Wait
+            $foundMarker = $false
+            $stream = [System.IO.File]::OpenRead($tempFile)
+            $reader = New-Object System.IO.StreamReader($stream)
+            $fileStream = [System.IO.File]::Create($vphysFilePath)
+            $writer = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
 
-        $stream = [System.IO.File]::OpenRead($tempFile)
-        $reader = New-Object System.IO.StreamReader($stream)
-        $fileStream = [System.IO.File]::Create($vphysFilePath)
-        $writer = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
-
-        $foundMarker = $false
-
-        while ($null -ne ($line = $reader.ReadLine())) {
-            if (-not $foundMarker) {
-                if ($line -eq '--- Data for block "PHYS" ---') {
-                    $foundMarker = $true
+            while ($null -ne ($line = $reader.ReadLine())) {
+                if (-not $foundMarker) {
+                    if ($line -eq '--- Data for block "PHYS" ---') {
+                        $foundMarker = $true
+                    }
+                    continue
                 }
-                continue
+                $writer.WriteLine($line)
             }
-            $writer.WriteLine($line)
-        }
 
-        if (-not $foundMarker) {
-            Write-Host "Error: PHYS data block not found" -ForegroundColor Red
+            if (-not $foundMarker) {
+                Write-Host "Error: PHYS data block not found (streaming method)" -ForegroundColor Red
+            }
+        }
+        finally {
+            if ($writer) { $writer.Dispose() }
+            if ($fileStream) { $fileStream.Dispose() }
+            if ($reader) { $reader.Dispose() }
+            if ($stream) { $stream.Dispose() }
+            if (Test-Path $tempFile) { Remove-Item $tempFile -ErrorAction SilentlyContinue }
         }
     }
-    finally {
-        if ($writer) { $writer.Dispose()}
-        if ($fileStream) { $fileStream.Dispose() }
-        if ($reader) { $reader.Dispose() }
-        if ($stream) { $stream.Dispose() }
-        if ($tempFile) { Remove-Item $tempFile -ErrorAction SilentlyContinue }
+    catch {
+        Write-Host "Error processing PHYS data: $_" -ForegroundColor Red
     }
+
 
     if (-not (Test-Path $vphysFilePath)) {
         Write-Host "Error: Expected vphys file not found for $fileNameWithoutExtension" -ForegroundColor Red
