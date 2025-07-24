@@ -18,6 +18,12 @@ if (-not (Test-Path $inputPath)) {
     exit
 }
 
+# Get project root and executable path
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$projectRoot = Resolve-Path (Join-Path $scriptRoot "..")
+$viewerExe = Join-Path $projectRoot "Source2Viewer-CLI.exe"
+
+
 # Process each .vpk file, excluding files with unwanted substrings.
 Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
     $_.Name -notlike "*_preview*" -and $_.Name -notlike "*_vanity*" -and $_.Name -notlike "*lobby_*" -and $_.Name -notlike "*graphics_*"
@@ -38,61 +44,49 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
     }
 
     try {
-        # Try fast in-memory method first
-        $output = .\Source2Viewer-CLI.exe -i $filePath --block "PHYS" -f "maps/$fileNameWithoutExtension/world_physics.vmdl_c" 2>&1
-        $outputLines = $output -split "`r?`n"
+        $startFound = $false
 
-        $startIndex = $outputLines.IndexOf('--- Data for block "PHYS" ---') + 1
-        if ($startIndex -le 0 -or $startIndex -ge $outputLines.Count) {
-            throw "PHYS data block not found"
-        }
+        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $processInfo.FileName = $viewerExe
+        $processInfo.Arguments = "-i `"$filePath`" --block `"PHYS`" -f `"maps/$fileNameWithoutExtension/world_physics.vmdl_c`""
+        $processInfo.UseShellExecute = $false
+        $processInfo.RedirectStandardOutput = $true
+        $processInfo.RedirectStandardError = $true
+        $processInfo.CreateNoWindow = $true
 
-        $physData = $outputLines[$startIndex..($outputLines.Count - 1)] -join "`n"
-        $physData | Out-File -FilePath $vphysFilePath -Encoding utf8
-    }
-    catch [System.OutOfMemoryException] {
-        # Fall back to stream processing if OOM occurs
-        Write-Warning "Falling back to streaming method due to memory constraints"
+        $proc = [System.Diagnostics.Process]::Start($processInfo)
+        $reader = $proc.StandardOutput
+        $writer = New-Object System.IO.StreamWriter($vphysFilePath, $false, [System.Text.Encoding]::UTF8)
 
-        $tempFile = [System.IO.Path]::GetTempFileName()
-        try {
-            $process = Start-Process -FilePath ".\Source2Viewer-CLI.exe" -ArgumentList @(
-                "-i", "`"$filePath`"",
-                "--block `"PHYS`"",
-                "-f `"maps/$fileNameWithoutExtension/world_physics.vmdl_c`""
-            ) -NoNewWindow -RedirectStandardOutput $tempFile -PassThru -Wait
-
-            $foundMarker = $false
-            $stream = [System.IO.File]::OpenRead($tempFile)
-            $reader = New-Object System.IO.StreamReader($stream)
-            $fileStream = [System.IO.File]::Create($vphysFilePath)
-            $writer = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
-
-            while ($null -ne ($line = $reader.ReadLine())) {
-                if (-not $foundMarker) {
-                    if ($line -eq '--- Data for block "PHYS" ---') {
-                        $foundMarker = $true
-                    }
-                    continue
+        while (($line = $reader.ReadLine()) -ne $null) {
+            if (-not $startFound) {
+                if ($line -eq '--- Data for block "PHYS" ---') {
+                    $startFound = $true
                 }
-                $writer.WriteLine($line)
+                continue
             }
-
-            if (-not $foundMarker) {
-                Write-Host "Error: PHYS data block not found (streaming method)" -ForegroundColor Red
-            }
+            $writer.WriteLine($line)
         }
-        finally {
-            if ($writer) { $writer.Dispose() }
-            if ($fileStream) { $fileStream.Dispose() }
-            if ($reader) { $reader.Dispose() }
-            if ($stream) { $stream.Dispose() }
-            if (Test-Path $tempFile) { Remove-Item $tempFile -ErrorAction SilentlyContinue }
+
+        $writer.Dispose()
+        $reader.Dispose()
+        $proc.WaitForExit()
+        $proc.Dispose()
+
+        if (-not $startFound) {
+            throw "PHYS data block not found"
         }
     }
     catch {
         Write-Host "Error processing PHYS data: $_" -ForegroundColor Red
     }
+    finally {
+        if ($writer) { $writer.Dispose() }
+        if ($reader) { $reader.Dispose() }
+        if ($proc) { $proc.Dispose() }
+    }
+
+
 
 
     if (-not (Test-Path $vphysFilePath)) {
