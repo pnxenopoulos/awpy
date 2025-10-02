@@ -14,7 +14,7 @@ try:
     from awpy.data import MAPS_DIR
 
     map_data_file = MAPS_DIR / "map-data.json"
-    with open(map_data_file) as map_data_file:
+    with open(map_data_file, encoding="utf-8") as map_data_file:
         MAP_DATA = json.load(map_data_file)
 except Exception as _e:
     logger.warning(f"Failed to load map data from {map_data_file}.")
@@ -83,6 +83,6 @@ def map_data_from_vdf_files(vdf_folder: Path) -> dict[str, MapData]:
 
 def update_map_data_file(new_map_data: dict[str, MapData], filepath: Path) -> None:
     """Update the map data file."""
-    with open(filepath, "w") as json_file:
+    with open(filepath, "w", encoding="utf-8") as json_file:
         json.dump(new_map_data, json_file)
         json_file.write("\n")

@@ -7,6 +7,7 @@ param(
     [string]$outputPath = "."
 )
 
+$env:PYTHONUTF8 = "1"
 $generalInputPath = Join-Path $inputPath "pak01_dir.vpk"
 $mapsInputPath = Join-Path $inputPath "maps"
 $inputPathWithoutCsgo = Split-Path $inputPath -Parent

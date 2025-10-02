@@ -7,6 +7,7 @@ param(
     [string]$outputDirectory = (Join-Path (Get-Location).Path "spawns")
 )
 
+$env:PYTHONUTF8 = "1"
 # Ensure the output directory exists; create it if it doesn't.
 if (-not (Test-Path $outputDirectory)) {
     New-Item -ItemType Directory -Path $outputDirectory | Out-Null

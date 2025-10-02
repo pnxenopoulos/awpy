@@ -65,7 +65,7 @@ class Spawns:
         Returns:
             Spawns: A Spawns object with the parsed data.
         """
-        with open(vents_file) as f:
+        with open(vents_file, encoding="utf-8") as f:
             return Spawns.from_vents_content(f.read())
 
 

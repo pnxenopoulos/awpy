@@ -350,7 +350,7 @@ class VphysParser:
         logger.debug(f"Parsing vphys file: {self.vphys_file}")
 
         # Read file
-        with open(self.vphys_file) as f:
+        with open(self.vphys_file, encoding="utf-8") as f:
             data = f.read()
 
         # Parse VPhys data

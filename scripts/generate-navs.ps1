@@ -7,6 +7,7 @@ param(
     [string]$outputDirectory = (Join-Path (Get-Location).Path "nav")
 )
 
+$env:PYTHONUTF8 = "1"
 # Ensure the output directory ("nav") exists; create it if it doesn't.
 if (-not (Test-Path $outputDirectory)) {
     New-Item -ItemType Directory -Path $outputDirectory | Out-Null
@@ -81,7 +82,7 @@ function Get-DirectoryContentHash {
 
     # Initialize the hasher.
     $hasher = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
-    
+
     # Create a memory stream to accumulate the data.
     $ms = New-Object System.IO.MemoryStream
 
