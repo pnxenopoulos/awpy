@@ -20,10 +20,14 @@ $resourceFolder = "resource/overviews/"
 $extensionFilter = "vtex_c"
 
 # Generate map data
+Write-Host "Generating general map data"  -ForegroundColor Green
+Write-Host "& `"$exePath`" -i `"$generalInputPath`" -f `"$resourceFolder`" -e `"txt`" -o `"$outputPath`" -d" -ForegroundColor Cyan
 & $exePath -i $generalInputPath -f $resourceFolder -e "txt" -o $outputPath -d
 
 
 # Run the command to extract the radar files
+Write-Host "Extracting general radar files"  -ForegroundColor Green
+Write-Host "& `"$exePath`" -i `"$generalInputPath`" -f `"$folderFilter`" -e `"$extensionFilter`" -o `"$outputPath`" -d" -ForegroundColor Cyan
 & $exePath -i $generalInputPath -f $folderFilter -e $extensionFilter -o $outputPath -d
 
 # Generate image and overview for all extra maps
