@@ -106,7 +106,7 @@ class Plantzone(Volume):
             designation = (
                 BombsiteDesignation.B
                 if specified_a
-                else BombsiteDesignation.from_designation_integer(properties["bomb_site_designation"])  # pyright: ignore[reportArgumentType]
+                else BombsiteDesignation.from_designation_integer(int(properties["bomb_site_designation"]))  # pyright: ignore[reportArgumentType]
             )
             if designation == BombsiteDesignation.A:
                 specified_a = True
