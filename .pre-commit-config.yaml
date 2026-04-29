@@ -1,7 +1,7 @@
 exclude: docs/
 repos:
   - repo: 'https://github.com/pre-commit/pre-commit-hooks'
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
         language: python
@@ -26,18 +26,18 @@ repos:
       - id: check-builtin-literals
         language: python
   - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.9.9
+    rev: v0.15.12
     hooks:
       - id: ruff
         args:
           - '--fix'
           - '--exit-non-zero-on-fix'
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.3
+    rev: 0.11.8
     hooks:
       - id: uv-lock
   - repo: https://github.com/crate-ci/typos
-    rev: v1.30.0
+    rev: v1.45.2
     hooks:
       - id: typos
         args: []

@@ -4,7 +4,7 @@ import io
 import math
 import warnings
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -42,10 +42,10 @@ class PointSettings:
     marker: str = "o"
     color: str = "red"
     size: int = 10
-    hp: Optional[int] = None
-    armor: Optional[int] = None
-    direction: Optional[tuple[float, float]] = None
-    label: Optional[str] = None
+    hp: int | None = None
+    armor: int | None = None
+    direction: tuple[float, float] | None = None
+    label: str | None = None
     alpha: float = 1.0
 
     @classmethod

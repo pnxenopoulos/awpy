@@ -8,7 +8,7 @@ import math
 import struct
 from enum import Enum
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, Self, TypedDict
+from typing import BinaryIO, Literal, Self, TypedDict
 
 import networkx as nx
 
@@ -30,7 +30,7 @@ def _read_i32(f: BinaryIO) -> int:
 class DynamicAttributeFlags(int):
     """A custom integer class for dynamic attribute flags."""
 
-    def __new__(cls, value: Any) -> "DynamicAttributeFlags":  # noqa: ANN401
+    def __new__(cls, value: int) -> Self:
         """Creates a new DynamicAttributeFlags instance.
 
         Args:
