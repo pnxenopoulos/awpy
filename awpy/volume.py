@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import pathlib
 import re
@@ -144,15 +145,15 @@ def parse_vents_file_to_dict(file_content: str) -> VentData:
         key = key.strip()
         value = value.strip()
 
-        # Attempt to parse the value
-        if value in ("True", "False"):
-            value = value == "True"  # Convert to boolean
-        elif re.match(r"^-?\d+$", value):
-            value = int(value)  # Convert to integer
-        elif re.match(r"^-?\d*\.\d+$", value):
-            value = float(value)  # Convert to float
-        elif re.match(r"^-?\d*\.\d+(?:\s-?\d*\.\d+)+$", value):
-            value = tuple(map(float, value.split()))  # Convert to tuple of floats
+        if value.lower() in ("true", "false"):
+            value = value.lower() == "true"  # Convert to boolean
+        elif re.match(r'^"?-?\d*\.\d+(?:\s-?\d*\.\d+)+"?$', value):
+            value = tuple(map(float, value.strip('"').split()))  # Convert to tuple of floats
+        else:
+            try:
+                value = ast.literal_eval(value)
+            except Exception:
+                value = value.strip('"')
 
         block_content[key] = value
 
