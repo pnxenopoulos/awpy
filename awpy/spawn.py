@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-import ast
 import itertools
 import json
-import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+from awpy.volume import VentData, parse_vents_file_to_dict
 
 if TYPE_CHECKING:
     import pathlib
 
 import awpy.vector
-
-VentsValue = str | int | float | bool | tuple[float, ...]
 
 
 @dataclass
@@ -70,53 +68,6 @@ class Spawns:
             return Spawns.from_vents_content(f.read())
 
 
-def parse_vents_file_to_dict(file_content: str) -> dict[int, dict[str, VentsValue]]:
-    """Parse the content of a .vents file into a dictionary.
-
-    Args:
-        file_content (str): The content of the .vents file.
-
-    Returns:
-        dict[int, dict[str, VentsValue]]: A dictionary with the parsed data.
-    """
-    # Dictionary to hold parsed data
-    parsed_data: dict[int, dict[str, VentsValue]] = {}
-    block_id = 0
-    block_content: dict[str, VentsValue] = {}
-
-    for line in file_content.splitlines():
-        if match := re.match(r"^====(\d+)====$", line):
-            block_id = int(match.group(1))
-            block_content = {}
-            continue
-
-        if not line.strip():
-            continue
-        try:
-            key, value = line.split(maxsplit=1)
-        except Exception as _e:  # noqa: S112
-            continue
-        key = key.strip()
-        value = value.strip()
-
-        # Attempt to parse the value
-        if value.lower() in ("true", "false"):
-            value = value.lower() == "true"  # Convert to boolean
-        elif re.match(r'^"?-?\d*\.\d+(?:\s-?\d*\.\d+)+"?$', value):
-            value = tuple(map(float, value.strip('"').split()))  # Convert to tuple of floats
-        else:
-            try:
-                value = ast.literal_eval(value)
-            except Exception:
-                value = value.strip('"')
-
-        block_content[key] = value
-
-        parsed_data[block_id] = block_content
-
-    return parsed_data
-
-
 @dataclass
 class SpawnPoint:
     """Representation of the relevant information for spawn points."""
@@ -145,7 +96,7 @@ class SpawnPoint:
         return collected
 
 
-def filter_vents_data(data: dict[int, dict[str, VentsValue]]) -> Spawns:
+def filter_vents_data(data: VentData) -> Spawns:
     """Filter the data to get the positions."""
     ct_candidates: list[SpawnPoint] = []
     t_candidates: list[SpawnPoint] = []

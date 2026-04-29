@@ -9,8 +9,9 @@ from loguru import logger
 import awpy.data
 import awpy.data.map_data
 import awpy.data.utils
-from awpy import Demo, Nav, Spawns
+from awpy import Buyzone, Callout, Demo, Nav, Plantzone, Spawns
 from awpy.visibility import VphysParser
+from awpy.volume import extract_phys_blocks, parse_vents_file_to_dict
 
 
 @click.group(name="awpy")
@@ -83,7 +84,40 @@ def parse_spawn(vent_file: Path, *, outpath: Path | None = None) -> None:
         outpath = vent_file.with_suffix(".json")
     spawns_data = Spawns.from_vents_file(vent_file)
     spawns_data.to_json(path=outpath)
-    logger.success(f"Spawns file saved to {vent_file.with_suffix('.json')}, {spawns_data}")
+    logger.success(f"Spawns file saved to {outpath}, {spawns_data}")
+
+
+@awpy_cli.command(
+    name="volumes",
+    help="Parse volumes such as callouts, bombsites, buyzones from a Counter-Strike 2 .vent file and physics volumes.",
+    hidden=True,
+)
+@click.option("--vent_file", type=click.Path(exists=True), required=True)
+@click.option("--models_file", type=click.Path(exists=True), required=True)
+@click.option("--outdir", type=click.Path(), help="Base directory to save the volumes to.")
+@click.option("--outname", type=str, help="Filename to save the volumes with.")
+def parse_volumes(*, vent_file: Path, models_file: Path, outdir: Path | str, outname: str) -> None:
+    """Parse callouts from a Counter-Strike 2 .vent file and physics volumes."""
+    vent_file = Path(vent_file)
+    models_file = Path(models_file)
+    vents_data = parse_vents_file_to_dict(Path(vent_file).read_text())
+    phys_blocks = extract_phys_blocks(Path(models_file).read_text())
+
+    callout_dir = Path(outdir) / "callouts"
+    callout_dir.mkdir(parents=True, exist_ok=True)
+    callout_data = Callout.from_data(vents_data, phys_blocks)
+    Callout.multiple_to_json(callout_data, path=callout_dir / f"{outname}.json")
+
+    plantzone_dir = Path(outdir) / "plantzones"
+    plantzone_dir.mkdir(parents=True, exist_ok=True)
+    plantzone_data = Plantzone.from_data(vents_data, phys_blocks)
+    Plantzone.multiple_to_json(plantzone_data, path=plantzone_dir / f"{outname}.json")
+
+    buyzone_dir = Path(outdir) / "buyzones"
+    buyzone_dir.mkdir(parents=True, exist_ok=True)
+    buyzone_data = Buyzone.from_data(vents_data, phys_blocks)
+    Buyzone.multiple_to_json(buyzone_data, path=buyzone_dir / f"{outname}.json")
+    logger.success("Volume files saved.")
 
 
 @awpy_cli.command(name="nav", help="Parse a Counter-Strike 2 .nav file.", hidden=True)
@@ -96,7 +130,7 @@ def parse_nav(nav_file: Path, *, outpath: Path | None = None) -> None:
     if not outpath:
         outpath = nav_file.with_suffix(".json")
     nav_mesh.to_json(path=outpath)
-    logger.success(f"Nav mesh saved to {nav_file.with_suffix('.json')}, {nav_mesh}")
+    logger.success(f"Nav mesh saved to {outpath}, {nav_mesh}")
 
 
 @awpy_cli.command(name="mapdata", help="Parse Counter-Strike 2 map images.", hidden=True)
@@ -108,7 +142,7 @@ def parse_mapdata(overview_dir: Path) -> None:
         overview_dir_err_msg = f"{overview_dir} is not a directory."
         raise NotADirectoryError(overview_dir_err_msg)
     map_data = awpy.data.map_data.map_data_from_vdf_files(overview_dir)
-    awpy.data.map_data.update_map_data_file(map_data, "map-data.json")
+    awpy.data.map_data.update_map_data_file(map_data, Path("map-data.json"))
     logger.success("Map data saved to map_data.json")
 
 
