@@ -79,6 +79,7 @@ if (-not (Test-Path $targetDir)) {
     New-Item -ItemType Directory -Path $targetDir | Out-Null
 }
 
+$seenNames = @{}
 # Check if the source directory exists before processing.
 if (Test-Path $sourceDir) {
     # Process each file ending with "_radar_psd.png"
@@ -89,12 +90,18 @@ if (Test-Path $sourceDir) {
         if ($_.Name -like "*_preview*" -or $_.Name -like "*_vanity*") {
             return
         }
-
         # Define the new file name by replacing "_radar_psd.png" with ".png"
         $newFileName = $_.Name -replace "_radar_psd\.png$|_radar_tga\.png$", ".png"
-        Write-Host "Renaming file: $($_.Name) to $newFileName" -ForegroundColor Yellow
 
-        # Rename the file within the source directory.
+        # Skip if already processed in this run
+        if ($seenNames.ContainsKey($newFileName)) {
+            Write-Host "Skipping rename: $newFileName already processed in this run" -ForegroundColor DarkYellow
+            return
+        }
+
+        $seenNames[$newFileName] = $true
+
+        Write-Host "Renaming file: $($_.Name) to $newFileName" -ForegroundColor Yellow
         Rename-Item -Path $_.FullName -NewName $newFileName
 
         # Define full paths for the renamed file and its destination.
