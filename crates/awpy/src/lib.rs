@@ -65,6 +65,7 @@ pub mod game_phases;
 pub mod geometry;
 pub mod hitgroups;
 pub mod io;
+pub mod map_control;
 pub mod nav;
 pub mod position;
 pub mod round_end_reasons;
@@ -90,6 +91,10 @@ pub use error::{Error, Result};
 pub use game_phases::{all_game_phases, game_phase_name};
 pub use geometry::{Mesh, VisibilityMesh};
 pub use hitgroups::{all_hitgroups, hitgroup_name};
+pub use map_control::{
+    AreaControl, Control, MapControl, Observer, Occluder, Params as MapControlParams, Team,
+    reachability_control, vision_control,
+};
 pub use nav::{Nav, NavArea, PathWeight};
 pub use position::{CELL_BITS, CELL_SIZE, WORLD_HALF, cell_to_world};
 pub use round_end_reasons::{all_round_end_reasons, round_end_reason_name};

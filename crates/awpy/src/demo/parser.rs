@@ -376,7 +376,7 @@ impl Parser {
 
     /// Decode and cache the event stream now, if it isn't already.
     ///
-    /// Every dataset pass reads the event stream via [`events_ref`](Self::events_ref),
+    /// Every dataset pass reads the event stream via `events_ref`,
     /// which decodes it lazily on first use. When several passes run **concurrently**
     /// on a fresh parser they would otherwise each decode it redundantly (the cache
     /// is populated with a benign check-then-set race). Call this once serially
@@ -1098,7 +1098,7 @@ impl Parser {
         Ok(())
     }
 
-    /// Byte offset (relative to the post-[`HEADER_SIZE`] data) and tick of every
+    /// Byte offset (relative to the post-`HEADER_SIZE` data) and tick of every
     /// `DEM_FullPacket` keyframe, via a cheap header-only pre-scan.
     ///
     /// Full packets are periodic snapshots the parallel tick decoder cold-restarts
@@ -1173,7 +1173,7 @@ impl Parser {
     ///
     /// `start` selects where decoding begins: `None` starts from the signon
     /// baseline (the first segment); `Some(offset)` cold-restarts at the
-    /// `DEM_FullPacket` at that byte offset (from [`full_packet_offsets`]),
+    /// `DEM_FullPacket` at that byte offset (from `full_packet_offsets`),
     /// applying its snapshot. `on_tick` fires once per completed tick whose value
     /// is `< end_tick` (pass [`i32::MAX`] for the final segment).
     ///

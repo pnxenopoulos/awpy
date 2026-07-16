@@ -440,7 +440,7 @@ impl Parser {
     /// Per-player match statistics (see the [module docs](self)).
     ///
     /// Parses the kill, damage, and round datasets and aggregates them with a
-    /// trade window of [`TRADE_SECONDS`] converted to ticks using the demo's
+    /// trade window of `TRADE_SECONDS` converted to ticks using the demo's
     /// tick rate.
     pub fn player_stats(&self, exclude_knife_rounds: bool) -> Result<Vec<PlayerStats>> {
         // One combined pass yields both kills and damages (see event_datasets).
@@ -472,7 +472,7 @@ impl Parser {
     }
 
     /// Ticks per second, from the demo's playback timing (falling back to
-    /// [`DEFAULT_TICKRATE`] when it is unavailable).
+    /// `DEFAULT_TICKRATE` when it is unavailable).
     pub fn tickrate(&self) -> f32 {
         self.file_info()
             .ok()

@@ -15,6 +15,9 @@ use pyo3::types::{PyDict, PyIterator, PyList, PyString};
 use pyo3_polars::PyDataFrame;
 
 use awpy::geometry::VisibilityMesh;
+use awpy::map_control::{
+    Observer, Occluder, Params as McParams, Team, reachability_control, vision_control,
+};
 use awpy::nav::{Nav, PathWeight};
 use awpy::{
     Blind, BombEvent, ChatMessage, Context, Damage, Entity, FieldValue, Fire, GameEvent, Grenade,
@@ -1318,6 +1321,163 @@ impl NavMesh {
     }
 }
 
+/// One player observation for [`compute_map_control`]:
+/// `(x, y, z, side, crouched, blind)`. `side` is the demo's `"terrorist"` /
+/// `"counter-terrorist"` (or `"t"` / `"ct"`); other sides are dropped.
+type PlayerObs = (f32, f32, f32, String, bool, bool);
+/// A sphere occluder for [`compute_map_control`]: `(x, y, z, radius)`.
+type Sphere = (f32, f32, f32, f32);
+
+/// Map a side string to a [`Team`], or `None` for a side that holds no control
+/// (unassigned / spectator).
+fn parse_team(side: &str) -> Option<Team> {
+    match side.to_ascii_lowercase().as_str() {
+        "t" | "terrorist" => Some(Team::T),
+        "ct" | "counter-terrorist" => Some(Team::Ct),
+        _ => None,
+    }
+}
+
+/// Compute one snapshot's map control over a nav mesh.
+///
+/// The low-level primitive behind :func:`awpy.map_control.map_control`. Given
+/// player positions and (for vision) a :class:`VisibilityChecker`, it labels
+/// every nav area ``"ct"`` / ``"t"`` / ``"contested"`` / ``"neutral"`` and
+/// returns size-weighted summary fractions.
+///
+/// Args:
+///     nav: The map's :class:`NavMesh`.
+///     players: Sequence of ``(x, y, z, side, crouched, blind)`` for the living
+///         players at the tick.
+///     visibility: The map's :class:`VisibilityChecker`; required for
+///         ``method="vision"``.
+///     method: ``"vision"`` (line of sight, smoke-aware) or ``"reachability"``
+///         (who reaches each area first, fire-aware).
+///     smokes: Active smoke spheres ``(x, y, z, radius)`` (vision only).
+///     fires: Active inferno spheres ``(x, y, z, radius)`` (reachability only).
+///     detail: When ``True`` (default) include the per-area arrays; when
+///         ``False`` return only the summary fractions.
+///     eye_height, crouch_eye_height, target_height, max_distance,
+///     contest_margin: Model parameters (see :class:`awpy.map_control.MapControlParams`).
+///
+/// Returns:
+///     A dict with ``ct_fraction``, ``t_fraction``, ``contested_fraction``,
+///     ``neutral_fraction``, ``net_control``, and (when ``detail``) the
+///     ``area_ids`` / ``control`` / ``ct`` / ``t`` per-area lists.
+#[pyfunction]
+#[pyo3(signature = (
+    nav,
+    players,
+    *,
+    visibility=None,
+    method="vision",
+    smokes=Vec::new(),
+    fires=Vec::new(),
+    detail=true,
+    eye_height=64.0,
+    crouch_eye_height=46.0,
+    target_height=46.0,
+    max_distance=None,
+    contest_margin=200.0,
+))]
+#[allow(clippy::too_many_arguments)]
+fn compute_map_control(
+    py: Python<'_>,
+    nav: PyRef<'_, NavMesh>,
+    players: Vec<PlayerObs>,
+    visibility: Option<PyRef<'_, VisibilityChecker>>,
+    method: &str,
+    smokes: Vec<Sphere>,
+    fires: Vec<Sphere>,
+    detail: bool,
+    eye_height: f32,
+    crouch_eye_height: f32,
+    target_height: f32,
+    max_distance: Option<f32>,
+    contest_margin: f64,
+) -> PyResult<Py<PyDict>> {
+    let observers: Vec<Observer> = players
+        .iter()
+        .filter_map(|(x, y, z, side, crouched, blind)| {
+            parse_team(side).map(|team| Observer {
+                pos: [*x, *y, *z],
+                team,
+                crouched: *crouched,
+                blind: *blind,
+            })
+        })
+        .collect();
+
+    let params = McParams {
+        eye_height,
+        crouch_eye_height,
+        target_height,
+        max_distance,
+        contest_margin,
+    };
+    let to_occluders = |spheres: &[Sphere]| {
+        spheres
+            .iter()
+            .map(|(x, y, z, r)| Occluder {
+                center: [*x, *y, *z],
+                radius: *r,
+            })
+            .collect::<Vec<_>>()
+    };
+
+    let result = match method.to_ascii_lowercase().as_str() {
+        "vision" => {
+            let vc = visibility.as_ref().ok_or_else(|| {
+                PyValueError::new_err(
+                    "method='vision' requires a VisibilityChecker (pass visibility=...)",
+                )
+            })?;
+            vision_control(
+                &nav.nav,
+                &vc.mesh,
+                &observers,
+                &to_occluders(&smokes),
+                &params,
+            )
+        }
+        "reachability" | "reach" => {
+            reachability_control(&nav.nav, &observers, &to_occluders(&fires), &params)
+        }
+        other => {
+            return Err(PyValueError::new_err(format!(
+                "unknown method {other:?}; expected 'vision' or 'reachability'"
+            )));
+        }
+    };
+
+    let d = PyDict::new(py);
+    d.set_item("ct_fraction", result.ct_fraction)?;
+    d.set_item("t_fraction", result.t_fraction)?;
+    d.set_item("contested_fraction", result.contested_fraction)?;
+    d.set_item("neutral_fraction", result.neutral_fraction)?;
+    d.set_item("net_control", result.net_control)?;
+    if detail {
+        let n = result.areas.len();
+        let (mut ids, mut control, mut ct, mut t) = (
+            Vec::with_capacity(n),
+            Vec::with_capacity(n),
+            Vec::with_capacity(n),
+            Vec::with_capacity(n),
+        );
+        for a in &result.areas {
+            ids.push(a.area_id);
+            control.push(a.control.as_str());
+            ct.push(a.ct);
+            t.push(a.t);
+        }
+        d.set_item("area_ids", ids)?;
+        d.set_item("control", control)?;
+        d.set_item("ct", ct)?;
+        d.set_item("t", t)?;
+    }
+    Ok(d.unbind())
+}
+
 /// Column helper: collect a field from each item via a getter.
 macro_rules! col {
     ($name:literal, $items:expr, $f:expr) => {
@@ -2089,6 +2249,7 @@ fn _awpy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Events>()?;
     m.add_class::<VisibilityChecker>()?;
     m.add_class::<NavMesh>()?;
+    m.add_function(wrap_pyfunction!(compute_map_control, m)?)?;
     m.add("InvalidDemoError", m.py().get_type::<InvalidDemoError>())?;
     Ok(())
 }

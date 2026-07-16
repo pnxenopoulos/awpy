@@ -76,6 +76,26 @@ with `bandwidth=`). `bins` sets the grid resolution, `cmap` any matplotlib
 colormap, `alpha` the overlay opacity. Empty cells stay transparent, so the
 radar shows through.
 
+## Map control: `map_control`
+
+Shade the map by which side controls each area at one tick, players and the
+shaping occluders overlaid:
+
+```python
+from awpy import Demo, plot
+
+demo = Demo("match.dem")
+
+fig, ax = plot.map_control(demo, tick=29000, method="vision")
+fig, ax = plot.map_control(demo, tick=29000, method="reachability")
+```
+
+Blue is CT, yellow is T, purple is contested; neutral is left unshaded, and the
+legend shows each side's share of the map. `method` picks the model — `"vision"`
+(line of sight, drawing the active smokes) or `"reachability"` (who reaches each
+area first, drawing the active molotovs). Tune it with `params=` (a
+`MapControlParams`), and see {doc}`map_control` for what the numbers mean.
+
 ## Multi-level maps
 
 Nuke, Vertigo, Train, and Baggage have two radar images. Pass `lower=True` to

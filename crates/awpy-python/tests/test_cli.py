@@ -131,9 +131,7 @@ class FakeDemo:
 
     @property
     def blinds(self):
-        return pl.DataFrame(
-            {"tick": [5, 15], "victim_name": ["a", "b"], "duration": [1.5, 3.0]}
-        )
+        return pl.DataFrame({"tick": [5, 15], "victim_name": ["a", "b"], "duration": [1.5, 3.0]})
 
     @property
     def item_events(self):

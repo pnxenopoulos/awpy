@@ -15,7 +15,7 @@
 //! - [`Parser::fires`] / [`Parser::smokes`] — active infernos / smoke clouds.
 //! - [`Parser::shots`] — `weapon_fire` events with shooter and weapon state.
 //! - [`Parser::players`] — the roster (Steam id, name, last observed side).
-//! - [`Parser::snapshot`] / [`Parser::snapshots`] — per-player game state
+//! - [`Parser::snapshot`] / [`Parser::snapshots_query`] — per-player game state
 //!   (position, eye angles, health, armor, and economy: equipment value,
 //!   primary / secondary weapon, grenade counts, and inventory) at a tick or
 //!   over a tick range.
@@ -1550,7 +1550,7 @@ impl Parser {
     /// decode pass instead of one each.
     ///
     /// They all track projectile entities against player pawn / controller
-    /// state, so one [`track_projectiles`](Self::track_projectiles) pass over
+    /// state, so one `track_projectiles` pass over
     /// the union of their classes yields all three. The rows are split by class
     /// and finished per dataset (trajectory end-fill for grenades; instance
     /// collapse for fires / smokes).
@@ -1764,7 +1764,7 @@ pub struct RoundEconomy {
     pub side: &'static str,
     /// Total equipment value across the team once the buy is locked (freeze end).
     pub equipment_value: i32,
-    /// `"eco"` / `"force"` / `"full"` (see [`buy_type`]).
+    /// `"eco"` / `"force"` / `"full"` (see `buy_type`).
     pub buy_type: &'static str,
     /// Number of players counted for the team.
     pub n_players: i32,
@@ -1988,7 +1988,7 @@ impl Parser {
     /// Per-team economy and buy type for each round.
     ///
     /// One row per (round, side): the side's total equipment value once the buy
-    /// is locked (read at freeze end) and its [`buy_type`] classification. Reuses
+    /// is locked (read at freeze end) and its `buy_type` classification. Reuses
     /// the sampled-snapshot pass over the rounds' freeze-end ticks. Knife rounds
     /// are excluded.
     pub fn round_economy(&self) -> Result<Vec<RoundEconomy>> {

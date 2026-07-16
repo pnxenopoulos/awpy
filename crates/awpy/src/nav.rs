@@ -41,7 +41,7 @@
 //! }
 //! ```
 
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::path::Path;
 
 use crate::error::{Error, Result};
@@ -239,6 +239,26 @@ impl Nav {
         Nav::from_bytes(&std::fs::read(path)?)
     }
 
+    /// Build a mesh directly from a list of areas, constructing the
+    /// `area_id → index` lookup from them.
+    ///
+    /// For programmatic or synthetic navs (e.g. tests, or a mesh assembled from
+    /// another source). Version fields are `0` and `is_analyzed` is `false`; if
+    /// two areas share an ID the last one wins in the lookup.
+    pub fn from_areas(areas: Vec<NavArea>) -> Nav {
+        let mut index = HashMap::with_capacity(areas.len());
+        for (i, a) in areas.iter().enumerate() {
+            index.insert(a.area_id, i);
+        }
+        Nav {
+            version: 0,
+            sub_version: 0,
+            is_analyzed: false,
+            areas,
+            index,
+        }
+    }
+
     /// Number of areas in the mesh.
     pub fn area_count(&self) -> usize {
         self.areas.len()
@@ -351,6 +371,58 @@ impl Nav {
         }
         path.reverse();
         path
+    }
+
+    /// Shortest travel cost from the nearest of `sources` to every reachable
+    /// area, as an `area_id → cost` map.
+    ///
+    /// A multi-source Dijkstra over the connection graph: every source starts at
+    /// cost 0, so each area's entry is the cost of reaching it from whichever
+    /// source is closest. Areas in `blocked` are impassable — never settled and
+    /// never traversed through — which is how a caller routes around denied space
+    /// (e.g. a burning molotov). Unreachable areas are simply absent from the
+    /// map, and unknown or blocked source IDs are ignored.
+    ///
+    /// `weight` selects how edges are costed (see [`PathWeight`]).
+    pub fn multi_source_distances(
+        &self,
+        sources: &[u32],
+        weight: PathWeight,
+        blocked: &HashSet<u32>,
+    ) -> HashMap<u32, f64> {
+        let mut dist: HashMap<u32, f64> = HashMap::new();
+        let mut heap: BinaryHeap<HeapItem> = BinaryHeap::new();
+        for &s in sources {
+            if self.area(s).is_none() || blocked.contains(&s) {
+                continue;
+            }
+            // First time we see this source, seed it at 0; duplicates are skipped
+            // (the entry already exists) so we don't push it onto the heap twice.
+            if dist.insert(s, 0.0).is_none() {
+                heap.push(HeapItem { cost: 0.0, area: s });
+            }
+        }
+
+        while let Some(HeapItem { cost, area }) = heap.pop() {
+            // Stale heap entry (a shorter route to `area` was already settled).
+            if cost > *dist.get(&area).unwrap_or(&f64::INFINITY) {
+                continue;
+            }
+            for next in self.neighbors(area) {
+                if blocked.contains(&next) {
+                    continue;
+                }
+                let nd = cost + self.edge_cost(area, next, weight);
+                if nd < *dist.get(&next).unwrap_or(&f64::INFINITY) {
+                    dist.insert(next, nd);
+                    heap.push(HeapItem {
+                        cost: nd,
+                        area: next,
+                    });
+                }
+            }
+        }
+        dist
     }
 
     /// Cost of stepping from `a` to `b` under `weight`.
@@ -844,6 +916,40 @@ mod tests {
         assert_eq!(nav.find_path(1, 3, PathWeight::Distance), vec![1, 2, 3]);
         assert_eq!(nav.find_path(1, 1, PathWeight::Hops), vec![1]);
         assert_eq!(nav.find_path(3, 1, PathWeight::Hops), vec![3, 2, 1]);
+    }
+
+    #[test]
+    fn multi_source_distances_picks_nearest_source() {
+        // 1 -> 2 -> 3 -> 4 chain; sources at both ends. Each interior area takes
+        // the distance to whichever end is nearer.
+        let bytes = encode_nav(&[
+            (1, square(0.0, 0.0, 0.0), &[2]),
+            (2, square(1.0, 0.0, 0.0), &[1, 3]),
+            (3, square(2.0, 0.0, 0.0), &[2, 4]),
+            (4, square(3.0, 0.0, 0.0), &[3]),
+        ]);
+        let nav = Nav::from_bytes(&bytes).unwrap();
+        let d = nav.multi_source_distances(&[1, 4], PathWeight::Hops, &HashSet::new());
+        assert_eq!(d[&1], 0.0);
+        assert_eq!(d[&4], 0.0);
+        assert_eq!(d[&2], 1.0);
+        assert_eq!(d[&3], 1.0);
+    }
+
+    #[test]
+    fn multi_source_distances_respects_blocked() {
+        // 1 -> 2 -> 3; blocking 2 cuts 3 off from a source at 1.
+        let bytes = encode_nav(&[
+            (1, square(0.0, 0.0, 0.0), &[2]),
+            (2, square(1.0, 0.0, 0.0), &[1, 3]),
+            (3, square(2.0, 0.0, 0.0), &[2]),
+        ]);
+        let nav = Nav::from_bytes(&bytes).unwrap();
+        let blocked: HashSet<u32> = [2u32].into_iter().collect();
+        let d = nav.multi_source_distances(&[1], PathWeight::Hops, &blocked);
+        assert!(d.contains_key(&1));
+        assert!(!d.contains_key(&2));
+        assert!(!d.contains_key(&3));
     }
 
     #[test]

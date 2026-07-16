@@ -67,9 +67,7 @@ def test_parse_ticks(demo_path: Path) -> None:
     # world position and core state.
     ticks = demo.ticks()
     assert isinstance(ticks, pl.DataFrame)
-    assert {"tick", "steamid", "X", "Y", "Z", "health", "armor", "team_num"} <= set(
-        ticks.columns
-    )
+    assert {"tick", "steamid", "X", "Y", "Z", "health", "armor", "team_num"} <= set(ticks.columns)
     assert ticks.height > 0
     # Identity is complete (filled from the global slot map) and unique per tick:
     # no pawn/controller double-emission.
@@ -112,9 +110,7 @@ def test_snapshots_parallel_matches_serial(
     assert serial.sort(keys).equals(parallel.sort(keys))
 
 
-def test_ticks_parallel_matches_serial(
-    demo_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ticks_parallel_matches_serial(demo_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # ticks() decodes the demo in parallel across keyframe segments; the result
     # must be bit-identical to a single serial pass (AWPY_TICK_SEGMENTS forces the
     # segment count).

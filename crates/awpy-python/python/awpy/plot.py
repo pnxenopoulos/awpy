@@ -42,9 +42,11 @@ from __future__ import annotations
 
 import math
 import warnings
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
+
+import polars as pl
 
 try:
     import matplotlib.image as mpimg
@@ -53,7 +55,7 @@ try:
     import numpy as np
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
-    from matplotlib.patches import Circle, Rectangle
+    from matplotlib.patches import Circle, Patch, Polygon, Rectangle
     from matplotlib.transforms import Affine2D, ScaledTranslation
 except ImportError as exc:  # pragma: no cover - exercised only without the extra
     _msg = (
@@ -63,8 +65,13 @@ except ImportError as exc:  # pragma: no cover - exercised only without the extr
     raise ImportError(_msg) from exc
 
 from awpy import data
+from awpy.map_control import MapControlParams, map_control_at
+
+if TYPE_CHECKING:
+    from awpy import Demo
 
 __all__ = [
+    "CONTESTED_COLOR",
     "CT_COLOR",
     "FIRE_RADIUS",
     "NEUTRAL_COLOR",
@@ -79,6 +86,7 @@ __all__ = [
     "heatmap",
     "heatmap_levels",
     "is_lower_level",
+    "map_control",
     "pixel_to_world",
     "radar",
     "world_to_pixel",
@@ -91,6 +99,10 @@ RADAR_SIZE = 1024
 T_COLOR = "#EAB308"
 CT_COLOR = "#3B82F6"
 NEUTRAL_COLOR = "#EF4444"
+
+#: Fill color for map-control areas held by both sides at once (see
+#: :func:`map_control`).
+CONTESTED_COLOR = "#A855F7"
 
 _BOMB_COLOR = "#F97316"
 
@@ -306,11 +318,16 @@ def _marker_offset(ax: Axes, px: float, py: float):
     a bar's height wobble by a pixel with the player's sub-pixel position).
     """
     fig = ax.get_figure(root=True)
+    if fig is None:  # pragma: no cover - an Axes detached from any figure
+        raise ValueError("ax is not attached to a figure")
     per_point = fig.dpi / 72.0  # points -> display pixels
     # Scale points to pixels, flipping y so +y is downward on screen, then pin
-    # the origin to the marker's (pixel-snapped) data position.
+    # the origin to the marker's (pixel-snapped) data position. `transData` is a
+    # general Transform in the stubs but ScaledTranslation accepts it at runtime.
     return Affine2D().scale(per_point, -per_point) + ScaledTranslation(
-        round(px), round(py), ax.transData
+        round(px),
+        round(py),
+        ax.transData,  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -355,9 +372,10 @@ def _draw_player(ax: Axes, px: float, py: float, player: Player, alpha: float) -
             },
             zorder=12,
         )
-        tick.arrow_patch.set_path_effects(
-            [patheffects.withStroke(linewidth=2.2, foreground="black")]
-        )
+        if tick.arrow_patch is not None:
+            tick.arrow_patch.set_path_effects(
+                [patheffects.withStroke(linewidth=2.2, foreground="black")]
+            )
 
     # HP/armor bars, anchored to the marker in screen points (see
     # _marker_offset) so they keep their size relative to the fixed-size marker
@@ -468,24 +486,26 @@ def _draw_grenade(ax: Axes, px: float, py: float, color: str, alpha: float) -> N
     )
 
 
-def _grenade_marker(entry: Sequence[float] | dict) -> tuple[Sequence[float], str] | None:
+def _grenade_marker(
+    entry: Sequence[float] | Mapping[str, Any],
+) -> tuple[Sequence[float], str] | None:
     """Resolve one grenade entry to its ``(position, color)``, or ``None`` to skip.
 
     An entry is either a world ``(x, y[, z])`` position, or a mapping carrying
     the position (``pos``, or ``x``/``y``/``z`` keys — the shape of a
     ``Demo.grenades`` row) and an optional ``type``/``color``.
     """
-    if isinstance(entry, dict):
-        pos = entry.get("pos")
-        if pos is None and "x" in entry:
-            pos = (entry["x"], entry["y"], entry.get("z", 0.0))
-        if pos is None:
-            return None
-        color = entry.get("color") or _GRENADE_COLORS.get(
-            str(entry.get("type") or "").lower(), _GRENADE_DEFAULT_COLOR
-        )
-        return pos, color
-    return entry, _GRENADE_DEFAULT_COLOR
+    if not isinstance(entry, Mapping):
+        return entry, _GRENADE_DEFAULT_COLOR
+    raw = entry.get("pos")
+    if raw is None and "x" in entry:
+        raw = (entry.get("x"), entry.get("y"), entry.get("z", 0.0))
+    if raw is None:
+        return None
+    color = entry.get("color") or _GRENADE_COLORS.get(
+        str(entry.get("type") or "").lower(), _GRENADE_DEFAULT_COLOR
+    )
+    return cast("Sequence[float]", raw), str(color)
 
 
 def frame(
@@ -496,7 +516,7 @@ def frame(
     bomb_planted: bool = False,
     smokes: Iterable[Sequence[float]] | None = None,
     fires: Iterable[Sequence[float]] | None = None,
-    grenades: Iterable[Sequence[Sequence[float]] | dict] | None = None,
+    grenades: Iterable[Sequence[float] | Mapping[str, Any]] | None = None,
     smoke_radius: float = SMOKE_RADIUS,
     fire_radius: float = FIRE_RADIUS,
     version: int | None = None,
@@ -675,6 +695,148 @@ def frame_levels(
         )
     fig.tight_layout(pad=0.05)
     return fig, axes
+
+
+# --- map control -----------------------------------------------------------------
+
+#: Fill color per map-control label; ``"neutral"`` is left unfilled so the bare
+#: radar shows through.
+_CONTROL_COLORS = {"ct": CT_COLOR, "t": T_COLOR, "contested": CONTESTED_COLOR}
+
+
+def map_control(
+    demo: Demo,
+    tick: int,
+    *,
+    method: Literal["vision", "reachability"] = "vision",
+    params: MapControlParams | None = None,
+    players: bool = True,
+    occluders: bool = True,
+    legend: bool = True,
+    alpha: float = 0.5,
+    version: int | None = None,
+    map_name: str | None = None,
+    lower: bool = False,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """Shade the map by which side controls each area at one tick.
+
+    Computes :func:`awpy.map_control.map_control_at` for the tick and fills every
+    nav area with its controlling side's color — blue (CT), yellow (T), purple
+    (contested) — leaving neutral areas unshaded. The players are overlaid, along
+    with the occluders that shaped the picture (smokes for ``"vision"``, molotovs
+    for ``"reachability"``).
+
+    Args:
+        demo: The parsed demo.
+        tick: The tick to draw.
+        method: ``"vision"`` or ``"reachability"`` (see :mod:`awpy.map_control`).
+        params: Model parameters (defaults if omitted).
+        players: Overlay the players at the tick.
+        occluders: Draw the active smokes (vision) or fires (reachability).
+        legend: Draw a legend with each side's share of the map.
+        alpha: Opacity of the area shading.
+        version: awpy-data release to use (default: newest cached).
+        map_name: Override the map (defaults to the demo header's map).
+        lower: Draw the lower-level radar of a multi-level map.
+        ax: Draw onto an existing axes instead of creating a new figure.
+
+    Returns:
+        The matplotlib ``(Figure, Axes)``.
+    """
+    from awpy import NavMesh
+
+    params = params or MapControlParams()
+    if map_name is None:
+        map_name = demo.header.get("map_name")
+        if not map_name:
+            msg = "could not read map_name from the demo header; pass map_name=..."
+            raise ValueError(msg)
+
+    control = map_control_at(
+        demo, tick, method=method, params=params, map_name=map_name, version=version
+    )
+    labels = dict(zip(control["area_id"], control["control"], strict=True))
+    nav = NavMesh(map_name, version=version)
+
+    fig, ax = radar(map_name, version=version, lower=lower, ax=ax)
+
+    # Fill each non-neutral area with its controlling side's color. Areas are
+    # convex polygons; project their corners to radar pixels and drop a patch.
+    for area_id, label in labels.items():
+        color = _CONTROL_COLORS.get(label)
+        if color is None:
+            continue
+        info = nav.area(int(area_id))
+        if info is None or is_lower_level(map_name, info["centroid"][2], version=version) != lower:
+            continue
+        corners = [
+            world_to_pixel(map_name, (cx, cy), version=version) for cx, cy, _ in info["corners"]
+        ]
+        ax.add_patch(
+            Polygon(corners, closed=True, facecolor=color, edgecolor="none", alpha=alpha, zorder=4)
+        )
+
+    if occluders:
+        source = demo.smokes if method == "vision" else demo.fires
+        color = _SMOKE_COLOR if method == "vision" else _FIRE_COLOR
+        world_r = params.smoke_radius if method == "vision" else params.fire_radius
+        radius_px = _pixel_radius(map_name, world_r, version=version)
+        active = source.filter((pl.col("start_tick") <= tick) & (pl.col("end_tick") >= tick))
+        for x, y, z in zip(active["x"], active["y"], active["z"], strict=True):
+            if is_lower_level(map_name, z, version=version) != lower:
+                continue
+            px, py = world_to_pixel(map_name, (x, y), version=version)
+            if 0 <= px <= RADAR_SIZE and 0 <= py <= RADAR_SIZE:
+                _draw_area(ax, px, py, radius_px, color, 0.5, zorder=6)
+
+    if players:
+        for row in demo.snapshots(ticks=tick).iter_rows(named=True):
+            if row["x"] is None:
+                continue
+            z = row["z"] or 0.0
+            if is_lower_level(map_name, z, version=version) != lower:
+                continue
+            px, py = world_to_pixel(map_name, (row["x"], row["y"]), version=version)
+            if 0 <= px <= RADAR_SIZE and 0 <= py <= RADAR_SIZE:
+                player = Player(
+                    x=row["x"], y=row["y"], z=z, side=row["side"], hp=row["health"], yaw=row["yaw"]
+                )
+                _draw_player(ax, px, py, player, 1.0)
+
+    if legend:
+        _map_control_legend(ax, control)
+    return fig, ax
+
+
+def _map_control_legend(ax: Axes, control: pl.DataFrame) -> None:
+    """A legend keying each control color to its size-weighted share of the map."""
+    total = float(control["size"].sum()) or 1.0
+    share = {
+        row["control"]: row["size"] / total
+        for row in control.group_by("control").agg(pl.col("size").sum()).iter_rows(named=True)
+    }
+    entries = [
+        ("ct", "CT", CT_COLOR),
+        ("t", "T", T_COLOR),
+        ("contested", "Contested", CONTESTED_COLOR),
+    ]
+    handles = [
+        Patch(facecolor=color, edgecolor="none", label=f"{name}  {100 * share.get(key, 0.0):.0f}%")
+        for key, name, color in entries
+    ]
+    legend = ax.legend(
+        handles=handles,
+        loc="upper right",
+        fontsize=5,
+        framealpha=0.6,
+        facecolor="black",
+        edgecolor="none",
+        labelcolor="white",
+        handlelength=1.0,
+        borderpad=0.5,
+    )
+    legend.set_zorder(20)
 
 
 # --- heatmaps --------------------------------------------------------------------

@@ -3,7 +3,23 @@
 [advisories]
 # Check all crates (workspace + transitive) for advisories.
 version = 2
-ignore = []
+# Two pyo3 < 0.29 advisories, both fixed only in pyo3 0.29 and both non-issues
+# for awpy-python's usage. The fix is not yet consumable: pyo3-polars 0.27
+# (latest) still pins `pyo3 ^0.28`, and we need pyo3-polars for `PyDataFrame` —
+# both link the `python` native library, so pyo3 0.29 cannot coexist. Drop
+# these once pyo3-polars supports pyo3 0.29 and we bump.
+ignore = [
+    # Missing `Sync` bound on `PyCFunction::new_closure`. We never call
+    # `new_closure` (only `#[pyfunction]` / `#[pyclass]` / `#[pymethods]`), and
+    # build against GIL-enabled CPython, not the free-threaded build the
+    # data-race window needs.
+    { id = "RUSTSEC-2026-0177", reason = "unused API (no PyCFunction::new_closure); pyo3 0.29 fix not yet supported by pyo3-polars" },
+    # Out-of-bounds read in `nth` / `nth_back` for `PyList` / `PyTuple`
+    # iterators. We extract Python arguments into Rust `Vec`s and iterate those;
+    # we never call `.nth()` / `.nth_back()` on a `BoundListIterator` /
+    # `BoundTupleIterator`, so the vulnerable path is unreachable.
+    { id = "RUSTSEC-2026-0176", reason = "unused API (no .nth on PyList/PyTuple iterators); pyo3 0.29 fix not yet supported by pyo3-polars" },
+]
 
 [licenses]
 # Awpy is MIT-licensed. Allow permissive and weak-copyleft licenses.

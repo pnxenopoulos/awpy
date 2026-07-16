@@ -95,9 +95,7 @@ class Demo:
         event's DataFrame.
         """
 
-    def ticks(
-        self, props: list[str] | None = ..., players_only: bool = ...
-    ) -> pl.DataFrame:
+    def ticks(self, props: list[str] | None = ..., players_only: bool = ...) -> pl.DataFrame:
         """Sample per-tick entity properties into a long-format DataFrame.
 
         With ``players_only=True`` (the default) there is **one row per player
@@ -465,3 +463,47 @@ class NavMesh:
                 ``"hops"`` (fewest areas), or ``"size"`` (sum of adjacent area
                 sizes; routes away from large open areas).
         """
+
+def compute_map_control(
+    nav: NavMesh,
+    players: Sequence[tuple[float, float, float, str, bool, bool]],
+    *,
+    visibility: VisibilityChecker | None = ...,
+    method: str = ...,
+    smokes: Sequence[tuple[float, float, float, float]] = ...,
+    fires: Sequence[tuple[float, float, float, float]] = ...,
+    detail: bool = ...,
+    eye_height: float = ...,
+    crouch_eye_height: float = ...,
+    target_height: float = ...,
+    max_distance: float | None = ...,
+    contest_margin: float = ...,
+) -> dict[str, Any]:
+    """Compute one snapshot's map control over a nav mesh (low-level primitive).
+
+    Behind :func:`awpy.map_control.map_control`. Labels every nav area
+    ``"ct"`` / ``"t"`` / ``"contested"`` / ``"neutral"`` and returns
+    size-weighted summary fractions.
+
+    Args:
+        nav: The map's :class:`NavMesh`.
+        players: ``(x, y, z, side, crouched, blind)`` for each living player.
+        visibility: The map's :class:`VisibilityChecker`; required for
+            ``method="vision"``.
+        method: ``"vision"`` (line of sight, smoke-aware) or ``"reachability"``
+            (who reaches each area first, fire-aware).
+        smokes: Active smoke spheres ``(x, y, z, radius)`` (vision only).
+        fires: Active inferno spheres ``(x, y, z, radius)`` (reachability only).
+        detail: When ``True`` include per-area ``area_ids`` / ``control`` /
+            ``ct`` / ``t`` lists; when ``False`` return only the summary.
+        eye_height: Standing eye height above the feet (vision rays start here).
+        crouch_eye_height: Eye height when crouched.
+        target_height: Height above an area's floor that vision aims at.
+        max_distance: Optional vision-range cap; ``None`` is unbounded.
+        contest_margin: Reachability travel-distance tie band.
+
+    Returns:
+        A dict with ``ct_fraction``, ``t_fraction``, ``contested_fraction``,
+        ``neutral_fraction``, ``net_control``, plus the per-area lists when
+        ``detail`` is set.
+    """
