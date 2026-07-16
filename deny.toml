@@ -1,0 +1,34 @@
+# https://embarkstudios.github.io/cargo-deny/
+
+[advisories]
+# Check all crates (workspace + transitive) for advisories.
+version = 2
+ignore = []
+
+[licenses]
+# Awpy is MIT-licensed. Allow permissive and weak-copyleft licenses.
+# Unlisted licenses are denied by default.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "MPL-2.0",
+    "Unicode-3.0",
+    "Zlib",
+]
+
+[bans]
+# Warn on multiple versions of the same crate in the dependency tree.
+multiple-versions = "warn"
+# Allow all wildcard dependencies (common in workspaces).
+wildcards = "allow"
+
+[sources]
+# Only allow crates from crates.io.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
