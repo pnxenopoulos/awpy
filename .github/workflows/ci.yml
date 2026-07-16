@@ -5,6 +5,11 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ "**" ]
+  schedule:
+    # Nightly, at 06:00 UTC: runs the full CI pass plus the ground-truth bench
+    # (which only runs on schedule / manual dispatch — see the `fixtures-bench`
+    # job). Also re-runs `cargo deny` so new advisories surface without a push.
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -164,10 +169,20 @@ jobs:
   fixtures-bench:
     name: Ground-truth bench
     needs: build-python-wheels
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      # The manifest (which fixtures to run and their expected stats) is the
+      # awpy-fixtures repo's single source of truth — fetch it at run time
+      # rather than vendoring a copy. Must run before the cache step so the
+      # cache key below tracks the manifest's content.
+      - name: Fetch fixture manifest
+        run: |
+          mkdir -p crates/awpy-python/tests/fixtures
+          curl -sfL https://raw.githubusercontent.com/pnxenopoulos/awpy-fixtures/main/manifest.json \
+            -o crates/awpy-python/tests/fixtures/manifest.json
 
       - name: Install uv
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990

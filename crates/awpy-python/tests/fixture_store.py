@@ -10,8 +10,9 @@ Downloading is **opt-in**: a demo that is not already cached is only fetched
 when ``AWPY_RUN_FIXTURES`` is set, so a plain ``pytest`` run never pulls ~1.5 GB
 — the ground-truth tests just skip.
 
-``fixtures/manifest.json`` is vendored from the awpy-fixtures repo (its single
-source of truth). Re-sync after adding a fixture::
+``fixtures/manifest.json`` is not committed — it is fetched from the
+awpy-fixtures repo (its single source of truth): by CI's ground-truth job, and
+for a local run by::
 
     curl -sfL https://raw.githubusercontent.com/pnxenopoulos/awpy-fixtures/main/manifest.json \\
       -o tests/fixtures/manifest.json
