@@ -5,11 +5,6 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ "**" ]
-  schedule:
-    # Nightly, at 06:00 UTC: runs the full CI pass plus the ground-truth bench
-    # (which only runs on schedule / manual dispatch — see the `fixtures-bench`
-    # job). Also re-runs `cargo deny` so new advisories surface without a push.
-    - cron: "0 6 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -158,18 +153,19 @@ jobs:
       - name: Run pytest
         working-directory: crates/awpy-python
         # Excludes the `fixtures` marker (the ground-truth bench over large
-        # demos); that runs in the manual `fixtures-bench` job. Demo-backed
-        # schema tests skip here unless AWPY_RUN_FIXTURES is set to fetch one.
+        # demos); that runs in the `fixtures-bench` job. Demo-backed schema
+        # tests skip here unless AWPY_RUN_FIXTURES is set to fetch one.
         run: uv run pytest tests/ -m "not fixtures" -v
 
   # Ground-truth bench: download the real match fixtures (from awpy-fixtures
   # releases, via tests/fixtures/manifest.json) and assert Awpy's output against
-  # each match's known scoreboard. Manual-only + cached, since the demos are
-  # ~1.5 GB; trigger it from the Actions tab (Run workflow).
+  # each match's known scoreboard. A required check (see `check`), so anything
+  # merging to main must pass it. The demos (~1.5 GB) are cached across runs,
+  # keyed on the manifest, so only the first run after a manifest change pays
+  # the full download.
   fixtures-bench:
     name: Ground-truth bench
     needs: build-python-wheels
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -234,7 +230,7 @@ jobs:
   check:
     name: CI Check
     if: always()
-    needs: [lint, deny, test-rust, lint-python, build-python-wheels, test-python, docs]
+    needs: [lint, deny, test-rust, lint-python, build-python-wheels, test-python, fixtures-bench, docs]
     runs-on: ubuntu-latest
     steps:
       - name: Verify all jobs passed
@@ -245,6 +241,7 @@ jobs:
                 "${{ needs.lint-python.result }}" != "success" ||
                 "${{ needs.build-python-wheels.result }}" != "success" ||
                 "${{ needs.test-python.result }}" != "success" ||
+                "${{ needs.fixtures-bench.result }}" != "success" ||
                 "${{ needs.docs.result }}" != "success" ]]; then
             echo "One or more required jobs failed"
             exit 1
