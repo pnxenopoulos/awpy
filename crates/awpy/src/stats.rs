@@ -96,35 +96,52 @@ struct Acc {
 }
 
 /// Live start tick of each round (freeze start where known).
-///
-/// The **first** round is bucketed from its freeze *end* instead. A match
-/// restart drops straight into a warmup period that sits inside the opening
-/// round's freeze window, and the restart itself respawns everyone — which the
-/// game reports as `player_death` events with weapon `world`. Both would
-/// otherwise be tallied as real deaths. Nothing can legitimately die during a
-/// freeze period, so cutting the first round at live play discards those
-/// artifacts without dropping any match action.
 fn round_starts(rounds: &[Round]) -> Vec<i32> {
-    let mut starts: Vec<i32> = rounds
+    rounds
         .iter()
         .map(|r| r.start_tick.or(r.freeze_end_tick).unwrap_or(r.end_tick))
-        .collect();
-    if let Some(first) = rounds.first()
-        && let Some(freeze_end) = first.freeze_end_tick
-    {
-        // Guard against a malformed first round whose freeze end runs past the
-        // second round's start, which would break the ascending invariant.
-        if starts.get(1).is_none_or(|&next| freeze_end < next) {
-            starts[0] = freeze_end;
-        }
-    }
-    starts
+        .collect()
 }
 
-/// Index of the round a tick belongs to, or `None` for pre-match / warmup ticks
-/// before the first round starts. `starts` must be ascending.
-fn round_of(tick: i32, starts: &[i32]) -> Option<usize> {
-    if starts.first().is_none_or(|&s| tick < s) {
+/// Each round's freeze period as a half-open `[start_tick, freeze_end_tick)`
+/// range, ascending.
+///
+/// Nobody can legitimately die while play is frozen, so anything the demo
+/// reports here is an artifact and must not reach the stat tallies. Two
+/// situations produce them, and both can occur in *any* round, not just the
+/// first:
+///
+/// * A match restart (after a knife round, or ending warmup) drops into a
+///   warmup that sits inside the opening round's freeze window, where players
+///   shoot each other freely.
+/// * A pause — a disconnect and reconnect, a tech pause — ends with the server
+///   re-seating every player, which respawns them all and is reported as a
+///   `player_death` with weapon `world` for the entire server on one tick.
+fn freeze_windows(rounds: &[Round]) -> Vec<(i32, i32)> {
+    let mut windows: Vec<(i32, i32)> = rounds
+        .iter()
+        .filter_map(|r| match (r.start_tick, r.freeze_end_tick) {
+            (Some(start), Some(end)) if start < end => Some((start, end)),
+            _ => None,
+        })
+        .collect();
+    windows.sort_unstable();
+    windows
+}
+
+/// Whether `tick` falls inside any freeze period. `windows` must be ascending.
+fn in_freeze(tick: i32, windows: &[(i32, i32)]) -> bool {
+    // Right-most window whose start is <= tick; only that one can contain it,
+    // since freeze periods never overlap.
+    let idx = windows.partition_point(|&(start, _)| start <= tick);
+    idx > 0 && tick < windows[idx - 1].1
+}
+
+/// Index of the round a tick belongs to, or `None` when it is not live play:
+/// pre-match / warmup ticks before the first round starts, or any tick inside a
+/// freeze period. `starts` and `windows` must be ascending.
+fn round_of(tick: i32, starts: &[i32], windows: &[(i32, i32)]) -> Option<usize> {
+    if starts.first().is_none_or(|&s| tick < s) || in_freeze(tick, windows) {
         return None;
     }
     match starts.binary_search(&tick) {
@@ -192,6 +209,7 @@ pub fn player_stats(
     };
     let num_rounds = (total_rounds - knife_rounds.len()) as i32;
     let starts = round_starts(rounds);
+    let freezes = freeze_windows(rounds);
 
     // Kills in tick order, for opening-kill and trade detection.
     let mut ordered: Vec<&Kill> = kills.iter().collect();
@@ -226,7 +244,7 @@ pub fn player_stats(
     let mut round_has_opening: HashSet<usize> = HashSet::new();
 
     for (i, k) in ordered.iter().enumerate() {
-        let Some(round) = round_of(k.tick, &starts) else {
+        let Some(round) = round_of(k.tick, &starts, &freezes) else {
             continue;
         };
         if knife_rounds.contains(&round) {
@@ -313,7 +331,7 @@ pub fn player_stats(
     // credited to the attacker.
     let mut victim_health: HashMap<(usize, u64), i32> = HashMap::new();
     for d in damages {
-        let Some(round) = round_of(d.tick, &starts) else {
+        let Some(round) = round_of(d.tick, &starts, &freezes) else {
             continue;
         };
         if knife_rounds.contains(&round) {
@@ -350,7 +368,7 @@ pub fn player_stats(
         if !s.weapon.contains("flashbang") {
             continue;
         }
-        let Some(round) = round_of(s.tick, &starts) else {
+        let Some(round) = round_of(s.tick, &starts, &freezes) else {
             continue;
         };
         if knife_rounds.contains(&round) {
@@ -367,7 +385,7 @@ pub fn player_stats(
         }
     }
     for b in blinds {
-        let Some(round) = round_of(b.tick, &starts) else {
+        let Some(round) = round_of(b.tick, &starts, &freezes) else {
             continue;
         };
         if knife_rounds.contains(&round) {
@@ -659,46 +677,65 @@ mod tests {
     }
 
     #[test]
-    fn first_round_is_bucketed_from_live_play() {
-        // A match restart drops into a warmup that sits inside the opening
-        // round's freeze window, so the first round starts counting at its
-        // freeze end rather than its freeze start.
+    fn freeze_ticks_are_not_live_play() {
         let rounds = vec![
             round_with_freeze(1, 100, 500, 900),
             round_with_freeze(2, 1000, 1100, 1900),
         ];
-        assert_eq!(round_starts(&rounds), vec![500, 1000]);
-
         let starts = round_starts(&rounds);
-        assert_eq!(round_of(200, &starts), None, "warmup tick must not count");
-        assert_eq!(round_of(600, &starts), Some(0));
-        assert_eq!(round_of(1500, &starts), Some(1));
+        let freezes = freeze_windows(&rounds);
+        assert_eq!(freezes, vec![(100, 500), (1000, 1100)]);
+
+        // Pre-match, before any round.
+        assert_eq!(round_of(50, &starts, &freezes), None);
+        // Inside a freeze period — the first round's *and* a later one's.
+        assert_eq!(round_of(200, &starts, &freezes), None);
+        assert_eq!(round_of(1050, &starts, &freezes), None);
+        // Live play, and the post-round window between rounds.
+        assert_eq!(round_of(500, &starts, &freezes), Some(0));
+        assert_eq!(round_of(600, &starts, &freezes), Some(0));
+        assert_eq!(round_of(950, &starts, &freezes), Some(0));
+        assert_eq!(round_of(1500, &starts, &freezes), Some(1));
     }
 
     #[test]
-    fn warmup_kills_before_live_play_are_ignored() {
-        let rounds = vec![round_with_freeze(1, 100, 500, 900)];
-        let kills = vec![
-            kill(200, 1, "terrorist", 5, "counter-terrorist"), // warmup: ignored
-            kill(600, 1, "terrorist", 6, "counter-terrorist"), // live: counts
-        ];
-        let stats = player_stats(&kills, &[], &[], &[], &rounds, 320, false);
-        assert_eq!(find(&stats, 1).kills, 1);
-        // The warmup victim must not be charged with a death either.
-        assert!(stats.iter().all(|s| s.steamid != 5));
-        assert_eq!(find(&stats, 6).deaths, 1);
-    }
-
-    #[test]
-    fn malformed_first_round_keeps_ascending_starts() {
-        // A freeze end running past the next round's start would break the
-        // binary search, so the plain start tick is kept instead.
+    fn freeze_period_kills_are_ignored_in_every_round() {
+        // A pause ending in a server re-seat respawns everyone mid-match, which
+        // the demo reports as deaths during the round's freeze period.
         let rounds = vec![
-            round_with_freeze(1, 100, 2000, 900),
+            round_with_freeze(1, 100, 500, 900),
             round_with_freeze(2, 1000, 1100, 1900),
         ];
+        let kills = vec![
+            kill(200, 1, "terrorist", 5, "counter-terrorist"), // round 1 freeze: ignored
+            kill(600, 1, "terrorist", 6, "counter-terrorist"), // live: counts
+            kill(1050, 1, "terrorist", 7, "counter-terrorist"), // round 2 freeze: ignored
+            kill(1500, 1, "terrorist", 8, "counter-terrorist"), // live: counts
+        ];
+        let stats = player_stats(&kills, &[], &[], &[], &rounds, 320, false);
+        assert_eq!(find(&stats, 1).kills, 2);
+        // Freeze-period victims must not be charged with a death either.
+        assert!(stats.iter().all(|s| s.steamid != 5 && s.steamid != 7));
+        assert_eq!(find(&stats, 6).deaths, 1);
+        assert_eq!(find(&stats, 8).deaths, 1);
+    }
+
+    #[test]
+    fn rounds_without_a_known_freeze_have_no_window() {
+        // Missing or degenerate freeze bounds must not fabricate a window that
+        // would silently swallow real kills.
+        let rounds = vec![
+            Round {
+                freeze_end_tick: None,
+                ..round(1, 100, 900)
+            },
+            round_with_freeze(2, 1000, 1000, 1900), // zero-length
+        ];
+        let freezes = freeze_windows(&rounds);
+        assert!(freezes.is_empty());
+
         let starts = round_starts(&rounds);
-        assert_eq!(starts, vec![100, 1000]);
-        assert!(starts.windows(2).all(|w| w[0] <= w[1]));
+        assert_eq!(round_of(200, &starts, &freezes), Some(0));
+        assert_eq!(round_of(1000, &starts, &freezes), Some(1));
     }
 }
