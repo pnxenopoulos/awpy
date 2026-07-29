@@ -1144,6 +1144,23 @@ impl Parser {
             let freeze = entity.get_bool(k.freeze);
             let total = entity.get_i64(k.total_rounds) as i32;
 
+            // A match restart (`mp_restartgame`, fired when the real match begins
+            // — typically right after a knife round) resets the round counter.
+            // Everything emitted so far therefore belongs to the pre-match
+            // period: the knife round and any warmup skirmishing. Discard it and
+            // begin the match here.
+            //
+            // Without this, a knife round that ticked the counter 0 -> 1 survives
+            // as a round numbered 1, the real first round is emitted as a *second*
+            // round 1, and — because the discarded round starts at tick 0 —
+            // `round_of` in `stats` buckets every pre-match kill into it, inflating
+            // player stats and the round count that ADR / KAST divide by.
+            if total < prev_total {
+                rounds.clear();
+                start_tick = None;
+                freeze_end_tick = None;
+            }
+
             // Emit the completed round FIRST, before handling this tick's freeze
             // transition. A round completes exactly when the round counter ticks
             // up by one. (`== prev + 1` rather than `>` so a mid-join demo whose
@@ -1152,7 +1169,10 @@ impl Parser {
             // "game over" screen on the very same tick, so emitting first keeps
             // that round's real start / freeze-end ticks instead of clobbering
             // them with the post-match freeze.
-            if total == prev_total + 1 {
+            //
+            // Warmup never produces a scored round, so a counter tick there is
+            // an artifact and is ignored.
+            if !warmup && total == prev_total + 1 {
                 let win_status = entity.get_i64(k.win_status);
                 let reason = entity.get_i64(k.win_reason) as i32;
                 rounds.push(Round {
