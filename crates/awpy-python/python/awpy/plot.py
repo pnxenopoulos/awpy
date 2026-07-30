@@ -65,15 +65,17 @@ except ImportError as exc:  # pragma: no cover - exercised only without the extr
     raise ImportError(_msg) from exc
 
 from awpy import data
-from awpy.map_control import MapControlParams, map_control_at
+from awpy.map_control import LINE_OF_SIGHT_METHODS, MapControlParams, map_control_at
 
 if TYPE_CHECKING:
-    from awpy import Demo
+    from awpy import Demo, NavMesh
 
 __all__ = [
     "CONTESTED_COLOR",
     "CT_COLOR",
     "FIRE_RADIUS",
+    "NAV_COLOR",
+    "NAV_HIGHLIGHT_COLOR",
     "NEUTRAL_COLOR",
     "RADAR_SIZE",
     "SMOKE_RADIUS",
@@ -87,6 +89,7 @@ __all__ = [
     "heatmap_levels",
     "is_lower_level",
     "map_control",
+    "nav",
     "pixel_to_world",
     "radar",
     "world_to_pixel",
@@ -320,14 +323,26 @@ def _marker_offset(ax: Axes, px: float, py: float):
     fig = ax.get_figure(root=True)
     if fig is None:  # pragma: no cover - an Axes detached from any figure
         raise ValueError("ax is not attached to a figure")
-    per_point = fig.dpi / 72.0  # points -> display pixels
-    # Scale points to pixels, flipping y so +y is downward on screen, then pin
-    # the origin to the marker's (pixel-snapped) data position. `transData` is a
-    # general Transform in the stubs but ScaledTranslation accepts it at runtime.
-    return Affine2D().scale(per_point, -per_point) + ScaledTranslation(
-        round(px),
-        round(py),
-        ax.transData,  # ty: ignore[invalid-argument-type]
+    # Points -> inches (flipping y so +y is downward on screen), then
+    # `dpi_scale_trans` for inches -> display pixels, then pin the origin to the
+    # marker's (pixel-snapped) data position.
+    #
+    # The inches step must go through `dpi_scale_trans` rather than baking
+    # `fig.dpi / 72` into the scale: `savefig(dpi=...)` temporarily overrides the
+    # figure's dpi, and a baked factor would not follow it. The marker, label, and
+    # yaw tick are all sized by matplotlib's own point handling, which does follow
+    # it — so a frozen factor here makes the bars the wrong size relative to the
+    # marker at any dpi other than the figure's own (they land *inside* the circle
+    # when saving at a higher dpi). `dpi_scale_trans` is invalidated on a dpi
+    # change, so composing with it keeps every piece in step.
+    return (
+        Affine2D().scale(1 / 72.0, -1 / 72.0)
+        + fig.dpi_scale_trans
+        + ScaledTranslation(
+            round(px),
+            round(py),
+            ax.transData,  # ty: ignore[invalid-argument-type]
+        )
     )
 
 
@@ -351,10 +366,14 @@ def _draw_player(ax: Axes, px: float, py: float, player: Player, alpha: float) -
         # A view-direction tick from the marker center to its edge. Drawn as a
         # points offset (like the marker itself, which is sized in points) so it
         # stays inside the circle at any zoom — a data-unit line would grow past
-        # the fixed-size marker when zoomed in. World +y (yaw 90°) points up on
-        # the radar, i.e. toward smaller py.
+        # the fixed-size marker when zoomed in.
+        #
+        # The offset is in **display** space, where +y is up — not in radar-pixel
+        # space, where +y is down. So the world facing vector `(cos, sin)` is used
+        # as-is: negating the y component here mirrors the tick vertically, which
+        # points every view direction at its reflection.
         dx = math.cos(math.radians(player.yaw))
-        dy = -math.sin(math.radians(player.yaw))
+        dy = math.sin(math.radians(player.yaw))
         tick = ax.annotate(
             "",
             xy=(px, py),
@@ -703,12 +722,167 @@ def frame_levels(
 #: radar shows through.
 _CONTROL_COLORS = {"ct": CT_COLOR, "t": T_COLOR, "contested": CONTESTED_COLOR}
 
+#: Fill color for nav areas drawn by :func:`nav` — a muted amber that reads as
+#: "the walkable surface" without competing with the radar underneath.
+NAV_COLOR = "#F5A524"
+#: Fill color for the areas passed as ``highlight`` to :func:`nav`.
+NAV_HIGHLIGHT_COLOR = "#22D3EE"
+
+
+def _fill_nav_areas(
+    ax: Axes,
+    mesh: NavMesh,
+    map_name: str,
+    colors: Mapping[int, str],
+    *,
+    version: int | None,
+    lower: bool,
+    alpha: float,
+    zorder: int = 4,
+    edge: bool = False,
+    linewidth: float = 0.4,
+) -> int:
+    """Fill nav areas on ``ax``, one color per area id. Returns the count drawn.
+
+    Shared by :func:`nav` and :func:`map_control`, which differ only in how they
+    choose each area's color. Areas are convex polygons, so projecting their
+    corners to radar pixels and dropping a patch is enough. Areas whose floor is
+    on the other level of a multi-level map are skipped, so each radar only shows
+    what belongs on it.
+
+    Args:
+        ax: Axes to draw on.
+        mesh: The map's nav mesh.
+        map_name: Map the axes is showing (for the world -> pixel transform).
+        colors: Area id -> fill color. Areas absent from this mapping are skipped.
+        version: awpy-data release, for the coordinate transform.
+        lower: Whether ``ax`` is showing the lower level.
+        alpha: Fill opacity.
+        zorder: Draw order for the patches.
+        edge: Outline each area in its fill color — this is what makes a mesh
+            legible *as* a mesh rather than one flat blob.
+        linewidth: Outline width when ``edge`` is set.
+    """
+    drawn = 0
+    for area_id, color in colors.items():
+        info = mesh.area(int(area_id))
+        if info is None or len(info["corners"]) < 3:
+            continue
+        if is_lower_level(map_name, info["centroid"][2], version=version) != lower:
+            continue
+        corners = [
+            world_to_pixel(map_name, (cx, cy), version=version) for cx, cy, _ in info["corners"]
+        ]
+        ax.add_patch(
+            Polygon(
+                corners,
+                closed=True,
+                facecolor=color,
+                edgecolor=color if edge else "none",
+                linewidth=linewidth if edge else 0.0,
+                alpha=alpha,
+                zorder=zorder,
+            )
+        )
+        drawn += 1
+    return drawn
+
+
+def nav(
+    map_name: str,
+    *,
+    highlight: Sequence[int] | None = None,
+    version: int | None = None,
+    lower: bool = False,
+    alpha: float = 0.25,
+    edge: bool = True,
+    legend: bool = True,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """Draw a map's navigation mesh over its radar image.
+
+    Fills every walkable area from the map's :class:`awpy.NavMesh`, outlined so the
+    tiling is visible. Useful for seeing what the bot navigation actually covers —
+    and, with ``highlight``, for showing a route across it.
+
+    Args:
+        map_name: Map to draw, e.g. ``"de_dust2"``.
+        highlight: Area ids to emphasize in a contrasting color, drawn above the
+            rest. Pass the result of :meth:`awpy.NavMesh.find_path` to show a route.
+        version: awpy-data release to use (default: newest cached).
+        lower: Draw the lower-level radar of a multi-level map. Areas are filtered
+            to the level being drawn, so a two-level map needs one call per level
+            (or use :func:`frame_levels`-style side-by-side axes).
+        alpha: Fill opacity of the areas.
+        edge: Outline each area, which is what makes the mesh legible as a mesh.
+        legend: Label the area count (and highlighted count, if any).
+        ax: Draw onto an existing axes instead of creating a new figure.
+
+    Returns:
+        The matplotlib ``(Figure, Axes)``.
+
+    Example:
+        >>> from awpy import NavMesh
+        >>> from awpy.plot import nav
+        >>> fig, ax = nav("de_dust2")  # doctest: +SKIP
+        >>> mesh = NavMesh("de_dust2")  # doctest: +SKIP
+        >>> route = mesh.find_path((-680.0, 1500.0, 0.0), (1200.0, 2400.0, 0.0))
+        >>> fig, ax = nav("de_dust2", highlight=route)  # doctest: +SKIP
+    """
+    from awpy import NavMesh
+
+    mesh = NavMesh(map_name, version=version)
+    fig, ax = radar(map_name, version=version, lower=lower, ax=ax)
+
+    marked = {int(a) for a in highlight or ()}
+    base = {int(a): NAV_COLOR for a in mesh.areas["area_id"] if int(a) not in marked}
+    drawn = _fill_nav_areas(
+        ax, mesh, map_name, base, version=version, lower=lower, alpha=alpha, edge=edge
+    )
+
+    # Highlights go on top, at full strength — a route is the subject of the plot,
+    # not part of the backdrop.
+    highlighted = 0
+    if marked:
+        highlighted = _fill_nav_areas(
+            ax,
+            mesh,
+            map_name,
+            dict.fromkeys(marked, NAV_HIGHLIGHT_COLOR),
+            version=version,
+            lower=lower,
+            alpha=min(1.0, alpha * 3),
+            zorder=6,
+            edge=edge,
+            linewidth=0.8,
+        )
+
+    if legend:
+        label = f"{drawn + highlighted} nav areas"
+        # On a multi-level map the count is per level, so say which one — otherwise
+        # it reads as the map's total.
+        if has_lower_level(map_name, version=version):
+            label += f" · {'lower' if lower else 'upper'} level"
+        if highlighted:
+            label += f" · {highlighted} highlighted"
+        ax.text(
+            0.5,
+            0.985,
+            label,
+            transform=ax.transAxes,
+            ha="center",
+            va="top",
+            fontsize=8,
+            color="#E5E7EB",
+        )
+    return fig, ax
+
 
 def map_control(
     demo: Demo,
     tick: int,
     *,
-    method: Literal["vision", "reachability"] = "vision",
+    method: Literal["raycast", "vision", "reachability"] = "vision",
     params: MapControlParams | None = None,
     players: bool = True,
     occluders: bool = True,
@@ -724,13 +898,14 @@ def map_control(
     Computes :func:`awpy.map_control.map_control_at` for the tick and fills every
     nav area with its controlling side's color — blue (CT), yellow (T), purple
     (contested) — leaving neutral areas unshaded. The players are overlaid, along
-    with the occluders that shaped the picture (smokes for ``"vision"``, molotovs
-    for ``"reachability"``).
+    with the occluders that shaped the picture (smokes for the line-of-sight
+    models, molotovs for ``"reachability"``).
 
     Args:
         demo: The parsed demo.
         tick: The tick to draw.
-        method: ``"vision"`` or ``"reachability"`` (see :mod:`awpy.map_control`).
+        method: ``"raycast"``, ``"vision"``, or ``"reachability"`` (see
+            :mod:`awpy.map_control`).
         params: Model parameters (defaults if omitted).
         players: Overlay the players at the tick.
         occluders: Draw the active smokes (vision) or fires (reachability).
@@ -757,30 +932,31 @@ def map_control(
         demo, tick, method=method, params=params, map_name=map_name, version=version
     )
     labels = dict(zip(control["area_id"], control["control"], strict=True))
-    nav = NavMesh(map_name, version=version)
+    mesh = NavMesh(map_name, version=version)
 
     fig, ax = radar(map_name, version=version, lower=lower, ax=ax)
 
-    # Fill each non-neutral area with its controlling side's color. Areas are
-    # convex polygons; project their corners to radar pixels and drop a patch.
-    for area_id, label in labels.items():
-        color = _CONTROL_COLORS.get(label)
-        if color is None:
-            continue
-        info = nav.area(int(area_id))
-        if info is None or is_lower_level(map_name, info["centroid"][2], version=version) != lower:
-            continue
-        corners = [
-            world_to_pixel(map_name, (cx, cy), version=version) for cx, cy, _ in info["corners"]
-        ]
-        ax.add_patch(
-            Polygon(corners, closed=True, facecolor=color, edgecolor="none", alpha=alpha, zorder=4)
-        )
+    # Fill each non-neutral area with its controlling side's color.
+    _fill_nav_areas(
+        ax,
+        mesh,
+        map_name,
+        {
+            int(area): _CONTROL_COLORS[label]
+            for area, label in labels.items()
+            if label in _CONTROL_COLORS
+        },
+        version=version,
+        lower=lower,
+        alpha=alpha,
+    )
 
     if occluders:
-        source = demo.smokes if method == "vision" else demo.fires
-        color = _SMOKE_COLOR if method == "vision" else _FIRE_COLOR
-        world_r = params.smoke_radius if method == "vision" else params.fire_radius
+        # Smokes shape both line-of-sight models; molotovs shape reachability.
+        line_of_sight = method in LINE_OF_SIGHT_METHODS
+        source = demo.smokes if line_of_sight else demo.fires
+        color = _SMOKE_COLOR if line_of_sight else _FIRE_COLOR
+        world_r = params.smoke_radius if line_of_sight else params.fire_radius
         radius_px = _pixel_radius(map_name, world_r, version=version)
         active = source.filter((pl.col("start_tick") <= tick) & (pl.col("end_tick") >= tick))
         for x, y, z in zip(active["x"], active["y"], active["z"], strict=True):
@@ -799,8 +975,18 @@ def map_control(
                 continue
             px, py = world_to_pixel(map_name, (row["x"], row["y"]), version=version)
             if 0 <= px <= RADAR_SIZE and 0 <= py <= RADAR_SIZE:
+                # Carry everything the snapshot knows, so a player here reads the
+                # same as one drawn by `frame` — armor included. `label` is left
+                # off deliberately: ten names over shaded areas is unreadable.
                 player = Player(
-                    x=row["x"], y=row["y"], z=z, side=row["side"], hp=row["health"], yaw=row["yaw"]
+                    x=row["x"],
+                    y=row["y"],
+                    z=z,
+                    side=row["side"],
+                    hp=row["health"],
+                    armor=row["armor"],
+                    yaw=row["yaw"],
+                    has_bomb=row["has_bomb"],
                 )
                 _draw_player(ax, px, py, player, 1.0)
 

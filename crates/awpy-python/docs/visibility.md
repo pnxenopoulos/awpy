@@ -58,7 +58,7 @@ victim = (row["victim_x"], row["victim_y"], row["victim_z"])
 had_los = vc.is_visible(attacker, victim)
 ```
 
-## Fetching assets: `awpy.data`
+## Fetching assets: awpy.data
 
 `awpy.data` downloads assets on demand and caches them under
 `$HOME/.awpy/<version>/` (override the root with the `AWPY_DATA_DIR`

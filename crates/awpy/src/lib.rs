@@ -93,7 +93,7 @@ pub use geometry::{Mesh, VisibilityMesh};
 pub use hitgroups::{all_hitgroups, hitgroup_name};
 pub use map_control::{
     AreaControl, Control, MapControl, Observer, Occluder, Params as MapControlParams, Team,
-    reachability_control, vision_control,
+    raycast_control, reachability_control, vision_control,
 };
 pub use nav::{Nav, NavArea, PathWeight};
 pub use position::{CELL_BITS, CELL_SIZE, WORLD_HALF, cell_to_world};

@@ -12,6 +12,16 @@ meshes and radars — and answers the two questions you'd actually ask of one:
 **which area is this point in**, and **what's the shortest path between two
 areas**.
 
+```{figure} img/nav-mesh.webp
+:alt: Dust 2's navigation mesh drawn over its radar image, with 2242 walkable areas outlined in amber
+:width: 100%
+
+Dust 2's 2,242 nav areas, drawn with {func}`awpy.plot.nav`. The tiling is
+finer in the chokepoints and coarser across open ground — area size tracks how
+much detail the bots need, which is why `weight="size"` routes away from open
+areas.
+```
+
 ## `NavMesh`
 
 ```python
@@ -100,6 +110,24 @@ Edges can be weighted three ways:
 nav.find_path(a, b, weight="distance")  # default: 3D distance between centroids
 nav.find_path(a, b, weight="hops")      # fewest areas
 nav.find_path(a, b, weight="size")      # sum of area sizes; routes away from large areas
+```
+
+Pass a route straight to {func}`awpy.plot.nav` to see it:
+
+```python
+from awpy.plot import nav as plot_nav
+
+route = nav.find_path((-680.0, 1500.0, 0.0), (1200.0, 2400.0, 0.0))
+fig, ax = plot_nav("de_dust2", highlight=route)
+```
+
+```{figure} img/nav-path.webp
+:alt: The same Dust 2 nav mesh with a 70-area route highlighted in cyan, running from T spawn through mid toward the A site
+:width: 100%
+
+A 70-area route highlighted with `highlight=`. Because `find_path` returns plain
+area ids, anything you can express as a set of areas — a route, a bombsite, the
+output of your own search — can be drawn the same way.
 ```
 
 | Member | Type | Description |

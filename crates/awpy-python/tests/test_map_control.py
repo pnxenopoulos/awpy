@@ -82,14 +82,14 @@ def empty_mesh(tmp_path: Path) -> VisibilityChecker:
     return VisibilityChecker(path)
 
 
-def test_vision_open_map_is_all_contested(
+def test_raycast_open_map_is_all_contested(
     three_areas: NavMesh, empty_mesh: VisibilityChecker
 ) -> None:
     players = [
-        (0.5, 0.5, 0.0, "ct", False, False),
-        (200.5, 0.5, 0.0, "t", False, False),
+        (0.5, 0.5, 0.0, "ct", False, False, None),
+        (200.5, 0.5, 0.0, "t", False, False, None),
     ]
-    res = compute_map_control(three_areas, players, visibility=empty_mesh, method="vision")
+    res = compute_map_control(three_areas, players, visibility=empty_mesh, method="raycast")
     assert _row_of(res, 1) == "contested"
     assert _row_of(res, 2) == "contested"
     assert _row_of(res, 3) == "contested"
@@ -97,7 +97,7 @@ def test_vision_open_map_is_all_contested(
     assert res["net_control"] == pytest.approx(0.0)
 
 
-def test_vision_wall_splits_control(tmp_path: Path) -> None:
+def test_raycast_wall_splits_control(tmp_path: Path) -> None:
     nav_path = tmp_path / "two.nav"
     _write_nav(nav_path, [(1, _square(0, 0), []), (2, _square(100, 0), [])])
     nav = NavMesh(nav_path)
@@ -109,44 +109,52 @@ def test_vision_wall_splits_control(tmp_path: Path) -> None:
         [(0, 1, 2), (0, 2, 3)],
     )
     vc = VisibilityChecker(mesh_path)
-    players = [(0.5, 0.5, 0.0, "ct", False, False), (100.5, 0.5, 0.0, "t", False, False)]
-    res = compute_map_control(nav, players, visibility=vc, method="vision")
+    players = [
+        (0.5, 0.5, 0.0, "ct", False, False, None),
+        (100.5, 0.5, 0.0, "t", False, False, None),
+    ]
+    res = compute_map_control(nav, players, visibility=vc, method="raycast")
     assert _row_of(res, 1) == "ct"
     assert _row_of(res, 2) == "t"
 
 
-def test_vision_smoke_blocks_far_sightlines(
+def test_raycast_smoke_blocks_far_sightlines(
     three_areas: NavMesh, empty_mesh: VisibilityChecker
 ) -> None:
-    players = [(0.5, 0.5, 0.0, "ct", False, False), (200.5, 0.5, 0.0, "t", False, False)]
+    players = [
+        (0.5, 0.5, 0.0, "ct", False, False, None),
+        (200.5, 0.5, 0.0, "t", False, False, None),
+    ]
     smokes = [(100.5, 0.5, 40.0, 80.0)]  # over the middle area
     res = compute_map_control(
-        three_areas, players, visibility=empty_mesh, method="vision", smokes=smokes
+        three_areas, players, visibility=empty_mesh, method="raycast", smokes=smokes
     )
     assert _row_of(res, 1) == "ct"
     assert _row_of(res, 3) == "t"
     assert _row_of(res, 2) != "contested"  # the smoke cut both long sightlines
 
 
-def test_vision_blind_player_sees_nothing(
+def test_raycast_blind_player_sees_nothing(
     three_areas: NavMesh, empty_mesh: VisibilityChecker
 ) -> None:
-    players = [(0.5, 0.5, 0.0, "ct", False, True)]  # lone, blinded CT
-    res = compute_map_control(three_areas, players, visibility=empty_mesh, method="vision")
+    players = [(0.5, 0.5, 0.0, "ct", False, True, None)]  # lone, blinded CT
+    res = compute_map_control(three_areas, players, visibility=empty_mesh, method="raycast")
     assert res["neutral_fraction"] == pytest.approx(1.0)
 
 
-def test_vision_requires_visibility(three_areas: NavMesh) -> None:
+def test_line_of_sight_requires_visibility(three_areas: NavMesh) -> None:
     with pytest.raises(ValueError, match="requires a VisibilityChecker"):
-        compute_map_control(three_areas, [(0.5, 0.5, 0.0, "ct", False, False)], method="vision")
+        compute_map_control(
+            three_areas, [(0.5, 0.5, 0.0, "ct", False, False, None)], method="raycast"
+        )
 
 
 def test_summary_only_omits_area_detail(
     three_areas: NavMesh, empty_mesh: VisibilityChecker
 ) -> None:
-    players = [(0.5, 0.5, 0.0, "ct", False, False)]
+    players = [(0.5, 0.5, 0.0, "ct", False, False, None)]
     res = compute_map_control(
-        three_areas, players, visibility=empty_mesh, method="vision", detail=False
+        three_areas, players, visibility=empty_mesh, method="raycast", detail=False
     )
     assert "ct_fraction" in res
     assert "area_ids" not in res
@@ -170,7 +178,10 @@ def chain(tmp_path: Path) -> NavMesh:
 
 
 def test_reachability_awards_nearest_side(chain: NavMesh) -> None:
-    players = [(0.5, 0.5, 0.0, "ct", False, False), (400.5, 0.5, 0.0, "t", False, False)]
+    players = [
+        (0.5, 0.5, 0.0, "ct", False, False, None),
+        (400.5, 0.5, 0.0, "t", False, False, None),
+    ]
     res = compute_map_control(chain, players, method="reachability", contest_margin=1.0)
     assert _row_of(res, 1) == "ct"
     assert _row_of(res, 2) == "ct"
@@ -180,9 +191,90 @@ def test_reachability_awards_nearest_side(chain: NavMesh) -> None:
 
 
 def test_reachability_fire_denies_ground(chain: NavMesh) -> None:
-    players = [(0.5, 0.5, 0.0, "ct", False, False), (400.5, 0.5, 0.0, "t", False, False)]
+    players = [
+        (0.5, 0.5, 0.0, "ct", False, False, None),
+        (400.5, 0.5, 0.0, "t", False, False, None),
+    ]
     fires = [(200.5, 0.5, 0.0, 10.0)]  # on area 3, the only bridge
     res = compute_map_control(chain, players, method="reachability", fires=fires)
     assert _row_of(res, 3) == "neutral"  # burning: denied to both
     assert _row_of(res, 1) == "ct"
     assert _row_of(res, 5) == "t"
+
+
+# --- vision: the field-of-view model --------------------------------------------
+
+
+def test_vision_only_covers_the_arc_faced(
+    three_areas: NavMesh, empty_mesh: VisibilityChecker
+) -> None:
+    """A player standing on the middle area sees ahead but not behind."""
+    # Areas sit at x = 0, 100, 200; the CT is on the middle one facing +x.
+    facing_pos_x = [(100.5, 0.5, 0.0, "ct", False, False, 0.0)]
+    res = compute_map_control(three_areas, facing_pos_x, visibility=empty_mesh, method="vision")
+    assert _row_of(res, 3) == "ct"  # ahead
+    assert _row_of(res, 1) == "neutral"  # behind
+
+    # Turn around and the held half flips.
+    facing_neg_x = [(100.5, 0.5, 0.0, "ct", False, False, 180.0)]
+    res = compute_map_control(three_areas, facing_neg_x, visibility=empty_mesh, method="vision")
+    assert _row_of(res, 1) == "ct"
+    assert _row_of(res, 3) == "neutral"
+
+
+def test_vision_is_a_subset_of_raycast(three_areas: NavMesh, empty_mesh: VisibilityChecker) -> None:
+    """The FOV cone can only remove areas, never add them."""
+    players = [(100.5, 0.5, 0.0, "ct", False, False, 0.0)]
+    raycast = compute_map_control(three_areas, players, visibility=empty_mesh, method="raycast")
+    vision = compute_map_control(three_areas, players, visibility=empty_mesh, method="vision")
+    assert vision["ct_fraction"] < raycast["ct_fraction"]
+    assert raycast["ct_fraction"] == pytest.approx(1.0)
+
+
+def test_vision_fov_360_matches_raycast(
+    three_areas: NavMesh, empty_mesh: VisibilityChecker
+) -> None:
+    """A full-circle FOV is no constraint, so the two models must agree."""
+    players = [(100.5, 0.5, 0.0, "ct", False, False, 0.0)]
+    wide = compute_map_control(
+        three_areas, players, visibility=empty_mesh, method="vision", fov=360.0
+    )
+    raycast = compute_map_control(three_areas, players, visibility=empty_mesh, method="raycast")
+    assert wide["ct_fraction"] == pytest.approx(raycast["ct_fraction"])
+
+
+def test_vision_without_a_yaw_is_unrestricted(
+    three_areas: NavMesh, empty_mesh: VisibilityChecker
+) -> None:
+    """No known facing means no cone to test, not a dropped player."""
+    players = [(100.5, 0.5, 0.0, "ct", False, False, None)]
+    res = compute_map_control(three_areas, players, visibility=empty_mesh, method="vision")
+    assert _row_of(res, 1) == "ct"
+    assert _row_of(res, 3) == "ct"
+
+
+def test_vision_narrow_fov_holds_less(three_areas: NavMesh, empty_mesh: VisibilityChecker) -> None:
+    """`fov` monotonically widens what is held."""
+    # Facing 45 degrees off the row, so a wide cone catches the far area and a
+    # narrow one does not.
+    players = [(100.5, 0.5, 0.0, "ct", False, False, 45.0)]
+    fractions = [
+        compute_map_control(three_areas, players, visibility=empty_mesh, method="vision", fov=fov)[
+            "ct_fraction"
+        ]
+        for fov in (30.0, 120.0, 360.0)
+    ]
+    assert fractions == sorted(fractions), fractions
+    assert fractions[0] < fractions[-1]
+
+
+def test_unknown_method_lists_all_three(
+    three_areas: NavMesh, empty_mesh: VisibilityChecker
+) -> None:
+    with pytest.raises(ValueError, match="raycast"):
+        compute_map_control(
+            three_areas,
+            [(0.5, 0.5, 0.0, "ct", False, False, None)],
+            visibility=empty_mesh,
+            method="nonsense",
+        )

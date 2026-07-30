@@ -30,7 +30,7 @@ are included.
 `2` = terrorist, `3` = counter-terrorist. The `winner_side` column gives the
 name. Sides swap at halftime, so a "side" is not a fixed team.
 
-## Why is `demo.chat` empty?
+## Why is demo.chat empty?
 
 Server-side (GOTV) recordings — most pro and platform demos — often strip chat
 user messages entirely. The schema is still returned, just with zero rows.

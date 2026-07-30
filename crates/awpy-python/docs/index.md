@@ -12,8 +12,8 @@ CS2 demo files hold a wealth of match data — player positions, kills, damage, 
 - 🔫 **CS2-aware.** Rounds are reconstructed from game-rules state; kills and damage carry every field; hit groups and round-end reasons are decoded to names.
 - 👁️ **Line-of-sight.** `VisibilityChecker` answers whether two world points can see each other, using collision meshes fetched by `awpy.data`.
 - 🧭 **Navigation meshes.** `NavMesh` locates a point's map area and finds shortest paths across a map's nav graph.
-- 🗺️ **Map control.** `awpy.map_control` scores how much of the map each team holds at any tick — by vision (line of sight, smoke-aware) or reachability (who arrives first, molotov-aware).
-- 📈 **Plotting.** `awpy.plot` draws game states, heatmaps, and map control on radar images (`pip install 'awpy[plot]'`).
+- 🗺️ **Map control.** `awpy.map_control` scores how much of the map each team holds at any tick — by raycast (line of sight in any direction), vision (clipped to each player's 90° field of view), or reachability (who arrives first, molotov-aware).
+- 📈 **Plotting.** `awpy.plot` draws game states, heatmaps, nav meshes, and map control on radar images (`pip install 'awpy[plot]'`).
 - 💻 **CLI included.** `pip install awpy` also gives you the `awpy` command — demo inspection and map-data downloads without writing any code.
 
 ## Get started
@@ -45,6 +45,7 @@ kills = demo.kills      # every player_death, all fields
 
 getting-started
 examples
+faq
 ```
 
 ```{toctree}
@@ -82,6 +83,5 @@ cli
 :caption: About
 
 other-parsers
-faq
 changelog
 ```

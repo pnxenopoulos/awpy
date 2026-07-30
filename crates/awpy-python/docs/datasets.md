@@ -471,7 +471,7 @@ every other form decodes in parallel across keyframe segments — the cost is th
 decode, not the (usually small) sampled output, so a coarse stride over a big demo
 is cheap.
 
-## Any game event: `demo.events`
+## Any game event: demo.events
 
 For events without a dedicated dataset, `demo.events` maps event names to
 DataFrames — a `tick` column plus one string column per event key. Everything

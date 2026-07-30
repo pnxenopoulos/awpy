@@ -31,11 +31,15 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   (`X`/`Y`/`Z`, `health`, `armor`, `team_num`, `name`, `money`).
 - Fast by default: the headline datasets decode together in one parallel pass on
   first access; `ticks` and `snapshots` decode in parallel across keyframes.
-- `awpy.plot` for radars, frames, heatmaps, and GIFs (`awpy[plot]` extra).
+- `awpy.plot` for radars, frames, heatmaps, nav meshes, and GIFs (`awpy[plot]`
+  extra). `plot.nav` draws a map's walkable areas and can highlight a set of them
+  — e.g. a route from `NavMesh.find_path`.
 - `awpy.VisibilityChecker` for line-of-sight queries against map meshes, and
   `awpy.NavMesh` for navigation-mesh area lookups and pathfinding.
-- `awpy.map_control` — how much of the map each team holds at a tick, by vision
-  (line of sight, smoke-aware) or reachability (who reaches each area first,
-  molotov-aware); `awpy.plot.map_control` shades the radar by controlling side.
+- `awpy.map_control` — how much of the map each team holds at a tick, by
+  `raycast` (line of sight in any direction, smoke-aware), `vision` (the same,
+  clipped to each player's field of view — 90° by default, matching CS2), or
+  `reachability` (who reaches each area first, molotov-aware);
+  `awpy.plot.map_control` shades the radar by controlling side.
 - `awpy.data` — map-data cache (mesh / nav / radar assets, versioned releases).
 - `awpy` command-line tool; `awpy-dev` developer CLI for parser internals.

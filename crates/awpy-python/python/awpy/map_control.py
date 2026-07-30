@@ -4,12 +4,19 @@
 map's navigation mesh — every walkable area is labelled ``"ct"``, ``"t"``,
 ``"contested"`` (both teams hold it), or ``"neutral"`` (neither does) — and
 aggregates that, weighted by area size, into a single fraction of the map held
-by each side. Two models are offered, because "control" means two things:
+by each side. Three models are offered, because "control" means more than one
+thing:
 
-- ``method="vision"`` — *what a team can see.* An area is held by a side if any
+- ``method="raycast"`` — *what a team could see.* An area is held by a side if any
   living, un-blinded player on it has line of sight to the area (a ray through
-  the map's collision mesh). Active smokes block the rays that cross them, and
-  a flashed player projects no vision.
+  the map's collision mesh) **in any direction**. Active smokes block the rays
+  that cross them, and a flashed player projects no vision.
+
+- ``method="vision"`` — *what a team can actually see.* The same rays, narrowed to
+  each player's **field of view**: within ``fov / 2`` degrees of where they are
+  looking (default 90°, CS2's own FOV). A player watching one angle no longer
+  holds the space behind them, so this reports notably less control than
+  ``"raycast"``.
 
 - ``method="reachability"`` — *what space a team can take first.* Whichever
   side's nearest player can travel to an area first (over the nav graph) holds
@@ -32,8 +39,8 @@ Two entry points, sharing one per-tick computation:
     ts = mc.map_control(demo, method="vision", seconds=1)   # a momentum series
     areas = mc.map_control_at(demo, tick=29000, method="reachability")
 
-Requires the map's ``.nav`` (both models) and ``.mesh`` (vision only), fetched
-on demand by :mod:`awpy.data`.
+Requires the map's ``.nav`` (all three models) and ``.mesh`` (the line-of-sight
+models, ``"raycast"`` and ``"vision"``), fetched on demand by :mod:`awpy.data`.
 """
 
 from __future__ import annotations
@@ -50,13 +57,18 @@ if TYPE_CHECKING:
     from awpy import Demo
 
 __all__ = [
+    "LINE_OF_SIGHT_METHODS",
     "MapControlParams",
     "Method",
     "map_control",
     "map_control_at",
 ]
 
-Method = Literal["vision", "reachability"]
+Method = Literal["raycast", "vision", "reachability"]
+
+#: Methods that cast rays through the collision mesh, and so need a
+#: :class:`~awpy.VisibilityChecker`.
+LINE_OF_SIGHT_METHODS: frozenset[str] = frozenset({"raycast", "vision"})
 
 #: Summary columns of a :func:`map_control` time series (besides ``tick`` /
 #: ``method``): the size-weighted fraction of the map in each bucket, and the
@@ -80,6 +92,10 @@ class MapControlParams:
         max_distance: Optional cap on vision range; ``None`` is unbounded.
         contest_margin: Travel-distance tie band — areas whose two sides' travel
             distances differ by no more than this are contested.
+        fov: Horizontal field of view in degrees for ``method="vision"`` — an area
+            counts only within ``fov / 2`` either side of where the player looks.
+            The default matches CS2's own FOV; ``360`` or more removes the limit,
+            making ``"vision"`` equivalent to ``"raycast"``.
         smoke_radius: Radius of a smoke cloud that blocks vision.
         smoke_height: How far above its landing point a smoke's blocking sphere
             is centred.
@@ -93,6 +109,7 @@ class MapControlParams:
     target_height: float = 46.0
     max_distance: float | None = None
     contest_margin: float = 200.0
+    fov: float = 90.0
     smoke_radius: float = 144.0
     smoke_height: float = 60.0
     fire_radius: float = 150.0
@@ -106,6 +123,7 @@ class MapControlParams:
             "target_height": self.target_height,
             "max_distance": self.max_distance,
             "contest_margin": self.contest_margin,
+            "fov": self.fov,
         }
 
 
@@ -130,8 +148,12 @@ def _resolve_map(demo: Demo, map_name: str | None) -> str:
 
 
 def _players_at(group: pl.DataFrame, flash_threshold: float) -> list[tuple]:
-    """``(x, y, z, side, crouched, blind)`` tuples for the living players in one
-    tick's snapshot rows (dead players and non-playing sides are dropped)."""
+    """``(x, y, z, side, crouched, blind, yaw)`` tuples for the living players in
+    one tick's snapshot rows (dead players and non-playing sides are dropped).
+
+    ``yaw`` is where the player is looking, which ``method="vision"`` needs for its
+    field-of-view cone; it is ``None`` when the snapshot does not resolve it.
+    """
     alive = group.filter(
         (pl.col("health") > 0)
         & pl.col("x").is_not_null()
@@ -145,6 +167,7 @@ def _players_at(group: pl.DataFrame, flash_threshold: float) -> list[tuple]:
             alive["side"],
             alive["is_crouched"],
             alive["flash_duration"] > flash_threshold,
+            alive["yaw"],
             strict=True,
         )
     )
@@ -175,13 +198,14 @@ def _compute_at(
 ) -> dict:
     """Run one model for a single tick, gathering its players and occluders."""
     players = _players_at(group, params.flash_threshold)
-    if method == "vision":
+    if method in LINE_OF_SIGHT_METHODS:
+        # Smokes cut rays, so they apply to both line-of-sight models.
         occluders = _active(smokes, tick, params.smoke_radius, params.smoke_height)
         return compute_map_control(
             nav,
             players,
             visibility=vis,
-            method="vision",
+            method=method,
             smokes=occluders,
             detail=detail,
             **params._core_kwargs(),
@@ -220,7 +244,8 @@ def map_control(
 
     Args:
         demo: The parsed demo.
-        method: ``"vision"`` or ``"reachability"`` (see the module docs).
+        method: ``"raycast"``, ``"vision"``, or ``"reachability"`` (see the
+            module docs).
         ticks, every, seconds, events, start_tick, end_tick: Tick selection,
             forwarded to :meth:`awpy.Demo.snapshots`.
         params: Model parameters (defaults if omitted).
@@ -237,7 +262,7 @@ def map_control(
     params = params or MapControlParams()
     name = _resolve_map(demo, map_name)
     nav = _nav(name, version)
-    vis = _visibility(name, version) if method == "vision" else None
+    vis = _visibility(name, version) if method in LINE_OF_SIGHT_METHODS else None
 
     snaps = demo.snapshots(
         ticks=ticks,
@@ -296,7 +321,8 @@ def map_control_at(
     Args:
         demo: The parsed demo.
         tick: The tick to evaluate.
-        method: ``"vision"`` or ``"reachability"`` (see the module docs).
+        method: ``"raycast"``, ``"vision"``, or ``"reachability"`` (see the
+            module docs).
         params: Model parameters (defaults if omitted).
         map_name: Override the map (defaults to the demo header's map).
         version: awpy-data release for the nav/mesh assets.
@@ -310,7 +336,7 @@ def map_control_at(
     params = params or MapControlParams()
     name = _resolve_map(demo, map_name)
     nav = _nav(name, version)
-    vis = _visibility(name, version) if method == "vision" else None
+    vis = _visibility(name, version) if method in LINE_OF_SIGHT_METHODS else None
 
     snap = demo.snapshots(ticks=tick)
     group = snap.filter(pl.col("tick") == tick) if "tick" in snap.columns else snap

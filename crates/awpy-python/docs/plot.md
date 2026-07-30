@@ -54,6 +54,15 @@ players = [
 fig, ax = plot.frame(demo.header["map_name"], players)
 ```
 
+```{figure} img/plot-frame.webp
+:alt: Inferno radar with ten player markers, each labelled and carrying green health and grey armor bars
+:width: 100%
+
+A mid-round moment on Inferno. Each marker carries the player's name, a
+view-direction tick from `yaw`, and health/armor bars — so a `frame` is readable
+without a legend.
+```
+
 ## Heatmaps: `heatmap`
 
 Pass any iterable of world `(x, y)` or `(x, y, z)` rows — with Polars,
@@ -76,6 +85,14 @@ with `bandwidth=`). `bins` sets the grid resolution, `cmap` any matplotlib
 colormap, `alpha` the overlay opacity. Empty cells stay transparent, so the
 radar shows through.
 
+```{figure} img/plot-heatmap.webp
+:alt: Inferno radar overlaid with a smoothed density map of death locations, brightest at banana and the apartments
+:width: 100%
+
+Every death in one match, `method="kde"`. The bright spots are the map's real
+fight locations — banana, the apartments, and the site chokes.
+```
+
 ## Map control: `map_control`
 
 Shade the map by which side controls each area at one tick, players and the
@@ -87,14 +104,25 @@ from awpy import Demo, plot
 demo = Demo("match.dem")
 
 fig, ax = plot.map_control(demo, tick=29000, method="vision")
+fig, ax = plot.map_control(demo, tick=29000, method="raycast")
 fig, ax = plot.map_control(demo, tick=29000, method="reachability")
 ```
 
 Blue is CT, yellow is T, purple is contested; neutral is left unshaded, and the
-legend shows each side's share of the map. `method` picks the model — `"vision"`
-(line of sight, drawing the active smokes) or `"reachability"` (who reaches each
-area first, drawing the active molotovs). Tune it with `params=` (a
-`MapControlParams`), and see {doc}`map_control` for what the numbers mean.
+legend shows each side's share of the map. `method` picks the model —
+`"raycast"` (line of sight in any direction), `"vision"` (the same, clipped to each
+player's 90° field of view), or `"reachability"` (who reaches each area first). The
+first two draw the active smokes, reachability the active molotovs. Tune it with
+`params=` (a `MapControlParams`), and see {doc}`map_control` for what the numbers
+mean.
+
+```{figure} img/map-control-reachability.webp
+:alt: Inferno shaded blue for CT and yellow for T with a thin purple contested seam, players and a legend overlaid
+:width: 100%
+
+`method="reachability"` on Inferno. {doc}`map_control` shows this same tick under
+all three models — the raycast, vision, and reachability pictures differ a lot.
+```
 
 ## Multi-level maps
 
@@ -121,6 +149,23 @@ fig, axes = plot.heatmap_levels("de_nuke", deaths, method="kde")
 Both return `(fig, (ax_upper, ax_lower))`, and degrade gracefully to a single
 panel on single-level maps — no need to special-case the map.
 
+```{figure} img/plot-frame-levels.webp
+:alt: Two Nuke radar panels labelled upper and lower, with blue CT markers on the upper panel and yellow T markers on the lower
+:width: 100%
+
+`frame_levels` on Nuke. Each player is drawn on the panel for the level their `z`
+puts them on, at full opacity — no dimming, no guessing which floor a marker is
+on. (Positions here are sampled from the map's nav areas, not a real round.)
+```
+
+```{figure} img/plot-heatmap-levels.webp
+:alt: The same two Nuke panels with a hexagonal density overlay on each, denser on the upper level
+:width: 100%
+
+`heatmap_levels` splits points the same way, so the ramp and lower B site get
+their own density surface instead of being smeared onto the upper radar.
+```
+
 ## Animation: `gif`
 
 Render a sequence of frames to an animated GIF — each entry is a list of
@@ -138,6 +183,32 @@ plot.gif(
 )
 ```
 
+## Navigation meshes: `nav`
+
+Draw a map's walkable areas, optionally highlighting a set of them — a route from
+`NavMesh.find_path`, a bombsite, or anything else you can name as area ids:
+
+```python
+from awpy import NavMesh, plot
+
+fig, ax = plot.nav("de_dust2")
+
+mesh = NavMesh("de_dust2")
+route = mesh.find_path((-680.0, 1500.0, 0.0), (1200.0, 2400.0, 0.0))
+fig, ax = plot.nav("de_dust2", highlight=route)
+```
+
+```{figure} img/nav-path.webp
+:alt: Dust 2's nav mesh in amber with a 70-area route highlighted in cyan
+:width: 100%
+
+`highlight=` takes any iterable of area ids. See {doc}`nav` for the mesh itself.
+```
+
+Areas are filtered to the level being drawn, so a multi-level map needs one call
+per level (`lower=True`). `edge=False` drops the outlines for a flatter fill, and
+`legend=False` removes the area count.
+
 ## Building blocks
 
 `radar` draws the bare map and returns `(fig, ax)`; every other function
@@ -154,5 +225,19 @@ px, py = plot.world_to_pixel("de_inferno", (1258.0, 455.5))
 x, y = plot.pixel_to_world("de_inferno", (px, py))
 ```
 
+```{figure} img/plot-radar.webp
+:alt: The bare Dust 2 radar image with no overlays
+:width: 60%
+:align: center
+
+`radar` on its own — the canvas everything else draws onto.
+```
+
 All of it is Hammer units, Z-up, straight from the demo dataframes — the same
 frame as `VisibilityChecker`.
+
+---
+
+Every figure on this page is generated by `scripts/build_docs_images.py`. The docs
+ship pre-rendered images because a docs build has neither a demo nor the asset
+cache; re-run that script and commit the result if a plot's appearance changes.

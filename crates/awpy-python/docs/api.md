@@ -53,7 +53,7 @@ A map's navigation mesh: the walkable areas and the graph connecting them. See
    :special-members: __len__
 ```
 
-## `awpy.map_control`
+## awpy.map_control
 
 How much of the map each team holds — the demo-oriented interface. See
 {doc}`map_control`.
@@ -76,7 +76,7 @@ mesh and a list of player positions.
 .. autofunction:: awpy._awpy.compute_map_control
 ```
 
-## `awpy.plot`
+## awpy.plot
 
 Radar rendering, game-state frames, heatmaps, and GIFs. Requires the `plot`
 extra — `pip install 'awpy[plot]'`. See {doc}`plot`.
@@ -87,7 +87,7 @@ extra — `pip install 'awpy[plot]'`. See {doc}`plot`.
    :undoc-members:
 ```
 
-## `awpy.data`
+## awpy.data
 
 Downloads and caches CS2 map assets (collision meshes, nav meshes, radar images,
 coordinate transforms) from the
@@ -102,7 +102,7 @@ newest cached release. See {doc}`visibility`.
    :members:
 ```
 
-## `awpy.schema`
+## awpy.schema
 
 Discoverable catalogs: which per-player features `snapshots` can return (mapped to
 the engine properties they come from), and what the common game events are. Both

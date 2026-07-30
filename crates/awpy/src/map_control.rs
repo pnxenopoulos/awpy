@@ -8,14 +8,20 @@
 //! team — and its signed difference, [`MapControl::net_control`], is a compact
 //! momentum series you can plot over a round.
 //!
-//! Two models are offered, because "control" means two different things:
+//! Three models are offered, because "control" means more than one thing:
 //!
-//! - [`vision_control`] — *what a team can see.* An area is controlled by a side
-//!   if any living, un-blinded player on it has line of sight to the area (a ray
-//!   through the map's collision [`VisibilityMesh`]).
+//! - [`raycast_control`] — *what a team could see.* An area is controlled by a
+//!   side if any living, un-blinded player on it has line of sight to the area (a
+//!   ray through the map's collision [`VisibilityMesh`]), **in any direction**.
 //!   Active smoke clouds are passed as [`Occluder`] spheres and block the rays
 //!   through them; blinded players (caught in a flash) project no vision. An area
 //!   seen by both sides is contested.
+//!
+//! - [`vision_control`] — *what a team can actually see right now.* The same
+//!   rays, additionally restricted to each player's field of view: within
+//!   [`Params::fov`] / 2 degrees of their [`Observer::yaw`] (default 90°, CS2's
+//!   own FOV). A player watching one angle no longer holds the space behind them,
+//!   so this reports a good deal less control than [`raycast_control`].
 //!
 //! - [`reachability_control`] — *what space a team can take first.* A
 //!   multi-source shortest-path search over the nav graph gives, for every area,
@@ -24,9 +30,9 @@
 //!   neutral. Burning infernos are passed as [`Occluder`] spheres and mark the
 //!   areas under them impassable, so paths route around denied ground.
 //!
-//! Both take feet positions in Hammer units (Z-up) — the frame of the demo's
+//! All three take feet positions in Hammer units (Z-up) — the frame of the demo's
 //! world-position columns — and return the same [`MapControl`], so a caller can
-//! compute and compare both from one snapshot.
+//! compute and compare them from one snapshot.
 //!
 //! ```no_run
 //! use awpy::geometry::VisibilityMesh;
@@ -35,9 +41,23 @@
 //!
 //! let nav = Nav::from_file("de_inferno.nav".as_ref()).unwrap();
 //! let mesh = VisibilityMesh::from_file("de_inferno.mesh".as_ref()).unwrap();
+//! // `yaw` is where the player is looking, which `vision_control` needs for the
+//! // field-of-view cone; `None` leaves them unrestricted.
 //! let observers = vec![
-//!     Observer { pos: [-1200.0, 500.0, 100.0], team: Team::Ct, crouched: false, blind: false },
-//!     Observer { pos: [1500.0, 2500.0, 130.0], team: Team::T, crouched: false, blind: false },
+//!     Observer {
+//!         pos: [-1200.0, 500.0, 100.0],
+//!         team: Team::Ct,
+//!         crouched: false,
+//!         blind: false,
+//!         yaw: Some(180.0),
+//!     },
+//!     Observer {
+//!         pos: [1500.0, 2500.0, 130.0],
+//!         team: Team::T,
+//!         crouched: false,
+//!         blind: false,
+//!         yaw: Some(0.0),
+//!     },
 //! ];
 //! let mc = vision_control(&nav, &mesh, &observers, &[], &Params::default());
 //! println!("CT holds {:.0}% of the map", 100.0 * mc.ct_fraction);
@@ -118,13 +138,21 @@ pub struct Observer {
     /// Whether the player is crouched (lowers their eye height for vision).
     pub crouched: bool,
     /// Whether the player is currently blinded by a flash. A blinded player
-    /// projects no vision (ignored by [`vision_control`]) but still occupies
-    /// space (counted by [`reachability_control`]).
+    /// projects no vision (ignored by [`raycast_control`] and [`vision_control`])
+    /// but still occupies space (counted by [`reachability_control`]).
     pub blind: bool,
+    /// Where the player is looking: eye-angle yaw in degrees, measured the way
+    /// the demo reports it (0° = +x, increasing counter-clockwise).
+    ///
+    /// Only [`vision_control`] uses this, to restrict what the player sees to
+    /// their field of view. `None` means the direction is unknown, in which case
+    /// no field-of-view limit is applied and the player sees in every direction —
+    /// the same treatment [`raycast_control`] always gives.
+    pub yaw: Option<f32>,
 }
 
-/// A spherical region that affects control: a smoke cloud (blocks vision rays in
-/// [`vision_control`]) or a burning inferno (blocks movement in
+/// A spherical region that affects control: a smoke cloud (blocks the rays cast
+/// by [`raycast_control`] and [`vision_control`]) or a burning inferno (blocks movement in
 /// [`reachability_control`]). Callers place and size the sphere — e.g. a smoke
 /// centred a little above where it landed, a molotov at the fire's footprint.
 #[derive(Clone, Copy, Debug)]
@@ -135,7 +163,8 @@ pub struct Occluder {
     pub radius: f32,
 }
 
-/// Tunable parameters shared by both models (see field docs for the defaults).
+/// Tunable parameters shared by the three models (see field docs for the
+/// defaults; each model ignores the ones that don't apply to it).
 #[derive(Clone, Copy, Debug)]
 pub struct Params {
     /// Eye height above the feet for a standing player, in Hammer units
@@ -156,6 +185,13 @@ pub struct Params {
     /// more than this, the area is contested rather than awarded to the nearer
     /// side.
     pub contest_margin: f64,
+    /// Horizontal field of view in degrees, used only by [`vision_control`]
+    /// (default `90.0`, matching CS2's default FOV). An area counts as seen only
+    /// if it falls within `fov / 2` either side of where the player is looking.
+    ///
+    /// A value of `360.0` or more removes the limit, making [`vision_control`]
+    /// equivalent to [`raycast_control`].
+    pub fov: f32,
 }
 
 impl Default for Params {
@@ -166,6 +202,7 @@ impl Default for Params {
             target_height: 46.0,
             max_distance: None,
             contest_margin: 200.0,
+            fov: 90.0,
         }
     }
 }
@@ -236,27 +273,116 @@ fn segment_hits_sphere(a: Vec3, b: Vec3, center: Vec3, radius: f32) -> bool {
     dot(d, d) <= radius * radius
 }
 
-/// Can any of `eyes` see `target`: clear line of sight through the mesh, not cut
-/// by a smoke, and within the optional range cap?
+/// One player's viewpoint: where their eyes are, and (for the field-of-view
+/// model) where they are looking.
+#[derive(Clone, Copy, Debug)]
+struct Eye {
+    pos: Vec3,
+    yaw: Option<f32>,
+}
+
+/// Is `target` within `half_cos` of where an eye at `eye` is looking?
+///
+/// `half_cos` is the cosine of half the field of view, precomputed once so this
+/// costs a dot product per area rather than a trig call. The test is **horizontal
+/// only** — it compares yaw against the bearing to the target and ignores pitch,
+/// because a player's vertical view is a function of their aspect ratio and the
+/// demo's yaw is the direction that actually matters for map coverage.
+fn within_fov(eye: &Eye, target: Vec3, half_cos: f32) -> bool {
+    let Some(yaw) = eye.yaw else {
+        // Direction unknown: apply no limit rather than silently dropping the
+        // player's contribution.
+        return true;
+    };
+    let (dx, dy) = (target[0] - eye.pos[0], target[1] - eye.pos[1]);
+    let len_sq = dx * dx + dy * dy;
+    if len_sq <= f32::EPSILON {
+        // Standing on the area: nothing to aim at.
+        return true;
+    }
+    let (rad, len) = (yaw.to_radians(), len_sq.sqrt());
+    // Facing vector from the demo's yaw convention: 0° = +x, counter-clockwise.
+    let cos_angle = (rad.cos() * dx + rad.sin() * dy) / len;
+    cos_angle >= half_cos
+}
+
+/// Can any of `eyes` see `target`: within the field of view (when one is given),
+/// clear line of sight through the mesh, not cut by a smoke, and within the
+/// optional range cap?
 fn any_sees(
-    eyes: &[Vec3],
+    eyes: &[Eye],
     target: Vec3,
     mesh: &VisibilityMesh,
     smokes: &[Occluder],
     params: &Params,
+    half_cos: Option<f32>,
 ) -> bool {
-    eyes.iter().any(|&eye| {
+    eyes.iter().any(|eye| {
+        // Cheap rejections first: the FOV cone and the range cap are both a few
+        // arithmetic ops, while the mesh query walks a BVH.
+        if let Some(half_cos) = half_cos
+            && !within_fov(eye, target, half_cos)
+        {
+            return false;
+        }
         if let Some(max) = params.max_distance {
-            let d = sub(target, eye);
+            let d = sub(target, eye.pos);
             if dot(d, d) > max * max {
                 return false;
             }
         }
-        mesh.is_visible(eye, target)
+        mesh.is_visible(eye.pos, target)
             && !smokes
                 .iter()
-                .any(|s| segment_hits_sphere(eye, target, s.center, s.radius))
+                .any(|s| segment_hits_sphere(eye.pos, target, s.center, s.radius))
     })
+}
+
+/// Shared body of [`raycast_control`] and [`vision_control`]: the two differ only
+/// in whether a field-of-view cone is applied.
+///
+/// `fov` is the cone width in degrees, or `None` for no limit.
+fn line_of_sight_control(
+    nav: &Nav,
+    mesh: &VisibilityMesh,
+    observers: &[Observer],
+    smokes: &[Occluder],
+    params: &Params,
+    fov: Option<f32>,
+) -> MapControl {
+    // A field of view of 360° or wider constrains nothing, so skip the test.
+    let half_cos = fov
+        .filter(|f| *f < 360.0)
+        .map(|f| (f.to_radians() / 2.0).cos());
+
+    // A blinded player sees nothing, so only sighted players project vision.
+    let eyes = |team: Team| -> Vec<Eye> {
+        observers
+            .iter()
+            .filter(|o| o.team == team && !o.blind)
+            .map(|o| Eye {
+                pos: params.eye(o),
+                yaw: o.yaw,
+            })
+            .collect()
+    };
+    let ct_eyes = eyes(Team::Ct);
+    let t_eyes = eyes(Team::T);
+
+    let holds = nav
+        .areas
+        .iter()
+        .map(|a| {
+            let target = {
+                let c = a.centroid();
+                [c[0], c[1], c[2] + params.target_height]
+            };
+            let ct = any_sees(&ct_eyes, target, mesh, smokes, params, half_cos);
+            let t = any_sees(&t_eyes, target, mesh, smokes, params, half_cos);
+            (a.area_id, ct, t)
+        })
+        .collect();
+    assemble(nav, holds)
 }
 
 /// Assemble a [`MapControl`] from per-area holds, weighting the summary by area
@@ -292,9 +418,39 @@ fn assemble(nav: &Nav, holds: Vec<(u32, bool, bool)>) -> MapControl {
     }
 }
 
-/// Vision-based map control: an area is held by a side if any of its living,
-/// un-blinded players has line of sight to the area (through the collision mesh,
-/// unbroken by an active smoke, within [`Params::max_distance`]).
+/// Raycast map control: an area is held by a side if any of its living,
+/// un-blinded players has line of sight to the area **in any direction** —
+/// through the collision mesh, unbroken by an active smoke, within
+/// [`Params::max_distance`].
+///
+/// This is the "what could a team see if they spun on the spot" model. It ignores
+/// where players are actually looking; for the narrower model that respects each
+/// player's field of view, see [`vision_control`].
+///
+/// `smokes` are the active smoke clouds as [`Occluder`] spheres; pass an empty
+/// slice for none. See the [module docs](self) for the full model.
+pub fn raycast_control(
+    nav: &Nav,
+    mesh: &VisibilityMesh,
+    observers: &[Observer],
+    smokes: &[Occluder],
+    params: &Params,
+) -> MapControl {
+    line_of_sight_control(nav, mesh, observers, smokes, params, None)
+}
+
+/// Vision map control: like [`raycast_control`], but an area only counts if it
+/// also falls inside the player's **field of view** — within
+/// [`Params::fov`] / 2 degrees either side of their [`Observer::yaw`]
+/// (default 90°, CS2's own FOV).
+///
+/// This is the stricter, more literal reading of "what a team can see": a player
+/// watching one angle does not simultaneously hold the space behind them. Expect
+/// noticeably smaller fractions than [`raycast_control`] on the same snapshot.
+///
+/// The cone is horizontal — yaw against the bearing to each area, ignoring pitch.
+/// An observer whose `yaw` is `None` has no direction to test against, so no limit
+/// is applied to them.
 ///
 /// `smokes` are the active smoke clouds as [`Occluder`] spheres; pass an empty
 /// slice for none. See the [module docs](self) for the full model.
@@ -305,31 +461,7 @@ pub fn vision_control(
     smokes: &[Occluder],
     params: &Params,
 ) -> MapControl {
-    // A blinded player sees nothing, so only sighted players project vision.
-    let eyes = |team: Team| -> Vec<Vec3> {
-        observers
-            .iter()
-            .filter(|o| o.team == team && !o.blind)
-            .map(|o| params.eye(o))
-            .collect()
-    };
-    let ct_eyes = eyes(Team::Ct);
-    let t_eyes = eyes(Team::T);
-
-    let holds = nav
-        .areas
-        .iter()
-        .map(|a| {
-            let target = {
-                let c = a.centroid();
-                [c[0], c[1], c[2] + params.target_height]
-            };
-            let ct = any_sees(&ct_eyes, target, mesh, smokes, params);
-            let t = any_sees(&t_eyes, target, mesh, smokes, params);
-            (a.area_id, ct, t)
-        })
-        .collect();
-    assemble(nav, holds)
+    line_of_sight_control(nav, mesh, observers, smokes, params, Some(params.fov))
 }
 
 /// Reachability-based map control: each area is awarded to whichever side's
@@ -422,12 +554,22 @@ mod tests {
         }
     }
 
+    /// An observer with no known facing, so no field-of-view limit applies.
     fn obs(pos: Vec3, team: Team) -> Observer {
         Observer {
             pos,
             team,
             crouched: false,
             blind: false,
+            yaw: None,
+        }
+    }
+
+    /// An observer looking along `yaw` degrees (0 = +x, counter-clockwise).
+    fn obs_facing(pos: Vec3, team: Team, yaw: f32) -> Observer {
+        Observer {
+            yaw: Some(yaw),
+            ..obs(pos, team)
         }
     }
 
@@ -450,7 +592,7 @@ mod tests {
     }
 
     #[test]
-    fn vision_open_map_partitions_by_side() {
+    fn raycast_open_map_partitions_by_side() {
         // Three areas in a row on an empty map (no geometry). A CT sits on the
         // left area, a T on the right; with clear sightlines every area is seen
         // by both, so all are contested.
@@ -464,7 +606,7 @@ mod tests {
             obs([0.5, 0.5, 0.0], Team::Ct),
             obs([200.5, 0.5, 0.0], Team::T),
         ];
-        let mc = vision_control(&nav, &mesh, &observers, &[], &Params::default());
+        let mc = raycast_control(&nav, &mesh, &observers, &[], &Params::default());
         assert_eq!(label(&mc, 1), Control::Contested);
         assert_eq!(label(&mc, 2), Control::Contested);
         assert_eq!(label(&mc, 3), Control::Contested);
@@ -473,7 +615,7 @@ mod tests {
     }
 
     #[test]
-    fn vision_wall_splits_control() {
+    fn raycast_wall_splits_control() {
         // A wall at x = 50 between a CT (left) and a T (right). Each sees only
         // its own side; the areas nearest each player are that side's, and the
         // far side is out of sight.
@@ -486,13 +628,13 @@ mod tests {
             obs([0.5, 0.5, 0.0], Team::Ct),
             obs([100.5, 0.5, 0.0], Team::T),
         ];
-        let mc = vision_control(&nav, &mesh, &observers, &[], &Params::default());
+        let mc = raycast_control(&nav, &mesh, &observers, &[], &Params::default());
         assert_eq!(label(&mc, 1), Control::Ct);
         assert_eq!(label(&mc, 2), Control::T);
     }
 
     #[test]
-    fn vision_smoke_blocks_sightline() {
+    fn raycast_smoke_blocks_sightline() {
         // Open map, CT and T on opposite ends (would both see the middle area).
         // A smoke over the middle area cuts every crossing sightline, so the
         // middle becomes each side's own near area only where they still reach.
@@ -511,7 +653,7 @@ mod tests {
             center: [100.5, 0.5, 40.0],
             radius: 80.0,
         }];
-        let mc = vision_control(&nav, &mesh, &observers, &smokes, &Params::default());
+        let mc = raycast_control(&nav, &mesh, &observers, &smokes, &Params::default());
         // The middle area is smoked off from both distant players, but each
         // player still stands in / sees their own end.
         assert_eq!(label(&mc, 1), Control::Ct);
@@ -522,7 +664,7 @@ mod tests {
     }
 
     #[test]
-    fn vision_blind_player_sees_nothing() {
+    fn raycast_blind_player_sees_nothing() {
         let nav = Nav::from_areas(vec![
             area(1, 0.0, 0.0, 0.0, &[]),
             area(2, 100.0, 0.0, 0.0, &[]),
@@ -530,9 +672,127 @@ mod tests {
         let mesh = VisibilityMesh::build(Mesh::default());
         let mut ct = obs([0.5, 0.5, 0.0], Team::Ct);
         ct.blind = true;
-        let mc = vision_control(&nav, &mesh, &[ct], &[], &Params::default());
+        let mc = raycast_control(&nav, &mesh, &[ct], &[], &Params::default());
         // A fully blinded lone CT projects no vision, so nothing is controlled.
         assert!((mc.neutral_fraction - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn vision_only_covers_the_arc_a_player_faces() {
+        // Five areas in a row, the CT standing on the middle one. Facing +x, the
+        // areas to their left are behind them and must not count as seen.
+        let nav = Nav::from_areas(vec![
+            area(1, -200.0, 0.0, 0.0, &[]),
+            area(2, -100.0, 0.0, 0.0, &[]),
+            area(3, 0.0, 0.0, 0.0, &[]),
+            area(4, 100.0, 0.0, 0.0, &[]),
+            area(5, 200.0, 0.0, 0.0, &[]),
+        ]);
+        let mesh = VisibilityMesh::build(Mesh::default());
+        let facing_pos_x = vec![obs_facing([0.5, 0.5, 0.0], Team::Ct, 0.0)];
+        let mc = vision_control(&nav, &mesh, &facing_pos_x, &[], &Params::default());
+
+        // Ahead: seen. Behind: not.
+        assert_eq!(label(&mc, 4), Control::Ct);
+        assert_eq!(label(&mc, 5), Control::Ct);
+        assert_eq!(label(&mc, 1), Control::Neutral);
+        assert_eq!(label(&mc, 2), Control::Neutral);
+
+        // Turning around flips exactly which half is held.
+        let facing_neg_x = vec![obs_facing([0.5, 0.5, 0.0], Team::Ct, 180.0)];
+        let mc = vision_control(&nav, &mesh, &facing_neg_x, &[], &Params::default());
+        assert_eq!(label(&mc, 1), Control::Ct);
+        assert_eq!(label(&mc, 2), Control::Ct);
+        assert_eq!(label(&mc, 4), Control::Neutral);
+        assert_eq!(label(&mc, 5), Control::Neutral);
+    }
+
+    #[test]
+    fn vision_holds_less_than_raycast() {
+        // The distinguishing property of the two models: on the same snapshot, a
+        // 90-degree cone can only ever see a subset of what an unrestricted ray
+        // cast sees.
+        let nav = Nav::from_areas(vec![
+            area(1, -200.0, 0.0, 0.0, &[]),
+            area(2, -100.0, 0.0, 0.0, &[]),
+            area(3, 0.0, 0.0, 0.0, &[]),
+            area(4, 100.0, 0.0, 0.0, &[]),
+            area(5, 200.0, 0.0, 0.0, &[]),
+        ]);
+        let mesh = VisibilityMesh::build(Mesh::default());
+        let observers = vec![obs_facing([0.5, 0.5, 0.0], Team::Ct, 0.0)];
+
+        let raycast = raycast_control(&nav, &mesh, &observers, &[], &Params::default());
+        let vision = vision_control(&nav, &mesh, &observers, &[], &Params::default());
+        assert!(
+            vision.ct_fraction < raycast.ct_fraction,
+            "vision {} should hold less than raycast {}",
+            vision.ct_fraction,
+            raycast.ct_fraction
+        );
+        // Raycast sees the whole row from the middle; vision only the near half.
+        assert!((raycast.ct_fraction - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn a_full_circle_fov_matches_raycast() {
+        // 360 degrees is no constraint at all, so the two models must agree —
+        // the property that lets `fov` interpolate between them.
+        let nav = Nav::from_areas(vec![
+            area(1, -100.0, 0.0, 0.0, &[]),
+            area(2, 0.0, 0.0, 0.0, &[]),
+            area(3, 100.0, 0.0, 0.0, &[]),
+        ]);
+        let mesh = VisibilityMesh::build(Mesh::default());
+        let observers = vec![obs_facing([0.5, 0.5, 0.0], Team::Ct, 0.0)];
+        let params = Params {
+            fov: 360.0,
+            ..Params::default()
+        };
+        let vision = vision_control(&nav, &mesh, &observers, &[], &params);
+        let raycast = raycast_control(&nav, &mesh, &observers, &[], &Params::default());
+        assert_eq!(vision.ct_fraction, raycast.ct_fraction);
+    }
+
+    #[test]
+    fn an_unknown_facing_is_unrestricted() {
+        // With no yaw there is no cone to test against, so the player is not
+        // silently dropped — they behave as they do under raycast.
+        let nav = Nav::from_areas(vec![
+            area(1, -100.0, 0.0, 0.0, &[]),
+            area(2, 0.0, 0.0, 0.0, &[]),
+            area(3, 100.0, 0.0, 0.0, &[]),
+        ]);
+        let mesh = VisibilityMesh::build(Mesh::default());
+        let observers = vec![obs([0.5, 0.5, 0.0], Team::Ct)]; // yaw: None
+        let vision = vision_control(&nav, &mesh, &observers, &[], &Params::default());
+        assert_eq!(label(&vision, 1), Control::Ct);
+        assert_eq!(label(&vision, 3), Control::Ct);
+    }
+
+    #[test]
+    fn vision_still_respects_walls_and_smokes() {
+        // The FOV cone is an extra filter, not a replacement: geometry and smokes
+        // must still cut a sightline that is within the arc.
+        let nav = Nav::from_areas(vec![
+            area(1, 0.0, 0.0, 0.0, &[]),
+            area(2, 100.0, 0.0, 0.0, &[]),
+        ]);
+        let observers = vec![obs_facing([0.5, 0.5, 0.0], Team::Ct, 0.0)];
+
+        // A wall between them, well within the arc.
+        let walled = VisibilityMesh::build(wall(50.0));
+        let mc = vision_control(&nav, &walled, &observers, &[], &Params::default());
+        assert_eq!(label(&mc, 2), Control::Neutral);
+
+        // No wall, but a smoke on the line.
+        let open = VisibilityMesh::build(Mesh::default());
+        let smoke = [Occluder {
+            center: [50.0, 0.5, 46.0],
+            radius: 60.0,
+        }];
+        let mc = vision_control(&nav, &open, &observers, &smoke, &Params::default());
+        assert_eq!(label(&mc, 2), Control::Neutral);
     }
 
     #[test]

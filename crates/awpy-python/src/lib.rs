@@ -16,7 +16,8 @@ use pyo3_polars::PyDataFrame;
 
 use awpy::geometry::VisibilityMesh;
 use awpy::map_control::{
-    Observer, Occluder, Params as McParams, Team, reachability_control, vision_control,
+    Observer, Occluder, Params as McParams, Team, raycast_control, reachability_control,
+    vision_control,
 };
 use awpy::nav::{Nav, PathWeight};
 use awpy::{
@@ -1384,7 +1385,9 @@ impl NavMesh {
 /// One player observation for [`compute_map_control`]:
 /// `(x, y, z, side, crouched, blind)`. `side` is the demo's `"terrorist"` /
 /// `"counter-terrorist"` (or `"t"` / `"ct"`); other sides are dropped.
-type PlayerObs = (f32, f32, f32, String, bool, bool);
+/// `(x, y, z, side, crouched, blind, yaw)` for one living player. `yaw` is the
+/// eye-angle yaw in degrees and may be `None`; only `method="vision"` reads it.
+type PlayerObs = (f32, f32, f32, String, bool, bool, Option<f32>);
 /// A sphere occluder for [`compute_map_control`]: `(x, y, z, radius)`.
 type Sphere = (f32, f32, f32, f32);
 
@@ -1407,12 +1410,15 @@ fn parse_team(side: &str) -> Option<Team> {
 ///
 /// Args:
 ///     nav: The map's :class:`NavMesh`.
-///     players: Sequence of ``(x, y, z, side, crouched, blind)`` for the living
-///         players at the tick.
+///     players: Sequence of ``(x, y, z, side, crouched, blind, yaw)`` for the
+///         living players at the tick. ``yaw`` is the eye-angle yaw in degrees and
+///         may be ``None``; only ``method="vision"`` reads it, and a player with
+///         no yaw is left unrestricted.
 ///     visibility: The map's :class:`VisibilityChecker`; required for
-///         ``method="vision"``.
-///     method: ``"vision"`` (line of sight, smoke-aware) or ``"reachability"``
-///         (who reaches each area first, fire-aware).
+///         ``method="vision"`` and ``method="raycast"``.
+///     method: ``"raycast"`` (line of sight in any direction, smoke-aware),
+///         ``"vision"`` (the same, narrowed to each player's field of view), or
+///         ``"reachability"`` (who reaches each area first, fire-aware).
 ///     smokes: Active smoke spheres ``(x, y, z, radius)`` (vision only).
 ///     fires: Active inferno spheres ``(x, y, z, radius)`` (reachability only).
 ///     detail: When ``True`` (default) include the per-area arrays; when
@@ -1421,8 +1427,11 @@ fn parse_team(side: &str) -> Option<Team> {
 ///     crouch_eye_height: Eye height when crouched.
 ///     target_height: Height above an area's floor that vision aims at.
 ///     max_distance: Optional cap on vision range; ``None`` is unbounded.
-///     contest_margin: Reachability travel-distance tie band. See
-///         :class:`awpy.map_control.MapControlParams` for all five.
+///     contest_margin: Reachability travel-distance tie band.
+///     fov: Horizontal field of view in degrees for ``method="vision"``
+///         (default ``90.0``, CS2's own FOV); ``360.0`` or more removes the limit,
+///         making it equivalent to ``"raycast"``. See
+///         :class:`awpy.map_control.MapControlParams` for all six.
 ///
 /// Returns:
 ///     A dict with ``ct_fraction``, ``t_fraction``, ``contested_fraction``,
@@ -1443,11 +1452,12 @@ fn parse_team(side: &str) -> Option<Team> {
     target_height=46.0,
     max_distance=None,
     contest_margin=200.0,
+    fov=90.0,
 ))]
 #[pyo3(
     text_signature = "(nav, players, *, visibility=None, method='vision', smokes=[], fires=[], \
                        detail=True, eye_height=64.0, crouch_eye_height=46.0, target_height=46.0, \
-                       max_distance=None, contest_margin=200.0)"
+                       max_distance=None, contest_margin=200.0, fov=90.0)"
 )]
 #[allow(clippy::too_many_arguments)]
 fn compute_map_control(
@@ -1464,15 +1474,17 @@ fn compute_map_control(
     target_height: f32,
     max_distance: Option<f32>,
     contest_margin: f64,
+    fov: f32,
 ) -> PyResult<Py<PyDict>> {
     let observers: Vec<Observer> = players
         .iter()
-        .filter_map(|(x, y, z, side, crouched, blind)| {
+        .filter_map(|(x, y, z, side, crouched, blind, yaw)| {
             parse_team(side).map(|team| Observer {
                 pos: [*x, *y, *z],
                 team,
                 crouched: *crouched,
                 blind: *blind,
+                yaw: *yaw,
             })
         })
         .collect();
@@ -1483,6 +1495,7 @@ fn compute_map_control(
         target_height,
         max_distance,
         contest_margin,
+        fov,
     };
     let to_occluders = |spheres: &[Sphere]| {
         spheres
@@ -1495,13 +1508,19 @@ fn compute_map_control(
     };
 
     let result = match method.to_ascii_lowercase().as_str() {
-        "vision" => {
+        line_of_sight @ ("vision" | "raycast") => {
             let vc = visibility.as_ref().ok_or_else(|| {
-                PyValueError::new_err(
-                    "method='vision' requires a VisibilityChecker (pass visibility=...)",
-                )
+                PyValueError::new_err(format!(
+                    "method={line_of_sight:?} requires a VisibilityChecker (pass visibility=...)"
+                ))
             })?;
-            vision_control(
+            // The two share everything but the field-of-view cone.
+            let model = if line_of_sight == "vision" {
+                vision_control
+            } else {
+                raycast_control
+            };
+            model(
                 &nav.nav,
                 &vc.mesh,
                 &observers,
@@ -1514,7 +1533,7 @@ fn compute_map_control(
         }
         other => {
             return Err(PyValueError::new_err(format!(
-                "unknown method {other:?}; expected 'vision' or 'reachability'"
+                "unknown method {other:?}; expected 'vision', 'raycast' or 'reachability'"
             )));
         }
     };
