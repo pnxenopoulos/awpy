@@ -11,14 +11,19 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
 - `item_events` — weapon-item transactions (purchases, pickups, and drops),
   reconstructed from inventory state so they work on demos without the
   `item_purchase` event.
-- Player datasets: `players` (roster); `snapshots(...)` for per-player state —
-  position, health, armor, economy, and loadout — at a tick, a list of ticks, a
-  contiguous range (`start_tick` / `end_tick`), or sampled across the match by a
-  stride and/or event ticks.
-- `stats` also reports utility (grenade damage, flashes thrown, enemies flashed,
-  blind duration dealt); `round_economy` classifies each team's buy per round
-  (`eco` / `force` / `full`).
-- Metadata: `chat`, `convars`.
+- Player datasets: `players` (roster, including each player's team /
+  organization name); `snapshots(...)` for per-player state — position, health,
+  armor, economy, and loadout — at a tick, a list of ticks, a contiguous range
+  (`start_tick` / `end_tick`), or sampled across the match by a stride and/or
+  event ticks.
+- `stats` also reports clutches (`clutches_played`, `clutches_won`, and
+  `clutch_1v1` … `clutch_1v5`) and utility (grenade damage, flashes thrown,
+  enemies flashed, blind duration dealt); `round_economy` classifies each team's
+  buy per round (`pistol` / `eco` / `force` / `full`).
+- `kills` flags trades: `is_trade` (this kill avenged a teammate) and
+  `victim_traded` (this kill's victim was avenged) — the same classification
+  behind `stats.traded_deaths`.
+- Metadata: `header`, `tick_rate`, `chat`, `convars`.
 - `awpy.SNAPSHOT_PROPERTIES` and `awpy.GAME_EVENTS` — discoverable catalogs of the
   per-player snapshot features (mapped to engine properties) and common events.
 - Generic access: `header`, the `events` mapping, and `ticks()` — one natively

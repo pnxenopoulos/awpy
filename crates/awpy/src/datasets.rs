@@ -109,6 +109,8 @@ const FLASH_EDGE_MARGIN: f32 = 0.05;
 const PLAYER_PAWN_CLASS: &str = "CCSPlayerPawn";
 /// Player controller entity — carries the persistent Steam id and name.
 const PLAYER_CONTROLLER_CLASS: &str = "CCSPlayerController";
+/// Team entity — one per team number, carrying the organization ("clan") name.
+const TEAM_CLASS: &str = "CCSTeam";
 /// Planted-bomb entity — carries the bomb-site index while the bomb is down.
 const PLANTED_C4_CLASS: &str = "CPlantedC4";
 
@@ -238,6 +240,69 @@ pub struct Kill {
     pub thrusmoke: bool,
     pub hitgroup: i32,
     pub hitgroup_name: String,
+
+    /// Whether this kill **is** a trade — the attacker killed someone who had
+    /// just killed one of the attacker's teammates, within the trade window.
+    /// See [`trade_flags`].
+    pub is_trade: bool,
+    /// Whether this kill's **victim was traded** — a teammate of the victim
+    /// killed this attacker within the trade window. This is the flag behind
+    /// [`PlayerStats::traded_deaths`](crate::stats::PlayerStats::traded_deaths).
+    pub victim_traded: bool,
+}
+
+/// Default trade window in seconds — how long after a death a teammate's
+/// revenge kill still counts as a trade.
+pub const TRADE_SECONDS: f32 = 5.0;
+
+/// Classify every kill as a trade and/or a traded death.
+///
+/// A death is **traded** when the killer is themselves killed by a teammate of
+/// the victim within `trade_ticks`. The revenge kill **is a trade**. The two
+/// flags are duals: whenever kill *A* has `victim_traded`, the kill *B* that
+/// avenged it has `is_trade`.
+///
+/// Returns `(is_trade, victim_traded)` per kill, positionally matching `kills`
+/// (which need not be sorted). A kill with an unresolved attacker or victim side
+/// can neither trade nor be traded, since there is no team to compare against.
+///
+/// The two flags do not occur in equal numbers: one kill can avenge several
+/// teammates at once — a player who kills two enemies and is then killed by a
+/// third trades both of those deaths — so `victim_traded` is usually the more
+/// common of the two.
+pub fn trade_flags(kills: &[Kill], trade_ticks: i32) -> Vec<(bool, bool)> {
+    let mut flags = vec![(false, false); kills.len()];
+
+    // Indices in tick order, so the window scan can stop at the first kill past
+    // the window instead of walking the whole match.
+    let mut order: Vec<usize> = (0..kills.len()).collect();
+    order.sort_by_key(|&i| kills[i].tick);
+
+    for (pos, &i) in order.iter().enumerate() {
+        let death = &kills[i];
+        // The killer, who a teammate of the victim must kill for this to trade.
+        let Some(killer) = death.attacker_steamid else {
+            continue;
+        };
+        let Some(victim_side) = &death.victim_side else {
+            continue;
+        };
+        for &j in &order[pos + 1..] {
+            let revenge = &kills[j];
+            if revenge.tick - death.tick > trade_ticks {
+                break;
+            }
+            if revenge.tick > death.tick
+                && revenge.victim_steamid == Some(killer)
+                && revenge.attacker_side.as_ref() == Some(victim_side)
+            {
+                flags[i].1 = true; // this death was traded
+                flags[j].0 = true; // and that kill is the trade
+                break;
+            }
+        }
+    }
+    flags
 }
 
 /// A single damage instance, from a `player_hurt` game event, enriched with the
@@ -1383,6 +1448,15 @@ impl Parser {
             detect_blinds(ctx, &detonations, &mut prev_flash, fk, pk, ck, &mut blinds);
         })?;
 
+        // Trades need every kill's resolved sides, so they are classified after
+        // the decode has filled the participants in.
+        let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
+        let flags = trade_flags(&kills, trade_ticks);
+        for (kill, (is_trade, victim_traded)) in kills.iter_mut().zip(flags) {
+            kill.is_trade = is_trade;
+            kill.victim_traded = victim_traded;
+        }
+
         Ok(EventDatasets {
             kills,
             damages,
@@ -1704,6 +1778,15 @@ pub struct Player {
     pub name: Option<String>,
     /// Last observed side (players swap at halftime).
     pub side: Option<String>,
+    /// The organization the player's team was playing under when they were last
+    /// observed (`CCSTeam::m_szClanTeamname`, e.g. `"Imperial"`).
+    ///
+    /// Set by tournament servers and by anything that names its teams; empty in
+    /// casual matchmaking, where it is `None`. Because it is captured alongside
+    /// [`side`](Self::side) rather than at the end of the demo, a player who
+    /// leaves mid-match keeps the clan they actually played for, not whoever
+    /// held their side afterwards.
+    pub team_clan_name: Option<String>,
 }
 
 /// One player's state at a tick (see [`Parser::snapshot`]).
@@ -1851,16 +1934,51 @@ pub struct ItemEvent {
 }
 
 impl Parser {
-    /// Every player seen in the demo — Steam id, name, and last observed side.
+    /// Every player seen in the demo — Steam id, name, last observed side, and
+    /// the team ("clan") name they were playing under.
     ///
     /// Derived from `CCSPlayerController` entities, so bots appear too (with
     /// `steamid` 0). A reconnecting player gets a fresh controller slot; rows
     /// are deduplicated by Steam id, keeping the freshest state.
+    ///
+    /// Clan names come from the `CCSTeam` entities, which are keyed by team
+    /// number — and team numbers swap sides at halftime. They are therefore read
+    /// at the same time as each player's side, so both describe the same moment.
     pub fn players(&self) -> Result<Vec<Player>> {
-        let filter: HashSet<&str> = HashSet::from([PLAYER_CONTROLLER_CLASS]);
+        let filter: HashSet<&str> = HashSet::from([PLAYER_CONTROLLER_CLASS, TEAM_CLASS]);
         let mut keys: Option<(Option<u64>, Option<u64>, Option<u64>)> = None;
+        let mut team_keys: Option<(Option<u64>, Option<u64>)> = None;
         let mut seen: std::collections::BTreeMap<i32, Player> = Default::default();
+        // Team number -> clan name, as of the tick being processed.
+        let mut clans: HashMap<i64, String> = HashMap::new();
         self.run_to_end_filtered(&filter, |ctx| {
+            // Teams first: the controller loop below reads `clans`, and team
+            // entities sort after the controllers by entity index.
+            let (team_num_key, clan_key) = *team_keys.get_or_insert_with(|| {
+                let ser = ctx.serializers.get(TEAM_CLASS);
+                let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
+                (key("m_iTeamNum"), key("m_szClanTeamname"))
+            });
+            for (_, e) in ctx.entities.iter() {
+                if !e.active || e.class_name != TEAM_CLASS {
+                    continue;
+                }
+                let team = e.get_i64(team_num_key);
+                // Only the playing sides matter; 0 / 1 are unassigned and
+                // spectator, which never carry a clan name.
+                if team <= 1 {
+                    continue;
+                }
+                match e.get_string(clan_key) {
+                    Some(clan) if !clan.is_empty() => {
+                        clans.insert(team, clan);
+                    }
+                    // An empty string means the server never named this team;
+                    // leave any earlier value in place rather than blanking it.
+                    _ => {}
+                }
+            }
+
             let (steamid_key, name_key, team_key) = *keys.get_or_insert_with(|| {
                 let ser = ctx.serializers.get(PLAYER_CONTROLLER_CLASS);
                 let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
@@ -1880,6 +1998,9 @@ impl Parser {
                 let team = e.get_i64(team_key);
                 if team > 0 {
                     entry.side = Some(team_name(team).to_string());
+                    if let Some(clan) = clans.get(&team) {
+                        entry.team_clan_name = Some(clan.clone());
+                    }
                 }
             }
         })?;
@@ -2491,5 +2612,67 @@ mod tests {
         assert_eq!(dmg.dmg_health, 444); // raw damage is preserved
         assert_eq!(dmg.health_post, 0);
         assert_eq!(dmg.health_pre, 100); // clamped, not 444
+    }
+
+    fn kill(tick: i32, attacker: u64, aside: &str, victim: u64, vside: &str) -> Kill {
+        Kill {
+            tick,
+            attacker_steamid: Some(attacker),
+            attacker_side: Some(aside.into()),
+            victim_steamid: Some(victim),
+            victim_side: Some(vside.into()),
+            ..Default::default()
+        }
+    }
+
+    const T: &str = "terrorist";
+    const CT: &str = "counter-terrorist";
+
+    #[test]
+    fn trade_flags_are_duals() {
+        // CT 2 kills T 1; T 3 trades by killing CT 2 inside the window. The first
+        // kill's victim was traded, and the second kill *is* that trade.
+        let kills = vec![kill(100, 2, CT, 1, T), kill(300, 3, T, 2, CT)];
+        let flags = trade_flags(&kills, 320);
+        assert_eq!(flags[0], (false, true));
+        assert_eq!(flags[1], (true, false));
+    }
+
+    #[test]
+    fn trade_flags_respect_the_window() {
+        let kills = vec![kill(100, 2, CT, 1, T), kill(500, 3, T, 2, CT)];
+        let flags = trade_flags(&kills, 320); // 400 ticks apart, window is 320
+        assert_eq!(flags, vec![(false, false), (false, false)]);
+    }
+
+    #[test]
+    fn a_teammates_revenge_is_required_for_a_trade() {
+        // CT 2 kills T 1, then a *fellow CT* kills CT 2 (a team kill). Nobody on
+        // T's side avenged the death, so it is not traded.
+        let kills = vec![kill(100, 2, CT, 1, T), kill(200, 4, CT, 2, CT)];
+        let flags = trade_flags(&kills, 320);
+        assert_eq!(flags[0], (false, false));
+        assert_eq!(flags[1], (false, false));
+    }
+
+    #[test]
+    fn trade_flags_follow_ticks_not_input_order() {
+        // Same two kills as `trade_flags_are_duals`, supplied out of tick order:
+        // the flags must attach to the same kills, positionally.
+        let kills = vec![kill(300, 3, T, 2, CT), kill(100, 2, CT, 1, T)];
+        let flags = trade_flags(&kills, 320);
+        assert_eq!(flags[0], (true, false)); // the tick-300 revenge kill
+        assert_eq!(flags[1], (false, true)); // the tick-100 death it avenged
+    }
+
+    #[test]
+    fn a_death_with_an_unresolved_side_cannot_be_traded() {
+        // World / suicide deaths have no victim side, so there is no team to
+        // credit a revenge kill to.
+        let mut kills = vec![kill(100, 2, CT, 1, T), kill(200, 3, T, 2, CT)];
+        kills[0].victim_side = None;
+        let flags = trade_flags(&kills, 320);
+        assert_eq!(flags[0], (false, false));
+        assert_eq!(flags[1], (false, false));
     }
 }

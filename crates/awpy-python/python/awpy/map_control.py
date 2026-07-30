@@ -68,18 +68,18 @@ _SUMMARY_COLUMNS = ("ct", "t", "contested", "neutral", "net_control")
 class MapControlParams:
     """Knobs for the map-control models (all optional; the defaults are sane).
 
-    Vision geometry (Hammer units):
+    Grouped by what they affect: *vision geometry* (the first four, in Hammer
+    units), *reachability* (``contest_margin``), and the *dynamic occluders* that
+    smokes, molotovs, and flashes create.
+
+    Attributes:
         eye_height: Standing eye height above the feet — where vision rays start.
         crouch_eye_height: Eye height when crouched.
         target_height: Height above an area's floor that vision aims at, modelling
             "would I see a player standing here" rather than the bare floor.
         max_distance: Optional cap on vision range; ``None`` is unbounded.
-
-    Reachability:
         contest_margin: Travel-distance tie band — areas whose two sides' travel
             distances differ by no more than this are contested.
-
-    Dynamic occluders:
         smoke_radius: Radius of a smoke cloud that blocks vision.
         smoke_height: How far above its landing point a smoke's blocking sphere
             is centred.

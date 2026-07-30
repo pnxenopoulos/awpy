@@ -102,6 +102,7 @@ struct Demo {
 #[pymethods]
 impl Demo {
     #[new]
+    #[pyo3(text_signature = "(path)")]
     fn new(path: PathBuf) -> PyResult<Self> {
         if !path.exists() {
             return Err(PyFileNotFoundError::new_err(format!(
@@ -143,6 +144,18 @@ impl Demo {
             dict.set_item("playback_time", info.playback_time)?;
         }
         Ok(dict)
+    }
+
+    /// Ticks per second as a ``float``, for converting tick counts to seconds.
+    ///
+    /// Computed from the demo's playback timing (``playback_ticks`` divided by
+    /// ``playback_time``), falling back to ``64.0`` when the demo does not report
+    /// it. Competitive demos are 64 tick; some are recorded at 128::
+    ///
+    ///     seconds = (row["end_tick"] - row["freeze_end_tick"]) / demo.tick_rate
+    #[getter]
+    fn tick_rate(&self) -> f32 {
+        self.parser.tickrate()
     }
 
     /// The demo's game events, keyed by name.
@@ -208,6 +221,7 @@ impl Demo {
     ///     players_only: When ``True`` (default), return one merged row per
     ///         player; otherwise dump every entity separately.
     #[pyo3(signature = (props=None, players_only=true))]
+    #[pyo3(text_signature = "($self, props=None, players_only=True)")]
     fn ticks(&self, props: Option<Vec<String>>, players_only: bool) -> PyResult<PyDataFrame> {
         let props = props.unwrap_or_else(default_tick_props);
         if players_only {
@@ -275,6 +289,19 @@ impl Demo {
     }
 
     /// Every kill (``player_death`` event) as a DataFrame, all fields typed (cached).
+    ///
+    /// Includes two trade flags:
+    ///
+    /// * ``is_trade`` — this kill **is** a trade: the attacker killed someone who
+    ///   had just killed one of their teammates (within 5 seconds).
+    /// * ``victim_traded`` — this kill's **victim was traded**: a teammate of the
+    ///   victim killed this attacker within the window.
+    ///
+    /// The two are duals, so the kill that avenges a death carries ``is_trade``
+    /// and the death it avenged carries ``victim_traded``; the latter is what
+    /// :attr:`stats` tallies as ``traded_deaths``, from the same classifier, so
+    /// they cannot disagree. Their totals differ, though: one kill can avenge
+    /// several teammates at once, so ``victim_traded`` is usually more common.
     #[getter]
     fn kills(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.event_frame(py, "kills")
@@ -318,10 +345,24 @@ impl Demo {
         self.event_frame(py, "shots")
     }
 
-    /// Per-player match statistics (kills, KAST, ADR, openings, trades, ...; cached).
+    /// Per-player match statistics as a DataFrame (cached).
     ///
-    /// One row per player. See the docs for the full column list and the
-    /// definitions of opening kills/deaths, traded deaths, KAST, and ADR.
+    /// One row per player, knife rounds excluded. Columns: ``steamid``, ``name``,
+    /// ``rounds_played``, ``kills``, ``deaths``, ``assists``, ``flash_assists``,
+    /// ``headshot_kills``, ``headshot_pct``, ``opening_kills``,
+    /// ``opening_deaths``, ``traded_deaths``, ``multikill_2k`` …
+    /// ``multikill_5k``, ``kast``, ``adr``, the clutch columns below, and utility
+    /// (``utility_damage``, ``flashes_thrown``, ``enemies_flashed``,
+    /// ``flash_duration_dealt``).
+    ///
+    /// Clutches: ``clutches_played`` (rounds entered as the last player alive
+    /// against at least one opponent), ``clutches_won``, and ``clutch_1v1`` …
+    /// ``clutch_1v5`` — clutches *won*, bucketed by how many opponents were alive
+    /// at the moment the player was left alone, so the five sum to
+    /// ``clutches_won``.
+    ///
+    /// See the reference docs for how opening kills/deaths, traded deaths,
+    /// clutches, KAST, and ADR are defined.
     #[getter]
     fn stats(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.ensure_parsed(py);
@@ -345,6 +386,7 @@ impl Demo {
     /// demo). Prefer :attr:`stats` for the default (knife-rounds-excluded)
     /// result, and keep the returned DataFrame if you call this repeatedly.
     #[pyo3(signature = (include_knife_rounds=false))]
+    #[pyo3(text_signature = "($self, include_knife_rounds=False)")]
     fn player_stats(&self, include_knife_rounds: bool) -> PyResult<PyDataFrame> {
         let stats = self
             .parser
@@ -355,8 +397,15 @@ impl Demo {
 
     /// The roster: every player seen in the demo (cached).
     ///
-    /// One row per player with ``steamid``, ``name``, and ``side`` (the last
-    /// team observed — players swap at halftime). Bots have ``steamid`` 0.
+    /// One row per player with ``steamid``, ``name``, ``side`` (the last team
+    /// observed — players swap at halftime), and ``team_clan_name``. Bots have
+    /// ``steamid`` 0.
+    ///
+    /// ``team_clan_name`` is the organization the player's team was playing under
+    /// (e.g. ``"Imperial"``), from the ``CCSTeam`` entities. Tournament servers
+    /// set it; casual matchmaking leaves it null. It is captured alongside
+    /// ``side``, so a player who leaves mid-match keeps the team they actually
+    /// played for rather than whoever held their side afterwards.
     #[getter]
     fn players(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.ensure_parsed(py);
@@ -369,8 +418,8 @@ impl Demo {
     /// Per-team economy and buy type per round (cached).
     ///
     /// One row per (round, side): ``round_num``, ``side``, ``equipment_value``
-    /// (team total at round start), ``buy_type`` (``eco`` / ``force`` / ``full``),
-    /// and ``n_players``.
+    /// (team total at round start), ``buy_type`` (``pistol`` / ``eco`` /
+    /// ``force`` / ``full``), and ``n_players``.
     #[getter]
     fn round_economy(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.cached_frame(py, "round_economy", || {
@@ -466,6 +515,9 @@ impl Demo {
     ///     demo.snapshots(events="player_death")          # at kill ticks
     ///     demo.snapshots(every=64, start_tick=0, end_tick=64000)
     #[pyo3(signature = (*, ticks=None, every=None, seconds=None, events=None, start_tick=None, end_tick=None))]
+    #[pyo3(
+        text_signature = "($self, *, ticks=None, every=None, seconds=None, events=None, start_tick=None, end_tick=None)"
+    )]
     #[allow(clippy::too_many_arguments)]
     fn snapshots(
         &self,
@@ -1025,6 +1077,7 @@ struct VisibilityChecker {
 impl VisibilityChecker {
     #[new]
     #[pyo3(signature = (source, *, version=None))]
+    #[pyo3(text_signature = "(source, *, version=None)")]
     fn new(
         py: Python<'_>,
         source: &Bound<'_, PyAny>,
@@ -1066,6 +1119,7 @@ impl VisibilityChecker {
     ///
     /// Returns:
     ///     ``True`` if nothing blocks the line between the two points.
+    #[pyo3(text_signature = "($self, a, b)")]
     fn is_visible(&self, a: [f32; 3], b: [f32; 3]) -> bool {
         self.mesh.is_visible(a, b)
     }
@@ -1073,6 +1127,7 @@ impl VisibilityChecker {
     /// Does any triangle block the segment from ``a`` to ``b``?
     ///
     /// The complement of :meth:`is_visible`.
+    #[pyo3(text_signature = "($self, a, b)")]
     fn is_occluded(&self, a: [f32; 3], b: [f32; 3]) -> bool {
         self.mesh.is_occluded(a, b)
     }
@@ -1154,6 +1209,7 @@ impl NavMesh {
 impl NavMesh {
     #[new]
     #[pyo3(signature = (source, *, version=None))]
+    #[pyo3(text_signature = "(source, *, version=None)")]
     fn new(
         py: Python<'_>,
         source: &Bound<'_, PyAny>,
@@ -1259,6 +1315,7 @@ impl NavMesh {
     /// ``dynamic_attribute_flags``, ``corners`` (list of ``(x, y, z)``),
     /// ``connections`` (distinct neighbour IDs), ``ladders_above``,
     /// ``ladders_below``, ``centroid`` and ``size``.
+    #[pyo3(text_signature = "($self, area_id)")]
     fn area(&self, py: Python<'_>, area_id: u32) -> PyResult<Option<Py<PyDict>>> {
         let Some(a) = self.nav.area(area_id) else {
             return Ok(None);
@@ -1283,11 +1340,13 @@ impl NavMesh {
     ///
     /// When areas overlap in the XY plane (stacked floors, a bridge over a
     /// tunnel), the area whose height is closest to the point's Z wins.
+    #[pyo3(text_signature = "($self, point)")]
     fn find_area(&self, point: [f32; 3]) -> Option<u32> {
         self.nav.find_area(point)
     }
 
     /// Distinct neighbour area IDs reachable directly from ``area_id``.
+    #[pyo3(text_signature = "($self, area_id)")]
     fn neighbors(&self, area_id: u32) -> Vec<u32> {
         self.nav.neighbors(area_id)
     }
@@ -1306,6 +1365,7 @@ impl NavMesh {
     ///         ``"hops"`` (fewest areas), or ``"size"`` (sum of adjacent area
     ///         sizes; routes away from large open areas).
     #[pyo3(signature = (start, end, *, weight="distance"))]
+    #[pyo3(text_signature = "($self, start, end, *, weight='distance')")]
     fn find_path(
         &self,
         start: &Bound<'_, PyAny>,
@@ -1357,8 +1417,12 @@ fn parse_team(side: &str) -> Option<Team> {
 ///     fires: Active inferno spheres ``(x, y, z, radius)`` (reachability only).
 ///     detail: When ``True`` (default) include the per-area arrays; when
 ///         ``False`` return only the summary fractions.
-///     eye_height, crouch_eye_height, target_height, max_distance,
-///     contest_margin: Model parameters (see :class:`awpy.map_control.MapControlParams`).
+///     eye_height: Standing eye height above the feet, where vision rays start.
+///     crouch_eye_height: Eye height when crouched.
+///     target_height: Height above an area's floor that vision aims at.
+///     max_distance: Optional cap on vision range; ``None`` is unbounded.
+///     contest_margin: Reachability travel-distance tie band. See
+///         :class:`awpy.map_control.MapControlParams` for all five.
 ///
 /// Returns:
 ///     A dict with ``ct_fraction``, ``t_fraction``, ``contested_fraction``,
@@ -1380,6 +1444,11 @@ fn parse_team(side: &str) -> Option<Team> {
     max_distance=None,
     contest_margin=200.0,
 ))]
+#[pyo3(
+    text_signature = "(nav, players, *, visibility=None, method='vision', smokes=[], fires=[], \
+                       detail=True, eye_height=64.0, crouch_eye_height=46.0, target_height=46.0, \
+                       max_distance=None, contest_margin=200.0)"
+)]
 #[allow(clippy::too_many_arguments)]
 fn compute_map_control(
     py: Python<'_>,
@@ -1540,6 +1609,8 @@ fn kills_to_frame(kills: &[Kill]) -> PolarsResult<DataFrame> {
         col!("thrusmoke", kills, |k| k.thrusmoke),
         col!("hitgroup", kills, |k| k.hitgroup),
         col!("hitgroup_name", kills, |k| k.hitgroup_name.clone()),
+        col!("is_trade", kills, |k| k.is_trade),
+        col!("victim_traded", kills, |k| k.victim_traded),
         col!("tick", kills, |k| k.tick),
     ])
 }
@@ -1650,6 +1721,7 @@ fn players_to_frame(players: &[Player]) -> PolarsResult<DataFrame> {
         col!("steamid", players, |p| p.steamid),
         col!("name", players, |p| p.name.clone()),
         col!("side", players, |p| p.side.clone()),
+        col!("team_clan_name", players, |p| p.team_clan_name.clone()),
     ])
 }
 
@@ -1759,6 +1831,13 @@ fn stats_to_frame(stats: &[PlayerStats]) -> PolarsResult<DataFrame> {
         col!("multikill_5k", stats, |s| s.multikill_5k),
         col!("kast", stats, |s| s.kast),
         col!("adr", stats, |s| s.adr),
+        col!("clutches_played", stats, |s| s.clutches_played),
+        col!("clutches_won", stats, |s| s.clutches_won),
+        col!("clutch_1v1", stats, |s| s.clutch_1v1),
+        col!("clutch_1v2", stats, |s| s.clutch_1v2),
+        col!("clutch_1v3", stats, |s| s.clutch_1v3),
+        col!("clutch_1v4", stats, |s| s.clutch_1v4),
+        col!("clutch_1v5", stats, |s| s.clutch_1v5),
         col!("utility_damage", stats, |s| s.utility_damage),
         col!("flashes_thrown", stats, |s| s.flashes_thrown),
         col!("enemies_flashed", stats, |s| s.enemies_flashed),

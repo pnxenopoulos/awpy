@@ -56,10 +56,28 @@ For each of `attacker`, `victim`, `assister`:
 
 Plus the kill's own fields: `weapon` (str), `headshot` (bool), `dominated`,
 `noscope` (bool), `penetrated`, `revenge`, `thrusmoke` (bool), `hitgroup`,
-`hitgroup_name`, and `tick`.
+`hitgroup_name`, `is_trade` (bool), `victim_traded` (bool), and `tick`.
 
 Participant columns are **null** when that participant is absent (no assister)
 or can't be resolved (e.g. a world kill).
+
+### Trades
+
+Two flags mark each kill's place in a trade. A **trade** is a kill that avenges a
+teammate killed within the last 5 seconds:
+
+| Column | Description |
+| --- | --- |
+| `is_trade` | This kill **is** a trade — the attacker killed someone who had just killed one of their teammates. |
+| `victim_traded` | This kill's **victim was traded** — a teammate of the victim killed this attacker within the window. |
+
+The two are duals: the kill that avenges a death carries `is_trade`, and the death
+it avenged carries `victim_traded`. `victim_traded` is what the `stats` dataset
+counts as `traded_deaths` — both come from one classifier, so they cannot
+disagree. Note that the totals differ: one kill can avenge several teammates at
+once (kill two enemies, get killed by a third, and both of those deaths are
+traded), so `victim_traded` is usually the more common of the two. A kill can also
+carry both flags — a trade that was itself traded back.
 
 ```python
 # Headshot rate per weapon
@@ -71,6 +89,15 @@ kills.group_by("weapon").agg(
 
 # Kills by side
 kills.group_by("attacker_side").len()
+
+# Who trades for their team the most?
+kills.filter(pl.col("is_trade")).group_by("attacker_name").len().sort("len", descending=True)
+
+# How often does each player's death go unavenged?
+kills.group_by("victim_name").agg(
+    deaths=pl.len(),
+    traded=pl.col("victim_traded").sum(),
+).with_columns(trade_rate=pl.col("traded") / pl.col("deaths"))
 ```
 
 ## `damages`
@@ -255,15 +282,16 @@ One row per player, aggregating the kill / damage / round datasets into the
 common scoreboard metrics. Columns: `steamid`, `name`, `rounds_played`, `kills`,
 `deaths`, `assists`, `flash_assists`, `headshot_kills`, `headshot_pct`,
 `opening_kills`, `opening_deaths`, `traded_deaths`, `multikill_2k` …
-`multikill_5k`, `kast`, `adr`, plus utility: `utility_damage`, `flashes_thrown`,
+`multikill_5k`, `kast`, `adr`, clutches (`clutches_played`, `clutches_won`,
+`clutch_1v1` … `clutch_1v5`), plus utility: `utility_damage`, `flashes_thrown`,
 `enemies_flashed`, `flash_duration_dealt`.
 
 Precise definitions of every metric — assists and flash assists, opening
-kills / deaths, **traded deaths**, KAST, ADR, multi-kills, and the utility stats —
-are in the {doc}`Reference <reference>`. In brief: **KAST** is the share of rounds
-where the player got a **K**ill, **A**ssist, **S**urvived, or was **T**raded (their
-death was avenged by a teammate within 5 s), and **ADR** is average damage per
-round counting the actual HP removed from enemies.
+kills / deaths, **traded deaths**, **clutches**, KAST, ADR, multi-kills, and the
+utility stats — are in the {doc}`Reference <reference>`. In brief: **KAST** is the
+share of rounds where the player got a **K**ill, **A**ssist, **S**urvived, or was
+**T**raded (their death was avenged by a teammate within 5 s), and **ADR** is
+average damage per round counting the actual HP removed from enemies.
 
 Every player is treated as having played every round (the denominator for KAST
 and ADR is the match's round count), so players who join or leave mid-match are
@@ -291,6 +319,12 @@ returned DataFrame if you use it more than once rather than calling it in a loop
 ```python
 # Top fraggers with KAST and ADR
 demo.stats.sort("kills", descending=True).select("name", "kills", "kast", "adr")
+
+# Clutch success rate
+demo.stats.filter(pl.col("clutches_played") > 0).select(
+    "name", "clutches_won", "clutches_played",
+    rate=pl.col("clutches_won") / pl.col("clutches_played"),
+).sort("rate", descending=True)
 ```
 
 ## `round_economy`
@@ -315,12 +349,28 @@ demo.round_economy.filter(pl.col("buy_type") == "full")
 ## `players`
 
 ```python
-demo.players  # steamid, name, side
+demo.players  # steamid, name, side, team_clan_name
 ```
 
 The roster: one row per player seen in the demo. `side` is the last team the
 player was observed on (players swap at halftime); bots (e.g. the GOTV camera
 controller) have `steamid` 0.
+
+`team_clan_name` is the organization the player's team was playing under — e.g.
+`"Imperial"` — read from the `CCSTeam` entities. Tournament and league servers set
+it; casual matchmaking leaves it empty, in which case the column is null. Because
+it is captured at the same moment as `side`, a player who leaves mid-match keeps
+the team they actually played for rather than whoever held their side afterwards.
+
+```python
+# Group a match's players by organization
+demo.players.drop_nulls("team_clan_name").group_by("team_clan_name").agg("name")
+
+# Join team names onto the scoreboard
+demo.stats.join(
+    demo.players.select("steamid", "team_clan_name"), on="steamid", how="left"
+).sort("kills", descending=True)
+```
 
 ## `chat`
 

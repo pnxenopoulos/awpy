@@ -174,7 +174,7 @@ Each dataset is a property on the `Demo` class returning a [Polars](https://pola
 | Dataset | Description |
 |---------|-------------|
 | `rounds` | One row per round, reconstructed from `CCSGameRules` state — works even when `round_start` / `round_end` events are absent. Includes winner, side, and decoded round-end reason. |
-| `kills` | Every `player_death` event, with attacker, victim, and assister each resolved to a Steam id, name, side, and world position. |
+| `kills` | Every `player_death` event, with attacker, victim, and assister each resolved to a Steam id, name, side, and world position. Flags each kill as a trade (`is_trade`) and each death as traded (`victim_traded`). |
 | `damages` | Every `player_hurt` event, with attacker and victim resolved, plus the victim's health/armor before and after the hit. |
 | `bomb` | Bomb actions (pickup, drop, plant start/finish, defuse) with the acting player, position, and bombsite. |
 | `grenades` | Per-tick thrown-grenade trajectories (smoke, HE, flashbang, molotov, decoy). |
@@ -183,9 +183,9 @@ Each dataset is a property on the `Demo` class returning a [Polars](https://pola
 | `shots` | Every `weapon_fire` event with the shooter's state and active-weapon state (clip, inaccuracy, scoped). |
 | `blinds` | One row per flash event: the thrower, the blinded player (both resolved), and the blind duration. |
 | `item_events` | One row per weapon-item transaction — purchase, pickup, or drop — with the acting player, item, position, and (for buys) cost. |
-| `stats` | One row per player: kills, deaths, assists, headshots, openings, trades, multikills, KAST, ADR, and utility (grenade damage, flashes thrown, enemies flashed, blind duration). |
+| `stats` | One row per player: kills, deaths, assists, headshots, openings, trades, multikills, clutches (1v1–1v5), KAST, ADR, and utility (grenade damage, flashes thrown, enemies flashed, blind duration). |
 | `round_economy` | One row per (round, side): team equipment value at freeze end and its buy-type classification (`eco` / `force` / `full`). |
-| `players` | The roster: one row per player seen in the demo (Steam id, name, last side). |
+| `players` | The roster: one row per player seen in the demo (Steam id, name, last side, and team/organization name). |
 | `chat` | Chat messages decoded from `SayText` user messages, with channel (all/team). |
 | `convars` | Server console variables (`mp_maxrounds`, ...) as a `dict[str, str]`. |
 | `snapshots(*, ticks / every / seconds / events / start_tick / end_tick)` | Per-player game state (position, eye angles, health, armor, economy, and loadout) at a tick, a list of ticks, a contiguous range, or sampled across the match by a stride and/or event ticks. |
@@ -210,6 +210,7 @@ To discover what you can ask for without parsing first, `awpy.SNAPSHOT_PROPERTIE
 Full documentation is available at [awpy.readthedocs.io](https://awpy.readthedocs.io), including:
 
 - [Getting Started](https://awpy.readthedocs.io/en/latest/getting-started.html)
+- [Examples](https://awpy.readthedocs.io/en/latest/examples.html) — runnable scripts, also in [`crates/awpy-python/examples/`](crates/awpy-python/examples)
 - [Datasets](https://awpy.readthedocs.io/en/latest/datasets.html)
 - [API Reference](https://awpy.readthedocs.io/en/latest/api.html)
 - [CLI Reference](https://awpy.readthedocs.io/en/latest/cli.html)

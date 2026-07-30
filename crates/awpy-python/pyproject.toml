@@ -46,6 +46,9 @@ docs = [
     "shibuya>=2024.0",
     "sphinx>=8.0",
     "myst-parser>=4.0",
+    # `api.md` autodocs `awpy.plot`, so the docs build has to be able to import
+    # it — which needs the `plot` extra's matplotlib.
+    "matplotlib>=3.8",
 ]
 
 [build-system]

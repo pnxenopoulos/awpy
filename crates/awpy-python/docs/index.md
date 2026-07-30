@@ -18,7 +18,7 @@ CS2 demo files hold a wealth of match data — player positions, kills, damage, 
 
 ## Get started
 
-Install with `uv add awpy` or `pip install awpy`, then head to {doc}`getting-started` for a walkthrough. If something's off, open a [GitHub issue](https://github.com/pnxenopoulos/awpy/issues).
+Install with `uv add awpy` or `pip install awpy`, then head to {doc}`getting-started` for a walkthrough, or {doc}`examples` for complete scripts you can run. If something's off, open a [GitHub issue](https://github.com/pnxenopoulos/awpy/issues).
 
 ```python
 from awpy import Demo
@@ -41,16 +41,46 @@ kills = demo.kills      # every player_death, all fields
 ```{toctree}
 :maxdepth: 2
 :hidden:
+:caption: Start here
 
 getting-started
+examples
+```
+
+```{toctree}
+:maxdepth: 2
+:hidden:
+:caption: Match data
+
 datasets
 reference
+```
+
+```{toctree}
+:maxdepth: 2
+:hidden:
+:caption: Maps & space
+
 visibility
 nav
 map_control
 plot
+```
+
+```{toctree}
+:maxdepth: 2
+:hidden:
+:caption: Interfaces
+
 api
 cli
+```
+
+```{toctree}
+:maxdepth: 2
+:hidden:
+:caption: About
+
 other-parsers
 faq
 changelog

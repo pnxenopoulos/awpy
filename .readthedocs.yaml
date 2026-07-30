@@ -4,10 +4,15 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.12"
+    # The API reference is generated with sphinx.ext.autodoc, which imports the
+    # package — and `Demo` / `VisibilityChecker` / `NavMesh` live in the compiled
+    # `awpy._awpy` extension. So the docs build installs awpy for real (no
+    # `--no-install-project`), which means building the Rust core here.
+    rust: "latest"
   jobs:
     install:
       - pip install uv
-      - uv sync --group docs --no-install-project --project crates/awpy-python
+      - uv sync --group docs --project crates/awpy-python
     build:
       html:
         - uv run --project crates/awpy-python sphinx-build -b html crates/awpy-python/docs $READTHEDOCS_OUTPUT/html

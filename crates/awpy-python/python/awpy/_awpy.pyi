@@ -1,3 +1,14 @@
+"""Type stubs for the compiled ``awpy._awpy`` extension.
+
+These exist for type checkers and editor tooltips, so each entry carries its types
+plus a summary. The **authoritative** prose lives in the ``///`` docstrings in
+``crates/awpy-python/src/lib.rs``: those are what ``help()`` returns and what the
+published API reference is built from, since ``sphinx.ext.autodoc`` reads the
+compiled objects rather than this file. Keep the two consistent, and put new detail
+in the Rust docstrings rather than only here — anything added only here is invisible
+on the website.
+"""
+
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any, TypedDict
@@ -77,6 +88,17 @@ class Demo:
         Keys: ``map_name``, ``server_name``, ``client_name``, ``build_num``,
         ``demo_version_name``, ``game_directory``, and (when available)
         ``playback_ticks``, ``playback_frames``, ``playback_time``.
+        """
+
+    @property
+    def tick_rate(self) -> float:
+        """Ticks per second, for converting tick counts to seconds.
+
+        Computed from the demo's playback timing (``playback_ticks`` divided by
+        ``playback_time``), falling back to ``64.0`` when the demo does not
+        report it. Competitive demos are 64 tick; some are recorded at 128::
+
+            seconds = (row["end_tick"] - row["start_tick"]) / demo.tick_rate
         """
 
     @property
@@ -176,8 +198,24 @@ class Demo:
     def players(self) -> pl.DataFrame:
         """The roster: every player seen in the demo (cached).
 
-        One row per player with ``steamid``, ``name``, and ``side`` (the last
-        team observed — players swap at halftime). Bots have ``steamid`` 0.
+        One row per player with ``steamid``, ``name``, ``side`` (the last team
+        observed — players swap at halftime), and ``team_clan_name``. Bots have
+        ``steamid`` 0.
+
+        ``team_clan_name`` is the organization the player's team was playing
+        under (e.g. ``"Imperial"``), from the ``CCSTeam`` entities. Tournament
+        servers set it; casual matchmaking leaves it null. It is captured
+        alongside ``side``, so a player who leaves mid-match keeps the team they
+        actually played for rather than whoever held their side afterwards.
+        """
+
+    @property
+    def round_economy(self) -> pl.DataFrame:
+        """Per-team economy and buy type per round (cached).
+
+        One row per (round, side): ``round_num``, ``side``, ``equipment_value``
+        (the team's total at freeze end), ``buy_type`` (``pistol`` / ``eco`` /
+        ``force`` / ``full``), and ``n_players``.
         """
 
     @property
@@ -233,7 +271,28 @@ class Demo:
 
     @property
     def kills(self) -> pl.DataFrame:
-        """Every kill (``player_death`` event) as a DataFrame, all fields typed (cached)."""
+        """Every kill (``player_death`` event) as a DataFrame, all fields typed (cached).
+
+        Includes two trade flags:
+
+        - ``is_trade`` — this kill **is** a trade: the attacker killed someone
+          who had just killed one of their teammates (within 5 seconds).
+        - ``victim_traded`` — this kill's **victim was traded**: a teammate of
+          the victim killed this attacker within the window.
+
+        The two are duals, so the kill that avenges a death carries ``is_trade``
+        and the death it avenged carries ``victim_traded``. The latter is what
+        :attr:`stats` tallies as ``traded_deaths`` — both come from one
+        classifier, so they cannot disagree::
+
+            demo.kills.filter(pl.col("is_trade"))        # every trade kill
+            demo.kills.filter(pl.col("victim_traded"))   # every traded death
+
+        The two counts need not be equal: one kill can avenge several teammates
+        at once (a player who kills two enemies and is then killed by a third
+        trades both of those deaths), so ``victim_traded`` is typically the
+        larger of the two.
+        """
 
     @property
     def damages(self) -> pl.DataFrame:
@@ -264,11 +323,17 @@ class Demo:
 
     @property
     def stats(self) -> pl.DataFrame:
-        """Per-player match statistics (kills, KAST, ADR, openings, trades, ...; cached).
+        """Per-player match statistics (kills, KAST, ADR, openings, trades,
+        clutches, ...; cached).
 
         One row per player, knife rounds excluded. See the docs for the full
         column list and the definitions of opening kills/deaths, traded deaths,
-        KAST, and ADR.
+        clutches, KAST, and ADR.
+
+        Clutch columns: ``clutches_played`` (rounds entered as the last player
+        alive against at least one opponent), ``clutches_won``, and
+        ``clutch_1v1`` … ``clutch_1v5`` (clutches *won*, bucketed by how many
+        opponents were alive at the moment the player was left alone).
 
         This is the **cached** form: it is computed once (as part of the shared
         first-parse pass) and returned instantly thereafter. Use it unless you

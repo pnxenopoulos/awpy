@@ -126,11 +126,42 @@ def test_ticks_parallel_matches_serial(demo_path: Path, monkeypatch: pytest.Monk
 def test_players(demo_path: Path) -> None:
     players = Demo(demo_path).players
     assert isinstance(players, pl.DataFrame)
-    assert {"steamid", "name", "side"} <= set(players.columns)
+    assert {"steamid", "name", "side", "team_clan_name"} <= set(players.columns)
     humans = players.filter(pl.col("steamid") > 0)
     assert humans.height == 10
     assert humans["steamid"].n_unique() == 10
     assert set(humans["side"].unique()) <= {"terrorist", "counter-terrorist"}
+
+
+def test_players_team_clan_names(demo_path: Path) -> None:
+    players = Demo(demo_path).players
+    playing = players.filter(pl.col("side").is_in(["terrorist", "counter-terrorist"]))
+    named = playing.drop_nulls("team_clan_name")
+    if named.is_empty():
+        pytest.skip("demo has no team clan names (casual matchmaking)")
+
+    # A clan belongs to one side at a time, so a named match has at most two.
+    assert named["team_clan_name"].n_unique() <= 2
+    assert all(clan.strip() for clan in named["team_clan_name"])
+    # Everyone sharing a side shares a clan: the name is read alongside the side,
+    # so the two can never describe different moments.
+    per_side = named.group_by("side").agg(pl.col("team_clan_name").n_unique().alias("clans"))
+    assert (per_side["clans"] == 1).all()
+    # Spectators and unassigned players are on no team, so they carry no clan.
+    bench = players.filter(~pl.col("side").is_in(["terrorist", "counter-terrorist"]))
+    assert bench["team_clan_name"].null_count() == bench.height
+
+
+def test_tick_rate(demo_path: Path) -> None:
+    demo = Demo(demo_path)
+    assert isinstance(demo.tick_rate, float)
+    # Every competitive demo is 64 or 128 tick; the fallback is 64.
+    assert demo.tick_rate in (64.0, 128.0)
+    # Consistent with the header's own playback timing, when it reports it.
+    header = demo.header
+    ticks, seconds = header.get("playback_ticks"), header.get("playback_time")
+    if ticks and seconds:
+        assert demo.tick_rate == pytest.approx(ticks / seconds, rel=1e-3)
 
 
 def test_snapshot_single_tick(demo_path: Path) -> None:
@@ -583,6 +614,70 @@ def test_stats(demo_path: Path) -> None:
     assert stats["utility_damage"].sum() > 0
     # You can't blind more enemies than you threw flashes at (loosely).
     assert stats["flash_duration_dealt"].sum() > 0
+
+
+CLUTCH_COLS = ("clutch_1v1", "clutch_1v2", "clutch_1v3", "clutch_1v4", "clutch_1v5")
+
+
+def test_stats_clutches(demo_path: Path) -> None:
+    demo = Demo(demo_path)
+    stats = demo.stats
+    assert {"clutches_played", "clutches_won", *CLUTCH_COLS} <= set(stats.columns)
+    for col in ("clutches_played", "clutches_won", *CLUTCH_COLS):
+        assert stats[col].min() >= 0
+
+    # You cannot win more clutches than you played.
+    assert (stats["clutches_won"] <= stats["clutches_played"]).all()
+    # The 1vN breakdown covers exactly the wins.
+    breakdown = sum(stats[col] for col in CLUTCH_COLS)
+    assert (breakdown == stats["clutches_won"]).all()
+
+    # At most one clutch per side per round, so never more than 2 per round.
+    n_rounds = demo.rounds.filter(~pl.col("is_knife_round")).height
+    assert stats["clutches_played"].sum() <= 2 * n_rounds
+    # A full match always leaves someone last alive at least once.
+    assert stats["clutches_played"].sum() > 0
+
+
+def test_kills_trade_flags(demo_path: Path) -> None:
+    kills = Demo(demo_path).kills
+    assert {"is_trade", "victim_traded"} <= set(kills.columns)
+    assert kills["is_trade"].dtype == pl.Boolean
+    assert kills["victim_traded"].dtype == pl.Boolean
+
+    trades = kills.filter(pl.col("is_trade"))
+    traded = kills.filter(pl.col("victim_traded"))
+    assert trades.height > 0, "a full match always has trade kills"
+    # Duals: every trade kill must be preceded by a traded death on the other
+    # side, and one kill can avenge several teammates at once — so traded deaths
+    # are at least as numerous as the kills that avenged them, never fewer.
+    assert traded.height >= trades.height
+    # A trade kill is by definition against the opposing side.
+    assert (trades["attacker_side"] != trades["victim_side"]).all()
+    # A death with no resolved victim side has no team to avenge it.
+    assert traded["victim_side"].null_count() == 0
+
+
+def test_traded_deaths_match_the_kills_dataset(demo_path: Path) -> None:
+    """``stats.traded_deaths`` and ``kills.victim_traded`` share one classifier."""
+    demo = Demo(demo_path)
+    rounds = demo.rounds.sort("round_num")
+    live = rounds.filter(~pl.col("is_knife_round"))
+    per_player = (
+        demo.kills.filter(pl.col("victim_traded"))
+        .group_by("victim_steamid")
+        .len()
+        .rename({"victim_steamid": "steamid", "len": "flagged"})
+    )
+    joined = demo.stats.join(per_player, on="steamid", how="left").with_columns(
+        pl.col("flagged").fill_null(0)
+    )
+    if live.height == rounds.height:
+        # No knife round to exclude, so the two must agree exactly.
+        assert (joined["traded_deaths"] == joined["flagged"]).all()
+    else:
+        # Knife-round trades are dropped from stats but still flagged on kills.
+        assert (joined["traded_deaths"] <= joined["flagged"]).all()
 
 
 def test_round_economy(demo_path: Path) -> None:

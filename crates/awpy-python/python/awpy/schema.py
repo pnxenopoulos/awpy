@@ -13,10 +13,6 @@ from __future__ import annotations
 
 __all__ = ["GAME_EVENTS", "SNAPSHOT_PROPERTIES"]
 
-# Per-player snapshot feature -> the CS2 network property (or derivation) it is
-# read from. These are the columns of `demo.snapshots()`
-# (besides `tick`). Direct fields (health, money, the `is_*` flags, ...) can also
-# be requested by these readable names, or by their raw name, in `demo.ticks()`.
 SNAPSHOT_PROPERTIES: dict[str, str] = {
     # ── Identity ──
     "steamid": "m_steamID",
@@ -57,10 +53,15 @@ SNAPSHOT_PROPERTIES: dict[str, str] = {
     "is_defusing": "m_bIsDefusing",
     "flash_duration": "m_flFlashDuration",
 }
+"""Per-player snapshot feature name -> the CS2 network property it is read from.
 
-# Common CS2 game events and a one-line description. Not exhaustive — a demo may
-# carry others; `demo.events.names` lists the ones actually present, and
-# `demo.events[name]` returns any of them as a DataFrame.
+Every key is a column of :meth:`Demo.snapshots` (besides ``tick``), and the value
+is the engine property — or the derivation, for computed ones like world
+position. The direct fields (``health``, ``money``, the ``is_*`` flags, ...) can
+also be passed to :meth:`Demo.ticks`, either by these readable names or by their
+raw network names.
+"""
+
 GAME_EVENTS: dict[str, str] = {
     # ── Rounds & match ──
     "round_start": "A round begins.",
@@ -106,3 +107,9 @@ GAME_EVENTS: dict[str, str] = {
     "inferno_startburn": "A molotov / incendiary fire starts.",
     "inferno_expire": "A fire burns out.",
 }
+"""Common CS2 game event name -> a one-line description of what it means.
+
+Not exhaustive: a demo may carry events that are not listed here. For what a
+*particular* demo contains, use ``demo.events.names`` (or ``demo.events.counts``),
+and ``demo.events[name]`` to pull any of them as a DataFrame.
+"""

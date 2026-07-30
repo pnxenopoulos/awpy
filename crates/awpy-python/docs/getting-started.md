@@ -250,6 +250,8 @@ See {doc}`cli` for the full command list.
 
 ## Where next
 
+- {doc}`examples` — complete, runnable scripts: scoreboards, trade graphs, buy-type
+  win rates, clutch GIFs, and batch parsing to Parquet.
 - {doc}`datasets` — every dataset, every column.
 - {doc}`plot` — frames, heatmaps, multi-level maps, GIFs.
 - {doc}`visibility` — line-of-sight, map data, and the asset cache.

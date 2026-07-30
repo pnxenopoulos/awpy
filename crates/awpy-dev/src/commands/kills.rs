@@ -26,15 +26,16 @@ pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
     };
 
     println!(
-        "{:<8} {:<18} {:<18} {:<16} {:<8} {}",
+        "{:<8} {:<18} {:<18} {:<16} {:<8} {:<12} {}",
         "Tick".bold(),
         "Attacker".bold(),
         "Victim".bold(),
         "Weapon".bold(),
         "Headshot".bold(),
+        "Trade".bold(),
         "Hitgroup".bold(),
     );
-    println!("{}", "-".repeat(76));
+    println!("{}", "-".repeat(90));
 
     for k in shown {
         let hs = if k.headshot {
@@ -42,13 +43,22 @@ pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
         } else {
             "no".to_string()
         };
+        // Either flag can be set, including both on the same kill: a trade that
+        // is itself traded back.
+        let trade = match (k.is_trade, k.victim_traded) {
+            (true, true) => "trade,traded".cyan().to_string(),
+            (true, false) => "trade".cyan().to_string(),
+            (false, true) => "traded".to_string(),
+            (false, false) => "-".to_string(),
+        };
         println!(
-            "{:<8} {:<18} {:<18} {:<16} {:<8} {}",
+            "{:<8} {:<18} {:<18} {:<16} {:<8} {:<12} {}",
             k.tick,
             who(&k.attacker_name, &k.attacker_side),
             who(&k.victim_name, &k.victim_side),
             k.weapon,
             hs,
+            trade,
             k.hitgroup_name,
         );
     }

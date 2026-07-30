@@ -105,6 +105,22 @@ How the reconstructed and aggregated numbers are computed.
 (2 / 3). Players swap sides at halftime, so a player's `side` changes across the
 match; the persistent identity is `steamid`.
 
+A player's **team** — the organization they play for — is separate and does *not*
+swap: `demo.players` reports it as `team_clan_name` (e.g. `"Imperial"`), from the
+`CCSTeam` entities' `m_szClanTeamname`. Tournament and league servers set it;
+casual matchmaking leaves it null.
+
+### Ticks & time
+
+Demo timings are in **ticks**. `demo.tick_rate` gives ticks per second, computed
+from the demo's own playback timing (`playback_ticks / playback_time`) and falling
+back to `64.0` when the demo does not report it. Competitive CS2 demos are 64 tick;
+some are recorded at 128.
+
+```python
+round_seconds = (row["end_tick"] - row["freeze_end_tick"]) / demo.tick_rate
+```
+
 ### Buy types (`round_economy`)
 
 Each team's buy per round, from its **total equipment value at freeze end** (the
@@ -142,7 +158,9 @@ match's round count and players who join or leave mid-match are approximate.
 - **Traded death** — a death that was avenged: the player who killed you is
   themselves killed by one of **your** teammates within the **trade window** (5
   seconds by default). This is what the *T* in KAST rewards — you count for the
-  round even though you died, because your death was traded back.
+  round even though you died, because your death was traded back. The `kills`
+  dataset exposes the same classification per kill as `victim_traded`, and the
+  avenging kill as `is_trade`.
 - **KAST** — the percentage of rounds in which the player got a **K**ill, an
   **A**ssist, **S**urvived (was not killed), or was **T**raded.
 - **ADR** — average damage per round, using the **actual HP removed** from
@@ -152,6 +170,32 @@ match's round count and players who join or leave mid-match are approximate.
   fall) damage are excluded.
 - **Multi-kill rounds** (`multikill_2k` … `multikill_5k`) — rounds with exactly
   2 / 3 / 4 / 5-or-more kills.
+
+#### Clutches
+
+A **clutch** is a round the player was left to finish alone: they became the last
+player alive on their side while at least one opponent was still up.
+
+- **`clutches_played`** — how many such situations the player was in.
+- **`clutches_won`** — how many of those rounds their side went on to win.
+- **`clutch_1v1` … `clutch_1v5`** — clutches **won**, bucketed by how many
+  opponents were alive at the moment the player was left alone. Losses are counted
+  in `clutches_played` only, so `clutch_1v1 + … + clutch_1v5 == clutches_won`.
+
+Two details worth knowing:
+
+- The situation is **fixed at the moment the player is left alone**. A 1v3 stays a
+  1v3 in `clutch_1v3` even if two of the three die to a teammate's grenade
+  afterwards — it is not re-graded as a 1v1.
+- The player must *become* last alive. A side that fields a single player for the
+  whole round (after a disconnect, say) never registers a clutch, because there was
+  no transition.
+
+Alive / dead state is reconstructed from the event datasets rather than from
+per-tick entity state, so each side's roster for a round is inferred from who
+appears in that round's events — carried across rounds a player was quiet in, and
+re-derived after each side swap. Players who join or leave mid-match are covered
+only for the rounds they actually appear in.
 
 #### Utility
 

@@ -46,6 +46,7 @@ dev = [
     { name = "ty" },
 ]
 docs = [
+    { name = "matplotlib" },
     { name = "myst-parser" },
     { name = "shibuya" },
     { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -69,6 +70,7 @@ dev = [
     { name = "ty", specifier = ">=0.0.1a1" },
 ]
 docs = [
+    { name = "matplotlib", specifier = ">=3.8" },
     { name = "myst-parser", specifier = ">=4.0" },
     { name = "shibuya", specifier = ">=2024.0" },
     { name = "sphinx", specifier = ">=8.0" },

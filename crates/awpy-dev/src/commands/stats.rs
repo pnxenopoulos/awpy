@@ -14,7 +14,7 @@ pub fn run(file: &Path, json: bool) -> Result<()> {
     }
 
     println!(
-        "{:<16} {:>3} {:>3} {:>3} {:>3} {:>3} {:>3} {:>3} {:>6} {:>6}",
+        "{:<16} {:>3} {:>3} {:>3} {:>3} {:>3} {:>3} {:>3} {:>6} {:>6} {:>6}",
         "Player".bold(),
         "K".bold(),
         "D".bold(),
@@ -25,11 +25,12 @@ pub fn run(file: &Path, json: bool) -> Result<()> {
         "TD".bold(),
         "KAST".bold(),
         "ADR".bold(),
+        "CL".bold(),
     );
-    println!("{}", "-".repeat(64));
+    println!("{}", "-".repeat(72));
     for s in &stats {
         println!(
-            "{:<16} {:>3} {:>3} {:>3} {:>3} {:>3} {:>3} {:>3} {:>5.0}% {:>6.1}",
+            "{:<16} {:>3} {:>3} {:>3} {:>3} {:>3} {:>3} {:>3} {:>5.0}% {:>6.1} {:>6}",
             s.name,
             s.kills,
             s.deaths,
@@ -40,12 +41,14 @@ pub fn run(file: &Path, json: bool) -> Result<()> {
             s.traded_deaths,
             s.kast,
             s.adr,
+            format!("{}/{}", s.clutches_won, s.clutches_played),
         );
     }
     println!(
         "\n{} players over {} rounds. \
          K=kills D=deaths A=assists HS=headshot kills OK/OD=opening kills/deaths \
-         TD=traded deaths. Use --json for all columns (flash assists, multi-kills).",
+         TD=traded deaths CL=clutches won/played. \
+         Use --json for all columns (flash assists, multi-kills, clutch breakdown).",
         stats.len(),
         stats.first().map(|s| s.rounds_played).unwrap_or(0),
     );

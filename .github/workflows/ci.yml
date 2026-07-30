@@ -99,8 +99,8 @@ jobs:
         working-directory: crates/awpy-python
         run: |
           uv sync --no-install-project
-          uv run ruff check python tests
-          uv run ruff format --check python tests
+          uv run ruff check python tests examples
+          uv run ruff format --check python tests examples
 
       - name: ty
         working-directory: crates/awpy-python
@@ -212,6 +212,10 @@ jobs:
 
   docs:
     name: Sphinx Docs
+    # `api.md` is generated with sphinx.ext.autodoc, which imports awpy — and the
+    # core classes live in the compiled `awpy._awpy` extension. Reuse the wheel
+    # this workflow already built instead of compiling the Rust core again.
+    needs: build-python-wheels
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -221,11 +225,22 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build docs
+      - name: Download wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: python-wheels
+          path: dist
+
+      - name: Install wheel and docs dependencies
         working-directory: crates/awpy-python
         run: |
           uv sync --group docs --no-install-project
-          uv run sphinx-build -W -b html docs docs/_build/html
+          WHEEL=$(ls ../../dist/awpy-*-cp312-*.whl)
+          uv pip install "$WHEEL"
+
+      - name: Build docs
+        working-directory: crates/awpy-python
+        run: uv run sphinx-build -W -b html docs docs/_build/html
 
   check:
     name: CI Check
