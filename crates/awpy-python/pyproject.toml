@@ -10,13 +10,13 @@ authors = [
 dynamic = ["version"]
 keywords = ["counter-strike", "cs2", "demo", "parser", "esports"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Rust",
     "Topic :: Games/Entertainment",
     "Topic :: Software Development :: Libraries",
@@ -36,19 +36,19 @@ awpy = "awpy.cli:main"
 
 [dependency-groups]
 dev = [
-    "matplotlib>=3.8",
+    "matplotlib>=3.8,<4",
     "maturin>=1.0,<2.0",
-    "pytest>=8.0",
-    "ruff>=0.6",
-    "ty>=0.0.1a1",
+    "pytest>=9.0,<10",
+    "ruff==0.16.1",
+    "ty==0.0.65",
 ]
 docs = [
-    "shibuya>=2024.0",
-    "sphinx>=8.0",
-    "myst-parser>=4.0",
+    "shibuya==2026.7.12",
+    "sphinx==9.1.0",
+    "myst-parser==5.1.0",
     # `api.md` autodocs `awpy.plot`, so the docs build has to be able to import
     # it — which needs the `plot` extra's matplotlib.
-    "matplotlib>=3.8",
+    "matplotlib==3.11",
 ]
 
 [build-system]

@@ -5,8 +5,7 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use polars::prelude::*;
 use pyo3::exceptions::{PyAttributeError, PyFileNotFoundError, PyKeyError, PyValueError};
@@ -14,6 +13,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator, PyList, PyString};
 use pyo3_polars::PyDataFrame;
 
+use awpy::datasets::{EventDatasets, Projectiles};
 use awpy::geometry::VisibilityMesh;
 use awpy::map_control::{
     Observer, Occluder, Params as McParams, Team, raycast_control, reachability_control,
@@ -72,6 +72,40 @@ fn df_from_columns(columns: Vec<Column>) -> PolarsResult<DataFrame> {
     DataFrame::new(height, columns)
 }
 
+/// Fallible, thread-safe lazy initialization for Rust-side dataset groups.
+///
+/// `OnceLock::get_or_try_init` is not available on the crate's minimum Rust
+/// version, so a small mutex supplies the same successful-value-only behavior:
+/// failures are returned and a later call may retry.
+struct LazyCache<T> {
+    value: OnceLock<T>,
+    init: Mutex<()>,
+}
+
+impl<T> Default for LazyCache<T> {
+    fn default() -> Self {
+        Self {
+            value: OnceLock::new(),
+            init: Mutex::new(()),
+        }
+    }
+}
+
+impl<T> LazyCache<T> {
+    fn get_or_try_init<E>(&self, build: impl FnOnce() -> Result<T, E>) -> Result<&T, E> {
+        if let Some(value) = self.value.get() {
+            return Ok(value);
+        }
+        let _guard = self.init.lock().expect("dataset cache lock poisoned");
+        if self.value.get().is_none() {
+            self.value
+                .set(build()?)
+                .unwrap_or_else(|_| unreachable!("dataset cache initialized while locked"));
+        }
+        Ok(self.value.get().expect("dataset cache populated"))
+    }
+}
+
 fn to_py_err(e: awpy::Error) -> PyErr {
     match e {
         awpy::Error::Io(io_err) => PyErr::from(io_err),
@@ -94,10 +128,11 @@ struct Demo {
     path: PathBuf,
     events_cache: OnceLock<Py<Events>>,
     frames_cache: Mutex<HashMap<&'static str, Py<PyAny>>>,
-    convars_cache: OnceLock<Vec<(String, String)>>,
-    /// Set once the batched parallel parse (`ensure_parsed`) has been attempted,
-    /// so it runs at most once per demo.
-    parsed: AtomicBool,
+    convars_cache: LazyCache<Vec<(String, String)>>,
+    event_datasets_cache: LazyCache<EventDatasets>,
+    projectiles_cache: LazyCache<Projectiles>,
+    rounds_cache: LazyCache<Vec<Round>>,
+    players_cache: LazyCache<Vec<Player>>,
 }
 
 #[pymethods]
@@ -118,8 +153,11 @@ impl Demo {
             path,
             events_cache: OnceLock::new(),
             frames_cache: Mutex::new(HashMap::new()),
-            convars_cache: OnceLock::new(),
-            parsed: AtomicBool::new(false),
+            convars_cache: LazyCache::default(),
+            event_datasets_cache: LazyCache::default(),
+            projectiles_cache: LazyCache::default(),
+            rounds_cache: LazyCache::default(),
+            players_cache: LazyCache::default(),
         })
     }
 
@@ -176,20 +214,31 @@ impl Demo {
         if let Some(cached) = self.events_cache.get() {
             return Ok(cached.clone_ref(py));
         }
-        let raw = self.parser.events(None).map_err(to_py_err)?;
-        let mut groups: BTreeMap<String, Vec<GameEvent>> = BTreeMap::new();
-        for event in raw {
-            groups.entry(event.name.clone()).or_default().push(event);
+        let events = py
+            .detach(|| self.parser.events_shared())
+            .map_err(to_py_err)?;
+        let mut groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+        for (index, event) in events.iter().enumerate() {
+            if let Some(group) = groups.get_mut(&event.name) {
+                group.push(index);
+            } else {
+                groups.insert(event.name.clone(), vec![index]);
+            }
         }
         let obj = Py::new(
             py,
             Events {
+                events,
                 groups,
                 frames: Mutex::new(HashMap::new()),
             },
         )?;
         let _ = self.events_cache.set(obj.clone_ref(py));
-        Ok(obj)
+        Ok(self
+            .events_cache
+            .get()
+            .expect("events object cache populated")
+            .clone_ref(py))
     }
 
     /// Sample per-tick entity properties into a long-format DataFrame.
@@ -223,55 +272,63 @@ impl Demo {
     ///         player; otherwise dump every entity separately.
     #[pyo3(signature = (props=None, players_only=true))]
     #[pyo3(text_signature = "($self, props=None, players_only=True)")]
-    fn ticks(&self, props: Option<Vec<String>>, players_only: bool) -> PyResult<PyDataFrame> {
-        let props = props.unwrap_or_else(default_tick_props);
-        if players_only {
-            return self.ticks_by_player(props);
-        }
-        let mut ticks: Vec<i64> = Vec::new();
-        let mut entity_ids: Vec<i64> = Vec::new();
-        let mut classes: Vec<String> = Vec::new();
-        let mut prop_cols: Vec<TickColumn> = (0..props.len()).map(|_| TickColumn::new()).collect();
+    fn ticks(
+        &self,
+        py: Python<'_>,
+        props: Option<Vec<String>>,
+        players_only: bool,
+    ) -> PyResult<PyDataFrame> {
+        py.detach(move || {
+            let props = props.unwrap_or_else(default_tick_props);
+            if players_only {
+                return self.ticks_by_player(props);
+            }
+            let mut ticks: Vec<i64> = Vec::new();
+            let mut entity_ids: Vec<i64> = Vec::new();
+            let mut classes: Vec<String> = Vec::new();
+            let mut prop_cols: Vec<TickColumn> =
+                (0..props.len()).map(|_| TickColumn::new()).collect();
 
-        // Cache resolved (class, prop) → field key so we don't re-walk the
-        // serializer hierarchy on every tick.
-        let mut key_cache: HashMap<String, Vec<Option<u64>>> = HashMap::new();
+            // Cache resolved (class, prop) → field key so we don't re-walk the
+            // serializer hierarchy on every tick.
+            let mut key_cache: HashMap<String, Vec<Option<u64>>> = HashMap::new();
 
-        // `players_only=False`: dump every entity separately (the merged
-        // one-row-per-player path returned earlier).
-        self.parser
-            .run_to_end(|ctx| {
-                for (_, entity) in ctx.entities.iter() {
-                    if !entity.active {
-                        continue;
+            // `players_only=False`: dump every entity separately (the merged
+            // one-row-per-player path returned earlier).
+            self.parser
+                .run_to_end(|ctx| {
+                    for (_, entity) in ctx.entities.iter() {
+                        if !entity.active {
+                            continue;
+                        }
+                        let Some(serializer) = ctx.serializers.get(&entity.class_name) else {
+                            continue;
+                        };
+                        let keys = key_cache
+                            .entry(entity.class_name.clone())
+                            .or_insert_with(|| resolve_keys(serializer, &props));
+
+                        ticks.push(ctx.tick as i64);
+                        entity_ids.push(entity.index as i64);
+                        classes.push(entity.class_name.clone());
+                        for (i, key) in keys.iter().enumerate() {
+                            prop_cols[i].push(read_field(entity, *key));
+                        }
                     }
-                    let Some(serializer) = ctx.serializers.get(&entity.class_name) else {
-                        continue;
-                    };
-                    let keys = key_cache
-                        .entry(entity.class_name.clone())
-                        .or_insert_with(|| resolve_keys(serializer, &props));
+                })
+                .map_err(to_py_err)?;
 
-                    ticks.push(ctx.tick as i64);
-                    entity_ids.push(entity.index as i64);
-                    classes.push(entity.class_name.clone());
-                    for (i, key) in keys.iter().enumerate() {
-                        prop_cols[i].push(read_field(entity, *key));
-                    }
-                }
-            })
-            .map_err(to_py_err)?;
-
-        let mut columns: Vec<Column> = vec![
-            Column::new("tick".into(), ticks),
-            Column::new("entity_id".into(), entity_ids),
-            Column::new("class_name".into(), classes),
-        ];
-        for (prop, col) in props.iter().zip(prop_cols) {
-            columns.push(col.into_column(prop.as_str()));
-        }
-        let df = df_from_columns(columns).map_err(polars_err)?;
-        Ok(PyDataFrame(df))
+            let mut columns: Vec<Column> = vec![
+                Column::new("tick".into(), ticks),
+                Column::new("entity_id".into(), entity_ids),
+                Column::new("class_name".into(), classes),
+            ];
+            for (prop, col) in props.iter().zip(prop_cols) {
+                columns.push(col.into_column(prop.as_str()));
+            }
+            let df = df_from_columns(columns).map_err(polars_err)?;
+            Ok(PyDataFrame(df))
+        })
     }
 
     /// Per-round information as a DataFrame (cached).
@@ -282,10 +339,9 @@ impl Demo {
     /// demos without ``round_start`` / ``round_end`` events.
     #[getter]
     fn rounds(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.ensure_parsed(py);
-        self.cached_frame(py, "rounds", || {
-            let rounds = self.parser.rounds().map_err(to_py_err)?;
-            rounds_to_frame(&rounds).map_err(polars_err)
+        let rounds = self.parsed_rounds(py)?;
+        self.cached_frame(py, "rounds", move || {
+            rounds_to_frame(rounds).map_err(polars_err)
         })
     }
 
@@ -366,9 +422,10 @@ impl Demo {
     /// clutches, KAST, and ADR are defined.
     #[getter]
     fn stats(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.ensure_parsed(py);
-        self.cached_frame(py, "stats", || {
-            let stats = self.parser.player_stats(true).map_err(to_py_err)?;
+        let event_datasets = self.event_datasets(py)?;
+        let rounds = self.parsed_rounds(py)?;
+        self.cached_frame(py, "stats", move || {
+            let stats = self.parser.player_stats_from(event_datasets, rounds, true);
             stats_to_frame(&stats).map_err(polars_err)
         })
     }
@@ -388,12 +445,14 @@ impl Demo {
     /// result, and keep the returned DataFrame if you call this repeatedly.
     #[pyo3(signature = (include_knife_rounds=false))]
     #[pyo3(text_signature = "($self, include_knife_rounds=False)")]
-    fn player_stats(&self, include_knife_rounds: bool) -> PyResult<PyDataFrame> {
-        let stats = self
-            .parser
-            .player_stats(!include_knife_rounds)
-            .map_err(to_py_err)?;
-        Ok(PyDataFrame(stats_to_frame(&stats).map_err(polars_err)?))
+    fn player_stats(&self, py: Python<'_>, include_knife_rounds: bool) -> PyResult<PyDataFrame> {
+        py.detach(|| {
+            let stats = self
+                .parser
+                .player_stats(!include_knife_rounds)
+                .map_err(to_py_err)?;
+            Ok(PyDataFrame(stats_to_frame(&stats).map_err(polars_err)?))
+        })
     }
 
     /// The roster: every player seen in the demo (cached).
@@ -409,10 +468,9 @@ impl Demo {
     /// played for rather than whoever held their side afterwards.
     #[getter]
     fn players(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.ensure_parsed(py);
-        self.cached_frame(py, "players", || {
-            let players = self.parser.players().map_err(to_py_err)?;
-            players_to_frame(&players).map_err(polars_err)
+        let players = self.parsed_players(py)?;
+        self.cached_frame(py, "players", move || {
+            players_to_frame(players).map_err(polars_err)
         })
     }
 
@@ -475,12 +533,11 @@ impl Demo {
     /// set more than once, the last value wins.
     #[getter]
     fn convars<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
-        if self.convars_cache.get().is_none() {
-            let convars = self.parser.convars().map_err(to_py_err)?;
-            let _ = self.convars_cache.set(convars);
-        }
+        let convars = py
+            .detach(|| self.convars_cache.get_or_try_init(|| self.parser.convars()))
+            .map_err(to_py_err)?;
         let dict = PyDict::new(py);
-        for (name, value) in self.convars_cache.get().expect("just set") {
+        for (name, value) in convars {
             dict.set_item(name, value)?;
         }
         Ok(dict)
@@ -522,6 +579,7 @@ impl Demo {
     #[allow(clippy::too_many_arguments)]
     fn snapshots(
         &self,
+        py: Python<'_>,
         ticks: Option<TicksArg>,
         every: Option<i32>,
         seconds: Option<f32>,
@@ -544,8 +602,10 @@ impl Demo {
             && events.is_none()
             && !has_window
         {
-            let states = self.parser.snapshot(explicit[0]).map_err(to_py_err)?;
-            return Ok(PyDataFrame(states_to_frame(&states).map_err(polars_err)?));
+            return py.detach(|| {
+                let states = self.parser.snapshot(explicit[0]).map_err(to_py_err)?;
+                Ok(PyDataFrame(states_to_frame(&states).map_err(polars_err)?))
+            });
         }
 
         let stride: Option<i32> = match (every, seconds) {
@@ -564,7 +624,9 @@ impl Demo {
         if let Some(events) = events {
             let names = events.into_vec();
             let refs: HashSet<&str> = names.iter().map(String::as_str).collect();
-            tick_set = self.parser.event_ticks(&refs).map_err(to_py_err)?;
+            tick_set = py
+                .detach(|| self.parser.event_ticks(&refs))
+                .map_err(to_py_err)?;
         }
         tick_set.extend(&explicit);
 
@@ -575,113 +637,49 @@ impl Demo {
             ));
         }
 
-        let states = self
-            .parser
-            .snapshots_query(
-                stride,
-                &tick_set,
-                start_tick.unwrap_or(i32::MIN),
-                end_tick.unwrap_or(i32::MAX),
-            )
-            .map_err(to_py_err)?;
-        let df = states_to_frame(&states).map_err(polars_err)?;
-        Ok(PyDataFrame(df))
+        py.detach(|| {
+            let states = self
+                .parser
+                .snapshots_query(
+                    stride,
+                    &tick_set,
+                    start_tick.unwrap_or(i32::MIN),
+                    end_tick.unwrap_or(i32::MAX),
+                )
+                .map_err(to_py_err)?;
+            let df = states_to_frame(&states).map_err(polars_err)?;
+            Ok(PyDataFrame(df))
+        })
     }
 }
 
 impl Demo {
-    /// Decode every independent dataset pass **concurrently** on first access to
-    /// any dataset, caching all resulting frames.
-    ///
-    /// Each pass (`event_datasets`, `projectiles`, `rounds`, `players`) is an
-    /// independent, read-only decode of the same demo bytes with its own entity
-    /// state — nothing is shared or mutated — so running them on separate threads
-    /// is byte-identical to running them serially, only faster (wall-clock
-    /// collapses from the sum of the passes to the slowest single one). `stats`
-    /// is derived from the already-decoded events + rounds, avoiding a re-decode.
-    ///
-    /// Runs at most once. The GIL is released for the decode (the worker threads
-    /// touch no Python state); frames are wrapped and cached afterwards. A pass
-    /// that errors simply leaves its frames uncached, so the corresponding getter
-    /// falls back to its own serial build, which surfaces the real error.
-    fn ensure_parsed(&self, py: Python<'_>) {
-        if self.parsed.swap(true, Ordering::SeqCst) {
-            return;
-        }
-        let parser = &self.parser;
-        let built: Vec<(&'static str, DataFrame)> = py.detach(|| {
-            // Decode the event stream once up front so the concurrent passes reuse
-            // the single cached copy instead of each re-decoding it.
-            let _ = parser.prime_events();
-            std::thread::scope(|s| {
-                // Each pass decodes AND builds its own frames on its thread, so
-                // the heavy frame construction (e.g. the ~80k-row grenades frame)
-                // runs in parallel too — not serially after the decode. The
-                // event pass also hands back its decoded struct so `stats` can be
-                // derived without a second pass.
-                let ed_h = s.spawn(|| {
-                    let ed = parser.event_datasets().ok()?;
-                    let frames = vec![
-                        ("kills", kills_to_frame(&ed.kills)),
-                        ("damages", damages_to_frame(&ed.damages)),
-                        ("bomb", bomb_to_frame(&ed.bomb)),
-                        ("blinds", blinds_to_frame(&ed.blinds)),
-                        ("shots", shots_to_frame(&ed.shots)),
-                    ];
-                    Some((frames, ed))
-                });
-                let proj_h = s.spawn(|| {
-                    let p = parser.projectiles().ok()?;
-                    Some(vec![
-                        ("grenades", grenades_to_frame(&p.grenades)),
-                        ("fires", fires_to_frame(&p.fires)),
-                        ("smokes", smokes_to_frame(&p.smokes)),
-                    ])
-                });
-                let rounds_h = s.spawn(|| parser.rounds().ok());
-                let players_h = s.spawn(|| {
-                    let pl = parser.players().ok()?;
-                    Some(players_to_frame(&pl))
-                });
+    fn event_datasets(&self, py: Python<'_>) -> PyResult<&EventDatasets> {
+        py.detach(|| {
+            self.event_datasets_cache
+                .get_or_try_init(|| self.parser.event_datasets())
+        })
+        .map_err(to_py_err)
+    }
 
-                let ed = ed_h.join().ok().flatten();
-                let proj_frames = proj_h.join().ok().flatten();
-                let rounds = rounds_h.join().ok().flatten();
-                let players_frame = players_h.join().ok().flatten();
+    fn projectiles(&self, py: Python<'_>) -> PyResult<&Projectiles> {
+        py.detach(|| {
+            self.projectiles_cache
+                .get_or_try_init(|| self.parser.projectiles())
+        })
+        .map_err(to_py_err)
+    }
 
-                let mut out: Vec<(&'static str, PolarsResult<DataFrame>)> = Vec::new();
-                if let Some((frames, ed)) = ed {
-                    out.extend(frames);
-                    // stats derives from the already-decoded events + rounds — no
-                    // second entity pass.
-                    if let Some(rounds) = &rounds {
-                        let stats = parser.player_stats_from(&ed, rounds, true);
-                        out.push(("stats", stats_to_frame(&stats)));
-                    }
-                }
-                if let Some(frames) = proj_frames {
-                    out.extend(frames);
-                }
-                if let Some(rounds) = &rounds {
-                    out.push(("rounds", rounds_to_frame(rounds)));
-                }
-                if let Some(pf) = players_frame {
-                    out.push(("players", pf));
-                }
-                out.into_iter()
-                    .filter_map(|(name, df)| df.ok().map(|df| (name, df)))
-                    .collect()
-            })
-        });
+    fn parsed_rounds(&self, py: Python<'_>) -> PyResult<&[Round]> {
+        py.detach(|| self.rounds_cache.get_or_try_init(|| self.parser.rounds()))
+            .map(Vec::as_slice)
+            .map_err(to_py_err)
+    }
 
-        let mut cache = self.frames_cache.lock().expect("dataset cache poisoned");
-        for (name, df) in built {
-            if let std::collections::hash_map::Entry::Vacant(e) = cache.entry(name)
-                && let Ok(obj) = PyDataFrame(df).into_pyobject(py)
-            {
-                e.insert(obj.unbind());
-            }
-        }
+    fn parsed_players(&self, py: Python<'_>) -> PyResult<&[Player]> {
+        py.detach(|| self.players_cache.get_or_try_init(|| self.parser.players()))
+            .map(Vec::as_slice)
+            .map_err(to_py_err)
     }
 
     /// `ticks(players_only=True)`: one row per player per tick, decoded in
@@ -809,75 +807,57 @@ impl Demo {
         &self,
         py: Python<'_>,
         key: &'static str,
-        build: impl FnOnce() -> PyResult<DataFrame>,
+        build: impl FnOnce() -> PyResult<DataFrame> + Send,
     ) -> PyResult<Py<PyAny>> {
-        let mut cache = self.frames_cache.lock().expect("dataset cache poisoned");
-        if let Some(df) = cache.get(key) {
+        if let Some(df) = self
+            .frames_cache
+            .lock()
+            .expect("dataset cache poisoned")
+            .get(key)
+        {
             return Ok(df.clone_ref(py));
         }
-        let obj = PyDataFrame(build()?).into_pyobject(py)?.unbind();
+
+        let built = py.detach(build)?;
+        let obj = PyDataFrame(built).into_pyobject(py)?.unbind();
+        let mut cache = self.frames_cache.lock().expect("dataset cache poisoned");
+        if let Some(existing) = cache.get(key) {
+            return Ok(existing.clone_ref(py));
+        }
         cache.insert(key, obj.clone_ref(py));
         Ok(obj)
     }
 
-    /// Fetch one dataset from a group that is decoded together in a single pass:
-    /// on the first miss, `build` produces **all** the group's frames (one shared
-    /// entity traversal), each is cached, then the requested `key` is returned.
-    /// Every frame is built before any is inserted, so a failure can't leave the
-    /// cache half-populated.
-    fn batched_frame(
-        &self,
-        py: Python<'_>,
-        key: &'static str,
-        build: impl FnOnce() -> PyResult<Vec<(&'static str, DataFrame)>>,
-    ) -> PyResult<Py<PyAny>> {
-        self.ensure_parsed(py);
-        let mut cache = self.frames_cache.lock().expect("dataset cache poisoned");
-        if let Some(df) = cache.get(key) {
-            return Ok(df.clone_ref(py));
-        }
-        for (name, df) in build()? {
-            let obj = PyDataFrame(df).into_pyobject(py)?.unbind();
-            cache.insert(name, obj);
-        }
-        Ok(cache
-            .get(key)
-            .expect("batched dataset just cached")
-            .clone_ref(py))
-    }
-
     /// Fetch one of the five event-based datasets (kills / damages / bomb /
-    /// blinds / shots), decoded together in one entity traversal (see
-    /// `Parser::event_datasets`).
+    /// blinds / shots). The typed group is decoded once; only the requested
+    /// frame is materialized.
     fn event_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<Py<PyAny>> {
-        self.batched_frame(py, key, || {
-            let ds = self.parser.event_datasets().map_err(to_py_err)?;
-            Ok(vec![
-                ("kills", kills_to_frame(&ds.kills).map_err(polars_err)?),
-                (
-                    "damages",
-                    damages_to_frame(&ds.damages).map_err(polars_err)?,
-                ),
-                ("bomb", bomb_to_frame(&ds.bomb).map_err(polars_err)?),
-                ("blinds", blinds_to_frame(&ds.blinds).map_err(polars_err)?),
-                ("shots", shots_to_frame(&ds.shots).map_err(polars_err)?),
-            ])
+        let ds = self.event_datasets(py)?;
+        self.cached_frame(py, key, move || {
+            match key {
+                "kills" => kills_to_frame(&ds.kills),
+                "damages" => damages_to_frame(&ds.damages),
+                "bomb" => bomb_to_frame(&ds.bomb),
+                "blinds" => blinds_to_frame(&ds.blinds),
+                "shots" => shots_to_frame(&ds.shots),
+                _ => unreachable!("unknown event dataset"),
+            }
+            .map_err(polars_err)
         })
     }
 
     /// Fetch one of the three projectile datasets (grenades / fires / smokes),
-    /// decoded together in one pass (see `Parser::projectiles`).
+    /// decoding the typed group once and materializing only the requested frame.
     fn projectile_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<Py<PyAny>> {
-        self.batched_frame(py, key, || {
-            let p = self.parser.projectiles().map_err(to_py_err)?;
-            Ok(vec![
-                (
-                    "grenades",
-                    grenades_to_frame(&p.grenades).map_err(polars_err)?,
-                ),
-                ("fires", fires_to_frame(&p.fires).map_err(polars_err)?),
-                ("smokes", smokes_to_frame(&p.smokes).map_err(polars_err)?),
-            ])
+        let projectiles = self.projectiles(py)?;
+        self.cached_frame(py, key, move || {
+            match key {
+                "grenades" => grenades_to_frame(&projectiles.grenades),
+                "fires" => fires_to_frame(&projectiles.fires),
+                "smokes" => smokes_to_frame(&projectiles.smokes),
+                _ => unreachable!("unknown projectile dataset"),
+            }
+            .map_err(polars_err)
         })
     }
 }
@@ -898,8 +878,10 @@ impl Demo {
 /// built on first access, and is cached.
 #[pyclass]
 struct Events {
-    /// Raw events grouped by name (sorted, so listings are deterministic).
-    groups: BTreeMap<String, Vec<GameEvent>>,
+    /// The parser's single shared copy of the decoded event stream.
+    events: Arc<[GameEvent]>,
+    /// Event indices grouped by name (sorted, so listings are deterministic).
+    groups: BTreeMap<String, Vec<usize>>,
     /// Frames already built, by event name.
     frames: Mutex<HashMap<String, Py<PyAny>>>,
 }
@@ -908,17 +890,24 @@ impl Events {
     /// Build (or fetch the cached) DataFrame for one event; `None` if absent.
     fn frame(&self, py: Python<'_>, name: &str) -> Option<PyResult<Py<PyAny>>> {
         let group = self.groups.get(name)?;
-        let mut cache = self.frames.lock().expect("events cache poisoned");
-        if let Some(df) = cache.get(name) {
+        if let Some(df) = self.frames.lock().expect("events cache poisoned").get(name) {
             return Some(Ok(df.clone_ref(py)));
         }
-        let refs: Vec<&GameEvent> = group.iter().collect();
-        let built = events_to_frame(&refs)
-            .map_err(polars_err)
-            .and_then(|df| Ok(PyDataFrame(df).into_pyobject(py)?.unbind()));
-        Some(built.inspect(|obj| {
-            cache.insert(name.to_string(), obj.clone_ref(py));
-        }))
+        let refs: Vec<&GameEvent> = group.iter().map(|&index| &self.events[index]).collect();
+        let built = match py.detach(|| events_to_frame(&refs).map_err(polars_err)) {
+            Ok(df) => df,
+            Err(error) => return Some(Err(error)),
+        };
+        let obj = match PyDataFrame(built).into_pyobject(py) {
+            Ok(obj) => obj.unbind(),
+            Err(error) => return Some(Err(error)),
+        };
+        let mut cache = self.frames.lock().expect("events cache poisoned");
+        if let Some(existing) = cache.get(name) {
+            return Some(Ok(existing.clone_ref(py)));
+        }
+        cache.insert(name.to_string(), obj.clone_ref(py));
+        Some(Ok(obj))
     }
 }
 

@@ -221,6 +221,7 @@ impl Serializer {
 }
 
 /// Container holding all parsed serializers, indexed by name.
+#[derive(Clone)]
 pub struct SerializerContainer {
     // `FxHashMap` (not the default SipHash `HashMap`): `get` is called once per
     // entity update in the decode hot path, hashing the class-name string each

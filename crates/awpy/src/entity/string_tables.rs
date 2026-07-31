@@ -32,7 +32,7 @@ pub struct StringTableEntry {
 }
 
 /// A string table.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StringTable {
     pub name: String,
     user_data_fixed_size: bool,
@@ -194,7 +194,7 @@ impl StringTable {
 }
 
 /// Container for all string tables.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct StringTableContainer {
     tables: Vec<StringTable>,
     /// Cached instance baselines: class_id -> baseline data.

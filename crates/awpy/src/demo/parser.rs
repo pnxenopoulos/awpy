@@ -10,7 +10,7 @@ use crate::error::{Error, Result};
 use crate::io::{BitReader, ByteReader};
 
 use std::collections::HashMap;
-use std::sync::OnceLock;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use super::command::{self, CmdHeader, dem, ge, net, svc};
 
@@ -37,6 +37,9 @@ const DEFAULT_FULL_PACKET_INTERVAL: i32 = 1800;
 
 /// Scratch buffer size for decompressed command bodies and packet payloads.
 const BUF_SIZE: usize = 2 * 1024 * 1024;
+/// Initial capacity for relevant inner-message payloads. The buffer grows for
+/// unusually large messages instead of zeroing 2 MiB for every parse worker.
+const PACKET_BUF_CAPACITY: usize = 64 * 1024;
 
 /// Information about a demo message in the command stream.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -141,6 +144,41 @@ impl AsRef<[u8]> for Storage {
     }
 }
 
+/// Immutable signon state cached by the parser and cloned for each decode.
+///
+/// Serializers are internally `Arc`-backed, so cloning the container is
+/// shallow for the expensive serializer graph. String tables are mutable
+/// during playback and therefore intentionally get a private copy.
+struct InitialState {
+    serializers: SerializerContainer,
+    class_info: ClassInfo,
+    string_tables: StringTableContainer,
+    tick_interval: f32,
+    full_packet_interval: i32,
+    /// Position immediately after `DEM_SyncTick`, relative to `HEADER_SIZE`.
+    stream_start: Option<usize>,
+}
+
+impl InitialState {
+    fn context(&self) -> Context {
+        Context {
+            serializers: self.serializers.clone(),
+            class_info: self.class_info.clone(),
+            string_tables: self.string_tables.clone(),
+            entities: EntityContainer::new(),
+            tick_interval: self.tick_interval,
+            full_packet_interval: self.full_packet_interval,
+            tick: -1,
+        }
+    }
+}
+
+/// Header-only command index shared by seeking and parallel decode paths.
+struct DemoIndex {
+    full_packets: Vec<(usize, i32)>,
+    distinct_ticks: Vec<i32>,
+}
+
 /// The main parser. Owns the demo file data (memory-mapped or in-memory).
 pub struct Parser {
     storage: Storage,
@@ -148,7 +186,16 @@ pub struct Parser {
     /// higher-level dataset (kills, damages, bomb, ...) reads the events, so
     /// caching the decode here means the demo's event stream is walked once per
     /// `Parser`, not once per dataset.
-    events_cache: OnceLock<Vec<GameEvent>>,
+    events_cache: OnceLock<Arc<[GameEvent]>>,
+    events_lock: Mutex<()>,
+    /// Signon state is expensive to decode but immutable between parse passes.
+    init_cache: OnceLock<InitialState>,
+    init_lock: Mutex<()>,
+    /// Full-packet offsets and distinct ticks come from the same header scan.
+    index_cache: OnceLock<DemoIndex>,
+    index_lock: Mutex<()>,
+    file_header_cache: OnceLock<CDemoFileHeader>,
+    file_info_cache: OnceLock<CDemoFileInfo>,
 }
 
 impl Parser {
@@ -163,6 +210,13 @@ impl Parser {
         Ok(Self {
             storage: Storage::Mmap(mmap),
             events_cache: OnceLock::new(),
+            events_lock: Mutex::new(()),
+            init_cache: OnceLock::new(),
+            init_lock: Mutex::new(()),
+            index_cache: OnceLock::new(),
+            index_lock: Mutex::new(()),
+            file_header_cache: OnceLock::new(),
+            file_info_cache: OnceLock::new(),
         })
     }
 
@@ -174,6 +228,13 @@ impl Parser {
         Self {
             storage: Storage::Bytes(bytes),
             events_cache: OnceLock::new(),
+            events_lock: Mutex::new(()),
+            init_cache: OnceLock::new(),
+            init_lock: Mutex::new(()),
+            index_cache: OnceLock::new(),
+            index_lock: Mutex::new(()),
+            file_header_cache: OnceLock::new(),
+            file_info_cache: OnceLock::new(),
         }
     }
 
@@ -284,6 +345,9 @@ impl Parser {
 
     /// Find and decode the CDemoFileHeader message.
     pub fn file_header(&self) -> Result<CDemoFileHeader> {
+        if let Some(header) = self.file_header_cache.get() {
+            return Ok(header.clone());
+        }
         self.verify()?;
         let data = &self.data()[HEADER_SIZE..];
         let mut reader = ByteReader::new(data);
@@ -294,7 +358,13 @@ impl Parser {
 
             if header.cmd == dem::FILE_HEADER {
                 Self::read_cmd_body(&mut reader, &header, &mut body_buf)?;
-                return CDemoFileHeader::decode(&body_buf[..]).map_err(Error::from);
+                let decoded = CDemoFileHeader::decode(&body_buf[..])?;
+                let _ = self.file_header_cache.set(decoded);
+                return Ok(self
+                    .file_header_cache
+                    .get()
+                    .expect("just populated")
+                    .clone());
             }
 
             if header.cmd == dem::STOP {
@@ -311,6 +381,9 @@ impl Parser {
 
     /// Decode CDemoFileInfo using the offset stored in the file header.
     pub fn file_info(&self) -> Result<CDemoFileInfo> {
+        if let Some(info) = self.file_info_cache.get() {
+            return Ok(info.clone());
+        }
         self.verify()?;
 
         // Bytes 8..12 of the file header contain the absolute offset to DEM_FileInfo.
@@ -338,7 +411,9 @@ impl Parser {
 
         let mut body_buf = Vec::new();
         Self::read_cmd_body(&mut reader, &header, &mut body_buf)?;
-        CDemoFileInfo::decode(&body_buf[..]).map_err(Error::from)
+        let decoded = CDemoFileInfo::decode(&body_buf[..])?;
+        let _ = self.file_info_cache.set(decoded);
+        Ok(self.file_info_cache.get().expect("just populated").clone())
     }
 
     /// Parse game events from the demo.
@@ -366,21 +441,38 @@ impl Parser {
     /// Internal dataset builders take this slice by reference (no clone); the
     /// public [`events`](Parser::events) hands back an owned copy.
     pub(crate) fn events_ref(&self) -> Result<&[GameEvent]> {
+        if let Some(events) = self.events_cache.get() {
+            return Ok(events);
+        }
+
+        let _guard = self.events_lock.lock().map_err(|_| Error::Parse {
+            context: "event cache lock poisoned".into(),
+        })?;
         if self.events_cache.get().is_none() {
             let events = self.decode_events(None)?;
-            // Another thread may have won the race; either stored vec is fine.
-            let _ = self.events_cache.set(events);
+            self.events_cache
+                .set(events.into())
+                .expect("event cache initialized while locked");
         }
-        Ok(self.events_cache.get().expect("just populated"))
+        Ok(self.events_cache.get().expect("event cache populated"))
+    }
+
+    /// Share the cached full event stream without cloning its event payloads.
+    ///
+    /// This is useful for bindings and other long-lived consumers that need an
+    /// owned handle while preserving the parser's single decoded copy.
+    pub fn events_shared(&self) -> Result<Arc<[GameEvent]>> {
+        self.events_ref()?;
+        Ok(Arc::clone(
+            self.events_cache.get().expect("event cache populated"),
+        ))
     }
 
     /// Decode and cache the event stream now, if it isn't already.
     ///
-    /// Every dataset pass reads the event stream via `events_ref`,
-    /// which decodes it lazily on first use. When several passes run **concurrently**
-    /// on a fresh parser they would otherwise each decode it redundantly (the cache
-    /// is populated with a benign check-then-set race). Call this once serially
-    /// beforehand so the parallel passes all reuse the single cached copy.
+    /// Every dataset pass reads the event stream via `events_ref`, which now
+    /// initializes atomically. This remains available as an explicit warm-up
+    /// hook for callers that want first-use latency outside a timed operation.
     pub fn prime_events(&self) -> Result<()> {
         self.events_ref()?;
         Ok(())
@@ -391,7 +483,7 @@ impl Parser {
         let data = &self.data()[HEADER_SIZE..];
         let mut reader = ByteReader::new(data);
         let mut body_buf = Vec::with_capacity(BUF_SIZE);
-        let mut packet_buf = vec![0u8; BUF_SIZE];
+        let mut packet_buf = Vec::with_capacity(PACKET_BUF_CAPACITY);
         let mut events = Vec::new();
         let mut descriptors: HashMap<i32, EventDescriptor> = HashMap::new();
 
@@ -456,7 +548,7 @@ impl Parser {
         let data = &self.data()[HEADER_SIZE..];
         let mut reader = ByteReader::new(data);
         let mut body_buf = Vec::with_capacity(BUF_SIZE);
-        let mut packet_buf = vec![0u8; BUF_SIZE];
+        let mut packet_buf = Vec::with_capacity(PACKET_BUF_CAPACITY);
         let mut convars = Vec::new();
 
         while reader.remaining() > 0 {
@@ -505,20 +597,23 @@ impl Parser {
             let msg_type = br.read_ubitvar()?;
             let size = br.read_uvarint32()? as usize;
 
+            if msg_type != net::SET_CON_VAR {
+                br.skip_bits(size * 8)?;
+                continue;
+            }
+
             if size > packet_buf.len() {
                 packet_buf.resize(size, 0);
             }
             br.read_bytes(&mut packet_buf[..size])?;
 
-            if msg_type == net::SET_CON_VAR {
-                let msg = CnetMsgSetConVar::decode(&packet_buf[..size])?;
-                if let Some(cvars) = msg.convars {
-                    for cvar in cvars.cvars {
-                        convars.push((
-                            cvar.name.unwrap_or_default(),
-                            cvar.value.unwrap_or_default(),
-                        ));
-                    }
+            let msg = CnetMsgSetConVar::decode(&packet_buf[..size])?;
+            if let Some(cvars) = msg.convars {
+                for cvar in cvars.cvars {
+                    convars.push((
+                        cvar.name.unwrap_or_default(),
+                        cvar.value.unwrap_or_default(),
+                    ));
                 }
             }
         }
@@ -539,6 +634,16 @@ impl Parser {
         while br.bits_remaining() > 8 {
             let msg_type = br.read_ubitvar()?;
             let size = br.read_uvarint32()? as usize;
+
+            if !matches!(
+                msg_type,
+                ge::SOURCE1_LEGACY_GAME_EVENT_LIST
+                    | ge::SOURCE1_LEGACY_GAME_EVENT
+                    | svc::USER_MESSAGE
+            ) {
+                br.skip_bits(size * 8)?;
+                continue;
+            }
 
             if size > packet_buf.len() {
                 packet_buf.resize(size, 0);
@@ -667,11 +772,35 @@ impl Parser {
 
     /// Parse all initialization data up to DEM_SyncTick and return a Context.
     pub fn parse_init(&self) -> Result<Context> {
+        Ok(self.initial_state()?.context())
+    }
+
+    fn initial_state(&self) -> Result<&InitialState> {
+        if let Some(state) = self.init_cache.get() {
+            return Ok(state);
+        }
+
+        let _guard = self.init_lock.lock().map_err(|_| Error::Parse {
+            context: "initial-state cache lock poisoned".into(),
+        })?;
+        if self.init_cache.get().is_none() {
+            let state = self.decode_initial_state()?;
+            self.init_cache
+                .set(state)
+                .unwrap_or_else(|_| unreachable!("initial-state cache initialized while locked"));
+        }
+        Ok(self
+            .init_cache
+            .get()
+            .expect("initial-state cache populated"))
+    }
+
+    fn decode_initial_state(&self) -> Result<InitialState> {
         self.verify()?;
         let data = &self.data()[HEADER_SIZE..];
         let mut reader = ByteReader::new(data);
 
-        let mut packet_buf = vec![0u8; BUF_SIZE];
+        let mut packet_buf = Vec::with_capacity(PACKET_BUF_CAPACITY);
         let mut body_buf = Vec::with_capacity(BUF_SIZE);
 
         let mut serializers: Option<SerializerContainer> = None;
@@ -679,12 +808,14 @@ impl Parser {
         let mut string_tables = StringTableContainer::new();
         let mut tick_interval: f32 = 0.0;
         let mut full_packet_interval: i32 = DEFAULT_FULL_PACKET_INTERVAL;
+        let mut stream_start = None;
 
         while reader.remaining() > 0 {
             let header = Self::read_cmd_header(&mut reader)?;
 
             if header.cmd == dem::SYNC_TICK {
                 reader.skip(header.body_size as usize)?;
+                stream_start = Some(reader.position());
                 break;
             }
 
@@ -728,14 +859,13 @@ impl Parser {
         // Update instance baselines
         string_tables.update_instance_baselines(&class_info);
 
-        Ok(Context {
+        Ok(InitialState {
             serializers,
             class_info,
             string_tables,
-            entities: EntityContainer::new(),
             tick_interval,
             full_packet_interval,
-            tick: -1,
+            stream_start,
         })
     }
 
@@ -792,53 +922,28 @@ impl Parser {
     /// cheap header-only pre-scan — full-packet spacing varies by demo, so it
     /// cannot be predicted from the tick interval.
     pub fn parse_to_tick(&self, target_tick: i32) -> Result<Context> {
-        let mut ctx = self.parse_init()?;
+        let initial_state = self.initial_state()?;
+        let mut ctx = initial_state.context();
         let data = &self.data()[HEADER_SIZE..];
 
-        // Header-only pre-scan: byte offset of the last full packet <= target.
-        let mut last_full_packet: Option<usize> = None;
-        {
-            let mut scan = ByteReader::new(data);
-            while scan.remaining() > 0 {
-                let pos = scan.position();
-                let header = match Self::read_cmd_header(&mut scan) {
-                    Ok(h) => h,
-                    Err(_) => break,
-                };
-                if header.cmd == dem::STOP || header.tick > target_tick {
-                    break;
-                }
-                if header.cmd == dem::FULL_PACKET {
-                    last_full_packet = Some(pos);
-                }
-                scan.skip(header.body_size as usize)?;
-            }
-        }
+        let last_full_packet = self
+            .index()?
+            .full_packets
+            .iter()
+            .rev()
+            .find(|(_, tick)| *tick <= target_tick)
+            .map(|(offset, _)| *offset);
 
         let mut reader = ByteReader::new(data);
-        let mut packet_buf = vec![0u8; BUF_SIZE];
+        let mut packet_buf = Vec::with_capacity(PACKET_BUF_CAPACITY);
         let mut body_buf = Vec::with_capacity(BUF_SIZE);
         let mut fp_buf = Vec::with_capacity(256);
         let mut field_decode_ctx = FieldDecodeContext::new(ctx.tick_interval);
 
-        // Skip past init (up to and including SyncTick)
-        let mut past_sync = false;
-        while reader.remaining() > 0 {
-            let header = Self::read_cmd_header(&mut reader)?;
-            if header.cmd == dem::SYNC_TICK {
-                reader.skip(header.body_size as usize)?;
-                past_sync = true;
-                break;
-            }
-            if header.cmd == dem::STOP {
-                return Ok(ctx);
-            }
-            reader.skip(header.body_size as usize)?;
-        }
-
-        if !past_sync {
+        let Some(stream_start) = initial_state.stream_start else {
             return Ok(ctx);
-        }
+        };
+        reader.seek(stream_start)?;
 
         // Replay deltas only once the snapshot they build on has been applied.
         // With no full packet before the target, replay from the signon
@@ -878,6 +983,7 @@ impl Parser {
                             &mut ctx,
                             &mut field_decode_ctx,
                             &mut packet_buf,
+                            None,
                             &mut fp_buf,
                         )?;
                     }
@@ -903,6 +1009,7 @@ impl Parser {
                         &mut ctx,
                         &mut field_decode_ctx,
                         &mut packet_buf,
+                        None,
                         &mut fp_buf,
                     )?;
                 }
@@ -915,31 +1022,49 @@ impl Parser {
 
     /// Parse the entire demo, calling a callback at each tick with the current context.
     /// This is more efficient than calling parse_to_tick repeatedly.
-    pub fn run_to_end<F>(&self, mut on_tick: F) -> Result<()>
+    pub fn run_to_end<F>(&self, on_tick: F) -> Result<()>
     where
         F: FnMut(&Context),
     {
-        let mut ctx = self.parse_init()?;
+        self.run_to_end_impl(None, on_tick)
+    }
+
+    /// Parse the entire demo with entity class filtering.
+    /// Only entities with classes in the filter are fully tracked.
+    /// This is much faster when you only need specific entity types.
+    pub fn run_to_end_filtered<F>(
+        &self,
+        class_filter: &std::collections::HashSet<&str>,
+        on_tick: F,
+    ) -> Result<()>
+    where
+        F: FnMut(&Context),
+    {
+        self.run_to_end_impl(Some(class_filter), on_tick)
+    }
+
+    /// Shared command loop for filtered and unfiltered entity decoding.
+    fn run_to_end_impl<F>(
+        &self,
+        class_filter: Option<&std::collections::HashSet<&str>>,
+        mut on_tick: F,
+    ) -> Result<()>
+    where
+        F: FnMut(&Context),
+    {
+        let initial_state = self.initial_state()?;
+        let mut ctx = initial_state.context();
         let data = &self.data()[HEADER_SIZE..];
         let mut reader = ByteReader::new(data);
+        let Some(stream_start) = initial_state.stream_start else {
+            return Ok(());
+        };
+        reader.seek(stream_start)?;
 
-        let mut packet_buf = vec![0u8; BUF_SIZE];
+        let mut packet_buf = Vec::with_capacity(PACKET_BUF_CAPACITY);
         let mut body_buf = Vec::with_capacity(BUF_SIZE);
         let mut fp_buf = Vec::with_capacity(256);
         let mut field_decode_ctx = FieldDecodeContext::new(ctx.tick_interval);
-
-        // Skip past init (up to and including SyncTick)
-        while reader.remaining() > 0 {
-            let header = Self::read_cmd_header(&mut reader)?;
-            if header.cmd == dem::SYNC_TICK {
-                reader.skip(header.body_size as usize)?;
-                break;
-            }
-            if header.cmd == dem::STOP {
-                return Ok(());
-            }
-            reader.skip(header.body_size as usize)?;
-        }
 
         let mut last_tick: i32 = -1;
 
@@ -980,100 +1105,6 @@ impl Parser {
                             &mut ctx,
                             &mut field_decode_ctx,
                             &mut packet_buf,
-                            &mut fp_buf,
-                        )?;
-                    }
-                }
-                dem::PACKET | dem::SIGNON_PACKET => {
-                    let cmd = CDemoPacket::decode(&body_buf[..])?;
-                    let pkt_data = cmd.data.unwrap_or_default();
-                    Self::process_packet_entities(
-                        &pkt_data,
-                        &mut ctx,
-                        &mut field_decode_ctx,
-                        &mut packet_buf,
-                        &mut fp_buf,
-                    )?;
-                }
-                _ => {}
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Parse the entire demo with entity class filtering.
-    /// Only entities with classes in the filter are fully tracked.
-    /// This is much faster when you only need specific entity types.
-    pub fn run_to_end_filtered<F>(
-        &self,
-        class_filter: &std::collections::HashSet<&str>,
-        mut on_tick: F,
-    ) -> Result<()>
-    where
-        F: FnMut(&Context),
-    {
-        let mut ctx = self.parse_init()?;
-        let data = &self.data()[HEADER_SIZE..];
-        let mut reader = ByteReader::new(data);
-
-        let mut packet_buf = vec![0u8; BUF_SIZE];
-        let mut body_buf = Vec::with_capacity(BUF_SIZE);
-        let mut fp_buf = Vec::with_capacity(256);
-        let mut field_decode_ctx = FieldDecodeContext::new(ctx.tick_interval);
-
-        // Skip past init (up to and including SyncTick)
-        while reader.remaining() > 0 {
-            let header = Self::read_cmd_header(&mut reader)?;
-            if header.cmd == dem::SYNC_TICK {
-                reader.skip(header.body_size as usize)?;
-                break;
-            }
-            if header.cmd == dem::STOP {
-                return Ok(());
-            }
-            reader.skip(header.body_size as usize)?;
-        }
-
-        let mut last_tick: i32 = -1;
-
-        while reader.remaining() > 0 {
-            let header = Self::read_cmd_header(&mut reader)?;
-
-            // Call callback when tick changes
-            if header.tick != last_tick && last_tick >= 0 {
-                on_tick(&ctx);
-                ctx.string_tables.clear_dirty();
-            }
-            last_tick = header.tick;
-            ctx.tick = header.tick;
-
-            if header.cmd == dem::STOP {
-                // Final callback
-                if last_tick >= 0 {
-                    on_tick(&ctx);
-                }
-                break;
-            }
-
-            Self::read_cmd_body(&mut reader, &header, &mut body_buf)?;
-
-            match header.cmd {
-                dem::FULL_PACKET => {
-                    let cmd = CDemoFullPacket::decode(&body_buf[..])?;
-
-                    if let Some(st) = cmd.string_table {
-                        ctx.string_tables.do_full_update(st);
-                        ctx.string_tables.update_instance_baselines(&ctx.class_info);
-                    }
-
-                    if let Some(packet) = cmd.packet {
-                        let pkt_data = packet.data.unwrap_or_default();
-                        Self::process_packet_entities_filtered(
-                            &pkt_data,
-                            &mut ctx,
-                            &mut field_decode_ctx,
-                            &mut packet_buf,
                             class_filter,
                             &mut fp_buf,
                         )?;
@@ -1082,7 +1113,7 @@ impl Parser {
                 dem::PACKET | dem::SIGNON_PACKET => {
                     let cmd = CDemoPacket::decode(&body_buf[..])?;
                     let pkt_data = cmd.data.unwrap_or_default();
-                    Self::process_packet_entities_filtered(
+                    Self::process_packet_entities(
                         &pkt_data,
                         &mut ctx,
                         &mut field_decode_ctx,
@@ -1098,30 +1129,67 @@ impl Parser {
         Ok(())
     }
 
-    /// Byte offset (relative to the post-`HEADER_SIZE` data) and tick of every
-    /// `DEM_FullPacket` keyframe, via a cheap header-only pre-scan.
-    ///
-    /// Full packets are periodic snapshots the parallel tick decoder cold-restarts
-    /// from — each is a segment boundary. Returned in ascending order.
-    pub fn full_packet_offsets(&self) -> Result<Vec<(usize, i32)>> {
+    fn index(&self) -> Result<&DemoIndex> {
+        if let Some(index) = self.index_cache.get() {
+            return Ok(index);
+        }
+
+        let _guard = self.index_lock.lock().map_err(|_| Error::Parse {
+            context: "demo-index cache lock poisoned".into(),
+        })?;
+        if self.index_cache.get().is_none() {
+            let index = self.build_index()?;
+            self.index_cache
+                .set(index)
+                .unwrap_or_else(|_| unreachable!("demo-index cache initialized while locked"));
+        }
+        Ok(self.index_cache.get().expect("demo-index cache populated"))
+    }
+
+    fn build_index(&self) -> Result<DemoIndex> {
+        self.verify()?;
         let data = &self.data()[HEADER_SIZE..];
         let mut scan = ByteReader::new(data);
-        let mut offsets = Vec::new();
+        let mut full_packets = Vec::new();
+        let mut distinct_ticks = Vec::new();
+        let mut past_sync = false;
+        let mut last_tick = i32::MIN;
+
         while scan.remaining() > 0 {
-            let pos = scan.position();
+            let offset = scan.position();
             let header = match Self::read_cmd_header(&mut scan) {
-                Ok(h) => h,
+                Ok(header) => header,
                 Err(_) => break,
             };
             if header.cmd == dem::STOP {
                 break;
             }
             if header.cmd == dem::FULL_PACKET {
-                offsets.push((pos, header.tick));
+                full_packets.push((offset, header.tick));
+            }
+            if past_sync && header.tick >= 0 && header.tick != last_tick {
+                distinct_ticks.push(header.tick);
+                last_tick = header.tick;
             }
             scan.skip(header.body_size as usize)?;
+            if header.cmd == dem::SYNC_TICK {
+                past_sync = true;
+            }
         }
-        Ok(offsets)
+
+        Ok(DemoIndex {
+            full_packets,
+            distinct_ticks,
+        })
+    }
+
+    /// Byte offset (relative to the post-`HEADER_SIZE` data) and tick of every
+    /// `DEM_FullPacket` keyframe, via a cheap header-only pre-scan.
+    ///
+    /// Full packets are periodic snapshots the parallel tick decoder cold-restarts
+    /// from — each is a segment boundary. Returned in ascending order.
+    pub fn full_packet_offsets(&self) -> Result<Vec<(usize, i32)>> {
+        Ok(self.index()?.full_packets.clone())
     }
 
     /// Every distinct tick in the demo (ascending), from a header-only pre-scan
@@ -1130,43 +1198,7 @@ impl Parser {
     /// Lets a sampled pass (stride snapshots) compute which ticks to sample once,
     /// independently of how the demo is later split into parallel segments.
     pub fn distinct_ticks(&self) -> Result<Vec<i32>> {
-        let data = &self.data()[HEADER_SIZE..];
-        let mut scan = ByteReader::new(data);
-
-        // Skip init up to and including SyncTick, matching the decode's start.
-        let mut past_sync = false;
-        while scan.remaining() > 0 {
-            let header = Self::read_cmd_header(&mut scan)?;
-            if header.cmd == dem::STOP {
-                return Ok(Vec::new());
-            }
-            scan.skip(header.body_size as usize)?;
-            if header.cmd == dem::SYNC_TICK {
-                past_sync = true;
-                break;
-            }
-        }
-        if !past_sync {
-            return Ok(Vec::new());
-        }
-
-        let mut ticks = Vec::new();
-        let mut last = i32::MIN;
-        while scan.remaining() > 0 {
-            let header = match Self::read_cmd_header(&mut scan) {
-                Ok(h) => h,
-                Err(_) => break,
-            };
-            if header.cmd == dem::STOP {
-                break;
-            }
-            if header.tick != last && header.tick >= 0 {
-                ticks.push(header.tick);
-                last = header.tick;
-            }
-            scan.skip(header.body_size as usize)?;
-        }
-        Ok(ticks)
+        Ok(self.index()?.distinct_ticks.clone())
     }
 
     /// Decode one contiguous segment of the demo, for the parallel tick path.
@@ -1194,32 +1226,20 @@ impl Parser {
     where
         F: FnMut(&Context),
     {
-        let mut ctx = self.parse_init()?;
+        let initial_state = self.initial_state()?;
+        let mut ctx = initial_state.context();
         let data = &self.data()[HEADER_SIZE..];
-        let mut reader = match start {
-            Some(off) => ByteReader::new(&data[off..]),
-            None => {
-                // Skip past init (up to and including SyncTick).
-                let mut r = ByteReader::new(data);
-                loop {
-                    if r.remaining() == 0 {
-                        return Ok(());
-                    }
-                    let header = Self::read_cmd_header(&mut r)?;
-                    if header.cmd == dem::SYNC_TICK {
-                        r.skip(header.body_size as usize)?;
-                        break;
-                    }
-                    if header.cmd == dem::STOP {
-                        return Ok(());
-                    }
-                    r.skip(header.body_size as usize)?;
-                }
-                r
-            }
+        let offset = match start {
+            Some(offset) => offset,
+            None => match initial_state.stream_start {
+                Some(offset) => offset,
+                None => return Ok(()),
+            },
         };
+        let mut reader = ByteReader::new(data);
+        reader.seek(offset)?;
 
-        let mut packet_buf = vec![0u8; BUF_SIZE];
+        let mut packet_buf = Vec::with_capacity(PACKET_BUF_CAPACITY);
         let mut body_buf = Vec::with_capacity(BUF_SIZE);
         let mut fp_buf = Vec::with_capacity(256);
         let mut field_decode_ctx = FieldDecodeContext::new(ctx.tick_interval);
@@ -1262,12 +1282,12 @@ impl Parser {
                     }
                     if let Some(packet) = cmd.packet {
                         let pkt_data = packet.data.unwrap_or_default();
-                        Self::process_packet_entities_filtered(
+                        Self::process_packet_entities(
                             &pkt_data,
                             &mut ctx,
                             &mut field_decode_ctx,
                             &mut packet_buf,
-                            class_filter,
+                            Some(class_filter),
                             &mut fp_buf,
                         )?;
                     }
@@ -1275,12 +1295,12 @@ impl Parser {
                 dem::PACKET | dem::SIGNON_PACKET => {
                     let cmd = CDemoPacket::decode(&body_buf[..])?;
                     let pkt_data = cmd.data.unwrap_or_default();
-                    Self::process_packet_entities_filtered(
+                    Self::process_packet_entities(
                         &pkt_data,
                         &mut ctx,
                         &mut field_decode_ctx,
                         &mut packet_buf,
-                        class_filter,
+                        Some(class_filter),
                         &mut fp_buf,
                     )?;
                 }
@@ -1297,6 +1317,7 @@ impl Parser {
         ctx: &mut Context,
         field_decode_ctx: &mut FieldDecodeContext,
         packet_buf: &mut Vec<u8>,
+        class_filter: Option<&std::collections::HashSet<&str>>,
         fp_buf: &mut Vec<crate::entity::field_path::FieldPath>,
     ) -> Result<()> {
         let mut br = BitReader::new(pkt_data);
@@ -1348,89 +1369,26 @@ impl Parser {
                 }
                 svc::PACKET_ENTITIES => {
                     let msg = CsvcMsgPacketEntities::decode(msg_data)?;
-                    ctx.entities.handle_packet_entities(
-                        msg,
-                        &ctx.class_info,
-                        &ctx.serializers,
-                        &ctx.string_tables,
-                        field_decode_ctx,
-                        fp_buf,
-                    )?;
-                }
-                _ => {}
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Process a packet's inner messages with entity class filtering.
-    fn process_packet_entities_filtered(
-        pkt_data: &[u8],
-        ctx: &mut Context,
-        field_decode_ctx: &mut FieldDecodeContext,
-        packet_buf: &mut Vec<u8>,
-        class_filter: &std::collections::HashSet<&str>,
-        fp_buf: &mut Vec<crate::entity::field_path::FieldPath>,
-    ) -> Result<()> {
-        let mut br = BitReader::new(pkt_data);
-
-        while br.bits_remaining() > 8 {
-            let msg_type = br.read_ubitvar()?;
-            let size = br.read_uvarint32()? as usize;
-
-            // Only these four message types are consumed below; advance past
-            // everything else without copying its bytes out of the bitstream.
-            if !matches!(
-                msg_type,
-                svc::CREATE_STRING_TABLE
-                    | svc::UPDATE_STRING_TABLE
-                    | svc::SERVER_INFO
-                    | svc::PACKET_ENTITIES
-            ) {
-                br.skip_bits(size * 8)?;
-                continue;
-            }
-
-            if size > packet_buf.len() {
-                packet_buf.resize(size, 0);
-            }
-            br.read_bytes(&mut packet_buf[..size])?;
-            let msg_data = &packet_buf[..size];
-
-            match msg_type {
-                svc::CREATE_STRING_TABLE => {
-                    let msg = CsvcMsgCreateStringTable::decode(msg_data)?;
-                    if ctx.string_tables.handle_create(msg)? {
-                        ctx.string_tables.update_instance_baselines(&ctx.class_info);
+                    if let Some(filter) = class_filter {
+                        ctx.entities.handle_packet_entities_filtered(
+                            msg,
+                            &ctx.class_info,
+                            &ctx.serializers,
+                            &ctx.string_tables,
+                            field_decode_ctx,
+                            filter,
+                            fp_buf,
+                        )?;
+                    } else {
+                        ctx.entities.handle_packet_entities(
+                            msg,
+                            &ctx.class_info,
+                            &ctx.serializers,
+                            &ctx.string_tables,
+                            field_decode_ctx,
+                            fp_buf,
+                        )?;
                     }
-                }
-                svc::UPDATE_STRING_TABLE => {
-                    let msg = CsvcMsgUpdateStringTable::decode(msg_data)?;
-                    if ctx.string_tables.handle_update(msg)? {
-                        ctx.string_tables.update_instance_baselines(&ctx.class_info);
-                    }
-                }
-                svc::SERVER_INFO => {
-                    let msg = CsvcMsgServerInfo::decode(msg_data)?;
-                    if let Some(ti) = msg.tick_interval {
-                        ctx.tick_interval = ti;
-                        field_decode_ctx.tick_interval = ti;
-                        let ratio = DEFAULT_TICK_INTERVAL / ti;
-                        ctx.full_packet_interval = DEFAULT_FULL_PACKET_INTERVAL * ratio as i32;
-                    }
-                }
-                svc::PACKET_ENTITIES => {
-                    let msg = CsvcMsgPacketEntities::decode(msg_data)?;
-                    ctx.entities.handle_packet_entities_filtered(
-                        msg,
-                        &ctx.class_info,
-                        &ctx.serializers,
-                        &ctx.string_tables,
-                        field_decode_ctx,
-                        class_filter,
-                        fp_buf,
-                    )?;
                 }
                 _ => {}
             }

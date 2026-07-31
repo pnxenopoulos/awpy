@@ -2353,8 +2353,8 @@ impl Parser {
     /// dropped one). A release is a **drop** when the weapon is left on the
     /// ground (still a live entity with no owner); a thrown grenade — whose held
     /// entity is consumed — is not a drop. Free default spawn equipment is not
-    /// reported (and the knife is excluded entirely). This performs a full
-    /// entity decode, so it is among the slower datasets.
+    /// reported (and the knife is excluded entirely). The decode is filtered to
+    /// player pawn/controller and known weapon classes.
     pub fn item_events(&self) -> Result<Vec<ItemEvent>> {
         /// Field keys on a weapon serializer, resolved once per class.
         struct WeaponKeys {
@@ -2381,7 +2381,8 @@ impl Parser {
         let mut slot_keys: Option<Vec<Option<u64>>> = None;
         let mut out: Vec<ItemEvent> = Vec::new();
 
-        self.run_to_end(|ctx| {
+        let filter = snapshot_filter();
+        self.run_to_end_filtered(&filter, |ctx| {
             let pkr = pk.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ckr = ck.get_or_insert_with(|| CtrlKeys::resolve(ctx));
             let mkey = *money_key.get_or_insert_with(|| {
