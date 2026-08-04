@@ -427,12 +427,13 @@ message CSVCMsg_UpdateStringTable {
 
 message CSVCMsg_VoiceData {
 	optional .CMsgVoiceAudio audio = 1;
-	optional int32 client = 2 [default = -1];
+	optional int32 client_deprecated = 2 [default = -1];
 	optional bool proximity = 3;
 	optional fixed64 xuid = 4;
 	optional int32 audible_mask = 5;
 	optional uint32 tick = 6;
 	optional int32 passthrough = 7;
+	optional int32 entity = 8 [default = -1];
 }
 
 message CSVCMsg_PacketReliable {
@@ -641,6 +642,7 @@ message CMsgServerUserCmd {
 	optional int32 player_slot = 3 [default = -1];
 	optional int32 server_tick_executed = 4;
 	optional int32 client_tick = 5;
+	optional bytes delta_data = 6;
 }
 
 message CSVCMsg_UserCommands {

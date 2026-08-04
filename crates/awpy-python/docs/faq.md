@@ -2,9 +2,10 @@
 
 ## Which games does Awpy support?
 
-Counter-Strike 2 (Source 2) demo files (`.dem`, the `PBDEMS2` container). It does
-not parse the older CS:GO (Source 1) demo format. For Deadlock (also Source 2),
-see the sister project [Boon](https://github.com/pnxenopoulos/boon).
+Counter-Strike 2 (Source 2) demo files (`.dem`, the
+[`PBDEMS2` container](https://docs.rs/pbdems2/latest/pbdems2/guide/file_structure/index.html)).
+It does not parse the older CS:GO (Source 1) demo format. For Deadlock (also
+Source 2), see the sister project [Boon](https://github.com/pnxenopoulos/boon).
 
 ## How do I get Steam ids and names?
 

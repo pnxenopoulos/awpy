@@ -111,6 +111,7 @@ enum ECsgoGCMsg {
 	k_EMsgGCCStrike15_v2_RecurringMissionSchema = 9226;
 	k_EMsgGCCStrike15_v2_VolatileItemClaimReward = 9227;
 	k_EMsgGCCStrike15_v2_VolatileShopSubscribe = 9228;
+	k_EMsgGCCStrike15_v2_SetClanId = 9229;
 }
 
 enum ECsgoSteamUserStat {
@@ -681,6 +682,7 @@ message CMsgGCCStrike15_v2_ServerNotificationForUserPenalty {
 	optional uint32 reason = 2;
 	optional uint32 seconds = 3;
 	optional bool communication_cooldown = 4;
+	optional uint32 cheating_penalty_level = 5;
 }
 
 message CMsgGCCStrike15_v2_ClientReportPlayer {
@@ -1246,6 +1248,7 @@ message CSOPersonaDataPublic {
 	optional bool elevated_state = 3;
 	optional uint32 xp_trail_timestamp_refresh = 4;
 	optional uint32 xp_trail_level = 5;
+	optional uint32 clan_id = 6;
 }
 
 message CSOAccountRecurringMission {
@@ -1438,6 +1441,10 @@ message CMsgGCCStrike15_v2_ClientRequestSouvenir {
 message CMsgGCCStrike15_v2_ClientAccountBalance {
 	optional uint64 amount = 1;
 	optional string url = 2;
+}
+
+message CMsgGCCStrike15_v2_SetClanId {
+	optional uint32 clan_id = 1;
 }
 
 message CMsgGCCStrike15_v2_ClientPartyJoinRelay {

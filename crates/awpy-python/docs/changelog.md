@@ -24,13 +24,19 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   `victim_traded` (this kill's victim was avenged) — the same classification
   behind `stats.traded_deaths`.
 - Metadata: `header`, `tick_rate`, `chat`, `convars`.
+- Updated CS2 protobuf definitions to game build `2000880` (source revision
+  `10877702`), including the newly required Valve extension definitions; hit
+  group names now cover the engine's `unused` (9) and `special` (11) values.
 - `awpy.SNAPSHOT_PROPERTIES` and `awpy.GAME_EVENTS` — discoverable catalogs of the
   per-player snapshot features (mapped to engine properties) and common events.
 - Generic access: `header`, the `events` mapping, and `ticks()` — one natively
   typed row per player per tick, with default props and friendly aliases
   (`X`/`Y`/`Z`, `health`, `armor`, `team_num`, `name`, `money`).
-- Fast by default: the headline datasets decode together in one parallel pass on
-  first access; `ticks` and `snapshots` decode in parallel across keyframes.
+- Fast by default: event-based combat datasets now collect their protobuf
+  events while decoding entity state, eliminating a separate full event-stream
+  traversal. That pass materializes only the legacy event names those datasets
+  consume, skips all user messages, and omits unused raw payload copies;
+  `ticks` and `snapshots` decode in parallel across keyframes.
 - `awpy.plot` for radars, frames, heatmaps, nav meshes, and GIFs (`awpy[plot]`
   extra). `plot.nav` draws a map's walkable areas and can highlight a set of them
   — e.g. a route from `NavMesh.find_path`.

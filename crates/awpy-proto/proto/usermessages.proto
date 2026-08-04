@@ -2,8 +2,6 @@ import "networkbasetypes.proto";
 
 enum EBaseUserMessages {
 	UM_AchievementEvent = 101;
-	UM_CloseCaption = 102;
-	UM_CloseCaptionDirect = 103;
 	UM_CurrentTimescale = 104;
 	UM_DesiredTimescale = 105;
 	UM_Fade = 106;
@@ -52,13 +50,13 @@ enum EBaseUserMessages {
 	UM_NotifyResponseFound = 165;
 	UM_PlayResponseConditional = 166;
 	UM_UserSentBugBug = 167;
+	UM_UsageReport = 168;
 	UM_MAX_BASE = 200;
 }
 
 enum EBaseEntityMessages {
 	EM_PlayJingle = 136;
 	EM_ScreenOverlay = 137;
-	EM_RemoveAllDecals = 138;
 	EM_PropagateForce = 139;
 	EM_DoSpark = 140;
 	EM_FixAngle = 141;
@@ -125,20 +123,6 @@ enum EHapticPulseType {
 
 message CUserMessageAchievementEvent {
 	optional uint32 achievement = 1;
-}
-
-message CUserMessageCloseCaption {
-	optional fixed32 hash = 1;
-	optional float duration = 2;
-	optional bool from_player = 3;
-	optional int32 ent_index = 4 [default = -1];
-}
-
-message CUserMessageCloseCaptionDirect {
-	optional fixed32 hash = 1;
-	optional float duration = 2;
-	optional bool from_player = 3;
-	optional int32 ent_index = 4 [default = -1];
 }
 
 message CUserMessageCloseCaptionPlaceholder {
@@ -302,11 +286,6 @@ message CEntityMessagePlayJingle {
 
 message CEntityMessageScreenOverlay {
 	optional bool start_effect = 1;
-	optional .CEntityMsg entity_msg = 2;
-}
-
-message CEntityMessageRemoveAllDecals {
-	optional bool remove_decals = 1;
 	optional .CEntityMsg entity_msg = 2;
 }
 
@@ -871,4 +850,8 @@ message CUserMessage_PlayResponseConditional {
 	optional .CMsgVector ent_origin = 4;
 	optional float pre_delay = 5;
 	optional int32 mix_priority = 6;
+}
+
+message CUserMessage_UsageReport {
+	optional string usage = 1;
 }

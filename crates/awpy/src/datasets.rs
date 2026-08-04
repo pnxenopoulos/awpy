@@ -929,16 +929,6 @@ fn det_dist2(d: &Detonation, x: f32, y: f32, z: f32) -> f32 {
     }
 }
 
-/// Group row indices by the tick their event fired on, so the decode can fill
-/// the right rows when it reaches each tick.
-fn index_by_tick(ticks: impl Iterator<Item = i32>) -> HashMap<i32, Vec<usize>> {
-    let mut by_tick: HashMap<i32, Vec<usize>> = HashMap::new();
-    for (i, tick) in ticks.enumerate() {
-        by_tick.entry(tick).or_default().push(i);
-    }
-    by_tick
-}
-
 /// Fill a [`Kill`] row from the player-death event and entity state at its tick.
 fn fill_kill(kill: &mut Kill, e: &GameEvent, ctx: &Context, pk: &PawnKeys, ck: &CtrlKeys) {
     let k = Keys(&e.keys);
@@ -1328,65 +1318,15 @@ impl Parser {
     /// `shots` itself far cheaper than its old *unfiltered* pass, which decoded
     /// every entity in the demo.
     pub fn event_datasets(&self) -> Result<EventDatasets> {
-        let events = self.events_ref()?;
-
-        // A row per matching event, plus a tick -> row-indices map so the decode
-        // knows which rows to fill when it reaches a tick.
-        let kill_raw: Vec<&GameEvent> =
-            events.iter().filter(|e| e.name == "player_death").collect();
-        let mut kills: Vec<Kill> = kill_raw.iter().map(|e| kill_event_fields(e)).collect();
-        let kill_by_tick = index_by_tick(kill_raw.iter().map(|e| e.tick));
-
-        let hurt_raw: Vec<&GameEvent> = events.iter().filter(|e| e.name == "player_hurt").collect();
-        let mut damages: Vec<Damage> = hurt_raw.iter().map(|e| damage_event_fields(e)).collect();
-        let hurt_by_tick = index_by_tick(hurt_raw.iter().map(|e| e.tick));
-
-        let bomb_raw: Vec<(&str, &GameEvent)> = events
-            .iter()
-            .filter_map(|e| {
-                BOMB_EVENTS
-                    .iter()
-                    .find(|(name, _)| *name == e.name)
-                    .map(|(_, label)| (*label, e))
-            })
-            .collect();
-        let mut bomb: Vec<BombEvent> = bomb_raw
-            .iter()
-            .map(|(label, e)| BombEvent {
-                tick: e.tick,
-                event: label.to_string(),
-                ..Default::default()
-            })
-            .collect();
-        let bomb_by_tick = index_by_tick(bomb_raw.iter().map(|(_, e)| e.tick));
-
-        // Flashbang detonations grouped by tick, for blind attribution.
+        let mut kills = Vec::new();
+        let mut damages = Vec::new();
+        let mut bomb = Vec::new();
+        let mut blinds = Vec::new();
+        let mut shots = Vec::new();
         let mut detonations: HashMap<i32, Vec<Detonation>> = HashMap::new();
-        for e in events {
-            if e.name == "flashbang_detonate" {
-                let k = Keys(&e.keys);
-                detonations.entry(e.tick).or_default().push(Detonation {
-                    thrower_pawn: k.i64("userid_pawn"),
-                    x: k.f32("x"),
-                    y: k.f32("y"),
-                    z: k.f32("z"),
-                });
-            }
-        }
-
-        let shot_raw: Vec<&GameEvent> = events.iter().filter(|e| e.name == "weapon_fire").collect();
-        let mut shots: Vec<Shot> = shot_raw
-            .iter()
-            .map(|e| Shot {
-                tick: e.tick,
-                weapon: Keys(&e.keys).string("weapon"),
-                ..Default::default()
-            })
-            .collect();
-        let shot_by_tick = index_by_tick(shot_raw.iter().map(|e| e.tick));
 
         // Shots follow the active-weapon handle to a weapon entity, so the pass
-        // must also decode weapon entities — see [`weapon_classes`].
+        // must also decode weapon entities.
         let mut filter: HashSet<&str> =
             HashSet::from([PLAYER_PAWN_CLASS, PLAYER_CONTROLLER_CLASS, PLANTED_C4_CLASS]);
         filter.extend(weapon_classes());
@@ -1395,47 +1335,73 @@ impl Parser {
         let mut site_key: Option<Option<u64>> = None;
         let mut flash_key: Option<Option<u64>> = None;
         let mut prev_flash: HashMap<i32, f32> = HashMap::new();
-        let mut blinds: Vec<Blind> = Vec::new();
         let mut shot_keys: Option<ShotKeys> = None;
         let mut weapon_keys: HashMap<String, (Option<u64>, Option<u64>)> = HashMap::new();
 
-        self.run_to_end_filtered(&filter, |ctx| {
+        // These datasets consume legacy key/value pairs only. Select their
+        // event names up front so unrelated legacy events and all CS2 user
+        // messages are skipped without materializing owned payloads.
+        let mut event_names: HashSet<&str> = HashSet::from([
+            "player_death",
+            "player_hurt",
+            "flashbang_detonate",
+            "weapon_fire",
+        ]);
+        event_names.extend(BOMB_EVENTS.iter().map(|(name, _)| *name));
+
+        self.run_to_end_with_legacy_events_filtered(&filter, &event_names, |ctx, events| {
             let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
 
-            if let Some(indices) = kill_by_tick.get(&ctx.tick()) {
-                for &i in indices {
-                    fill_kill(&mut kills[i], kill_raw[i], ctx, pk, ck);
-                }
-            }
-            if let Some(indices) = hurt_by_tick.get(&ctx.tick()) {
-                for &i in indices {
-                    fill_damage(&mut damages[i], hurt_raw[i], ctx, pk, ck);
-                }
-            }
-            if let Some(indices) = bomb_by_tick.get(&ctx.tick()) {
-                let sk = *site_key.get_or_insert_with(|| {
-                    ctx.serializers()
-                        .get(PLANTED_C4_CLASS)
-                        .and_then(|s| s.resolve_field_key("m_nBombSite"))
-                });
-                let site = bomb_site(ctx, sk);
-                for &i in indices {
-                    fill_bomb(&mut bomb[i], bomb_raw[i].1, ctx, pk, ck, site);
-                }
-            }
-            if let Some(indices) = shot_by_tick.get(&ctx.tick()) {
-                let shk = shot_keys.get_or_insert_with(|| ShotKeys::resolve(ctx));
-                for &i in indices {
-                    fill_shot(
-                        &mut shots[i],
-                        shot_raw[i],
-                        ctx,
-                        pk,
-                        ck,
-                        shk,
-                        &mut weapon_keys,
-                    );
+            for event in events {
+                match event.name.as_str() {
+                    "player_death" => {
+                        let mut kill = kill_event_fields(event);
+                        fill_kill(&mut kill, event, ctx, pk, ck);
+                        kills.push(kill);
+                    }
+                    "player_hurt" => {
+                        let mut damage = damage_event_fields(event);
+                        fill_damage(&mut damage, event, ctx, pk, ck);
+                        damages.push(damage);
+                    }
+                    "flashbang_detonate" => {
+                        let keys = Keys(&event.keys);
+                        detonations.entry(event.tick).or_default().push(Detonation {
+                            thrower_pawn: keys.i64("userid_pawn"),
+                            x: keys.f32("x"),
+                            y: keys.f32("y"),
+                            z: keys.f32("z"),
+                        });
+                    }
+                    "weapon_fire" => {
+                        let mut shot = Shot {
+                            tick: event.tick,
+                            weapon: Keys(&event.keys).string("weapon"),
+                            ..Default::default()
+                        };
+                        let sk = shot_keys.get_or_insert_with(|| ShotKeys::resolve(ctx));
+                        fill_shot(&mut shot, event, ctx, pk, ck, sk, &mut weapon_keys);
+                        shots.push(shot);
+                    }
+                    _ => {
+                        if let Some((_, label)) =
+                            BOMB_EVENTS.iter().find(|(name, _)| *name == event.name)
+                        {
+                            let sk = *site_key.get_or_insert_with(|| {
+                                ctx.serializers()
+                                    .get(PLANTED_C4_CLASS)
+                                    .and_then(|s| s.resolve_field_key("m_nBombSite"))
+                            });
+                            let mut row = BombEvent {
+                                tick: event.tick,
+                                event: (*label).to_string(),
+                                ..Default::default()
+                            };
+                            fill_bomb(&mut row, event, ctx, pk, ck, bomb_site(ctx, sk));
+                            bomb.push(row);
+                        }
+                    }
                 }
             }
 

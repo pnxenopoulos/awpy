@@ -25,8 +25,9 @@ Demos are `.dem` files recorded by the game server. Common sources:
 - **Third-party platforms** — FACEIT and other platforms offer demo downloads
   on the match room page.
 
-Awpy parses CS2 (Source 2, `PBDEMS2`) demos. The older CS:GO format is not
-supported.
+Awpy parses CS2 (Source 2,
+[`PBDEMS2`](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html)) demos. The
+older CS:GO format is not supported.
 
 ## Open a demo
 

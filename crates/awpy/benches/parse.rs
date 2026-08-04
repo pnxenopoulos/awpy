@@ -7,8 +7,9 @@
 //!   `from_file` (open + memory-map), `parse_send_tables`, `parse_class_info`,
 //!   and `parse_init`.
 //! - `decode` group — `messages` (enumerate every message without decoding
-//!   entities), `events` (decode all game events), and `run_to_end` (full entity
-//!   decode: every class, every tick). These report throughput (MiB/s).
+//!   entities), `events` (decode all game events), `event_datasets` (collect
+//!   combat events and entity enrichment together), and `run_to_end` (full
+//!   entity decode: every class, every tick). These report throughput (MiB/s).
 //!
 //! The demo is chosen from `$AWPY_BENCH_DEMO`, else the smallest `.dem` under the
 //! repository's `demos/` directory. When none is present every benchmark skips.
@@ -101,6 +102,14 @@ fn bench_decode(c: &mut Criterion) {
         b.iter_batched(
             || Parser::from_bytes(bytes.clone()),
             |p| black_box(p.events(None).unwrap()),
+            BatchSize::LargeInput,
+        )
+    });
+
+    group.bench_function("event_datasets", |b| {
+        b.iter_batched(
+            || Parser::from_bytes(bytes.clone()),
+            |p| black_box(p.event_datasets().unwrap()),
             BatchSize::LargeInput,
         )
     });

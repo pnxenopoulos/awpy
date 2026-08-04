@@ -35,6 +35,7 @@ kills = demo.kills      # every player_death, all fields
 - [Counter-Strike 2](https://www.counter-strike.net/cs2) — official home page
 - [Awpy on GitHub](https://github.com/pnxenopoulos/awpy)
 - [Polars](https://pola.rs) — the DataFrame library Awpy returns data in
+- [pbdems2](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html) — the shared Source 2 demo-format core and its format guide
 - [Boon](https://github.com/pnxenopoulos/boon) — sister project: a [Deadlock](https://store.steampowered.com/app/1422450/Deadlock/) demo parser with the same Rust-core, Polars-out design
 - [deadlock.nyc](https://deadlock.nyc/) — sister project: a fully client-side Deadlock demo viewer that runs in your browser
 

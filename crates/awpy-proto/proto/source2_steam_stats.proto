@@ -207,4 +207,5 @@ message CUserMessage_UserSentBugBug {
 	optional uint32 build_id = 4;
 	optional int32 osversion = 5;
 	optional string command_logs = 6;
+	optional int32 bugbug_no = 7;
 }

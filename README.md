@@ -19,7 +19,7 @@
 
 Awpy is a fast [Counter-Strike 2](https://www.counter-strike.net/cs2) demo (`.dem`) parser written in Rust with native Python bindings. It reads Source 2 demo files and returns [Polars](https://pola.rs) DataFrames, giving you structured access to match data without touching the binary format or parsing code yourself.
 
-CS2 runs on the Source 2 engine, so Awpy shares its core with [Boon](https://github.com/pnxenopoulos/boon), a Deadlock parser: the `PBDEMS2` container, bit-level wire encodings, flattened serializers, the entity system, and string tables are all Source 2 mechanisms. Awpy adapts the game-specific parts — the CS2 protobufs, a handful of CS2 field decoders, and the CS2 name tables (teams, hit groups, round-end reasons, game phases).
+CS2 runs on the Source 2 engine, so Awpy and [Boon](https://github.com/pnxenopoulos/boon), a Deadlock parser, share the game-neutral [pbdems2](https://github.com/pnxenopoulos/pbdems2) core. Its [PBDEMS2 format guide](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html) covers the container, packet framing, bit-level wire encodings, flattened serializers, entity system, string tables, and playback. Awpy adapts the game-specific parts — the CS2 protobufs, a handful of CS2 field decoders, and the CS2 name tables (teams, hit groups, round-end reasons, game phases).
 
 ## Table of Contents
 

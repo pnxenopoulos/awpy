@@ -16,7 +16,9 @@
 //!     HITGROUP_LEFTLEG  = 6,
 //!     HITGROUP_RIGHTLEG = 7,
 //!     HITGROUP_NECK     = 8,
+//!     HITGROUP_UNUSED   = 9,
 //!     HITGROUP_GEAR     = 10,
+//!     HITGROUP_SPECIAL  = 11,
 //! };
 //! ```
 
@@ -32,7 +34,9 @@ const HITGROUPS: &[(i64, &str)] = &[
     (6, "left_leg"),
     (7, "right_leg"),
     (8, "neck"),
+    (9, "unused"),
     (10, "gear"),
+    (11, "special"),
 ];
 
 /// Look up a hit group name by ID. Returns `"HITGROUP_NOT_FOUND"` for unknown IDs.
@@ -58,7 +62,9 @@ mod tests {
         assert_eq!(hitgroup_name(-1), "invalid");
         assert_eq!(hitgroup_name(0), "generic");
         assert_eq!(hitgroup_name(1), "head");
+        assert_eq!(hitgroup_name(9), "unused");
         assert_eq!(hitgroup_name(10), "gear");
+        assert_eq!(hitgroup_name(11), "special");
     }
 
     #[test]
@@ -68,6 +74,6 @@ mod tests {
 
     #[test]
     fn all_hitgroups_count() {
-        assert_eq!(all_hitgroups().len(), 11);
+        assert_eq!(all_hitgroups().len(), 13);
     }
 }

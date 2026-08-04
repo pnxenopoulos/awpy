@@ -3,7 +3,7 @@ use pbdems2::{DemoParser, PreparedPlayback};
 use crate::entity::{ClassInfo, SerializerContainer};
 use crate::error::{Error, Result};
 
-use super::{Context, Cs2Adapter, DEFAULT_TICK_INTERVAL, HEADER_SIZE, Parser};
+use super::{Context, Cs2Adapter, DEFAULT_TICK_INTERVAL, GameEvent, HEADER_SIZE, Parser};
 
 impl Parser {
     fn demo_parser(&self) -> Result<DemoParser<'_>> {
@@ -76,6 +76,51 @@ impl Parser {
         self.prepared()?
             .session(parser)?
             .run_to_end_filtered(class_filter, on_tick)?;
+        Ok(())
+    }
+
+    /// Parse entities and game events in one filtered pass.
+    pub fn run_to_end_with_events_filtered<F>(
+        &self,
+        class_filter: &std::collections::HashSet<&str>,
+        mut on_tick: F,
+    ) -> Result<()>
+    where
+        F: FnMut(&Context, &[GameEvent]),
+    {
+        let parser = self.demo_parser()?;
+        let mut session = self.prepared()?.session(parser)?;
+        session.adapter_mut().enable_events();
+        session.run_to_end_filtered_with_adapter(class_filter, |state, adapter| {
+            on_tick(state, adapter.tick_events());
+            adapter.clear_tick_events();
+        })?;
+        Ok(())
+    }
+
+    /// Parse entities and only selected legacy events in one filtered pass.
+    ///
+    /// Raw event payloads are omitted: callers of this path consume the decoded
+    /// legacy key/value pairs and avoid allocating protobuf bytes they will not
+    /// use.
+    pub(crate) fn run_to_end_with_legacy_events_filtered<F>(
+        &self,
+        class_filter: &std::collections::HashSet<&str>,
+        event_names: &std::collections::HashSet<&str>,
+        mut on_tick: F,
+    ) -> Result<()>
+    where
+        F: FnMut(&Context, &[GameEvent]),
+    {
+        let parser = self.demo_parser()?;
+        let mut session = self.prepared()?.session(parser)?;
+        session
+            .adapter_mut()
+            .enable_legacy_events(event_names.iter().copied(), false);
+        session.run_to_end_filtered_with_adapter(class_filter, |state, adapter| {
+            on_tick(state, adapter.tick_events());
+            adapter.clear_tick_events();
+        })?;
         Ok(())
     }
 

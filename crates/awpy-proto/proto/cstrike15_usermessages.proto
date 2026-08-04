@@ -240,6 +240,7 @@ message CCSUsrMsg_WeaponSound {
 	optional string sound = 5;
 	optional float game_timestamp = 6;
 	optional fixed32 source_soundscapeid = 7;
+	optional bool stealth = 8;
 }
 
 message CCSUsrMsg_WeaponMagDrop {
