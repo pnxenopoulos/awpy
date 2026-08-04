@@ -13,9 +13,6 @@ pub mod dem {
     pub const STOP: i32 = EDemoCommands::DemStop as i32;
     pub const FILE_HEADER: i32 = EDemoCommands::DemFileHeader as i32;
     pub const FILE_INFO: i32 = EDemoCommands::DemFileInfo as i32;
-    pub const SYNC_TICK: i32 = EDemoCommands::DemSyncTick as i32;
-    pub const SEND_TABLES: i32 = EDemoCommands::DemSendTables as i32;
-    pub const CLASS_INFO: i32 = EDemoCommands::DemClassInfo as i32;
     pub const PACKET: i32 = EDemoCommands::DemPacket as i32;
     pub const SIGNON_PACKET: i32 = EDemoCommands::DemSignonPacket as i32;
     pub const FULL_PACKET: i32 = EDemoCommands::DemFullPacket as i32;

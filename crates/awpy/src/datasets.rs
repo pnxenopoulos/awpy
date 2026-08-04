@@ -646,7 +646,7 @@ struct PawnKeys {
 
 impl PawnKeys {
     fn resolve(ctx: &Context) -> Self {
-        let ser = ctx.serializers.get(PLAYER_PAWN_CLASS);
+        let ser = ctx.serializers().get(PLAYER_PAWN_CLASS);
         let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
         Self {
             cell: [
@@ -674,7 +674,7 @@ struct CtrlKeys {
 
 impl CtrlKeys {
     fn resolve(ctx: &Context) -> Self {
-        let ser = ctx.serializers.get(PLAYER_CONTROLLER_CLASS);
+        let ser = ctx.serializers().get(PLAYER_CONTROLLER_CLASS);
         let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
         Self {
             steamid: key("m_steamID"),
@@ -698,7 +698,7 @@ fn fill_loadout(
     for &wkey in weapon_keys {
         let Some(weapon) = pawn
             .get_handle(wkey)
-            .and_then(|h| ctx.entities.get_by_handle(h))
+            .and_then(|h| ctx.entities().get_by_handle(h))
         else {
             continue;
         };
@@ -758,10 +758,10 @@ struct SnapshotKeys {
 
 impl SnapshotKeys {
     fn resolve(ctx: &Context) -> Self {
-        let ser = ctx.serializers.get(PLAYER_PAWN_CLASS);
+        let ser = ctx.serializers().get(PLAYER_PAWN_CLASS);
         let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
         SnapshotKeys {
-            pawn_class: ctx.class_info.id_of(PLAYER_PAWN_CLASS).unwrap_or(-1),
+            pawn_class: ctx.class_info().id_of(PLAYER_PAWN_CLASS).unwrap_or(-1),
             pawn: PawnKeys::resolve(ctx),
             ctrl: CtrlKeys::resolve(ctx),
             health: key("m_iHealth"),
@@ -836,7 +836,7 @@ fn segment_ranges(offsets: &[(usize, i32)], n: usize) -> Vec<(Option<usize>, i32
 /// an all-`None` [`ResolvedPlayer`] when the handle does not point at a live
 /// player pawn.
 fn resolve_player(ctx: &Context, pawn_handle: i64, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
-    let Some(pawn) = ctx.entities.get_by_handle(pawn_handle as u32) else {
+    let Some(pawn) = ctx.entities().get_by_handle(pawn_handle as u32) else {
         return ResolvedPlayer::default();
     };
     if !pawn.class_name.contains("PlayerPawn") {
@@ -869,7 +869,7 @@ fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys)
     // Follow the controller handle for the persistent Steam id and name.
     if let Some(controller) = pawn
         .get_handle(pk.controller)
-        .and_then(|h| ctx.entities.get_by_handle(h))
+        .and_then(|h| ctx.entities().get_by_handle(h))
     {
         player.steamid = controller.get_u64(ck.steamid);
         player.name = controller.get_string(ck.name);
@@ -1003,9 +1003,9 @@ fn fill_damage(dmg: &mut Damage, e: &GameEvent, ctx: &Context, pk: &PawnKeys, ck
 /// The active planted-C4's bomb site (0 = A, 1 = B), or `None` when no bomb is
 /// currently planted.
 fn bomb_site(ctx: &Context, site_key: Option<u64>) -> Option<&'static str> {
-    ctx.entities
+    ctx.entities()
         .iter()
-        .find(|(_, e)| e.class_name == PLANTED_C4_CLASS)
+        .find(|(_, e)| e.class_name.as_ref() == PLANTED_C4_CLASS)
         .filter(|(_, e)| site_key.is_some_and(|k| e.fields.contains_key(&k)))
         .and_then(|(_, e)| match e.get_i64(site_key) {
             0 => Some("A"),
@@ -1044,7 +1044,7 @@ struct ShotKeys {
 
 impl ShotKeys {
     fn resolve(ctx: &Context) -> Self {
-        let ser = ctx.serializers.get(PLAYER_PAWN_CLASS);
+        let ser = ctx.serializers().get(PLAYER_PAWN_CLASS);
         let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
         Self {
             angles: key("m_angEyeAngles"),
@@ -1077,7 +1077,7 @@ fn fill_shot(
     shot.y = player.y;
     shot.z = player.z;
 
-    let Some(pawn) = ctx.entities.get_by_handle(k.i64("userid_pawn") as u32) else {
+    let Some(pawn) = ctx.entities().get_by_handle(k.i64("userid_pawn") as u32) else {
         return;
     };
     let angles = pawn.get_qangle(sk.angles);
@@ -1088,11 +1088,11 @@ fn fill_shot(
     // Follow the active-weapon handle to the weapon entity for clip / accuracy.
     if let Some(weapon) = pawn
         .get_handle(sk.weapon_handle)
-        .and_then(|h| ctx.entities.get_by_handle(h))
-        && let Some(wser) = ctx.serializers.get(&weapon.class_name)
+        .and_then(|h| ctx.entities().get_by_handle(h))
+        && let Some(wser) = ctx.serializers().get(&weapon.class_name)
     {
         let (clip_k, acc_k) = *weapon_keys
-            .entry(weapon.class_name.clone())
+            .entry(weapon.class_name.to_string())
             .or_insert_with(|| {
                 (
                     wser.resolve_field_key("m_iClip1"),
@@ -1116,9 +1116,9 @@ fn detect_blinds(
     ck: &CtrlKeys,
     out: &mut Vec<Blind>,
 ) {
-    let dets = detonations.get(&ctx.tick);
-    for (idx, pawn) in ctx.entities.iter() {
-        if !pawn.active || pawn.class_name != PLAYER_PAWN_CLASS {
+    let dets = detonations.get(&ctx.tick());
+    for (idx, pawn) in ctx.entities().iter() {
+        if !pawn.active || pawn.class_name.as_ref() != PLAYER_PAWN_CLASS {
             continue;
         }
         let cur = pawn.get_f32(flash_key);
@@ -1144,7 +1144,7 @@ fn detect_blinds(
         };
         let attacker = resolve_player(ctx, det.thrower_pawn, pk, ck);
         let mut blind = Blind {
-            tick: ctx.tick,
+            tick: ctx.tick(),
             duration: cur,
             ..Default::default()
         };
@@ -1194,13 +1194,13 @@ impl Parser {
 
         self.run_to_end_filtered(&filter, |ctx| {
             let Some((_, entity)) = ctx
-                .entities
+                .entities()
                 .iter()
-                .find(|(_, e)| e.class_name == GAME_RULES_CLASS)
+                .find(|(_, e)| e.class_name.as_ref() == GAME_RULES_CLASS)
             else {
                 return;
             };
-            let Some(ser) = ctx.serializers.get(GAME_RULES_CLASS) else {
+            let Some(ser) = ctx.serializers().get(GAME_RULES_CLASS) else {
                 return;
             };
             let k = keys.get_or_insert_with(|| GameRulesKeys::resolve(ser));
@@ -1244,7 +1244,7 @@ impl Parser {
                     round_num: total,
                     start_tick,
                     freeze_end_tick,
-                    end_tick: ctx.tick,
+                    end_tick: ctx.tick(),
                     official_end_tick: None,
                     winner: win_status as i32,
                     winner_side: team_name(win_status).to_string(),
@@ -1265,12 +1265,12 @@ impl Parser {
                     if let Some(last) = rounds.last_mut()
                         && last.official_end_tick.is_none()
                     {
-                        last.official_end_tick = Some(ctx.tick);
+                        last.official_end_tick = Some(ctx.tick());
                     }
-                    start_tick = Some(ctx.tick);
+                    start_tick = Some(ctx.tick());
                     freeze_end_tick = None;
                 } else if !freeze && prev_freeze {
-                    freeze_end_tick = Some(ctx.tick);
+                    freeze_end_tick = Some(ctx.tick());
                 }
             }
 
@@ -1403,19 +1403,19 @@ impl Parser {
             let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
 
-            if let Some(indices) = kill_by_tick.get(&ctx.tick) {
+            if let Some(indices) = kill_by_tick.get(&ctx.tick()) {
                 for &i in indices {
                     fill_kill(&mut kills[i], kill_raw[i], ctx, pk, ck);
                 }
             }
-            if let Some(indices) = hurt_by_tick.get(&ctx.tick) {
+            if let Some(indices) = hurt_by_tick.get(&ctx.tick()) {
                 for &i in indices {
                     fill_damage(&mut damages[i], hurt_raw[i], ctx, pk, ck);
                 }
             }
-            if let Some(indices) = bomb_by_tick.get(&ctx.tick) {
+            if let Some(indices) = bomb_by_tick.get(&ctx.tick()) {
                 let sk = *site_key.get_or_insert_with(|| {
-                    ctx.serializers
+                    ctx.serializers()
                         .get(PLANTED_C4_CLASS)
                         .and_then(|s| s.resolve_field_key("m_nBombSite"))
                 });
@@ -1424,7 +1424,7 @@ impl Parser {
                     fill_bomb(&mut bomb[i], bomb_raw[i].1, ctx, pk, ck, site);
                 }
             }
-            if let Some(indices) = shot_by_tick.get(&ctx.tick) {
+            if let Some(indices) = shot_by_tick.get(&ctx.tick()) {
                 let shk = shot_keys.get_or_insert_with(|| ShotKeys::resolve(ctx));
                 for &i in indices {
                     fill_shot(
@@ -1441,7 +1441,7 @@ impl Parser {
 
             // Blinds are found from a per-tick rising edge, so this runs every tick.
             let fk = *flash_key.get_or_insert_with(|| {
-                ctx.serializers
+                ctx.serializers()
                     .get(PLAYER_PAWN_CLASS)
                     .and_then(|s| s.resolve_field_key("m_flFlashDuration"))
             });
@@ -1556,18 +1556,18 @@ impl Parser {
             let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
             let mut current: HashSet<i32> = HashSet::new();
 
-            for (_, e) in ctx.entities.iter() {
+            for (_, e) in ctx.entities().iter() {
                 if !e.active {
                     continue;
                 }
-                let Some(trackers) = modes.get(e.class_name.as_str()) else {
+                let Some(trackers) = modes.get(e.class_name.as_ref()) else {
                     continue;
                 };
-                let Some(ser) = ctx.serializers.get(&e.class_name) else {
+                let Some(ser) = ctx.serializers().get(&e.class_name) else {
                     continue;
                 };
                 let posk = pos_keys
-                    .entry(e.class_name.clone())
+                    .entry(e.class_name.to_string())
                     .or_insert_with(|| PositionKeys::resolve(ser));
                 let Some((x, y, z)) = posk.world(e) else {
                     continue;
@@ -1576,12 +1576,14 @@ impl Parser {
                 // Grenade projectiles carry `m_hThrower`; infernos instead carry
                 // `m_hOwnerEntity`. Resolve whichever points at a player pawn
                 // (once per entity — every tracker on it shares the thrower).
-                let (tk, ok) = *thrower_keys.entry(e.class_name.clone()).or_insert_with(|| {
-                    (
-                        ser.resolve_field_key("m_hThrower"),
-                        ser.resolve_field_key("m_hOwnerEntity"),
-                    )
-                });
+                let (tk, ok) = *thrower_keys
+                    .entry(e.class_name.to_string())
+                    .or_insert_with(|| {
+                        (
+                            ser.resolve_field_key("m_hThrower"),
+                            ser.resolve_field_key("m_hOwnerEntity"),
+                        )
+                    });
                 let thrower = e
                     .get_handle(tk)
                     .or_else(|| e.get_handle(ok))
@@ -1597,7 +1599,7 @@ impl Parser {
                     let (start_tick, end_tick) = match mode {
                         ProjMode::Windowed(w) => {
                             let Some(&(s, en)) = w.get(&e.index).and_then(|v| {
-                                v.iter().find(|(s, en)| (*s..=*en).contains(&ctx.tick))
+                                v.iter().find(|(s, en)| (*s..=*en).contains(&ctx.tick()))
                             }) else {
                                 continue;
                             };
@@ -1606,9 +1608,9 @@ impl Parser {
                         ProjMode::Trajectory => {
                             current.insert(e.index);
                             if !prev.contains(&e.index) {
-                                starts.insert(e.index, ctx.tick);
+                                starts.insert(e.index, ctx.tick());
                             }
-                            let start = *starts.get(&e.index).unwrap_or(&ctx.tick);
+                            let start = *starts.get(&e.index).unwrap_or(&ctx.tick());
                             if last_pos.get(&e.index) == Some(&(x, y, z)) {
                                 continue;
                             }
@@ -1620,9 +1622,9 @@ impl Parser {
                     rows.push((
                         *kind,
                         TrackedRow {
-                            tick: ctx.tick,
+                            tick: ctx.tick(),
                             entity_id: e.index,
-                            class_name: e.class_name.clone(),
+                            class_name: e.class_name.to_string(),
                             x,
                             y,
                             z,
@@ -1955,12 +1957,12 @@ impl Parser {
             // Teams first: the controller loop below reads `clans`, and team
             // entities sort after the controllers by entity index.
             let (team_num_key, clan_key) = *team_keys.get_or_insert_with(|| {
-                let ser = ctx.serializers.get(TEAM_CLASS);
+                let ser = ctx.serializers().get(TEAM_CLASS);
                 let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
                 (key("m_iTeamNum"), key("m_szClanTeamname"))
             });
-            for (_, e) in ctx.entities.iter() {
-                if !e.active || e.class_name != TEAM_CLASS {
+            for (_, e) in ctx.entities().iter() {
+                if !e.active || e.class_name.as_ref() != TEAM_CLASS {
                     continue;
                 }
                 let team = e.get_i64(team_num_key);
@@ -1980,12 +1982,12 @@ impl Parser {
             }
 
             let (steamid_key, name_key, team_key) = *keys.get_or_insert_with(|| {
-                let ser = ctx.serializers.get(PLAYER_CONTROLLER_CLASS);
+                let ser = ctx.serializers().get(PLAYER_CONTROLLER_CLASS);
                 let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
                 (key("m_steamID"), key("m_iszPlayerName"), key("m_iTeamNum"))
             });
-            for (idx, e) in ctx.entities.iter() {
-                if !e.active || e.class_name != PLAYER_CONTROLLER_CLASS {
+            for (idx, e) in ctx.entities().iter() {
+                if !e.active || e.class_name.as_ref() != PLAYER_CONTROLLER_CLASS {
                     continue;
                 }
                 let entry = seen.entry(idx).or_default();
@@ -2089,7 +2091,7 @@ impl Parser {
             let mut out = Vec::new();
             let mut keys: Option<SnapshotKeys> = None;
             self.run_to_end_filtered(filter, |ctx| {
-                if predicate(ctx.tick) {
+                if predicate(ctx.tick()) {
                     let keys = keys.get_or_insert_with(|| SnapshotKeys::resolve(ctx));
                     out.extend(Self::player_states(ctx, keys));
                 }
@@ -2109,7 +2111,7 @@ impl Parser {
                         let mut out = Vec::new();
                         let mut keys: Option<SnapshotKeys> = None;
                         this.decode_segment(seg_start, seg_end, filter, |ctx| {
-                            if predicate(ctx.tick) {
+                            if predicate(ctx.tick()) {
                                 let keys = keys.get_or_insert_with(|| SnapshotKeys::resolve(ctx));
                                 out.extend(Self::player_states(ctx, keys));
                             }
@@ -2216,12 +2218,12 @@ impl Parser {
     fn player_states(ctx: &Context, keys: &SnapshotKeys) -> Vec<PlayerState> {
         let (pk, ck) = (&keys.pawn, &keys.ctrl);
         let mut out = Vec::new();
-        for (_, pawn) in ctx.entities.iter() {
+        for (_, pawn) in ctx.entities().iter() {
             if !pawn.active || pawn.class_id != keys.pawn_class {
                 continue;
             }
             let mut state = PlayerState {
-                tick: ctx.tick,
+                tick: ctx.tick(),
                 ..Default::default()
             };
             // Position is only meaningful once the offset fields are present.
@@ -2250,7 +2252,7 @@ impl Parser {
             state.flash_duration = pawn.get_f32(keys.flash);
             state.active_weapon = pawn
                 .get_handle(keys.active_weapon)
-                .and_then(|h| ctx.entities.get_by_handle(h))
+                .and_then(|h| ctx.entities().get_by_handle(h))
                 .and_then(|w| weapon_info(&w.class_name))
                 .map(|i| i.name);
             let count = (pawn.get_i64(keys.weapon_count) as usize).min(keys.weapons.len());
@@ -2268,7 +2270,7 @@ impl Parser {
             state.side = Some(team_name(team));
             if let Some(ctrl) = pawn
                 .get_handle(pk.controller)
-                .and_then(|h| ctx.entities.get_by_handle(h))
+                .and_then(|h| ctx.entities().get_by_handle(h))
             {
                 state.steamid = ctrl.get_u64(ck.steamid);
                 state.name = ctrl.get_string(ck.name);
@@ -2386,11 +2388,11 @@ impl Parser {
             let pkr = pk.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ckr = ck.get_or_insert_with(|| CtrlKeys::resolve(ctx));
             let mkey = *money_key.get_or_insert_with(|| {
-                ctx.serializers
+                ctx.serializers()
                     .get(PLAYER_CONTROLLER_CLASS)
                     .and_then(|s| s.resolve_field_key("m_pInGameMoneyServices.m_iAccount"))
             });
-            let pawn_ser = ctx.serializers.get(PLAYER_PAWN_CLASS);
+            let pawn_ser = ctx.serializers().get(PLAYER_PAWN_CLASS);
             let ckey = *count_key.get_or_insert_with(|| {
                 pawn_ser.and_then(|s| s.resolve_field_key("m_pWeaponServices.m_hMyWeapons"))
             });
@@ -2406,7 +2408,7 @@ impl Parser {
 
             // Resolve the field keys for a weapon's serializer.
             let keys_for = |class: &str| -> WeaponKeys {
-                let s = ctx.serializers.get(class);
+                let s = ctx.serializers().get(class);
                 let key = |n: &str| s.and_then(|s| s.resolve_field_key(n));
                 WeaponKeys {
                     owner: key("m_hOwnerEntity"),
@@ -2417,8 +2419,8 @@ impl Parser {
                 }
             };
 
-            for (idx, pawn) in ctx.entities.iter() {
-                if !pawn.active || pawn.class_name != PLAYER_PAWN_CLASS {
+            for (idx, pawn) in ctx.entities().iter() {
+                if !pawn.active || pawn.class_name.as_ref() != PLAYER_PAWN_CLASS {
                     continue;
                 }
                 let actor = resolve_from_pawn(ctx, pawn, pkr, ckr);
@@ -2443,7 +2445,7 @@ impl Parser {
                 // Money change for this player this tick (purchases spend money).
                 let account = pawn
                     .get_handle(pkr.controller)
-                    .and_then(|h| ctx.entities.get_by_handle(h))
+                    .and_then(|h| ctx.entities().get_by_handle(h))
                     .map(|c| c.get_i64(mkey) as i32);
                 let delta = match (account, prev_money.get(&steamid)) {
                     (Some(a), Some(&p)) => a - p,
@@ -2455,7 +2457,7 @@ impl Parser {
 
                 // Acquisitions.
                 for &h in cur.difference(&prev) {
-                    let Some(weapon) = ctx.entities.get_by_handle(h) else {
+                    let Some(weapon) = ctx.entities().get_by_handle(h) else {
                         continue;
                     };
                     let Some(info) = weapon_info(&weapon.class_name) else {
@@ -2465,7 +2467,7 @@ impl Parser {
                         continue;
                     }
                     let wk = weapon_keys
-                        .entry(weapon.class_name.clone())
+                        .entry(weapon.class_name.to_string())
                         .or_insert_with(|| keys_for(&weapon.class_name));
                     let orig = original_owner(weapon, wk);
                     let dropped = weapon.get_f32(wk.dropped_time) > 0.0;
@@ -2484,7 +2486,7 @@ impl Parser {
                         continue;
                     };
                     out.push(ItemEvent {
-                        tick: ctx.tick,
+                        tick: ctx.tick(),
                         action: action.to_string(),
                         steamid: actor.steamid,
                         name: actor.name.clone(),
@@ -2502,7 +2504,7 @@ impl Parser {
                 // Releases: a weapon left on the ground (live entity, no owner)
                 // is a drop; a consumed one (thrown grenade) is skipped.
                 for &h in prev.difference(&cur) {
-                    let Some(weapon) = ctx.entities.get_by_handle(h) else {
+                    let Some(weapon) = ctx.entities().get_by_handle(h) else {
                         continue;
                     };
                     let Some(info) = weapon_info(&weapon.class_name) else {
@@ -2512,17 +2514,17 @@ impl Parser {
                         continue;
                     }
                     let wk = weapon_keys
-                        .entry(weapon.class_name.clone())
+                        .entry(weapon.class_name.to_string())
                         .or_insert_with(|| keys_for(&weapon.class_name));
                     let still_held = weapon
                         .get_handle(wk.owner)
-                        .and_then(|oh| ctx.entities.get_by_handle(oh))
+                        .and_then(|oh| ctx.entities().get_by_handle(oh))
                         .is_some_and(|o| o.class_name.contains("PlayerPawn"));
                     if still_held {
                         continue;
                     }
                     out.push(ItemEvent {
-                        tick: ctx.tick,
+                        tick: ctx.tick(),
                         action: "drop".to_string(),
                         steamid: actor.steamid,
                         name: actor.name.clone(),

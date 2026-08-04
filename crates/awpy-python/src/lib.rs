@@ -297,20 +297,20 @@ impl Demo {
             // one-row-per-player path returned earlier).
             self.parser
                 .run_to_end(|ctx| {
-                    for (_, entity) in ctx.entities.iter() {
+                    for (_, entity) in ctx.entities().iter() {
                         if !entity.active {
                             continue;
                         }
-                        let Some(serializer) = ctx.serializers.get(&entity.class_name) else {
+                        let Some(serializer) = ctx.serializers().get(&entity.class_name) else {
                             continue;
                         };
                         let keys = key_cache
-                            .entry(entity.class_name.clone())
+                            .entry(entity.class_name.to_string())
                             .or_insert_with(|| resolve_keys(serializer, &props));
 
-                        ticks.push(ctx.tick as i64);
+                        ticks.push(ctx.tick() as i64);
                         entity_ids.push(entity.index as i64);
-                        classes.push(entity.class_name.clone());
+                        classes.push(entity.class_name.to_string());
                         for (i, key) in keys.iter().enumerate() {
                             prop_cols[i].push(read_field(entity, *key));
                         }
@@ -1945,13 +1945,13 @@ struct PlayerTickKeys {
 
 impl PlayerTickKeys {
     fn resolve(ctx: &Context, props: &[String]) -> Self {
-        let pawn_ser = ctx.serializers.get(PLAYER_CLASSES[0]);
-        let ctrl_ser = ctx.serializers.get(PLAYER_CLASSES[1]);
+        let pawn_ser = ctx.serializers().get(PLAYER_CLASSES[0]);
+        let ctrl_ser = ctx.serializers().get(PLAYER_CLASSES[1]);
         let axis = |name: &str| {
             pawn_ser.and_then(|s| s.resolve_field_key(&format!("{ORIGIN_PATH}.{name}")))
         };
         PlayerTickKeys {
-            pawn_id: ctx.class_info.id_of(PLAYER_CLASSES[0]).unwrap_or(-1),
+            pawn_id: ctx.class_info().id_of(PLAYER_CLASSES[0]).unwrap_or(-1),
             controller: pawn_ser.and_then(|s| s.resolve_field_key("m_hController")),
             steamid: ctrl_ser.and_then(|s| s.resolve_field_key("m_steamID")),
             cell: [axis("m_cellX"), axis("m_cellY"), axis("m_cellZ")],
@@ -2010,13 +2010,13 @@ fn run_tick_segment(
 
     parser.decode_segment(start, end_tick, filter, |ctx| {
         let k = keys.get_or_insert_with(|| PlayerTickKeys::resolve(ctx, props));
-        for (_, pawn) in ctx.entities.iter() {
+        for (_, pawn) in ctx.entities().iter() {
             if !pawn.active || pawn.class_id != k.pawn_id {
                 continue;
             }
             let controller = match pawn
                 .get_handle(k.controller)
-                .and_then(|h| ctx.entities.get_by_handle(h))
+                .and_then(|h| ctx.entities().get_by_handle(h))
             {
                 Some(c) => {
                     pawn_to_ctrl.insert(pawn.index, c.index);
@@ -2024,9 +2024,9 @@ fn run_tick_segment(
                 }
                 None => pawn_to_ctrl
                     .get(&pawn.index)
-                    .and_then(|&i| ctx.entities.get(i)),
+                    .and_then(|&i| ctx.entities().get(i)),
             };
-            seg.ticks.push(ctx.tick as i64);
+            seg.ticks.push(ctx.tick() as i64);
             seg.pawn_idx.push(pawn.index);
             if let Some(sid) = controller
                 .and_then(|c| read_field(c, k.steamid))

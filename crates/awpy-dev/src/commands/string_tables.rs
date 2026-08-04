@@ -14,13 +14,13 @@ pub fn run(
     let ctx = parser.parse_init()?;
 
     let tables: Vec<_> = ctx
-        .string_tables
+        .string_tables()
         .tables()
         .iter()
         .filter(|t| {
             table_filter
                 .as_ref()
-                .map(|f| t.name.to_lowercase().contains(&f.to_lowercase()))
+                .map(|f| t.name().to_lowercase().contains(&f.to_lowercase()))
                 .unwrap_or(true)
         })
         .collect();
@@ -28,15 +28,15 @@ pub fn run(
     for table in &tables {
         println!(
             "{} ({} entries)",
-            table.name.green().bold(),
-            table.entries.len()
+            table.name().green().bold(),
+            table.entries().len()
         );
 
         // Only enumerate entries when a specific table was requested, to avoid
         // dumping the huge instancebaseline table by default.
         if table_filter.is_some() {
-            let display_limit = limit.unwrap_or(table.entries.len());
-            for (i, entry) in table.entries.iter().take(display_limit).enumerate() {
+            let display_limit = limit.unwrap_or(table.entries().len());
+            for (i, entry) in table.entries().iter().take(display_limit).enumerate() {
                 let key = entry.string.as_deref().unwrap_or("<none>");
                 let data_len = entry.user_data.as_ref().map(|d| d.len()).unwrap_or(0);
                 println!("  [{i:>4}] {key:<40} ({data_len} bytes user data)");
@@ -44,6 +44,9 @@ pub fn run(
         }
     }
 
-    println!("\n{} string tables total", ctx.string_tables.tables().len());
+    println!(
+        "\n{} string tables total",
+        ctx.string_tables().tables().len()
+    );
     Ok(())
 }

@@ -38,8 +38,8 @@
 //!
 //! let parser = Parser::from_file(Path::new("match.dem")).unwrap();
 //! parser.run_to_end(|ctx| {
-//!     for (idx, entity) in ctx.entities.iter() {
-//!         if entity.class_name == "CCSPlayerPawn" {
+//!     for (idx, entity) in ctx.entities().iter() {
+//!         if entity.class_name.as_ref() == "CCSPlayerPawn" {
 //!             let _ = idx; // slot index; access entity fields by resolved key
 //!         }
 //!     }

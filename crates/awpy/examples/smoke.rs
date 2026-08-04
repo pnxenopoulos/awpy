@@ -58,11 +58,11 @@ fn main() {
     // ── Init: serializers, classes, string tables ──
     let ctx = parser.parse_init().expect("parse_init");
     println!("== init ==");
-    println!("  serializers     : {}", ctx.serializers.serializers.len());
-    println!("  classes         : {}", ctx.class_info.classes.len());
-    println!("  class_id bits   : {}", ctx.class_info.bits);
-    println!("  string tables   : {}", ctx.string_tables.tables().len());
-    println!("  tick_interval   : {}", ctx.tick_interval);
+    println!("  serializers     : {}", ctx.serializers().len());
+    println!("  classes         : {}", ctx.class_info().classes().len());
+    println!("  class_id bits   : {}", ctx.class_info().bits());
+    println!("  string tables   : {}", ctx.string_tables().tables().len());
+    println!("  tick_interval   : {}", ctx.tick_interval());
 
     // ── Events ──
     let events = parser.events(None).expect("events");
@@ -95,12 +95,12 @@ fn main() {
     parser
         .run_to_end(|ctx| {
             tick_count += 1;
-            max_entities = max_entities.max(ctx.entities.len());
+            max_entities = max_entities.max(ctx.entities().len());
             if tick_count == 1 {
                 let mut names: Vec<String> = ctx
-                    .entities
+                    .entities()
                     .iter()
-                    .map(|(_, e)| e.class_name.clone())
+                    .map(|(_, e)| e.class_name.to_string())
                     .collect();
                 names.sort();
                 names.dedup();

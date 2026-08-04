@@ -3,6 +3,8 @@ use std::fmt;
 /// Errors that can occur while parsing a demo file.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error(transparent)]
+    Pbdems2(#[from] pbdems2::Error),
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
     #[error("invalid demo file: magic bytes mismatch (expected PBDEMS2\\0, got {got:?})")]

@@ -17,7 +17,7 @@ pub fn run(
     let ctx = parser.parse_to_tick(tick)?;
 
     let mut entities: Vec<_> = ctx
-        .entities
+        .entities()
         .iter()
         .map(|(_, e)| e)
         .filter(|e| e.active)
@@ -35,8 +35,8 @@ pub fn run(
     println!(
         "{} active entities at tick {} (of {} total){}",
         entities.len().to_string().cyan(),
-        ctx.tick,
-        ctx.entities.len(),
+        ctx.tick(),
+        ctx.entities().len(),
         if let Some(ref f) = class_filter {
             format!(" matching '{f}'")
         } else {
@@ -52,7 +52,7 @@ pub fn run(
             e.class_name.bold(),
             format!("({} fields)", e.fields.len()).dimmed()
         );
-        if show_fields && let Some(serializer) = ctx.serializers.get(&e.class_name) {
+        if show_fields && let Some(serializer) = ctx.serializers().get(&e.class_name) {
             let mut shown = 0;
             for field in &serializer.fields {
                 if let Some(key) = serializer.resolve_field_key(&field.var_name)

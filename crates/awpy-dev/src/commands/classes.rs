@@ -9,7 +9,7 @@ pub fn run(file: &Path, filter: Option<String>, limit: Option<usize>, json: bool
     let class_info = parser.parse_class_info()?;
 
     let mut classes: Vec<_> = class_info
-        .classes
+        .classes()
         .iter()
         .filter(|c| {
             filter
@@ -40,8 +40,8 @@ pub fn run(file: &Path, filter: Option<String>, limit: Option<usize>, json: bool
     }
     println!(
         "\n{} classes ({} bits per class id)",
-        class_info.classes.len(),
-        class_info.bits
+        class_info.classes().len(),
+        class_info.bits()
     );
 
     Ok(())

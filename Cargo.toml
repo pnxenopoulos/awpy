@@ -17,6 +17,7 @@ rust-version = "1.88.0"
 [workspace.dependencies]
 awpy = { path = "crates/awpy", version = "3.0.0" }
 awpy-proto = { path = "crates/awpy-proto", version = "0.1" }
+pbdems2 = "0.2.1"
 
 [profile.dev]
 incremental = false   # awpy-proto is a large generated crate; incremental bookkeeping

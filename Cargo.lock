@@ -224,8 +224,8 @@ dependencies = [
  "awpy-proto",
  "criterion",
  "memmap2",
+ "pbdems2",
  "prost",
- "rustc-hash",
  "serde",
  "serde_json",
  "snap",
@@ -1705,6 +1705,18 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-link 0.2.1",
+]
+
+[[package]]
+name = "pbdems2"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "828b4a70c5f349887f4dd24352f11615e48748738ca0011b78a6d1f3aa97da18"
+dependencies = [
+ "rustc-hash",
+ "serde",
+ "snap",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

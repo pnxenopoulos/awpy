@@ -14,9 +14,9 @@ pub fn run(
         .with_context(|| format!("failed to open {}", file.display()))?;
     let serializers = parser.parse_send_tables()?;
 
-    let mut names: Vec<&String> = serializers
-        .serializers
-        .keys()
+    let mut names: Vec<&str> = serializers
+        .iter()
+        .map(|(name, _)| name)
         .filter(|n| {
             filter
                 .as_ref()
