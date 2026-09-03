@@ -84,14 +84,29 @@ def test_parse_ticks(demo_path: Path) -> None:
 
     # Friendly aliases and raw names both work; a pawn field (team) and a
     # controller field (name) resolve in one call.
-    named = demo.ticks(["m_iTeamNum", "name"])
-    assert {"tick", "steamid", "m_iTeamNum", "name"} <= set(named.columns)
+    named = demo.ticks(["m_iTeamNum", "name", "velocity_x", "velocity"])
+    assert {
+        "tick",
+        "steamid",
+        "m_iTeamNum",
+        "name",
+        "velocity_x",
+        "velocity",
+    } <= set(named.columns)
     assert named["m_iTeamNum"].is_not_null().any()
     assert named["name"].is_not_null().any()
+    assert named["velocity_x"].is_not_null().any()
+    assert named["velocity"].max() > 0
 
     # players_only=False still dumps every entity separately.
     raw = demo.ticks(["m_iTeamNum"], players_only=False)
-    assert {"tick", "entity_id", "class_name", "m_iTeamNum"} <= set(raw.columns)
+    assert {
+        "tick",
+        "entity_id",
+        "entity_serial",
+        "class_name",
+        "m_iTeamNum",
+    } <= set(raw.columns)
     assert raw.height > ticks.height
 
 
@@ -178,6 +193,10 @@ def test_snapshot_single_tick(demo_path: Path) -> None:
         "x",
         "y",
         "z",
+        "velocity_x",
+        "velocity_y",
+        "velocity_z",
+        "velocity",
         "pitch",
         "yaw",
     } <= set(snap.columns)
@@ -185,6 +204,8 @@ def test_snapshot_single_tick(demo_path: Path) -> None:
     assert snap["tick"].unique().to_list() == [tick]
     assert snap["health"].min() == 100
     assert snap["x"].null_count() == 0
+    assert snap["velocity_x"].null_count() == 0
+    assert snap["velocity"].min() >= 0
     # Snapshots must work anywhere in the demo, not just near full packets.
     for probe in (2000, 29000, 60000, 150000):
         assert demo.snapshots(ticks=probe).height == 10, f"empty snapshot at tick {probe}"
@@ -369,12 +390,19 @@ def test_item_events(demo_path: Path) -> None:
 
 
 def test_chat(demo_path: Path) -> None:
-    chat = Demo(demo_path).chat
+    demo = Demo(demo_path)
+    chat = demo.chat
     assert isinstance(chat, pl.DataFrame)
     # Server-side demos may strip chat entirely; the schema must hold anyway.
     assert {"tick", "entity_index", "name", "message", "channel"} <= set(chat.columns)
+    say_text_count = sum(
+        count for name, count in demo.events.counts.items() if "saytext" in name.lower()
+    )
+    assert chat.height == say_text_count
     if chat.height:
         assert chat["message"].null_count() == 0
+    else:
+        assert say_text_count == 0
 
 
 def test_convars(demo_path: Path) -> None:
@@ -554,13 +582,10 @@ def test_shots(demo_path: Path) -> None:
     assert (shots["num_bullets_remaining"] > 0).sum() > 0
 
 
-def test_parallel_parse_populates_all(demo_path: Path) -> None:
-    # Accessing any one dataset kicks off the batched parallel parse, which
-    # decodes every independent pass concurrently and caches them all. So after a
-    # single access, every dataset must be present, non-empty, and identical to
-    # what a fresh (independently parsed) Demo produces for it.
+def test_dataset_groups_match_fresh_parse(demo_path: Path) -> None:
+    # Incremental dataset groups remain identical to independent cold parses.
     d = Demo(demo_path)
-    _ = d.kills  # triggers ensure_parsed -> all passes in parallel
+    _ = d.kills
     fresh = Demo(demo_path)
     for name in ("kills", "damages", "bomb", "shots", "grenades", "rounds", "players", "stats"):
         got = getattr(d, name)
@@ -614,6 +639,82 @@ def test_stats(demo_path: Path) -> None:
     assert stats["utility_damage"].sum() > 0
     # You can't blind more enemies than you threw flashes at (loosely).
     assert stats["flash_duration_dealt"].sum() > 0
+
+
+def test_fused_stats_matches_full_datasets(demo_path: Path) -> None:
+    # Stats-first uses the selective fused pass.
+    fused = Demo(demo_path)
+    fused_stats = fused.stats
+
+    # A planned union of the four stats event inputs exercises aggregation
+    # from independently cached parts, including fully enriched shots.
+    full = Demo(demo_path)
+    full.load("kills", "damages", "blinds", "shots")
+    full_kills = full.kills
+    full_stats = full.stats
+
+    assert fused_stats.equals(full_stats)
+    assert fused.kills.equals(full_kills)
+    assert fused.damages.equals(full.damages)
+    assert fused.blinds.equals(full.blinds)
+    assert fused.rounds.equals(full.rounds)
+
+    # The fused pass also tracks the roster using changed entity indices.
+    assert fused.players.equals(Demo(demo_path).players)
+
+
+def test_load_unions_and_caches_datasets(demo_path: Path) -> None:
+    assert {"players", "stats", "rounds", "kills"} <= set(Demo.available_datasets())
+
+    demo = Demo(demo_path)
+    requested = (
+        "players",
+        "stats",
+        "rounds",
+        "kills",
+        "damages",
+        "blinds",
+        "bomb",
+        "shots",
+        "grenades",
+        "fires",
+        "smokes",
+    )
+    assert demo.load(*requested) is None
+
+    players = demo.players
+    stats = demo.stats
+    rounds = demo.rounds
+    kills = demo.kills
+    damages = demo.damages
+    blinds = demo.blinds
+    bomb = demo.bomb
+    shots = demo.shots
+    grenades = demo.grenades
+    fires = demo.fires
+    smokes = demo.smokes
+    assert demo.players is players
+    assert demo.stats is stats
+    assert demo.rounds is rounds
+    assert demo.kills is kills
+    assert demo.damages is damages
+    assert demo.blinds is blinds
+    assert demo.bomb is bomb
+    assert demo.shots is shots
+    assert demo.grenades is grenades
+    assert demo.fires is fires
+    assert demo.smokes is smokes
+
+    # Planned union rows must match incrementally selected cold datasets.
+    fresh = Demo(demo_path)
+    for name in ("kills", "damages", "blinds", "bomb", "shots"):
+        assert getattr(demo, name).equals(getattr(fresh, name)), name
+    fresh = Demo(demo_path)
+    for name in ("grenades", "fires", "smokes"):
+        assert getattr(demo, name).equals(getattr(fresh, name)), name
+
+    with pytest.raises(ValueError, match="unknown dataset"):
+        demo.load("not_a_dataset")
 
 
 CLUTCH_COLS = ("clutch_1v1", "clutch_1v2", "clutch_1v3", "clutch_1v4", "clutch_1v5")

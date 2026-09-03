@@ -225,9 +225,11 @@ impl Cs2Adapter {
                     | svc::PACKET_ENTITIES
             );
             let is_descriptor = message_type == ge::SOURCE1_LEGACY_GAME_EVENT_LIST;
+            let is_user_message = message_type == svc::USER_MESSAGE
+                || awpy_command::is_user_message_type(message_type);
             let is_collected_event = (message_type == ge::SOURCE1_LEGACY_GAME_EVENT
                 && self.collects_legacy_events())
-                || (message_type == svc::USER_MESSAGE && self.collects_user_messages());
+                || (is_user_message && self.collects_user_messages());
             if !(is_entity_message || is_descriptor || is_collected_event) {
                 continue;
             }
@@ -328,12 +330,29 @@ impl Cs2Adapter {
                 svc::USER_MESSAGE if self.collects_user_messages() => {
                     let message = CsvcMsgUserMessage::decode(payload)?;
                     let inner_type = message.msg_type.unwrap_or_default();
+                    let msg_type = u32::try_from(inner_type).map_err(|_| Error::Parse {
+                        context: format!("negative user message type: {inner_type}"),
+                    })?;
                     self.tick_events.push(GameEvent {
                         tick,
                         name: awpy_command::user_message_name(inner_type),
-                        msg_type: inner_type as u32,
+                        msg_type,
                         keys: Vec::new(),
                         payload: message.msg_data.unwrap_or_default(),
+                    });
+                }
+                direct_type
+                    if self.collects_user_messages()
+                        && awpy_command::is_user_message_type(direct_type) =>
+                {
+                    self.tick_events.push(GameEvent {
+                        tick,
+                        name: awpy_command::user_message_name(
+                            i32::try_from(direct_type).expect("known user message type"),
+                        ),
+                        msg_type: direct_type,
+                        keys: Vec::new(),
+                        payload: payload.to_vec(),
                     });
                 }
                 _ => unreachable!(),

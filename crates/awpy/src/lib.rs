@@ -75,17 +75,17 @@ pub mod weapons;
 
 // Re-export commonly used types at the crate root for convenience
 pub use datasets::{
-    Blind, BombEvent, ChatMessage, Damage, Fire, Grenade, ItemEvent, Kill, Player, PlayerState,
-    Round, RoundEconomy, Shot, Smoke,
+    Blind, BombEvent, ChatMessage, Damage, EventDatasetSelection, Fire, Grenade, ItemEvent, Kill,
+    Player, PlayerState, ProjectileSelection, Round, RoundEconomy, Shot, Smoke,
 };
 pub use demo::{
     CmdHeader, Context, GameEvent, MessageInfo, Parser, command_name, decode_event_payload,
     user_message_name,
 };
 pub use entity::{
-    ClassEntry, ClassInfo, ENTITY_HANDLE_INDEX_MASK, Entity, EntityContainer, FieldValue,
-    INVALID_ENTITY_HANDLE, Serializer, SerializerContainer, SerializerField, StringTable,
-    StringTableContainer, StringTableEntry, protobuf_handle_index,
+    ClassEntry, ClassInfo, ENTITY_HANDLE_INDEX_MASK, Entity, EntityChange, EntityChangeKind,
+    EntityContainer, EntityId, FieldValue, INVALID_ENTITY_HANDLE, Serializer, SerializerContainer,
+    SerializerField, StringTable, StringTableContainer, StringTableEntry, protobuf_handle_index,
 };
 pub use error::{Error, Result};
 pub use game_phases::{all_game_phases, game_phase_name};

@@ -13,8 +13,9 @@ macro_rules! decode_match {
 
 /// Attempt to decode raw protobuf bytes for a known user-message type.
 ///
-/// `msg_type` is the inner `svc_UserMessage` type — either an
-/// `ECstrike15UserMessages` (`CS_UM_*`) or `EBaseUserMessages` (`UM_*`) id.
+/// `msg_type` is an `ECstrike15UserMessages` (`CS_UM_*`) or
+/// `EBaseUserMessages` (`UM_*`) ID. A packet can store the message directly or
+/// inside `svc_UserMessage`.
 /// Returns `Some(pretty-printed string)` when the type is recognized and the
 /// payload decodes, or `None` otherwise. Only a curated set of commonly useful
 /// messages is mapped; unmapped types return `None`.
@@ -23,9 +24,9 @@ pub fn decode_event_payload(msg_type: u32, data: &[u8]) -> Option<String> {
 
     decode_match!(msg_type, data,
         // ── ECstrike15UserMessages (CS_UM_*) ──
-        // Note: SayText/SayText2/TextMsg moved to the base `CUserMessage*`
-        // types in CS2 (see the EBaseUserMessages entries below).
         304 => CcsUsrMsgHudText,
+        305 => CUserMessageSayText,
+        306 => CUserMessageSayText2,
         308 => CcsUsrMsgHudMsg,
         312 => CcsUsrMsgShake,
         313 => CcsUsrMsgFade,
@@ -56,7 +57,9 @@ pub fn decode_event_payload(msg_type: u32, data: &[u8]) -> Option<String> {
         386 => CcsUsrMsgDamagePrediction,
 
         // ── EBaseUserMessages (UM_*) ──
+        117 => CUserMessageSayText,
         118 => CUserMessageSayText2,
+        119 => CUserMessageSayTextChannel,
         124 => CUserMessageTextMsg,
     )
 }

@@ -68,6 +68,13 @@ DATASETS: dict[str, Callable[[Demo], Any]] = {
     "players": lambda d: d.players,
     "stats": lambda d: d.stats,
     "player_stats": lambda d: d.player_stats(),
+    "load_players_stats": lambda d: (d.load("players", "stats"), d.stats)[1],
+    "load_events": lambda d: (d.load("kills", "bomb", "shots"), d.shots)[1],
+    "load_projectiles": lambda d: (
+        d.load("grenades", "fires", "smokes"),
+        d.grenades,
+    )[1],
+    "load_stats_bomb": lambda d: (d.load("stats", "bomb"), d.stats)[1],
     "ticks(xyz)": lambda d: d.ticks(["X", "Y", "Z"], True),
 }
 
@@ -245,8 +252,10 @@ def main(argv: list[str] | None = None) -> None:
         datasets = DEFAULT_DATASETS
 
     demos = discover_demos(args.demo, args.download)
-    print(f"awpy parse benchmark — {platform.python_implementation()} {platform.python_version()} "
-          f"on {platform.system()} {platform.machine()}")
+    print(
+        f"awpy parse benchmark — {platform.python_implementation()} {platform.python_version()} "
+        f"on {platform.system()} {platform.machine()}"
+    )
     print(f"{len(demos)} demo(s), datasets: {', '.join(datasets)}")
 
     runs = [benchmark_demo(path, datasets, args.construct_repeat, args.cold) for path in demos]

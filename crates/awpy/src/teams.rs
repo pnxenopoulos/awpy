@@ -22,9 +22,8 @@ const TEAMS: &[(i64, &str)] = &[
 pub fn team_name(id: i64) -> &'static str {
     TEAMS
         .iter()
-        .find(|&&(k, _)| k == id)
-        .map(|&(_, v)| v)
-        .unwrap_or("TEAM_NOT_FOUND")
+        .find(|&&(key, _)| key == id)
+        .map_or("TEAM_NOT_FOUND", |&(_, value)| value)
 }
 
 /// Return all known (team number, team name) pairs.

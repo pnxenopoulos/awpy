@@ -178,12 +178,11 @@ const SIDES: [&str; 2] = ["terrorist", "counter-terrorist"];
 /// One player's observed side, per round they were seen in.
 type SideObservations = HashMap<u64, HashMap<usize, String>>;
 
-/// Every (player, round, side) an event dataset witnesses.
+/// Record the side of each player in each round.
 ///
-/// [`player_stats`] is a pure function over the event datasets — it has no entity
-/// state to read a roster from — so team membership is reconstructed from who
-/// appears in the events, on which side, in which round. Every dataset that names
-/// a player and a side contributes.
+/// [`player_stats`] does not read entity state. It uses the event datasets to
+/// reconstruct team membership. Each dataset that has a player and a side
+/// contributes to the result.
 fn side_observations(
     kills: &[Kill],
     damages: &[Damage],
@@ -193,32 +192,56 @@ fn side_observations(
     windows: &[(i32, i32)],
 ) -> SideObservations {
     let mut obs: SideObservations = HashMap::new();
-    let mut note = |tick: i32, steamid: Option<u64>, side: &Option<String>| {
+    let mut note = |tick: i32, steamid: Option<u64>, side: Option<&str>| {
         if let Some(steamid) = steamid
             && let Some(side) = side
-            && SIDES.contains(&side.as_str())
+            && SIDES.contains(&side)
             && let Some(round) = round_of(tick, starts, windows)
         {
             obs.entry(steamid)
                 .or_default()
-                .insert(round, side.to_string());
+                .insert(round, side.to_owned());
         }
     };
-    for k in kills {
-        note(k.tick, k.attacker_steamid, &k.attacker_side);
-        note(k.tick, k.victim_steamid, &k.victim_side);
-        note(k.tick, k.assister_steamid, &k.assister_side);
+    for kill in kills {
+        note(
+            kill.tick,
+            kill.attacker_steamid,
+            kill.attacker_side.as_deref(),
+        );
+        note(kill.tick, kill.victim_steamid, kill.victim_side.as_deref());
+        note(
+            kill.tick,
+            kill.assister_steamid,
+            kill.assister_side.as_deref(),
+        );
     }
-    for d in damages {
-        note(d.tick, d.attacker_steamid, &d.attacker_side);
-        note(d.tick, d.victim_steamid, &d.victim_side);
+    for damage in damages {
+        note(
+            damage.tick,
+            damage.attacker_steamid,
+            damage.attacker_side.as_deref(),
+        );
+        note(
+            damage.tick,
+            damage.victim_steamid,
+            damage.victim_side.as_deref(),
+        );
     }
-    for b in blinds {
-        note(b.tick, b.attacker_steamid, &b.attacker_side);
-        note(b.tick, b.victim_steamid, &b.victim_side);
+    for blind in blinds {
+        note(
+            blind.tick,
+            blind.attacker_steamid,
+            blind.attacker_side.as_deref(),
+        );
+        note(
+            blind.tick,
+            blind.victim_steamid,
+            blind.victim_side.as_deref(),
+        );
     }
-    for s in shots {
-        note(s.tick, s.steamid, &s.side);
+    for shot in shots {
+        note(shot.tick, shot.steamid, shot.side.as_deref());
     }
     obs
 }
@@ -401,19 +424,22 @@ fn clutches(
     out
 }
 
-/// Whether an attacker and victim are on opposing sides, treating an unknown
-/// side as "enemy" so world / unresolved cases still count. Used for kills.
-fn is_enemy(attacker_side: &Option<String>, victim_side: &Option<String>) -> bool {
+/// Return whether the attacker and victim are on opposing sides.
+///
+/// Treat an unknown side as an enemy. This rule includes world and unresolved
+/// kills.
+fn is_enemy(attacker_side: Option<&str>, victim_side: Option<&str>) -> bool {
     match (attacker_side, victim_side) {
         (Some(a), Some(v)) => a != v,
         _ => true,
     }
 }
 
-/// Whether an attacker and victim are *confirmed* to be on opposing sides —
-/// both resolved and different. Used for ADR, which must exclude team, self,
-/// and world damage, so unresolved cases do **not** count.
-fn is_confirmed_enemy(attacker_side: &Option<String>, victim_side: &Option<String>) -> bool {
+/// Return whether the attacker and victim have known, opposing sides.
+///
+/// Use this rule for ADR. It excludes team damage, self damage, world damage,
+/// and unresolved damage.
+fn is_confirmed_enemy(attacker_side: Option<&str>, victim_side: Option<&str>) -> bool {
     matches!((attacker_side, victim_side), (Some(a), Some(v)) if a != v)
 }
 
@@ -458,7 +484,7 @@ pub fn player_stats(
     } else {
         HashSet::new()
     };
-    let num_rounds = (total_rounds - knife_rounds.len()) as i32;
+    let num_rounds = i32::try_from(total_rounds - knife_rounds.len()).unwrap_or(i32::MAX);
     let starts = round_starts(rounds);
     let freezes = freeze_windows(rounds);
 
@@ -487,11 +513,11 @@ pub fn player_stats(
         // team kill).
         if let Some(attacker) = k.attacker_steamid
             && k.victim_steamid != Some(attacker)
-            && is_enemy(&k.attacker_side, &k.victim_side)
+            && is_enemy(k.attacker_side.as_deref(), k.victim_side.as_deref())
         {
             let a = acc.entry(attacker).or_default();
             if let Some(name) = &k.attacker_name {
-                a.name = name.clone();
+                a.name.clone_from(name);
             }
             a.kills += 1;
             if k.headshot {
@@ -506,7 +532,7 @@ pub fn player_stats(
             if a.name.is_empty()
                 && let Some(name) = &k.victim_name
             {
-                a.name = name.clone();
+                a.name.clone_from(name);
             }
             a.deaths += 1;
             a.death_rounds.insert(round);
@@ -528,7 +554,7 @@ pub fn player_stats(
                 if a.name.is_empty()
                     && let Some(name) = &k.assister_name
                 {
-                    a.name = name.clone();
+                    a.name.clone_from(name);
                 }
                 a.assists += 1;
                 if k.assist_flash {
@@ -583,7 +609,7 @@ pub fn player_stats(
             continue;
         };
         if d.victim_steamid == Some(attacker)
-            || !is_confirmed_enemy(&d.attacker_side, &d.victim_side)
+            || !is_confirmed_enemy(d.attacker_side.as_deref(), d.victim_side.as_deref())
         {
             continue;
         }
@@ -611,7 +637,7 @@ pub fn player_stats(
             if a.name.is_empty()
                 && let Some(name) = &s.name
             {
-                a.name = name.clone();
+                a.name.clone_from(name);
             }
             a.flashes_thrown += 1;
         }
@@ -624,7 +650,7 @@ pub fn player_stats(
             continue;
         }
         // Only enemy blinds count — a team-flash or self-flash is not credited.
-        if !is_confirmed_enemy(&b.attacker_side, &b.victim_side) {
+        if !is_confirmed_enemy(b.attacker_side.as_deref(), b.victim_side.as_deref()) {
             continue;
         }
         if let Some(attacker) = b.attacker_steamid {
@@ -632,7 +658,7 @@ pub fn player_stats(
             if a.name.is_empty()
                 && let Some(name) = &b.attacker_name
             {
-                a.name = name.clone();
+                a.name.clone_from(name);
             }
             a.enemies_flashed += 1;
             a.flash_duration_dealt += b.duration;
@@ -742,10 +768,12 @@ impl Parser {
     /// trade window of `TRADE_SECONDS` converted to ticks using the demo's
     /// tick rate.
     pub fn player_stats(&self, exclude_knife_rounds: bool) -> Result<Vec<PlayerStats>> {
-        // One combined pass yields both kills and damages (see event_datasets).
-        let events = self.event_datasets()?;
-        let rounds = self.rounds()?;
-        Ok(self.player_stats_from(&events, &rounds, exclude_knife_rounds))
+        let inputs = self.player_stats_inputs(None)?;
+        Ok(self.player_stats_from(
+            inputs.event_datasets(),
+            inputs.rounds(),
+            exclude_knife_rounds,
+        ))
     }
 
     /// Aggregate per-player statistics from an **already-decoded**
@@ -758,12 +786,33 @@ impl Parser {
         rounds: &[Round],
         exclude_knife_rounds: bool,
     ) -> Vec<PlayerStats> {
-        let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
-        player_stats(
+        self.player_stats_from_parts(
             &events.kills,
             &events.damages,
             &events.blinds,
             &events.shots,
+            rounds,
+            exclude_knife_rounds,
+        )
+    }
+
+    /// Aggregate stats from separately cached event dataset slices.
+    #[allow(clippy::too_many_arguments)]
+    pub fn player_stats_from_parts(
+        &self,
+        kills: &[Kill],
+        damages: &[Damage],
+        blinds: &[Blind],
+        shots: &[Shot],
+        rounds: &[Round],
+        exclude_knife_rounds: bool,
+    ) -> Vec<PlayerStats> {
+        let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
+        player_stats(
+            kills,
+            damages,
+            blinds,
+            shots,
             rounds,
             trade_ticks,
             exclude_knife_rounds,

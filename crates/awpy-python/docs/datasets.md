@@ -3,6 +3,29 @@
 Awpy's headline datasets are properties on `Demo` — Polars DataFrames with
 typed columns, computed on first access and cached.
 
+## Batch loading
+
+Use `Demo.load()` when an analysis needs several datasets:
+
+```python
+demo.load("players", "stats")
+players = demo.players
+stats = demo.stats
+```
+
+The method returns `None` and warms the same objects used by the properties.
+Already-cached datasets are skipped. `load()` plans the complete request before
+decoding: requested enriched event tables share one pass, as do requested
+`grenades` / `fires` / `smokes`. Loading `stats` also prepares `rounds`,
+`players`, `kills`, `damages`, and `blinds`; when `bomb` or `shots` are requested
+alongside it, their fully enriched rows are collected in that same fused pass.
+
+Ordinary property access still eagerly prepares its compatible event or
+projectile group, so sequential code remains efficient. Use `load()` when the
+complete set is known up front so Awpy can restrict the pass to that union.
+`Demo.available_datasets()` lists every accepted name; an unknown name raises
+`ValueError` before any loading begins.
+
 ## `rounds`
 
 ```python
@@ -381,7 +404,9 @@ demo.chat  # tick, entity_index, name, message, channel
 Chat messages, decoded from `SayText` / `SayText2` user messages. `channel`
 distinguishes all-chat from team chat (`Cstrike_Chat_All`, `Cstrike_Chat_T`,
 `Cstrike_Chat_CT`, ...). Note that server-side (GOTV) recordings may strip
-chat entirely — an empty frame with this schema is normal for some demos.
+chat entirely — an empty frame with this schema is normal for some demos. You
+can confirm the source contains no chat payload by checking that
+`demo.events.counts` has no `SayText` / `SayText2` entry.
 
 ## `convars`
 
@@ -418,11 +443,15 @@ list), a stride (`every` / `seconds`), `events` (a name or list), and a
 `start_tick` / `end_tick` window — given on their own, the window is a contiguous
 range; combined with a sampler, they bound it. At least one must be given.
 
-**Identity & position:** `tick`, `steamid`, `name`, `side`, `x`, `y`, `z`,
-`pitch`, `yaw`.
+**Identity, position & movement:** `tick`, `steamid`, `name`, `side`, `x`, `y`, `z`,
+`velocity_x`, `velocity_y`, `velocity_z`, `velocity`, `pitch`, `yaw`.
 
 | Column | Type | Description |
 | --- | --- | --- |
+| `velocity_x` | f32? | X velocity in Hammer units per second. |
+| `velocity_y` | f32? | Y velocity in Hammer units per second. |
+| `velocity_z` | f32? | Z velocity in Hammer units per second. |
+| `velocity` | f32? | Three-dimensional speed derived from the velocity vector. |
 | `health` | i32 | Hit points. |
 | `armor` | i32 | Armor value. |
 | `has_helmet` | bool | Kevlar + helmet. |
@@ -499,9 +528,10 @@ The **raw, low-level reader** — the escape hatch beneath `snapshots` (above).
 For curated player state, prefer `snapshots`; reach for `ticks` when you need one
 of the things its fixed schema can't give you:
 
-- **A raw or derived network property** `snapshots` doesn't ship — e.g.
-  `demo.ticks(["m_vecVelocity[0]", "m_vecVelocity[1]"])` for velocity. Any CS2
-  field is fair game, by friendly alias or raw name.
+- **A lean subset of player properties** — e.g.
+  `demo.ticks(["velocity_x", "velocity_y", "velocity_z", "velocity"])` for
+  networked velocity components plus derived 3D speed. Any CS2 field is fair
+  game, by friendly alias or raw name.
 - **Non-player entities**, via `players_only=False` — projectiles, the planted
   C4, hostages, and every other entity, not just players.
 - **A lean slice over every tick** — request only the columns you need (e.g.
@@ -529,11 +559,14 @@ names:
 | `team_num` | `m_iTeamNum` (2 = T, 3 = CT). |
 | `name` | `m_iszPlayerName` (from the controller). |
 | `money` | `m_pInGameMoneyServices.m_iAccount`. |
+| `velocity_x` / `velocity_y` / `velocity_z` | Networked velocity components. Short aliases `vx` / `vy` / `vz` also work. |
+| `velocity` / `speed` | Derived three-dimensional speed. |
 | *(anything else)* | Used verbatim as a raw network field name. |
 
 `ticks()` decodes the demo in parallel across keyframe segments, so it is fast
 even over a full match.
 
 Set `players_only=False` for a raw per-entity dump instead — one row per (tick,
-entity), with columns `tick`, `entity_id`, `class_name`, then the requested
-properties.
+entity), with columns `tick`, `entity_id`, `entity_serial`,
+`class_name`, then the requested properties. Use `(entity_id, entity_serial)`
+as the stable identity because Source 2 can reuse an entity slot.

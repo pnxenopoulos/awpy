@@ -29,9 +29,8 @@ const GAME_PHASES: &[(i64, &str)] = &[
 pub fn game_phase_name(id: i64) -> &'static str {
     GAME_PHASES
         .iter()
-        .find(|&&(k, _)| k == id)
-        .map(|&(_, v)| v)
-        .unwrap_or("GAME_PHASE_NOT_FOUND")
+        .find(|&&(key, _)| key == id)
+        .map_or("GAME_PHASE_NOT_FOUND", |&(_, value)| value)
 }
 
 /// Return all known (game-phase ID, name) pairs.

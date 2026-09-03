@@ -232,8 +232,9 @@ impl Parser {
         Ok(())
     }
 
-    /// Iterate all commands and return metadata about each.
-    /// Continues past DEM_Stop to capture DEM_FileInfo.
+    /// Return metadata for all commands.
+    ///
+    /// Continue after `DEM_Stop` to read `DEM_FileInfo`.
     pub fn messages(&self) -> Result<Vec<MessageInfo>> {
         self.verify()?;
         let data = &self.data()[HEADER_SIZE..];
@@ -243,10 +244,7 @@ impl Parser {
 
         while reader.remaining() > 0 {
             let offset = reader.position() + HEADER_SIZE;
-            let header = match Self::read_cmd_header(&mut reader) {
-                Ok(h) => h,
-                Err(_) => break,
-            };
+            let header = Self::read_cmd_header(&mut reader)?;
 
             messages.push(MessageInfo {
                 index,
@@ -258,21 +256,19 @@ impl Parser {
                 offset,
             });
 
-            // DEM_Stop has no body, and DEM_FileInfo follows it
+            // `DEM_Stop` has no body. `DEM_FileInfo` follows it.
             if header.cmd == dem::STOP {
                 index += 1;
                 continue;
             }
 
-            // DEM_FileInfo comes after DEM_Stop; once we've read it, we're done
+            // Stop after `DEM_FileInfo`.
             if header.cmd == dem::FILE_INFO {
-                reader.skip(header.body_size as usize).ok();
+                reader.skip(header.body_size as usize)?;
                 break;
             }
 
-            if reader.skip(header.body_size as usize).is_err() {
-                break;
-            }
+            reader.skip(header.body_size as usize)?;
 
             index += 1;
         }
@@ -425,10 +421,7 @@ impl Parser {
         let mut descriptors: HashMap<i32, EventDescriptor> = HashMap::new();
 
         while reader.remaining() > 0 {
-            let header = match Self::read_cmd_header(&mut reader) {
-                Ok(h) => h,
-                Err(_) => break,
-            };
+            let header = Self::read_cmd_header(&mut reader)?;
 
             if header.cmd == dem::STOP {
                 break;
@@ -489,10 +482,7 @@ impl Parser {
         let mut convars = Vec::new();
 
         while reader.remaining() > 0 {
-            let header = match Self::read_cmd_header(&mut reader) {
-                Ok(h) => h,
-                Err(_) => break,
-            };
+            let header = Self::read_cmd_header(&mut reader)?;
 
             if header.cmd == dem::STOP {
                 break;
@@ -572,12 +562,14 @@ impl Parser {
             let msg_type = br.read_ubitvar()?;
             let size = br.read_uvarint32()? as usize;
 
+            let is_user_message = command::is_user_message_type(msg_type);
             if !matches!(
                 msg_type,
                 ge::SOURCE1_LEGACY_GAME_EVENT_LIST
                     | ge::SOURCE1_LEGACY_GAME_EVENT
                     | svc::USER_MESSAGE
-            ) {
+            ) && !is_user_message
+            {
                 br.skip_bits(size * 8)?;
                 continue;
             }
@@ -614,9 +606,7 @@ impl Parser {
                             .collect();
                         (desc.name.clone(), keys)
                     } else {
-                        let name = msg
-                            .event_name
-                            .unwrap_or_else(|| format!("event_{}", eventid));
+                        let name = msg.event_name.unwrap_or_else(|| format!("event_{eventid}"));
                         (name, Vec::new())
                     };
                     events.push(GameEvent {
@@ -630,14 +620,28 @@ impl Parser {
                 svc::USER_MESSAGE => {
                     let msg = CsvcMsgUserMessage::decode(msg_data)?;
                     let inner_type = msg.msg_type.unwrap_or_default();
+                    let msg_type = u32::try_from(inner_type).map_err(|_| Error::Parse {
+                        context: format!("negative user message type: {inner_type}"),
+                    })?;
                     let name = command::user_message_name(inner_type);
                     let inner_payload = msg.msg_data.unwrap_or_default();
                     events.push(GameEvent {
                         tick,
                         name,
-                        msg_type: inner_type as u32,
+                        msg_type,
                         keys: Vec::new(),
                         payload: inner_payload,
+                    });
+                }
+                direct_type if is_user_message => {
+                    events.push(GameEvent {
+                        tick,
+                        name: command::user_message_name(
+                            i32::try_from(direct_type).expect("known user message type"),
+                        ),
+                        msg_type: direct_type,
+                        keys: Vec::new(),
+                        payload: msg_data.to_vec(),
                     });
                 }
                 _ => {
@@ -649,5 +653,32 @@ impl Parser {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parser_with_truncated_command() -> Parser {
+        let mut bytes = vec![0; HEADER_SIZE];
+        bytes[..MAGIC.len()].copy_from_slice(MAGIC);
+        bytes.push(0x80);
+        Parser::from_bytes(bytes)
+    }
+
+    #[test]
+    fn messages_rejects_a_truncated_command() {
+        assert!(parser_with_truncated_command().messages().is_err());
+    }
+
+    #[test]
+    fn events_rejects_a_truncated_command() {
+        assert!(parser_with_truncated_command().events(None).is_err());
+    }
+
+    #[test]
+    fn convars_rejects_a_truncated_command() {
+        assert!(parser_with_truncated_command().convars().is_err());
     }
 }

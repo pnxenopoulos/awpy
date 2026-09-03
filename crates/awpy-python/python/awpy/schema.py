@@ -22,6 +22,10 @@ SNAPSHOT_PROPERTIES: dict[str, str] = {
     "x": "CBodyComponent.m_cellX + m_vecX (computed)",
     "y": "CBodyComponent.m_cellY + m_vecY (computed)",
     "z": "CBodyComponent.m_cellZ + m_vecZ (computed)",
+    "velocity_x": "m_vecVelocity.m_vecX",
+    "velocity_y": "m_vecVelocity.m_vecY",
+    "velocity_z": "m_vecVelocity.m_vecZ",
+    "velocity": "sqrt(velocity_x^2 + velocity_y^2 + velocity_z^2) (computed)",
     "pitch": "m_angEyeAngles[0]",
     "yaw": "m_angEyeAngles[1]",
     # ── Health & armor ──

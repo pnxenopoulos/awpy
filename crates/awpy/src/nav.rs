@@ -434,14 +434,16 @@ impl Nav {
                     (Some(a), Some(b)) => (a.centroid(), b.centroid()),
                     _ => return 1.0,
                 };
-                let dx = (ca[0] - cb[0]) as f64;
-                let dy = (ca[1] - cb[1]) as f64;
-                let dz = (ca[2] - cb[2]) as f64;
+                let dx = f64::from(ca[0] - cb[0]);
+                let dy = f64::from(ca[1] - cb[1]);
+                let dz = f64::from(ca[2] - cb[2]);
                 (dx * dx + dy * dy + dz * dz).sqrt()
             }
             PathWeight::Size => {
-                let sa = self.area(a).map_or(0.0, |a| a.size()) as f64;
-                let sb = self.area(b).map_or(0.0, |a| a.size()) as f64;
+                let sa = self.area(a).map_or(0.0, NavArea::size);
+                let sb = self.area(b).map_or(0.0, NavArea::size);
+                let sa = f64::from(sa);
+                let sb = f64::from(sb);
                 sa + sb
             }
         }
@@ -581,10 +583,10 @@ fn read_ids(r: &mut Reader) -> Result<Vec<u32>> {
 ///
 /// [ValveResourceFormat's `BinaryKV3`]: https://github.com/ValveResourceFormat/ValveResourceFormat/blob/master/ValveResourceFormat/Resource/ResourceTypes/BinaryKV3.cs
 fn skip_kv3(r: &mut Reader) -> Result<()> {
-    // KV3 documents are aligned to an 8-byte boundary.
-    r.align8();
+    const MAGIC0: u32 = 0x0356_4B56;
 
-    const MAGIC0: u32 = 0x0356_4B56; // "VKV\x03" — legacy, unused by nav files
+    // Align KV3 documents to an 8-byte boundary.
+    r.align8();
     let magic = r.u32()?;
     if magic == MAGIC0 {
         return Err(parse("KV3 v0 document not supported"));
@@ -611,7 +613,7 @@ fn skip_kv3(r: &mut Reader) -> Result<()> {
     let mut size_block_compressed = 0i64;
     if version >= 4 {
         r.skip(4)?; // countBytes2
-        size_block_compressed = r.i32()? as i64;
+        size_block_compressed = i64::from(r.i32()?);
     }
 
     // On-disk size of the two data buffers. v5 splits them out explicitly; for
@@ -642,17 +644,15 @@ fn skip_kv3(r: &mut Reader) -> Result<()> {
         )));
     }
 
-    let on_disk = |unc: i32, cmp: i32| if method == 0 { unc } else { cmp } as i64;
+    let on_disk = |unc: i32, cmp: i32| i64::from(if method == 0 { unc } else { cmp });
     let body = on_disk(unc1, cmp1) + on_disk(unc2, cmp2) + size_block_compressed;
-    if body < 0 {
-        return Err(parse("negative KV3 body size"));
-    }
-    r.skip(body as usize)
+    let body = usize::try_from(body).map_err(|_| parse("negative KV3 body size"))?;
+    r.skip(body)
 }
 
 fn parse(context: impl Into<String>) -> Error {
     Error::Parse {
-        context: format!("nav: {}", context.into()),
+        context: format!("nav: {context}", context = context.into()),
     }
 }
 

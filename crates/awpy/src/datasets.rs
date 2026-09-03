@@ -16,17 +16,18 @@
 //! - [`Parser::shots`] — `weapon_fire` events with shooter and weapon state.
 //! - [`Parser::players`] — the roster (Steam id, name, last observed side).
 //! - [`Parser::snapshot`] / [`Parser::snapshots_query`] — per-player game state
-//!   (position, eye angles, health, armor, and economy: equipment value,
+//!   (position, velocity, eye angles, health, armor, and economy: equipment value,
 //!   primary / secondary weapon, grenade counts, and inventory) at a tick or
 //!   over a tick range.
 //! - [`Parser::blinds`] — flash events (who was blinded, by whom, for how long),
 //!   reconstructed from pawn flash state and `flashbang_detonate`.
 //! - [`Parser::chat`] — chat messages, decoded from `SayText` user messages.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::num::NonZeroUsize;
 
 use crate::demo::{Context, GameEvent, Parser};
-use crate::entity::Entity;
+use crate::entity::{Entity, EntityChangeKind, EntityId};
 use crate::error::Result;
 use crate::hitgroups::hitgroup_name;
 use crate::position::cell_to_world;
@@ -131,6 +132,11 @@ const BOMB_EVENTS: &[(&str, &str)] = &[
 
 /// Dotted field-path prefix for a pawn's networked world position.
 const ORIGIN_PATH: &str = "CBodyComponent.m_skeletonInstance.m_vecOrigin";
+const VELOCITY_PATHS: [&str; 3] = [
+    "m_vecVelocity.m_vecX",
+    "m_vecVelocity.m_vecY",
+    "m_vecVelocity.m_vecZ",
+];
 
 /// A small view over a game event's `(key, value)` pairs with typed getters.
 ///
@@ -138,7 +144,19 @@ const ORIGIN_PATH: &str = "CBodyComponent.m_skeletonInstance.m_vecOrigin";
 /// missing keys and unparseable values fall back to the type's default.
 struct Keys<'a>(&'a [(String, String)]);
 
-impl<'a> Keys<'a> {
+/// Convert an event value to an entity handle.
+///
+/// Source 1 stores entity handles in signed 32-bit event fields. Preserve
+/// the bit pattern when the decoded value is negative.
+fn event_entity_handle(value: i64) -> Option<u32> {
+    u32::try_from(value).ok().or_else(|| {
+        i32::try_from(value)
+            .ok()
+            .map(|signed| u32::from_ne_bytes(signed.to_ne_bytes()))
+    })
+}
+
+impl Keys<'_> {
     fn get(&self, key: &str) -> Option<&str> {
         self.0
             .iter()
@@ -356,7 +374,7 @@ fn damage_event_fields(e: &GameEvent) -> Damage {
         dmg_health,
         dmg_armor,
         hitgroup,
-        hitgroup_name: hitgroup_name(hitgroup as i64).to_string(),
+        hitgroup_name: hitgroup_name(i64::from(hitgroup)).to_string(),
         health_post,
         // `dmg_health` is the raw, uncapped damage and can exceed the victim's
         // health (a lethal overkill hit), so clamp the reconstructed pre-health
@@ -524,9 +542,37 @@ enum ProjMode<'a> {
     Windowed(&'a HashMap<i32, Vec<(i32, i32)>>),
 }
 
-/// The three projectile datasets ([`Parser::grenades`], [`Parser::fires`],
-/// [`Parser::smokes`]), built together in one pass by
-/// [`Parser::projectiles`].
+/// Select which projectile datasets a parser pass should collect.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ProjectileSelection {
+    pub grenades: bool,
+    pub fires: bool,
+    pub smokes: bool,
+}
+
+impl ProjectileSelection {
+    pub const ALL: Self = Self {
+        grenades: true,
+        fires: true,
+        smokes: true,
+    };
+
+    #[must_use]
+    pub const fn union(self, other: Self) -> Self {
+        Self {
+            grenades: self.grenades || other.grenades,
+            fires: self.fires || other.fires,
+            smokes: self.smokes || other.smokes,
+        }
+    }
+
+    const fn any(self) -> bool {
+        self.grenades || self.fires || self.smokes
+    }
+}
+
+/// The selected projectile datasets collected by [`Parser::projectiles_selected`].
+#[derive(Default)]
 pub struct Projectiles {
     pub grenades: Vec<Grenade>,
     pub fires: Vec<Fire>,
@@ -595,7 +641,7 @@ fn kill_event_fields(e: &GameEvent) -> Kill {
         revenge: k.i32("revenge"),
         thrusmoke: k.bool("thrusmoke"),
         hitgroup,
-        hitgroup_name: hitgroup_name(hitgroup as i64).to_string(),
+        hitgroup_name: hitgroup_name(i64::from(hitgroup)).to_string(),
         ..Default::default()
     }
 }
@@ -630,9 +676,11 @@ impl PositionKeys {
         if !self.offset[0].is_some_and(|k| e.fields.contains_key(&k)) {
             return None;
         }
-        let coord =
-            |i: usize| cell_to_world(e.get_i64(self.cell[i]) as i32, e.get_f32(self.offset[i]));
-        Some((coord(0), coord(1), coord(2)))
+        let coord = |axis: usize| {
+            let cell = i32::try_from(e.get_i64(self.cell[axis])).ok()?;
+            Some(cell_to_world(cell, e.get_f32(self.offset[axis])))
+        };
+        Some((coord(0)?, coord(1)?, coord(2)?))
     }
 }
 
@@ -739,6 +787,7 @@ struct SnapshotKeys {
     ctrl: CtrlKeys,
     health: Option<u64>,
     armor: Option<u64>,
+    velocity: [Option<u64>; 3],
     angles: Option<u64>,
     equip: Option<u64>,
     equip_round_start: Option<u64>,
@@ -766,6 +815,7 @@ impl SnapshotKeys {
             ctrl: CtrlKeys::resolve(ctx),
             health: key("m_iHealth"),
             armor: key("m_ArmorValue"),
+            velocity: VELOCITY_PATHS.map(key),
             angles: key("m_angEyeAngles"),
             equip: key("m_unCurrentEquipmentValue"),
             equip_round_start: key("m_unRoundStartEquipmentValue"),
@@ -805,11 +855,7 @@ fn parallel_segment_budget() -> usize {
     std::env::var("AWPY_TICK_SEGMENTS")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or_else(|| {
-            std::thread::available_parallelism()
-                .map(|n| n.get())
-                .unwrap_or(1)
-        })
+        .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, NonZeroUsize::get))
 }
 
 /// Split the demo into `n` contiguous `(start_offset, end_tick)` segments at
@@ -836,7 +882,10 @@ fn segment_ranges(offsets: &[(usize, i32)], n: usize) -> Vec<(Option<usize>, i32
 /// an all-`None` [`ResolvedPlayer`] when the handle does not point at a live
 /// player pawn.
 fn resolve_player(ctx: &Context, pawn_handle: i64, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
-    let Some(pawn) = ctx.entities().get_by_handle(pawn_handle as u32) else {
+    let Some(pawn_handle) = event_entity_handle(pawn_handle) else {
+        return ResolvedPlayer::default();
+    };
+    let Some(pawn) = ctx.entities().get_by_handle(pawn_handle) else {
         return ResolvedPlayer::default();
     };
     if !pawn.class_name.contains("PlayerPawn") {
@@ -859,11 +908,13 @@ fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys)
     // World position: cell index + in-cell offset per axis. Only reported when
     // the offset field is actually present on the pawn.
     if pk.offset[0].is_some_and(|k| pawn.fields.contains_key(&k)) {
-        let coord =
-            |i: usize| cell_to_world(pawn.get_i64(pk.cell[i]) as i32, pawn.get_f32(pk.offset[i]));
-        player.x = Some(coord(0));
-        player.y = Some(coord(1));
-        player.z = Some(coord(2));
+        let coord = |axis: usize| {
+            let cell = i32::try_from(pawn.get_i64(pk.cell[axis])).ok()?;
+            Some(cell_to_world(cell, pawn.get_f32(pk.offset[axis])))
+        };
+        player.x = coord(0);
+        player.y = coord(1);
+        player.z = coord(2);
     }
 
     // Follow the controller handle for the persistent Steam id and name.
@@ -900,15 +951,191 @@ impl GameRulesKeys {
     }
 }
 
-/// The four player-enriched, event-based datasets ([`Parser::kills`],
-/// [`Parser::damages`], [`Parser::bomb`], [`Parser::blinds`]), built together in
-/// one entity-decode pass by [`Parser::event_datasets`].
+/// Incremental round reconstruction shared by the standalone rounds dataset and
+/// the fused player-stats pass.
+#[derive(Default)]
+struct RoundTracker {
+    rounds: Vec<Round>,
+    start_tick: Option<i32>,
+    freeze_end_tick: Option<i32>,
+    prev_freeze: bool,
+    prev_total: i32,
+    keys: Option<GameRulesKeys>,
+}
+
+impl RoundTracker {
+    fn observe(&mut self, ctx: &Context) {
+        let Some((_, entity)) = ctx
+            .entities()
+            .iter()
+            .find(|(_, e)| e.class_name.as_ref() == GAME_RULES_CLASS)
+        else {
+            return;
+        };
+        let Some(serializer) = ctx.serializers().get(GAME_RULES_CLASS) else {
+            return;
+        };
+        let keys = self
+            .keys
+            .get_or_insert_with(|| GameRulesKeys::resolve(serializer));
+
+        let warmup = entity.get_bool(keys.warmup);
+        let freeze = entity.get_bool(keys.freeze);
+        let Ok(total) = i32::try_from(entity.get_i64(keys.total_rounds)) else {
+            return;
+        };
+
+        // A match restart discards warmup/knife-round state and resets the
+        // canonical round counter.
+        if total < self.prev_total {
+            self.rounds.clear();
+            self.start_tick = None;
+            self.freeze_end_tick = None;
+        }
+
+        // Emit before processing this tick's freeze transition: the deciding
+        // round and post-game freeze can begin on the same tick.
+        if !warmup && total == self.prev_total + 1 {
+            let win_status = entity.get_i64(keys.win_status);
+            let (Ok(winner), Ok(reason)) = (
+                i32::try_from(win_status),
+                i32::try_from(entity.get_i64(keys.win_reason)),
+            ) else {
+                return;
+            };
+            self.rounds.push(Round {
+                round_num: total,
+                start_tick: self.start_tick,
+                freeze_end_tick: self.freeze_end_tick,
+                end_tick: ctx.tick(),
+                official_end_tick: None,
+                winner,
+                winner_side: team_name(win_status).to_string(),
+                reason,
+                reason_name: round_end_reason_name(i64::from(reason)).to_string(),
+                is_knife_round: false,
+            });
+            self.start_tick = None;
+            self.freeze_end_tick = None;
+        }
+
+        if !warmup {
+            if freeze && !self.prev_freeze {
+                if let Some(last) = self.rounds.last_mut()
+                    && last.official_end_tick.is_none()
+                {
+                    last.official_end_tick = Some(ctx.tick());
+                }
+                self.start_tick = Some(ctx.tick());
+                self.freeze_end_tick = None;
+            } else if !freeze && self.prev_freeze {
+                self.freeze_end_tick = Some(ctx.tick());
+            }
+        }
+
+        self.prev_freeze = freeze;
+        self.prev_total = total;
+    }
+}
+
+/// Select which player-enriched event datasets a parser pass should collect.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EventDatasetSelection {
+    pub kills: bool,
+    pub damages: bool,
+    pub bomb: bool,
+    pub blinds: bool,
+    pub shots: bool,
+}
+
+impl EventDatasetSelection {
+    pub const ALL: Self = Self {
+        kills: true,
+        damages: true,
+        bomb: true,
+        blinds: true,
+        shots: true,
+    };
+
+    /// Event inputs consumed by the player-stat aggregation.
+    pub const PLAYER_STATS: Self = Self {
+        kills: true,
+        damages: true,
+        bomb: false,
+        blinds: true,
+        shots: true,
+    };
+
+    #[must_use]
+    pub const fn union(self, other: Self) -> Self {
+        Self {
+            kills: self.kills || other.kills,
+            damages: self.damages || other.damages,
+            bomb: self.bomb || other.bomb,
+            blinds: self.blinds || other.blinds,
+            shots: self.shots || other.shots,
+        }
+    }
+
+    const fn any(self) -> bool {
+        self.kills || self.damages || self.bomb || self.blinds || self.shots
+    }
+}
+
+/// The selected player-enriched event datasets collected by
+/// [`Parser::event_datasets_selected`].
+#[derive(Default)]
 pub struct EventDatasets {
     pub kills: Vec<Kill>,
     pub damages: Vec<Damage>,
     pub bomb: Vec<BombEvent>,
     pub blinds: Vec<Blind>,
     pub shots: Vec<Shot>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum EventDatasetMode {
+    Full,
+    PlayerStats,
+}
+
+/// The entity-derived inputs used to compute player statistics in one pass.
+///
+/// The event rows contain everything the stats aggregator consumes, but shots
+/// intentionally omit position, angles, scope, accuracy, and clip state. The
+/// same pass also reconstructs rounds and the player roster so Python callers
+/// can reuse those results without decoding the demo again.
+pub struct PlayerStatsInputs {
+    events: EventDatasets,
+    rounds: Vec<Round>,
+    players: Vec<Player>,
+    full_datasets: EventDatasetSelection,
+}
+
+impl PlayerStatsInputs {
+    /// The combat-event rows consumed by the stats aggregator.
+    #[must_use]
+    pub fn event_datasets(&self) -> &EventDatasets {
+        &self.events
+    }
+
+    /// Rounds reconstructed during the same entity pass.
+    #[must_use]
+    pub fn rounds(&self) -> &[Round] {
+        &self.rounds
+    }
+
+    /// Player roster reconstructed during the same entity pass.
+    #[must_use]
+    pub fn players(&self) -> &[Player] {
+        &self.players
+    }
+
+    /// Datasets whose rows are fully enriched and can be exposed directly.
+    #[must_use]
+    pub fn full_datasets(&self) -> EventDatasetSelection {
+        self.full_datasets
+    }
 }
 
 /// A flashbang detonation: the thrower's pawn handle and the blast site, used
@@ -1056,7 +1283,7 @@ fn fill_shot(
     pk: &PawnKeys,
     ck: &CtrlKeys,
     sk: &ShotKeys,
-    weapon_keys: &mut HashMap<String, (Option<u64>, Option<u64>)>,
+    weapon_keys: &mut HashMap<i32, (Option<u64>, Option<u64>)>,
 ) {
     let k = Keys(&e.keys);
     let player = resolve_player(ctx, k.i64("userid_pawn"), pk, ck);
@@ -1067,7 +1294,10 @@ fn fill_shot(
     shot.y = player.y;
     shot.z = player.z;
 
-    let Some(pawn) = ctx.entities().get_by_handle(k.i64("userid_pawn") as u32) else {
+    let Some(pawn_handle) = event_entity_handle(k.i64("userid_pawn")) else {
+        return;
+    };
+    let Some(pawn) = ctx.entities().get_by_handle(pawn_handle) else {
         return;
     };
     let angles = pawn.get_qangle(sk.angles);
@@ -1081,38 +1311,62 @@ fn fill_shot(
         .and_then(|h| ctx.entities().get_by_handle(h))
         && let Some(wser) = ctx.serializers().get(&weapon.class_name)
     {
-        let (clip_k, acc_k) = *weapon_keys
-            .entry(weapon.class_name.to_string())
-            .or_insert_with(|| {
-                (
-                    wser.resolve_field_key("m_iClip1"),
-                    wser.resolve_field_key("m_fAccuracyPenalty"),
-                )
-            });
-        shot.num_bullets_remaining = Some(weapon.get_i64(clip_k) as i32);
+        let (clip_k, acc_k) = *weapon_keys.entry(weapon.class_id).or_insert_with(|| {
+            (
+                wser.resolve_field_key("m_iClip1"),
+                wser.resolve_field_key("m_fAccuracyPenalty"),
+            )
+        });
+        shot.num_bullets_remaining = i32::try_from(weapon.get_i64(clip_k)).ok();
         shot.inaccuracy = Some(weapon.get_f32(acc_k));
     }
 }
 
+/// Fill only the shot fields consumed by player-stat aggregation.
+///
+/// Keeping every weapon-fire row preserves per-round side observations used by
+/// clutch reconstruction, while avoiding weapon entity classes and their
+/// position/accuracy/clip enrichment.
+fn fill_stats_shot(
+    shot: &mut Shot,
+    event: &GameEvent,
+    ctx: &Context,
+    pawn_keys: &PawnKeys,
+    ctrl_keys: &CtrlKeys,
+) {
+    let player = resolve_player(
+        ctx,
+        Keys(&event.keys).i64("userid_pawn"),
+        pawn_keys,
+        ctrl_keys,
+    );
+    shot.steamid = player.steamid;
+    shot.name = player.name;
+    shot.side = player.side;
+}
+
 /// Detect new blinds on this tick: a rising edge of each player pawn's flash
 /// duration, attributed to a detonation on the same tick. `prev_flash` carries
-/// the previous tick's duration per pawn index across calls.
+/// the previous tick's duration per pawn identity across calls.
 fn detect_blinds(
     ctx: &Context,
     detonations: &HashMap<i32, Vec<Detonation>>,
-    prev_flash: &mut HashMap<i32, f32>,
+    prev_flash: &mut HashMap<EntityId, f32>,
     flash_key: Option<u64>,
     pk: &PawnKeys,
     ck: &CtrlKeys,
     out: &mut Vec<Blind>,
 ) {
     let dets = detonations.get(&ctx.tick());
-    for (idx, pawn) in ctx.entities().iter() {
+    for &idx in ctx.entities().updated_indices() {
+        let Some(pawn) = ctx.entities().get(idx) else {
+            continue;
+        };
         if !pawn.active || pawn.class_name.as_ref() != PLAYER_PAWN_CLASS {
             continue;
         }
         let cur = pawn.get_f32(flash_key);
-        let prev = prev_flash.insert(idx, cur).unwrap_or(0.0);
+        let prev = prev_flash.insert(pawn.id(), cur).unwrap_or(0.0);
         // A new blind is a rising edge above the noise floor. Requiring a
         // detonation on this tick both supplies the thrower and rejects spurious
         // edges (e.g. from recycled entity indices).
@@ -1174,102 +1428,13 @@ impl Parser {
     /// so it is slower than [`Parser::events`].
     pub fn rounds(&self) -> Result<Vec<Round>> {
         let filter: HashSet<&str> = HashSet::from([GAME_RULES_CLASS]);
-
-        let mut rounds: Vec<Round> = Vec::new();
-        let mut start_tick: Option<i32> = None;
-        let mut freeze_end_tick: Option<i32> = None;
-        let mut prev_freeze = false;
-        let mut prev_total: i32 = 0;
-        let mut keys: Option<GameRulesKeys> = None;
-
+        let mut tracker = RoundTracker::default();
         self.run_to_end_filtered(&filter, |ctx| {
-            let Some((_, entity)) = ctx
-                .entities()
-                .iter()
-                .find(|(_, e)| e.class_name.as_ref() == GAME_RULES_CLASS)
-            else {
-                return;
-            };
-            let Some(ser) = ctx.serializers().get(GAME_RULES_CLASS) else {
-                return;
-            };
-            let k = keys.get_or_insert_with(|| GameRulesKeys::resolve(ser));
-
-            let warmup = entity.get_bool(k.warmup);
-            let freeze = entity.get_bool(k.freeze);
-            let total = entity.get_i64(k.total_rounds) as i32;
-
-            // A match restart (`mp_restartgame`, fired when the real match begins
-            // — typically right after a knife round) resets the round counter.
-            // Everything emitted so far therefore belongs to the pre-match
-            // period: the knife round and any warmup skirmishing. Discard it and
-            // begin the match here.
-            //
-            // Without this, a knife round that ticked the counter 0 -> 1 survives
-            // as a round numbered 1, the real first round is emitted as a *second*
-            // round 1, and — because the discarded round starts at tick 0 —
-            // `round_of` in `stats` buckets every pre-match kill into it, inflating
-            // player stats and the round count that ADR / KAST divide by.
-            if total < prev_total {
-                rounds.clear();
-                start_tick = None;
-                freeze_end_tick = None;
-            }
-
-            // Emit the completed round FIRST, before handling this tick's freeze
-            // transition. A round completes exactly when the round counter ticks
-            // up by one. (`== prev + 1` rather than `>` so a mid-join demo whose
-            // first observed count is already high doesn't fabricate a round.)
-            // The match-deciding round flips the freeze period back on for the
-            // "game over" screen on the very same tick, so emitting first keeps
-            // that round's real start / freeze-end ticks instead of clobbering
-            // them with the post-match freeze.
-            //
-            // Warmup never produces a scored round, so a counter tick there is
-            // an artifact and is ignored.
-            if !warmup && total == prev_total + 1 {
-                let win_status = entity.get_i64(k.win_status);
-                let reason = entity.get_i64(k.win_reason) as i32;
-                rounds.push(Round {
-                    round_num: total,
-                    start_tick,
-                    freeze_end_tick,
-                    end_tick: ctx.tick(),
-                    official_end_tick: None,
-                    winner: win_status as i32,
-                    winner_side: team_name(win_status).to_string(),
-                    reason,
-                    reason_name: round_end_reason_name(reason as i64).to_string(),
-                    is_knife_round: false, // filled in by mark_knife_rounds below
-                });
-                start_tick = None;
-                freeze_end_tick = None;
-            }
-
-            // Track freeze-period transitions (post-warmup) for the next round's
-            // start / freeze-end ticks.
-            if !warmup {
-                if freeze && !prev_freeze {
-                    // The next round's freeze beginning marks the previous
-                    // round's official end (the post-round reset).
-                    if let Some(last) = rounds.last_mut()
-                        && last.official_end_tick.is_none()
-                    {
-                        last.official_end_tick = Some(ctx.tick());
-                    }
-                    start_tick = Some(ctx.tick());
-                    freeze_end_tick = None;
-                } else if !freeze && prev_freeze {
-                    freeze_end_tick = Some(ctx.tick());
-                }
-            }
-
-            prev_freeze = freeze;
-            prev_total = total;
+            tracker.observe(ctx);
         })?;
 
-        self.mark_knife_rounds(&mut rounds)?;
-        Ok(rounds)
+        self.mark_knife_rounds(&mut tracker.rounds)?;
+        Ok(tracker.rounds)
     }
 
     /// Flag knife rounds in place: a round with at least one kill whose kills are
@@ -1305,6 +1470,35 @@ impl Parser {
         Ok(())
     }
 
+    /// Mark knife rounds from the already-collected kill rows in the fused
+    /// player-stats pass, avoiding a separate raw-event scan.
+    fn mark_knife_rounds_from_kills(rounds: &mut [Round], kills: &[Kill]) {
+        if rounds.is_empty() {
+            return;
+        }
+        let starts: Vec<i32> = rounds
+            .iter()
+            .map(|round| {
+                round
+                    .start_tick
+                    .or(round.freeze_end_tick)
+                    .unwrap_or(round.end_tick)
+            })
+            .collect();
+        let mut tally = vec![(0u32, 0u32); rounds.len()];
+        for kill in kills.iter().filter(|kill| kill.tick >= starts[0]) {
+            let index = starts.partition_point(|&start| start <= kill.tick) - 1;
+            if kill.weapon.contains("knife") || kill.weapon.contains("bayonet") {
+                tally[index].0 += 1;
+            } else if kill.weapon != "world" && !kill.weapon.is_empty() {
+                tally[index].1 += 1;
+            }
+        }
+        for (round, (knife, firearm)) in rounds.iter_mut().zip(tally) {
+            round.is_knife_round = knife > 0 && firearm == 0;
+        }
+    }
+
     /// Build [`kills`](Self::kills), [`damages`](Self::damages),
     /// [`bomb`](Self::bomb), [`blinds`](Self::blinds) and [`shots`](Self::shots)
     /// in a **single** entity decode pass instead of one pass each.
@@ -1318,6 +1512,72 @@ impl Parser {
     /// `shots` itself far cheaper than its old *unfiltered* pass, which decoded
     /// every entity in the demo.
     pub fn event_datasets(&self) -> Result<EventDatasets> {
+        self.event_datasets_selected(EventDatasetSelection::ALL)
+    }
+
+    /// Collect only the requested enriched event datasets in one parser pass.
+    pub fn event_datasets_selected(
+        &self,
+        selection: EventDatasetSelection,
+    ) -> Result<EventDatasets> {
+        if !selection.any() {
+            return Ok(EventDatasets::default());
+        }
+        let (events, _, _) =
+            self.collect_event_datasets(EventDatasetMode::Full, false, selection, selection.shots)?;
+        Ok(events)
+    }
+
+    /// Collect the event, round, and roster inputs needed for player stats.
+    ///
+    /// If rounds have already been decoded, pass them here and this skips game
+    /// rules entirely. Otherwise rounds are reconstructed during the same
+    /// filtered pass as combat events. Weapon-fire rows retain identity and side
+    /// for clutch rosters but skip expensive active-weapon enrichment.
+    pub fn player_stats_inputs(
+        &self,
+        existing_rounds: Option<&[Round]>,
+    ) -> Result<PlayerStatsInputs> {
+        self.player_stats_inputs_selected(existing_rounds, EventDatasetSelection::default())
+    }
+
+    /// Collect stats inputs plus any additional fully enriched event datasets.
+    /// Requested extras share the stats pass instead of forcing another decode.
+    pub fn player_stats_inputs_selected(
+        &self,
+        existing_rounds: Option<&[Round]>,
+        extra_full: EventDatasetSelection,
+    ) -> Result<PlayerStatsInputs> {
+        let collect_rounds = existing_rounds.is_none();
+        let selection = EventDatasetSelection::PLAYER_STATS.union(extra_full);
+        let (events, collected_rounds, players) = self.collect_event_datasets(
+            EventDatasetMode::PlayerStats,
+            collect_rounds,
+            selection,
+            extra_full.shots,
+        )?;
+        let rounds = existing_rounds.map_or(collected_rounds, <[Round]>::to_vec);
+        Ok(PlayerStatsInputs {
+            events,
+            rounds,
+            players,
+            full_datasets: EventDatasetSelection {
+                kills: true,
+                damages: true,
+                bomb: extra_full.bomb,
+                blinds: true,
+                shots: extra_full.shots,
+            },
+        })
+    }
+
+    fn collect_event_datasets(
+        &self,
+        mode: EventDatasetMode,
+        collect_rounds: bool,
+        selection: EventDatasetSelection,
+        full_shots: bool,
+    ) -> Result<(EventDatasets, Vec<Round>, Vec<Player>)> {
         let mut kills = Vec::new();
         let mut damages = Vec::new();
         let mut bomb = Vec::new();
@@ -1325,47 +1585,75 @@ impl Parser {
         let mut shots = Vec::new();
         let mut detonations: HashMap<i32, Vec<Detonation>> = HashMap::new();
 
-        // Shots follow the active-weapon handle to a weapon entity, so the pass
-        // must also decode weapon entities.
-        let mut filter: HashSet<&str> =
-            HashSet::from([PLAYER_PAWN_CLASS, PLAYER_CONTROLLER_CLASS, PLANTED_C4_CLASS]);
-        filter.extend(weapon_classes());
+        let mut filter: HashSet<&str> = HashSet::from([PLAYER_PAWN_CLASS, PLAYER_CONTROLLER_CLASS]);
+        if selection.bomb {
+            filter.insert(PLANTED_C4_CLASS);
+        }
+        if full_shots && selection.shots {
+            // Fully enriched shots follow active-weapon handles for accuracy and clip.
+            filter.extend(weapon_classes());
+        }
+        if mode == EventDatasetMode::PlayerStats {
+            filter.insert(TEAM_CLASS);
+            if collect_rounds {
+                filter.insert(GAME_RULES_CLASS);
+            }
+        }
+
+        let mut round_tracker = collect_rounds.then(RoundTracker::default);
+        let mut player_tracker =
+            (mode == EventDatasetMode::PlayerStats).then(PlayerTracker::default);
         let mut pawn_keys: Option<PawnKeys> = None;
         let mut ctrl_keys: Option<CtrlKeys> = None;
         let mut site_key: Option<Option<u64>> = None;
         let mut flash_key: Option<Option<u64>> = None;
-        let mut prev_flash: HashMap<i32, f32> = HashMap::new();
+        let mut prev_flash: HashMap<EntityId, f32> = HashMap::new();
         let mut shot_keys: Option<ShotKeys> = None;
-        let mut weapon_keys: HashMap<String, (Option<u64>, Option<u64>)> = HashMap::new();
+        let mut weapon_keys: HashMap<i32, (Option<u64>, Option<u64>)> = HashMap::new();
 
         // These datasets consume legacy key/value pairs only. Select their
         // event names up front so unrelated legacy events and all CS2 user
         // messages are skipped without materializing owned payloads.
-        let mut event_names: HashSet<&str> = HashSet::from([
-            "player_death",
-            "player_hurt",
-            "flashbang_detonate",
-            "weapon_fire",
-        ]);
-        event_names.extend(BOMB_EVENTS.iter().map(|(name, _)| *name));
+        let mut event_names: HashSet<&str> = HashSet::new();
+        if selection.kills {
+            event_names.insert("player_death");
+        }
+        if selection.damages {
+            event_names.insert("player_hurt");
+        }
+        if selection.blinds {
+            event_names.insert("flashbang_detonate");
+        }
+        if selection.shots {
+            event_names.insert("weapon_fire");
+        }
+        if selection.bomb {
+            event_names.extend(BOMB_EVENTS.iter().map(|(name, _)| *name));
+        }
 
         self.run_to_end_with_legacy_events_filtered(&filter, &event_names, |ctx, events| {
+            if let Some(tracker) = &mut round_tracker {
+                tracker.observe(ctx);
+            }
+            if let Some(tracker) = &mut player_tracker {
+                tracker.observe(ctx);
+            }
             let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
 
             for event in events {
                 match event.name.as_str() {
-                    "player_death" => {
+                    "player_death" if selection.kills => {
                         let mut kill = kill_event_fields(event);
                         fill_kill(&mut kill, event, ctx, pk, ck);
                         kills.push(kill);
                     }
-                    "player_hurt" => {
+                    "player_hurt" if selection.damages => {
                         let mut damage = damage_event_fields(event);
                         fill_damage(&mut damage, event, ctx, pk, ck);
                         damages.push(damage);
                     }
-                    "flashbang_detonate" => {
+                    "flashbang_detonate" if selection.blinds => {
                         let keys = Keys(&event.keys);
                         detonations.entry(event.tick).or_default().push(Detonation {
                             thrower_pawn: keys.i64("userid_pawn"),
@@ -1380,8 +1668,12 @@ impl Parser {
                             weapon: Keys(&event.keys).string("weapon"),
                             ..Default::default()
                         };
-                        let sk = shot_keys.get_or_insert_with(|| ShotKeys::resolve(ctx));
-                        fill_shot(&mut shot, event, ctx, pk, ck, sk, &mut weapon_keys);
+                        if full_shots {
+                            let sk = shot_keys.get_or_insert_with(|| ShotKeys::resolve(ctx));
+                            fill_shot(&mut shot, event, ctx, pk, ck, sk, &mut weapon_keys);
+                        } else {
+                            fill_stats_shot(&mut shot, event, ctx, pk, ck);
+                        }
                         shots.push(shot);
                     }
                     _ => {
@@ -1405,31 +1697,43 @@ impl Parser {
                 }
             }
 
-            // Blinds are found from a per-tick rising edge, so this runs every tick.
-            let fk = *flash_key.get_or_insert_with(|| {
-                ctx.serializers()
-                    .get(PLAYER_PAWN_CLASS)
-                    .and_then(|s| s.resolve_field_key("m_flFlashDuration"))
-            });
-            detect_blinds(ctx, &detonations, &mut prev_flash, fk, pk, ck, &mut blinds);
+            if selection.blinds {
+                // Blinds are found from a per-tick rising edge, so this runs every tick.
+                let fk = *flash_key.get_or_insert_with(|| {
+                    ctx.serializers()
+                        .get(PLAYER_PAWN_CLASS)
+                        .and_then(|s| s.resolve_field_key("m_flFlashDuration"))
+                });
+                detect_blinds(ctx, &detonations, &mut prev_flash, fk, pk, ck, &mut blinds);
+            }
         })?;
 
-        // Trades need every kill's resolved sides, so they are classified after
-        // the decode has filled the participants in.
-        let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
-        let flags = trade_flags(&kills, trade_ticks);
-        for (kill, (is_trade, victim_traded)) in kills.iter_mut().zip(flags) {
-            kill.is_trade = is_trade;
-            kill.victim_traded = victim_traded;
+        if selection.kills {
+            // Trades need every kill's resolved sides, so classify after enrichment.
+            let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
+            let flags = trade_flags(&kills, trade_ticks);
+            for (kill, (is_trade, victim_traded)) in kills.iter_mut().zip(flags) {
+                kill.is_trade = is_trade;
+                kill.victim_traded = victim_traded;
+            }
         }
 
-        Ok(EventDatasets {
+        let events = EventDatasets {
             kills,
             damages,
             bomb,
             blinds,
             shots,
-        })
+        };
+        let mut rounds = round_tracker
+            .map(|tracker| tracker.rounds)
+            .unwrap_or_default();
+        Self::mark_knife_rounds_from_kills(&mut rounds, &events.kills);
+        let players = player_tracker
+            .map(PlayerTracker::into_players)
+            .unwrap_or_default();
+
+        Ok((events, rounds, players))
     }
 
     /// Collect every kill (`player_death` game event), enriched with each
@@ -1441,16 +1745,27 @@ impl Parser {
     /// following each pawn handle to the pawn (position, side) and on to its
     /// controller (Steam id, name). Slower than a raw event scan.
     pub fn kills(&self) -> Result<Vec<Kill>> {
-        Ok(self.event_datasets()?.kills)
+        Ok(self
+            .event_datasets_selected(EventDatasetSelection {
+                kills: true,
+                ..Default::default()
+            })?
+            .kills)
     }
 
     /// Collect every damage instance (`player_hurt` game event), enriched with
     /// the resolved attacker and victim and the victim's health/armor before and
     /// after the hit. Like [`Parser::kills`], this performs an entity decode.
     ///
-    /// Built alongside kills / bomb / blinds in [`Parser::event_datasets`].
+    /// Use [`Parser::event_datasets`] or [`Parser::event_datasets_selected`] to
+    /// collect several enriched event datasets in one pass.
     pub fn damages(&self) -> Result<Vec<Damage>> {
-        Ok(self.event_datasets()?.damages)
+        Ok(self
+            .event_datasets_selected(EventDatasetSelection {
+                damages: true,
+                ..Default::default()
+            })?
+            .damages)
     }
 
     /// Collect bomb actions (pickup / drop / plant / defuse) with the acting
@@ -1458,9 +1773,15 @@ impl Parser {
     /// site. Note that some demos don't emit the begin/abort-plant events, so
     /// `start_plant` / `interrupt_plant` rows may be absent.
     ///
-    /// Built alongside kills / damages / blinds in [`Parser::event_datasets`].
+    /// Use [`Parser::event_datasets`] or [`Parser::event_datasets_selected`] to
+    /// collect several enriched event datasets in one pass.
     pub fn bomb(&self) -> Result<Vec<BombEvent>> {
-        Ok(self.event_datasets()?.bomb)
+        Ok(self
+            .event_datasets_selected(EventDatasetSelection {
+                bomb: true,
+                ..Default::default()
+            })?
+            .bomb)
     }
 
     /// Pair `start_event` / `end_event` game events (by their `entityid` key,
@@ -1508,19 +1829,20 @@ impl Parser {
         let mut rows: Vec<(ProjKind, TrackedRow)> = Vec::new();
         let mut pawn_keys: Option<PawnKeys> = None;
         let mut ctrl_keys: Option<CtrlKeys> = None;
-        let mut pos_keys: HashMap<String, PositionKeys> = HashMap::new();
+        let mut pos_keys: HashMap<i32, PositionKeys> = HashMap::new();
         // (m_hThrower key, m_hOwnerEntity key) per class.
-        let mut thrower_keys: HashMap<String, (Option<u64>, Option<u64>)> = HashMap::new();
-        // Trajectory bookkeeping (grenades only): indices seen last tick, each
-        // live instance's start tick, and its last position.
-        let mut prev: HashSet<i32> = HashSet::new();
-        let mut starts: HashMap<i32, i32> = HashMap::new();
-        let mut last_pos: HashMap<i32, (f32, f32, f32)> = HashMap::new();
+        let mut thrower_keys: HashMap<i32, (Option<u64>, Option<u64>)> = HashMap::new();
+        // Trajectory bookkeeping (grenades only): identities seen last tick,
+        // each live instance's start tick, and its last position. Including the
+        // serial prevents a reused entity slot from continuing an old trajectory.
+        let mut prev: HashSet<EntityId> = HashSet::new();
+        let mut starts: HashMap<EntityId, i32> = HashMap::new();
+        let mut last_pos: HashMap<EntityId, (f32, f32, f32)> = HashMap::new();
 
         self.run_to_end_filtered(&filter, |ctx| {
             let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
-            let mut current: HashSet<i32> = HashSet::new();
+            let mut current: HashSet<EntityId> = HashSet::new();
 
             for (_, e) in ctx.entities().iter() {
                 if !e.active {
@@ -1533,7 +1855,7 @@ impl Parser {
                     continue;
                 };
                 let posk = pos_keys
-                    .entry(e.class_name.to_string())
+                    .entry(e.class_id)
                     .or_insert_with(|| PositionKeys::resolve(ser));
                 let Some((x, y, z)) = posk.world(e) else {
                     continue;
@@ -1542,18 +1864,16 @@ impl Parser {
                 // Grenade projectiles carry `m_hThrower`; infernos instead carry
                 // `m_hOwnerEntity`. Resolve whichever points at a player pawn
                 // (once per entity — every tracker on it shares the thrower).
-                let (tk, ok) = *thrower_keys
-                    .entry(e.class_name.to_string())
-                    .or_insert_with(|| {
-                        (
-                            ser.resolve_field_key("m_hThrower"),
-                            ser.resolve_field_key("m_hOwnerEntity"),
-                        )
-                    });
+                let (tk, ok) = *thrower_keys.entry(e.class_id).or_insert_with(|| {
+                    (
+                        ser.resolve_field_key("m_hThrower"),
+                        ser.resolve_field_key("m_hOwnerEntity"),
+                    )
+                });
                 let thrower = e
                     .get_handle(tk)
                     .or_else(|| e.get_handle(ok))
-                    .map(|h| resolve_player(ctx, h as i64, pk, ck))
+                    .map(|handle| resolve_player(ctx, i64::from(handle), pk, ck))
                     .unwrap_or_default();
 
                 for (kind, mode) in trackers {
@@ -1572,15 +1892,16 @@ impl Parser {
                             (s, en)
                         }
                         ProjMode::Trajectory => {
-                            current.insert(e.index);
-                            if !prev.contains(&e.index) {
-                                starts.insert(e.index, ctx.tick());
+                            let id = e.id();
+                            current.insert(id);
+                            if !prev.contains(&id) {
+                                starts.insert(id, ctx.tick());
                             }
-                            let start = *starts.get(&e.index).unwrap_or(&ctx.tick());
-                            if last_pos.get(&e.index) == Some(&(x, y, z)) {
+                            let start = *starts.get(&id).unwrap_or(&ctx.tick());
+                            if last_pos.get(&id) == Some(&(x, y, z)) {
                                 continue;
                             }
-                            last_pos.insert(e.index, (x, y, z));
+                            last_pos.insert(id, (x, y, z));
                             (start, 0)
                         }
                     };
@@ -1601,6 +1922,8 @@ impl Parser {
                     ));
                 }
             }
+            starts.retain(|id, _| current.contains(id));
+            last_pos.retain(|id, _| current.contains(id));
             prev = current;
         })?;
 
@@ -1617,23 +1940,47 @@ impl Parser {
     /// and finished per dataset (trajectory end-fill for grenades; instance
     /// collapse for fires / smokes).
     pub fn projectiles(&self) -> Result<Projectiles> {
-        let fire_windows = self.burn_intervals("inferno_startburn", "inferno_expire")?;
-        let smoke_windows = self.burn_intervals("smokegrenade_detonate", "smokegrenade_expired")?;
+        self.projectiles_selected(ProjectileSelection::ALL)
+    }
+
+    /// Collect only the requested projectile datasets in one parser pass.
+    pub fn projectiles_selected(&self, selection: ProjectileSelection) -> Result<Projectiles> {
+        if !selection.any() {
+            return Ok(Projectiles::default());
+        }
+        let fire_windows = if selection.fires {
+            self.burn_intervals("inferno_startburn", "inferno_expire")?
+        } else {
+            HashMap::new()
+        };
+        let smoke_windows = if selection.smokes {
+            self.burn_intervals("smokegrenade_detonate", "smokegrenade_expired")?
+        } else {
+            HashMap::new()
+        };
 
         // Every grenade projectile class is a grenade trajectory; CInferno is a
         // fire; CSmokeGrenadeProjectile is *also* a smoke (its cloud), so that
         // class carries two trackers.
-        let mut modes: HashMap<&str, Vec<(ProjKind, ProjMode)>> = grenade_projectile_classes()
-            .map(|class| (class, vec![(ProjKind::Grenade, ProjMode::Trajectory)]))
-            .collect();
-        modes
-            .entry(INFERNO_CLASS)
-            .or_default()
-            .push((ProjKind::Fire, ProjMode::Windowed(&fire_windows)));
-        modes
-            .entry(SMOKE_CLASS)
-            .or_default()
-            .push((ProjKind::Smoke, ProjMode::Windowed(&smoke_windows)));
+        let mut modes: HashMap<&str, Vec<(ProjKind, ProjMode)>> = HashMap::new();
+        if selection.grenades {
+            modes.extend(
+                grenade_projectile_classes()
+                    .map(|class| (class, vec![(ProjKind::Grenade, ProjMode::Trajectory)])),
+            );
+        }
+        if selection.fires {
+            modes
+                .entry(INFERNO_CLASS)
+                .or_default()
+                .push((ProjKind::Fire, ProjMode::Windowed(&fire_windows)));
+        }
+        if selection.smokes {
+            modes
+                .entry(SMOKE_CLASS)
+                .or_default()
+                .push((ProjKind::Smoke, ProjMode::Windowed(&smoke_windows)));
+        }
 
         let mut grenade_rows = Vec::new();
         let mut fire_rows = Vec::new();
@@ -1701,9 +2048,15 @@ impl Parser {
     /// Trajectories of thrown grenades: one row per tick each grenade projectile
     /// is live, with its position and resolved thrower.
     ///
-    /// Built alongside fires / smokes in [`Parser::projectiles`].
+    /// Use [`Parser::projectiles`] or [`Parser::projectiles_selected`] to
+    /// collect several projectile datasets in one pass.
     pub fn grenades(&self) -> Result<Vec<Grenade>> {
-        Ok(self.projectiles()?.grenades)
+        Ok(self
+            .projectiles_selected(ProjectileSelection {
+                grenades: true,
+                ..Default::default()
+            })?
+            .grenades)
     }
 
     /// Burning infernos (molotov / incendiary): one row per fire, with its
@@ -1711,9 +2064,15 @@ impl Parser {
     /// window comes from the `inferno_startburn` / `inferno_expire` events (the
     /// ~7 s fire), not the longer entity lifetime.
     ///
-    /// Built alongside grenades / smokes in [`Parser::projectiles`].
+    /// Use [`Parser::projectiles`] or [`Parser::projectiles_selected`] to
+    /// collect several projectile datasets in one pass.
     pub fn fires(&self) -> Result<Vec<Fire>> {
-        Ok(self.projectiles()?.fires)
+        Ok(self
+            .projectiles_selected(ProjectileSelection {
+                fires: true,
+                ..Default::default()
+            })?
+            .fires)
     }
 
     /// Deployed smoke clouds: one row per smoke, with its position, thrower, and
@@ -1721,20 +2080,31 @@ impl Parser {
     /// `smokegrenade_detonate` / `smokegrenade_expired` events (the deployed
     /// cloud), so the pre-detonation throw is excluded.
     ///
-    /// Built alongside grenades / fires in [`Parser::projectiles`].
+    /// Use [`Parser::projectiles`] or [`Parser::projectiles_selected`] to
+    /// collect several projectile datasets in one pass.
     pub fn smokes(&self) -> Result<Vec<Smoke>> {
-        Ok(self.projectiles()?.smokes)
+        Ok(self
+            .projectiles_selected(ProjectileSelection {
+                smokes: true,
+                ..Default::default()
+            })?
+            .smokes)
     }
 
     /// Every shot fired (`weapon_fire` game event), enriched with the shooter's
     /// Steam id, name, side, position, and view angles, plus the active weapon's
     /// scoped state, accuracy penalty, and remaining clip.
     ///
-    /// Built alongside kills / damages / bomb / blinds in
+    /// Group this with other enriched event datasets through
     /// [`Parser::event_datasets`] — reading the active weapon requires decoding
     /// weapon entities, which the shared pass now includes.
     pub fn shots(&self) -> Result<Vec<Shot>> {
-        Ok(self.event_datasets()?.shots)
+        Ok(self
+            .event_datasets_selected(EventDatasetSelection {
+                shots: true,
+                ..Default::default()
+            })?
+            .shots)
     }
 }
 
@@ -1757,6 +2127,131 @@ pub struct Player {
     pub team_clan_name: Option<String>,
 }
 
+/// Incrementally track the roster from controller and team entity changes.
+#[derive(Default)]
+struct PlayerTracker {
+    keys: Option<(Option<u64>, Option<u64>, Option<u64>)>,
+    team_keys: Option<(Option<u64>, Option<u64>)>,
+    seen: BTreeMap<EntityId, Player>,
+    clans: HashMap<i64, String>,
+    initialized: bool,
+}
+
+impl PlayerTracker {
+    fn observe(&mut self, ctx: &Context) {
+        let full_scan = !self.initialized;
+        self.initialized = true;
+
+        let (team_num_key, clan_key) = *self.team_keys.get_or_insert_with(|| {
+            let serializer = ctx.serializers().get(TEAM_CLASS);
+            let key = |name: &str| serializer.and_then(|s| s.resolve_field_key(name));
+            (key("m_iTeamNum"), key("m_szClanTeamname"))
+        });
+
+        // Team entities must be applied before controllers on the same tick so
+        // a player's side and clan always describe the same moment. A team
+        // update refreshes every active controller because the clan can change
+        // without the controller itself receiving an entity delta.
+        let mut team_changed = full_scan;
+        if full_scan {
+            for (_, entity) in ctx.entities().iter() {
+                if entity.active && entity.class_name.as_ref() == TEAM_CLASS {
+                    Self::observe_team(&mut self.clans, entity, team_num_key, clan_key);
+                }
+            }
+        } else {
+            for &index in ctx.entities().updated_indices() {
+                let Some(entity) = ctx.entities().get(index) else {
+                    continue;
+                };
+                if entity.active && entity.class_name.as_ref() == TEAM_CLASS {
+                    team_changed = true;
+                    Self::observe_team(&mut self.clans, entity, team_num_key, clan_key);
+                }
+            }
+        }
+
+        let (steamid_key, name_key, team_key) = *self.keys.get_or_insert_with(|| {
+            let serializer = ctx.serializers().get(PLAYER_CONTROLLER_CLASS);
+            let key = |name: &str| serializer.and_then(|s| s.resolve_field_key(name));
+            (key("m_steamID"), key("m_iszPlayerName"), key("m_iTeamNum"))
+        });
+
+        if full_scan || team_changed {
+            for (_, entity) in ctx.entities().iter() {
+                if entity.active && entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS {
+                    self.observe_controller(entity, steamid_key, name_key, team_key);
+                }
+            }
+        } else {
+            for &index in ctx.entities().updated_indices() {
+                let Some(entity) = ctx.entities().get(index) else {
+                    continue;
+                };
+                if entity.active && entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS {
+                    self.observe_controller(entity, steamid_key, name_key, team_key);
+                }
+            }
+        }
+    }
+
+    fn observe_team(
+        clans: &mut HashMap<i64, String>,
+        entity: &Entity,
+        team_num_key: Option<u64>,
+        clan_key: Option<u64>,
+    ) {
+        let team = entity.get_i64(team_num_key);
+        if team > 1
+            && let Some(clan) = entity.get_string(clan_key)
+            && !clan.is_empty()
+        {
+            clans.insert(team, clan);
+        }
+    }
+
+    fn observe_controller(
+        &mut self,
+        entity: &Entity,
+        steamid_key: Option<u64>,
+        name_key: Option<u64>,
+        team_key: Option<u64>,
+    ) {
+        let entry = self.seen.entry(entity.id()).or_default();
+        if let Some(steamid) = entity.get_u64(steamid_key) {
+            entry.steamid = Some(steamid);
+        }
+        if let Some(name) = entity.get_string(name_key) {
+            entry.name = Some(name);
+        }
+        let team = entity.get_i64(team_key);
+        if team > 0 {
+            entry.side = Some(team_name(team).to_string());
+            if let Some(clan) = self.clans.get(&team) {
+                entry.team_clan_name = Some(clan.clone());
+            }
+        }
+    }
+
+    fn into_players(self) -> Vec<Player> {
+        let mut players = Vec::new();
+        let mut by_key: HashMap<(u64, Option<String>), usize> = HashMap::new();
+        for player in self.seen.into_values() {
+            let key = match player.steamid {
+                Some(steamid) if steamid != 0 => (steamid, None),
+                _ => (0, player.name.clone()),
+            };
+            if let Some(&index) = by_key.get(&key) {
+                players[index] = player;
+            } else {
+                by_key.insert(key, players.len());
+                players.push(player);
+            }
+        }
+        players
+    }
+}
+
 /// One player's state at a tick (see [`Parser::snapshot`]).
 #[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct PlayerState {
@@ -1769,6 +2264,12 @@ pub struct PlayerState {
     pub x: Option<f32>,
     pub y: Option<f32>,
     pub z: Option<f32>,
+    /// Networked velocity components in Hammer units per second.
+    pub velocity_x: Option<f32>,
+    pub velocity_y: Option<f32>,
+    pub velocity_z: Option<f32>,
+    /// Three-dimensional speed derived from the networked velocity vector.
+    pub velocity: Option<f32>,
     pub pitch: f32,
     pub yaw: f32,
     pub health: i32,
@@ -1853,6 +2354,55 @@ pub struct ChatMessage {
     pub channel: Option<String>,
 }
 
+fn decode_chat_message(event: &GameEvent) -> Option<ChatMessage> {
+    use awpy_proto::proto::{
+        CUserMessageSayText, CUserMessageSayText2, CUserMessageSayTextChannel, EBaseUserMessages,
+        ECstrike15UserMessages,
+    };
+    use prost::Message as _;
+
+    let say_text = [
+        EBaseUserMessages::UmSayText as u32,
+        ECstrike15UserMessages::CsUmSayText as u32,
+    ];
+    let say_text2 = [
+        EBaseUserMessages::UmSayText2 as u32,
+        ECstrike15UserMessages::CsUmSayText2 as u32,
+    ];
+
+    if say_text2.contains(&event.msg_type) {
+        let message = CUserMessageSayText2::decode(&event.payload[..]).ok()?;
+        return Some(ChatMessage {
+            tick: event.tick,
+            entity_index: message.entityindex.filter(|&index| index >= 0),
+            name: message.param1.filter(|name| !name.is_empty()),
+            message: message.param2.unwrap_or_default(),
+            channel: message.messagename.filter(|channel| !channel.is_empty()),
+        });
+    }
+    if say_text.contains(&event.msg_type) {
+        let message = CUserMessageSayText::decode(&event.payload[..]).ok()?;
+        return Some(ChatMessage {
+            tick: event.tick,
+            entity_index: message.playerindex.filter(|&index| index >= 0),
+            name: None,
+            message: message.text.unwrap_or_default(),
+            channel: None,
+        });
+    }
+    if event.msg_type == EBaseUserMessages::UmSayTextChannel as u32 {
+        let message = CUserMessageSayTextChannel::decode(&event.payload[..]).ok()?;
+        return Some(ChatMessage {
+            tick: event.tick,
+            entity_index: message.player.filter(|&index| index >= 0),
+            name: None,
+            message: message.text.unwrap_or_default(),
+            channel: message.channel.map(|channel| channel.to_string()),
+        });
+    }
+    None
+}
+
 /// A flash event: one player blinded by a thrown flashbang (see
 /// [`Parser::blinds`]). The attacker is the flash's thrower — which may be a
 /// teammate (a team-flash) or the victim themselves (a self-flash).
@@ -1914,89 +2464,15 @@ impl Parser {
     /// at the same time as each player's side, so both describe the same moment.
     pub fn players(&self) -> Result<Vec<Player>> {
         let filter: HashSet<&str> = HashSet::from([PLAYER_CONTROLLER_CLASS, TEAM_CLASS]);
-        let mut keys: Option<(Option<u64>, Option<u64>, Option<u64>)> = None;
-        let mut team_keys: Option<(Option<u64>, Option<u64>)> = None;
-        let mut seen: std::collections::BTreeMap<i32, Player> = Default::default();
-        // Team number -> clan name, as of the tick being processed.
-        let mut clans: HashMap<i64, String> = HashMap::new();
-        self.run_to_end_filtered(&filter, |ctx| {
-            // Teams first: the controller loop below reads `clans`, and team
-            // entities sort after the controllers by entity index.
-            let (team_num_key, clan_key) = *team_keys.get_or_insert_with(|| {
-                let ser = ctx.serializers().get(TEAM_CLASS);
-                let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
-                (key("m_iTeamNum"), key("m_szClanTeamname"))
-            });
-            for (_, e) in ctx.entities().iter() {
-                if !e.active || e.class_name.as_ref() != TEAM_CLASS {
-                    continue;
-                }
-                let team = e.get_i64(team_num_key);
-                // Only the playing sides matter; 0 / 1 are unassigned and
-                // spectator, which never carry a clan name.
-                if team <= 1 {
-                    continue;
-                }
-                match e.get_string(clan_key) {
-                    Some(clan) if !clan.is_empty() => {
-                        clans.insert(team, clan);
-                    }
-                    // An empty string means the server never named this team;
-                    // leave any earlier value in place rather than blanking it.
-                    _ => {}
-                }
-            }
-
-            let (steamid_key, name_key, team_key) = *keys.get_or_insert_with(|| {
-                let ser = ctx.serializers().get(PLAYER_CONTROLLER_CLASS);
-                let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
-                (key("m_steamID"), key("m_iszPlayerName"), key("m_iTeamNum"))
-            });
-            for (idx, e) in ctx.entities().iter() {
-                if !e.active || e.class_name.as_ref() != PLAYER_CONTROLLER_CLASS {
-                    continue;
-                }
-                let entry = seen.entry(idx).or_default();
-                if let Some(steamid) = e.get_u64(steamid_key) {
-                    entry.steamid = Some(steamid);
-                }
-                if let Some(name) = e.get_string(name_key) {
-                    entry.name = Some(name);
-                }
-                let team = e.get_i64(team_key);
-                if team > 0 {
-                    entry.side = Some(team_name(team).to_string());
-                    if let Some(clan) = clans.get(&team) {
-                        entry.team_clan_name = Some(clan.clone());
-                    }
-                }
-            }
-        })?;
-
-        // Humans dedupe by Steam id; bots (steamid 0, e.g. the GOTV camera
-        // controllers) dedupe by name. The freshest state wins either way.
-        let mut out: Vec<Player> = Vec::new();
-        let mut by_key: HashMap<(u64, Option<String>), usize> = HashMap::new();
-        for player in seen.into_values() {
-            let key = match player.steamid {
-                Some(steamid) if steamid != 0 => (steamid, None),
-                _ => (0, player.name.clone()),
-            };
-            match by_key.get(&key) {
-                Some(&i) => out[i] = player,
-                None => {
-                    by_key.insert(key, out.len());
-                    out.push(player);
-                }
-            }
-        }
-        Ok(out)
+        let mut tracker = PlayerTracker::default();
+        self.run_to_end_filtered(&filter, |ctx| tracker.observe(ctx))?;
+        Ok(tracker.into_players())
     }
 
     /// Every player's state at a single tick.
     ///
     /// Seeks to `tick` (via the nearest preceding full packet) and reads each
-    /// active player pawn: position, eye angles, health, armor, side, and the
+    /// active player pawn: position, velocity, eye angles, health, armor, side, and the
     /// controller's Steam id and name.
     pub fn snapshot(&self, tick: i32) -> Result<Vec<PlayerState>> {
         let ctx = self.parse_to_tick(tick)?;
@@ -2197,13 +2673,25 @@ impl Parser {
                 let [x, y, z] = pawn.world_position(pk.cell, pk.offset);
                 (state.x, state.y, state.z) = (Some(x), Some(y), Some(z));
             }
+            let velocity = keys.velocity.map(|key| {
+                key.and_then(|key| {
+                    pawn.fields
+                        .contains_key(&key)
+                        .then(|| pawn.get_f32(Some(key)))
+                })
+            });
+            [state.velocity_x, state.velocity_y, state.velocity_z] = velocity;
+            if let [Some(x), Some(y), Some(z)] = velocity {
+                state.velocity = Some(x.mul_add(x, y.mul_add(y, z * z)).sqrt());
+            }
             let angles = pawn.get_qangle(keys.angles);
             state.pitch = angles[0];
             state.yaw = angles[1];
-            state.health = pawn.get_i64(keys.health) as i32;
-            state.armor = pawn.get_i64(keys.armor) as i32;
-            state.equipment_value = pawn.get_i64(keys.equip) as i32;
-            state.equipment_value_round_start = pawn.get_i64(keys.equip_round_start) as i32;
+            state.health = i32::try_from(pawn.get_i64(keys.health)).unwrap_or_default();
+            state.armor = i32::try_from(pawn.get_i64(keys.armor)).unwrap_or_default();
+            state.equipment_value = i32::try_from(pawn.get_i64(keys.equip)).unwrap_or_default();
+            state.equipment_value_round_start =
+                i32::try_from(pawn.get_i64(keys.equip_round_start)).unwrap_or_default();
             state.has_helmet = pawn.get_bool(keys.has_helmet);
             state.has_defuser = pawn.get_bool(keys.has_defuser);
             state.is_crouched = pawn.get_bool(keys.crouched);
@@ -2211,7 +2699,7 @@ impl Parser {
             // `FL_ONGROUND` clear ⇒ airborne (mid-jump or falling).
             state.is_jumping = pawn
                 .get_u64(keys.flags)
-                .is_some_and(|f| f as u32 & FL_ONGROUND == 0);
+                .is_some_and(|flags| flags & u64::from(FL_ONGROUND) == 0);
             state.is_in_bomb_zone = pawn.get_bool(keys.in_bomb_zone);
             state.is_scoped = pawn.get_bool(keys.scoped);
             state.is_defusing = pawn.get_bool(keys.defusing);
@@ -2221,7 +2709,9 @@ impl Parser {
                 .and_then(|h| ctx.entities().get_by_handle(h))
                 .and_then(|w| weapon_info(&w.class_name))
                 .map(|i| i.name);
-            let count = (pawn.get_i64(keys.weapon_count) as usize).min(keys.weapons.len());
+            let count = usize::try_from(pawn.get_i64(keys.weapon_count))
+                .unwrap_or_default()
+                .min(keys.weapons.len());
             fill_loadout(ctx, pawn, &keys.weapons[..count], &mut state);
             // Skip reserve/uninitialized pawns: the engine keeps spare
             // `CCSPlayerPawn` entities that sit at the world origin with no team.
@@ -2240,56 +2730,23 @@ impl Parser {
             {
                 state.steamid = ctrl.get_u64(ck.steamid);
                 state.name = ctrl.get_string(ck.name);
-                state.money = ctrl.get_i64(ck.money) as i32;
+                state.money = i32::try_from(ctrl.get_i64(ck.money)).unwrap_or_default();
             }
             out.push(state);
         }
         out
     }
 
-    /// Chat messages (`SayText` / `SayText2` user messages), in tick order.
+    /// Return chat messages in tick order.
+    ///
+    /// Decode direct and wrapped `SayText`, `SayText2`, and `SayTextChannel`
+    /// user messages.
     pub fn chat(&self) -> Result<Vec<ChatMessage>> {
-        use awpy_proto::proto::{
-            CUserMessageSayText, CUserMessageSayText2, EBaseUserMessages, ECstrike15UserMessages,
-        };
-        use prost::Message as _;
-
-        let say_text = [
-            EBaseUserMessages::UmSayText as u32,
-            ECstrike15UserMessages::CsUmSayText as u32,
-        ];
-        let say_text2 = [
-            EBaseUserMessages::UmSayText2 as u32,
-            ECstrike15UserMessages::CsUmSayText2 as u32,
-        ];
-
-        let mut out = Vec::new();
-        for event in self.events_ref()? {
-            if say_text2.contains(&event.msg_type) {
-                let Ok(msg) = CUserMessageSayText2::decode(&event.payload[..]) else {
-                    continue;
-                };
-                out.push(ChatMessage {
-                    tick: event.tick,
-                    entity_index: msg.entityindex.filter(|&i| i >= 0),
-                    name: msg.param1.filter(|s| !s.is_empty()),
-                    message: msg.param2.unwrap_or_default(),
-                    channel: msg.messagename.filter(|s| !s.is_empty()),
-                });
-            } else if say_text.contains(&event.msg_type) {
-                let Ok(msg) = CUserMessageSayText::decode(&event.payload[..]) else {
-                    continue;
-                };
-                out.push(ChatMessage {
-                    tick: event.tick,
-                    entity_index: msg.playerindex.filter(|&i| i >= 0),
-                    name: None,
-                    message: msg.text.unwrap_or_default(),
-                    channel: None,
-                });
-            }
-        }
-        Ok(out)
+        Ok(self
+            .events_ref()?
+            .iter()
+            .filter_map(decode_chat_message)
+            .collect())
     }
 
     /// Flash events: one row per player blinded, with the thrower, the victim,
@@ -2307,7 +2764,12 @@ impl Parser {
     /// Like [`Parser::kills`], this performs a filtered entity decode — built
     /// alongside kills / damages / bomb in [`Parser::event_datasets`].
     pub fn blinds(&self) -> Result<Vec<Blind>> {
-        Ok(self.event_datasets()?.blinds)
+        Ok(self
+            .event_datasets_selected(EventDatasetSelection {
+                blinds: true,
+                ..Default::default()
+            })?
+            .blinds)
     }
 
     /// Weapon-item transactions — purchases, pickups, and drops — reconstructed
@@ -2335,13 +2797,13 @@ impl Parser {
 
         /// Combine the split `m_OriginalOwnerXuid{Low,High}` into a Steam id.
         fn original_owner(w: &Entity, wk: &WeaponKeys) -> Option<u64> {
-            let id = ((w.get_u32(wk.xuid_high) as u64) << 32) | w.get_u32(wk.xuid_low) as u64;
+            let id = (u64::from(w.get_u32(wk.xuid_high)) << 32) | u64::from(w.get_u32(wk.xuid_low));
             (id > 0).then_some(id)
         }
 
-        let mut inv: HashMap<i32, HashSet<u32>> = HashMap::new();
+        let mut inv: HashMap<EntityId, HashSet<u32>> = HashMap::new();
         let mut prev_money: HashMap<u64, i32> = HashMap::new();
-        let mut weapon_keys: HashMap<String, WeaponKeys> = HashMap::new();
+        let mut weapon_keys: HashMap<i32, WeaponKeys> = HashMap::new();
         let mut pk: Option<PawnKeys> = None;
         let mut ck: Option<CtrlKeys> = None;
         let mut money_key: Option<Option<u64>> = None;
@@ -2351,6 +2813,13 @@ impl Parser {
 
         let filter = snapshot_filter();
         self.run_to_end_filtered(&filter, |ctx| {
+            for change in ctx.entities().entity_changes() {
+                if change.kind == EntityChangeKind::Deleted
+                    && change.class_name.as_ref() == PLAYER_PAWN_CLASS
+                {
+                    inv.remove(&change.id());
+                }
+            }
             let pkr = pk.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ckr = ck.get_or_insert_with(|| CtrlKeys::resolve(ctx));
             let mkey = *money_key.get_or_insert_with(|| {
@@ -2385,26 +2854,29 @@ impl Parser {
                 }
             };
 
-            for (idx, pawn) in ctx.entities().iter() {
+            for (_, pawn) in ctx.entities().iter() {
                 if !pawn.active || pawn.class_name.as_ref() != PLAYER_PAWN_CLASS {
                     continue;
                 }
                 let actor = resolve_from_pawn(ctx, pawn, pkr, ckr);
+                let pawn_id = pawn.id();
 
                 // Current inventory: the live `m_hMyWeapons` handles.
-                let count = (pawn.get_i64(ckey) as usize).min(skeys.len());
+                let count = usize::try_from(pawn.get_i64(ckey))
+                    .unwrap_or_default()
+                    .min(skeys.len());
                 let mut cur: HashSet<u32> = HashSet::new();
                 for &sk in &skeys[..count] {
                     if let Some(h) = pawn.get_handle(sk) {
                         cur.insert(h);
                     }
                 }
-                let prev = inv.remove(&idx).unwrap_or_default();
+                let prev = inv.remove(&pawn_id).unwrap_or_default();
 
                 // Without a Steam id we cannot classify or key money; keep the
                 // inventory current so a later resolved tick diffs cleanly.
                 let Some(steamid) = actor.steamid else {
-                    inv.insert(idx, cur);
+                    inv.insert(pawn_id, cur);
                     continue;
                 };
 
@@ -2412,7 +2884,7 @@ impl Parser {
                 let account = pawn
                     .get_handle(pkr.controller)
                     .and_then(|h| ctx.entities().get_by_handle(h))
-                    .map(|c| c.get_i64(mkey) as i32);
+                    .and_then(|controller| i32::try_from(controller.get_i64(mkey)).ok());
                 let delta = match (account, prev_money.get(&steamid)) {
                     (Some(a), Some(&p)) => a - p,
                     _ => 0,
@@ -2433,7 +2905,7 @@ impl Parser {
                         continue;
                     }
                     let wk = weapon_keys
-                        .entry(weapon.class_name.to_string())
+                        .entry(weapon.class_id)
                         .or_insert_with(|| keys_for(&weapon.class_name));
                     let orig = original_owner(weapon, wk);
                     let dropped = weapon.get_f32(wk.dropped_time) > 0.0;
@@ -2480,7 +2952,7 @@ impl Parser {
                         continue;
                     }
                     let wk = weapon_keys
-                        .entry(weapon.class_name.to_string())
+                        .entry(weapon.class_id)
                         .or_insert_with(|| keys_for(&weapon.class_name));
                     let still_held = weapon
                         .get_handle(wk.owner)
@@ -2505,7 +2977,7 @@ impl Parser {
                     });
                 }
 
-                inv.insert(idx, cur);
+                inv.insert(pawn_id, cur);
             }
         })?;
 
@@ -2516,6 +2988,8 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use awpy_proto::proto::{CUserMessageSayText2, EBaseUserMessages};
+    use prost::Message as _;
 
     fn ev(name: &str, tick: i32, keys: &[(&str, &str)]) -> GameEvent {
         GameEvent {
@@ -2528,6 +3002,40 @@ mod tests {
                 .collect(),
             payload: Vec::new(),
         }
+    }
+
+    #[test]
+    fn event_handles_preserve_signed_bits() {
+        assert_eq!(event_entity_handle(-1), Some(u32::MAX));
+        assert_eq!(event_entity_handle(i64::from(u32::MAX)), Some(u32::MAX));
+        assert_eq!(event_entity_handle(i64::from(u32::MAX) + 1), None);
+    }
+
+    #[test]
+    fn direct_say_text2_decodes_as_chat() {
+        let payload = CUserMessageSayText2 {
+            entityindex: Some(7),
+            chat: Some(true),
+            messagename: Some("Cstrike_Chat_All".to_string()),
+            param1: Some("Player".to_string()),
+            param2: Some("hello".to_string()),
+            ..Default::default()
+        }
+        .encode_to_vec();
+        let event = GameEvent {
+            tick: 42,
+            name: "UM_SayText2".to_string(),
+            msg_type: EBaseUserMessages::UmSayText2 as u32,
+            keys: Vec::new(),
+            payload,
+        };
+
+        let chat = decode_chat_message(&event).expect("SayText2 must decode");
+        assert_eq!(chat.tick, 42);
+        assert_eq!(chat.entity_index, Some(7));
+        assert_eq!(chat.name.as_deref(), Some("Player"));
+        assert_eq!(chat.message, "hello");
+        assert_eq!(chat.channel.as_deref(), Some("Cstrike_Chat_All"));
     }
 
     #[test]

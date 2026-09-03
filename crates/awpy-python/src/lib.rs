@@ -4,6 +4,7 @@
 //! events / per-tick entity state as Polars `DataFrame`s.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -13,7 +14,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator, PyList, PyString};
 use pyo3_polars::PyDataFrame;
 
-use awpy::datasets::{EventDatasets, Projectiles};
+use awpy::datasets::{
+    EventDatasetSelection, EventDatasets, PlayerStatsInputs, ProjectileSelection, Projectiles,
+};
 use awpy::geometry::VisibilityMesh;
 use awpy::map_control::{
     Observer, Occluder, Params as McParams, Team, raycast_control, reachability_control,
@@ -21,9 +24,9 @@ use awpy::map_control::{
 };
 use awpy::nav::{Nav, PathWeight};
 use awpy::{
-    Blind, BombEvent, ChatMessage, Context, Damage, Entity, FieldValue, Fire, GameEvent, Grenade,
-    ItemEvent, Kill, Parser, Player, PlayerState, PlayerStats, Round, RoundEconomy, Serializer,
-    Shot, Smoke, cell_to_world,
+    Blind, BombEvent, ChatMessage, Context, Damage, Entity, EntityId, FieldValue, Fire, GameEvent,
+    Grenade, ItemEvent, Kill, Parser, Player, PlayerState, PlayerStats, Round, RoundEconomy,
+    Serializer, Shot, Smoke, cell_to_world,
 };
 
 pyo3::create_exception!(_awpy, InvalidDemoError, pyo3::exceptions::PyException);
@@ -65,10 +68,28 @@ impl TicksArg {
 /// Player classes surfaced by [`Demo::ticks`] when `players_only=True`.
 const PLAYER_CLASSES: &[&str] = &["CCSPlayerPawn", "CCSPlayerController"];
 
+/// Cached DataFrame properties accepted by [`Demo::load`].
+const VALID_DATASETS: &[&str] = &[
+    "rounds",
+    "kills",
+    "damages",
+    "bomb",
+    "grenades",
+    "fires",
+    "smokes",
+    "shots",
+    "stats",
+    "players",
+    "round_economy",
+    "chat",
+    "blinds",
+    "item_events",
+];
+
 /// Build a `DataFrame` from columns, inferring the row count from the first
 /// column (polars 0.53's `DataFrame::new` requires an explicit height).
 fn df_from_columns(columns: Vec<Column>) -> PolarsResult<DataFrame> {
-    let height = columns.first().map_or(0, |c| c.len());
+    let height = columns.first().map_or(0, Column::len);
     DataFrame::new(height, columns)
 }
 
@@ -104,6 +125,117 @@ impl<T> LazyCache<T> {
         }
         Ok(self.value.get().expect("dataset cache populated"))
     }
+
+    fn get(&self) -> Option<&T> {
+        self.value.get()
+    }
+}
+
+/// Incremental cache for independently requested enriched event datasets.
+type StatsEventParts<'a> = (&'a [Kill], &'a [Damage], &'a [Blind], &'a [Shot]);
+
+#[derive(Default)]
+struct EventDatasetCache {
+    init: Mutex<()>,
+    kills: OnceLock<Vec<Kill>>,
+    damages: OnceLock<Vec<Damage>>,
+    bomb: OnceLock<Vec<BombEvent>>,
+    blinds: OnceLock<Vec<Blind>>,
+    shots: OnceLock<Vec<Shot>>,
+}
+
+impl EventDatasetCache {
+    fn missing(&self, requested: EventDatasetSelection) -> EventDatasetSelection {
+        EventDatasetSelection {
+            kills: requested.kills && self.kills.get().is_none(),
+            damages: requested.damages && self.damages.get().is_none(),
+            bomb: requested.bomb && self.bomb.get().is_none(),
+            blinds: requested.blinds && self.blinds.get().is_none(),
+            shots: requested.shots && self.shots.get().is_none(),
+        }
+    }
+
+    fn ensure(&self, parser: &Parser, requested: EventDatasetSelection) -> awpy::Result<()> {
+        let _guard = self.init.lock().expect("event dataset cache lock poisoned");
+        let missing = self.missing(requested);
+        if !(missing.kills || missing.damages || missing.bomb || missing.blinds || missing.shots) {
+            return Ok(());
+        }
+        let EventDatasets {
+            kills,
+            damages,
+            bomb,
+            blinds,
+            shots,
+        } = parser.event_datasets_selected(missing)?;
+        if missing.kills {
+            let _ = self.kills.set(kills);
+        }
+        if missing.damages {
+            let _ = self.damages.set(damages);
+        }
+        if missing.bomb {
+            let _ = self.bomb.set(bomb);
+        }
+        if missing.blinds {
+            let _ = self.blinds.set(blinds);
+        }
+        if missing.shots {
+            let _ = self.shots.set(shots);
+        }
+        Ok(())
+    }
+
+    fn stats_parts(&self) -> Option<StatsEventParts<'_>> {
+        Some((
+            self.kills.get()?.as_slice(),
+            self.damages.get()?.as_slice(),
+            self.blinds.get()?.as_slice(),
+            self.shots.get()?.as_slice(),
+        ))
+    }
+}
+
+/// Incremental cache for independently requested projectile datasets.
+#[derive(Default)]
+struct ProjectileCache {
+    init: Mutex<()>,
+    grenades: OnceLock<Vec<Grenade>>,
+    fires: OnceLock<Vec<Fire>>,
+    smokes: OnceLock<Vec<Smoke>>,
+}
+
+impl ProjectileCache {
+    fn missing(&self, requested: ProjectileSelection) -> ProjectileSelection {
+        ProjectileSelection {
+            grenades: requested.grenades && self.grenades.get().is_none(),
+            fires: requested.fires && self.fires.get().is_none(),
+            smokes: requested.smokes && self.smokes.get().is_none(),
+        }
+    }
+
+    fn ensure(&self, parser: &Parser, requested: ProjectileSelection) -> awpy::Result<()> {
+        let _guard = self.init.lock().expect("projectile cache lock poisoned");
+        let missing = self.missing(requested);
+        if !(missing.grenades || missing.fires || missing.smokes) {
+            return Ok(());
+        }
+        let Projectiles {
+            grenades,
+            fires,
+            smokes,
+        } = parser.projectiles_selected(missing)?;
+        if missing.grenades {
+            let _ = self.grenades.set(grenades);
+        }
+        if missing.fires {
+            let _ = self.fires.set(fires);
+        }
+        if missing.smokes {
+            let _ = self.smokes.set(smokes);
+        }
+        Ok(())
+    }
 }
 
 fn to_py_err(e: awpy::Error) -> PyErr {
@@ -129,8 +261,9 @@ struct Demo {
     events_cache: OnceLock<Py<Events>>,
     frames_cache: Mutex<HashMap<&'static str, Py<PyAny>>>,
     convars_cache: LazyCache<Vec<(String, String)>>,
-    event_datasets_cache: LazyCache<EventDatasets>,
-    projectiles_cache: LazyCache<Projectiles>,
+    event_datasets_cache: EventDatasetCache,
+    player_stats_inputs_cache: LazyCache<PlayerStatsInputs>,
+    projectiles_cache: ProjectileCache,
     rounds_cache: LazyCache<Vec<Round>>,
     players_cache: LazyCache<Vec<Player>>,
 }
@@ -154,8 +287,9 @@ impl Demo {
             events_cache: OnceLock::new(),
             frames_cache: Mutex::new(HashMap::new()),
             convars_cache: LazyCache::default(),
-            event_datasets_cache: LazyCache::default(),
-            projectiles_cache: LazyCache::default(),
+            event_datasets_cache: EventDatasetCache::default(),
+            player_stats_inputs_cache: LazyCache::default(),
+            projectiles_cache: ProjectileCache::default(),
             rounds_cache: LazyCache::default(),
             players_cache: LazyCache::default(),
         })
@@ -163,6 +297,121 @@ impl Demo {
 
     fn __repr__(&self) -> String {
         format!("Demo(path={:?})", self.path)
+    }
+
+    /// Dataset names accepted by [`load`](Self::load).
+    #[staticmethod]
+    fn available_datasets() -> Vec<&'static str> {
+        VALID_DATASETS.to_vec()
+    }
+
+    /// Materialize and cache one or more DataFrame datasets.
+    ///
+    /// Compatible event and projectile requests are unioned into one pass.
+    /// Loading `stats` also prepares rounds, players, and requested combat
+    /// datasets, so mixed loads do not decode the same events twice.
+    #[pyo3(signature = (*datasets))]
+    fn load(&self, py: Python<'_>, datasets: Vec<String>) -> PyResult<()> {
+        for name in &datasets {
+            if !VALID_DATASETS.contains(&name.as_str()) {
+                return Err(PyValueError::new_err(format!(
+                    "unknown dataset {name:?}; valid datasets: {VALID_DATASETS:?}"
+                )));
+            }
+        }
+
+        let wants_stats = datasets.iter().any(|name| name == "stats");
+        let mut event_selection = EventDatasetSelection::default();
+        let mut projectile_selection = ProjectileSelection::default();
+        for name in &datasets {
+            match name.as_str() {
+                "kills" => event_selection.kills = true,
+                "damages" => event_selection.damages = true,
+                "bomb" => event_selection.bomb = true,
+                "blinds" => event_selection.blinds = true,
+                "shots" => event_selection.shots = true,
+                "grenades" => projectile_selection.grenades = true,
+                "fires" => projectile_selection.fires = true,
+                "smokes" => projectile_selection.smokes = true,
+                _ => {}
+            }
+        }
+
+        // A fresh stats pass can fully enrich requested bomb/shot rows while it
+        // is already tracking combat, rounds, and players.
+        if wants_stats
+            && self.event_datasets_cache.stats_parts().is_none()
+            && self.player_stats_inputs_cache.get().is_none()
+        {
+            let extras = EventDatasetSelection {
+                bomb: event_selection.bomb,
+                shots: event_selection.shots,
+                ..Default::default()
+            };
+            let _ = self.parsed_player_stats_inputs_selected(py, extras)?;
+        }
+
+        // Rows prepared by the fused stats pass need not be decoded again.
+        if let Some(inputs) = self.player_stats_inputs_cache.get() {
+            let full = inputs.full_datasets();
+            event_selection.kills &= !full.kills;
+            event_selection.damages &= !full.damages;
+            event_selection.bomb &= !full.bomb;
+            event_selection.blinds &= !full.blinds;
+            event_selection.shots &= !full.shots;
+        }
+
+        self.ensure_event_datasets(py, event_selection)?;
+        self.ensure_projectiles(py, projectile_selection)?;
+
+        for name in datasets {
+            match name.as_str() {
+                "stats" => {
+                    let _ = self.stats(py)?;
+                }
+                "rounds" => {
+                    let _ = self.rounds(py)?;
+                }
+                "kills" => {
+                    let _ = self.kills(py)?;
+                }
+                "damages" => {
+                    let _ = self.damages(py)?;
+                }
+                "bomb" => {
+                    let _ = self.bomb(py)?;
+                }
+                "grenades" => {
+                    let _ = self.grenades(py)?;
+                }
+                "fires" => {
+                    let _ = self.fires(py)?;
+                }
+                "smokes" => {
+                    let _ = self.smokes(py)?;
+                }
+                "shots" => {
+                    let _ = self.shots(py)?;
+                }
+                "players" => {
+                    let _ = self.players(py)?;
+                }
+                "round_economy" => {
+                    let _ = self.round_economy(py)?;
+                }
+                "chat" => {
+                    let _ = self.chat(py)?;
+                }
+                "blinds" => {
+                    let _ = self.blinds(py)?;
+                }
+                "item_events" => {
+                    let _ = self.item_events(py)?;
+                }
+                _ => unreachable!("dataset names validated above"),
+            }
+        }
+        Ok(())
     }
 
     /// The demo file header and playback info as a dict.
@@ -252,15 +501,17 @@ impl Demo {
     /// Only the player pawn/controller entities are decoded.
     ///
     /// With ``players_only=False`` every entity is dumped raw — one row per
-    /// (tick, entity) with columns ``tick``, ``entity_id``, ``class_name``, then
-    /// the requested properties.
+    /// (tick, entity) with columns ``tick``, ``entity_id``,
+    /// ``entity_serial``, ``class_name``, then the requested properties.
+    /// The id and serial together uniquely identify a slot occupant.
     ///
     /// Each property column is typed from its values: integer fields become
     /// Int64, floats Float64, bools Boolean, and strings Utf8 (a column mixing
     /// integers and floats widens to Float64).
     ///
     /// Property names accept friendly aliases — ``"X"``/``"Y"``/``"Z"`` for
-    /// computed world position, and ``"health"``, ``"armor"``, ``"team_num"``,
+    /// computed world position, ``"velocity_x"`` / ``"velocity_y"`` / ``"velocity_z"``,
+    /// ``"velocity"`` (3D speed), and ``"health"``, ``"armor"``, ``"team_num"``,
     /// ``"name"``, ``"money"`` — as well as raw network names (``"m_iHealth"``).
     /// Omitting ``props`` uses a sensible default (position, health, armor,
     /// team).
@@ -281,17 +532,18 @@ impl Demo {
         py.detach(move || {
             let props = props.unwrap_or_else(default_tick_props);
             if players_only {
-                return self.ticks_by_player(props);
+                return self.ticks_by_player(&props);
             }
             let mut ticks: Vec<i64> = Vec::new();
             let mut entity_ids: Vec<i64> = Vec::new();
+            let mut entity_serials: Vec<u32> = Vec::new();
             let mut classes: Vec<String> = Vec::new();
             let mut prop_cols: Vec<TickColumn> =
                 (0..props.len()).map(|_| TickColumn::new()).collect();
 
-            // Cache resolved (class, prop) → field key so we don't re-walk the
-            // serializer hierarchy on every tick.
-            let mut key_cache: HashMap<String, Vec<Option<u64>>> = HashMap::new();
+            // Cache field keys by class ID. This avoids a string allocation for
+            // each entity lookup.
+            let mut key_cache: HashMap<i32, Vec<Option<u64>>> = HashMap::new();
 
             // `players_only=False`: dump every entity separately (the merged
             // one-row-per-player path returned earlier).
@@ -305,11 +557,12 @@ impl Demo {
                             continue;
                         };
                         let keys = key_cache
-                            .entry(entity.class_name.to_string())
+                            .entry(entity.class_id)
                             .or_insert_with(|| resolve_keys(serializer, &props));
 
-                        ticks.push(ctx.tick() as i64);
-                        entity_ids.push(entity.index as i64);
+                        ticks.push(i64::from(ctx.tick()));
+                        entity_ids.push(i64::from(entity.index));
+                        entity_serials.push(entity.serial);
                         classes.push(entity.class_name.to_string());
                         for (i, key) in keys.iter().enumerate() {
                             prop_cols[i].push(read_field(entity, *key));
@@ -321,6 +574,7 @@ impl Demo {
             let mut columns: Vec<Column> = vec![
                 Column::new("tick".into(), ticks),
                 Column::new("entity_id".into(), entity_ids),
+                Column::new("entity_serial".into(), entity_serials),
                 Column::new("class_name".into(), classes),
             ];
             for (prop, col) in props.iter().zip(prop_cols) {
@@ -422,10 +676,21 @@ impl Demo {
     /// clutches, KAST, and ADR are defined.
     #[getter]
     fn stats(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        let event_datasets = self.event_datasets(py)?;
-        let rounds = self.parsed_rounds(py)?;
+        if let Some((kills, damages, blinds, shots)) = self.event_datasets_cache.stats_parts() {
+            let rounds = self.parsed_rounds(py)?;
+            return self.cached_frame(py, "stats", move || {
+                let stats = self
+                    .parser
+                    .player_stats_from_parts(kills, damages, blinds, shots, rounds, true);
+                stats_to_frame(&stats).map_err(polars_err)
+            });
+        }
+
+        let inputs = self.parsed_player_stats_inputs(py)?;
         self.cached_frame(py, "stats", move || {
-            let stats = self.parser.player_stats_from(event_datasets, rounds, true);
+            let stats =
+                self.parser
+                    .player_stats_from(inputs.event_datasets(), inputs.rounds(), true);
             stats_to_frame(&stats).map_err(polars_err)
         })
     }
@@ -654,29 +919,73 @@ impl Demo {
 }
 
 impl Demo {
-    fn event_datasets(&self, py: Python<'_>) -> PyResult<&EventDatasets> {
+    fn ensure_event_datasets(
+        &self,
+        py: Python<'_>,
+        selection: EventDatasetSelection,
+    ) -> PyResult<()> {
+        py.detach(|| self.event_datasets_cache.ensure(&self.parser, selection))
+            .map_err(to_py_err)
+    }
+
+    /// Preserve eager group reuse for ordinary property access. `load()` skips
+    /// this helper and prepares exactly the caller's requested union instead.
+    fn ensure_default_event_group(&self, py: Python<'_>) -> PyResult<()> {
+        let mut selection = EventDatasetSelection::ALL;
+        if let Some(inputs) = self.player_stats_inputs_cache.get() {
+            let full = inputs.full_datasets();
+            selection.kills &= !full.kills;
+            selection.damages &= !full.damages;
+            selection.bomb &= !full.bomb;
+            selection.blinds &= !full.blinds;
+            selection.shots &= !full.shots;
+        }
+        self.ensure_event_datasets(py, selection)
+    }
+
+    fn parsed_player_stats_inputs(&self, py: Python<'_>) -> PyResult<&PlayerStatsInputs> {
+        self.parsed_player_stats_inputs_selected(py, EventDatasetSelection::default())
+    }
+
+    fn parsed_player_stats_inputs_selected(
+        &self,
+        py: Python<'_>,
+        extra_full: EventDatasetSelection,
+    ) -> PyResult<&PlayerStatsInputs> {
+        let existing_rounds = self.rounds_cache.get().map(Vec::as_slice);
         py.detach(|| {
-            self.event_datasets_cache
-                .get_or_try_init(|| self.parser.event_datasets())
+            self.player_stats_inputs_cache.get_or_try_init(|| {
+                self.parser
+                    .player_stats_inputs_selected(existing_rounds, extra_full)
+            })
         })
         .map_err(to_py_err)
     }
 
-    fn projectiles(&self, py: Python<'_>) -> PyResult<&Projectiles> {
-        py.detach(|| {
-            self.projectiles_cache
-                .get_or_try_init(|| self.parser.projectiles())
-        })
-        .map_err(to_py_err)
+    fn ensure_projectiles(&self, py: Python<'_>, selection: ProjectileSelection) -> PyResult<()> {
+        py.detach(|| self.projectiles_cache.ensure(&self.parser, selection))
+            .map_err(to_py_err)
     }
 
     fn parsed_rounds(&self, py: Python<'_>) -> PyResult<&[Round]> {
+        if let Some(rounds) = self.rounds_cache.get() {
+            return Ok(rounds);
+        }
+        if let Some(inputs) = self.player_stats_inputs_cache.get() {
+            return Ok(inputs.rounds());
+        }
         py.detach(|| self.rounds_cache.get_or_try_init(|| self.parser.rounds()))
             .map(Vec::as_slice)
             .map_err(to_py_err)
     }
 
     fn parsed_players(&self, py: Python<'_>) -> PyResult<&[Player]> {
+        if let Some(players) = self.players_cache.get() {
+            return Ok(players);
+        }
+        if let Some(inputs) = self.player_stats_inputs_cache.get() {
+            return Ok(inputs.players());
+        }
         py.detach(|| self.players_cache.get_or_try_init(|| self.parser.players()))
             .map(Vec::as_slice)
             .map_err(to_py_err)
@@ -692,7 +1001,7 @@ impl Demo {
     /// those keyframes and the segments decoded concurrently, then stitched back
     /// in tick order — identical to a single serial pass. Only the two player
     /// classes are decoded.
-    fn ticks_by_player(&self, props: Vec<String>) -> PyResult<PyDataFrame> {
+    fn ticks_by_player(&self, props: &[String]) -> PyResult<PyDataFrame> {
         let filter: HashSet<&str> = HashSet::from([PLAYER_CLASSES[0], PLAYER_CLASSES[1]]);
         let offsets = self.parser.full_packet_offsets().map_err(to_py_err)?;
 
@@ -706,7 +1015,7 @@ impl Demo {
         // parallel.
         let needs_serial = {
             let ctx = self.parser.parse_init().map_err(to_py_err)?;
-            let keys = PlayerTickKeys::resolve(&ctx, &props);
+            let keys = PlayerTickKeys::resolve(&ctx, props);
             keys.props.iter().any(|p| {
                 matches!(
                     p,
@@ -724,12 +1033,8 @@ impl Demo {
         // test can force the serial path and compare).
         let budget = std::env::var("AWPY_TICK_SEGMENTS")
             .ok()
-            .and_then(|s| s.parse::<usize>().ok())
-            .unwrap_or_else(|| {
-                std::thread::available_parallelism()
-                    .map(|n| n.get())
-                    .unwrap_or(1)
-            });
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, NonZeroUsize::get));
         let n = if needs_serial {
             1
         } else {
@@ -748,7 +1053,7 @@ impl Demo {
             .collect();
 
         let parser = &self.parser;
-        let props_ref: &[String] = &props;
+        let props_ref = props;
         let filter_ref = &filter;
         let parts: Vec<TickSegment> = if n == 1 {
             let (start, end) = segments[0];
@@ -769,14 +1074,13 @@ impl Demo {
             .map_err(to_py_err)?
         };
 
-        // A player's steamid is constant, so union each segment's slot→steamid map
-        // into a global one: this fills the identity for a segment's early rows
-        // (which cold-restart before the sticky pawn→controller link reappears),
-        // matching the serial forward-fill and making the result segment-count
-        // independent.
-        let mut slot_steamid: HashMap<i32, u64> = HashMap::new();
+        // A player's Steam id is constant for one pawn identity, so union each
+        // segment's map to fill early rows before the sticky controller link
+        // reappears. Including the serial prevents a reused slot from inheriting
+        // another occupant's Steam id.
+        let mut identity_steamid: HashMap<EntityId, u64> = HashMap::new();
         for part in &parts {
-            slot_steamid.extend(part.slot_steamid.iter().map(|(&k, &v)| (k, v)));
+            identity_steamid.extend(part.identity_steamid.iter().map(|(&k, &v)| (k, v)));
         }
 
         // Stitch the segments back together in tick order.
@@ -785,7 +1089,11 @@ impl Demo {
         let mut col_parts: Vec<Vec<TickColumn>> = (0..props.len()).map(|_| Vec::new()).collect();
         for part in parts {
             ticks.extend(part.ticks);
-            steamids.extend(part.pawn_idx.iter().map(|i| slot_steamid.get(i).copied()));
+            steamids.extend(
+                part.pawn_ids
+                    .iter()
+                    .map(|i| identity_steamid.get(i).copied()),
+            );
             for (i, c) in part.cols.into_iter().enumerate() {
                 col_parts[i].push(c);
             }
@@ -829,36 +1137,133 @@ impl Demo {
     }
 
     /// Fetch one of the five event-based datasets (kills / damages / bomb /
-    /// blinds / shots). The typed group is decoded once; only the requested
-    /// frame is materialized.
+    /// blinds / shots). Ordinary misses prepare the compatible group; `load()`
+    /// prepares exactly the requested union.
     fn event_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<Py<PyAny>> {
-        let ds = self.event_datasets(py)?;
-        self.cached_frame(py, key, move || {
-            match key {
-                "kills" => kills_to_frame(&ds.kills),
-                "damages" => damages_to_frame(&ds.damages),
-                "bomb" => bomb_to_frame(&ds.bomb),
-                "blinds" => blinds_to_frame(&ds.blinds),
-                "shots" => shots_to_frame(&ds.shots),
-                _ => unreachable!("unknown event dataset"),
+        match key {
+            "kills" => {
+                let rows = if let Some(rows) = self.event_datasets_cache.kills.get() {
+                    rows.as_slice()
+                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                    && inputs.full_datasets().kills
+                {
+                    inputs.event_datasets().kills.as_slice()
+                } else {
+                    self.ensure_default_event_group(py)?;
+                    self.event_datasets_cache
+                        .kills
+                        .get()
+                        .expect("kills cache populated")
+                };
+                self.cached_frame(py, key, move || kills_to_frame(rows).map_err(polars_err))
             }
-            .map_err(polars_err)
-        })
+            "damages" => {
+                let rows = if let Some(rows) = self.event_datasets_cache.damages.get() {
+                    rows.as_slice()
+                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                    && inputs.full_datasets().damages
+                {
+                    inputs.event_datasets().damages.as_slice()
+                } else {
+                    self.ensure_default_event_group(py)?;
+                    self.event_datasets_cache
+                        .damages
+                        .get()
+                        .expect("damages cache populated")
+                };
+                self.cached_frame(py, key, move || damages_to_frame(rows).map_err(polars_err))
+            }
+            "bomb" => {
+                let rows = if let Some(rows) = self.event_datasets_cache.bomb.get() {
+                    rows.as_slice()
+                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                    && inputs.full_datasets().bomb
+                {
+                    inputs.event_datasets().bomb.as_slice()
+                } else {
+                    self.ensure_default_event_group(py)?;
+                    self.event_datasets_cache
+                        .bomb
+                        .get()
+                        .expect("bomb cache populated")
+                };
+                self.cached_frame(py, key, move || bomb_to_frame(rows).map_err(polars_err))
+            }
+            "blinds" => {
+                let rows = if let Some(rows) = self.event_datasets_cache.blinds.get() {
+                    rows.as_slice()
+                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                    && inputs.full_datasets().blinds
+                {
+                    inputs.event_datasets().blinds.as_slice()
+                } else {
+                    self.ensure_default_event_group(py)?;
+                    self.event_datasets_cache
+                        .blinds
+                        .get()
+                        .expect("blinds cache populated")
+                };
+                self.cached_frame(py, key, move || blinds_to_frame(rows).map_err(polars_err))
+            }
+            "shots" => {
+                let rows = if let Some(rows) = self.event_datasets_cache.shots.get() {
+                    rows.as_slice()
+                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                    && inputs.full_datasets().shots
+                {
+                    inputs.event_datasets().shots.as_slice()
+                } else {
+                    self.ensure_default_event_group(py)?;
+                    self.event_datasets_cache
+                        .shots
+                        .get()
+                        .expect("shots cache populated")
+                };
+                self.cached_frame(py, key, move || shots_to_frame(rows).map_err(polars_err))
+            }
+            _ => unreachable!("unknown event dataset"),
+        }
     }
 
     /// Fetch one of the three projectile datasets (grenades / fires / smokes),
-    /// decoding the typed group once and materializing only the requested frame.
+    /// using eager group reuse or the requested union planned by `load()`.
     fn projectile_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<Py<PyAny>> {
-        let projectiles = self.projectiles(py)?;
-        self.cached_frame(py, key, move || {
-            match key {
-                "grenades" => grenades_to_frame(&projectiles.grenades),
-                "fires" => fires_to_frame(&projectiles.fires),
-                "smokes" => smokes_to_frame(&projectiles.smokes),
-                _ => unreachable!("unknown projectile dataset"),
+        match key {
+            "grenades" => {
+                if self.projectiles_cache.grenades.get().is_none() {
+                    self.ensure_projectiles(py, ProjectileSelection::ALL)?;
+                }
+                let rows = self
+                    .projectiles_cache
+                    .grenades
+                    .get()
+                    .expect("grenades cache populated");
+                self.cached_frame(py, key, move || grenades_to_frame(rows).map_err(polars_err))
             }
-            .map_err(polars_err)
-        })
+            "fires" => {
+                if self.projectiles_cache.fires.get().is_none() {
+                    self.ensure_projectiles(py, ProjectileSelection::ALL)?;
+                }
+                let rows = self
+                    .projectiles_cache
+                    .fires
+                    .get()
+                    .expect("fires cache populated");
+                self.cached_frame(py, key, move || fires_to_frame(rows).map_err(polars_err))
+            }
+            "smokes" => {
+                if self.projectiles_cache.smokes.get().is_none() {
+                    self.ensure_projectiles(py, ProjectileSelection::ALL)?;
+                }
+                let rows = self
+                    .projectiles_cache
+                    .smokes
+                    .get()
+                    .expect("smokes cache populated");
+                self.cached_frame(py, key, move || smokes_to_frame(rows).map_err(polars_err))
+            }
+            _ => unreachable!("unknown projectile dataset"),
+        }
     }
 }
 
@@ -887,27 +1292,25 @@ struct Events {
 }
 
 impl Events {
-    /// Build (or fetch the cached) DataFrame for one event; `None` if absent.
-    fn frame(&self, py: Python<'_>, name: &str) -> Option<PyResult<Py<PyAny>>> {
-        let group = self.groups.get(name)?;
-        if let Some(df) = self.frames.lock().expect("events cache poisoned").get(name) {
-            return Some(Ok(df.clone_ref(py)));
+    /// Return the cached DataFrame for one event, or build it.
+    ///
+    /// Return `None` if the event is not in the demo.
+    fn frame(&self, py: Python<'_>, name: &str) -> PyResult<Option<Py<PyAny>>> {
+        let Some(group) = self.groups.get(name) else {
+            return Ok(None);
+        };
+        if let Some(frame) = self.frames.lock().expect("events cache poisoned").get(name) {
+            return Ok(Some(frame.clone_ref(py)));
         }
-        let refs: Vec<&GameEvent> = group.iter().map(|&index| &self.events[index]).collect();
-        let built = match py.detach(|| events_to_frame(&refs).map_err(polars_err)) {
-            Ok(df) => df,
-            Err(error) => return Some(Err(error)),
-        };
-        let obj = match PyDataFrame(built).into_pyobject(py) {
-            Ok(obj) => obj.unbind(),
-            Err(error) => return Some(Err(error)),
-        };
+        let events: Vec<&GameEvent> = group.iter().map(|&index| &self.events[index]).collect();
+        let frame = py.detach(|| events_to_frame(&events).map_err(polars_err))?;
+        let object = PyDataFrame(frame).into_pyobject(py)?.unbind();
         let mut cache = self.frames.lock().expect("events cache poisoned");
         if let Some(existing) = cache.get(name) {
-            return Some(Ok(existing.clone_ref(py)));
+            return Ok(Some(existing.clone_ref(py)));
         }
-        cache.insert(name.to_string(), obj.clone_ref(py));
-        Some(Ok(obj))
+        cache.insert(name.to_owned(), object.clone_ref(py));
+        Ok(Some(object))
     }
 }
 
@@ -947,19 +1350,16 @@ impl Events {
     }
 
     fn __getitem__(&self, py: Python<'_>, name: &str) -> PyResult<Py<PyAny>> {
-        self.frame(py, name).unwrap_or_else(|| {
-            Err(PyKeyError::new_err(format!(
-                "no event '{name}' in this demo"
-            )))
-        })
+        self.frame(py, name)?
+            .ok_or_else(|| PyKeyError::new_err(format!("no event '{name}' in this demo")))
     }
 
     fn __getattr__(&self, py: Python<'_>, name: &str) -> PyResult<Py<PyAny>> {
-        self.frame(py, name).unwrap_or_else(|| {
-            Err(PyAttributeError::new_err(format!(
+        self.frame(py, name)?.ok_or_else(|| {
+            PyAttributeError::new_err(format!(
                 "no event '{name}' in this demo; `.names` lists the {} available",
                 self.groups.len()
-            )))
+            ))
         })
     }
 }
@@ -971,15 +1371,11 @@ fn mesh_to_py_err(e: awpy::Error) -> PyErr {
     }
 }
 
-/// Resolve a map-data `source` to a local file with the given `suffix` (e.g.
-/// `.mesh`, `.nav`).
+/// Resolve a map-data `source` to a local file with the specified `suffix`.
 ///
-/// A bare string with no path separator and no `suffix` is a map name: it
-/// resolves through `awpy.data.<resolver>` (e.g. `mesh_path` / `nav_path`),
-/// which uses the newest cached release — downloading the latest if the cache is
-/// empty — and honors `version=`. Anything else — a `Path`, or a string that
-/// looks like a file path — is used as-is, and combining it with `version=` is
-/// an error.
+/// A string without a path separator or suffix is a map name. Resolve this
+/// name with `awpy.data.<resolver>`. Use other strings and `Path` objects as
+/// file paths. The `version` argument is valid only for a map name.
 fn resolve_asset_source(
     py: Python<'_>,
     source: &Bound<'_, PyAny>,
@@ -994,28 +1390,26 @@ fn resolve_asset_source(
         .transpose()?
         .filter(|s| !s.ends_with(suffix) && !s.contains(['/', '\\']));
 
-    match map_name {
-        Some(map) => py
+    if let Some(map) = map_name {
+        return py
             .import("awpy.data")?
             .call_method1(resolver, (map.as_ref(), version))?
-            .extract(),
-        None => {
-            if version.is_some() {
-                return Err(PyValueError::new_err(format!(
-                    "version= applies only when source is a map name like 'de_inferno', \
-                     not a {suffix} file path"
-                )));
-            }
-            let path: PathBuf = source.extract()?;
-            if !path.exists() {
-                return Err(PyFileNotFoundError::new_err(format!(
-                    "no such file: {}",
-                    path.display()
-                )));
-            }
-            Ok(path)
-        }
+            .extract();
     }
+    if version.is_some() {
+        return Err(PyValueError::new_err(format!(
+            "version= applies only when source is a map name like 'de_inferno', \
+             not a {suffix} file path"
+        )));
+    }
+    let path: PathBuf = source.extract()?;
+    if !path.exists() {
+        return Err(PyFileNotFoundError::new_err(format!(
+            "no such file: {}",
+            path.display()
+        )));
+    }
+    Ok(path)
 }
 
 /// Line-of-sight visibility over a map's collision geometry.
@@ -1742,6 +2136,10 @@ fn states_to_frame(states: &[PlayerState]) -> PolarsResult<DataFrame> {
         col!("x", states, |s| s.x),
         col!("y", states, |s| s.y),
         col!("z", states, |s| s.z),
+        col!("velocity_x", states, |s| s.velocity_x),
+        col!("velocity_y", states, |s| s.velocity_y),
+        col!("velocity_z", states, |s| s.velocity_z),
+        col!("velocity", states, |s| s.velocity),
         col!("pitch", states, |s| s.pitch),
         col!("yaw", states, |s| s.yaw),
         col!("health", states, |s| s.health),
@@ -1866,20 +2264,26 @@ fn read_field(entity: &Entity, key: Option<u64>) -> Option<&FieldValue> {
     key.and_then(|k| entity.fields.get(&k))
 }
 
-/// Extract a `u64` from an integer-typed field value, regardless of the concrete
-/// integer variant (used for `m_steamID`).
-fn field_u64(v: &FieldValue) -> Option<u64> {
-    match v {
-        FieldValue::U64(n) => Some(*n),
-        FieldValue::U32(n) => Some(*n as u64),
-        FieldValue::I64(n) => Some(*n as u64),
-        FieldValue::I32(n) => Some(*n as u64),
+/// Convert an integer field to `u64`.
+///
+/// Return `None` if the value is negative or is not an integer.
+fn field_u64(value: &FieldValue) -> Option<u64> {
+    match value {
+        FieldValue::U64(number) => Some(*number),
+        FieldValue::U32(number) => Some(u64::from(*number)),
+        FieldValue::I64(number) => u64::try_from(*number).ok(),
+        FieldValue::I32(number) => u64::try_from(*number).ok(),
         _ => None,
     }
 }
 
 /// Field-path prefix of a pawn's networked origin (cell index + in-cell offset).
 const ORIGIN_PATH: &str = "CBodyComponent.m_skeletonInstance.m_vecOrigin";
+const VELOCITY_PATHS: [&str; 3] = [
+    "m_vecVelocity.m_vecX",
+    "m_vecVelocity.m_vecY",
+    "m_vecVelocity.m_vecZ",
+];
 
 /// Default player properties for `ticks()` when none are given: world position
 /// plus the common scalar state.
@@ -1896,6 +2300,8 @@ fn default_tick_props() -> Vec<String> {
 enum ResolvedProp {
     /// World position axis (0 = X, 1 = Y, 2 = Z), computed from cell + offset.
     Position(usize),
+    /// Three-dimensional magnitude of the pawn's networked velocity vector.
+    VelocityMagnitude,
     Field {
         pawn: Option<u64>,
         ctrl: Option<u64>,
@@ -1914,6 +2320,7 @@ fn resolve_prop(
         "X" | "x" => return ResolvedProp::Position(0),
         "Y" | "y" => return ResolvedProp::Position(1),
         "Z" | "z" => return ResolvedProp::Position(2),
+        "velocity" | "speed" => return ResolvedProp::VelocityMagnitude,
         _ => {}
     }
     let path = match name {
@@ -1922,6 +2329,9 @@ fn resolve_prop(
         "team" | "team_num" => "m_iTeamNum",
         "name" => "m_iszPlayerName",
         "money" => "m_pInGameMoneyServices.m_iAccount",
+        "velocity_x" | "vx" => "m_vecVelocity.m_vecX",
+        "velocity_y" | "vy" => "m_vecVelocity.m_vecY",
+        "velocity_z" | "vz" => "m_vecVelocity.m_vecZ",
         other => other,
     };
     ResolvedProp::Field {
@@ -1940,6 +2350,7 @@ struct PlayerTickKeys {
     /// Cell index and in-cell offset keys per axis, for computed position.
     cell: [Option<u64>; 3],
     offset: [Option<u64>; 3],
+    velocity: [Option<u64>; 3],
     props: Vec<ResolvedProp>,
 }
 
@@ -1956,6 +2367,8 @@ impl PlayerTickKeys {
             steamid: ctrl_ser.and_then(|s| s.resolve_field_key("m_steamID")),
             cell: [axis("m_cellX"), axis("m_cellY"), axis("m_cellZ")],
             offset: [axis("m_vecX"), axis("m_vecY"), axis("m_vecZ")],
+            velocity: VELOCITY_PATHS
+                .map(|path| pawn_ser.and_then(|serializer| serializer.resolve_field_key(path))),
             props: props
                 .iter()
                 .map(|p| resolve_prop(p, pawn_ser, ctrl_ser))
@@ -1967,21 +2380,20 @@ impl PlayerTickKeys {
 /// Compute a pawn's world position on one axis from its cell index and in-cell
 /// offset, or `None` if either is absent this tick.
 fn read_position(pawn: &Entity, cell_key: Option<u64>, off_key: Option<u64>) -> Option<f32> {
-    let cell = field_as_int(read_field(pawn, cell_key)?)? as i32;
-    let off = field_as_float(read_field(pawn, off_key)?)? as f32;
-    Some(cell_to_world(cell, off))
+    let cell = i32::try_from(field_as_int(read_field(pawn, cell_key)?)?).ok()?;
+    let offset = field_as_f32(read_field(pawn, off_key)?)?;
+    Some(cell_to_world(cell, offset))
 }
 
 /// One keyframe segment's accumulated tick rows, merged with its peers afterward.
 struct TickSegment {
     ticks: Vec<i64>,
-    /// Pawn slot index per row. A cold-restarted segment lacks the sticky
+    /// Pawn identity per row. A cold-restarted segment lacks the sticky
     /// pawn→controller link at its first ticks, so `steamid` is resolved after
-    /// the merge from a global slot→steamid map (a player's steamid is constant),
-    /// keeping the identity column complete and segment-count-independent.
-    pawn_idx: Vec<i32>,
-    /// Steamid seen for each pawn slot anywhere in this segment.
-    slot_steamid: HashMap<i32, u64>,
+    /// the merge from a global identity→steamid map.
+    pawn_ids: Vec<EntityId>,
+    /// Steam id seen for each pawn identity anywhere in this segment.
+    identity_steamid: HashMap<EntityId, u64>,
     cols: Vec<TickColumn>,
 }
 
@@ -2001,12 +2413,12 @@ fn run_tick_segment(
 ) -> Result<TickSegment, awpy::Error> {
     let mut seg = TickSegment {
         ticks: Vec::new(),
-        pawn_idx: Vec::new(),
-        slot_steamid: HashMap::new(),
+        pawn_ids: Vec::new(),
+        identity_steamid: HashMap::new(),
         cols: (0..props.len()).map(|_| TickColumn::new()).collect(),
     };
     let mut keys: Option<PlayerTickKeys> = None;
-    let mut pawn_to_ctrl: HashMap<i32, i32> = HashMap::new();
+    let mut pawn_to_ctrl: HashMap<EntityId, EntityId> = HashMap::new();
 
     parser.decode_segment(start, end_tick, filter, |ctx| {
         let k = keys.get_or_insert_with(|| PlayerTickKeys::resolve(ctx, props));
@@ -2014,25 +2426,28 @@ fn run_tick_segment(
             if !pawn.active || pawn.class_id != k.pawn_id {
                 continue;
             }
+            let pawn_id = pawn.id();
             let controller = match pawn
                 .get_handle(k.controller)
                 .and_then(|h| ctx.entities().get_by_handle(h))
             {
                 Some(c) => {
-                    pawn_to_ctrl.insert(pawn.index, c.index);
+                    pawn_to_ctrl.insert(pawn_id, c.id());
                     Some(c)
                 }
-                None => pawn_to_ctrl
-                    .get(&pawn.index)
-                    .and_then(|&i| ctx.entities().get(i)),
+                None => pawn_to_ctrl.get(&pawn_id).and_then(|id| {
+                    ctx.entities()
+                        .get(id.index)
+                        .filter(|entity| entity.id() == *id)
+                }),
             };
-            seg.ticks.push(ctx.tick() as i64);
-            seg.pawn_idx.push(pawn.index);
+            seg.ticks.push(i64::from(ctx.tick()));
+            seg.pawn_ids.push(pawn_id);
             if let Some(sid) = controller
                 .and_then(|c| read_field(c, k.steamid))
                 .and_then(field_u64)
             {
-                seg.slot_steamid.insert(pawn.index, sid);
+                seg.identity_steamid.insert(pawn_id, sid);
             }
             for (i, prop) in k.props.iter().enumerate() {
                 match *prop {
@@ -2040,6 +2455,17 @@ fn run_tick_segment(
                         match read_position(pawn, k.cell[axis], k.offset[axis]) {
                             Some(f) => seg.cols[i].push(Some(&FieldValue::F32(f))),
                             None => seg.cols[i].push(None),
+                        }
+                    }
+                    ResolvedProp::VelocityMagnitude => {
+                        let velocity = k
+                            .velocity
+                            .map(|key| read_field(pawn, key).and_then(field_as_f32));
+                        if let [Some(x), Some(y), Some(z)] = velocity {
+                            let speed = FieldValue::F32(x.mul_add(x, y.mul_add(y, z * z)).sqrt());
+                            seg.cols[i].push(Some(&speed));
+                        } else {
+                            seg.cols[i].push(None);
                         }
                     }
                     ResolvedProp::Field { pawn: pk, ctrl: ck } => {
@@ -2269,23 +2695,28 @@ impl TickColumn {
     }
 }
 
-/// Integer field values, widened to `i64` (the whole numeric family, since a
-/// `ticks` column can mix classes with slightly different integer widths).
-fn field_as_int(v: &FieldValue) -> Option<i64> {
-    match v {
-        FieldValue::I32(x) => Some(*x as i64),
-        FieldValue::I64(x) => Some(*x),
-        FieldValue::U32(x) => Some(*x as i64),
-        FieldValue::U64(x) => Some(*x as i64),
+/// Convert an integer field to `i64`.
+///
+/// Return `None` if an unsigned value is too large.
+fn field_as_int(value: &FieldValue) -> Option<i64> {
+    match value {
+        FieldValue::I32(number) => Some(i64::from(*number)),
+        FieldValue::I64(number) => Some(*number),
+        FieldValue::U32(number) => Some(i64::from(*number)),
+        FieldValue::U64(number) => i64::try_from(*number).ok(),
         _ => None,
     }
 }
 
-fn field_as_float(v: &FieldValue) -> Option<f64> {
-    match v {
-        FieldValue::F32(x) => Some(*x as f64),
+fn field_as_f32(value: &FieldValue) -> Option<f32> {
+    match value {
+        FieldValue::F32(number) => Some(*number),
         _ => None,
     }
+}
+
+fn field_as_float(value: &FieldValue) -> Option<f64> {
+    field_as_f32(value).map(f64::from)
 }
 
 fn field_as_bool(v: &FieldValue) -> Option<bool> {
@@ -2297,17 +2728,18 @@ fn field_as_bool(v: &FieldValue) -> Option<bool> {
 
 /// Build a `tick` + per-key DataFrame from a set of game events.
 fn events_to_frame(events: &[&GameEvent]) -> PolarsResult<DataFrame> {
-    // Collect the union of key names, preserving first-seen order.
+    // Collect each key name once. Keep the order in which each name first occurs.
+    let mut seen = HashSet::new();
     let mut key_order: Vec<String> = Vec::new();
-    for e in events {
-        for (k, _) in &e.keys {
-            if !key_order.iter().any(|existing| existing == k) {
-                key_order.push(k.clone());
+    for event in events {
+        for (key, _) in &event.keys {
+            if seen.insert(key.as_str()) {
+                key_order.push(key.clone());
             }
         }
     }
 
-    let ticks: Vec<i64> = events.iter().map(|e| e.tick as i64).collect();
+    let ticks: Vec<i64> = events.iter().map(|event| i64::from(event.tick)).collect();
     let mut columns: Vec<Column> = vec![Column::new("tick".into(), ticks)];
 
     for key in &key_order {
@@ -2328,6 +2760,22 @@ fn events_to_frame(events: &[&GameEvent]) -> PolarsResult<DataFrame> {
 
 fn polars_err(e: PolarsError) -> PyErr {
     InvalidDemoError::new_err(format!("dataframe error: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unsigned_conversion_rejects_negative_values() {
+        assert_eq!(field_u64(&FieldValue::I32(-1)), None);
+        assert_eq!(field_u64(&FieldValue::I64(-1)), None);
+    }
+
+    #[test]
+    fn signed_conversion_rejects_large_unsigned_values() {
+        assert_eq!(field_as_int(&FieldValue::U64(u64::MAX)), None);
+    }
 }
 
 #[pymodule]

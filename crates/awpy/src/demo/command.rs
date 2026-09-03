@@ -46,11 +46,24 @@ pub mod ge {
     pub const SOURCE1_LEGACY_GAME_EVENT: u32 = EBaseGameEvents::GeSource1LegacyGameEvent as u32;
 }
 
+/// Return whether a packet message type is a direct user message.
+#[must_use]
+pub fn is_user_message_type(msg_type: u32) -> bool {
+    use awpy_proto::proto::{EBaseUserMessages, ECstrike15UserMessages};
+
+    let Ok(msg_type) = i32::try_from(msg_type) else {
+        return false;
+    };
+    ECstrike15UserMessages::try_from(msg_type).is_ok()
+        || EBaseUserMessages::try_from(msg_type).is_ok()
+}
+
 /// Return a human-readable name for a user message type.
 ///
-/// CS2 wraps user messages in `svc_UserMessage`; the inner type is either a
+/// CS2 wraps user messages in `svc_UserMessage`. The inner type is a
 /// Counter-Strike message (`ECstrike15UserMessages`, `CS_UM_*`) or a shared
-/// base message (`EBaseUserMessages`, `UM_*`). Tries both, in that order.
+/// base message (`EBaseUserMessages`, `UM_*`). This function checks both
+/// types in that order.
 pub fn user_message_name(msg_type: i32) -> String {
     use awpy_proto::proto::{EBaseUserMessages, ECstrike15UserMessages};
 
@@ -60,7 +73,7 @@ pub fn user_message_name(msg_type: i32) -> String {
     if let Ok(e) = EBaseUserMessages::try_from(msg_type) {
         return e.as_str_name().to_string();
     }
-    format!("UserMessage_{}", msg_type)
+    format!("UserMessage_{msg_type}")
 }
 
 /// Header for a demo command in the stream.
@@ -81,9 +94,7 @@ pub struct CmdHeader {
 
 /// Return a human-readable name for a demo command.
 pub fn command_name(cmd: i32) -> &'static str {
-    EDemoCommands::try_from(cmd)
-        .map(|e| e.as_str_name())
-        .unwrap_or("DEM_Unknown")
+    EDemoCommands::try_from(cmd).map_or("DEM_Unknown", |command| command.as_str_name())
 }
 
 #[cfg(test)]
@@ -103,6 +114,14 @@ mod tests {
     #[test]
     fn command_name_unknown() {
         assert_eq!(command_name(9999), "DEM_Unknown");
+    }
+
+    #[test]
+    fn direct_user_message_types_are_recognized() {
+        assert!(is_user_message_type(118));
+        assert!(is_user_message_type(306));
+        assert!(!is_user_message_type(svc::USER_MESSAGE));
+        assert!(!is_user_message_type(9999));
     }
 
     #[test]

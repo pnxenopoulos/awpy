@@ -272,7 +272,12 @@ def map_control(
         start_tick=start_tick,
         end_tick=end_tick,
     ).sort("tick")
-    smokes, fires = demo.smokes, demo.fires
+    if method in LINE_OF_SIGHT_METHODS:
+        demo.load("smokes")
+        smokes, fires = demo.smokes, pl.DataFrame()
+    else:
+        demo.load("fires")
+        smokes, fires = pl.DataFrame(), demo.fires
 
     rows: list[dict] = []
     for (tick,), group in snaps.group_by("tick", maintain_order=True):
@@ -340,14 +345,20 @@ def map_control_at(
 
     snap = demo.snapshots(ticks=tick)
     group = snap.filter(pl.col("tick") == tick) if "tick" in snap.columns else snap
+    if method in LINE_OF_SIGHT_METHODS:
+        demo.load("smokes")
+        smokes, fires = demo.smokes, pl.DataFrame()
+    else:
+        demo.load("fires")
+        smokes, fires = pl.DataFrame(), demo.fires
     detail = _compute_at(
         tick,
         group,
         method=method,
         nav=nav,
         vis=vis,
-        smokes=demo.smokes,
-        fires=demo.fires,
+        smokes=smokes,
+        fires=fires,
         params=params,
         detail=True,
     )

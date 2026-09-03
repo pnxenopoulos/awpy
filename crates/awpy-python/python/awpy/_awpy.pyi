@@ -81,6 +81,23 @@ class Demo:
     path: Path
     def __init__(self, path: str | Path) -> None: ...
     def __repr__(self) -> str: ...
+    @staticmethod
+    def available_datasets() -> list[str]:
+        """Dataset names accepted by load()."""
+
+    def load(self, *datasets: str) -> None:
+        """Materialize and cache one or more DataFrame datasets.
+
+        Compatible event and projectile requests are unioned into one pass.
+        Loading stats also prepares rounds, players, and requested combat
+        datasets, including fully enriched bomb/shot rows, so mixed loads do
+        not decode the same events twice. Ordinary property access still
+        eagerly prepares its compatible group for efficient sequential use.
+
+        Raises:
+            ValueError: If a dataset name is unknown.
+        """
+
     @property
     def header(self) -> dict[str, Any]:
         """The demo file header and playback info as a dict.
@@ -129,15 +146,18 @@ class Demo:
         Only the player pawn/controller entities are decoded.
 
         With ``players_only=False`` every entity is dumped raw — one row per
-        (tick, entity) with columns ``tick``, ``entity_id``, ``class_name``,
-        then the requested properties.
+        (tick, entity) with columns ``tick``, ``entity_id``,
+        ``entity_serial``, ``class_name``, then the requested properties. The
+        id and serial together uniquely identify a slot occupant.
 
         Each property column is typed from its values: integer fields become
         Int64, floats Float64, bools Boolean, and strings Utf8 (a column mixing
         integers and floats widens to Float64).
 
         Property names accept friendly aliases — ``"X"``/``"Y"``/``"Z"`` for
-        computed world position, and ``"health"``, ``"armor"``, ``"team_num"``,
+        computed world position; ``"velocity_x"`` / ``"velocity_y"`` /
+        ``"velocity_z"``, ``"velocity"`` (3D speed), and ``"health"``, ``"armor"``,
+        ``"team_num"``,
         ``"name"``, ``"money"`` — as well as raw network names (``"m_iHealth"``).
         Omitting ``props`` uses a sensible default (position, health, armor,
         team).

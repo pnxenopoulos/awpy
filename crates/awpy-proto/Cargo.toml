@@ -6,7 +6,7 @@ name = "awpy-proto"
 # every proto sync yields a higher, publishable version. MAJOR.MINOR is the
 # compatibility epoch (bump it for breaking changes to this crate's API).
 # scripts/sync-protos.sh refreshes this on each sync.
-version = "0.1.10877702+2000880"
+version = "0.1.10948930+2000899"
 rust-version.workspace = true
 edition = "2024"
 description = "Protobuf definitions for Counter-Strike 2 demo files"

@@ -43,9 +43,8 @@ const HITGROUPS: &[(i64, &str)] = &[
 pub fn hitgroup_name(id: i64) -> &'static str {
     HITGROUPS
         .iter()
-        .find(|&&(k, _)| k == id)
-        .map(|&(_, v)| v)
-        .unwrap_or("HITGROUP_NOT_FOUND")
+        .find(|&&(key, _)| key == id)
+        .map_or("HITGROUP_NOT_FOUND", |&(_, value)| value)
 }
 
 /// Return all known (hit group ID, hit group name) pairs.

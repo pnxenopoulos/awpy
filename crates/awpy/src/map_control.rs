@@ -66,7 +66,7 @@
 use std::collections::HashSet;
 
 use crate::geometry::VisibilityMesh;
-use crate::nav::{Nav, PathWeight};
+use crate::nav::{Nav, NavArea, PathWeight};
 
 type Vec3 = [f32; 3];
 
@@ -391,7 +391,7 @@ fn assemble(nav: &Nav, holds: Vec<(u32, bool, bool)>) -> MapControl {
     let mut areas = Vec::with_capacity(holds.len());
     let (mut ct, mut t, mut contested, mut neutral, mut total) = (0.0f32, 0.0, 0.0, 0.0, 0.0);
     for (area_id, hct, ht) in holds {
-        let size = nav.area(area_id).map_or(0.0, |a| a.size());
+        let size = nav.area(area_id).map_or(0.0, NavArea::size);
         total += size;
         let control = Control::from_holds(hct, ht);
         match control {
