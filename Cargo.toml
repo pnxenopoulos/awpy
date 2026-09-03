@@ -1,0 +1,31 @@
+[workspace]
+exclude = [
+  "scripts/build-protos",
+]
+members = [
+  "crates/awpy",
+  "crates/awpy-dev",
+  "crates/awpy-proto",
+  "crates/awpy-python",
+]
+resolver = "2"
+
+[workspace.package]
+version = "3.0.0"
+rust-version = "1.88.0"
+
+[workspace.dependencies]
+awpy = { path = "crates/awpy", version = "3.0.0" }
+awpy-proto = { path = "crates/awpy-proto", version = "0.1" }
+pbdems2 = "0.3.0"
+
+[profile.dev]
+incremental = false   # awpy-proto is a large generated crate; incremental bookkeeping
+                      # (dep-graph + query-cache) balloons target/ for little gain.
+
+[profile.dev.package.awpy-proto]
+debug = false         # never step into prost-generated proto code; skip its debuginfo
+
+[profile.release]
+lto = true          # Link-time optimization
+codegen-units = 1   # Better optimization, slower compile

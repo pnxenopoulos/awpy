@@ -1,0 +1,85 @@
+/* Awpy docs — "Radar & Dust", a CS-native palette on shibuya's amber accent.
+
+   Dark (the default) is the radar: deep blue-charcoal like the CS2 menu, so the
+   black-background plots from awpy.plot sit natively on the page. Light is
+   Dust2: warm sand paper. Interactive color (links, buttons, focus rings) stays
+   the Radix "amber" accent scale set in conf.py — AWP gold / the T side — and
+   note/seealso admonitions wear CT blue for the T/CT duality. */
+
+:root {
+  --awpy-amber: #ffb224; /* dark-mode brand amber (Radix amber-9) */
+}
+
+/* ── Light mode: Dust2 sand ──────────────────────────────────────────────── */
+html.light {
+  --awpy-amber: #8f5300; /* readable amber on sand */
+
+  /* Shibuya's bright-accent link color (amber-a10) is ~1.7:1 on sand —
+     fine as a highlight, unreadable as a link. Darken to AA on both the
+     page (5.5:1) and surface (4.9:1) backgrounds. */
+  --sy-c-link: #8f5300;
+  --sy-c-link-hover: #6f4000;
+
+  --sy-c-background: #f6f1e4;
+  --sy-c-background-dropback: #f6f1e4cc;
+  --sy-c-background-contrast: #221f1a;
+  --sy-c-surface: #ece4cf;
+  --sy-c-divider: #e2d8bf;
+  --sy-c-border: #d3c7a9;
+  --sy-c-text: #221f1a;
+  --sy-c-light: #6f6754;
+  --sy-c-bold: #171410;
+  --sy-c-heading: #1c1915;
+  --sy-c-foot-background: #ece4cf;
+  --sy-c-foot-divider: #d3c7a9;
+
+  /* CT-blue notes (readable blues on sand). */
+  --note-1: #1d4ed80d;
+  --note-2: #1d4ed81a;
+  --note-3: #2563eb;
+  --note-4: #1d4ed8;
+  --seealso-1: #1d4ed80d;
+  --seealso-2: #1d4ed81a;
+  --seealso-3: #2563eb;
+  --seealso-4: #1d4ed8;
+}
+
+/* ── Dark mode (default): the radar ──────────────────────────────────────── */
+html.dark {
+  --sy-c-background: #0f1218;
+  --sy-c-background-dropback: #0f1218cc;
+  --sy-c-surface: #171b22;
+  --sy-c-divider: #222835;
+  --sy-c-border: #2c3444;
+  --sy-c-text: #e9e6df;
+  --sy-c-light: #a49f93;
+  --sy-c-bold: #f4f1ea;
+  --sy-c-heading: #f4f1ea;
+  --sy-c-foot-background: #0b0d12;
+  --sy-c-foot-divider: #222835;
+
+  /* CT-blue notes (lighter blues on charcoal). */
+  --note-1: #3b82f614;
+  --note-2: #3b82f629;
+  --note-3: #3b82f6;
+  --note-4: #93c5fd;
+  --seealso-1: #3b82f614;
+  --seealso-2: #3b82f629;
+  --seealso-3: #3b82f6;
+  --seealso-4: #93c5fd;
+}
+
+/* ── Brand touches ────────────────────────────────────────────────────────── */
+
+/* Logo in the site header. */
+.sy-logo img,
+img.sy-logo {
+  height: 1.9rem;
+  width: auto;
+  border-radius: 6px;
+}
+
+/* Give inline code a subtle amber-tinted border so it stands out in both modes. */
+.yue :not(pre) > code {
+  border: 1px solid var(--accent-a5);
+}

@@ -1,97 +1,248 @@
 <div align="center">
-<h1>Awpy</h1>
 
-[![Awpy Discord](https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord)](https://discord.gg/W34XjsSs2H) [![Awpy Downloads](https://static.pepy.tech/personalized-badge/awpy?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Downloads)](https://pepy.tech/project/awpy) [![Build](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml/badge.svg)](https://github.com/pnxenopoulos/awpy/actions/workflows/build.yml) [![Artifacts](https://github.com/pnxenopoulos/awpy/actions/workflows/artifacts.yml/badge.svg)](https://github.com/pnxenopoulos/awpy/actions/workflows/artifacts.yml) [![Documentation Status](https://readthedocs.org/projects/awpy/badge/?version=latest)](https://awpy.readthedocs.io/en/latest/?badge=latest) [![MIT License](https://img.shields.io/badge/license-MIT-lightgrey)](https://github.com/pnxenopoulos/awpy/blob/main/LICENSE)
+# Awpy
+
+<p>
+  <a href="https://discord.gg/W34XjsSs2H"><img src="https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord&logoColor=white&style=for-the-badge" alt="Awpy Discord"></a>
+  <a href="https://awpy.readthedocs.io"><img src="https://readthedocs.org/projects/awpy/badge/?version=latest&style=for-the-badge" alt="Docs"></a>
+  <a href="https://github.com/pnxenopoulos/awpy/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/pnxenopoulos/awpy/ci.yml?style=for-the-badge" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge" alt="License: MIT"></a>
+</p>
+
+<p>
+  <a href="https://pypi.org/project/awpy/"><img src="https://img.shields.io/pypi/v/awpy.svg?style=for-the-badge" alt="PyPI"></a>
+  <a href="https://pepy.tech/project/awpy"><img src="https://img.shields.io/pepy/dt/awpy?style=for-the-badge" alt="Downloads"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/pypi/pyversions/awpy?style=for-the-badge" alt="Python 3.11+"></a>
+</p>
 
 </div>
 
-**Counter-Strike 2 Demo Parsing, Analytics and Visualization in Python**
+Awpy is a fast [Counter-Strike 2](https://www.counter-strike.net/cs2) demo (`.dem`) parser written in Rust with native Python bindings. It reads Source 2 demo files and returns [Polars](https://pola.rs) DataFrames, giving you structured access to match data without touching the binary format or parsing code yourself.
 
-- :computer: Parse Counter-Strike demos in Python or with a command-line interface
-- :skull: Access tick-level player and event data, like kills, damages and more
-- :chart: Calculate popular statistics, such as ADR, KAST and Rating
-- :mag_right: Determine player visibility in microseconds
-- :earth_americas: Parse navigation meshes (.nav) and calculate distance metrics
-- 🎞️ Visualize Counter-Strike data, including animated round gifs and heatmaps
-- :speaker: Active [Discord](https://discord.gg/W34XjsSs2H) community
+CS2 runs on the Source 2 engine, so Awpy and [Boon](https://github.com/pnxenopoulos/boon), a Deadlock parser, share the game-neutral [pbdems2](https://github.com/pnxenopoulos/pbdems2) core. Its [PBDEMS2 format guide](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html) covers the container, packet framing, bit-level wire encodings, flattened serializers, entity system, string tables, and playback. Awpy adapts the game-specific parts — the CS2 protobufs, a handful of CS2 field decoders, and the CS2 name tables (teams, hit groups, round-end reasons, game phases).
+
+## Table of Contents
+
+- [Why Awpy?](#why-awpy)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Available Datasets](#available-datasets)
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
+- [Development](#development)
+- [License](#license)
+
+## Why Awpy?
+
+CS2 demo files hold a wealth of match data — player positions, kills, damage, round outcomes, grenades, and more — but the Source 2 demo format is complex and undocumented. Awpy handles the low-level parsing so you can focus on analysis.
+
+- ⚡ **Fast.** The core parser is written in Rust. A full match parses in seconds, not minutes.
+- 📊 **Structured output.** Every dataset is a Polars DataFrame, ready for filtering, grouping, joins, and visualization.
+- 🎯 **Parse only what you need.** Ask for one event or a handful of entity properties and Awpy skips the rest.
+- 🔫 **CS2-aware.** Rounds are reconstructed from game-rules state (so they work even on demos without `round_start` / `round_end` events); kills and damage carry every field; hit groups and round-end reasons are decoded to names.
+- 🗂️ **Comprehensive.** Rounds, kills, damage, bomb events, grenade trajectories, infernos, smokes, shots, flashes, item buys/pickups/drops, and a per-player scoreboard (KAST, ADR, openings, trades) — each one property access.
+- 💻 **CLI included.** A standalone command-line tool for quick inspection without writing any code.
 
 ## Installation
 
-To install Awpy, you can run
+Awpy can be used as a Python library, a Rust crate, or a standalone CLI tool.
 
+### Python
+
+We recommend using [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv add awpy
 ```
+
+You can also use pip:
+
+```bash
 pip install awpy
 ```
 
-> [!NOTE]
-> Awpy requires [Python](https://www.python.org/downloads/) >= 3.11. To update the library, just run `pip install --upgrade awpy`. To check your current Awpy version, run `pip show awpy`. If you want to see what data is available for download, run `awpy get --help`.
+Awpy ships as a pre-built wheel with a Rust backend — no compiler required. Requires Python 3.11+.
 
-> [!TIP]
-> Don't worry if you get stuck, visit [our Discord](https://discord.gg/W34XjsSs2H) for help.
+### CLI
 
-## Example Code
+Installing the Python package also installs the `awpy` command for demo
+inspection and map-data management:
 
-Using Awpy is easy. Just find a demo you want to analyze and use the example below to get started. You can easily find demos on [HLTV](https://hltv.org), [FACEIT](https://faceit.com) or [CS2Stats](https://csstats.gg/).
+```bash
+awpy info match.dem
+awpy kills match.dem --limit 20
+awpy stats match.dem --json
+awpy get              # download the latest map-data release
+```
+
+(For parser-internals debugging there is also a Rust developer binary,
+`awpy-dev`: `cargo install --path crates/awpy-dev`.)
+
+### Rust library
+
+The crates aren't published to crates.io yet — use a git dependency:
+
+```toml
+[dependencies]
+awpy = { git = "https://github.com/pnxenopoulos/awpy" }
+```
+
+## Quick Start
+
+### Python
 
 ```python
 from awpy import Demo
 
-# Create and parse demo
-dem = Demo("g2-vs-navi.dem")
-dem.parse()
+demo = Demo("match.dem")
 
-# Access various dictionaries & dataframes
-dem.header
-dem.rounds
-dem.grenades
-dem.kills
-dem.damages
-dem.bomb
-dem.smokes
-dem.infernos
-dem.shots
-dem.footsteps
-dem.ticks
+# File header + playback info
+print(demo.header["map_name"])   # "de_inferno"
 
-# The dataframes are Polars dataframes
-# to transform to Pandas, just do .to_pandas()
-dem.ticks.to_pandas()
+# Structured datasets, one call each — all Polars DataFrames
+rounds = demo.rounds           # one row per round, winner + reason
+kills = demo.kills             # every player_death, participants resolved
+damages = demo.damages         # every player_hurt, health/armor pre + post
+stats = demo.stats             # per-player scoreboard (KAST, ADR, ...)
+
+# Any game event, long-form (demo.events.names lists them)
+pings = demo.events.player_ping
+
+# Game state at a moment, or sampled across the match
+snap = demo.snapshots(ticks=29000)             # every player's state at one tick
+series = demo.snapshots(every=64)       # one sample per 64 ticks
+
+# Per-tick player state — one row per player per tick, decoded in parallel
+ticks = demo.ticks()                    # default: X, Y, Z, health, armor, team_num
+ticks = demo.ticks(["health", "m_iTeamNum"])
+
+# Round wins by side
+demo.rounds.group_by("winner_side").len()
 ```
 
-> [!TIP]
-> Want to learn more about the parser output? Visit the [parser primer](https://awpy.readthedocs.io/en/latest/modules/parser_output.html) in our documentation!
+### CLI
 
-### Help! The parser doesn't work or returns weird data
+```bash
+# File header and playback info
+awpy info match.dem
 
-Counter-Strike demos can be a bit troublesome. It is likely you'll see increased error rates in POV demos. To help us address parsing issues, please open a bug report in our [Github issues](https://github.com/pnxenopoulos/awpy/issues). Additionally, you can reach out in [our Discord](https://discord.gg/3JrhKYcEKW). We're appreciate any help in identifying bugs. We use [LaihoE's demoparser](https://github.com/LaihoE/demoparser) as a backend, so you may also check there for any open issues.
+# Per-round table (winner, reason, timings)
+awpy rounds match.dem
 
-## Examples and Projects
+# Kills, with players resolved
+awpy kills match.dem --limit 20
 
-Take a look at the following Jupyter notebooks provided in our `examples/` directory. These will help you get started parsing and analyzing Counter-Strike data.
+# Game events (--summary for counts, a name to dump one event)
+awpy events match.dem --summary
+awpy events match.dem player_ping --json
 
-- [Parsing a CS2 demofile](https://awpy.readthedocs.io/en/latest/examples/parse_demo.html)
-- [Parsing a CS2 demofile through command-line](https://awpy.readthedocs.io/en/latest/examples/parse_demo_cli.html)
-- [Calculating ADR, KAST% and Rating](https://awpy.readthedocs.io/en/latest/examples/demo_stats.html)
-- [Plotting CS2 demos](https://awpy.readthedocs.io/en/latest/examples/plot_demo.html)
-- [Calculating visibility from CS2 demos](https://awpy.readthedocs.io/en/latest/examples/visibility.html)
-- [Parsing CS2 `.nav` files](https://awpy.readthedocs.io/en/latest/examples/nav.html)
+# All available commands
+awpy --help
+```
 
-If you use the parser for any public analysis, we kindly ask you to link to the Awpy repository, so that others may know how you parsed, analyzed or visualized your data. If you have a paper or project that uses the parser, please let us know in Discord so we can add it to our growing list!
+### Rust
 
-> [!IMPORTANT]
-> If you use Awpy, we'd love if you could link back to our repo!
+```rust
+use std::path::Path;
+use awpy::Parser;
 
-## Contributing
+let parser = Parser::from_file(Path::new("match.dem"))?;
+println!("map: {:?}", parser.file_header()?.map_name);
 
-We welcome any contributions from the community, no matter the skill-level. You can visit our [issue page](https://github.com/pnxenopoulos/awpy/issues) to see what issues are still open, the [Awpy project](https://github.com/users/pnxenopoulos/projects/5) for a different view of project priorities, or you can message us on Discord. Some examples of where you can make a difference are in documentation, quality assurance, developing new features, or creating unique content with Awpy. You can see more examples of community content [here](https://awpy.readthedocs.io/en/latest/projects.html). If you are interested in contributing to Awpy, learn more [here](https://github.com/pnxenopoulos/awpy/blob/main/CONTRIBUTING.md).
+// Game events
+for event in parser.events(None)? {
+    if event.name == "player_death" {
+        println!("[{}] {:?}", event.tick, event.keys);
+    }
+}
 
-> [!TIP]
-> We are happy to walk through those that want to contribute, no matter your skill level. There are a diverse set of ways one can contribute to Awpy. We welcome first-time contributors!
+// Entities, tick by tick
+parser.run_to_end(|ctx| {
+    for (_, entity) in ctx.entities.iter() {
+        if entity.active && entity.class_name == "CCSPlayerPawn" {
+            // read entity fields
+        }
+    }
+})?;
+# Ok::<(), awpy::Error>(())
+```
 
-## Acknowledgments
+## Available Datasets
 
-The name "Awpy" is due to [Nick Wan](https://www.twitch.tv/nickwan_datasci) -- we recommend his stream for sports data analytics enthusiasts.
+Each dataset is a property on the `Demo` class returning a [Polars](https://pola.rs) DataFrame, parsed on first access and cached. The headline datasets are decoded together in one parallel pass on first access, so pulling several is no more expensive than pulling one. See the [dataset reference](https://awpy.readthedocs.io/en/latest/datasets.html) for the full column list.
 
-Awpy was first built on the amazing work done in the [demoinfocs-golang](https://github.com/markus-wa/demoinfocs-golang) Golang library. We now rely on [demoparser2](https://github.com/LaihoE/demoparser) for parsing, which is another fantastic parsing project, built specifically for Python.
+| Dataset | Description |
+|---------|-------------|
+| `rounds` | One row per round, reconstructed from `CCSGameRules` state — works even when `round_start` / `round_end` events are absent. Includes winner, side, and decoded round-end reason. |
+| `kills` | Every `player_death` event, with attacker, victim, and assister each resolved to a Steam id, name, side, and world position. Flags each kill as a trade (`is_trade`) and each death as traded (`victim_traded`). |
+| `damages` | Every `player_hurt` event, with attacker and victim resolved, plus the victim's health/armor before and after the hit. |
+| `bomb` | Bomb actions (pickup, drop, plant start/finish, defuse) with the acting player, position, and bombsite. |
+| `grenades` | Per-tick thrown-grenade trajectories (smoke, HE, flashbang, molotov, decoy). |
+| `fires` | One row per burning inferno (molotov / incendiary), with position, thrower, and `[start_tick, end_tick]`. |
+| `smokes` | One row per deployed smoke cloud, with position, thrower, and `[start_tick, end_tick]`. |
+| `shots` | Every `weapon_fire` event with the shooter's state and active-weapon state (clip, inaccuracy, scoped). |
+| `blinds` | One row per flash event: the thrower, the blinded player (both resolved), and the blind duration. |
+| `item_events` | One row per weapon-item transaction — purchase, pickup, or drop — with the acting player, item, position, and (for buys) cost. |
+| `stats` | One row per player: kills, deaths, assists, headshots, openings, trades, multikills, clutches (1v1–1v5), KAST, ADR, and utility (grenade damage, flashes thrown, enemies flashed, blind duration). |
+| `round_economy` | One row per (round, side): team equipment value at freeze end and its buy-type classification (`eco` / `force` / `full`). |
+| `players` | The roster: one row per player seen in the demo (Steam id, name, last side, and team/organization name). |
+| `chat` | Chat messages decoded from `SayText` user messages, with channel (all/team). |
+| `convars` | Server console variables (`mp_maxrounds`, ...) as a `dict[str, str]`. |
+| `snapshots(*, ticks / every / seconds / events / start_tick / end_tick)` | Per-player game state (position, eye angles, health, armor, economy, and loadout) at a tick, a list of ticks, a contiguous range, or sampled across the match by a stride and/or event ticks. |
 
-Awpy's team includes JanEric, adi and hojlund, who you can find in the Awpy Discord. Their work, among others, is crucial to Awpy's continued success! To contribute to Awpy, please visit [CONTRIBUTING](https://github.com/pnxenopoulos/awpy/blob/main/CONTRIBUTING.md).
+For events without a dedicated dataset, the `demo.events` mapping returns any game event as a DataFrame, and `ticks(props)` returns one row per player per tick for any networked properties.
+
+The first dataset you touch decodes the headline datasets together, in parallel, and caches them — so `demo.kills` also readies `demo.damages`, `demo.rounds`, `demo.grenades`, and the rest. `ticks` and `snapshots` likewise decode in parallel across the demo's keyframes.
+
+To discover what you can ask for without parsing first, `awpy.SNAPSHOT_PROPERTIES` maps each per-player snapshot feature to the engine property it comes from, and `awpy.GAME_EVENTS` catalogs the common game events (the ones actually in a demo are `demo.events.names`).
+
+## Project Structure
+
+| Crate | Description |
+|-------|-------------|
+| [`awpy`](crates/awpy) | Core parsing library (io, entity system, demo parser, name tables). |
+| [`awpy-dev`](crates/awpy-dev) | Developer CLI for parser internals (the `awpy-dev` binary). |
+| [`awpy-proto`](crates/awpy-proto) | Generated CS2 protobuf types (prost). |
+| [`awpy-python`](crates/awpy-python) | Python bindings via PyO3 + Polars (published as `awpy` on PyPI). |
+
+## Documentation
+
+Full documentation is available at [awpy.readthedocs.io](https://awpy.readthedocs.io), including:
+
+- [Getting Started](https://awpy.readthedocs.io/en/latest/getting-started.html)
+- [Examples](https://awpy.readthedocs.io/en/latest/examples.html) — runnable scripts, also in [`crates/awpy-python/examples/`](crates/awpy-python/examples)
+- [Datasets](https://awpy.readthedocs.io/en/latest/datasets.html)
+- [API Reference](https://awpy.readthedocs.io/en/latest/api.html)
+- [CLI Reference](https://awpy.readthedocs.io/en/latest/cli.html)
+- [FAQ](https://awpy.readthedocs.io/en/latest/faq.html)
+- [Changelog](https://awpy.readthedocs.io/en/latest/changelog.html)
+
+## Development
+
+```sh
+# Rust
+cargo fmt --all
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo nextest run --workspace --exclude awpy-python
+
+# Python (from crates/awpy-python)
+uv sync
+uv run maturin develop
+uv run pytest
+uv run ruff check python tests
+uv run ty check python
+```
+
+### Regenerating protobufs
+
+`crates/awpy-proto/src/proto.rs` is generated from the `.proto` files in
+`crates/awpy-proto/proto/` (synced from
+[GameTracking-CS2](https://github.com/SteamDatabase/GameTracking-CS2)):
+
+```sh
+cargo run --manifest-path scripts/build-protos/Cargo.toml
+```
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
