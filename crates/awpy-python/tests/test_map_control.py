@@ -3,8 +3,10 @@
 import struct
 from pathlib import Path
 
+import polars as pl
 import pytest
 from awpy import NavMesh, VisibilityChecker
+from awpy import map_control as map_control_module
 from awpy._awpy import compute_map_control
 
 Square = list[tuple[float, float, float]]
@@ -278,3 +280,24 @@ def test_unknown_method_lists_all_three(
             visibility=empty_mesh,
             method="nonsense",
         )
+
+
+def test_current_flash_state_controls_blindness() -> None:
+    """An old flash duration does not make a player blind."""
+    states = pl.DataFrame(
+        {
+            "health": [100, 100, 100],
+            "x": [0.0, 1.0, 2.0],
+            "y": [0.0, 1.0, 2.0],
+            "z": [0.0, 1.0, 2.0],
+            "side": ["terrorist"] * 3,
+            "is_crouched": [False] * 3,
+            "is_blinded": [False, True, True],
+            "flash_duration": [5.0, 0.5, 2.0],
+            "yaw": [0.0, 0.0, 0.0],
+        }
+    )
+
+    players = map_control_module._players_at(states, flash_threshold=1.0)
+
+    assert [player[5] for player in players] == [False, False, True]

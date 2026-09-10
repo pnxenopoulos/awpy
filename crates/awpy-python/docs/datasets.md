@@ -26,6 +26,24 @@ complete set is known up front so Awpy can restrict the pass to that union.
 `Demo.available_datasets()` lists every accepted name; an unknown name raises
 `ValueError` before any loading begins.
 
+Rows that refer to a Source 2 entity expose its slot as `entity_id` and its
+generation as `entity_serial`. Treat the pair as the identity. The engine can
+reuse a slot after an entity is deleted, but the serial changes and prevents
+unrelated lifetimes from being joined.
+
+All Steam ID columns use Polars `UInt64`, including columns that are empty or
+contain only null values. Keep this type when you join datasets. To convert a
+dataset to pandas without a floating-point conversion, use Arrow extension
+arrays:
+
+```python
+pandas_kills = demo.kills.to_pandas(use_pyarrow_extension_array=True)
+```
+
+This conversion requires `pyarrow`. The default NumPy-backed pandas conversion
+cannot represent nullable integers and can change a nullable Steam ID column to
+`float64`.
+
 ## `rounds`
 
 ```python
@@ -72,6 +90,8 @@ For each of `attacker`, `victim`, `assister`:
 
 | Column | Type | Description |
 | --- | --- | --- |
+| `<who>_entity_id` | i32? | Player-pawn entity slot. |
+| `<who>_entity_serial` | u32? | Player-pawn entity generation. |
 | `<who>_steamid` | u64? | 64-bit Steam id (from the controller's `m_steamID`). |
 | `<who>_name` | str? | Display name (`m_iszPlayerName`). |
 | `<who>_side` | str? | `terrorist` / `counter-terrorist`. |
@@ -133,10 +153,11 @@ One row per `player_hurt` game event, with the attacker and victim resolved to a
 Steam id, name, side, and world position (like `kills`), plus the victim's
 health/armor before and after the hit.
 
-For each of `attacker`, `victim`: `<who>_steamid`, `<who>_name`, `<who>_side`,
-`<who>_x` / `_y` / `_z`. Plus: `weapon`, `dmg_health`, `dmg_armor`, `hitgroup`,
-`hitgroup_name`, `health_pre` / `health_post`, `armor_pre` / `armor_post`, and
-`tick`. Pre-values are reconstructed as `post + damage`, clamped to the 100 HP /
+For each of `attacker`, `victim`: `<who>_entity_id`, `<who>_entity_serial`,
+`<who>_steamid`, `<who>_name`, `<who>_side`, and `<who>_x` / `_y` / `_z`.
+Plus: `weapon`, `dmg_health`, `dmg_armor`, `hitgroup`, `hitgroup_name`,
+`health_pre` / `health_post`, `armor_pre` / `armor_post`, and `tick`. Pre-values
+are reconstructed as `post + damage`, clamped to the 100 HP /
 armor cap — CS2 reports raw damage, so a lethal hit's `dmg_health` can exceed the
 victim's health (e.g. an AWP for 115), which would otherwise imply >100 pre-HP.
 
@@ -148,8 +169,8 @@ demo.bomb
 
 Bomb actions with the acting player and their position. Columns: `tick`,
 `event` (one of `pickup`, `drop`, `start_plant`, `interrupt_plant`,
-`finish_plant`, `defuse`), `steamid`, `name`, `bombsite` (`A` / `B`, from the
-planted C4; null before the plant), `x`, `y`, `z`.
+`finish_plant`, `defuse`), `entity_id`, `entity_serial`, `steamid`, `name`,
+`bombsite` (`A` / `B`; null before the plant), `x`, `y`, `z`.
 
 Some demos don't emit the begin/abort-plant events, so `start_plant` /
 `interrupt_plant` rows may be absent.
@@ -163,7 +184,7 @@ demo.grenades
 Thrown-grenade **trajectories** — one row per tick each grenade projectile is in
 flight (samples stop once it settles). Columns: `tick`, `thrower_name`,
 `thrower_steamid`, `thrower_side`, `type` (`smoke` / `he` / `flashbang` /
-`molotov` / `decoy`), `entity_id`, `x`, `y`, `z`.
+`molotov` / `decoy`), `entity_id`, `entity_serial`, `x`, `y`, `z`.
 
 ## `fires` / `smokes`
 
@@ -173,9 +194,9 @@ demo.smokes   # deployed smoke clouds
 ```
 
 **One row per fire / smoke.** Columns: `start_tick`, `end_tick`,
-`thrower_name`, `thrower_steamid`, `thrower_side`, `entity_id`, `x`, `y`, `z`
-(`fires` also has a `type` column). An inferno or smoke sits at a fixed
-position, so a single row with its `[start_tick, end_tick]` window fully
+`thrower_name`, `thrower_steamid`, `thrower_side`, `entity_id`,
+`entity_serial`, `x`, `y`, `z` (`fires` also has a `type` column). Each sits at
+a fixed position, so one row with its `[start_tick, end_tick]` window fully
 describes it.
 
 The window is the game's own event pair, not the (longer) entity lifetime:
@@ -204,10 +225,10 @@ demo.shots
 ```
 
 One row per `weapon_fire` event, with the shooter's state and active-weapon
-state. Columns: `tick`, `steamid`, `name`, `side`, `x`, `y`, `z`, `pitch`,
-`yaw`, `weapon`, `scoped`, `inaccuracy` (the weapon's networked accuracy
-penalty), `num_bullets_remaining` (active weapon's clip). Reading the active
-weapon requires a full entity pass, so this is the slowest dataset.
+state. Columns: `tick`, `entity_id`, `entity_serial`, `steamid`, `name`, `side`,
+`x`, `y`, `z`, `pitch`, `yaw`, `weapon`, `scoped`, `inaccuracy` (the
+weapon's networked accuracy penalty), and `num_bullets_remaining` (active
+weapon's clip).
 
 ## `blinds`
 
@@ -223,6 +244,8 @@ each get a Steam id, name, side, and world position, plus a `duration`.
 | --- | --- | --- |
 | `tick` | i32 | Tick the flash detonated and the blind began. |
 | `attacker_steamid` / `_name` / `_side` / `_x` / `_y` / `_z` | | The flash's thrower. |
+| `attacker_entity_id` / `attacker_entity_serial` | | The thrower's pawn identity. |
+| `victim_entity_id` / `victim_entity_serial` | | The blinded pawn's identity. |
 | `victim_steamid` / `_name` / `_side` / `_x` / `_y` / `_z` | | The blinded player. |
 | `duration` | f32 | Blind duration in seconds. |
 
@@ -258,6 +281,7 @@ with the acting player resolved.
 | --- | --- | --- |
 | `tick` | i32 | Tick the transaction occurred. |
 | `action` | str | `purchase`, `pickup`, or `drop`. |
+| `entity_id` / `entity_serial` | | The acting player's pawn identity. |
 | `steamid` / `name` / `side` | | The acting player. |
 | `item` | str | Short weapon name (e.g. `ak47`, `deagle`, `hegrenade`). |
 | `x` / `y` / `z` | f32? | The player's world position. |
@@ -331,13 +355,10 @@ demo.stats                                    # excludes knife rounds (default)
 demo.player_stats(include_knife_rounds=True)  # counts them
 ```
 
-**`stats` is cached; `player_stats()` is not.** `demo.stats` is a property
-computed once (alongside the other datasets) and returned instantly on every
-later access. `demo.player_stats(...)` is a method that **recomputes on every
-call** — it re-runs the kill/damage entity pass and the aggregation and caches
-nothing, so on a large demo it costs a few seconds *each time*. Reach for the
-method only when you need the `include_knife_rounds` toggle, and keep the
-returned DataFrame if you use it more than once rather than calling it in a loop.
+**Both forms are cached.** `demo.stats` and
+`demo.player_stats(include_knife_rounds=False)` return the same cached default
+result. The `include_knife_rounds=True` variant reuses the decoded combat and
+round inputs, then caches its aggregated DataFrame separately.
 
 ```python
 # Top fraggers with KAST and ADR
@@ -474,7 +495,8 @@ range; combined with a sampler, they bound it. At least one must be given.
 | `is_in_bomb_zone` | bool | Standing in a plant zone. |
 | `is_scoped` | bool | Scoped in. |
 | `is_defusing` | bool | Defusing the bomb. |
-| `flash_duration` | f32 | Seconds of blindness remaining (0 if not blinded). |
+| `is_blinded` | bool | Whether `m_bFlashing` says the player is currently blinded. |
+| `flash_duration` | f32 | Replicated duration set at flash onset. This is not a remaining-time counter. |
 | `inventory` | str | Comma-separated short names of every weapon in the loadout, in slot order (e.g. `ak47,deagle,knife,flashbang,flashbang,smokegrenade`). |
 
 Each column and the CS2 engine property it comes from is listed in the

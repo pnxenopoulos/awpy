@@ -118,6 +118,16 @@ class Demo:
             seconds = (row["end_tick"] - row["start_tick"]) / demo.tick_rate
         """
 
+    def tick_to_seconds(self, tick: int) -> float:
+        """Convert a demo tick to seconds from the start of the demo."""
+
+    def seconds_to_tick(self, seconds: float) -> int:
+        """Convert seconds from the start of the demo to the nearest demo tick.
+
+        Negative values are valid. The value must be finite and fit in a
+        signed 32-bit tick.
+        """
+
     @property
     def events(self) -> Events:
         """The demo's game events, keyed by name.
@@ -369,12 +379,8 @@ class Demo:
         count them instead. See :attr:`rounds` (``is_knife_round``) for which
         rounds these are.
 
-        Unlike the cached :attr:`stats` property, this method **recomputes on
-        every call** — it re-runs the kill/damage entity pass and the
-        aggregation, and the result is not cached. On a large demo that is a
-        few seconds each time. Prefer :attr:`stats` for the default
-        (knife-rounds-excluded) result, and store the returned DataFrame if you
-        call this repeatedly.
+        Both variants reuse decoded inputs and cache their resulting DataFrame.
+        The default variant is the same cached object as :attr:`stats`.
         """
 
 class VisibilityChecker:

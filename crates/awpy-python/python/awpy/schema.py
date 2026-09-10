@@ -55,7 +55,8 @@ SNAPSHOT_PROPERTIES: dict[str, str] = {
     "is_in_bomb_zone": "m_bInBombZone",
     "is_scoped": "m_bIsScoped",
     "is_defusing": "m_bIsDefusing",
-    "flash_duration": "m_flFlashDuration",
+    "is_blinded": "m_bFlashing",
+    "flash_duration": "m_flFlashDuration (replicated onset duration)",
 }
 """Per-player snapshot feature name -> the CS2 network property it is read from.
 

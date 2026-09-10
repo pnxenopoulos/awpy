@@ -59,6 +59,23 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   and `blinds`, and can fully enrich requested `bomb` / `shots` rows in the same
   fused pass. Ordinary property access retains eager group reuse;
   `Demo.available_datasets()` lists valid names.
+- Enriched event and projectile datasets now expose each resolved entity's
+  create serial with its slot. This identity stays stable when Source 2 reuses a
+  slot.
+- Snapshots now expose `is_blinded` from `m_bFlashing`. The existing
+  `flash_duration` is documented as the replicated onset duration, not a
+  remaining-time counter. Map control uses both values and no longer treats a
+  stale duration as an active blind.
+- Event-based snapshot selection decodes only the requested legacy event names
+  instead of materializing the complete event stream. Projectile tracking also
+  caches invariant thrower data.
+- `Demo.player_stats()` reuses decoded inputs and caches both knife-round
+  variants. Calling the default form after `demo.stats` no longer parses the
+  demo again.
+- Steam ID columns now have an explicit `UInt64` type, including empty and
+  all-null columns. This prevents accidental floating-point conversion inside
+  Awpy datasets.
+- Added `tick_to_seconds()` and `seconds_to_tick()` conversion helpers.
 - `awpy.plot` for radars, frames, heatmaps, nav meshes, and GIFs (`awpy[plot]`
   extra). `plot.nav` draws a map's walkable areas and can highlight a set of them
   — e.g. a route from `NavMesh.find_path`.

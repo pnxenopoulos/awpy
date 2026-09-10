@@ -100,8 +100,9 @@ class MapControlParams:
         smoke_height: How far above its landing point a smoke's blocking sphere
             is centred.
         fire_radius: Radius around a molotov within which the ground is denied.
-        flash_threshold: A player counts as blinded (projects no vision) while
-            more than this many seconds of flash blindness remain.
+        flash_threshold: A currently flashing player projects no vision when
+            the replicated flash duration is greater than this value. This
+            filters out short partial flashes.
     """
 
     eye_height: float = 64.0
@@ -166,7 +167,7 @@ def _players_at(group: pl.DataFrame, flash_threshold: float) -> list[tuple]:
             alive["z"],
             alive["side"],
             alive["is_crouched"],
-            alive["flash_duration"] > flash_threshold,
+            alive["is_blinded"] & (alive["flash_duration"] > flash_threshold),
             alive["yaw"],
             strict=True,
         )

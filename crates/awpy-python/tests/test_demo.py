@@ -68,6 +68,7 @@ def test_parse_ticks(demo_path: Path) -> None:
     ticks = demo.ticks()
     assert isinstance(ticks, pl.DataFrame)
     assert {"tick", "steamid", "X", "Y", "Z", "health", "armor", "team_num"} <= set(ticks.columns)
+    assert ticks["steamid"].dtype == pl.UInt64
     assert ticks.height > 0
     # Identity is complete (filled from the global slot map) and unique per tick:
     # no pawn/controller double-emission.
@@ -178,6 +179,16 @@ def test_tick_rate(demo_path: Path) -> None:
     if ticks and seconds:
         assert demo.tick_rate == pytest.approx(ticks / seconds, rel=1e-3)
 
+    tick = 12_345
+    elapsed = demo.tick_to_seconds(tick)
+    assert elapsed == pytest.approx(tick / demo.tick_rate)
+    assert demo.seconds_to_tick(elapsed) == tick
+    assert demo.seconds_to_tick(-1.0) == -round(demo.tick_rate)
+    with pytest.raises(ValueError):
+        demo.seconds_to_tick(float("inf"))
+    with pytest.raises(ValueError):
+        demo.seconds_to_tick(float("nan"))
+
 
 def test_snapshot_single_tick(demo_path: Path) -> None:
     demo = Demo(demo_path)
@@ -246,6 +257,10 @@ def test_snapshots_sampled(demo_path: Path) -> None:
     on_kills = demo.snapshots(events="player_death")
     assert set(on_kills["tick"].to_list()) == kill_ticks
 
+    plant_ticks = set(demo.bomb.filter(pl.col("event") == "finish_plant")["tick"].to_list())
+    on_kills_or_plants = demo.snapshots(events=["player_death", "bomb_planted"])
+    assert set(on_kills_or_plants["tick"].to_list()) == kill_ticks | plant_ticks
+
     # Explicit ticks (drawn from real frames), and the stride ∪ events union.
     some_ticks = every["tick"].unique().to_list()[:3]
     picked = demo.snapshots(ticks=some_ticks)
@@ -289,6 +304,7 @@ def test_snapshot_economy(demo_path: Path) -> None:
         "is_in_bomb_zone",
         "is_scoped",
         "is_defusing",
+        "is_blinded",
         "flash_duration",
         "inventory",
     }
@@ -322,6 +338,10 @@ def test_blinds(demo_path: Path) -> None:
     assert isinstance(blinds, pl.DataFrame)
     expected = {
         "tick",
+        "attacker_entity_id",
+        "attacker_entity_serial",
+        "victim_entity_id",
+        "victim_entity_serial",
         "attacker_steamid",
         "attacker_name",
         "attacker_side",
@@ -345,6 +365,8 @@ def test_blinds(demo_path: Path) -> None:
         assert set(blinds["victim_side"].unique()) <= {"terrorist", "counter-terrorist"}
         assert blinds["victim_x"].null_count() == 0
         # Rows are in tick order.
+        assert blinds["victim_entity_id"].null_count() == 0
+        assert blinds["victim_entity_serial"].dtype == pl.UInt32
         assert blinds["tick"].to_list() == sorted(blinds["tick"].to_list())
 
 
@@ -354,6 +376,8 @@ def test_item_events(demo_path: Path) -> None:
     expected = {
         "tick",
         "action",
+        "entity_id",
+        "entity_serial",
         "steamid",
         "name",
         "side",
@@ -368,6 +392,8 @@ def test_item_events(demo_path: Path) -> None:
     assert expected <= set(items.columns)
     assert items.height > 0
     assert set(items["action"].unique()) <= {"purchase", "pickup", "drop"}
+    assert items["entity_id"].null_count() == 0
+    assert items["entity_serial"].dtype == pl.UInt32
     # The knife is excluded (default loadout, never bought/dropped meaningfully).
     assert "knife" not in set(items["item"].unique())
     # Rows are in tick order.
@@ -387,6 +413,27 @@ def test_item_events(demo_path: Path) -> None:
     drops = items.filter(pl.col("action") == "drop")
     if drops.height:
         assert drops["near_buy_zone"].null_count() == 0
+
+
+def test_nullable_steamid_columns_use_uint64(demo_path: Path) -> None:
+    """Steam IDs do not become floats when values are null."""
+    demo = Demo(demo_path)
+    frames = (
+        demo.kills,
+        demo.damages,
+        demo.bomb,
+        demo.grenades,
+        demo.fires,
+        demo.smokes,
+        demo.shots,
+        demo.blinds,
+        demo.item_events,
+    )
+
+    for frame in frames:
+        steamid_columns = [name for name in frame.columns if name.endswith("steamid")]
+        assert steamid_columns
+        assert all(frame.schema[name] == pl.UInt64 for name in steamid_columns)
 
 
 def test_chat(demo_path: Path) -> None:
@@ -440,6 +487,12 @@ def test_kills(demo_path: Path) -> None:
     assert isinstance(kills, pl.DataFrame)
     expected = {
         "attacker_steamid",
+        "attacker_entity_id",
+        "attacker_entity_serial",
+        "victim_entity_id",
+        "victim_entity_serial",
+        "assister_entity_id",
+        "assister_entity_serial",
         "attacker_name",
         "attacker_side",
         "attacker_x",
@@ -466,6 +519,13 @@ def test_kills(demo_path: Path) -> None:
     assert kills["attacker_steamid"].dtype == pl.UInt64
     # Sides are terrorist / counter-terrorist (or null for world kills).
     sides = set(kills["attacker_side"].drop_nulls().unique())
+    assert kills["victim_entity_id"].null_count() == 0
+    assert kills["victim_entity_serial"].dtype == pl.UInt32
+    assert (
+        kills.filter(pl.col("attacker_steamid").is_not_null())["attacker_entity_id"]
+        .is_not_null()
+        .all()
+    )
     assert sides <= {"terrorist", "counter-terrorist"}
 
 
@@ -477,6 +537,10 @@ def test_damages(demo_path: Path) -> None:
         "attacker_name",
         "victim_name",
         "weapon",
+        "attacker_entity_id",
+        "attacker_entity_serial",
+        "victim_entity_id",
+        "victim_entity_serial",
         "dmg_health",
         "hitgroup_name",
         "health_pre",
@@ -492,6 +556,8 @@ def test_damages(demo_path: Path) -> None:
         pl.col("health_pre")
         != pl.min_horizontal(pl.col("health_post") + pl.col("dmg_health"), pl.lit(100))
     )
+    assert damages["victim_entity_id"].null_count() == 0
+    assert damages["victim_entity_serial"].dtype == pl.UInt32
     assert bad.height == 0
     assert damages["health_pre"].max() <= 100
 
@@ -513,6 +579,7 @@ def test_bomb(demo_path: Path) -> None:
         "finish_plant",
         "defuse",
     }
+    assert {"entity_id", "entity_serial"} <= set(bomb.columns)
 
 
 def test_grenades(demo_path: Path) -> None:
@@ -523,6 +590,8 @@ def test_grenades(demo_path: Path) -> None:
     # cloud); its throw trajectory must still land in grenades. Guards the shared
     # projectile pass against dropping the class's second role.
     assert g.filter(pl.col("type") == "smoke").height > 0
+    assert "entity_serial" in g.columns
+    assert g["entity_serial"].dtype == pl.UInt32
     assert set(g["type"].unique()) <= {"smoke", "he", "flashbang", "molotov", "decoy", "grenade"}
 
 
@@ -535,6 +604,7 @@ def test_fires_and_smokes(demo_path: Path) -> None:
             "end_tick",
             "thrower_steamid",
             "entity_id",
+            "entity_serial",
             "x",
             "y",
             "z",
@@ -542,7 +612,7 @@ def test_fires_and_smokes(demo_path: Path) -> None:
         assert "tick" not in df.columns  # one row per instance, not per tick
         assert df.height > 0
         # Exactly one row per (entity_id, start_tick) instance.
-        assert df.height == df.select("entity_id", "start_tick").n_unique()
+        assert df.height == df.select("entity_id", "entity_serial", "start_tick").n_unique()
         # A single burn covers a positive span of ticks.
         assert (df["end_tick"] > df["start_tick"]).all()
 
@@ -556,6 +626,8 @@ def test_shots(demo_path: Path) -> None:
         "name",
         "side",
         "x",
+        "entity_id",
+        "entity_serial",
         "y",
         "z",
         "pitch",
@@ -569,6 +641,8 @@ def test_shots(demo_path: Path) -> None:
 
     # Every shot resolves its shooter from the pawn handle.
     assert shots["steamid"].is_not_null().all()
+    assert shots["entity_id"].is_not_null().all()
+    assert shots["entity_serial"].dtype == pl.UInt32
 
     # Clip / accuracy come from following the shooter's active-weapon handle to a
     # weapon entity, which the shared event pass decodes via the weapon-class
@@ -599,7 +673,8 @@ def test_dataset_groups_match_fresh_parse(demo_path: Path) -> None:
 
 
 def test_stats(demo_path: Path) -> None:
-    stats = Demo(demo_path).stats
+    demo = Demo(demo_path)
+    stats = demo.stats
     assert isinstance(stats, pl.DataFrame)
     assert {
         "steamid",
@@ -623,6 +698,9 @@ def test_stats(demo_path: Path) -> None:
     assert stats["opening_kills"].sum() == stats["opening_deaths"].sum()
     # Non-negative counts throughout.
     assert stats["kills"].min() >= 0
+    assert stats is demo.player_stats()
+    with_knife_rounds = demo.player_stats(include_knife_rounds=True)
+    assert with_knife_rounds is demo.player_stats(include_knife_rounds=True)
     # Flash assists are a subset of assists (every flash assist is an assist).
     assert (stats["flash_assists"] <= stats["assists"]).all()
 

@@ -167,7 +167,7 @@ ts = mc.map_control(demo, method="vision", seconds=1, params=params)
 | `smoke_radius` | `144.0` | line of sight | Radius of a smoke cloud that blocks vision. |
 | `smoke_height` | `60.0` | line of sight | How far above its landing point a smoke's blocking sphere is centred. |
 | `fire_radius` | `150.0` | reachability | Radius around a molotov within which the ground is denied. |
-| `flash_threshold` | `1.0` | line of sight | A player is blind (projects no vision) while more than this many seconds of flash remain. |
+| `flash_threshold` | `1.0` | line of sight | A currently flashing player projects no vision when the replicated onset duration exceeds this value. This filters short partial flashes. |
 
 ## Notes & limitations
 

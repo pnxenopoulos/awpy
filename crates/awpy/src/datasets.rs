@@ -226,6 +226,8 @@ pub struct Round {
 pub struct Kill {
     pub tick: i32,
 
+    pub attacker_entity_id: Option<i32>,
+    pub attacker_entity_serial: Option<u32>,
     pub attacker_steamid: Option<u64>,
     pub attacker_name: Option<String>,
     pub attacker_side: Option<String>,
@@ -233,6 +235,8 @@ pub struct Kill {
     pub attacker_y: Option<f32>,
     pub attacker_z: Option<f32>,
 
+    pub victim_entity_id: Option<i32>,
+    pub victim_entity_serial: Option<u32>,
     pub victim_steamid: Option<u64>,
     pub victim_name: Option<String>,
     pub victim_side: Option<String>,
@@ -240,6 +244,8 @@ pub struct Kill {
     pub victim_y: Option<f32>,
     pub victim_z: Option<f32>,
 
+    pub assister_entity_id: Option<i32>,
+    pub assister_entity_serial: Option<u32>,
     pub assister_steamid: Option<u64>,
     pub assister_name: Option<String>,
     pub assister_side: Option<String>,
@@ -330,6 +336,8 @@ pub fn trade_flags(kills: &[Kill], trade_ticks: i32) -> Vec<(bool, bool)> {
 pub struct Damage {
     pub tick: i32,
 
+    pub attacker_entity_id: Option<i32>,
+    pub attacker_entity_serial: Option<u32>,
     pub attacker_steamid: Option<u64>,
     pub attacker_name: Option<String>,
     pub attacker_side: Option<String>,
@@ -337,6 +345,8 @@ pub struct Damage {
     pub attacker_y: Option<f32>,
     pub attacker_z: Option<f32>,
 
+    pub victim_entity_id: Option<i32>,
+    pub victim_entity_serial: Option<u32>,
     pub victim_steamid: Option<u64>,
     pub victim_name: Option<String>,
     pub victim_side: Option<String>,
@@ -394,6 +404,8 @@ pub struct BombEvent {
     /// One of `pickup`, `drop`, `start_plant`, `interrupt_plant`,
     /// `finish_plant`, `defuse`.
     pub event: String,
+    pub entity_id: Option<i32>,
+    pub entity_serial: Option<u32>,
     pub steamid: Option<u64>,
     pub name: Option<String>,
     /// `A` / `B` while a bomb is planted (from `CPlantedC4.m_nBombSite`); `None`
@@ -415,6 +427,7 @@ pub struct Grenade {
     #[serde(rename = "type")]
     pub grenade_type: String,
     pub entity_id: i32,
+    pub entity_serial: u32,
     pub x: f32,
     pub y: f32,
     pub z: f32,
@@ -433,6 +446,7 @@ pub struct Fire {
     #[serde(rename = "type")]
     pub fire_type: String,
     pub entity_id: i32,
+    pub entity_serial: u32,
     pub x: f32,
     pub y: f32,
     pub z: f32,
@@ -448,6 +462,7 @@ pub struct Smoke {
     pub thrower_steamid: Option<u64>,
     pub thrower_side: Option<String>,
     pub entity_id: i32,
+    pub entity_serial: u32,
     pub x: f32,
     pub y: f32,
     pub z: f32,
@@ -458,6 +473,8 @@ pub struct Smoke {
 #[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct Shot {
     pub tick: i32,
+    pub entity_id: Option<i32>,
+    pub entity_serial: Option<u32>,
     pub steamid: Option<u64>,
     pub name: Option<String>,
     pub side: Option<String>,
@@ -477,8 +494,8 @@ pub struct Shot {
 /// Internal per-tick sample used by the projectile-tracking datasets.
 struct TrackedRow {
     tick: i32,
-    entity_id: i32,
-    class_name: String,
+    entity: EntityId,
+    projectile_type: &'static str,
     x: f32,
     y: f32,
     z: f32,
@@ -497,10 +514,10 @@ struct TrackedRow {
 /// resolved Steam id wins; the end tick is the latest seen. Instances keep
 /// first-seen (chronological) order.
 fn collapse_instances(rows: Vec<TrackedRow>) -> Vec<TrackedRow> {
-    let mut order: Vec<(i32, i32)> = Vec::new();
-    let mut by_key: HashMap<(i32, i32), TrackedRow> = HashMap::new();
+    let mut order: Vec<(EntityId, i32)> = Vec::new();
+    let mut by_key: HashMap<(EntityId, i32), TrackedRow> = HashMap::new();
     for row in rows {
-        let key = (row.entity_id, row.start_tick);
+        let key = (row.entity, row.start_tick);
         match by_key.get_mut(&key) {
             None => {
                 order.push(key);
@@ -582,13 +599,13 @@ pub struct Projectiles {
 /// Fill each trajectory instance's `end_tick` from the last tick its entity
 /// index was seen (grenades have no event window to bound them).
 fn fill_trajectory_ends(rows: &mut [TrackedRow]) {
-    let mut ends: HashMap<(i32, i32), i32> = HashMap::new();
+    let mut ends: HashMap<(EntityId, i32), i32> = HashMap::new();
     for r in rows.iter() {
-        let e = ends.entry((r.entity_id, r.start_tick)).or_insert(r.tick);
+        let e = ends.entry((r.entity, r.start_tick)).or_insert(r.tick);
         *e = (*e).max(r.tick);
     }
     for r in rows.iter_mut() {
-        r.end_tick = ends[&(r.entity_id, r.start_tick)];
+        r.end_tick = ends[&(r.entity, r.start_tick)];
     }
 }
 
@@ -797,6 +814,7 @@ struct SnapshotKeys {
     scoped: Option<u64>,
     defusing: Option<u64>,
     flash: Option<u64>,
+    flashing: Option<u64>,
     in_bomb_zone: Option<u64>,
     has_helmet: Option<u64>,
     has_defuser: Option<u64>,
@@ -825,6 +843,7 @@ impl SnapshotKeys {
             scoped: key("m_bIsScoped"),
             defusing: key("m_bIsDefusing"),
             flash: key("m_flFlashDuration"),
+            flashing: key("m_bFlashing"),
             in_bomb_zone: key("m_bInBombZone"),
             has_helmet: key("m_pItemServices.m_bHasHelmet"),
             has_defuser: key("m_pItemServices.m_bHasDefuser"),
@@ -920,13 +939,42 @@ fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys)
     // Follow the controller handle for the persistent Steam id and name.
     if let Some(controller) = pawn
         .get_handle(pk.controller)
-        .and_then(|h| ctx.entities().get_by_handle(h))
+        .and_then(|handle| ctx.entities().get_by_handle(handle))
     {
         player.steamid = controller.get_u64(ck.steamid);
         player.name = controller.get_string(ck.name);
     }
 
     player
+}
+
+/// Resolve one logical event participant and preserve its wire identity.
+///
+/// The sentinel user id means that the event has no player in this role.
+/// In that case, ignore the pawn handle. CS2 user id zero is valid and can
+/// identify a participant.
+fn resolve_event_player(
+    ctx: &Context,
+    user_id: i32,
+    pawn_handle: i64,
+    pk: &PawnKeys,
+    ck: &CtrlKeys,
+) -> (Option<EntityId>, ResolvedPlayer) {
+    if user_id == NO_USER_ID {
+        return (None, ResolvedPlayer::default());
+    }
+    let pawn = event_entity_handle(pawn_handle)
+        .and_then(|handle| ctx.entities().get_by_handle(handle))
+        .filter(|entity| entity.class_name.contains("PlayerPawn"));
+    let Some(pawn) = pawn else {
+        return (None, ResolvedPlayer::default());
+    };
+    (Some(pawn.id()), resolve_from_pawn(ctx, pawn, pk, ck))
+}
+
+fn assign_entity_id(id: Option<EntityId>, index: &mut Option<i32>, serial: &mut Option<u32>) {
+    *index = id.map(|value| value.index);
+    *serial = id.map(|value| value.serial);
 }
 
 /// Field keys on the `CCSGameRulesProxy` serializer, resolved once.
@@ -1141,6 +1189,7 @@ impl PlayerStatsInputs {
 /// A flashbang detonation: the thrower's pawn handle and the blast site, used
 /// to attribute a [`Blind`] to its thrower.
 struct Detonation {
+    thrower_user_id: i32,
     thrower_pawn: i64,
     x: Option<f32>,
     y: Option<f32>,
@@ -1161,13 +1210,27 @@ fn fill_kill(kill: &mut Kill, e: &GameEvent, ctx: &Context, pk: &PawnKeys, ck: &
     let k = Keys(&e.keys);
     // The `*_pawn` keys are CHandles to each participant's pawn; a `65535` user
     // id means "no participant" (e.g. no assister).
-    let attacker = resolve_player(ctx, k.i64("attacker_pawn"), pk, ck);
-    let victim = resolve_player(ctx, k.i64("userid_pawn"), pk, ck);
-    let assister = if k.i32("assister") == NO_USER_ID {
-        ResolvedPlayer::default()
-    } else {
-        resolve_player(ctx, k.i64("assister_pawn"), pk, ck)
-    };
+    let (attacker_id, attacker) =
+        resolve_event_player(ctx, k.i32("attacker"), k.i64("attacker_pawn"), pk, ck);
+    let (victim_id, victim) =
+        resolve_event_player(ctx, k.i32("userid"), k.i64("userid_pawn"), pk, ck);
+    let (assister_id, assister) =
+        resolve_event_player(ctx, k.i32("assister"), k.i64("assister_pawn"), pk, ck);
+    assign_entity_id(
+        attacker_id,
+        &mut kill.attacker_entity_id,
+        &mut kill.attacker_entity_serial,
+    );
+    assign_entity_id(
+        victim_id,
+        &mut kill.victim_entity_id,
+        &mut kill.victim_entity_serial,
+    );
+    assign_entity_id(
+        assister_id,
+        &mut kill.assister_entity_id,
+        &mut kill.assister_entity_serial,
+    );
     attacker.assign_to(
         &mut kill.attacker_steamid,
         &mut kill.attacker_name,
@@ -1197,8 +1260,20 @@ fn fill_kill(kill: &mut Kill, e: &GameEvent, ctx: &Context, pk: &PawnKeys, ck: &
 /// Fill a [`Damage`] row from the player-hurt event and entity state.
 fn fill_damage(dmg: &mut Damage, e: &GameEvent, ctx: &Context, pk: &PawnKeys, ck: &CtrlKeys) {
     let k = Keys(&e.keys);
-    let attacker = resolve_player(ctx, k.i64("attacker_pawn"), pk, ck);
-    let victim = resolve_player(ctx, k.i64("userid_pawn"), pk, ck);
+    let (attacker_id, attacker) =
+        resolve_event_player(ctx, k.i32("attacker"), k.i64("attacker_pawn"), pk, ck);
+    let (victim_id, victim) =
+        resolve_event_player(ctx, k.i32("userid"), k.i64("userid_pawn"), pk, ck);
+    assign_entity_id(
+        attacker_id,
+        &mut dmg.attacker_entity_id,
+        &mut dmg.attacker_entity_serial,
+    );
+    assign_entity_id(
+        victim_id,
+        &mut dmg.victim_entity_id,
+        &mut dmg.victim_entity_serial,
+    );
     attacker.assign_to(
         &mut dmg.attacker_steamid,
         &mut dmg.attacker_name,
@@ -1242,7 +1317,9 @@ fn fill_bomb(
     bombsite: Option<&str>,
 ) {
     let k = Keys(&e.keys);
-    let player = resolve_player(ctx, k.i64("userid_pawn"), pk, ck);
+    let (entity_id, player) =
+        resolve_event_player(ctx, k.i32("userid"), k.i64("userid_pawn"), pk, ck);
+    assign_entity_id(entity_id, &mut row.entity_id, &mut row.entity_serial);
     row.steamid = player.steamid;
     row.name = player.name;
     row.x = player.x;
@@ -1286,7 +1363,9 @@ fn fill_shot(
     weapon_keys: &mut HashMap<i32, (Option<u64>, Option<u64>)>,
 ) {
     let k = Keys(&e.keys);
-    let player = resolve_player(ctx, k.i64("userid_pawn"), pk, ck);
+    let (entity_id, player) =
+        resolve_event_player(ctx, k.i32("userid"), k.i64("userid_pawn"), pk, ck);
+    assign_entity_id(entity_id, &mut shot.entity_id, &mut shot.entity_serial);
     shot.steamid = player.steamid;
     shot.name = player.name;
     shot.side = player.side;
@@ -1308,7 +1387,7 @@ fn fill_shot(
     // Follow the active-weapon handle to the weapon entity for clip / accuracy.
     if let Some(weapon) = pawn
         .get_handle(sk.weapon_handle)
-        .and_then(|h| ctx.entities().get_by_handle(h))
+        .and_then(|handle| ctx.entities().get_by_handle(handle))
         && let Some(wser) = ctx.serializers().get(&weapon.class_name)
     {
         let (clip_k, acc_k) = *weapon_keys.entry(weapon.class_id).or_insert_with(|| {
@@ -1334,12 +1413,15 @@ fn fill_stats_shot(
     pawn_keys: &PawnKeys,
     ctrl_keys: &CtrlKeys,
 ) {
-    let player = resolve_player(
+    let keys = Keys(&event.keys);
+    let (entity_id, player) = resolve_event_player(
         ctx,
-        Keys(&event.keys).i64("userid_pawn"),
+        keys.i32("userid"),
+        keys.i64("userid_pawn"),
         pawn_keys,
         ctrl_keys,
     );
+    assign_entity_id(entity_id, &mut shot.entity_id, &mut shot.entity_serial);
     shot.steamid = player.steamid;
     shot.name = player.name;
     shot.side = player.side;
@@ -1386,12 +1468,23 @@ fn detect_blinds(
                 .expect("dets is non-empty"),
             _ => &dets[0],
         };
-        let attacker = resolve_player(ctx, det.thrower_pawn, pk, ck);
+        let (attacker_id, attacker) =
+            resolve_event_player(ctx, det.thrower_user_id, det.thrower_pawn, pk, ck);
         let mut blind = Blind {
             tick: ctx.tick(),
             duration: cur,
             ..Default::default()
         };
+        assign_entity_id(
+            attacker_id,
+            &mut blind.attacker_entity_id,
+            &mut blind.attacker_entity_serial,
+        );
+        assign_entity_id(
+            Some(pawn.id()),
+            &mut blind.victim_entity_id,
+            &mut blind.victim_entity_serial,
+        );
         attacker.assign_to(
             &mut blind.attacker_steamid,
             &mut blind.attacker_name,
@@ -1656,6 +1749,7 @@ impl Parser {
                     "flashbang_detonate" if selection.blinds => {
                         let keys = Keys(&event.keys);
                         detonations.entry(event.tick).or_default().push(Detonation {
+                            thrower_user_id: keys.i32("userid"),
                             thrower_pawn: keys.i64("userid_pawn"),
                             x: keys.f32("x"),
                             y: keys.f32("y"),
@@ -1832,6 +1926,11 @@ impl Parser {
         let mut pos_keys: HashMap<i32, PositionKeys> = HashMap::new();
         // (m_hThrower key, m_hOwnerEntity key) per class.
         let mut thrower_keys: HashMap<i32, (Option<u64>, Option<u64>)> = HashMap::new();
+        // A projectile's thrower does not change. Cache the resolved player by
+        // full entity identity to avoid repeated pawn and controller lookups.
+        // Retry unresolved entries on later ticks.
+        let mut throwers: HashMap<EntityId, ResolvedPlayer> = HashMap::new();
+
         // Trajectory bookkeeping (grenades only): identities seen last tick,
         // each live instance's start tick, and its last position. Including the
         // serial prevents a reused entity slot from continuing an old trajectory.
@@ -1870,11 +1969,21 @@ impl Parser {
                         ser.resolve_field_key("m_hOwnerEntity"),
                     )
                 });
-                let thrower = e
-                    .get_handle(tk)
-                    .or_else(|| e.get_handle(ok))
-                    .map(|handle| resolve_player(ctx, i64::from(handle), pk, ck))
-                    .unwrap_or_default();
+                let entity = e.id();
+                let thrower = match throwers.get(&entity) {
+                    Some(player) if player.steamid.is_some() || player.name.is_some() => {
+                        player.clone()
+                    }
+                    _ => {
+                        let player = e
+                            .get_handle(tk)
+                            .or_else(|| e.get_handle(ok))
+                            .map(|handle| resolve_player(ctx, i64::from(handle), pk, ck))
+                            .unwrap_or_default();
+                        throwers.insert(entity, player.clone());
+                        player
+                    }
+                };
 
                 for (kind, mode) in trackers {
                     // Windowed classes only emit inside an active window;
@@ -1910,8 +2019,8 @@ impl Parser {
                         *kind,
                         TrackedRow {
                             tick: ctx.tick(),
-                            entity_id: e.index,
-                            class_name: e.class_name.to_string(),
+                            entity,
+                            projectile_type: grenade_type(&e.class_name).unwrap_or("grenade"),
                             x,
                             y,
                             z,
@@ -2001,8 +2110,9 @@ impl Parser {
                 thrower_name: r.thrower.name,
                 thrower_steamid: r.thrower.steamid,
                 thrower_side: r.thrower.side,
-                grenade_type: grenade_type(&r.class_name).unwrap_or("grenade").to_string(),
-                entity_id: r.entity_id,
+                grenade_type: r.projectile_type.to_string(),
+                entity_id: r.entity.index,
+                entity_serial: r.entity.serial,
                 x: r.x,
                 y: r.y,
                 z: r.z,
@@ -2017,7 +2127,8 @@ impl Parser {
                 thrower_steamid: r.thrower.steamid,
                 thrower_side: r.thrower.side,
                 fire_type: "inferno".to_string(),
-                entity_id: r.entity_id,
+                entity_id: r.entity.index,
+                entity_serial: r.entity.serial,
                 x: r.x,
                 y: r.y,
                 z: r.z,
@@ -2031,7 +2142,8 @@ impl Parser {
                 thrower_name: r.thrower.name,
                 thrower_steamid: r.thrower.steamid,
                 thrower_side: r.thrower.side,
-                entity_id: r.entity_id,
+                entity_id: r.entity.index,
+                entity_serial: r.entity.serial,
                 x: r.x,
                 y: r.y,
                 z: r.z,
@@ -2321,7 +2433,12 @@ pub struct PlayerState {
     pub is_scoped: bool,
     /// Whether the player is defusing the bomb.
     pub is_defusing: bool,
-    /// Seconds of blindness remaining (`m_flFlashDuration`); 0 when not blinded.
+    /// Whether the player is currently blinded (`m_bFlashing`).
+    pub is_blinded: bool,
+    /// The replicated flash duration (`m_flFlashDuration`).
+    ///
+    /// This is the duration set when the flash starts. It is not a reliable
+    /// remaining-time counter. Use [`Self::is_blinded`] for the current state.
     pub flash_duration: f32,
     /// Comma-separated short names of every weapon in the loadout, in slot
     /// order (e.g. `ak47,deagle,knife,hegrenade,flashbang,flashbang`).
@@ -2410,12 +2527,16 @@ fn decode_chat_message(event: &GameEvent) -> Option<ChatMessage> {
 pub struct Blind {
     /// Tick the flash detonated and the blind began.
     pub tick: i32,
+    pub attacker_entity_id: Option<i32>,
+    pub attacker_entity_serial: Option<u32>,
     pub attacker_steamid: Option<u64>,
     pub attacker_name: Option<String>,
     pub attacker_side: Option<String>,
     pub attacker_x: Option<f32>,
     pub attacker_y: Option<f32>,
     pub attacker_z: Option<f32>,
+    pub victim_entity_id: Option<i32>,
+    pub victim_entity_serial: Option<u32>,
     pub victim_steamid: Option<u64>,
     pub victim_name: Option<String>,
     pub victim_side: Option<String>,
@@ -2431,6 +2552,8 @@ pub struct Blind {
 #[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct ItemEvent {
     pub tick: i32,
+    pub entity_id: Option<i32>,
+    pub entity_serial: Option<u32>,
     /// `purchase`, `pickup`, or `drop`.
     pub action: String,
     pub steamid: Option<u64>,
@@ -2643,16 +2766,29 @@ impl Parser {
         Ok(out)
     }
 
-    /// The ticks on which any of the named game events fired, for feeding
-    /// [`Self::snapshots_query`] (resolving event names to ticks once, from the
-    /// cached event stream).
+    /// The ticks on which any of the named game events fired.
+    ///
+    /// Legacy events use a selective event-only pass. User messages use the
+    /// complete event stream because their names come from protobuf messages.
     pub fn event_ticks(&self, names: &HashSet<&str>) -> Result<HashSet<i32>> {
-        Ok(self
-            .events_ref()?
-            .iter()
-            .filter(|e| names.contains(e.name.as_str()))
-            .map(|e| e.tick)
-            .collect())
+        if names.iter().any(|name| {
+            name.starts_with("CS_UM_")
+                || name.starts_with("UM_")
+                || name.starts_with("UserMessage_")
+        }) {
+            return Ok(self
+                .events_ref()?
+                .iter()
+                .filter(|event| names.contains(event.name.as_str()))
+                .map(|event| event.tick)
+                .collect());
+        }
+
+        let mut ticks = HashSet::new();
+        self.run_to_end_with_legacy_events_filtered(&HashSet::new(), names, |_, events| {
+            ticks.extend(events.iter().map(|event| event.tick));
+        })?;
+        Ok(ticks)
     }
 
     /// Read every active player pawn's state out of a parsed context, using
@@ -2703,6 +2839,7 @@ impl Parser {
             state.is_in_bomb_zone = pawn.get_bool(keys.in_bomb_zone);
             state.is_scoped = pawn.get_bool(keys.scoped);
             state.is_defusing = pawn.get_bool(keys.defusing);
+            state.is_blinded = pawn.get_bool(keys.flashing);
             state.flash_duration = pawn.get_f32(keys.flash);
             state.active_weapon = pawn
                 .get_handle(keys.active_weapon)
@@ -2925,6 +3062,8 @@ impl Parser {
                     };
                     out.push(ItemEvent {
                         tick: ctx.tick(),
+                        entity_id: Some(pawn_id.index),
+                        entity_serial: Some(pawn_id.serial),
                         action: action.to_string(),
                         steamid: actor.steamid,
                         name: actor.name.clone(),
@@ -2963,6 +3102,8 @@ impl Parser {
                     }
                     out.push(ItemEvent {
                         tick: ctx.tick(),
+                        entity_id: Some(pawn_id.index),
+                        entity_serial: Some(pawn_id.serial),
                         action: "drop".to_string(),
                         steamid: actor.steamid,
                         name: actor.name.clone(),

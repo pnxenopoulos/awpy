@@ -1,7 +1,7 @@
 //! Map control: how much of the map each team holds at a single moment.
 //!
 //! *Map control* turns a snapshot of player positions into a partition of the
-//! navigation mesh: every walkable [`NavArea`](crate::nav::NavArea) is labelled
+//! navigation mesh: every walkable [`NavArea`] is labelled
 //! [`Control::Ct`], [`Control::T`], [`Control::Contested`] (both teams hold it),
 //! or [`Control::Neutral`] (neither does). Aggregated and weighted by area size,
 //! that yields a single, interpretable "fraction of the map controlled" per
