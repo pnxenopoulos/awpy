@@ -1,0 +1,30 @@
+[package]
+name = "awpy-dev"
+version.workspace = true
+rust-version.workspace = true
+edition = "2024"
+description = "Developer CLI for inspecting Counter-Strike 2 demo files and parser internals"
+license = "MIT"
+repository = "https://github.com/pnxenopoulos/awpy"
+publish = false
+authors = ["Peter Xenopoulos"]
+keywords = ["counter-strike", "cs2", "demo", "parser", "source2"]
+categories = ["command-line-utilities", "game-development"]
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+colored = "2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+awpy = { workspace = true }
+awpy-proto = { workspace = true }
+prost = "0.14"
+
+[lib]
+name = "awpy_dev"
+path = "src/lib.rs"
+
+[[bin]]
+name = "awpy-dev"
+path = "src/main.rs"
