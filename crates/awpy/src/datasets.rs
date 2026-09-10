@@ -549,14 +549,19 @@ enum ProjKind {
     Smoke,
 }
 
+/// Event window type for a static projectile effect.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum WindowKind {
+    Fire,
+    Smoke,
+}
+
 /// How a projectile class is tracked by [`Parser::track_projectiles`].
-enum ProjMode<'a> {
-    /// Grenades: emit a row while the projectile is moving; the instance's
-    /// lifetime is derived from when its entity index is present.
+enum ProjMode {
+    /// Emit a row while the projectile moves.
     Trajectory,
-    /// Fires / smokes: emit only while the tick is inside an event-derived
-    /// active window, which also supplies the instance's `[start, end]`.
-    Windowed(&'a HashMap<i32, Vec<(i32, i32)>>),
+    /// Emit a row while the matching event window is active.
+    Windowed(WindowKind),
 }
 
 /// Select which projectile datasets a parser pass should collect.
@@ -1878,31 +1883,6 @@ impl Parser {
             .bomb)
     }
 
-    /// Pair `start_event` / `end_event` game events (by their `entityid` key,
-    /// in tick order) into active `[start_tick, end_tick]` intervals per entity
-    /// index. Used to bound fires / smokes to the game's own burn / smoke window
-    /// rather than the (longer) entity lifetime.
-    fn burn_intervals(
-        &self,
-        start_event: &str,
-        end_event: &str,
-    ) -> Result<HashMap<i32, Vec<(i32, i32)>>> {
-        let events = self.events_ref()?;
-        let mut open: HashMap<i32, i32> = HashMap::new();
-        let mut intervals: HashMap<i32, Vec<(i32, i32)>> = HashMap::new();
-        for e in events {
-            if e.name == start_event {
-                open.insert(Keys(&e.keys).i32("entityid"), e.tick);
-            } else if e.name == end_event {
-                let id = Keys(&e.keys).i32("entityid");
-                if let Some(start) = open.remove(&id) {
-                    intervals.entry(id).or_default().push((start, e.tick));
-                }
-            }
-        }
-        Ok(intervals)
-    }
-
     /// Track projectile entities tick by tick in one pass, sampling each active
     /// entity's world position and resolved thrower.
     ///
@@ -1937,8 +1917,41 @@ impl Parser {
         let mut prev: HashSet<EntityId> = HashSet::new();
         let mut starts: HashMap<EntityId, i32> = HashMap::new();
         let mut last_pos: HashMap<EntityId, (f32, f32, f32)> = HashMap::new();
+        let mut window_events = HashSet::new();
+        for trackers in modes.values() {
+            for (_, mode) in trackers {
+                match mode {
+                    ProjMode::Windowed(WindowKind::Fire) => {
+                        window_events.extend(["inferno_startburn", "inferno_expire"]);
+                    }
+                    ProjMode::Windowed(WindowKind::Smoke) => {
+                        window_events.extend(["smokegrenade_detonate", "smokegrenade_expired"]);
+                    }
+                    ProjMode::Trajectory => {}
+                }
+            }
+        }
+        let mut active_windows: HashMap<(WindowKind, i32), i32> = HashMap::new();
+        let mut window_ends: HashMap<(WindowKind, i32, i32), i32> = HashMap::new();
 
-        self.run_to_end_filtered(&filter, |ctx| {
+        self.run_to_end_with_legacy_events_filtered(&filter, &window_events, |ctx, events| {
+            let mut closing = Vec::new();
+            for event in events {
+                let (kind, is_start) = match event.name.as_str() {
+                    "inferno_startburn" => (WindowKind::Fire, true),
+                    "inferno_expire" => (WindowKind::Fire, false),
+                    "smokegrenade_detonate" => (WindowKind::Smoke, true),
+                    "smokegrenade_expired" => (WindowKind::Smoke, false),
+                    _ => continue,
+                };
+                let id = Keys(&event.keys).i32("entityid");
+                if is_start {
+                    active_windows.insert((kind, id), event.tick);
+                } else if let Some(&start) = active_windows.get(&(kind, id)) {
+                    window_ends.insert((kind, id, start), event.tick);
+                    closing.push((kind, id, start));
+                }
+            }
             let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
             let mut current: HashSet<EntityId> = HashSet::new();
@@ -1992,13 +2005,11 @@ impl Parser {
                     // starts / last_pos, matching the per-class passes this
                     // replaced.
                     let (start_tick, end_tick) = match mode {
-                        ProjMode::Windowed(w) => {
-                            let Some(&(s, en)) = w.get(&e.index).and_then(|v| {
-                                v.iter().find(|(s, en)| (*s..=*en).contains(&ctx.tick()))
-                            }) else {
+                        ProjMode::Windowed(kind) => {
+                            let Some(&start) = active_windows.get(&(*kind, e.index)) else {
                                 continue;
                             };
-                            (s, en)
+                            (start, 0)
                         }
                         ProjMode::Trajectory => {
                             let id = e.id();
@@ -2031,10 +2042,27 @@ impl Parser {
                     ));
                 }
             }
+            for (kind, id, start) in closing {
+                if active_windows.get(&(kind, id)) == Some(&start) {
+                    active_windows.remove(&(kind, id));
+                }
+            }
             starts.retain(|id, _| current.contains(id));
             last_pos.retain(|id, _| current.contains(id));
             prev = current;
         })?;
+        rows.retain_mut(|(kind, row)| {
+            let window = match *kind {
+                ProjKind::Grenade => return true,
+                ProjKind::Fire => WindowKind::Fire,
+                ProjKind::Smoke => WindowKind::Smoke,
+            };
+            let Some(&end) = window_ends.get(&(window, row.entity.index, row.start_tick)) else {
+                return false;
+            };
+            row.end_tick = end;
+            true
+        });
 
         Ok(rows)
     }
@@ -2057,16 +2085,6 @@ impl Parser {
         if !selection.any() {
             return Ok(Projectiles::default());
         }
-        let fire_windows = if selection.fires {
-            self.burn_intervals("inferno_startburn", "inferno_expire")?
-        } else {
-            HashMap::new()
-        };
-        let smoke_windows = if selection.smokes {
-            self.burn_intervals("smokegrenade_detonate", "smokegrenade_expired")?
-        } else {
-            HashMap::new()
-        };
 
         // Every grenade projectile class is a grenade trajectory; CInferno is a
         // fire; CSmokeGrenadeProjectile is *also* a smoke (its cloud), so that
@@ -2082,13 +2100,13 @@ impl Parser {
             modes
                 .entry(INFERNO_CLASS)
                 .or_default()
-                .push((ProjKind::Fire, ProjMode::Windowed(&fire_windows)));
+                .push((ProjKind::Fire, ProjMode::Windowed(WindowKind::Fire)));
         }
         if selection.smokes {
             modes
                 .entry(SMOKE_CLASS)
                 .or_default()
-                .push((ProjKind::Smoke, ProjMode::Windowed(&smoke_windows)));
+                .push((ProjKind::Smoke, ProjMode::Windowed(WindowKind::Smoke)));
         }
 
         let mut grenade_rows = Vec::new();

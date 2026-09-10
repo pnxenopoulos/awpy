@@ -2546,6 +2546,94 @@ fn run_tick_segment(
     Ok(seg)
 }
 
+/// String values stored while a tick column is built.
+///
+/// Network strings often stay unchanged for many ticks. Share equal values in
+/// each segment to avoid one allocation for every output row.
+struct InternedStrings {
+    values: Vec<Option<Arc<str>>>,
+    interned: HashMap<String, Arc<str>>,
+}
+
+impl InternedStrings {
+    fn with_nulls(n: usize) -> Self {
+        Self {
+            values: vec![None; n],
+            interned: HashMap::new(),
+        }
+    }
+
+    fn from_strings(values: Vec<Option<String>>) -> Self {
+        let mut output = Self {
+            values: Vec::with_capacity(values.len()),
+            interned: HashMap::new(),
+        };
+        for value in values {
+            match value {
+                Some(value) => output.push_str(&value),
+                None => output.push_null(),
+            }
+        }
+        output
+    }
+
+    fn push_null(&mut self) {
+        self.values.push(None);
+    }
+
+    fn push_value(&mut self, value: &FieldValue) {
+        if let FieldValue::String(bytes) = value {
+            let text = String::from_utf8_lossy(bytes);
+            self.push_str(text.as_ref());
+        } else {
+            self.push_str(&format!("{value}"));
+        }
+    }
+
+    fn push_str(&mut self, value: &str) {
+        let value = match self.interned.get(value) {
+            Some(value) => Arc::clone(value),
+            None => {
+                let interned: Arc<str> = Arc::from(value);
+                self.interned
+                    .insert(value.to_owned(), Arc::clone(&interned));
+                interned
+            }
+        };
+        self.values.push(Some(value));
+    }
+
+    fn append(mut self, other: Self) -> Self {
+        self.values.extend(other.values);
+        self.interned.extend(other.interned);
+        self
+    }
+
+    fn pad_front(mut self, n: usize) -> Self {
+        self.values = std::iter::repeat_n(None, n).chain(self.values).collect();
+        self
+    }
+
+    fn pad_back(&mut self, n: usize) {
+        self.values.extend(std::iter::repeat_n(None, n));
+    }
+
+    fn into_column(self, name: &str) -> Column {
+        StringChunked::from_iter_options(
+            name.into(),
+            self.values.iter().map(|value| value.as_deref()),
+        )
+        .into_column()
+    }
+
+    fn into_strings(self) -> Vec<Option<String>> {
+        self.values
+            .into_iter()
+            .map(|value| value.map(|value| value.to_string()))
+            .collect()
+    }
+}
+
 /// Accumulates one [`Demo::ticks`] output column, picking a native Polars dtype
 /// from the values it sees rather than stringifying everything: integer fields
 /// become Int64, floats Float64, bools Boolean, and strings/vectors Utf8. A
@@ -2558,7 +2646,7 @@ enum TickColumn {
     Bool(Vec<Option<bool>>),
     Int(Vec<Option<i64>>),
     Float(Vec<Option<f64>>),
-    Str(Vec<Option<String>>),
+    Str(InternedStrings),
 }
 
 impl TickColumn {
@@ -2579,7 +2667,7 @@ impl TickColumn {
             TickColumn::Bool(v) => v.push(None),
             TickColumn::Int(v) => v.push(None),
             TickColumn::Float(v) => v.push(None),
-            TickColumn::Str(v) => v.push(None),
+            TickColumn::Str(v) => v.push_null(),
         }
     }
 
@@ -2607,7 +2695,7 @@ impl TickColumn {
                 // Any other mix (e.g. string vs number) falls back to strings.
                 this.widen_to_str();
                 if let TickColumn::Str(col) = this {
-                    col.push(Some(format!("{v}")));
+                    col.push_value(v);
                 }
             }
         }
@@ -2628,8 +2716,8 @@ impl TickColumn {
             col.push(Some(*b));
             TickColumn::Bool(col)
         } else {
-            let mut col = vec![None; nulls];
-            col.push(Some(format!("{v}")));
+            let mut col = InternedStrings::with_nulls(nulls);
+            col.push_value(v);
             TickColumn::Str(col)
         }
     }
@@ -2649,7 +2737,7 @@ impl TickColumn {
             TickColumn::Float(v) => v.iter().map(|o| o.map(|f| f.to_string())).collect(),
             TickColumn::Str(_) => return,
         };
-        *self = TickColumn::Str(strs);
+        *self = TickColumn::Str(InternedStrings::from_strings(strs));
     }
 
     fn into_column(self, name: &str) -> Column {
@@ -2658,7 +2746,7 @@ impl TickColumn {
             TickColumn::Bool(v) => Column::new(name.into(), v),
             TickColumn::Int(v) => Column::new(name.into(), v),
             TickColumn::Float(v) => Column::new(name.into(), v),
-            TickColumn::Str(v) => Column::new(name.into(), v),
+            TickColumn::Str(v) => v.into_column(name),
         }
     }
 
@@ -2692,9 +2780,9 @@ impl TickColumn {
                 a.extend(b);
                 Float(a)
             }
-            (Str(mut a), Str(b)) => {
-                a.extend(b);
-                Str(a)
+            (Str(a), Str(b)) => {
+                let combined = a.append(b);
+                Str(combined)
             }
             // An int/float mix widens the whole column to float.
             (Int(a), Float(b)) => {
@@ -2710,7 +2798,7 @@ impl TickColumn {
             (a, b) => {
                 let mut s = a.into_strs();
                 s.extend(b.into_strs());
-                Str(s)
+                Str(InternedStrings::from_strings(s))
             }
         }
     }
@@ -2723,7 +2811,7 @@ impl TickColumn {
             Bool(v) => Bool(std::iter::repeat_n(None, n).chain(v).collect()),
             Int(v) => Int(std::iter::repeat_n(None, n).chain(v).collect()),
             Float(v) => Float(std::iter::repeat_n(None, n).chain(v).collect()),
-            Str(v) => Str(std::iter::repeat_n(None, n).chain(v).collect()),
+            Str(v) => Str(v.pad_front(n)),
         }
     }
 
@@ -2735,7 +2823,7 @@ impl TickColumn {
             Bool(v) => v.extend(std::iter::repeat_n(None, n)),
             Int(v) => v.extend(std::iter::repeat_n(None, n)),
             Float(v) => v.extend(std::iter::repeat_n(None, n)),
-            Str(v) => v.extend(std::iter::repeat_n(None, n)),
+            Str(v) => v.pad_back(n),
         }
         self
     }
@@ -2755,7 +2843,7 @@ impl TickColumn {
             TickColumn::Bool(v) => v.into_iter().map(|o| o.map(|b| b.to_string())).collect(),
             TickColumn::Int(v) => v.into_iter().map(|o| o.map(|i| i.to_string())).collect(),
             TickColumn::Float(v) => v.into_iter().map(|o| o.map(|f| f.to_string())).collect(),
-            TickColumn::Str(v) => v,
+            TickColumn::Str(v) => v.into_strings(),
         }
     }
 }
