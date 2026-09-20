@@ -14,23 +14,21 @@ pub fn run(
         .with_context(|| format!("failed to open {}", file.display()))?;
     let serializers = parser.parse_send_tables()?;
 
-    let mut names: Vec<&str> = serializers
+    let filter = filter.as_deref().map(str::to_lowercase);
+    let mut selected: Vec<_> = serializers
         .iter()
-        .map(|(name, _)| name)
-        .filter(|n| {
+        .filter(|(name, _)| !name.is_empty())
+        .filter(|(name, _)| {
             filter
                 .as_ref()
-                .map(|f| n.to_lowercase().contains(&f.to_lowercase()))
-                .unwrap_or(true)
+                .is_none_or(|filter| name.to_lowercase().contains(filter))
         })
-        .filter(|n| !n.is_empty())
         .collect();
-    names.sort();
+    selected.sort_by_key(|(name, _)| *name);
 
-    let display_limit = limit.unwrap_or(names.len());
+    let display_limit = limit.unwrap_or(selected.len());
 
-    for name in names.iter().take(display_limit) {
-        let ser = serializers.get(name).unwrap();
+    for (name, ser) in selected.iter().take(display_limit) {
         if summary {
             println!("{:<48} {} fields", name.bold(), ser.fields.len());
             continue;
@@ -42,6 +40,6 @@ pub fn run(
         println!();
     }
 
-    println!("{} serializers total", names.len());
+    println!("{} serializers total", selected.len());
     Ok(())
 }

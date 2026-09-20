@@ -1737,8 +1737,8 @@ impl NavMesh {
         let corners: Vec<(f32, f32, f32)> = a.corners.iter().map(|c| (c[0], c[1], c[2])).collect();
         d.set_item("corners", corners)?;
         d.set_item("connections", self.nav.neighbors(area_id))?;
-        d.set_item("ladders_above", a.ladders_above.clone())?;
-        d.set_item("ladders_below", a.ladders_below.clone())?;
+        d.set_item("ladders_above", &a.ladders_above)?;
+        d.set_item("ladders_below", &a.ladders_below)?;
         let c = a.centroid();
         d.set_item("centroid", (c[0], c[1], c[2]))?;
         d.set_item("size", a.size())?;
@@ -1990,9 +1990,9 @@ fn rounds_to_frame(rounds: &[Round]) -> PolarsResult<DataFrame> {
         col!("end_tick", rounds, |r| r.end_tick),
         col!("official_end_tick", rounds, |r| r.official_end_tick),
         col!("winner", rounds, |r| r.winner),
-        col!("winner_side", rounds, |r| r.winner_side.clone()),
+        col!("winner_side", rounds, |r| r.winner_side.as_str()),
         col!("reason", rounds, |r| r.reason),
-        col!("reason_name", rounds, |r| r.reason_name.clone()),
+        col!("reason_name", rounds, |r| r.reason_name.as_str()),
         col!("is_knife_round", rounds, |r| r.is_knife_round),
     ])
 }
@@ -2013,16 +2013,16 @@ fn kills_to_frame(kills: &[Kill]) -> PolarsResult<DataFrame> {
         col!("attacker_entity_serial", kills, |k| k
             .attacker_entity_serial),
         nullable_u64_column("attacker_steamid", kills.iter().map(|k| k.attacker_steamid)),
-        col!("attacker_name", kills, |k| k.attacker_name.clone()),
-        col!("attacker_side", kills, |k| k.attacker_side.clone()),
+        col!("attacker_name", kills, |k| k.attacker_name.as_deref()),
+        col!("attacker_side", kills, |k| k.attacker_side.as_deref()),
         col!("attacker_x", kills, |k| k.attacker_x),
         col!("attacker_y", kills, |k| k.attacker_y),
         col!("attacker_z", kills, |k| k.attacker_z),
         col!("victim_entity_id", kills, |k| k.victim_entity_id),
         col!("victim_entity_serial", kills, |k| k.victim_entity_serial),
         nullable_u64_column("victim_steamid", kills.iter().map(|k| k.victim_steamid)),
-        col!("victim_name", kills, |k| k.victim_name.clone()),
-        col!("victim_side", kills, |k| k.victim_side.clone()),
+        col!("victim_name", kills, |k| k.victim_name.as_deref()),
+        col!("victim_side", kills, |k| k.victim_side.as_deref()),
         col!("victim_x", kills, |k| k.victim_x),
         col!("victim_y", kills, |k| k.victim_y),
         col!("victim_z", kills, |k| k.victim_z),
@@ -2030,12 +2030,12 @@ fn kills_to_frame(kills: &[Kill]) -> PolarsResult<DataFrame> {
         col!("assister_entity_serial", kills, |k| k
             .assister_entity_serial),
         nullable_u64_column("assister_steamid", kills.iter().map(|k| k.assister_steamid)),
-        col!("assister_name", kills, |k| k.assister_name.clone()),
-        col!("assister_side", kills, |k| k.assister_side.clone()),
+        col!("assister_name", kills, |k| k.assister_name.as_deref()),
+        col!("assister_side", kills, |k| k.assister_side.as_deref()),
         col!("assister_x", kills, |k| k.assister_x),
         col!("assister_y", kills, |k| k.assister_y),
         col!("assister_z", kills, |k| k.assister_z),
-        col!("weapon", kills, |k| k.weapon.clone()),
+        col!("weapon", kills, |k| k.weapon.as_str()),
         col!("headshot", kills, |k| k.headshot),
         col!("assist_flash", kills, |k| k.assist_flash),
         col!("dominated", kills, |k| k.dominated),
@@ -2044,7 +2044,7 @@ fn kills_to_frame(kills: &[Kill]) -> PolarsResult<DataFrame> {
         col!("revenge", kills, |k| k.revenge),
         col!("thrusmoke", kills, |k| k.thrusmoke),
         col!("hitgroup", kills, |k| k.hitgroup),
-        col!("hitgroup_name", kills, |k| k.hitgroup_name.clone()),
+        col!("hitgroup_name", kills, |k| k.hitgroup_name.as_str()),
         col!("is_trade", kills, |k| k.is_trade),
         col!("victim_traded", kills, |k| k.victim_traded),
         col!("tick", kills, |k| k.tick),
@@ -2060,24 +2060,24 @@ fn damages_to_frame(damages: &[Damage]) -> PolarsResult<DataFrame> {
             "attacker_steamid",
             damages.iter().map(|d| d.attacker_steamid),
         ),
-        col!("attacker_name", damages, |d| d.attacker_name.clone()),
-        col!("attacker_side", damages, |d| d.attacker_side.clone()),
+        col!("attacker_name", damages, |d| d.attacker_name.as_deref()),
+        col!("attacker_side", damages, |d| d.attacker_side.as_deref()),
         col!("attacker_x", damages, |d| d.attacker_x),
         col!("attacker_y", damages, |d| d.attacker_y),
         col!("attacker_z", damages, |d| d.attacker_z),
         col!("victim_entity_id", damages, |d| d.victim_entity_id),
         col!("victim_entity_serial", damages, |d| d.victim_entity_serial),
         nullable_u64_column("victim_steamid", damages.iter().map(|d| d.victim_steamid)),
-        col!("victim_name", damages, |d| d.victim_name.clone()),
-        col!("victim_side", damages, |d| d.victim_side.clone()),
+        col!("victim_name", damages, |d| d.victim_name.as_deref()),
+        col!("victim_side", damages, |d| d.victim_side.as_deref()),
         col!("victim_x", damages, |d| d.victim_x),
         col!("victim_y", damages, |d| d.victim_y),
         col!("victim_z", damages, |d| d.victim_z),
-        col!("weapon", damages, |d| d.weapon.clone()),
+        col!("weapon", damages, |d| d.weapon.as_str()),
         col!("dmg_health", damages, |d| d.dmg_health),
         col!("dmg_armor", damages, |d| d.dmg_armor),
         col!("hitgroup", damages, |d| d.hitgroup),
-        col!("hitgroup_name", damages, |d| d.hitgroup_name.clone()),
+        col!("hitgroup_name", damages, |d| d.hitgroup_name.as_str()),
         col!("health_pre", damages, |d| d.health_pre),
         col!("health_post", damages, |d| d.health_post),
         col!("armor_pre", damages, |d| d.armor_pre),
@@ -2089,12 +2089,12 @@ fn damages_to_frame(damages: &[Damage]) -> PolarsResult<DataFrame> {
 fn bomb_to_frame(bomb: &[BombEvent]) -> PolarsResult<DataFrame> {
     df_from_columns(vec![
         col!("tick", bomb, |b| b.tick),
-        col!("event", bomb, |b| b.event.clone()),
+        col!("event", bomb, |b| b.event.as_str()),
         col!("entity_id", bomb, |b| b.entity_id),
         col!("entity_serial", bomb, |b| b.entity_serial),
         nullable_u64_column("steamid", bomb.iter().map(|b| b.steamid)),
-        col!("name", bomb, |b| b.name.clone()),
-        col!("bombsite", bomb, |b| b.bombsite.clone()),
+        col!("name", bomb, |b| b.name.as_deref()),
+        col!("bombsite", bomb, |b| b.bombsite.as_deref()),
         col!("x", bomb, |b| b.x),
         col!("y", bomb, |b| b.y),
         col!("z", bomb, |b| b.z),
@@ -2104,13 +2104,13 @@ fn bomb_to_frame(bomb: &[BombEvent]) -> PolarsResult<DataFrame> {
 fn grenades_to_frame(grenades: &[Grenade]) -> PolarsResult<DataFrame> {
     df_from_columns(vec![
         col!("tick", grenades, |g| g.tick),
-        col!("thrower_name", grenades, |g| g.thrower_name.clone()),
+        col!("thrower_name", grenades, |g| g.thrower_name.as_deref()),
         nullable_u64_column(
             "thrower_steamid",
             grenades.iter().map(|g| g.thrower_steamid),
         ),
-        col!("thrower_side", grenades, |g| g.thrower_side.clone()),
-        col!("type", grenades, |g| g.grenade_type.clone()),
+        col!("thrower_side", grenades, |g| g.thrower_side.as_deref()),
+        col!("type", grenades, |g| g.grenade_type.as_str()),
         col!("entity_id", grenades, |g| g.entity_id),
         col!("entity_serial", grenades, |g| g.entity_serial),
         col!("x", grenades, |g| g.x),
@@ -2123,10 +2123,10 @@ fn fires_to_frame(fires: &[Fire]) -> PolarsResult<DataFrame> {
     df_from_columns(vec![
         col!("start_tick", fires, |f| f.start_tick),
         col!("end_tick", fires, |f| f.end_tick),
-        col!("thrower_name", fires, |f| f.thrower_name.clone()),
+        col!("thrower_name", fires, |f| f.thrower_name.as_deref()),
         nullable_u64_column("thrower_steamid", fires.iter().map(|f| f.thrower_steamid)),
-        col!("thrower_side", fires, |f| f.thrower_side.clone()),
-        col!("type", fires, |f| f.fire_type.clone()),
+        col!("thrower_side", fires, |f| f.thrower_side.as_deref()),
+        col!("type", fires, |f| f.fire_type.as_str()),
         col!("entity_id", fires, |f| f.entity_id),
         col!("entity_serial", fires, |f| f.entity_serial),
         col!("x", fires, |f| f.x),
@@ -2139,9 +2139,9 @@ fn smokes_to_frame(smokes: &[Smoke]) -> PolarsResult<DataFrame> {
     df_from_columns(vec![
         col!("start_tick", smokes, |s| s.start_tick),
         col!("end_tick", smokes, |s| s.end_tick),
-        col!("thrower_name", smokes, |s| s.thrower_name.clone()),
+        col!("thrower_name", smokes, |s| s.thrower_name.as_deref()),
         nullable_u64_column("thrower_steamid", smokes.iter().map(|s| s.thrower_steamid)),
-        col!("thrower_side", smokes, |s| s.thrower_side.clone()),
+        col!("thrower_side", smokes, |s| s.thrower_side.as_deref()),
         col!("entity_id", smokes, |s| s.entity_id),
         col!("entity_serial", smokes, |s| s.entity_serial),
         col!("x", smokes, |s| s.x),
@@ -2156,14 +2156,14 @@ fn shots_to_frame(shots: &[Shot]) -> PolarsResult<DataFrame> {
         col!("entity_id", shots, |s| s.entity_id),
         col!("entity_serial", shots, |s| s.entity_serial),
         nullable_u64_column("steamid", shots.iter().map(|s| s.steamid)),
-        col!("name", shots, |s| s.name.clone()),
-        col!("side", shots, |s| s.side.clone()),
+        col!("name", shots, |s| s.name.as_deref()),
+        col!("side", shots, |s| s.side.as_deref()),
         col!("x", shots, |s| s.x),
         col!("y", shots, |s| s.y),
         col!("z", shots, |s| s.z),
         col!("pitch", shots, |s| s.pitch),
         col!("yaw", shots, |s| s.yaw),
-        col!("weapon", shots, |s| s.weapon.clone()),
+        col!("weapon", shots, |s| s.weapon.as_str()),
         col!("scoped", shots, |s| s.scoped),
         col!("inaccuracy", shots, |s| s.inaccuracy),
         col!("num_bullets_remaining", shots, |s| s.num_bullets_remaining),
@@ -2173,9 +2173,9 @@ fn shots_to_frame(shots: &[Shot]) -> PolarsResult<DataFrame> {
 fn players_to_frame(players: &[Player]) -> PolarsResult<DataFrame> {
     df_from_columns(vec![
         col!("steamid", players, |p| p.steamid),
-        col!("name", players, |p| p.name.clone()),
-        col!("side", players, |p| p.side.clone()),
-        col!("team_clan_name", players, |p| p.team_clan_name.clone()),
+        col!("name", players, |p| p.name.as_deref()),
+        col!("side", players, |p| p.side.as_deref()),
+        col!("team_clan_name", players, |p| p.team_clan_name.as_deref()),
     ])
 }
 
@@ -2183,7 +2183,7 @@ fn states_to_frame(states: &[PlayerState]) -> PolarsResult<DataFrame> {
     df_from_columns(vec![
         col!("tick", states, |s| s.tick),
         col!("steamid", states, |s| s.steamid),
-        col!("name", states, |s| s.name.clone()),
+        col!("name", states, |s| s.name.as_deref()),
         col!("side", states, |s| s.side),
         col!("x", states, |s| s.x),
         col!("y", states, |s| s.y),
@@ -2228,11 +2228,11 @@ fn item_events_to_frame(items: &[ItemEvent]) -> PolarsResult<DataFrame> {
         col!("tick", items, |i| i.tick),
         col!("entity_id", items, |i| i.entity_id),
         col!("entity_serial", items, |i| i.entity_serial),
-        col!("action", items, |i| i.action.clone()),
+        col!("action", items, |i| i.action.as_str()),
         nullable_u64_column("steamid", items.iter().map(|i| i.steamid)),
-        col!("name", items, |i| i.name.clone()),
-        col!("side", items, |i| i.side.clone()),
-        col!("item", items, |i| i.item.clone()),
+        col!("name", items, |i| i.name.as_deref()),
+        col!("side", items, |i| i.side.as_deref()),
+        col!("item", items, |i| i.item.as_str()),
         col!("x", items, |i| i.x),
         col!("y", items, |i| i.y),
         col!("z", items, |i| i.z),
@@ -2255,16 +2255,16 @@ fn blinds_to_frame(blinds: &[Blind]) -> PolarsResult<DataFrame> {
             "attacker_steamid",
             blinds.iter().map(|b| b.attacker_steamid),
         ),
-        col!("attacker_name", blinds, |b| b.attacker_name.clone()),
-        col!("attacker_side", blinds, |b| b.attacker_side.clone()),
+        col!("attacker_name", blinds, |b| b.attacker_name.as_deref()),
+        col!("attacker_side", blinds, |b| b.attacker_side.as_deref()),
         col!("attacker_x", blinds, |b| b.attacker_x),
         col!("attacker_y", blinds, |b| b.attacker_y),
         col!("attacker_z", blinds, |b| b.attacker_z),
         col!("victim_entity_id", blinds, |b| b.victim_entity_id),
         col!("victim_entity_serial", blinds, |b| b.victim_entity_serial),
         nullable_u64_column("victim_steamid", blinds.iter().map(|b| b.victim_steamid)),
-        col!("victim_name", blinds, |b| b.victim_name.clone()),
-        col!("victim_side", blinds, |b| b.victim_side.clone()),
+        col!("victim_name", blinds, |b| b.victim_name.as_deref()),
+        col!("victim_side", blinds, |b| b.victim_side.as_deref()),
         col!("victim_x", blinds, |b| b.victim_x),
         col!("victim_y", blinds, |b| b.victim_y),
         col!("victim_z", blinds, |b| b.victim_z),
@@ -2276,16 +2276,16 @@ fn chat_to_frame(chat: &[ChatMessage]) -> PolarsResult<DataFrame> {
     df_from_columns(vec![
         col!("tick", chat, |c| c.tick),
         col!("entity_index", chat, |c| c.entity_index),
-        col!("name", chat, |c| c.name.clone()),
-        col!("message", chat, |c| c.message.clone()),
-        col!("channel", chat, |c| c.channel.clone()),
+        col!("name", chat, |c| c.name.as_deref()),
+        col!("message", chat, |c| c.message.as_str()),
+        col!("channel", chat, |c| c.channel.as_deref()),
     ])
 }
 
 fn stats_to_frame(stats: &[PlayerStats]) -> PolarsResult<DataFrame> {
     df_from_columns(vec![
         col!("steamid", stats, |s| s.steamid),
-        col!("name", stats, |s| s.name.clone()),
+        col!("name", stats, |s| s.name.as_str()),
         col!("rounds_played", stats, |s| s.rounds_played),
         col!("kills", stats, |s| s.kills),
         col!("deaths", stats, |s| s.deaths),
@@ -2780,18 +2780,18 @@ impl TickColumn {
                 a.extend(b);
                 Float(a)
             }
-            (Str(a), Str(b)) => {
-                let combined = a.append(b);
-                Str(combined)
-            }
+            (Str(a), Str(b)) => Str(a.append(b)),
             // An int/float mix widens the whole column to float.
             (Int(a), Float(b)) => {
-                let mut f = Int(a).into_floats();
+                let mut f: Vec<_> = a
+                    .into_iter()
+                    .map(|value| value.map(|value| value as f64))
+                    .collect();
                 f.extend(b);
                 Float(f)
             }
             (Float(mut a), Int(b)) => {
-                a.extend(Int(b).into_floats());
+                a.extend(b.into_iter().map(|value| value.map(|value| value as f64)));
                 Float(a)
             }
             // Anything else falls back to strings.
@@ -2826,15 +2826,6 @@ impl TickColumn {
             Str(v) => v.pad_back(n),
         }
         self
-    }
-
-    fn into_floats(self) -> Vec<Option<f64>> {
-        match self {
-            TickColumn::Empty(n) => vec![None; n],
-            TickColumn::Int(v) => v.into_iter().map(|o| o.map(|i| i as f64)).collect(),
-            TickColumn::Float(v) => v,
-            other => other.into_strs().iter().map(|_| None).collect(),
-        }
     }
 
     fn into_strs(self) -> Vec<Option<String>> {
@@ -2883,11 +2874,11 @@ fn field_as_bool(v: &FieldValue) -> Option<bool> {
 fn events_to_frame(events: &[&GameEvent]) -> PolarsResult<DataFrame> {
     // Collect each key name once. Keep the order in which each name first occurs.
     let mut seen = HashSet::new();
-    let mut key_order: Vec<String> = Vec::new();
+    let mut key_order: Vec<&str> = Vec::new();
     for event in events {
         for (key, _) in &event.keys {
             if seen.insert(key.as_str()) {
-                key_order.push(key.clone());
+                key_order.push(key);
             }
         }
     }
@@ -2895,17 +2886,17 @@ fn events_to_frame(events: &[&GameEvent]) -> PolarsResult<DataFrame> {
     let ticks: Vec<i64> = events.iter().map(|event| i64::from(event.tick)).collect();
     let mut columns: Vec<Column> = vec![Column::new("tick".into(), ticks)];
 
-    for key in &key_order {
-        let values: Vec<Option<String>> = events
+    for key in key_order {
+        let values: Vec<Option<&str>> = events
             .iter()
             .map(|e| {
                 e.keys
                     .iter()
                     .find(|(k, _)| k == key)
-                    .map(|(_, v)| v.clone())
+                    .map(|(_, v)| v.as_str())
             })
             .collect();
-        columns.push(Column::new(key.as_str().into(), values));
+        columns.push(Column::new(key.into(), values));
     }
 
     df_from_columns(columns)

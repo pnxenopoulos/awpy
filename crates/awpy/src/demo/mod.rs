@@ -6,6 +6,7 @@
 mod adapter;
 mod command;
 pub mod decode;
+mod events;
 mod parser;
 
 pub use command::{CmdHeader, EDemoCommands, SvcMessages, command_name, user_message_name};

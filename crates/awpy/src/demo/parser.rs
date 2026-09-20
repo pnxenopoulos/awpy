@@ -13,12 +13,15 @@ use std::sync::{Arc, Mutex, OnceLock};
 use super::command::{self, CmdHeader, dem, ge, net, svc};
 
 use super::adapter::Cs2Adapter;
+use super::events::{
+    EventDescriptor, decode_direct_user_message, decode_legacy_event, decode_user_message,
+};
 
 mod playback;
 
 use awpy_proto::proto::{
-    CDemoFileHeader, CDemoFileInfo, CDemoFullPacket, CDemoPacket, CMsgSource1LegacyGameEvent,
-    CMsgSource1LegacyGameEventList, CnetMsgSetConVar, CsvcMsgUserMessage,
+    CDemoFileHeader, CDemoFileInfo, CDemoFullPacket, CDemoPacket, CMsgSource1LegacyGameEventList,
+    CnetMsgSetConVar,
 };
 
 /// Magic bytes at the start of every Source 2 demo file.
@@ -78,36 +81,6 @@ pub struct GameEvent {
     pub payload: Vec<u8>,
 }
 
-struct EventDescriptor {
-    name: String,
-    field_names: Vec<String>,
-}
-
-fn format_event_key(key: &awpy_proto::proto::c_msg_source1_legacy_game_event::KeyT) -> String {
-    if let Some(ref s) = key.val_string {
-        return s.clone();
-    }
-    if let Some(f) = key.val_float {
-        return f.to_string();
-    }
-    if let Some(l) = key.val_long {
-        return l.to_string();
-    }
-    if let Some(s) = key.val_short {
-        return s.to_string();
-    }
-    if let Some(b) = key.val_byte {
-        return b.to_string();
-    }
-    if let Some(b) = key.val_bool {
-        return b.to_string();
-    }
-    if let Some(u) = key.val_uint64 {
-        return u.to_string();
-    }
-    String::new()
-}
-
 /// Internal storage for demo data — either memory-mapped or an owned byte buffer.
 enum Storage {
     Mmap(Mmap),
@@ -140,7 +113,13 @@ pub struct Parser {
 }
 
 impl Parser {
-    /// Open a demo file and memory-map it for zero-copy parsing.
+    /// Open a demo file and map its bytes into memory.
+    ///
+    /// The file must not change while the parser exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be opened or mapped.
     pub fn from_file(path: &Path) -> Result<Self> {
         let file = std::fs::File::open(path)?;
         // SAFETY: The file is opened read-only and the mapping lives as
@@ -585,70 +564,25 @@ impl Parser {
                     let msg = CMsgSource1LegacyGameEventList::decode(msg_data)?;
                     for desc in msg.descriptors {
                         let eventid = desc.eventid.unwrap_or_default();
-                        let name = desc.name.unwrap_or_default();
-                        let field_names = desc
-                            .keys
-                            .iter()
-                            .map(|k| k.name.clone().unwrap_or_default())
-                            .collect();
-                        descriptors.insert(eventid, EventDescriptor { name, field_names });
+                        descriptors.insert(eventid, EventDescriptor::from(desc));
                     }
                 }
                 ge::SOURCE1_LEGACY_GAME_EVENT => {
-                    let msg = CMsgSource1LegacyGameEvent::decode(msg_data)?;
-                    let eventid = msg.eventid.unwrap_or_default();
-                    let (name, keys) = if let Some(desc) = descriptors.get(&eventid) {
-                        let keys: Vec<(String, String)> = desc
-                            .field_names
-                            .iter()
-                            .zip(msg.keys.iter())
-                            .map(|(fname, key)| (fname.clone(), format_event_key(key)))
-                            .collect();
-                        (desc.name.clone(), keys)
-                    } else {
-                        let name = msg.event_name.unwrap_or_else(|| format!("event_{eventid}"));
-                        (name, Vec::new())
-                    };
-                    events.push(GameEvent {
+                    events.push(decode_legacy_event(
                         tick,
-                        name,
                         msg_type,
-                        keys,
-                        payload: msg_data.to_vec(),
-                    });
+                        msg_data,
+                        descriptors,
+                        true,
+                    )?);
                 }
                 svc::USER_MESSAGE => {
-                    let msg = CsvcMsgUserMessage::decode(msg_data)?;
-                    let inner_type = msg.msg_type.unwrap_or_default();
-                    let msg_type = u32::try_from(inner_type).map_err(|_| Error::Parse {
-                        context: format!("negative user message type: {inner_type}"),
-                    })?;
-                    let name = command::user_message_name(inner_type);
-                    let inner_payload = msg.msg_data.unwrap_or_default();
-                    events.push(GameEvent {
-                        tick,
-                        name,
-                        msg_type,
-                        keys: Vec::new(),
-                        payload: inner_payload,
-                    });
+                    events.push(decode_user_message(tick, msg_data)?);
                 }
                 direct_type if is_user_message => {
-                    events.push(GameEvent {
-                        tick,
-                        name: command::user_message_name(
-                            i32::try_from(direct_type).expect("known user message type"),
-                        ),
-                        msg_type: direct_type,
-                        keys: Vec::new(),
-                        payload: msg_data.to_vec(),
-                    });
+                    events.push(decode_direct_user_message(tick, direct_type, msg_data)?);
                 }
-                _ => {
-                    // Other packet messages (net messages, etc.) are not game
-                    // events. Unlike Deadlock's Citadel messages, CS2 delivers
-                    // all user messages wrapped in svc_UserMessage above.
-                }
+                _ => {}
             }
         }
 

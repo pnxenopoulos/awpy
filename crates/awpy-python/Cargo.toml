@@ -13,7 +13,10 @@ crate-type = ["cdylib"]
 [dependencies]
 awpy = { workspace = true }
 awpy-proto = { workspace = true }
-prost = "0.14"
+prost.workspace = true
 pyo3 = { version = "0.27", features = ["extension-module"] }
 pyo3-polars = "0.26"
 polars = { version = "0.53", features = ["dtype-full"] }
+
+[lints]
+workspace = true

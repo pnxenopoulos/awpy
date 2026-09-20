@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use awpy_proto::proto::{
-    CDemoClassInfo, CDemoFullPacket, CDemoPacket, CDemoSendTables, CMsgSource1LegacyGameEvent,
-    CMsgSource1LegacyGameEventList, CsvcMsgCreateStringTable, CsvcMsgFlattenedSerializer,
-    CsvcMsgPacketEntities, CsvcMsgServerInfo, CsvcMsgUpdateStringTable, CsvcMsgUserMessage,
+    CDemoClassInfo, CDemoFullPacket, CDemoPacket, CDemoSendTables, CMsgSource1LegacyGameEventList,
+    CsvcMsgCreateStringTable, CsvcMsgFlattenedSerializer, CsvcMsgPacketEntities, CsvcMsgServerInfo,
+    CsvcMsgUpdateStringTable,
 };
 use pbdems2::demo::{CommandFrame, command as demo_command};
 use pbdems2::entity::{
@@ -18,6 +18,9 @@ use prost::Message;
 use crate::error::{Error, Result};
 
 use super::command::{self as awpy_command, ge, svc};
+use super::events::{
+    EventDescriptor, decode_direct_user_message, decode_legacy_event, decode_user_message,
+};
 use super::parser::GameEvent;
 
 const SYMBOLIC_ARRAY_LENGTHS: &[(&str, usize)] = &[
@@ -35,12 +38,6 @@ const DECODE_PROFILE: DecodeProfile = DecodeProfile::new(
 .with_symbolic_array_lengths(SYMBOLIC_ARRAY_LENGTHS)
 .with_pointer_types(POINTER_TYPES)
 .with_dynamic_serializer_types(DYNAMIC_SERIALIZER_TYPES);
-
-#[derive(Clone)]
-pub(super) struct EventDescriptor {
-    name: String,
-    field_names: Vec<String>,
-}
 
 #[derive(Default)]
 enum EventCollection {
@@ -272,19 +269,13 @@ impl Cs2Adapter {
                     let message = CMsgSource1LegacyGameEventList::decode(payload)?;
                     for descriptor in message.descriptors {
                         let event_id = descriptor.eventid.unwrap_or_default();
-                        let name = descriptor.name.unwrap_or_default();
+                        let descriptor = EventDescriptor::from(descriptor);
                         let selected = matches!(
                             &self.event_collection,
                             EventCollection::Legacy { names, .. }
-                                if names.contains(name.as_str())
+                                if names.contains(descriptor.name.as_str())
                         );
-                        let field_names = descriptor
-                            .keys
-                            .iter()
-                            .map(|key| key.name.clone().unwrap_or_default())
-                            .collect();
-                        self.descriptors
-                            .insert(event_id, EventDescriptor { name, field_names });
+                        self.descriptors.insert(event_id, descriptor);
                         if selected
                             && let EventCollection::Legacy { event_ids, .. } =
                                 &mut self.event_collection
@@ -297,94 +288,29 @@ impl Cs2Adapter {
                     let Some(include_payload) = self.selected_legacy_event(payload)? else {
                         continue;
                     };
-                    let message = CMsgSource1LegacyGameEvent::decode(payload)?;
-                    let event_id = message.eventid.unwrap_or_default();
-                    let (name, keys) = if let Some(descriptor) = self.descriptors.get(&event_id) {
-                        let keys = descriptor
-                            .field_names
-                            .iter()
-                            .zip(message.keys.iter())
-                            .map(|(name, key)| (name.clone(), format_event_key(key)))
-                            .collect();
-                        (descriptor.name.clone(), keys)
-                    } else {
-                        (
-                            message
-                                .event_name
-                                .unwrap_or_else(|| format!("event_{event_id}")),
-                            Vec::new(),
-                        )
-                    };
-                    self.tick_events.push(GameEvent {
+                    self.tick_events.push(decode_legacy_event(
                         tick,
-                        name,
-                        msg_type: message_type,
-                        keys,
-                        payload: if include_payload {
-                            payload.to_vec()
-                        } else {
-                            Vec::new()
-                        },
-                    });
+                        message_type,
+                        payload,
+                        &self.descriptors,
+                        include_payload,
+                    )?);
                 }
                 svc::USER_MESSAGE if self.collects_user_messages() => {
-                    let message = CsvcMsgUserMessage::decode(payload)?;
-                    let inner_type = message.msg_type.unwrap_or_default();
-                    let msg_type = u32::try_from(inner_type).map_err(|_| Error::Parse {
-                        context: format!("negative user message type: {inner_type}"),
-                    })?;
-                    self.tick_events.push(GameEvent {
-                        tick,
-                        name: awpy_command::user_message_name(inner_type),
-                        msg_type,
-                        keys: Vec::new(),
-                        payload: message.msg_data.unwrap_or_default(),
-                    });
+                    self.tick_events.push(decode_user_message(tick, payload)?);
                 }
                 direct_type
                     if self.collects_user_messages()
                         && awpy_command::is_user_message_type(direct_type) =>
                 {
-                    self.tick_events.push(GameEvent {
-                        tick,
-                        name: awpy_command::user_message_name(
-                            i32::try_from(direct_type).expect("known user message type"),
-                        ),
-                        msg_type: direct_type,
-                        keys: Vec::new(),
-                        payload: payload.to_vec(),
-                    });
+                    self.tick_events
+                        .push(decode_direct_user_message(tick, direct_type, payload)?);
                 }
                 _ => unreachable!(),
             }
         }
         Ok(())
     }
-}
-
-fn format_event_key(key: &awpy_proto::proto::c_msg_source1_legacy_game_event::KeyT) -> String {
-    if let Some(ref value) = key.val_string {
-        return value.clone();
-    }
-    if let Some(value) = key.val_float {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_long {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_short {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_byte {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_bool {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_uint64 {
-        return value.to_string();
-    }
-    String::new()
 }
 
 fn decode_send_tables(command: CDemoSendTables) -> Result<FlattenedSerializer> {
@@ -447,7 +373,7 @@ fn create_string_table(message: CsvcMsgCreateStringTable) -> CreateStringTable {
 
 #[cfg(test)]
 mod tests {
-    use awpy_proto::proto::c_msg_source1_legacy_game_event::KeyT;
+    use awpy_proto::proto::{CMsgSource1LegacyGameEvent, c_msg_source1_legacy_game_event::KeyT};
 
     use super::*;
 

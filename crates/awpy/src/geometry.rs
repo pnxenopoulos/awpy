@@ -169,6 +169,11 @@ impl Mesh {
     /// Layout (little-endian): `b"AWMH"`, `version: u32`, `n_verts: u32`,
     /// `n_tris: u32`, then `n_verts * 3` `f32` positions and `n_tris * 3`
     /// `u32` indices.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the header is invalid, the data is incomplete,
+    /// a count exceeds the supported size, or a triangle index is invalid.
     pub fn from_bytes(data: &[u8]) -> Result<Mesh> {
         let parse = |context: &str| Error::Parse {
             context: format!("mesh: {context}"),
@@ -176,43 +181,47 @@ impl Mesh {
         if data.len() < 16 {
             return Err(parse("truncated header"));
         }
-        if &data[0..4] != MAGIC {
+        if &data[..4] != MAGIC {
             return Err(parse("bad magic (expected AWMH)"));
         }
-        let read_u32 = |off: usize| u32::from_le_bytes(data[off..off + 4].try_into().unwrap());
-        let version = read_u32(4);
+        let (header, _) = data[..16].as_chunks::<4>();
+        let version = u32::from_le_bytes(header[1]);
         if version != FORMAT_VERSION {
             return Err(parse(&format!("unsupported version {version}")));
         }
-        let n_verts = read_u32(8) as usize;
-        let n_tris = read_u32(12) as usize;
-
-        let verts_bytes = n_verts * 12;
-        let tris_bytes = n_tris * 12;
-        if data.len() < 16 + verts_bytes + tris_bytes {
-            return Err(parse("truncated body"));
-        }
+        let vertex_count = u32::from_le_bytes(header[2]);
+        let n_verts =
+            usize::try_from(vertex_count).map_err(|_| parse("vertex count out of range"))?;
+        let n_tris = usize::try_from(u32::from_le_bytes(header[3]))
+            .map_err(|_| parse("triangle count out of range"))?;
+        let verts_bytes = n_verts
+            .checked_mul(12)
+            .ok_or_else(|| parse("vertex size overflow"))?;
+        let tris_bytes = n_tris
+            .checked_mul(12)
+            .ok_or_else(|| parse("triangle size overflow"))?;
+        let body_size = verts_bytes
+            .checked_add(tris_bytes)
+            .ok_or_else(|| parse("body size overflow"))?;
+        let body = data[16..]
+            .get(..body_size)
+            .ok_or_else(|| parse("truncated body"))?;
+        let (vertex_data, triangle_data) = body.split_at(verts_bytes);
 
         let mut vertices = Vec::with_capacity(n_verts);
-        let mut off = 16;
-        for _ in 0..n_verts {
-            let x = f32::from_le_bytes(data[off..off + 4].try_into().unwrap());
-            let y = f32::from_le_bytes(data[off + 4..off + 8].try_into().unwrap());
-            let z = f32::from_le_bytes(data[off + 8..off + 12].try_into().unwrap());
-            vertices.push([x, y, z]);
-            off += 12;
+        for vertex in vertex_data.as_chunks::<12>().0 {
+            let (coordinates, _) = vertex.as_chunks::<4>();
+            vertices.push([coordinates[0], coordinates[1], coordinates[2]].map(f32::from_le_bytes));
         }
 
         let mut triangles = Vec::with_capacity(n_tris);
-        for _ in 0..n_tris {
-            let a = u32::from_le_bytes(data[off..off + 4].try_into().unwrap());
-            let b = u32::from_le_bytes(data[off + 4..off + 8].try_into().unwrap());
-            let c = u32::from_le_bytes(data[off + 8..off + 12].try_into().unwrap());
-            if a as usize >= n_verts || b as usize >= n_verts || c as usize >= n_verts {
+        for triangle in triangle_data.as_chunks::<12>().0 {
+            let (indices, _) = triangle.as_chunks::<4>();
+            let triangle = [indices[0], indices[1], indices[2]].map(u32::from_le_bytes);
+            if triangle.iter().any(|&index| index >= vertex_count) {
                 return Err(parse("triangle index out of range"));
             }
-            triangles.push([a, b, c]);
-            off += 12;
+            triangles.push(triangle);
         }
 
         Ok(Mesh {
@@ -222,6 +231,10 @@ impl Mesh {
     }
 
     /// Load a mesh from an awpy `.mesh` file.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be read or parsed.
     pub fn from_file(path: &Path) -> Result<Mesh> {
         Mesh::from_bytes(&std::fs::read(path)?)
     }
@@ -464,6 +477,31 @@ mod tests {
                 [0.0, -10.0, 10.0],
             ],
             triangles: vec![[0, 1, 2], [0, 2, 3]],
+        }
+    }
+
+    #[test]
+    fn oversized_mesh_counts_return_an_error_before_allocation() {
+        let mut data = MAGIC.to_vec();
+        data.extend_from_slice(&FORMAT_VERSION.to_le_bytes());
+        data.extend_from_slice(&u32::MAX.to_le_bytes());
+        data.extend_from_slice(&u32::MAX.to_le_bytes());
+        assert!(Mesh::from_bytes(&data).is_err());
+    }
+
+    #[test]
+    fn every_truncated_mesh_prefix_returns_an_error() {
+        let mut data = MAGIC.to_vec();
+        data.extend_from_slice(&FORMAT_VERSION.to_le_bytes());
+        data.extend_from_slice(&1_u32.to_le_bytes());
+        data.extend_from_slice(&1_u32.to_le_bytes());
+        data.extend_from_slice(&[0; 24]);
+        assert!(Mesh::from_bytes(&data).is_ok());
+        for end in 0..data.len() {
+            assert!(
+                Mesh::from_bytes(&data[..end]).is_err(),
+                "prefix length {end}"
+            );
         }
     }
 

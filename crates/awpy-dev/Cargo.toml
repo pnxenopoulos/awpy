@@ -12,14 +12,14 @@ keywords = ["counter-strike", "cs2", "demo", "parser", "source2"]
 categories = ["command-line-utilities", "game-development"]
 
 [dependencies]
-anyhow = "1.0"
+anyhow.workspace = true
 clap = { version = "4.5", features = ["derive"] }
 colored = "2"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde.workspace = true
+serde_json.workspace = true
 awpy = { workspace = true }
 awpy-proto = { workspace = true }
-prost = "0.14"
+prost.workspace = true
 
 [lib]
 name = "awpy_dev"
@@ -28,3 +28,6 @@ path = "src/lib.rs"
 [[bin]]
 name = "awpy-dev"
 path = "src/main.rs"
+
+[lints]
+workspace = true

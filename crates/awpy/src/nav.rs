@@ -163,6 +163,11 @@ pub struct Nav {
 
 impl Nav {
     /// Parse a navigation mesh from raw `.nav` bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the format is not supported, the data is incomplete,
+    /// or a polygon index is invalid.
     pub fn from_bytes(data: &[u8]) -> Result<Nav> {
         let mut r = Reader::new(data);
 
@@ -235,6 +240,10 @@ impl Nav {
     }
 
     /// Load and parse a navigation mesh from a `.nav` file.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be read or parsed.
     pub fn from_file(path: &Path) -> Result<Nav> {
         Nav::from_bytes(&std::fs::read(path)?)
     }
@@ -586,7 +595,7 @@ fn skip_kv3(r: &mut Reader) -> Result<()> {
     const MAGIC0: u32 = 0x0356_4B56;
 
     // Align KV3 documents to an 8-byte boundary.
-    r.align8();
+    r.align8()?;
     let magic = r.u32()?;
     if magic == MAGIC0 {
         return Err(parse("KV3 v0 document not supported"));
@@ -680,13 +689,19 @@ impl<'a> Reader<'a> {
         Ok(slice)
     }
 
+    fn array<const N: usize>(&mut self) -> Result<[u8; N]> {
+        let mut bytes = [0; N];
+        bytes.copy_from_slice(self.take(N)?);
+        Ok(bytes)
+    }
+
     fn skip(&mut self, n: usize) -> Result<()> {
         self.take(n).map(|_| ())
     }
 
     /// Advance to the next 8-byte boundary (KV3 documents are so aligned).
-    fn align8(&mut self) {
-        self.pos = (self.pos + 7) & !7;
+    fn align8(&mut self) -> Result<()> {
+        self.skip((8 - self.pos % 8) % 8)
     }
 
     /// Skip a null-terminated byte string, including its terminator.
@@ -700,19 +715,19 @@ impl<'a> Reader<'a> {
     }
 
     fn u32(&mut self) -> Result<u32> {
-        Ok(u32::from_le_bytes(self.take(4)?.try_into().unwrap()))
+        Ok(u32::from_le_bytes(self.array()?))
     }
 
     fn i32(&mut self) -> Result<i32> {
-        Ok(i32::from_le_bytes(self.take(4)?.try_into().unwrap()))
+        Ok(i32::from_le_bytes(self.array()?))
     }
 
     fn i64(&mut self) -> Result<i64> {
-        Ok(i64::from_le_bytes(self.take(8)?.try_into().unwrap()))
+        Ok(i64::from_le_bytes(self.array()?))
     }
 
     fn f32(&mut self) -> Result<f32> {
-        Ok(f32::from_le_bytes(self.take(4)?.try_into().unwrap()))
+        Ok(f32::from_le_bytes(self.array()?))
     }
 
     fn vec3(&mut self) -> Result<Vec3> {
@@ -723,6 +738,28 @@ impl<'a> Reader<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn failed_reads_keep_the_cursor_at_the_last_valid_position() {
+        let mut reader = Reader::new(&[1, 2, 3]);
+        assert_eq!(reader.u8().unwrap(), 1);
+        assert!(reader.u32().is_err());
+        assert_eq!(reader.u8().unwrap(), 2);
+        assert!(reader.skip(usize::MAX).is_err());
+        assert_eq!(reader.u8().unwrap(), 3);
+    }
+
+    #[test]
+    fn alignment_checks_the_available_bytes() {
+        let data = [0; 9];
+        let mut reader = Reader::new(&data);
+        reader.skip(1).unwrap();
+        reader.align8().unwrap();
+        assert_eq!(reader.pos, 8);
+        reader.u8().unwrap();
+        assert!(reader.align8().is_err());
+        assert_eq!(reader.pos, 9);
+    }
 
     /// Encode a minimal version-35 nav with `areas`, where each area is
     /// `(area_id, square corners, connections)`. Squares are axis-aligned unit
