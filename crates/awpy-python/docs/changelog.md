@@ -27,8 +27,8 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
 - Metadata: `header`, `tick_rate`, `chat`, `convars`.
 - Fixed `Demo.chat`. Awpy now reads user messages that packets store directly
   and messages inside `svc_UserMessage`. It also reads `SayTextChannel`.
-- Updated CS2 protobuf definitions to game build `2000899` (source revision
-  `10948930`), including the newly required Valve extension definitions; hit
+- Updated CS2 protobuf definitions to game build `2000918` (source revision
+  `11039926`), including the newly required Valve extension definitions; hit
   group names now cover the engine's `unused` (9) and `special` (11) values.
 - `awpy.SNAPSHOT_PROPERTIES` and `awpy.GAME_EVENTS` — discoverable catalogs of the
   per-player snapshot features (mapped to engine properties) and common events.
@@ -36,6 +36,13 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   typed row per player per tick, with default props and friendly aliases
   (`X`/`Y`/`Z`, velocity components and 3D speed, `health`, `armor`,
   `team_num`, `name`, `money`).
+- Updated the locked pbdems2 version to `0.3.2`. The version requirement
+  remains `0.3`.
+- Kept the public names of legacy CS user messages after upstream enum renames.
+- Fixed weapon variant names in snapshots and item events. Shared entity
+  classes now use the item-definition index, with a subclass-token fallback
+  when that index is absent or unknown. This distinguishes Deagle/Revolver,
+  M4A4/M4A1-S, and P2000/USP-S. Combat event weapon names are unchanged.
 - Updated to `pbdems2 0.3`: long-lived player, flash, projectile, and
   inventory tracking now keys entities by slot plus serial, preventing state
   from leaking when Source 2 reuses a slot. Raw `ticks(players_only=False)` rows

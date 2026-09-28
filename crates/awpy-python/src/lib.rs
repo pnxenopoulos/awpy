@@ -3,6 +3,8 @@
 //! Exposes a `Demo` class that returns demo metadata as a dict and game
 //! events / per-tick entity state as Polars `DataFrame`s.
 
+mod snapshot_columns;
+
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
@@ -13,6 +15,7 @@ use pyo3::exceptions::{PyAttributeError, PyFileNotFoundError, PyKeyError, PyValu
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator, PyList, PyString};
 use pyo3_polars::PyDataFrame;
+use snapshot_columns::SnapshotColumns;
 
 use awpy::datasets::{
     EventDatasetSelection, EventDatasets, PlayerStatsInputs, ProjectileSelection, Projectiles,
@@ -25,8 +28,8 @@ use awpy::map_control::{
 use awpy::nav::{Nav, PathWeight};
 use awpy::{
     Blind, BombEvent, ChatMessage, Context, Damage, Entity, EntityId, FieldValue, Fire, GameEvent,
-    Grenade, ItemEvent, Kill, Parser, Player, PlayerState, PlayerStats, Round, RoundEconomy,
-    Serializer, Shot, Smoke, cell_to_world,
+    Grenade, ItemEvent, Kill, Parser, Player, PlayerStats, Round, RoundEconomy, Serializer, Shot,
+    Smoke, cell_to_world,
 };
 
 pyo3::create_exception!(_awpy, InvalidDemoError, pyo3::exceptions::PyException);
@@ -895,7 +898,13 @@ impl Demo {
         {
             return py.detach(|| {
                 let states = self.parser.snapshot(explicit[0]).map_err(to_py_err)?;
-                Ok(PyDataFrame(states_to_frame(&states).map_err(polars_err)?))
+                Ok(PyDataFrame(
+                    states
+                        .into_iter()
+                        .collect::<SnapshotColumns>()
+                        .into_frame()
+                        .map_err(polars_err)?,
+                ))
             });
         }
 
@@ -929,16 +938,21 @@ impl Demo {
         }
 
         py.detach(|| {
-            let states = self
+            let chunks = self
                 .parser
-                .snapshots_query(
+                .snapshots_query_chunks::<SnapshotColumns>(
                     stride,
                     &tick_set,
                     start_tick.unwrap_or(i32::MIN),
                     end_tick.unwrap_or(i32::MAX),
                 )
                 .map_err(to_py_err)?;
-            let df = states_to_frame(&states).map_err(polars_err)?;
+            let mut chunks = chunks.into_iter();
+            let mut columns = chunks.next().unwrap_or_default();
+            for chunk in chunks {
+                columns.append(chunk);
+            }
+            let df = columns.into_frame().map_err(polars_err)?;
             Ok(PyDataFrame(df))
         })
     }
@@ -2176,50 +2190,6 @@ fn players_to_frame(players: &[Player]) -> PolarsResult<DataFrame> {
         col!("name", players, |p| p.name.as_deref()),
         col!("side", players, |p| p.side.as_deref()),
         col!("team_clan_name", players, |p| p.team_clan_name.as_deref()),
-    ])
-}
-
-fn states_to_frame(states: &[PlayerState]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("tick", states, |s| s.tick),
-        col!("steamid", states, |s| s.steamid),
-        col!("name", states, |s| s.name.as_deref()),
-        col!("side", states, |s| s.side),
-        col!("x", states, |s| s.x),
-        col!("y", states, |s| s.y),
-        col!("z", states, |s| s.z),
-        col!("velocity_x", states, |s| s.velocity_x),
-        col!("velocity_y", states, |s| s.velocity_y),
-        col!("velocity_z", states, |s| s.velocity_z),
-        col!("velocity", states, |s| s.velocity),
-        col!("pitch", states, |s| s.pitch),
-        col!("yaw", states, |s| s.yaw),
-        col!("health", states, |s| s.health),
-        col!("armor", states, |s| s.armor),
-        col!("has_helmet", states, |s| s.has_helmet),
-        col!("has_defuser", states, |s| s.has_defuser),
-        col!("has_bomb", states, |s| s.has_bomb),
-        col!("active_weapon", states, |s| s.active_weapon),
-        col!("primary_weapon", states, |s| s.primary_weapon),
-        col!("secondary_weapon", states, |s| s.secondary_weapon),
-        col!("fire_grenades", states, |s| s.fire_grenades),
-        col!("smoke_grenades", states, |s| s.smoke_grenades),
-        col!("he_grenades", states, |s| s.he_grenades),
-        col!("flashbangs", states, |s| s.flashbangs),
-        col!("decoy_grenades", states, |s| s.decoy_grenades),
-        col!("equipment_value", states, |s| s.equipment_value),
-        col!("equipment_value_round_start", states, |s| s
-            .equipment_value_round_start),
-        col!("money", states, |s| s.money),
-        col!("is_crouched", states, |s| s.is_crouched),
-        col!("is_walking", states, |s| s.is_walking),
-        col!("is_jumping", states, |s| s.is_jumping),
-        col!("is_in_bomb_zone", states, |s| s.is_in_bomb_zone),
-        col!("is_scoped", states, |s| s.is_scoped),
-        col!("is_defusing", states, |s| s.is_defusing),
-        col!("is_blinded", states, |s| s.is_blinded),
-        col!("flash_duration", states, |s| s.flash_duration),
-        col!("inventory", states, |s| s.inventory.clone()),
     ])
 }
 

@@ -233,6 +233,17 @@ uv run ruff check python tests
 uv run ty check python
 ```
 
+### Parsing benchmarks
+
+Run the Criterion suite with a local demo:
+
+```sh
+AWPY_BENCH_DEMO=/absolute/path/to/match.dem cargo criterion -p awpy --bench parse
+```
+
+See the [benchmark guide](crates/awpy/benches/README.md) for runner installation,
+workload filters, fixed parallelism, and baseline comparisons.
+
 ### Regenerating protobufs
 
 `crates/awpy-proto/src/proto.rs` is generated from the `.proto` files in

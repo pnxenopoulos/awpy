@@ -1,133 +1,186 @@
-//! Parser pipeline benchmarks.
+//! Parsing benchmarks for cargo-criterion and cargo bench.
 //!
-//! Each phase of the parse pipeline is timed in isolation so it is obvious where
-//! the time goes:
-//!
-//! - `init` group — the one-time costs paid before any tick is decoded:
-//!   `from_file` (open + memory-map), `parse_send_tables`, `parse_class_info`,
-//!   and `parse_init`.
-//! - `decode` group — `messages` (enumerate every message without decoding
-//!   entities), `events` (decode all game events), `event_datasets` (collect
-//!   combat events and entity enrichment together), and `run_to_end` (full
-//!   entity decode: every class, every tick). These report throughput (MiB/s).
-//!
-//! The demo is chosen from `$AWPY_BENCH_DEMO`, else the smallest `.dem` under the
-//! repository's `demos/` directory. When none is present every benchmark skips.
+//! Set AWPY_BENCH_DEMO to a demo file. Otherwise, use the smallest demo in
+//! the repository root or demos directory. See README.md in this directory.
 
+use std::collections::HashSet;
 use std::hint::black_box;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use criterion::{BatchSize, Criterion, Throughput, criterion_group, criterion_main};
+use awpy::{EventDatasetSelection, Parser};
+use criterion::measurement::WallTime;
+use criterion::{
+    BatchSize, BenchmarkGroup, BenchmarkId, Criterion, SamplingMode, Throughput, criterion_group,
+    criterion_main,
+};
 
-use awpy::Parser;
+struct DemoInput {
+    path: PathBuf,
+    label: String,
+    bytes: u64,
+}
 
-/// Resolve the demo file to benchmark against.
-fn demo_path() -> Option<PathBuf> {
-    if let Ok(p) = std::env::var("AWPY_BENCH_DEMO") {
-        let p = PathBuf::from(p);
-        return p.exists().then_some(p);
+impl DemoInput {
+    fn find() -> Option<Self> {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let path = if let Some(path) = std::env::var_os("AWPY_BENCH_DEMO") {
+            root.join(path)
+        } else {
+            let mut candidates = Vec::new();
+            for directory in [root.join("demos"), root] {
+                let entries = match std::fs::read_dir(&directory) {
+                    Ok(entries) => entries,
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                    Err(error) => panic!("cannot read {}: {error}", directory.display()),
+                };
+                for entry in entries {
+                    let path = entry.expect("cannot read demo directory entry").path();
+                    if path.extension().is_some_and(|extension| extension == "dem") {
+                        let metadata = path.metadata().expect("cannot read demo metadata");
+                        if metadata.is_file() {
+                            candidates.push((metadata.len(), path));
+                        }
+                    }
+                }
+            }
+            candidates.into_iter().min()?.1
+        };
+
+        let path = path
+            .canonicalize()
+            .unwrap_or_else(|error| panic!("cannot open demo {}: {error}", path.display()));
+        let bytes = path.metadata().expect("cannot read demo metadata").len();
+        let name = path.file_name().expect("demo path must name a file");
+        let label = format!("{}-{bytes}B", name.to_string_lossy());
+        let demo = Self { path, label, bytes };
+        demo.open().verify().expect("invalid demo header");
+        Some(demo)
     }
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../demos");
-    let mut demos: Vec<PathBuf> = std::fs::read_dir(dir)
-        .ok()?
-        .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().is_some_and(|x| x == "dem"))
-        .collect();
-    demos.sort_by_key(|p| std::fs::metadata(p).map(|m| m.len()).unwrap_or(u64::MAX));
-    demos.into_iter().next()
+
+    fn open(&self) -> Parser {
+        Parser::from_file(black_box(&self.path))
+            .unwrap_or_else(|error| panic!("cannot map demo {}: {error}", self.path.display()))
+    }
 }
 
-fn load_bytes() -> Option<Vec<u8>> {
-    let path = demo_path()?;
-    std::fs::read(path).ok()
+/// Exclude file mapping and final cleanup from the parse time.
+/// Keep only one parser and one result alive at a time.
+fn bench_parse<T>(
+    group: &mut BenchmarkGroup<'_, WallTime>,
+    demo: &DemoInput,
+    name: &str,
+    parse: impl Fn(&Parser) -> awpy::Result<T>,
+) {
+    group.bench_function(BenchmarkId::new(name, &demo.label), |b| {
+        b.iter_batched_ref(
+            || demo.open(),
+            |parser| black_box(parse(black_box(&*parser)).expect("benchmark parse failed")),
+            BatchSize::PerIteration,
+        );
+    });
 }
 
-fn bench_init(c: &mut Criterion) {
-    let Some(bytes) = load_bytes() else {
-        eprintln!("awpy parse bench: no demo available (set AWPY_BENCH_DEMO); skipping `init`");
-        return;
-    };
-
+fn bench_init(c: &mut Criterion, demo: &DemoInput) {
     let mut group = c.benchmark_group("init");
-    group.measurement_time(Duration::from_secs(10));
-
-    group.bench_function("parse_send_tables", |b| {
-        b.iter_batched(
-            || Parser::from_bytes(bytes.clone()),
-            |p| black_box(p.parse_send_tables().unwrap()),
-            BatchSize::LargeInput,
-        )
+    group.sampling_mode(SamplingMode::Flat);
+    group.bench_function(BenchmarkId::new("from_file", &demo.label), |b| {
+        b.iter_batched(|| (), |()| black_box(demo.open()), BatchSize::PerIteration);
     });
-
-    group.bench_function("parse_class_info", |b| {
-        b.iter_batched(
-            || Parser::from_bytes(bytes.clone()),
-            |p| black_box(p.parse_class_info().unwrap()),
-            BatchSize::LargeInput,
-        )
-    });
-
-    group.bench_function("parse_init", |b| {
-        b.iter_batched(
-            || Parser::from_bytes(bytes.clone()),
-            |p| black_box(p.parse_init().unwrap()),
-            BatchSize::LargeInput,
-        )
-    });
-
+    bench_parse(
+        &mut group,
+        demo,
+        "parse_send_tables",
+        Parser::parse_send_tables,
+    );
+    bench_parse(
+        &mut group,
+        demo,
+        "parse_class_info",
+        Parser::parse_class_info,
+    );
+    bench_parse(&mut group, demo, "parse_init", Parser::parse_init);
     group.finish();
 }
 
-fn bench_decode(c: &mut Criterion) {
-    let Some(bytes) = load_bytes() else {
-        eprintln!("awpy parse bench: no demo available (set AWPY_BENCH_DEMO); skipping `decode`");
+fn bench_decode(c: &mut Criterion, demo: &DemoInput) {
+    let mut group = c.benchmark_group("decode");
+    group.sampling_mode(SamplingMode::Flat);
+    group.throughput(Throughput::Bytes(demo.bytes));
+
+    bench_parse(&mut group, demo, "messages", Parser::messages);
+    bench_parse(&mut group, demo, "events", |parser| parser.events(None));
+    bench_parse(&mut group, demo, "run_to_end", |parser| {
+        let mut ticks = 0usize;
+        parser.run_to_end(|_| ticks += 1)?;
+        Ok(ticks)
+    });
+    let classes = HashSet::from(["CCSPlayerController", "CCSPlayerPawn"]);
+    bench_parse(&mut group, demo, "player_entities", |parser| {
+        let mut ticks = 0usize;
+        parser.run_to_end_filtered(black_box(&classes), |_| ticks += 1)?;
+        Ok(ticks)
+    });
+    group.finish();
+}
+
+fn bench_datasets(c: &mut Criterion, demo: &DemoInput) {
+    let mut group = c.benchmark_group("datasets");
+    group.sampling_mode(SamplingMode::Flat);
+    group.throughput(Throughput::Bytes(demo.bytes));
+
+    bench_parse(&mut group, demo, "players", Parser::players);
+    bench_parse(&mut group, demo, "rounds", Parser::rounds);
+    bench_parse(&mut group, demo, "stats", |parser| {
+        parser.player_stats(true)
+    });
+    bench_parse(&mut group, demo, "event_datasets", Parser::event_datasets);
+    bench_parse(&mut group, demo, "kills", Parser::kills);
+    let selection = EventDatasetSelection {
+        kills: true,
+        bomb: true,
+        shots: true,
+        ..Default::default()
+    };
+    bench_parse(&mut group, demo, "kills_bomb_shots_combined", |parser| {
+        parser.event_datasets_selected(black_box(selection))
+    });
+    bench_parse(&mut group, demo, "kills_bomb_shots_separate", |parser| {
+        Ok((parser.kills()?, parser.bomb()?, parser.shots()?))
+    });
+    bench_parse(&mut group, demo, "projectiles", Parser::projectiles);
+    let ticks = HashSet::new();
+    bench_parse(&mut group, demo, "snapshots_every_64", |parser| {
+        parser.snapshots_query(Some(64), black_box(&ticks), 0, i32::MAX)
+    });
+    group.finish();
+}
+
+fn bench_parser(c: &mut Criterion) {
+    let Some(demo) = DemoInput::find() else {
+        eprintln!(
+            "awpy parse bench: no demo found; no measurements will run. \
+             Set AWPY_BENCH_DEMO to a .dem file."
+        );
         return;
     };
-    let len = bytes.len() as u64;
-
-    let mut group = c.benchmark_group("decode");
-    group.measurement_time(Duration::from_secs(15));
-    group.throughput(Throughput::Bytes(len));
-
-    group.bench_function("messages", |b| {
-        b.iter_batched(
-            || Parser::from_bytes(bytes.clone()),
-            |p| black_box(p.messages().unwrap()),
-            BatchSize::LargeInput,
-        )
-    });
-
-    group.bench_function("events", |b| {
-        b.iter_batched(
-            || Parser::from_bytes(bytes.clone()),
-            |p| black_box(p.events(None).unwrap()),
-            BatchSize::LargeInput,
-        )
-    });
-
-    group.bench_function("event_datasets", |b| {
-        b.iter_batched(
-            || Parser::from_bytes(bytes.clone()),
-            |p| black_box(p.event_datasets().unwrap()),
-            BatchSize::LargeInput,
-        )
-    });
-
-    group.bench_function("run_to_end", |b| {
-        b.iter_batched(
-            || Parser::from_bytes(bytes.clone()),
-            |p| {
-                let mut ticks = 0usize;
-                p.run_to_end(|_ctx| ticks += 1).unwrap();
-                black_box(ticks)
-            },
-            BatchSize::LargeInput,
-        )
-    });
-
-    group.finish();
+    eprintln!(
+        "awpy parse bench: {} ({} bytes), AWPY_TICK_SEGMENTS={}",
+        demo.path.display(),
+        demo.bytes,
+        std::env::var("AWPY_TICK_SEGMENTS").unwrap_or_else(|_| "auto".into()),
+    );
+    bench_init(c, &demo);
+    bench_decode(c, &demo);
+    bench_datasets(c, &demo);
 }
 
-criterion_group!(benches, bench_init, bench_decode);
+criterion_group! {
+    name = benches;
+    config = Criterion::default()
+        .sample_size(10)
+        .warm_up_time(Duration::from_secs(1))
+        .measurement_time(Duration::from_secs(10));
+    targets = bench_parser
+}
 criterion_main!(benches);

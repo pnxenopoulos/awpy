@@ -79,6 +79,14 @@ message CMsgSource2NetworkFlowQuality {
 	optional uint32 netframes_size_exceeds_mtu = 34;
 	optional uint32 netframes_size_p95 = 35;
 	optional uint32 netframes_size_p99 = 36;
+	optional uint32 netframes_size_uncompressed_p50 = 12;
+	optional uint32 netframes_size_uncompressed_p95 = 13;
+	optional uint32 netframes_size_uncompressed_p99 = 14;
+	optional uint32 netframes_size_uncompressed_max = 15;
+	optional uint32 netframes_msgs_p50 = 16;
+	optional uint32 netframes_msgs_p95 = 17;
+	optional uint32 netframes_msgs_p99 = 18;
+	optional uint32 netframes_msgs_max = 19;
 	optional uint32 ticks_total = 40;
 	optional uint32 ticks_good = 41;
 	optional uint32 ticks_good_almost_late = 42;
@@ -108,6 +116,18 @@ message CMsgSource2NetworkFlowQuality {
 	optional uint32 net_ping_p5 = 80;
 	optional uint32 net_ping_p50 = 81;
 	optional uint32 net_ping_p95 = 82;
+	optional uint32 msgproc_usec_p50 = 90;
+	optional uint32 msgproc_usec_p95 = 91;
+	optional uint32 msgproc_usec_p99 = 92;
+	optional uint32 msgproc_usec_max = 93;
+	optional uint32 msgproc_usec_avg_p50 = 94;
+	optional uint32 msgproc_usec_avg_p95 = 95;
+	optional uint32 msgproc_usec_avg_p99 = 96;
+	optional uint32 msgproc_usec_avg_max = 97;
+	optional uint32 queuedmsgs_p50 = 100;
+	optional uint32 queuedmsgs_p95 = 101;
+	optional uint32 queuedmsgs_p99 = 102;
+	optional uint32 queuedmsgs_max = 103;
 }
 
 message CMsgSource2PerfIntervalSample {

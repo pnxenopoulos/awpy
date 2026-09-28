@@ -34,7 +34,7 @@ use crate::position::cell_to_world;
 use crate::round_end_reasons::round_end_reason_name;
 use crate::teams::team_name;
 use crate::weapons::{
-    WeaponSlot, grenade_projectile_classes, grenade_type, weapon_classes, weapon_info,
+    WeaponResolver, WeaponSlot, grenade_projectile_classes, grenade_type, weapon_classes,
 };
 
 /// User-id sentinel meaning "no such player" (e.g. no assister).
@@ -761,6 +761,7 @@ fn fill_loadout(
     ctx: &Context,
     pawn: &Entity,
     weapon_keys: &[Option<u64>],
+    resolver: &WeaponResolver,
     state: &mut PlayerState,
 ) {
     // Build the comma-joined inventory directly, without an intermediate Vec.
@@ -772,7 +773,7 @@ fn fill_loadout(
         else {
             continue;
         };
-        let Some(info) = weapon_info(&weapon.class_name) else {
+        let Some(info) = resolver.info(weapon) else {
             continue;
         };
         if !inventory.is_empty() {
@@ -826,6 +827,7 @@ struct SnapshotKeys {
     active_weapon: Option<u64>,
     weapon_count: Option<u64>,
     weapons: Vec<Option<u64>>,
+    weapon_resolver: WeaponResolver,
 }
 
 impl SnapshotKeys {
@@ -834,6 +836,7 @@ impl SnapshotKeys {
         let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
         SnapshotKeys {
             pawn_class: ctx.class_info().id_of(PLAYER_PAWN_CLASS).unwrap_or(-1),
+            weapon_resolver: WeaponResolver::new(ctx),
             pawn: PawnKeys::resolve(ctx),
             ctrl: CtrlKeys::resolve(ctx),
             health: key("m_iHealth"),
@@ -2498,11 +2501,11 @@ fn decode_chat_message(event: &GameEvent) -> Option<ChatMessage> {
 
     let say_text = [
         EBaseUserMessages::UmSayText as u32,
-        ECstrike15UserMessages::CsUmSayText as u32,
+        ECstrike15UserMessages::CsUmSayTextCsgoLegacy as u32,
     ];
     let say_text2 = [
         EBaseUserMessages::UmSayText2 as u32,
-        ECstrike15UserMessages::CsUmSayText2 as u32,
+        ECstrike15UserMessages::CsUmSayText2CsgoLegacy as u32,
     ];
 
     if say_text2.contains(&event.msg_type) {
@@ -2636,12 +2639,37 @@ impl Parser {
         start_tick: i32,
         end_tick: i32,
     ) -> Result<Vec<PlayerState>> {
+        let mut chunks =
+            self.snapshots_query_chunks::<Vec<PlayerState>>(every, ticks, start_tick, end_tick)?;
+        if chunks.len() == 1 {
+            return Ok(chunks.pop().unwrap_or_default());
+        }
+        Ok(chunks.into_iter().flatten().collect())
+    }
+
+    /// Collect the same rows as [`Self::snapshots_query`] into per-segment
+    /// accumulators, returned in tick order.
+    ///
+    /// Each segment starts with `C::default()` and extends it with that
+    /// segment's player states. Custom column builders can consume owned rows
+    /// as callbacks produce them, without retaining a full `Vec<PlayerState>`.
+    /// The number of chunks depends on the segment budget and demo keyframes.
+    pub fn snapshots_query_chunks<C>(
+        &self,
+        every: Option<i32>,
+        ticks: &HashSet<i32>,
+        start_tick: i32,
+        end_tick: i32,
+    ) -> Result<Vec<C>>
+    where
+        C: Default + Extend<PlayerState> + Send,
+    {
         let filter = snapshot_filter();
         let in_window = move |t: i32| t >= start_tick && t <= end_tick;
 
         // No sampler: every tick in the window (contiguous range).
         if every.is_none() && ticks.is_empty() {
-            return self.collect_states(&filter, in_window);
+            return self.collect_state_chunks(&filter, in_window);
         }
 
         // Resolve the sampled tick set once, up front, so it does not depend on
@@ -2656,7 +2684,7 @@ impl Parser {
                 }
             }
         }
-        self.collect_states(&filter, move |t| sampled.contains(&t) && in_window(t))
+        self.collect_state_chunks(&filter, move |t| sampled.contains(&t) && in_window(t))
     }
 
     /// Collect player-state snapshots for every tick matching `predicate`, in one
@@ -2664,14 +2692,17 @@ impl Parser {
     /// single serial pass when parallelism is disabled) — player pawn/controller
     /// state is re-keyframed at every full packet, so the per-segment cold
     /// restarts stitch back into the same result as a serial pass.
-    fn collect_states(
+    fn collect_state_chunks<C>(
         &self,
         filter: &HashSet<&str>,
         predicate: impl Fn(i32) -> bool + Sync,
-    ) -> Result<Vec<PlayerState>> {
+    ) -> Result<Vec<C>>
+    where
+        C: Default + Extend<PlayerState> + Send,
+    {
         let n = parallel_segment_budget();
         if n <= 1 {
-            let mut out = Vec::new();
+            let mut out = C::default();
             let mut keys: Option<SnapshotKeys> = None;
             self.run_to_end_filtered(filter, |ctx| {
                 if predicate(ctx.tick()) {
@@ -2679,19 +2710,19 @@ impl Parser {
                     out.extend(Self::player_states(ctx, keys));
                 }
             })?;
-            return Ok(out);
+            return Ok(vec![out]);
         }
 
         let offsets = self.full_packet_offsets()?;
         let n = n.min(offsets.len().max(1));
         let segments = segment_ranges(&offsets, n);
         let (predicate, this) = (&predicate, self);
-        let parts: Vec<Vec<PlayerState>> = std::thread::scope(|s| {
+        let parts: Vec<C> = std::thread::scope(|s| {
             let handles: Vec<_> = segments
                 .iter()
                 .map(|&(seg_start, seg_end)| {
-                    s.spawn(move || -> Result<Vec<PlayerState>> {
-                        let mut out = Vec::new();
+                    s.spawn(move || -> Result<C> {
+                        let mut out = C::default();
                         let mut keys: Option<SnapshotKeys> = None;
                         this.decode_segment(seg_start, seg_end, filter, |ctx| {
                             if predicate(ctx.tick()) {
@@ -2708,7 +2739,7 @@ impl Parser {
                 .map(|h| h.join().expect("snapshot segment panicked"))
                 .collect::<Result<Vec<_>>>()
         })?;
-        Ok(parts.into_iter().flatten().collect())
+        Ok(parts)
     }
 
     /// Per-team economy and buy type for each round.
@@ -2862,12 +2893,18 @@ impl Parser {
             state.active_weapon = pawn
                 .get_handle(keys.active_weapon)
                 .and_then(|h| ctx.entities().get_by_handle(h))
-                .and_then(|w| weapon_info(&w.class_name))
+                .and_then(|w| keys.weapon_resolver.info(w))
                 .map(|i| i.name);
             let count = usize::try_from(pawn.get_i64(keys.weapon_count))
                 .unwrap_or_default()
                 .min(keys.weapons.len());
-            fill_loadout(ctx, pawn, &keys.weapons[..count], &mut state);
+            fill_loadout(
+                ctx,
+                pawn,
+                &keys.weapons[..count],
+                &keys.weapon_resolver,
+                &mut state,
+            );
             // Skip reserve/uninitialized pawns: the engine keeps spare
             // `CCSPlayerPawn` entities that sit at the world origin with no team.
             // A pawn in play is always on T or CT — dead players keep their team
@@ -2959,6 +2996,7 @@ impl Parser {
         let mut inv: HashMap<EntityId, HashSet<u32>> = HashMap::new();
         let mut prev_money: HashMap<u64, i32> = HashMap::new();
         let mut weapon_keys: HashMap<i32, WeaponKeys> = HashMap::new();
+        let mut weapon_resolver: Option<WeaponResolver> = None;
         let mut pk: Option<PawnKeys> = None;
         let mut ck: Option<CtrlKeys> = None;
         let mut money_key: Option<Option<u64>> = None;
@@ -2975,6 +3013,7 @@ impl Parser {
                     inv.remove(&change.id());
                 }
             }
+            let resolver = weapon_resolver.get_or_insert_with(|| WeaponResolver::new(ctx));
             let pkr = pk.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ckr = ck.get_or_insert_with(|| CtrlKeys::resolve(ctx));
             let mkey = *money_key.get_or_insert_with(|| {
@@ -3053,7 +3092,7 @@ impl Parser {
                     let Some(weapon) = ctx.entities().get_by_handle(h) else {
                         continue;
                     };
-                    let Some(info) = weapon_info(&weapon.class_name) else {
+                    let Some(info) = resolver.info(weapon) else {
                         continue;
                     };
                     if info.slot == WeaponSlot::Melee {
@@ -3102,7 +3141,7 @@ impl Parser {
                     let Some(weapon) = ctx.entities().get_by_handle(h) else {
                         continue;
                     };
-                    let Some(info) = weapon_info(&weapon.class_name) else {
+                    let Some(info) = resolver.info(weapon) else {
                         continue;
                     };
                     if info.slot == WeaponSlot::Melee {
@@ -3147,7 +3186,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use awpy_proto::proto::{CUserMessageSayText2, EBaseUserMessages};
+    use awpy_proto::proto::{CUserMessageSayText, CUserMessageSayText2};
     use prost::Message as _;
 
     fn ev(name: &str, tick: i32, keys: &[(&str, &str)]) -> GameEvent {
@@ -3181,20 +3220,49 @@ mod tests {
             ..Default::default()
         }
         .encode_to_vec();
-        let event = GameEvent {
-            tick: 42,
-            name: "UM_SayText2".to_string(),
-            msg_type: EBaseUserMessages::UmSayText2 as u32,
-            keys: Vec::new(),
-            payload,
-        };
+        for msg_type in [118, 306] {
+            let event = GameEvent {
+                tick: 42,
+                name: crate::user_message_name(msg_type as i32),
+                msg_type,
+                keys: Vec::new(),
+                payload: payload.clone(),
+            };
 
-        let chat = decode_chat_message(&event).expect("SayText2 must decode");
-        assert_eq!(chat.tick, 42);
-        assert_eq!(chat.entity_index, Some(7));
-        assert_eq!(chat.name.as_deref(), Some("Player"));
-        assert_eq!(chat.message, "hello");
-        assert_eq!(chat.channel.as_deref(), Some("Cstrike_Chat_All"));
+            let chat = decode_chat_message(&event).expect("SayText2 must decode");
+            assert_eq!(chat.tick, 42);
+            assert_eq!(chat.entity_index, Some(7));
+            assert_eq!(chat.name.as_deref(), Some("Player"));
+            assert_eq!(chat.message, "hello");
+            assert_eq!(chat.channel.as_deref(), Some("Cstrike_Chat_All"));
+        }
+    }
+
+    #[test]
+    fn base_and_legacy_say_text_decode_as_chat() {
+        let payload = CUserMessageSayText {
+            playerindex: Some(7),
+            text: Some("hello".to_string()),
+            chat: Some(true),
+            ..Default::default()
+        }
+        .encode_to_vec();
+        for msg_type in [117, 305] {
+            let event = GameEvent {
+                tick: 42,
+                name: crate::user_message_name(msg_type as i32),
+                msg_type,
+                keys: Vec::new(),
+                payload: payload.clone(),
+            };
+
+            let chat = decode_chat_message(&event).expect("SayText must decode");
+            assert_eq!(chat.tick, 42);
+            assert_eq!(chat.entity_index, Some(7));
+            assert_eq!(chat.message, "hello");
+            assert!(chat.name.is_none());
+            assert!(chat.channel.is_none());
+        }
     }
 
     #[test]

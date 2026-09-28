@@ -68,7 +68,15 @@ pub fn user_message_name(msg_type: i32) -> String {
     use awpy_proto::proto::{EBaseUserMessages, ECstrike15UserMessages};
 
     if let Ok(e) = ECstrike15UserMessages::try_from(msg_type) {
-        return e.as_str_name().to_string();
+        // Keep public event names when upstream adds the CSGOLegacy suffix.
+        let name = match e {
+            ECstrike15UserMessages::CsUmSayTextCsgoLegacy => "CS_UM_SayText",
+            ECstrike15UserMessages::CsUmSayText2CsgoLegacy => "CS_UM_SayText2",
+            ECstrike15UserMessages::CsUmTextMsgCsgoLegacy => "CS_UM_TextMsg",
+            ECstrike15UserMessages::CsUmUpdateTeamMoneyCsgoLegacy => "CS_UM_UpdateTeamMoney",
+            _ => e.as_str_name(),
+        };
+        return name.to_string();
     }
     if let Ok(e) = EBaseUserMessages::try_from(msg_type) {
         return e.as_str_name().to_string();
@@ -125,10 +133,16 @@ mod tests {
     }
 
     #[test]
-    fn user_message_name_known_cs() {
-        // 306 is CS_UM_SayText2
-        let name = user_message_name(306);
-        assert!(!name.starts_with("UserMessage_"), "got: {name}");
+    fn legacy_user_message_names_stay_compatible() {
+        for (id, name) in [
+            (305, "CS_UM_SayText"),
+            (306, "CS_UM_SayText2"),
+            (307, "CS_UM_TextMsg"),
+            (328, "CS_UM_UpdateTeamMoney"),
+        ] {
+            assert_eq!(user_message_name(id), name);
+            assert!(is_user_message_type(id as u32));
+        }
     }
 
     #[test]

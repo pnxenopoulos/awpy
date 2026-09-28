@@ -248,7 +248,7 @@ dependencies = [
 
 [[package]]
 name = "awpy-proto"
-version = "0.1.10948930+2000899"
+version = "0.1.11039926+2000918"
 dependencies = [
  "bytes",
  "prost",
@@ -1709,9 +1709,9 @@ dependencies = [
 
 [[package]]
 name = "pbdems2"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "349b861c242d196c06457e9693ab074ef547c6dfa83d9b2d94c3b8bd020035f9"
+checksum = "ff1b00840cd16d512f22c863c5beec84474ebfdbac2cdb4f8045bc9c4528dab7"
 dependencies = [
  "rustc-hash",
  "serde",

@@ -24,3 +24,4 @@ crates/awpy-python/tests/fixtures/
 # Editor / OS
 .DS_Store
 *.swp
+.skills/

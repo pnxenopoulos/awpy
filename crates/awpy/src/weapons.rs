@@ -1,12 +1,10 @@
-//! Weapon entity class → canonical name and inventory slot.
+//! Weapon names and inventory slots.
 //!
-//! CS2 networks each held item as its own entity whose `class_name` identifies
-//! the weapon (e.g. `CAK47`, `CDEagle`, `CHEGrenade`). The class prefixes are
-//! inconsistent (`CAK47` vs `CWeaponAWP` vs `CDEagle`), so this module maps them
-//! to the short names used elsewhere in awpy (matching the `weapon` key of
-//! `player_death` / `weapon_fire` events, e.g. `ak47`, `awp`, `usp_silencer`)
-//! and to the loadout [`WeaponSlot`] used by the economy columns of
-//! [`Parser::snapshot`](crate::demo::Parser::snapshot).
+//! CS2 uses shared entity classes for some weapon variants. Entity-based
+//! collection checks the item-definition index and subclass token to identify
+//! these variants. Class names provide a fallback when both fields are absent
+//! or unknown. Names use the short event labels, such as `ak47` and
+//! `usp_silencer`. [`WeaponSlot`] identifies the inventory slot.
 
 /// The loadout slot a weapon occupies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -94,7 +92,10 @@ pub fn weapon_classes() -> impl Iterator<Item = &'static str> {
     WEAPONS.iter().map(|(class, ..)| *class)
 }
 
-/// The canonical name and slot for a weapon entity's class name, if recognized.
+/// Return the class default name and slot, if the class is known.
+///
+/// A shared class does not identify the exact weapon variant. Snapshot and
+/// inventory collection also check item-definition and subclass fields.
 ///
 /// Falls back to treating any unrecognized `CKnife*` variant as a knife, since
 /// knife skins can carry a class name other than the base `CKnife`.
@@ -138,9 +139,252 @@ pub fn grenade_type(class: &str) -> Option<&'static str> {
         .map(|(_, t)| *t)
 }
 
+/// A weapon variant within a shared network class.
+struct WeaponVariant {
+    definition: u32,
+    subclass: u32,
+    name: &'static str,
+}
+
+// Subclass tokens are MurmurHash2 hashes of decimal item-definition IDs,
+// with seed 0x31415926. Keep these constants out of the per-entity path.
+const PISTOLS: &[WeaponVariant] = &[
+    WeaponVariant {
+        definition: 1,
+        subclass: 628_863_847,
+        name: "deagle",
+    },
+    WeaponVariant {
+        definition: 64,
+        subclass: 966_714_057,
+        name: "revolver",
+    },
+];
+const RIFLES: &[WeaponVariant] = &[
+    WeaponVariant {
+        definition: 16,
+        subclass: 2_746_029_779,
+        name: "m4a1",
+    },
+    WeaponVariant {
+        definition: 60,
+        subclass: 4_152_478_990,
+        name: "m4a1_silencer",
+    },
+];
+const STARTING_PISTOLS: &[WeaponVariant] = &[
+    WeaponVariant {
+        definition: 32,
+        subclass: 1_721_431_921,
+        name: "hkp2000",
+    },
+    WeaponVariant {
+        definition: 61,
+        subclass: 2_343_690_088,
+        name: "usp_silencer",
+    },
+];
+
+/// Field keys and the class fallback for one weapon class.
+struct WeaponIdentity {
+    fallback: WeaponInfo,
+    variants: &'static [WeaponVariant],
+    definition: Option<u64>,
+    subclass: Option<u64>,
+}
+
+impl WeaponIdentity {
+    fn variants(class: &str) -> &'static [WeaponVariant] {
+        match class {
+            "CDEagle" | "CWeaponRevolver" => PISTOLS,
+            "CWeaponM4A1" | "CWeaponM4A1Silencer" => RIFLES,
+            "CWeaponHKP2000" | "CWeaponUSPSilencer" => STARTING_PISTOLS,
+            _ => &[],
+        }
+    }
+
+    fn info(&self, entity: &crate::entity::Entity) -> WeaponInfo {
+        // Use an item ID only within this class's weapon family. If it is
+        // absent, zero, or unknown, try the subclass token before the class.
+        let definition = entity.get_u64(self.definition);
+        let variant = self
+            .variants
+            .iter()
+            .find(|v| definition == Some(u64::from(v.definition)))
+            .or_else(|| {
+                let subclass = entity.get_u64(self.subclass);
+                self.variants
+                    .iter()
+                    .find(|v| subclass == Some(u64::from(v.subclass)))
+            });
+        WeaponInfo {
+            name: variant.map_or(self.fallback.name, |v| v.name),
+            slot: self.fallback.slot,
+        }
+    }
+}
+
+/// Resolve weapon identities with field keys cached once per parser pass.
+pub(crate) struct WeaponResolver {
+    classes: std::collections::HashMap<i32, WeaponIdentity>,
+}
+
+impl WeaponResolver {
+    pub(crate) fn new(ctx: &crate::demo::Context) -> Self {
+        let classes = ctx
+            .class_info()
+            .classes()
+            .iter()
+            .filter_map(|class| {
+                let fallback = weapon_info(&class.network_name)?;
+                let variants = WeaponIdentity::variants(&class.network_name);
+                let serializer = ctx.serializers().get(&class.network_name);
+                let key = |path| serializer.and_then(|s| s.resolve_field_key(path));
+                Some((
+                    class.class_id,
+                    WeaponIdentity {
+                        fallback,
+                        variants,
+                        definition: (!variants.is_empty())
+                            .then(|| key("m_AttributeManager.m_Item.m_iItemDefinitionIndex"))
+                            .flatten(),
+                        subclass: (!variants.is_empty())
+                            .then(|| key("m_nSubclassID"))
+                            .flatten(),
+                    },
+                ))
+            })
+            .collect();
+        Self { classes }
+    }
+
+    pub(crate) fn info(&self, entity: &crate::entity::Entity) -> Option<WeaponInfo> {
+        self.classes
+            .get(&entity.class_id)
+            .map(|keys| keys.info(entity))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn entity_info(class: &str, definition: Option<u32>, subclass: Option<u32>) -> WeaponInfo {
+        let mut entity =
+            crate::entity::Entity::from_fields(1, 0, 0, class, true, Default::default()).unwrap();
+        if let Some(value) = definition {
+            entity
+                .fields
+                .insert(0, crate::entity::FieldValue::U32(value));
+        }
+        if let Some(value) = subclass {
+            entity
+                .fields
+                .insert(1, crate::entity::FieldValue::U32(value));
+        }
+        WeaponIdentity {
+            fallback: weapon_info(class).unwrap(),
+            variants: WeaponIdentity::variants(class),
+            definition: Some(0),
+            subclass: Some(1),
+        }
+        .info(&entity)
+    }
+
+    #[test]
+    fn shared_classes_resolve_each_item_definition() {
+        for (class, variants, slot) in [
+            ("CDEagle", PISTOLS, Secondary),
+            ("CWeaponM4A1", RIFLES, Primary),
+            ("CWeaponHKP2000", STARTING_PISTOLS, Secondary),
+        ] {
+            for variant in variants {
+                let info = entity_info(class, Some(variant.definition), None);
+                assert_eq!(info.name, variant.name);
+                assert_eq!(info.slot, slot);
+            }
+        }
+    }
+
+    #[test]
+    fn subclass_resolves_variants_without_an_item_definition() {
+        for (class, variants) in [
+            ("CDEagle", PISTOLS),
+            ("CWeaponM4A1", RIFLES),
+            ("CWeaponHKP2000", STARTING_PISTOLS),
+        ] {
+            for variant in variants {
+                for definition in [None, Some(0), Some(u32::MAX)] {
+                    assert_eq!(
+                        entity_info(class, definition, Some(variant.subclass)).name,
+                        variant.name
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn valid_item_definition_takes_priority_over_subclass() {
+        assert_eq!(
+            entity_info("CDEagle", Some(64), Some(628_863_847)).name,
+            "revolver"
+        );
+        assert_eq!(
+            entity_info("CDEagle", Some(1), Some(966_714_057)).name,
+            "deagle"
+        );
+    }
+
+    #[test]
+    fn missing_unknown_and_foreign_ids_keep_the_class_fallback() {
+        for class in [
+            "CDEagle",
+            "CWeaponM4A1",
+            "CWeaponHKP2000",
+            "CWeaponRevolver",
+            "CWeaponM4A1Silencer",
+            "CWeaponUSPSilencer",
+            "CAK47",
+            "CKnifeGG",
+        ] {
+            for (definition, subclass) in [
+                (None, None),
+                (Some(0), Some(0)),
+                (Some(u32::MAX), Some(u32::MAX)),
+            ] {
+                assert_eq!(
+                    entity_info(class, definition, subclass).name,
+                    weapon_info(class).unwrap().name
+                );
+            }
+        }
+        assert_eq!(
+            entity_info("CDEagle", Some(60), Some(4_152_478_990)).name,
+            "deagle"
+        );
+        assert_eq!(
+            entity_info("CAK47", Some(64), Some(966_714_057)).name,
+            "ak47"
+        );
+        assert_eq!(
+            entity_info("CKnifeGG", Some(64), Some(966_714_057)).name,
+            "knife"
+        );
+    }
+
+    #[test]
+    fn legacy_variant_class_names_accept_identity_fields() {
+        assert_eq!(entity_info("CWeaponRevolver", Some(1), None).name, "deagle");
+        assert_eq!(
+            entity_info("CWeaponM4A1Silencer", None, Some(2_746_029_779)).name,
+            "m4a1"
+        );
+        assert_eq!(
+            entity_info("CWeaponUSPSilencer", Some(32), None).name,
+            "hkp2000"
+        );
+    }
 
     #[test]
     fn maps_known_weapons() {

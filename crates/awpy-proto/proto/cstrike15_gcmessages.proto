@@ -552,6 +552,7 @@ message CMsgGCCStrike15_v2_MatchmakingGC2ServerReserve {
 	optional uint32 socache_control = 20;
 	repeated int32 teammate_colors = 21;
 	optional uint32 match_id_additional = 22;
+	repeated string clan_tags = 23;
 }
 
 message CMsgGCCStrike15_v2_MatchmakingServerReservationResponse {
@@ -942,7 +943,7 @@ message CEconItemPreviewDataBlock {
 	optional uint32 paintseed = 8;
 	optional uint32 killeaterscoretype = 9;
 	optional uint32 killeatervalue = 10;
-	optional string customname = 11;
+	repeated string customnames = 11;
 	repeated .CEconItemPreviewDataBlock.Sticker stickers = 12;
 	optional uint32 inventory = 13;
 	optional uint32 origin = 14;
@@ -955,6 +956,8 @@ message CEconItemPreviewDataBlock {
 	optional uint32 style = 21;
 	repeated .CEconItemPreviewDataBlock.Sticker variations = 22;
 	optional uint32 upgrade_level = 23;
+	optional uint32 pet_food_expiration_date = 24;
+	optional bytes blobdata = 25;
 }
 
 message CMsgGCCStrike15_v2_MatchEndRewardDropsNotification {
@@ -1249,6 +1252,7 @@ message CSOPersonaDataPublic {
 	optional uint32 xp_trail_timestamp_refresh = 4;
 	optional uint32 xp_trail_level = 5;
 	optional uint32 clan_id = 6;
+	optional string clan_tag = 7;
 }
 
 message CSOAccountRecurringMission {
