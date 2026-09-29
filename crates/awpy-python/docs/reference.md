@@ -60,8 +60,17 @@ by any raw network name (`m_iHealth`, `m_bIsScoped`, …).
 | `is_jumping` | `m_fFlags` with `FL_ONGROUND` clear (airborne) |
 | `is_in_bomb_zone` | `m_bInBombZone` |
 | `is_scoped` | `m_bIsScoped` |
+| `is_reloading` | Active weapon: `m_bInReload` |
+| `is_silent_reloading` | Active weapon: `m_bInReload && m_bStealthy` |
 | `is_defusing` | `m_bIsDefusing` |
 | `flash_duration` | `m_flFlashDuration` (seconds of blindness remaining) |
+
+Both reload properties are snapshot columns. Awpy reads them from the active
+weapon, not from the player pawn. Both return `false` when there is no active
+weapon. They return `null` if a required schema field on the active weapon is
+unavailable. Omitted Boolean values default to `false` when the schema has
+the field. The silent-reload mapping has not yet been checked against a demo
+that contains quiet reloads.
 
 ## Game events
 

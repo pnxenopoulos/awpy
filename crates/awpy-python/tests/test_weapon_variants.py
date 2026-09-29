@@ -70,6 +70,26 @@ def test_shared_class_loadouts(
 
 
 @pytest.mark.fixtures
+def test_reload_fields_on_demo_before_quiet_reload_update() -> None:
+    demo = _fixture_demo("valve-de_mirage-472514809")
+    states = demo.snapshots(every=64)
+    assert states.height > 0
+    assert states["is_reloading"].dtype == pl.Boolean
+    assert states["is_reloading"].any()
+    assert states["is_reloading"].eq(False).any()
+    assert states["is_silent_reloading"].dtype == pl.Boolean
+    armed = states.filter(pl.col("active_weapon").is_not_null())
+    assert armed.height > 0
+    assert armed["is_silent_reloading"].null_count() == armed.height
+
+    unarmed = states.filter(pl.col("active_weapon").is_null())
+    assert unarmed.height > 0
+    for name in ("is_reloading", "is_silent_reloading"):
+        assert unarmed[name].null_count() == 0
+        assert unarmed[name].eq(False).all()
+
+
+@pytest.mark.fixtures
 @pytest.mark.parametrize("segments", [1, 4])
 def test_kensizor_round_two_revolver(segments: int, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AWPY_TICK_SEGMENTS", str(segments))

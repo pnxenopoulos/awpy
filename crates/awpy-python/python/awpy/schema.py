@@ -54,6 +54,8 @@ SNAPSHOT_PROPERTIES: dict[str, str] = {
     "is_jumping": "m_fFlags (FL_ONGROUND clear)",
     "is_in_bomb_zone": "m_bInBombZone",
     "is_scoped": "m_bIsScoped",
+    "is_reloading": "active weapon: m_bInReload (null if field absent)",
+    "is_silent_reloading": "active weapon: m_bInReload && m_bStealthy (null if field absent)",
     "is_defusing": "m_bIsDefusing",
     "is_blinded": "m_bFlashing",
     "flash_duration": "m_flFlashDuration (replicated onset duration)",

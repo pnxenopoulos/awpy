@@ -208,6 +208,13 @@ def test_snapshot_single_tick(demo_path: Path) -> None:
     assert snap["x"].null_count() == 0
     assert snap["velocity_x"].null_count() == 0
     assert snap["velocity"].min() >= 0
+    for name in ("is_reloading", "is_silent_reloading"):
+        assert snap[name].dtype == pl.Boolean
+    # Empty samples must keep the nullable Boolean schema.
+    empty = demo.snapshots(ticks=[2_000_000_000, 2_000_000_001])
+    assert empty.is_empty()
+    for name in ("is_reloading", "is_silent_reloading"):
+        assert empty[name].dtype == pl.Boolean
     # Snapshots must work anywhere in the demo, not just near full packets.
     for probe in (2000, 29000, 60000, 150000):
         assert demo.snapshots(ticks=probe).height == 10, f"empty snapshot at tick {probe}"

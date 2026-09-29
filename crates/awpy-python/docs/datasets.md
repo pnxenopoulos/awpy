@@ -494,10 +494,21 @@ range; combined with a sampler, they bound it. At least one must be given.
 | `is_jumping` | bool | Airborne (off the ground). |
 | `is_in_bomb_zone` | bool | Standing in a plant zone. |
 | `is_scoped` | bool | Scoped in. |
+| `is_reloading` | bool? | Active weapon's `m_bInReload` value. |
+| `is_silent_reloading` | bool? | True when the active weapon's `m_bInReload` and `m_bStealthy` values are both true. |
 | `is_defusing` | bool | Defusing the bomb. |
 | `is_blinded` | bool | Whether `m_bFlashing` says the player is currently blinded. |
 | `flash_duration` | f32 | Replicated duration set at flash onset. This is not a remaining-time counter. |
 | `inventory` | str | Comma-separated short names of every weapon in the loadout, in slot order (e.g. `ak47,deagle,knife,flashbang,flashbang,smokegrenade`). |
+
+Reload columns are nullable Boolean columns. Both are `false` when there is
+no active weapon. A missing schema field on an active weapon produces `null`.
+Older demos without `m_bStealthy` have `null` in `is_silent_reloading` when
+a weapon is active. If the schema has a Boolean field but the demo omits its
+value, the value defaults to `false`.
+The silent-reload column reports stealth reload mode, not measured sound.
+The mapping has synthetic tests but has not yet been checked against a
+demo that contains quiet reloads.
 
 Each column and the CS2 engine property it comes from is listed in the
 {doc}`Reference <reference>` (also `awpy.SNAPSHOT_PROPERTIES`). Weapon names match

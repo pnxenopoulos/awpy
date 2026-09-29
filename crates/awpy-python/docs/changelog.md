@@ -17,6 +17,11 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   a tick, a list of ticks, a contiguous range
   (`start_tick` / `end_tick`), or sampled across the match by a stride and/or
   event ticks.
+- Snapshots now include nullable Boolean `is_reloading` and
+  `is_silent_reloading` columns from the active weapon. Both are false when
+  there is no active weapon. Missing schema fields on an active weapon remain
+  null. The silent-reload mapping has synthetic tests; real-demo validation
+  is pending.
 - `stats` also reports clutches (`clutches_played`, `clutches_won`, and
   `clutch_1v1` … `clutch_1v5`) and utility (grenade damage, flashes thrown,
   enemies flashed, blind duration dealt); `round_economy` classifies each team's

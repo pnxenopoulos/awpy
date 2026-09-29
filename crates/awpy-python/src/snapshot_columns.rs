@@ -65,6 +65,8 @@ snapshot_columns! {
     is_jumping: bool,
     is_in_bomb_zone: bool,
     is_scoped: bool,
+    is_reloading: Option<bool>,
+    is_silent_reloading: Option<bool>,
     is_defusing: bool,
     is_blinded: bool,
     flash_duration: f32,

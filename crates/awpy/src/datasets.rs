@@ -798,6 +798,43 @@ fn fill_loadout(
     state.inventory = inventory;
 }
 
+/// Reload field keys for one weapon class.
+struct ReloadKeys {
+    reloading: Option<u64>,
+    stealthy: Option<u64>,
+}
+
+impl ReloadKeys {
+    fn resolve(serializer: &crate::entity::Serializer) -> Self {
+        Self {
+            reloading: serializer.resolve_field_key("m_bInReload"),
+            stealthy: serializer.resolve_field_key("m_bStealthy"),
+        }
+    }
+
+    fn read(&self, weapon: &Entity) -> (Option<bool>, Option<bool>) {
+        if !weapon.active {
+            return (Some(false), Some(false));
+        }
+        // Keyframes can omit a field at its default value. A missing schema
+        // field is unknown; an omitted Boolean value defaults to false.
+        let read = |key: Option<u64>| {
+            key.and_then(|key| {
+                weapon
+                    .try_get::<bool>(Some(key))
+                    .ok()
+                    .map(|value| value.unwrap_or(false))
+            })
+        };
+        let reloading = read(self.reloading);
+        let stealthy = read(self.stealthy);
+        let silent = reloading
+            .zip(stealthy)
+            .map(|(reload, stealth)| reload && stealth);
+        (reloading, silent)
+    }
+}
+
 /// Field keys read for every [`PlayerState`], resolved once per pass. Resolving
 /// them per tick — especially the up-to-64 inventory-slot handles, each built
 /// with `format!` — costs far more than reading them, and a snapshot pass reads
@@ -828,6 +865,7 @@ struct SnapshotKeys {
     weapon_count: Option<u64>,
     weapons: Vec<Option<u64>>,
     weapon_resolver: WeaponResolver,
+    weapon_reload: HashMap<i32, ReloadKeys>,
 }
 
 impl SnapshotKeys {
@@ -837,6 +875,13 @@ impl SnapshotKeys {
         SnapshotKeys {
             pawn_class: ctx.class_info().id_of(PLAYER_PAWN_CLASS).unwrap_or(-1),
             weapon_resolver: WeaponResolver::new(ctx),
+            weapon_reload: weapon_classes()
+                .filter_map(|name| {
+                    let class_id = ctx.class_info().id_of(name)?;
+                    let serializer = ctx.serializers().get(name)?;
+                    Some((class_id, ReloadKeys::resolve(serializer)))
+                })
+                .collect(),
             pawn: PawnKeys::resolve(ctx),
             ctrl: CtrlKeys::resolve(ctx),
             health: key("m_iHealth"),
@@ -2452,6 +2497,17 @@ pub struct PlayerState {
     pub is_in_bomb_zone: bool,
     /// Whether the player is scoped in.
     pub is_scoped: bool,
+    /// Active weapon reload state (`m_bInReload`).
+    /// `Some(false)` means no reload or no active weapon.
+    /// `None` means the schema field is unavailable.
+    pub is_reloading: Option<bool>,
+    /// Whether the active weapon is reloading in stealth mode.
+    ///
+    /// This is `m_bInReload && m_bStealthy`, not an audio measurement.
+    /// `Some(false)` means no silent reload or no active weapon.
+    /// `None` means a required schema field is unavailable.
+    /// The mapping has not yet been checked against a quiet-reload demo.
+    pub is_silent_reloading: Option<bool>,
     /// Whether the player is defusing the bomb.
     pub is_defusing: bool,
     /// Whether the player is currently blinded (`m_bFlashing`).
@@ -2890,11 +2946,18 @@ impl Parser {
             state.is_defusing = pawn.get_bool(keys.defusing);
             state.is_blinded = pawn.get_bool(keys.flashing);
             state.flash_duration = pawn.get_f32(keys.flash);
-            state.active_weapon = pawn
+            if let Some(weapon) = pawn
                 .get_handle(keys.active_weapon)
                 .and_then(|h| ctx.entities().get_by_handle(h))
-                .and_then(|w| keys.weapon_resolver.info(w))
-                .map(|i| i.name);
+            {
+                state.active_weapon = keys.weapon_resolver.info(weapon).map(|info| info.name);
+                if let Some(reload) = keys.weapon_reload.get(&weapon.class_id) {
+                    (state.is_reloading, state.is_silent_reloading) = reload.read(weapon);
+                }
+            } else {
+                state.is_reloading = Some(false);
+                state.is_silent_reloading = Some(false);
+            }
             let count = usize::try_from(pawn.get_i64(keys.weapon_count))
                 .unwrap_or_default()
                 .min(keys.weapons.len());
@@ -3199,6 +3262,100 @@ mod tests {
                 .map(|(k, v)| (k.to_string(), v.to_string()))
                 .collect(),
             payload: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn reload_flags_preserve_unknown_values() {
+        use crate::entity::FieldValue;
+
+        for (reload, stealth, expected_silent) in [
+            (None, None, None),
+            (None, Some(false), None),
+            (None, Some(true), None),
+            (Some(false), None, None),
+            (Some(true), None, None),
+            (Some(false), Some(false), Some(false)),
+            (Some(false), Some(true), Some(false)),
+            (Some(true), Some(false), Some(false)),
+            (Some(true), Some(true), Some(true)),
+        ] {
+            let keys = ReloadKeys {
+                reloading: reload.map(|_| 0),
+                stealthy: stealth.map(|_| 1),
+            };
+            let mut weapon =
+                Entity::from_fields(1, 0, 0, "CAK47", true, Default::default()).unwrap();
+            for (key, value) in [(0, reload), (1, stealth)] {
+                if let Some(value) = value {
+                    weapon.fields.insert(key, FieldValue::Bool(value));
+                }
+            }
+            assert_eq!(keys.read(&weapon), (reload, expected_silent));
+        }
+    }
+
+    #[test]
+    fn reload_flags_follow_current_values_and_schema() {
+        use crate::entity::{
+            BareCharEncoding, DecodeProfile, FieldValue, FlattenedField, FlattenedSerializer,
+            FlattenedSerializerDefinition, PreciseQAngleMode, SerializerContainer,
+        };
+
+        // The two weapon classes use different field orders.
+        let serializers = SerializerContainer::parse(
+            FlattenedSerializer::new(
+                vec![
+                    FlattenedSerializerDefinition::new(Some(0), vec![0, 1]),
+                    FlattenedSerializerDefinition::new(Some(1), vec![1, 0]),
+                    FlattenedSerializerDefinition::new(Some(2), vec![0]),
+                ],
+                [
+                    "CAK47",
+                    "CDEagle",
+                    "CWeaponM4A1",
+                    "bool",
+                    "m_bInReload",
+                    "m_bStealthy",
+                ]
+                .map(String::from)
+                .to_vec(),
+                vec![
+                    FlattenedField::new(Some(3), Some(4)),
+                    FlattenedField::new(Some(3), Some(5)),
+                ],
+            ),
+            DecodeProfile::new(
+                BareCharEncoding::NullTerminatedString,
+                PreciseQAngleMode::Centered,
+            ),
+        )
+        .unwrap();
+
+        for class in ["CAK47", "CDEagle", "CWeaponM4A1"] {
+            let keys = ReloadKeys::resolve(serializers.get(class).unwrap());
+            let mut weapon = Entity::from_fields(1, 0, 0, class, true, Default::default()).unwrap();
+            // No stored value means false when the schema has the field.
+            let initial_silent = keys.stealthy.map(|_| false);
+            assert_eq!(keys.read(&weapon), (Some(false), initial_silent));
+            let reload = keys.reloading.unwrap();
+            weapon.fields.insert(reload, FieldValue::Bool(true));
+            if let Some(stealth) = keys.stealthy {
+                weapon.fields.insert(stealth, FieldValue::Bool(true));
+                assert_eq!(keys.read(&weapon), (Some(true), Some(true)));
+                weapon.fields.insert(stealth, FieldValue::Bool(false));
+                assert_eq!(keys.read(&weapon), (Some(true), Some(false)));
+                weapon.fields.insert(stealth, FieldValue::U32(1));
+            }
+            assert_eq!(keys.read(&weapon), (Some(true), None));
+
+            weapon.fields.insert(reload, FieldValue::Bool(false));
+            assert_eq!(keys.read(&weapon), (Some(false), None));
+            weapon.fields.insert(reload, FieldValue::U32(1));
+            assert_eq!(keys.read(&weapon), (None, None));
+            weapon.active = false;
+            weapon.fields.insert(reload, FieldValue::Bool(true));
+            assert_eq!(keys.read(&weapon), (Some(false), Some(false)));
         }
     }
 
