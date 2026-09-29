@@ -1,23 +1,17 @@
 """Tests for the VisibilityChecker line-of-sight class."""
 
-import struct
 from pathlib import Path
 
 import pytest
 from awpy import VisibilityChecker, data
+from spatial_fixtures import write_mesh
 
 
 def _write_wall_mesh(path: Path) -> None:
     """Write one wall quad (x=0 plane, y,z in [-10, 10]) as an awpy ``.mesh``."""
     verts = [(0, -10, -10), (0, 10, -10), (0, 10, 10), (0, -10, 10)]
     tris = [(0, 1, 2), (0, 2, 3)]
-    buf = bytearray(b"AWMH")
-    buf += struct.pack("<III", 1, len(verts), len(tris))  # version, n_verts, n_tris
-    for v in verts:
-        buf += struct.pack("<fff", *v)
-    for t in tris:
-        buf += struct.pack("<III", *t)
-    path.write_bytes(buf)
+    write_mesh(path, verts, tris)
 
 
 def test_wall_blocks_line_of_sight(tmp_path: Path) -> None:
@@ -57,14 +51,6 @@ def test_bad_mesh_raises_value_error(tmp_path: Path) -> None:
 # --- map-name construction (offline; the cache is pre-populated) --------------
 
 
-@pytest.fixture
-def cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Redirect the asset cache to a temp dir and reset the latest-version cache."""
-    monkeypatch.setattr(data, "AWPY_DATA_DIR", tmp_path)
-    monkeypatch.setattr(data, "_latest_cache", None)
-    return tmp_path
-
-
 def _prime_cache(root: Path, version: str, map_name: str) -> Path:
     """Materialize a cached release holding one geometry mesh."""
     geometry = root / version / "geometry"
@@ -75,9 +61,11 @@ def _prime_cache(root: Path, version: str, map_name: str) -> Path:
     return geometry / f"{map_name}.mesh"
 
 
-def test_map_name_uses_newest_cached_release(cache: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    _prime_cache(cache, "999", "de_test")
-    newest = _prime_cache(cache, "2000873", "de_test")
+def test_map_name_uses_newest_cached_release(
+    asset_cache: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _prime_cache(asset_cache, "999", "de_test")
+    newest = _prime_cache(asset_cache, "2000873", "de_test")
 
     def boom() -> str:
         raise AssertionError("the network must not be consulted when the cache is non-empty")
@@ -88,15 +76,15 @@ def test_map_name_uses_newest_cached_release(cache: Path, monkeypatch: pytest.Mo
     assert vc.triangle_count == 2
 
 
-def test_map_name_with_pinned_version(cache: Path) -> None:
-    pinned = _prime_cache(cache, "999", "de_test")
-    _prime_cache(cache, "2000873", "de_test")
+def test_map_name_with_pinned_version(asset_cache: Path) -> None:
+    pinned = _prime_cache(asset_cache, "999", "de_test")
+    _prime_cache(asset_cache, "2000873", "de_test")
     vc = VisibilityChecker("de_test", version=999)
     assert vc.path == pinned
 
 
-def test_unknown_map_raises(cache: Path) -> None:
-    _prime_cache(cache, "999", "de_test")
+def test_unknown_map_raises(asset_cache: Path) -> None:
+    _prime_cache(asset_cache, "999", "de_test")
     with pytest.raises(FileNotFoundError):
         VisibilityChecker("de_missing")
 

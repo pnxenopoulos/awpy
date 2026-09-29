@@ -157,12 +157,9 @@ jobs:
         # tests skip here unless AWPY_RUN_FIXTURES is set to fetch one.
         run: uv run pytest tests/ -m "not fixtures" -v
 
-  # Ground-truth bench: download the real match fixtures (from awpy-fixtures
-  # releases, via tests/fixtures/manifest.json) and assert Awpy's output against
-  # each match's known scoreboard. A required check (see `check`), so anything
-  # merging to main must pass it. The demos (~1.5 GB) are cached across runs,
-  # keyed on the manifest, so only the first run after a manifest change pays
-  # the full download.
+  # Check scoreboards and regressions with real match fixtures. This job is
+  # required by `check`. Download demos from awpy-fixtures releases and cache
+  # them across runs. The manifest contents determine the cache key.
   fixtures-bench:
     name: Ground-truth bench
     needs: build-python-wheels
@@ -204,11 +201,11 @@ jobs:
           WHEEL=$(ls ../../dist/awpy-*-cp311-*.whl)
           uv pip install "$WHEEL"
 
-      - name: Run ground-truth bench
+      - name: Run fixture tests
         working-directory: crates/awpy-python
         env:
           AWPY_RUN_FIXTURES: "1"
-        run: uv run pytest -m fixtures tests/test_ground_truth.py -v
+        run: uv run pytest -m fixtures tests/ -v
 
   docs:
     name: Sphinx Docs

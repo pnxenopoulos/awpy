@@ -8,7 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-from awpy import data, plot
+from awpy import plot
 
 matplotlib.use("Agg")
 
@@ -28,11 +28,9 @@ MAP_DATA = {
 
 
 @pytest.fixture
-def cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Fabricate a cached release with map_data.json and radar PNGs."""
-    monkeypatch.setattr(data, "AWPY_DATA_DIR", tmp_path)
-    monkeypatch.setattr(data, "_latest_cache", None)
-    release = tmp_path / "9"
+def cache(asset_cache: Path) -> Path:
+    """Add map data and radar images to the test cache."""
+    release = asset_cache / "9"
     radars = release / "radars"
     radars.mkdir(parents=True)
     (release / "map_data.json").write_text(json.dumps(MAP_DATA))
@@ -40,7 +38,7 @@ def cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     image = np.zeros((16, 16, 3))
     for name in ("de_flat", "de_duplex", "de_duplex_lower"):
         plt.imsave(radars / f"{name}.png", image)
-    return tmp_path
+    return asset_cache
 
 
 @pytest.fixture(autouse=True)
@@ -611,43 +609,21 @@ def _yaw_tick_offset(ax) -> tuple[float, float]:  # noqa: ANN001
     return tick.xyann
 
 
-def test_yaw_tick_points_where_the_player_looks(cache: Path) -> None:
-    """The view tick must match the world facing direction on screen.
-
-    The offset is in display space (+y up), not radar-pixel space (+y down). Using
-    the pixel convention mirrors the tick vertically: yaw 90 — world +y, which is
-    *up* on the radar — drew downward, so every marker pointed at the reflection of
-    where its player was actually looking.
-    """
-    # (yaw, expected screen direction). World +y is up on the radar, because
-    # world_to_pixel flips y and the radar image inverts the axis.
-    for yaw, (want_x, want_y) in {
-        0.0: (1, 0),
-        90.0: (0, 1),
-        180.0: (-1, 0),
-        270.0: (0, -1),
-    }.items():
-        fig, ax = plot.frame("de_flat", [plot.Player(x=0.0, y=0.0, side="ct", yaw=yaw)])
-        dx, dy = _yaw_tick_offset(ax)
-        # Component along the expected axis must be positive, and there must be no
-        # drift along the perpendicular one.
-        along = dx * want_x + dy * want_y
-        across = dx * want_y + dy * want_x
-        assert along > 0, f"yaw={yaw}: tick points backwards (dx={dx:.2f}, dy={dy:.2f})"
-        assert abs(across) < 1e-9, f"yaw={yaw}: tick drifts off axis (dx={dx:.2f}, dy={dy:.2f})"
-
-
-def test_yaw_tick_is_not_mirrored_diagonally(cache: Path) -> None:
-    """A diagonal catches a mirror the cardinal directions could let through."""
-    fig, ax = plot.frame("de_flat", [plot.Player(x=0.0, y=0.0, side="ct", yaw=45.0)])
-    dx, dy = _yaw_tick_offset(ax)
-    # yaw 45 is up and to the right, in equal measure.
-    assert dx > 0 and dy > 0, f"expected up-right, got dx={dx:.2f} dy={dy:.2f}"
-    assert dx == pytest.approx(dy, rel=1e-6)
-
-
-def test_yaw_tick_length_is_the_marker_radius(cache: Path) -> None:
-    """The tick reaches the marker edge — no further, so it stays inside the circle."""
-    fig, ax = plot.frame("de_flat", [plot.Player(x=0.0, y=0.0, side="ct", yaw=30.0)])
-    dx, dy = _yaw_tick_offset(ax)
-    assert (dx**2 + dy**2) ** 0.5 == pytest.approx(plot._MARKER_RADIUS_PT, rel=1e-6)
+@pytest.mark.parametrize(
+    ("yaw", "direction"),
+    [
+        (0.0, (1.0, 0.0)),
+        (30.0, (np.sqrt(3) / 2, 0.5)),
+        (45.0, (np.sqrt(0.5), np.sqrt(0.5))),
+        (90.0, (0.0, 1.0)),
+        (180.0, (-1.0, 0.0)),
+        (270.0, (0.0, -1.0)),
+    ],
+)
+def test_yaw_tick_direction_and_length(
+    cache: Path, yaw: float, direction: tuple[float, float]
+) -> None:
+    """Check the direction and length in display coordinates (+y up)."""
+    fig, ax = plot.frame("de_flat", [plot.Player(x=0.0, y=0.0, side="ct", yaw=yaw)])
+    expected = tuple(component * plot._MARKER_RADIUS_PT for component in direction)
+    assert _yaw_tick_offset(ax) == pytest.approx(expected, abs=1e-9)

@@ -1,60 +1,11 @@
 """Tests for the NavMesh navigation-mesh class."""
 
-import struct
 from pathlib import Path
 
 import pytest
 from awpy import NavMesh, data
-
-# A unit square in the XY plane at height ``z``, as four ordered corners.
-Square = list[tuple[float, float, float]]
-
-
-def _square(x: float, y: float, z: float) -> Square:
-    return [(x, y, z), (x + 1, y, z), (x + 1, y + 1, z), (x, y + 1, z)]
-
-
-def _write_nav(path: Path, areas: list[tuple[int, Square, list[int]]]) -> None:
-    """Write a minimal version-35 ``.nav`` file.
-
-    Each area is ``(area_id, four_corners, connection_area_ids)``; every area is
-    one 4-corner polygon and all its connections are placed on the first edge.
-    """
-    buf = bytearray()
-    buf += struct.pack("<I", 0xFEEDFACE)  # magic
-    buf += struct.pack("<III", 35, 1, 1)  # version, sub_version, unk1 (analyzed)
-
-    # Shared polygon table: four corners per area.
-    buf += struct.pack("<I", len(areas) * 4)
-    for _, corners, _ in areas:
-        for cx, cy, cz in corners:
-            buf += struct.pack("<fff", cx, cy, cz)
-    buf += struct.pack("<I", len(areas))  # polygon_count
-    for i in range(len(areas)):
-        buf += struct.pack("<B", 4)  # corner count
-        for k in range(4):
-            buf += struct.pack("<I", i * 4 + k)
-        buf += struct.pack("<I", 0)  # version>=35 per-polygon field
-
-    buf += struct.pack("<I", 0)  # version>=32 field
-    buf += struct.pack("<I", 0)  # version>=35 field
-
-    buf += struct.pack("<I", len(areas))  # area_count
-    for i, (area_id, _, conns) in enumerate(areas):
-        buf += struct.pack("<I", area_id)
-        buf += struct.pack("<q", 0)  # dynamic_attribute_flags
-        buf += struct.pack("<B", 0)  # hull_index
-        buf += struct.pack("<I", i)  # polygon_index
-        buf += struct.pack("<I", 0)  # skip
-        buf += struct.pack("<I", len(conns))  # connections on first edge
-        for c in conns:
-            buf += struct.pack("<II", c, 0)  # neighbor area id, edge id
-        for _ in range(3):
-            buf += struct.pack("<I", 0)  # no connections on the other edges
-        buf += b"\x00" * 5  # legacy hiding/encounter counts
-        buf += struct.pack("<I", 0)  # ladders_above count
-        buf += struct.pack("<I", 0)  # ladders_below count
-    path.write_bytes(buf)
+from spatial_fixtures import square as _square
+from spatial_fixtures import write_nav as _write_nav
 
 
 @pytest.fixture
@@ -192,14 +143,6 @@ def test_bad_nav_raises_value_error(tmp_path: Path) -> None:
 # --- map-name construction (offline; the cache is pre-populated) --------------
 
 
-@pytest.fixture
-def cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Redirect the asset cache to a temp dir and reset the latest-version cache."""
-    monkeypatch.setattr(data, "AWPY_DATA_DIR", tmp_path)
-    monkeypatch.setattr(data, "_latest_cache", None)
-    return tmp_path
-
-
 def _prime_cache(root: Path, version: str, map_name: str) -> Path:
     """Materialize a cached release holding one nav mesh."""
     navs = root / version / "navs"
@@ -210,9 +153,11 @@ def _prime_cache(root: Path, version: str, map_name: str) -> Path:
     return navs / f"{map_name}.nav"
 
 
-def test_map_name_uses_newest_cached_release(cache: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    _prime_cache(cache, "999", "de_test")
-    newest = _prime_cache(cache, "2000873", "de_test")
+def test_map_name_uses_newest_cached_release(
+    asset_cache: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _prime_cache(asset_cache, "999", "de_test")
+    newest = _prime_cache(asset_cache, "2000873", "de_test")
 
     def boom() -> str:
         raise AssertionError("the network must not be consulted when the cache is non-empty")
@@ -223,15 +168,15 @@ def test_map_name_uses_newest_cached_release(cache: Path, monkeypatch: pytest.Mo
     assert nav.area_count == 1
 
 
-def test_map_name_with_pinned_version(cache: Path) -> None:
-    pinned = _prime_cache(cache, "999", "de_test")
-    _prime_cache(cache, "2000873", "de_test")
+def test_map_name_with_pinned_version(asset_cache: Path) -> None:
+    pinned = _prime_cache(asset_cache, "999", "de_test")
+    _prime_cache(asset_cache, "2000873", "de_test")
     nav = NavMesh("de_test", version=999)
     assert nav.path == pinned
 
 
-def test_unknown_map_raises(cache: Path) -> None:
-    _prime_cache(cache, "999", "de_test")
+def test_unknown_map_raises(asset_cache: Path) -> None:
+    _prime_cache(asset_cache, "999", "de_test")
     with pytest.raises(FileNotFoundError):
         NavMesh("de_missing")
 

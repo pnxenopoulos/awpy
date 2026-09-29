@@ -8,8 +8,17 @@ when the directory is empty (e.g. in a fresh checkout).
 from pathlib import Path
 
 import pytest
+from awpy import data
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture
+def asset_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Use an empty local asset cache for this test."""
+    monkeypatch.setattr(data, "AWPY_DATA_DIR", tmp_path)
+    monkeypatch.setattr(data, "_latest_cache", None)
+    return tmp_path
 
 
 def pytest_configure(config: pytest.Config) -> None:

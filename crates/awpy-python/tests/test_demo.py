@@ -8,7 +8,8 @@ from pathlib import Path
 
 import polars as pl
 import pytest
-from awpy import Demo, InvalidDemoError
+from awpy import SNAPSHOT_PROPERTIES, Demo, InvalidDemoError
+from polars.testing import assert_frame_equal
 
 
 def test_missing_file_raises() -> None:
@@ -111,32 +112,21 @@ def test_parse_ticks(demo_path: Path) -> None:
     assert raw.height > ticks.height
 
 
-def test_snapshots_parallel_matches_serial(
-    demo_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    ("method", "options"),
+    [("ticks", {}), ("snapshots", {"every": 64})],
+    ids=["ticks", "snapshots"],
+)
+def test_parallel_matches_serial(
+    demo_path: Path, monkeypatch: pytest.MonkeyPatch, method: str, options: dict[str, int]
 ) -> None:
-    # Snapshots decode in parallel across keyframe segments (including the loadout,
-    # which follows weapon-entity handles); the result must be bit-identical to a
-    # single serial pass.
-    keys = ["tick", "steamid"]
+    """Check both decode paths with one and eight segments."""
     monkeypatch.setenv("AWPY_TICK_SEGMENTS", "1")
-    serial = Demo(demo_path).snapshots(every=64)
+    serial = getattr(Demo(demo_path), method)(**options)
     monkeypatch.setenv("AWPY_TICK_SEGMENTS", "8")
-    parallel = Demo(demo_path).snapshots(every=64)
-    assert parallel.height == serial.height
-    assert serial.sort(keys).equals(parallel.sort(keys))
-
-
-def test_ticks_parallel_matches_serial(demo_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    # ticks() decodes the demo in parallel across keyframe segments; the result
-    # must be bit-identical to a single serial pass (AWPY_TICK_SEGMENTS forces the
-    # segment count).
+    parallel = getattr(Demo(demo_path), method)(**options)
     keys = ["tick", "steamid"]
-    monkeypatch.setenv("AWPY_TICK_SEGMENTS", "1")
-    serial = Demo(demo_path).ticks()
-    monkeypatch.setenv("AWPY_TICK_SEGMENTS", "8")
-    parallel = Demo(demo_path).ticks()
-    assert parallel.height == serial.height
-    assert serial.sort(keys).equals(parallel.sort(keys))
+    assert_frame_equal(serial.sort(keys), parallel.sort(keys), check_exact=True)
 
 
 def test_players(demo_path: Path) -> None:
@@ -211,6 +201,7 @@ def test_snapshot_single_tick(demo_path: Path) -> None:
         "pitch",
         "yaw",
     } <= set(snap.columns)
+    assert set(snap.columns) == {"tick", *SNAPSHOT_PROPERTIES}
     assert snap.height == 10  # every player, alive at freeze end
     assert snap["tick"].unique().to_list() == [tick]
     assert snap["health"].min() == 100
@@ -446,10 +437,7 @@ def test_chat(demo_path: Path) -> None:
         count for name, count in demo.events.counts.items() if "saytext" in name.lower()
     )
     assert chat.height == say_text_count
-    if chat.height:
-        assert chat["message"].null_count() == 0
-    else:
-        assert say_text_count == 0
+    assert chat["message"].null_count() == 0
 
 
 def test_convars(demo_path: Path) -> None:
@@ -469,6 +457,7 @@ def test_rounds(demo_path: Path) -> None:
         "start_tick",
         "freeze_end_tick",
         "end_tick",
+        "official_end_tick",
         "winner",
         "winner_side",
         "reason_name",
@@ -562,11 +551,6 @@ def test_damages(demo_path: Path) -> None:
     assert damages["health_pre"].max() <= 100
 
 
-def test_rounds_official_end(demo_path: Path) -> None:
-    rounds = Demo(demo_path).rounds
-    assert "official_end_tick" in rounds.columns
-
-
 def test_bomb(demo_path: Path) -> None:
     bomb = Demo(demo_path).bomb
     assert isinstance(bomb, pl.DataFrame)
@@ -656,22 +640,6 @@ def test_shots(demo_path: Path) -> None:
     assert (shots["num_bullets_remaining"] > 0).sum() > 0
 
 
-def test_dataset_groups_match_fresh_parse(demo_path: Path) -> None:
-    # Incremental dataset groups remain identical to independent cold parses.
-    d = Demo(demo_path)
-    _ = d.kills
-    fresh = Demo(demo_path)
-    for name in ("kills", "damages", "bomb", "shots", "grenades", "rounds", "players", "stats"):
-        got = getattr(d, name)
-        assert isinstance(got, pl.DataFrame)
-        # Row counts are deterministic across independent parses of the same demo
-        # (the parallel passes are byte-identical to serial ones).
-        assert got.height == getattr(fresh, name).height, f"{name} row count differs"
-    # A standard match has a full server of players and at least one round.
-    assert d.players.height >= 10
-    assert d.rounds.height > 0
-
-
 def test_stats(demo_path: Path) -> None:
     demo = Demo(demo_path)
     stats = demo.stats
@@ -746,9 +714,6 @@ def test_load_unions_and_caches_datasets(demo_path: Path) -> None:
 
     demo = Demo(demo_path)
     requested = (
-        "players",
-        "stats",
-        "rounds",
         "kills",
         "damages",
         "blinds",
@@ -757,39 +722,20 @@ def test_load_unions_and_caches_datasets(demo_path: Path) -> None:
         "grenades",
         "fires",
         "smokes",
+        "rounds",
+        "players",
+        "stats",
     )
     assert demo.load(*requested) is None
 
-    players = demo.players
-    stats = demo.stats
-    rounds = demo.rounds
-    kills = demo.kills
-    damages = demo.damages
-    blinds = demo.blinds
-    bomb = demo.bomb
-    shots = demo.shots
-    grenades = demo.grenades
-    fires = demo.fires
-    smokes = demo.smokes
-    assert demo.players is players
-    assert demo.stats is stats
-    assert demo.rounds is rounds
-    assert demo.kills is kills
-    assert demo.damages is damages
-    assert demo.blinds is blinds
-    assert demo.bomb is bomb
-    assert demo.shots is shots
-    assert demo.grenades is grenades
-    assert demo.fires is fires
-    assert demo.smokes is smokes
+    cached = {name: getattr(demo, name) for name in requested}
+    for name, frame in cached.items():
+        assert getattr(demo, name) is frame, name
 
-    # Planned union rows must match incrementally selected cold datasets.
+    # Compare the planned union with incremental loads on a new Demo.
     fresh = Demo(demo_path)
-    for name in ("kills", "damages", "blinds", "bomb", "shots"):
-        assert getattr(demo, name).equals(getattr(fresh, name)), name
-    fresh = Demo(demo_path)
-    for name in ("grenades", "fires", "smokes"):
-        assert getattr(demo, name).equals(getattr(fresh, name)), name
+    for name in requested:
+        assert_frame_equal(cached[name], getattr(fresh, name), check_exact=True)
 
     with pytest.raises(ValueError, match="unknown dataset"):
         demo.load("not_a_dataset")
@@ -879,18 +825,9 @@ def test_round_economy(demo_path: Path) -> None:
 
 
 def test_schema_constants() -> None:
-    from awpy import GAME_EVENTS, SNAPSHOT_PROPERTIES
+    from awpy import GAME_EVENTS
 
     assert isinstance(SNAPSHOT_PROPERTIES, dict) and SNAPSHOT_PROPERTIES
     assert isinstance(GAME_EVENTS, dict) and "player_death" in GAME_EVENTS
     # Values map to engine property names / descriptions (all strings).
     assert all(isinstance(v, str) for v in SNAPSHOT_PROPERTIES.values())
-
-
-def test_snapshot_properties_match_schema(demo_path: Path) -> None:
-    # The SNAPSHOT_PROPERTIES catalog must stay in sync with what snapshot() emits.
-    from awpy import SNAPSHOT_PROPERTIES
-
-    tick = Demo(demo_path).rounds.row(1, named=True)["freeze_end_tick"]
-    cols = set(Demo(demo_path).snapshots(ticks=tick).columns) - {"tick"}
-    assert cols == set(SNAPSHOT_PROPERTIES)

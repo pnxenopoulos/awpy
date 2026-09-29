@@ -1,11 +1,36 @@
 """Check weapon variants against real-demo shot events."""
 
-from pathlib import Path
-
+import fixture_store
 import polars as pl
 import pytest
 from awpy import Demo
-from fixture_store import get_demo, load_manifest
+
+
+def _fixture_demo(name: str) -> Demo:
+    """Load a named fixture. Fail if an enabled fixture run cannot load it."""
+    entry = next((f for f in fixture_store.load_manifest() if f["name"] == name), None)
+    if entry is not None:
+        demo = fixture_store.get_demo(entry)
+        if demo is not None:
+            return demo
+    message = f"required fixture {name!r} is missing from the manifest or unavailable"
+    if fixture_store.download_enabled():
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+@pytest.mark.parametrize("enabled", ["0", "1"])
+@pytest.mark.parametrize("listed", [False, True])
+def test_missing_fixture_fails_only_when_enabled(
+    enabled: str, listed: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AWPY_RUN_FIXTURES", enabled)
+    entries = [{"name": "missing"}] if listed else []
+    monkeypatch.setattr(fixture_store, "load_manifest", lambda: entries)
+    monkeypatch.setattr(fixture_store, "get_demo", lambda entry: None)
+    expected = pytest.fail.Exception if enabled == "1" else pytest.skip.Exception
+    with pytest.raises(expected, match="required fixture 'missing'"):
+        _fixture_demo("missing")
 
 
 def _check_loadout(demo: Demo, weapon: str, column: str) -> None:
@@ -39,22 +64,16 @@ def test_shared_class_loadouts(
     fixture_name: str, weapon: str, column: str, segments: int, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("AWPY_TICK_SEGMENTS", str(segments))
-    entry = next((f for f in load_manifest() if f["name"] == fixture_name), None)
-    if entry is None:
-        pytest.skip(f"fixture {fixture_name} is not in the manifest")
-    demo = get_demo(entry)
-    if demo is None:
-        pytest.skip(f"fixture {fixture_name} is not cached")
+    demo = _fixture_demo(fixture_name)
     _check_loadout(demo, weapon, column)
+    assert weapon in demo.item_events["item"].to_list()
 
 
+@pytest.mark.fixtures
 @pytest.mark.parametrize("segments", [1, 4])
 def test_kensizor_round_two_revolver(segments: int, monkeypatch: pytest.MonkeyPatch) -> None:
-    path = Path(__file__).resolve().parents[3] / "b8-vs-vitality-m1-mirage.dem"
-    if not path.is_file():
-        pytest.skip("reported B8 Mirage demo is not available")
     monkeypatch.setenv("AWPY_TICK_SEGMENTS", str(segments))
-    demo = Demo(path)
+    demo = _fixture_demo("hltv-de_mirage-2394170")
     round_two = demo.rounds.filter(pl.col("round_num") == 2).row(0, named=True)
     ticks = [15346, 15391]
     assert all(round_two["freeze_end_tick"] <= tick <= round_two["end_tick"] for tick in ticks)
@@ -65,13 +84,3 @@ def test_kensizor_round_two_revolver(segments: int, monkeypatch: pytest.MonkeyPa
     assert states["inventory"].to_list() == ["knife,revolver", "knife,revolver"]
     shots = demo.shots.filter(pl.col("tick").is_in(ticks) & (pl.col("name") == "kensizor"))
     assert shots["weapon"].to_list() == ["weapon_revolver", "weapon_revolver"]
-
-
-def test_reported_b8_loadouts() -> None:
-    path = Path(__file__).resolve().parents[3] / "b8-vs-vitality-m2-dust2.dem"
-    if not path.is_file():
-        pytest.skip("reported B8 demo is not available")
-    demo = Demo(path)
-    _check_loadout(demo, "usp_silencer", "secondary_weapon")
-    _check_loadout(demo, "m4a1_silencer", "primary_weapon")
-    assert "m4a1_silencer" in demo.item_events["item"].to_list()

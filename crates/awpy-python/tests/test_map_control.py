@@ -1,6 +1,5 @@
 """Tests for the map-control primitive (offline; synthetic nav + mesh)."""
 
-import struct
 from pathlib import Path
 
 import polars as pl
@@ -8,59 +7,9 @@ import pytest
 from awpy import NavMesh, VisibilityChecker
 from awpy import map_control as map_control_module
 from awpy._awpy import compute_map_control
-
-Square = list[tuple[float, float, float]]
-
-
-def _square(x: float, y: float, z: float = 0.0) -> Square:
-    """A unit square in the XY plane, lower-left corner at ``(x, y)``."""
-    return [(x, y, z), (x + 1, y, z), (x + 1, y + 1, z), (x, y + 1, z)]
-
-
-def _write_nav(path: Path, areas: list[tuple[int, Square, list[int]]]) -> None:
-    """Write a minimal version-35 ``.nav`` (one 4-corner polygon per area)."""
-    buf = bytearray()
-    buf += struct.pack("<I", 0xFEEDFACE)
-    buf += struct.pack("<III", 35, 1, 1)  # version, sub_version, analyzed
-    buf += struct.pack("<I", len(areas) * 4)  # shared corner table
-    for _, corners, _ in areas:
-        for cx, cy, cz in corners:
-            buf += struct.pack("<fff", cx, cy, cz)
-    buf += struct.pack("<I", len(areas))  # polygon_count
-    for i in range(len(areas)):
-        buf += struct.pack("<B", 4)
-        for k in range(4):
-            buf += struct.pack("<I", i * 4 + k)
-        buf += struct.pack("<I", 0)
-    buf += struct.pack("<I", 0)  # v>=32
-    buf += struct.pack("<I", 0)  # v>=35
-    buf += struct.pack("<I", len(areas))  # area_count
-    for i, (area_id, _, conns) in enumerate(areas):
-        buf += struct.pack("<I", area_id)
-        buf += struct.pack("<q", 0)
-        buf += struct.pack("<B", 0)
-        buf += struct.pack("<I", i)
-        buf += struct.pack("<I", 0)
-        buf += struct.pack("<I", len(conns))
-        for c in conns:
-            buf += struct.pack("<II", c, 0)
-        for _ in range(3):
-            buf += struct.pack("<I", 0)
-        buf += b"\x00" * 5
-        buf += struct.pack("<I", 0)
-        buf += struct.pack("<I", 0)
-    path.write_bytes(buf)
-
-
-def _write_mesh(path: Path, verts: list[tuple], tris: list[tuple]) -> None:
-    """Write an awpy ``.mesh`` (AWMH) from vertices and triangle indices."""
-    buf = bytearray(b"AWMH")
-    buf += struct.pack("<III", 1, len(verts), len(tris))
-    for v in verts:
-        buf += struct.pack("<fff", *v)
-    for t in tris:
-        buf += struct.pack("<III", *t)
-    path.write_bytes(buf)
+from spatial_fixtures import square as _square
+from spatial_fixtures import write_mesh as _write_mesh
+from spatial_fixtures import write_nav as _write_nav
 
 
 def _row_of(result: dict, area_id: int) -> str:
