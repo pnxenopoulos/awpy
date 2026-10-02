@@ -1,0 +1,13 @@
+[package]
+name = "build-awpy-protos"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "build-awpy-protos"
+path = "src/main.rs"
+
+[dependencies]
+prost-build = "0.14"
+tempfile = "3"

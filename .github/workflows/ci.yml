@@ -1,0 +1,296 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  lint:
+    name: Format & Lint (Rust)
+    runs-on: ubuntu-latest  
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust (stable) + rustfmt, clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: lint-${{ runner.os }}-stable
+
+      - name: rustfmt
+        run: cargo fmt --all -- --check
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: rustdoc
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: cargo doc --workspace --no-deps --all-features --exclude awpy-dev --exclude awpy-python
+
+  proto-freshness:
+    name: Protobuf Freshness (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Upstream drift does not block CI Check or package releases.
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Compare protobuf files with upstream
+        shell: bash
+        run: ./scripts/sync-protos.sh --check 2>&1 | tee "$RUNNER_TEMP/proto-check.log"
+
+      - name: Report protobuf status
+        if: always()
+        run: |
+          {
+            echo '## Protobuf freshness'
+            echo '```text'
+            cat "$RUNNER_TEMP/proto-check.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Flag a failed check
+        if: failure()
+        run: echo "::warning::Protobuf files differ from upstream, or the check could not finish. See the Protobuf Freshness summary."
+
+  deny:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: cargo deny
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features
+
+  test-rust:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ runner.os }}-stable
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
+      - name: Test
+        run: cargo nextest run --workspace --all-features --exclude awpy-python --failure-output immediate-final
+
+  lint-python:
+    name: Format & Lint (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        with:
+          python-version: "3.13"
+
+      - name: ruff
+        working-directory: crates/awpy-python
+        run: |
+          uv sync --locked --no-install-project
+          uv run --no-sync ruff check python tests examples
+          uv run --no-sync ruff format --check python tests examples
+
+      - name: ty
+        working-directory: crates/awpy-python
+        run: uv run --no-sync ty check python
+
+  build-python-wheels:
+    name: Build Python Wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          args: --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-wheels
+          path: dist/*.whl
+
+  test-python:
+    name: Python Tests (${{ matrix.python-version }})
+    needs: build-python-wheels
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: python-wheels
+          path: dist
+
+      - name: Install wheel and test dependencies
+        working-directory: crates/awpy-python
+        run: |
+          uv sync --locked --no-install-project
+          CPVER="cp$(echo ${{ matrix.python-version }} | tr -d .)"
+          WHEEL=$(ls ../../dist/awpy-*-${CPVER}-*.whl)
+          uv pip install "$WHEEL"
+
+      - name: Run pytest
+        working-directory: crates/awpy-python
+        # Test the installed wheel without a source rebuild. All tests that
+        # need demos run in fixtures-bench; this job needs no demo downloads.
+        run: uv run --no-sync pytest -m "not fixtures" -q --durations=10
+
+  # Check demo schemas, examples, scoreboards, and regressions. This job is
+  # required by `check`. Download demos from awpy-fixtures releases and cache
+  # them across runs. The manifest contents determine the cache key.
+  fixtures-bench:
+    name: Demo & Ground-truth Tests
+    needs: build-python-wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # The manifest (which fixtures to run and their expected stats) is the
+      # awpy-fixtures repo's single source of truth — fetch it at run time
+      # rather than vendoring a copy. Must run before the cache step so the
+      # cache key below tracks the manifest's content.
+      - name: Fetch fixture manifest
+        run: |
+          mkdir -p crates/awpy-python/tests/fixtures
+          curl -sfL https://raw.githubusercontent.com/pnxenopoulos/awpy-fixtures/main/manifest.json \
+            -o crates/awpy-python/tests/fixtures/manifest.json
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        with:
+          python-version: "3.11"
+
+      - name: Download wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: python-wheels
+          path: dist
+
+      - name: Cache demo fixtures
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/awpy-fixtures
+          key: awpy-fixtures-${{ hashFiles('crates/awpy-python/tests/fixtures/manifest.json') }}
+
+      - name: Install wheel and test dependencies
+        working-directory: crates/awpy-python
+        run: |
+          uv sync --locked --no-install-project
+          WHEEL=$(ls ../../dist/awpy-*-cp311-*.whl)
+          uv pip install "$WHEEL"
+
+      # Download once before workers start. Workers must not share partial downloads.
+      - name: Prepare demo fixtures
+        working-directory: crates/awpy-python
+        run: uv run --no-sync python tests/fixture_store.py
+
+      - name: Run fixture tests
+        working-directory: crates/awpy-python
+        env:
+          AWPY_RUN_FIXTURES: "1"
+          # Bound native threads as well as test workers to limit memory use.
+          AWPY_TICK_SEGMENTS: "2"
+          POLARS_MAX_THREADS: "2"
+        # Keep each file on one worker so module-scoped fixtures stay shared.
+        run: uv run --no-sync pytest -m fixtures -q -n 2 --dist=loadfile --durations=10
+
+  docs:
+    name: Sphinx Docs
+    # `api.md` is generated with sphinx.ext.autodoc, which imports awpy — and the
+    # core classes live in the compiled `awpy._awpy` extension. Reuse the wheel
+    # this workflow already built instead of compiling the Rust core again.
+    needs: build-python-wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
+        with:
+          python-version: "3.12"
+
+      - name: Download wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: python-wheels
+          path: dist
+
+      - name: Install wheel and docs dependencies
+        working-directory: crates/awpy-python
+        run: |
+          uv sync --locked --group docs --no-install-project
+          WHEEL=$(ls ../../dist/awpy-*-cp312-*.whl)
+          uv pip install "$WHEEL"
+
+      - name: Build docs
+        working-directory: crates/awpy-python
+        run: uv run --no-sync sphinx-build -W -b html docs docs/_build/html
+
+  check:
+    name: CI Check
+    if: always()
+    needs: [lint, deny, test-rust, lint-python, build-python-wheels, test-python, fixtures-bench, docs]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" ||
+                "${{ needs.deny.result }}" != "success" ||
+                "${{ needs.test-rust.result }}" != "success" ||
+                "${{ needs.lint-python.result }}" != "success" ||
+                "${{ needs.build-python-wheels.result }}" != "success" ||
+                "${{ needs.test-python.result }}" != "success" ||
+                "${{ needs.fixtures-bench.result }}" != "success" ||
+                "${{ needs.docs.result }}" != "success" ]]; then
+            echo "One or more required jobs failed"
+            exit 1
+          fi
