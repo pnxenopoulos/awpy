@@ -126,13 +126,13 @@ jobs:
       - name: ruff
         working-directory: crates/awpy-python
         run: |
-          uv sync --no-install-project
-          uv run ruff check python tests examples
-          uv run ruff format --check python tests examples
+          uv sync --locked --no-install-project
+          uv run --no-sync ruff check python tests examples
+          uv run --no-sync ruff format --check python tests examples
 
       - name: ty
         working-directory: crates/awpy-python
-        run: uv run ty check python
+        run: uv run --no-sync ty check python
 
   build-python-wheels:
     name: Build Python Wheels
@@ -173,23 +173,22 @@ jobs:
       - name: Install wheel and test dependencies
         working-directory: crates/awpy-python
         run: |
-          uv sync --no-install-project
+          uv sync --locked --no-install-project
           CPVER="cp$(echo ${{ matrix.python-version }} | tr -d .)"
           WHEEL=$(ls ../../dist/awpy-*-${CPVER}-*.whl)
           uv pip install "$WHEEL"
 
       - name: Run pytest
         working-directory: crates/awpy-python
-        # Excludes the `fixtures` marker (the ground-truth bench over large
-        # demos); that runs in the `fixtures-bench` job. Demo-backed schema
-        # tests skip here unless AWPY_RUN_FIXTURES is set to fetch one.
-        run: uv run pytest tests/ -m "not fixtures" -v
+        # Test the installed wheel without a source rebuild. All tests that
+        # need demos run in fixtures-bench; this job needs no demo downloads.
+        run: uv run --no-sync pytest -m "not fixtures" -q --durations=10
 
-  # Check scoreboards and regressions with real match fixtures. This job is
+  # Check demo schemas, examples, scoreboards, and regressions. This job is
   # required by `check`. Download demos from awpy-fixtures releases and cache
   # them across runs. The manifest contents determine the cache key.
   fixtures-bench:
-    name: Ground-truth bench
+    name: Demo & Ground-truth Tests
     needs: build-python-wheels
     runs-on: ubuntu-latest
     steps:
@@ -225,15 +224,24 @@ jobs:
       - name: Install wheel and test dependencies
         working-directory: crates/awpy-python
         run: |
-          uv sync --no-install-project
+          uv sync --locked --no-install-project
           WHEEL=$(ls ../../dist/awpy-*-cp311-*.whl)
           uv pip install "$WHEEL"
+
+      # Download once before workers start. Workers must not share partial downloads.
+      - name: Prepare demo fixtures
+        working-directory: crates/awpy-python
+        run: uv run --no-sync python tests/fixture_store.py
 
       - name: Run fixture tests
         working-directory: crates/awpy-python
         env:
           AWPY_RUN_FIXTURES: "1"
-        run: uv run pytest -m fixtures tests/ -v
+          # Bound native threads as well as test workers to limit memory use.
+          AWPY_TICK_SEGMENTS: "2"
+          POLARS_MAX_THREADS: "2"
+        # Keep each file on one worker so module-scoped fixtures stay shared.
+        run: uv run --no-sync pytest -m fixtures -q -n 2 --dist=loadfile --durations=10
 
   docs:
     name: Sphinx Docs
@@ -259,13 +267,13 @@ jobs:
       - name: Install wheel and docs dependencies
         working-directory: crates/awpy-python
         run: |
-          uv sync --group docs --no-install-project
+          uv sync --locked --group docs --no-install-project
           WHEEL=$(ls ../../dist/awpy-*-cp312-*.whl)
           uv pip install "$WHEEL"
 
       - name: Build docs
         working-directory: crates/awpy-python
-        run: uv run sphinx-build -W -b html docs docs/_build/html
+        run: uv run --no-sync sphinx-build -W -b html docs docs/_build/html
 
   check:
     name: CI Check

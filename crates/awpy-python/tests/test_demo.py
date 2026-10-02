@@ -1,7 +1,7 @@
 """Tests for the awpy Python bindings.
 
-The fixture-backed tests are skipped when no demo is present (see conftest).
-The error-handling tests always run.
+Tests that need demos use the fixtures marker (see conftest).
+The error-handling tests do not need demo files.
 """
 
 from pathlib import Path
@@ -24,16 +24,15 @@ def test_invalid_file_raises(tmp_path: Path) -> None:
         Demo(bogus)
 
 
-def test_header(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_header(demo: Demo) -> None:
     header = demo.header
     assert isinstance(header, dict)
     assert "map_name" in header
     assert header["map_name"].startswith("de_")
 
 
-def test_events_listing(demo_path: Path) -> None:
-    events = Demo(demo_path).events
+def test_events_listing(demo: Demo) -> None:
+    events = demo.events
     assert "player_death" in events
     assert "player_death" in events.names
     assert list(events) == events.names == sorted(events.names)
@@ -54,16 +53,15 @@ def test_events_access_and_caching(demo_path: Path) -> None:
     assert demo.events is demo.events
 
 
-def test_events_unknown_name_raises(demo_path: Path) -> None:
-    events = Demo(demo_path).events
+def test_events_unknown_name_raises(demo: Demo) -> None:
+    events = demo.events
     with pytest.raises(KeyError, match="no_such_event"):
         events["no_such_event"]
     with pytest.raises(AttributeError, match="no_such_event"):
         _ = events.no_such_event
 
 
-def test_parse_ticks(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_parse_ticks(demo: Demo) -> None:
     # Default props: one row per player per tick, keyed by steamid, with computed
     # world position and core state.
     ticks = demo.ticks()
@@ -129,8 +127,8 @@ def test_parallel_matches_serial(
     assert_frame_equal(serial.sort(keys), parallel.sort(keys), check_exact=True)
 
 
-def test_players(demo_path: Path) -> None:
-    players = Demo(demo_path).players
+def test_players(demo: Demo) -> None:
+    players = demo.players
     assert isinstance(players, pl.DataFrame)
     assert {"steamid", "name", "side", "team_clan_name"} <= set(players.columns)
     humans = players.filter(pl.col("steamid") > 0)
@@ -139,8 +137,8 @@ def test_players(demo_path: Path) -> None:
     assert set(humans["side"].unique()) <= {"terrorist", "counter-terrorist"}
 
 
-def test_players_team_clan_names(demo_path: Path) -> None:
-    players = Demo(demo_path).players
+def test_players_team_clan_names(demo: Demo) -> None:
+    players = demo.players
     playing = players.filter(pl.col("side").is_in(["terrorist", "counter-terrorist"]))
     named = playing.drop_nulls("team_clan_name")
     if named.is_empty():
@@ -158,8 +156,7 @@ def test_players_team_clan_names(demo_path: Path) -> None:
     assert bench["team_clan_name"].null_count() == bench.height
 
 
-def test_tick_rate(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_tick_rate(demo: Demo) -> None:
     assert isinstance(demo.tick_rate, float)
     # Every competitive demo is 64 or 128 tick; the fallback is 64.
     assert demo.tick_rate in (64.0, 128.0)
@@ -180,8 +177,7 @@ def test_tick_rate(demo_path: Path) -> None:
         demo.seconds_to_tick(float("nan"))
 
 
-def test_snapshot_single_tick(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_snapshot_single_tick(demo: Demo) -> None:
     tick = demo.rounds.row(0, named=True)["freeze_end_tick"]
     snap = demo.snapshots(ticks=tick)
     assert {
@@ -220,8 +216,7 @@ def test_snapshot_single_tick(demo_path: Path) -> None:
         assert demo.snapshots(ticks=probe).height == 10, f"empty snapshot at tick {probe}"
 
 
-def test_snapshot_tick_range(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_snapshot_tick_range(demo: Demo) -> None:
     start = demo.rounds.row(0, named=True)["freeze_end_tick"]
     span = demo.snapshots(start_tick=start, end_tick=start + 128)
     ticks = span["tick"]
@@ -230,9 +225,7 @@ def test_snapshot_tick_range(demo_path: Path) -> None:
     assert span.height == ticks.n_unique() * 10
 
 
-def test_snapshots_sampled(demo_path: Path) -> None:
-    demo = Demo(demo_path)
-
+def test_snapshots_sampled(demo: Demo) -> None:
     # `every=N`: evenly spaced ticks, same schema as a single snapshot, 10 players each.
     every = demo.snapshots(every=256)
     one = demo.snapshots(ticks=demo.rounds["freeze_end_tick"][0])
@@ -274,8 +267,7 @@ def test_snapshots_sampled(demo_path: Path) -> None:
         demo.snapshots(every=64, seconds=1.0)
 
 
-def test_snapshot_economy(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_snapshot_economy(demo: Demo) -> None:
     # Freeze end of the first (pistol) round: all 10 players alive and armed.
     tick = demo.rounds.row(0, named=True)["freeze_end_tick"]
     snap = demo.snapshots(ticks=tick)
@@ -331,8 +323,8 @@ def test_snapshot_economy(demo_path: Path) -> None:
             assert row["secondary_weapon"] in row["inventory"]
 
 
-def test_blinds(demo_path: Path) -> None:
-    blinds = Demo(demo_path).blinds
+def test_blinds(demo: Demo) -> None:
+    blinds = demo.blinds
     assert isinstance(blinds, pl.DataFrame)
     expected = {
         "tick",
@@ -368,8 +360,8 @@ def test_blinds(demo_path: Path) -> None:
         assert blinds["tick"].to_list() == sorted(blinds["tick"].to_list())
 
 
-def test_item_events(demo_path: Path) -> None:
-    items = Demo(demo_path).item_events
+def test_item_events(demo: Demo) -> None:
+    items = demo.item_events
     assert isinstance(items, pl.DataFrame)
     expected = {
         "tick",
@@ -413,9 +405,8 @@ def test_item_events(demo_path: Path) -> None:
         assert drops["near_buy_zone"].null_count() == 0
 
 
-def test_nullable_steamid_columns_use_uint64(demo_path: Path) -> None:
+def test_nullable_steamid_columns_use_uint64(demo: Demo) -> None:
     """Steam IDs do not become floats when values are null."""
-    demo = Demo(demo_path)
     frames = (
         demo.kills,
         demo.damages,
@@ -434,8 +425,7 @@ def test_nullable_steamid_columns_use_uint64(demo_path: Path) -> None:
         assert all(frame.schema[name] == pl.UInt64 for name in steamid_columns)
 
 
-def test_chat(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_chat(demo: Demo) -> None:
     chat = demo.chat
     assert isinstance(chat, pl.DataFrame)
     # Server-side demos may strip chat entirely; the schema must hold anyway.
@@ -447,16 +437,15 @@ def test_chat(demo_path: Path) -> None:
     assert chat["message"].null_count() == 0
 
 
-def test_convars(demo_path: Path) -> None:
-    convars = Demo(demo_path).convars
+def test_convars(demo: Demo) -> None:
+    convars = demo.convars
     assert isinstance(convars, dict)
     assert convars  # every demo carries at least the signon convars
     assert all(isinstance(k, str) and isinstance(v, str) for k, v in convars.items())
     assert any(key.startswith("mp_") for key in convars)
 
 
-def test_rounds(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_rounds(demo: Demo) -> None:
     rounds = demo.rounds
     assert isinstance(rounds, pl.DataFrame)
     assert {
@@ -477,8 +466,7 @@ def test_rounds(demo_path: Path) -> None:
     assert end == sorted(end)
 
 
-def test_kills(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_kills(demo: Demo) -> None:
     kills = demo.kills
     assert isinstance(kills, pl.DataFrame)
     expected = {
@@ -525,8 +513,7 @@ def test_kills(demo_path: Path) -> None:
     assert sides <= {"terrorist", "counter-terrorist"}
 
 
-def test_damages(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_damages(demo: Demo) -> None:
     damages = demo.damages
     assert isinstance(damages, pl.DataFrame)
     assert {
@@ -558,8 +545,8 @@ def test_damages(demo_path: Path) -> None:
     assert damages["health_pre"].max() <= 100
 
 
-def test_bomb(demo_path: Path) -> None:
-    bomb = Demo(demo_path).bomb
+def test_bomb(demo: Demo) -> None:
+    bomb = demo.bomb
     assert isinstance(bomb, pl.DataFrame)
     assert {"tick", "event", "steamid", "name", "bombsite", "x", "y", "z"} <= set(bomb.columns)
     assert set(bomb["event"].unique()) <= {
@@ -573,8 +560,8 @@ def test_bomb(demo_path: Path) -> None:
     assert {"entity_id", "entity_serial"} <= set(bomb.columns)
 
 
-def test_grenades(demo_path: Path) -> None:
-    g = Demo(demo_path).grenades
+def test_grenades(demo: Demo) -> None:
+    g = demo.grenades
     assert isinstance(g, pl.DataFrame)
     assert {"tick", "thrower_name", "type", "entity_id", "x", "y", "z"} <= set(g.columns)
     # The smoke-grenade projectile is BOTH a grenade (its throw) and a smoke (its
@@ -586,8 +573,7 @@ def test_grenades(demo_path: Path) -> None:
     assert set(g["type"].unique()) <= {"smoke", "he", "flashbang", "molotov", "decoy", "grenade"}
 
 
-def test_fires_and_smokes(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_fires_and_smokes(demo: Demo) -> None:
     for df in (demo.fires, demo.smokes):
         assert isinstance(df, pl.DataFrame)
         assert {
@@ -608,8 +594,8 @@ def test_fires_and_smokes(demo_path: Path) -> None:
         assert (df["end_tick"] > df["start_tick"]).all()
 
 
-def test_shots(demo_path: Path) -> None:
-    shots = Demo(demo_path).shots
+def test_shots(demo: Demo) -> None:
+    shots = demo.shots
     assert isinstance(shots, pl.DataFrame)
     assert {
         "tick",
@@ -751,8 +737,7 @@ def test_load_unions_and_caches_datasets(demo_path: Path) -> None:
 CLUTCH_COLS = ("clutch_1v1", "clutch_1v2", "clutch_1v3", "clutch_1v4", "clutch_1v5")
 
 
-def test_stats_clutches(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_stats_clutches(demo: Demo) -> None:
     stats = demo.stats
     assert {"clutches_played", "clutches_won", *CLUTCH_COLS} <= set(stats.columns)
     for col in ("clutches_played", "clutches_won", *CLUTCH_COLS):
@@ -771,8 +756,8 @@ def test_stats_clutches(demo_path: Path) -> None:
     assert stats["clutches_played"].sum() > 0
 
 
-def test_kills_trade_flags(demo_path: Path) -> None:
-    kills = Demo(demo_path).kills
+def test_kills_trade_flags(demo: Demo) -> None:
+    kills = demo.kills
     assert {"is_trade", "victim_traded"} <= set(kills.columns)
     assert kills["is_trade"].dtype == pl.Boolean
     assert kills["victim_traded"].dtype == pl.Boolean
@@ -790,9 +775,8 @@ def test_kills_trade_flags(demo_path: Path) -> None:
     assert traded["victim_side"].null_count() == 0
 
 
-def test_traded_deaths_match_the_kills_dataset(demo_path: Path) -> None:
+def test_traded_deaths_match_the_kills_dataset(demo: Demo) -> None:
     """``stats.traded_deaths`` and ``kills.victim_traded`` share one classifier."""
-    demo = Demo(demo_path)
     rounds = demo.rounds.sort("round_num")
     live = rounds.filter(~pl.col("is_knife_round"))
     per_player = (
@@ -812,8 +796,8 @@ def test_traded_deaths_match_the_kills_dataset(demo_path: Path) -> None:
         assert (joined["traded_deaths"] <= joined["flagged"]).all()
 
 
-def test_round_economy(demo_path: Path) -> None:
-    econ = Demo(demo_path).round_economy
+def test_round_economy(demo: Demo) -> None:
+    econ = demo.round_economy
     assert isinstance(econ, pl.DataFrame)
     assert {"round_num", "side", "equipment_value", "buy_type", "n_players"} <= set(econ.columns)
     assert econ.height > 0

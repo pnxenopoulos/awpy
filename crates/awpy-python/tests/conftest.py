@@ -1,14 +1,16 @@
-"""Shared pytest fixtures.
+"""Shared test fixtures.
 
-Demo fixtures are large and not committed. Any ``.dem`` file placed in
-``tests/fixtures/`` is discovered automatically; tests that need one are skipped
-when the directory is empty (e.g. in a fresh checkout).
+Cache verified paths for the session. Keep parsed demos only for one module
+or parameter. Tests that change parser state must create their own Demo.
 """
 
+from collections.abc import Callable
+from functools import cache
 from pathlib import Path
 
+import fixture_store
 import pytest
-from awpy import data
+from awpy import Demo, data
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -21,40 +23,58 @@ def asset_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return tmp_path
 
 
-def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line(
-        "markers",
-        "fixtures: ground-truth tests against downloaded demo fixtures "
-        "(opt-in; set AWPY_RUN_FIXTURES=1 to fetch — see tests/fixture_store.py)",
-    )
-
-
-def _demo_files() -> list[Path]:
-    if not FIXTURES_DIR.is_dir():
-        return []
-    return sorted(FIXTURES_DIR.glob("*.dem"))
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Put all demo-backed tests in the CI fixture job."""
+    for item in items:
+        if {"demo_path", "match_demo"}.intersection(getattr(item, "fixturenames", ())):
+            item.add_marker(pytest.mark.fixtures)
 
 
 @pytest.fixture(scope="session")
-def demo_path() -> Path:
-    """A demo to run the (map-agnostic) schema tests against.
+def demo_file() -> Callable[[str | None], Path]:
+    """Verify each named demo once. Do not keep parsed demos in this cache."""
 
-    Prefers any local ``.dem`` in ``tests/fixtures/`` for fast local runs.
-    Otherwise falls back to the **smallest** fixture in the manifest — fetched
-    only when ``AWPY_RUN_FIXTURES`` is set (see :mod:`fixture_store`), so this is
-    the same download source as the ground-truth bench. Skips when neither is
-    available.
-    """
-    local = _demo_files()
+    @cache
+    def resolve(name: str | None) -> Path:
+        entry = next((f for f in fixture_store.load_manifest() if f["name"] == name), None)
+        if entry is not None:
+            path = fixture_store.ensure_demo(entry)
+            if path is not None:
+                return path
+        message = (
+            "fixture manifest has no ground-truth cases"
+            if name is None
+            else f"required fixture {name!r} is missing from the manifest or unavailable"
+        )
+        if fixture_store.download_enabled():
+            pytest.fail(message, pytrace=False)
+        pytest.skip(message)
+
+    return resolve
+
+
+@pytest.fixture(scope="session")
+def demo_path(demo_file: Callable[[str | None], Path]) -> Path:
+    """Use the smallest local demo, or the smallest demo in the manifest."""
+    local = list(FIXTURES_DIR.glob("*.dem"))
     if local:
-        return local[0]
+        return min(local, key=lambda path: (path.stat().st_size, path.name))
+    entries = fixture_store.load_manifest()
+    if entries:
+        smallest = min(entries, key=lambda entry: entry.get("size", float("inf")))
+        return demo_file(smallest["name"])
+    if fixture_store.download_enabled():
+        pytest.fail("demo fixture manifest is missing or empty", pytrace=False)
+    pytest.skip("no demo fixture available; set AWPY_RUN_FIXTURES=1 to allow downloads")
 
-    from fixture_store import ensure_demo, load_manifest
 
-    fixtures = load_manifest()
-    if fixtures:
-        smallest = min(fixtures, key=lambda f: f.get("size", float("inf")))
-        path = ensure_demo(smallest)
-        if path is not None:
-            return path
-    pytest.skip("no demo fixture available (none local; set AWPY_RUN_FIXTURES=1 to download)")
+@pytest.fixture(scope="module")
+def demo(demo_path: Path) -> Demo:
+    """Share a demo for read-only checks. Do not change its cached DataFrames."""
+    return Demo(demo_path)
+
+
+@pytest.fixture(scope="module")
+def match_demo(request: pytest.FixtureRequest, demo_file: Callable[[str | None], Path]) -> Demo:
+    """Load one manifest demo per parameter, then release its parsed data."""
+    return Demo(demo_file(request.param))

@@ -27,8 +27,6 @@ import shutil
 import urllib.request
 from pathlib import Path
 
-from awpy import Demo
-
 MANIFEST_PATH = Path(__file__).parent / "fixtures" / "manifest.json"
 
 
@@ -96,24 +94,16 @@ def ensure_demo(entry: dict) -> Path | None:
     return dest
 
 
-_DEMOS: dict[str, Demo | None] = {}
-
-
-def get_demo(entry: dict) -> Demo | None:
-    """Parsed :class:`~awpy.Demo` for an entry, cached per session; ``None`` if unavailable."""
-    name = entry["name"]
-    if name not in _DEMOS:
-        path = ensure_demo(entry)
-        _DEMOS[name] = Demo(path) if path is not None else None
-    return _DEMOS[name]
-
-
 def main() -> None:
-    """Pre-fetch every fixture (e.g. CI cache warming): ``python tests/fixture_store.py``."""
+    """Download and verify all demos before parallel tests start."""
+    entries = load_manifest()
+    if not entries:
+        raise SystemExit("demo fixture manifest is missing or empty")
     os.environ["AWPY_RUN_FIXTURES"] = "1"
-    for entry in load_manifest():
-        path = ensure_demo(entry)
-        print(f"{'ok  ' if path is not None else 'FAIL'} {entry['name']}")
+    for entry in entries:
+        if ensure_demo(entry) is None:
+            raise SystemExit(f"required fixture {entry['name']!r} is unavailable")
+        print(f"ok   {entry['name']}")
 
 
 if __name__ == "__main__":

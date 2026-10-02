@@ -226,12 +226,56 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo nextest run --workspace --exclude awpy-python
 
 # Python (from crates/awpy-python)
-uv sync
-uv run maturin develop
-uv run pytest
-uv run ruff check python tests
-uv run ty check python
+uv sync --locked --no-install-project
+uv run --no-sync maturin develop --release
+uv run --no-sync pytest -m "not fixtures"
+uv run --no-sync ruff check python tests
+uv run --no-sync ty check python
 ```
+
+### Python tests
+
+The `fixtures` marker selects all tests that need demo files, including schema,
+CLI, and example tests. CI runs these tests in a separate job. Run the offline
+tests with `pytest -m "not fixtures"`. Unknown markers and configuration keys
+are errors.
+
+For demo-backed tests, fetch the fixture manifest and allow downloads. Run these
+commands from `crates/awpy-python` after the development install:
+
+```sh
+mkdir -p tests/fixtures
+curl -fSL https://raw.githubusercontent.com/pnxenopoulos/awpy-fixtures/main/manifest.json \
+  -o tests/fixtures/manifest.json
+AWPY_RUN_FIXTURES=1 uv run --no-sync pytest -m fixtures --durations=10
+```
+
+A plain `pytest` run also uses cached demos, but does not download missing ones.
+When `AWPY_RUN_FIXTURES=1`, missing required demos or an empty manifest fail the
+tests instead of silently skipping them. With no download permission, unavailable
+demos cause skips.
+
+For a faster run, prepare the files before starting two test workers:
+
+```sh
+uv run --no-sync python tests/fixture_store.py
+AWPY_RUN_FIXTURES=1 AWPY_TICK_SEGMENTS=2 POLARS_MAX_THREADS=2 \
+  uv run --no-sync pytest -m fixtures -n 2 --dist=loadfile --durations=10
+```
+
+CI uses this parallel command for demo tests. Each worker runs whole test files,
+so module fixtures stay shared. Two workers use more memory than one process.
+Keep the serial command when memory is limited. Avoid `-n auto`: each worker
+can also start native parser and Polars threads.
+
+Fixtures verify each demo file once per worker session. Read-only checks share
+a parsed demo within a module or parameter; cache and parser-state tests create
+fresh instances. Do not change the cached DataFrames on a shared demo. Temporary asset
+caches and monkeypatches remain local to each test.
+
+CI installs dependencies from the lockfile and tests the prebuilt wheel with
+`uv run --no-sync`. This prevents uv from replacing the wheel with a source
+build. Keep timing reports enabled when changing fixtures or test scheduling.
 
 ### Parsing benchmarks
 

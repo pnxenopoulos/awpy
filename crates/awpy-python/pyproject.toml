@@ -39,6 +39,7 @@ dev = [
     "matplotlib>=3.8,<4",
     "maturin>=1.0,<2.0",
     "pytest>=9.0,<10",
+    "pytest-xdist>=3.8,<4",
     "ruff==0.16.1",
     "ty==0.0.65",
 ]
@@ -65,3 +66,12 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
+addopts = ["--strict-config", "--strict-markers", "-ra"]
+xfail_strict = true
+markers = [
+    "fixtures: tests that need demo files (set AWPY_RUN_FIXTURES=1 to allow downloads)",
+]

@@ -13,8 +13,9 @@ touching any plumbing:
   stat key *skips* with a message rather than failing, so the manifest can lead
   the code.
 
-These tests are marked ``fixtures`` and only download demos when
-``AWPY_RUN_FIXTURES`` is set (otherwise they skip). Run the suite with::
+These tests use the ``fixtures`` marker. They use cached demos without network
+access. Set ``AWPY_RUN_FIXTURES=1`` to allow downloads and fail if a required
+demo is unavailable. Run the suite with::
 
     AWPY_RUN_FIXTURES=1 pytest -m fixtures
 """
@@ -27,7 +28,7 @@ from dataclasses import dataclass
 import polars as pl
 import pytest
 from awpy import Demo
-from fixture_store import get_demo, load_manifest
+from fixture_store import load_manifest
 
 
 @dataclass(frozen=True)
@@ -118,29 +119,25 @@ def _cases() -> list:
                     continue
                 cases.append(
                     pytest.param(
-                        entry,
+                        entry["name"],
                         player["name"],
                         stat,
                         expected,
                         id=f"{entry['name']}::{player['name']}::{stat}",
                     )
                 )
-    return cases
+    return cases or [pytest.param(None, "", "", 0, id="no-ground-truth")]
 
 
 @pytest.mark.fixtures
-@pytest.mark.parametrize("entry, player, stat, expected", _cases())
-def test_ground_truth(entry: dict, player: str, stat: str, expected: float) -> None:
-    demo = get_demo(entry)
-    if demo is None:
-        pytest.skip(
-            f"fixture '{entry['name']}' unavailable "
-            "(set AWPY_RUN_FIXTURES=1 to download, or check connectivity)"
-        )
+@pytest.mark.parametrize(
+    "match_demo, player, stat, expected", _cases(), indirect=["match_demo"], scope="module"
+)
+def test_ground_truth(match_demo: Demo, player: str, stat: str, expected: float) -> None:
     check = CHECKS.get(stat)
     if check is None:
         pytest.skip(f"no check registered for stat '{stat}' — add one to CHECKS")
-    actual = check.extract(demo, player)
+    actual = check.extract(match_demo, player)
     assert actual is not None, f"'{player}' not found in demo.stats (or column missing)"
     if check.tol:
         assert abs(actual - expected) <= check.tol, (
