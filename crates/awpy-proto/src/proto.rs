@@ -9396,87 +9396,6 @@ pub struct CvDiagnostic {
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CMsgGccStrike15V2Gc2ClientRefuseSecureMode {
-    #[prost(string, optional, tag = "1")]
-    pub file_report: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "2")]
-    pub offer_insecure_mode: ::core::option::Option<bool>,
-    #[prost(bool, optional, tag = "3")]
-    pub offer_secure_mode: ::core::option::Option<bool>,
-    #[prost(bool, optional, tag = "4")]
-    pub show_unsigned_ui: ::core::option::Option<bool>,
-    #[prost(bool, optional, tag = "5")]
-    pub kick_user: ::core::option::Option<bool>,
-    #[prost(bool, optional, tag = "6")]
-    pub show_trusted_ui: ::core::option::Option<bool>,
-    #[prost(bool, optional, tag = "7")]
-    pub show_warning_not_trusted: ::core::option::Option<bool>,
-    #[prost(bool, optional, tag = "8")]
-    pub show_warning_not_trusted_2: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "9")]
-    pub files_prevented_trusted: ::core::option::Option<::prost::alloc::string::String>,
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CMsgGccStrike15V2Gc2ClientRequestValidation {
-    #[prost(bool, optional, tag = "1")]
-    pub full_report: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "2")]
-    pub module: ::core::option::Option<::prost::alloc::string::String>,
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CMsgGccStrike15V2Gc2ClientInitSystem {
-    #[prost(bool, optional, tag = "1")]
-    pub load: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "2")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "3")]
-    pub outputname: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bytes = "vec", optional, tag = "4")]
-    pub key_data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(bytes = "vec", optional, tag = "5")]
-    pub sha_hash: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(int32, optional, tag = "6")]
-    pub cookie: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "7")]
-    pub manifest: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bytes = "vec", optional, tag = "8")]
-    pub system_package: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(bool, optional, tag = "9")]
-    pub load_system: ::core::option::Option<bool>,
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct CMsgGccStrike15V2Gc2ClientInitSystemResponse {
-    #[prost(bool, optional, tag = "1")]
-    pub success: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "2")]
-    pub diagnostic: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bytes = "vec", optional, tag = "3")]
-    pub sha_hash: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(int32, optional, tag = "4")]
-    pub response: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "5")]
-    pub error_code1: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "6")]
-    pub error_code2: ::core::option::Option<i32>,
-    #[prost(int64, optional, tag = "7")]
-    pub handle: ::core::option::Option<i64>,
-    #[prost(
-        enumeration = "EInitSystemResult",
-        optional,
-        tag = "8",
-        default = "KEInitSystemResultInvalid"
-    )]
-    pub einit_result: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "9")]
-    pub aux_system1: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "10")]
-    pub aux_system2: ::core::option::Option<i32>,
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CMsgGccStrike15V2SetPlayerLeaderboardSafeName {
     #[prost(string, optional, tag = "1")]
     pub leaderboard_safe_name: ::core::option::Option<::prost::alloc::string::String>,
@@ -9594,13 +9513,9 @@ pub enum ECsgoGcMsg {
     KEMsgGccStrike15V2ClientPerfReport = 9202,
     KEMsgGccStrike15V2GetEventFavoritesResponse = 9203,
     KEMsgGccStrike15V2ClientRequestSouvenir = 9204,
-    KEMsgGccStrike15V2Gc2ClientRefuseSecureMode = 9206,
-    KEMsgGccStrike15V2Gc2ClientRequestValidation = 9207,
     KEMsgGccStrike15V2ClientRedeemMissionReward = 9209,
     KEMsgGccStrike15ClientDeepStats = 9210,
     KEMsgGccStrike15StartAgreementSessionInGame = 9211,
-    KEMsgGccStrike15V2Gc2ClientInitSystem = 9212,
-    KEMsgGccStrike15V2Gc2ClientInitSystemResponse = 9213,
     KEMsgGccStrike15V2PrivateQueues = 9214,
     KEMsgGccStrike15V2MatchListTournamentOperatorMgmt = 9215,
     KEMsgGccStrike15V2BetaEnrollment = 9217,
@@ -9867,24 +9782,12 @@ impl ECsgoGcMsg {
             Self::KEMsgGccStrike15V2ClientRequestSouvenir => {
                 "k_EMsgGCCStrike15_v2_ClientRequestSouvenir"
             }
-            Self::KEMsgGccStrike15V2Gc2ClientRefuseSecureMode => {
-                "k_EMsgGCCStrike15_v2_GC2ClientRefuseSecureMode"
-            }
-            Self::KEMsgGccStrike15V2Gc2ClientRequestValidation => {
-                "k_EMsgGCCStrike15_v2_GC2ClientRequestValidation"
-            }
             Self::KEMsgGccStrike15V2ClientRedeemMissionReward => {
                 "k_EMsgGCCStrike15_v2_ClientRedeemMissionReward"
             }
             Self::KEMsgGccStrike15ClientDeepStats => "k_EMsgGCCStrike15_ClientDeepStats",
             Self::KEMsgGccStrike15StartAgreementSessionInGame => {
                 "k_EMsgGCCStrike15_StartAgreementSessionInGame"
-            }
-            Self::KEMsgGccStrike15V2Gc2ClientInitSystem => {
-                "k_EMsgGCCStrike15_v2_GC2ClientInitSystem"
-            }
-            Self::KEMsgGccStrike15V2Gc2ClientInitSystemResponse => {
-                "k_EMsgGCCStrike15_v2_GC2ClientInitSystem_Response"
             }
             Self::KEMsgGccStrike15V2PrivateQueues => "k_EMsgGCCStrike15_v2_PrivateQueues",
             Self::KEMsgGccStrike15V2MatchListTournamentOperatorMgmt => {
@@ -10181,12 +10084,6 @@ impl ECsgoGcMsg {
             "k_EMsgGCCStrike15_v2_ClientRequestSouvenir" => {
                 Some(Self::KEMsgGccStrike15V2ClientRequestSouvenir)
             }
-            "k_EMsgGCCStrike15_v2_GC2ClientRefuseSecureMode" => {
-                Some(Self::KEMsgGccStrike15V2Gc2ClientRefuseSecureMode)
-            }
-            "k_EMsgGCCStrike15_v2_GC2ClientRequestValidation" => {
-                Some(Self::KEMsgGccStrike15V2Gc2ClientRequestValidation)
-            }
             "k_EMsgGCCStrike15_v2_ClientRedeemMissionReward" => {
                 Some(Self::KEMsgGccStrike15V2ClientRedeemMissionReward)
             }
@@ -10195,12 +10092,6 @@ impl ECsgoGcMsg {
             }
             "k_EMsgGCCStrike15_StartAgreementSessionInGame" => {
                 Some(Self::KEMsgGccStrike15StartAgreementSessionInGame)
-            }
-            "k_EMsgGCCStrike15_v2_GC2ClientInitSystem" => {
-                Some(Self::KEMsgGccStrike15V2Gc2ClientInitSystem)
-            }
-            "k_EMsgGCCStrike15_v2_GC2ClientInitSystem_Response" => {
-                Some(Self::KEMsgGccStrike15V2Gc2ClientInitSystemResponse)
             }
             "k_EMsgGCCStrike15_v2_PrivateQueues" => {
                 Some(Self::KEMsgGccStrike15V2PrivateQueues)
@@ -10356,54 +10247,6 @@ impl EClientReportingVersion {
             "k_EClientReportingVersion_SupportsTrustedMode" => {
                 Some(Self::KEClientReportingVersionSupportsTrustedMode)
             }
-            _ => None,
-        }
-    }
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum EInitSystemResult {
-    KEInitSystemResultInvalid = 0,
-    KEInitSystemResultSuccess = 1,
-    KEInitSystemResultNone = 2,
-    KEInitSystemResultNotFound = 3,
-    KEInitSystemResultExisting = 4,
-    KEInitSystemResultFailedOpen = 5,
-    KEInitSystemResultMismatch = 6,
-    KEInitSystemResultFailedInit = 7,
-    KEInitSystemResultMax = 8,
-}
-impl EInitSystemResult {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            Self::KEInitSystemResultInvalid => "k_EInitSystemResult_Invalid",
-            Self::KEInitSystemResultSuccess => "k_EInitSystemResult_Success",
-            Self::KEInitSystemResultNone => "k_EInitSystemResult_None",
-            Self::KEInitSystemResultNotFound => "k_EInitSystemResult_NotFound",
-            Self::KEInitSystemResultExisting => "k_EInitSystemResult_Existing",
-            Self::KEInitSystemResultFailedOpen => "k_EInitSystemResult_FailedOpen",
-            Self::KEInitSystemResultMismatch => "k_EInitSystemResult_Mismatch",
-            Self::KEInitSystemResultFailedInit => "k_EInitSystemResult_FailedInit",
-            Self::KEInitSystemResultMax => "k_EInitSystemResult_Max",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "k_EInitSystemResult_Invalid" => Some(Self::KEInitSystemResultInvalid),
-            "k_EInitSystemResult_Success" => Some(Self::KEInitSystemResultSuccess),
-            "k_EInitSystemResult_None" => Some(Self::KEInitSystemResultNone),
-            "k_EInitSystemResult_NotFound" => Some(Self::KEInitSystemResultNotFound),
-            "k_EInitSystemResult_Existing" => Some(Self::KEInitSystemResultExisting),
-            "k_EInitSystemResult_FailedOpen" => Some(Self::KEInitSystemResultFailedOpen),
-            "k_EInitSystemResult_Mismatch" => Some(Self::KEInitSystemResultMismatch),
-            "k_EInitSystemResult_FailedInit" => Some(Self::KEInitSystemResultFailedInit),
-            "k_EInitSystemResult_Max" => Some(Self::KEInitSystemResultMax),
             _ => None,
         }
     }

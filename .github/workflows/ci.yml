@@ -46,6 +46,34 @@ jobs:
           RUSTDOCFLAGS: "-D warnings"
         run: cargo doc --workspace --no-deps --all-features --exclude awpy-dev --exclude awpy-python
 
+  proto-freshness:
+    name: Protobuf Freshness (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Upstream drift does not block CI Check or package releases.
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Compare protobuf files with upstream
+        shell: bash
+        run: ./scripts/sync-protos.sh --check 2>&1 | tee "$RUNNER_TEMP/proto-check.log"
+
+      - name: Report protobuf status
+        if: always()
+        run: |
+          {
+            echo '## Protobuf freshness'
+            echo '```text'
+            cat "$RUNNER_TEMP/proto-check.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Flag a failed check
+        if: failure()
+        run: echo "::warning::Protobuf files differ from upstream, or the check could not finish. See the Protobuf Freshness summary."
+
   deny:
     name: Dependency Check
     runs-on: ubuntu-latest

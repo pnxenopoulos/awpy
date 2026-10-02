@@ -32,9 +32,12 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
 - Metadata: `header`, `tick_rate`, `chat`, `convars`.
 - Fixed `Demo.chat`. Awpy now reads user messages that packets store directly
   and messages inside `svc_UserMessage`. It also reads `SayTextChannel`.
-- Updated CS2 protobuf definitions to game build `2000918` (source revision
-  `11039926`), including the newly required Valve extension definitions; hit
+- Updated CS2 protobuf definitions to game build `2000922` (source revision
+  `11064488`), including the newly required Valve extension definitions; hit
   group names now cover the engine's `unused` (9) and `special` (11) values.
+- Added an advisory protobuf freshness check to CI. Run
+  `./scripts/sync-protos.sh --check` to compare local files with upstream without
+  changing them. This check does not block CI Check or releases.
 - `awpy.SNAPSHOT_PROPERTIES` and `awpy.GAME_EVENTS` — discoverable catalogs of the
   per-player snapshot features (mapped to engine properties) and common events.
 - Generic access: `header`, the `events` mapping, and `ticks()` — one natively

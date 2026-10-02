@@ -2,9 +2,10 @@
 set -euo pipefail
 
 # Sync CS2 protos + version info into ../crates/awpy-proto
+# Use --check to compare allowlisted files without changing local files or versions.
 #
 # What it does:
-# 1) Clones SteamDatabase/GameTracking-CS2 (sparse checkout if available)
+# 1) Fetches one SteamDatabase/GameTracking-CS2 revision with sparse checkout
 # 2) Copies ONLY the allowlisted Protobufs/*.proto into ../crates/awpy-proto/proto/
 # 3) Reads game/csgo/steam.inf and updates ../crates/awpy-proto/Cargo.toml:
 #    - Reads the compatibility epoch MAJOR.MINOR from [package].version
@@ -39,6 +40,14 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 need_file() { [[ -f "$1" ]] || die "Missing file: $1"; }
 need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"; }
 
+CHECK_ONLY=0
+[[ $# -le 1 ]] || die "Usage: $0 [--check]"
+case "${1:-}" in
+  --check) CHECK_ONLY=1 ;;
+  "") ;;
+  *) die "Usage: $0 [--check]" ;;
+esac
+
 need_cmd git
 need_file "$CARGO_TOML"
 need_file "$MANIFEST"
@@ -49,39 +58,26 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 REPO_DIR="$TMP_DIR/cs2"
 INF_PATH="game/csgo/steam.inf"
 
-has_sparse_checkout() {
-  git help -a 2>/dev/null | grep -qE '^\s*sparse-checkout\s*$'
-}
-
 clone_repo() {
-  if git clone --filter=blob:none --no-checkout "$REPO_URL" "$REPO_DIR" >/dev/null 2>&1; then
-    :
-  else
-    git clone --no-checkout "$REPO_URL" "$REPO_DIR"
-  fi
-
-  cd "$REPO_DIR"
-
-  if has_sparse_checkout; then
-    git sparse-checkout init --cone >/dev/null 2>&1 || true
-    git sparse-checkout set "Protobufs" "$INF_PATH" >/dev/null 2>&1 || true
-  fi
-
-  if [[ -n "$CS2_REF" ]]; then
-    git checkout -f "$CS2_REF" >/dev/null 2>&1 || die "Failed to checkout CS2_REF=$CS2_REF"
-  else
-    git checkout -f >/dev/null 2>&1 || die "Failed to checkout repo"
-  fi
+  git init -q "$REPO_DIR"
+  git -C "$REPO_DIR" remote add origin "$REPO_URL"
+  git -C "$REPO_DIR" config core.autocrlf false
+  git -C "$REPO_DIR" sparse-checkout set --no-cone '/Protobufs/' "/$INF_PATH"
+  git -C "$REPO_DIR" fetch -q --depth=1 --filter=blob:none origin "${CS2_REF:-HEAD}"
+  git -C "$REPO_DIR" checkout -q --detach FETCH_HEAD
 }
 
-copy_protos() {
-  mkdir -p "$DEST_DIR"
-
-  if [[ "$CLEAN_DEST" == "1" ]]; then
-    find "$DEST_DIR" -maxdepth 1 -type f -name '*.proto' -delete
+sync_protos() {
+  if [[ "$CHECK_ONLY" == "0" ]]; then
+    mkdir -p "$DEST_DIR"
+    if [[ "$CLEAN_DEST" == "1" ]]; then
+      find "$DEST_DIR" -maxdepth 1 -type f -name '*.proto' -delete
+    fi
+  else
+    echo "Comparing protos with $(git -C "$REPO_DIR" rev-parse HEAD)"
   fi
 
-  local copied=0
+  local checked=0 changed=0
   while IFS= read -r raw || [[ -n "$raw" ]]; do
     raw="${raw%$'\r'}"              # strip CR for CRLF files
 
@@ -95,12 +91,30 @@ copy_protos() {
     local src="$REPO_DIR/Protobufs/$line"
     [[ -f "$src" ]] || die "Missing proto in upstream: $src"
 
-    cp -f "$src" "$DEST_DIR/"
-    copied=$((copied + 1))
+    if [[ "$CHECK_ONLY" == "0" ]]; then
+      cp -f "$src" "$DEST_DIR/"
+    elif [[ ! -f "$DEST_DIR/$line" ]]; then
+      echo "Missing local proto: $line"
+      changed=$((changed + 1))
+    elif ! cmp -s <(tr -d '\r' < "$src") <(tr -d '\r' < "$DEST_DIR/$line"); then
+      echo "Changed proto: $line"
+      changed=$((changed + 1))
+    fi
+    checked=$((checked + 1))
   done < "$MANIFEST"
 
-  (( copied > 0 )) || die "Manifest produced 0 files"
-  echo "Copied $copied proto files to: $DEST_DIR"
+  (( checked > 0 )) || die "Manifest produced 0 files"
+  if (( changed > 0 )); then
+    echo "$changed of $checked proto files need an update."
+    echo "Run ./scripts/sync-protos.sh, then regenerate Rust with:"
+    echo "cargo run --manifest-path scripts/build-protos/Cargo.toml --bin build-awpy-protos"
+    return 1
+  fi
+  if [[ "$CHECK_ONLY" == "1" ]]; then
+    echo "All $checked proto files match upstream."
+  else
+    echo "Copied $checked proto files to: $DEST_DIR"
+  fi
 }
 
 parse_steam_inf() {
@@ -186,7 +200,7 @@ update_cargo_toml() {
   local minor="${BASH_REMATCH[2]}"
 
   # The suffix keeps only ServerVersion, which has always matched ClientVersion.
-  # Warn (don't fail) if they ever diverge, since ClientVersion is then dropped.
+  # Warn but continue if the values differ. ClientVersion is then dropped.
   if [[ "$client" != "$server" ]]; then
     echo "WARNING: ClientVersion ($client) != ServerVersion ($server); only ServerVersion is recorded in the version" >&2
   fi
@@ -203,7 +217,8 @@ update_cargo_toml() {
 
 main() {
   clone_repo
-  copy_protos
+  sync_protos
+  [[ "$CHECK_ONLY" == "0" ]] || return 0
 
   read -r client server rev < <(parse_steam_inf)
   update_cargo_toml "$client" "$server" "$rev"
