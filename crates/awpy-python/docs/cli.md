@@ -1,8 +1,6 @@
-# 💻 Command-line tool
+# Command-line tool
 
-Installing the Python package gives you an `awpy` command (also runnable as
-`python -m awpy`) for quick demo inspection and map-data management without
-writing any code:
+Install the package to use `awpy` or `python -m awpy`:
 
 ```sh
 pip install awpy
@@ -11,8 +9,8 @@ awpy --help
 
 ## Demo inspection
 
-Every command takes a demo path. Row-level commands accept `--limit N`, and
-all of them accept `--json` for machine-readable output.
+Each inspection command takes a demo path and accepts `--json`.
+Dataset commands other than `stats` also accept `--limit N`.
 
 | Command | Description |
 | --- | --- |
@@ -38,18 +36,7 @@ awpy kills match.dem --limit 20
 awpy stats match.dem
 ```
 
-Tables are rendered by Polars — the same DataFrames the Python API returns —
-and `--json` emits the rows as a JSON array:
-
-```text
-shape: (24, 9)
-┌───────────┬────────────┬─────────────────┬──────────┬───┬───────────────────┬────────────────┐
-│ round_num ┆ start_tick ┆ freeze_end_tick ┆ end_tick ┆ … ┆ winner_side       ┆ reason_name    │
-╞═══════════╪════════════╪═════════════════╪══════════╪═══╪═══════════════════╪════════════════╡
-│ 1         ┆ 1016       ┆ 2712            ┆ 6810     ┆ … ┆ counter-terrorist ┆ bomb_defused   │
-│ 2         ┆ 7258       ┆ 11121           ┆ 14649    ┆ … ┆ counter-terrorist ┆ ct_win         │
-└───────────┴────────────┴─────────────────┴──────────┴───┴───────────────────┴────────────────┘
-```
+Dataset commands print Polars tables. With `--json`, they return row arrays.
 
 ## Map-data cache
 
@@ -66,9 +53,7 @@ awpy clear 2000873   # delete one cached release (--all for everything)
 
 ## Parser internals: `awpy-dev`
 
-The Rust workspace additionally ships a developer binary for debugging the
-parser itself — the demo message stream, entity snapshots, send-tables, string
-tables, and entity classes:
+Use `awpy-dev` to inspect parser internals:
 
 ```sh
 cargo install --path crates/awpy-dev   # installs `awpy-dev`
@@ -80,5 +65,4 @@ awpy-dev string-tables match.dem --table userinfo
 awpy-dev entities match.dem --tick 100000 --class CCSPlayerPawn --fields
 ```
 
-These surfaces aren't exposed in the Python API; if you're not hacking on the
-parser, you won't need them.
+These inspection commands are not part of the Python API.

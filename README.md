@@ -17,9 +17,9 @@
 
 </div>
 
-Awpy is a fast [Counter-Strike 2](https://www.counter-strike.net/cs2) demo (`.dem`) parser written in Rust with native Python bindings. It reads Source 2 demo files and returns [Polars](https://pola.rs) DataFrames, giving you structured access to match data without touching the binary format or parsing code yourself.
+Awpy parses [Counter-Strike 2](https://www.counter-strike.net/cs2) demo files in Rust. Its Python API returns [Polars](https://pola.rs) DataFrames.
 
-CS2 runs on the Source 2 engine, so Awpy and [Boon](https://github.com/pnxenopoulos/boon), a Deadlock parser, share the game-neutral [pbdems2](https://github.com/pnxenopoulos/pbdems2) core. Its [PBDEMS2 format guide](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html) covers the container, packet framing, bit-level wire encodings, flattened serializers, entity system, string tables, and playback. Awpy adapts the game-specific parts — the CS2 protobufs, a handful of CS2 field decoders, and the CS2 name tables (teams, hit groups, round-end reasons, game phases).
+Awpy and the Deadlock parser [Boon](https://github.com/pnxenopoulos/boon) use the shared [pbdems2](https://github.com/pnxenopoulos/pbdems2) core. Awpy adds CS2 protobufs, field decoders, and name tables. See the [PBDEMS2 format guide](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html) for the shared format.
 
 ## Table of Contents
 
@@ -34,22 +34,16 @@ CS2 runs on the Source 2 engine, so Awpy and [Boon](https://github.com/pnxenopou
 
 ## Why Awpy?
 
-CS2 demo files hold a wealth of match data — player positions, kills, damage, round outcomes, grenades, and more — but the Source 2 demo format is complex and undocumented. Awpy handles the low-level parsing so you can focus on analysis.
-
-- ⚡ **Fast.** The core parser is written in Rust. A full match parses in seconds, not minutes.
-- 📊 **Structured output.** Every dataset is a Polars DataFrame, ready for filtering, grouping, joins, and visualization.
-- 🎯 **Parse only what you need.** Ask for one event or a handful of entity properties and Awpy skips the rest.
-- 🔫 **CS2-aware.** Rounds are reconstructed from game-rules state (so they work even on demos without `round_start` / `round_end` events); kills and damage carry every field; hit groups and round-end reasons are decoded to names.
-- 🗂️ **Comprehensive.** Rounds, kills, damage, bomb events, grenade trajectories, infernos, smokes, shots, flashes, item buys/pickups/drops, and a per-player scoreboard (KAST, ADR, openings, trades) — each one property access.
-- 💻 **CLI included.** A standalone command-line tool for quick inspection without writing any code.
+- Read match events, player state, rounds, and statistics as DataFrames.
+- Select the datasets, ticks, or entity properties that you need.
+- Reconstruct rounds from game state, including demos without round events.
+- Use the Python API, Rust library, or command-line interface.
 
 ## Installation
 
-Awpy can be used as a Python library, a Rust crate, or a standalone CLI tool.
-
 ### Python
 
-We recommend using [uv](https://docs.astral.sh/uv/):
+Use [uv](https://docs.astral.sh/uv/):
 
 ```bash
 uv add awpy
@@ -61,7 +55,7 @@ You can also use pip:
 pip install awpy
 ```
 
-Awpy ships as a pre-built wheel with a Rust backend — no compiler required. Requires Python 3.11+.
+Python 3.11 or later is required. Pre-built wheels do not need a Rust compiler.
 
 ### CLI
 
@@ -169,13 +163,13 @@ parser.run_to_end(|ctx| {
 
 ## Available Datasets
 
-Each dataset is a property on the `Demo` class returning a [Polars](https://pola.rs) DataFrame, parsed on first access and cached. The headline datasets are decoded together in one parallel pass on first access, so pulling several is no more expensive than pulling one. See the [dataset reference](https://awpy.readthedocs.io/en/latest/datasets.html) for the full column list.
+Dataset properties return cached DataFrames. Use `demo.load("kills", "damages", "shots")` to collect compatible datasets in one pass. See the [dataset reference](https://awpy.readthedocs.io/en/latest/datasets.html) for columns and selection rules.
 
 | Dataset | Description |
 |---------|-------------|
-| `rounds` | One row per round, reconstructed from `CCSGameRules` state — works even when `round_start` / `round_end` events are absent. Includes winner, side, and decoded round-end reason. |
-| `kills` | Every `player_death` event, with attacker, victim, and assister each resolved to a Steam id, name, side, and world position. Flags each kill as a trade (`is_trade`) and each death as traded (`victim_traded`). |
-| `damages` | Every `player_hurt` event, with attacker and victim resolved, plus the victim's health/armor before and after the hit. |
+| `rounds` | Round timings, winners, and end reasons from game state. |
+| `kills` | Kills, participants, positions, and trade flags. |
+| `damages` | Damage events, participants, and health and armor changes. |
 | `bomb` | Bomb actions (pickup, drop, plant start/finish, defuse) with the acting player, position, and bombsite. |
 | `grenades` | Per-tick thrown-grenade trajectories (smoke, HE, flashbang, molotov, decoy). |
 | `fires` | One row per burning inferno (molotov / incendiary), with position, thrower, and `[start_tick, end_tick]`. |
@@ -183,18 +177,16 @@ Each dataset is a property on the `Demo` class returning a [Polars](https://pola
 | `shots` | Every `weapon_fire` event with the shooter's state and active-weapon state (clip, inaccuracy, scoped). |
 | `blinds` | One row per flash event: the thrower, the blinded player (both resolved), and the blind duration. |
 | `item_events` | One row per weapon-item transaction — purchase, pickup, or drop — with the acting player, item, position, and (for buys) cost. |
-| `stats` | One row per player: kills, deaths, assists, headshots, openings, trades, multikills, clutches (1v1–1v5), KAST, ADR, and utility (grenade damage, flashes thrown, enemies flashed, blind duration). |
+| `stats` | Player statistics, including KAST, ADR, trades, clutches, and utility. |
 | `round_economy` | One row per (round, side): team equipment value at freeze end and its buy-type classification (`eco` / `force` / `full`). |
 | `players` | The roster: one row per player seen in the demo (Steam id, name, last side, and team/organization name). |
-| `chat` | Chat messages decoded from `SayText` user messages, with channel (all/team). |
+| `chat` | Recorded chat messages and channels. |
 | `convars` | Server console variables (`mp_maxrounds`, ...) as a `dict[str, str]`. |
 | `snapshots(*, ticks / every / seconds / events / start_tick / end_tick)` | Per-player game state (position, eye angles, health, armor, economy, and loadout) at a tick, a list of ticks, a contiguous range, or sampled across the match by a stride and/or event ticks. |
 
 For events without a dedicated dataset, the `demo.events` mapping returns any game event as a DataFrame, and `ticks(props)` returns one row per player per tick for any networked properties.
 
-The first dataset you touch decodes the headline datasets together, in parallel, and caches them — so `demo.kills` also readies `demo.damages`, `demo.rounds`, `demo.grenades`, and the rest. `ticks` and `snapshots` likewise decode in parallel across the demo's keyframes.
-
-To discover what you can ask for without parsing first, `awpy.SNAPSHOT_PROPERTIES` maps each per-player snapshot feature to the engine property it comes from, and `awpy.GAME_EVENTS` catalogs the common game events (the ones actually in a demo are `demo.events.names`).
+Use `awpy.SNAPSHOT_PROPERTIES` to find snapshot fields and their engine properties. `awpy.GAME_EVENTS` lists common events; `demo.events.names` lists events in the demo.
 
 ## Project Structure
 
@@ -207,7 +199,7 @@ To discover what you can ask for without parsing first, `awpy.SNAPSHOT_PROPERTIE
 
 ## Documentation
 
-Full documentation is available at [awpy.readthedocs.io](https://awpy.readthedocs.io), including:
+See [awpy.readthedocs.io](https://awpy.readthedocs.io):
 
 - [Getting Started](https://awpy.readthedocs.io/en/latest/getting-started.html)
 - [Examples](https://awpy.readthedocs.io/en/latest/examples.html) — runnable scripts, also in [`crates/awpy-python/examples/`](crates/awpy-python/examples)
@@ -250,10 +242,9 @@ curl -fSL https://raw.githubusercontent.com/pnxenopoulos/awpy-fixtures/main/mani
 AWPY_RUN_FIXTURES=1 uv run --no-sync pytest -m fixtures --durations=10
 ```
 
-A plain `pytest` run also uses cached demos, but does not download missing ones.
-When `AWPY_RUN_FIXTURES=1`, missing required demos or an empty manifest fail the
-tests instead of silently skipping them. With no download permission, unavailable
-demos cause skips.
+By default, `pytest` uses cached demos and skips unavailable demos.
+`AWPY_RUN_FIXTURES=1` permits downloads and makes missing required demos or an
+empty manifest fail the tests.
 
 For a faster run, prepare the files before starting two test workers:
 
@@ -263,10 +254,9 @@ AWPY_RUN_FIXTURES=1 AWPY_TICK_SEGMENTS=2 POLARS_MAX_THREADS=2 \
   uv run --no-sync pytest -m fixtures -n 2 --dist=loadfile --durations=10
 ```
 
-CI uses this parallel command for demo tests. Each worker runs whole test files,
-so module fixtures stay shared. Two workers use more memory than one process.
-Keep the serial command when memory is limited. Avoid `-n auto`: each worker
-can also start native parser and Polars threads.
+CI uses two workers and assigns complete test files to each worker. This keeps
+module fixtures shared. Use one worker if memory is limited. Avoid `-n auto`:
+each worker can also start parser and Polars threads.
 
 Fixtures verify each demo file once per worker session. Read-only checks share
 a parsed demo within a module or parameter; cache and parser-state tests create

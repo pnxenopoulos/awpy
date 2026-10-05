@@ -1,25 +1,7 @@
-"""``awpy`` — the Awpy command line: inspect CS2 demos and manage map assets.
+"""Inspect demos and manage map assets with ``awpy`` or ``python -m awpy``.
 
-Demo inspection (thin wrappers over :class:`awpy.Demo`; add ``--json`` for
-machine-readable output, ``--limit N`` to cap row-level tables)::
-
-    awpy info match.dem
-    awpy rounds match.dem
-    awpy kills match.dem --limit 20
-    awpy events match.dem --summary
-    awpy stats match.dem
-
-Map-data cache management (see :mod:`awpy.data`)::
-
-    awpy get             # download the latest awpy-data release
-    awpy get 2000873     # ... or a specific one
-    awpy versions        # cached releases, and whether a newer one exists
-    awpy maps            # maps available in a release
-    awpy clear 2000873   # delete one cached release (--all for everything)
-
-Also runnable as ``python -m awpy``. Parser-internals commands (demo message
-stream, entity snapshots, send-tables, string tables) live in the Rust
-developer binary ``awpy-dev`` (``cargo install --path crates/awpy-dev``).
+Use ``awpy --help`` for commands. The separate Rust binary ``awpy-dev``
+provides parser-internal inspection.
 """
 
 import json

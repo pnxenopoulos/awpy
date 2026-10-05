@@ -1,11 +1,8 @@
-# 👁️ Visibility & map data
+# Visibility & map data
 
-Awpy can answer **line-of-sight** questions — is there a clear line between two
-points on a map? — using the map's collision geometry. The geometry (and radar
-images, nav meshes, and coordinate tables) come from the
-[`awpy-data`](https://github.com/pnxenopoulos/awpy-data) project, which builds
-them from a clean CS2 install and publishes them as GitHub Releases pinned to
-the game's `ClientVersion`.
+Use map collision geometry to check whether a straight segment is blocked.
+[awpy-data](https://github.com/pnxenopoulos/awpy-data) supplies collision meshes,
+nav meshes, radar images, and coordinate tables by game `ClientVersion`.
 
 ## `VisibilityChecker`
 
@@ -33,13 +30,11 @@ A string counts as a file path when it ends in `.mesh` or contains a path
 separator; a `pathlib.Path` always does. Anything else is treated as a map
 name and resolved through `awpy.data.mesh_path`.
 
-Construction loads the mesh and builds a bounding-volume hierarchy over its
-triangles once, up front. Each query is then a fast ray cast, so **reuse a
-single checker** for many queries rather than rebuilding it.
+Reuse a checker to avoid loading the mesh and rebuilding its spatial index.
 
-Points are `(x, y, z)` tuples (or lists) in **Hammer units, Z-up** — the same
-frame as demo world positions, so the `*_x` / `*_y` / `*_z` columns from
-`demo.kills`, `demo.grenades`, etc. can be passed straight in.
+Points are `(x, y, z)` tuples or lists in Hammer units, with Z vertical.
+The checker uses static geometry. It does not model smokes, moving doors,
+or bullet penetration. Player positions are not eye positions.
 
 | Member | Type | Description |
 | --- | --- | --- |
@@ -50,7 +45,7 @@ frame as demo world positions, so the `*_x` / `*_y` / `*_z` columns from
 | `path` | `Path \| None` | The file the mesh was loaded from. |
 
 ```python
-# Was a kill made through a wall (a wallbang)? Compare the answer to reality.
+# Check the segment between recorded player positions.
 kills = demo.kills
 row = kills.row(0, named=True)
 attacker = (row["attacker_x"], row["attacker_y"], row["attacker_z"])
@@ -73,8 +68,7 @@ $HOME/.awpy/2000873/
     geometry/<map>.mesh    collision mesh for VisibilityChecker
 ```
 
-The path helpers each download whatever archive they need the first time and
-return a local `Path`:
+Path helpers download missing archives and return local paths:
 
 ```python
 from awpy import data
@@ -85,7 +79,7 @@ data.radar_path("de_nuke")              # -> .../radars/de_nuke.png
 data.radar_path("de_nuke", lower=True)  # -> .../radars/de_nuke_lower.png
 ```
 
-And the whole-release helpers return parsed JSON or lists:
+Read release metadata:
 
 ```python
 data.available_maps()          # ['ar_baggage', ..., 'de_vertigo']
@@ -93,11 +87,10 @@ data.map_data()["de_inferno"]  # {'pos_x': ..., 'scale': ..., ...}
 data.manifest()["buildid"]     # Steam build the release was cut from
 ```
 
-**Version.** Every accessor takes an optional `version=` — an integer
-`ClientVersion` like `2000873`. Omit it to use the newest release already in
-the cache; only an empty cache falls through to the latest GitHub release. No
-network is involved once assets are cached, so analyses keep working offline
-and don't shift releases under you mid-session:
+Set `version=` to select a `ClientVersion`.
+Without it, accessors use the newest cached release.
+An empty cache uses the latest GitHub release.
+Cached assets work offline.
 
 ```python
 data.mesh_path("de_inferno", version=2000873)
@@ -124,5 +117,4 @@ awpy maps            # maps available in a release
 awpy clear 2000873   # delete one cached release (--all for everything)
 ```
 
-`awpy get` is the explicit "check for updates" step: the accessors above never
-replace a cached release on their own.
+Use `awpy get` to check for updates. Accessors do not replace cached releases.

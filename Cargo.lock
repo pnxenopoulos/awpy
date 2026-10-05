@@ -241,7 +241,6 @@ dependencies = [
  "awpy-proto",
  "clap",
  "colored",
- "prost",
  "serde",
  "serde_json",
 ]

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 /// Snapshot entities at a given tick and list those matching a class filter.
@@ -12,8 +12,7 @@ pub fn run(
     show_fields: bool,
     _json: bool,
 ) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let ctx = parser.parse_to_tick(tick)?;
 
     let mut entities: Vec<_> = ctx

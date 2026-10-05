@@ -1,14 +1,10 @@
-# 🚀 Getting started
+# Getting started
 
-This is a guided tour of Awpy, start to finish: open a demo, pull structured
-datasets, look up players and server settings, reconstruct game state at any
-moment, check lines of sight, and draw it all on the map's radar. Every output
-below is real — it comes from a professional match played on `de_ancient`.
+Open a demo, read datasets, and plot player state.
 
 ## Install
 
-Awpy ships as a pre-built wheel with a Rust parser inside — no compiler
-required. It supports Python 3.11+.
+Awpy requires Python 3.11 or later. Pre-built wheels do not need a Rust compiler.
 
 ```sh
 uv add awpy          # or: pip install awpy
@@ -37,11 +33,11 @@ from awpy import Demo
 demo = Demo("match.dem")
 ```
 
-Construction memory-maps the file and verifies it's a valid CS2 demo — it
-raises `FileNotFoundError` or `InvalidDemoError` otherwise, so a `try/except`
-around this line is all the validation you need.
+Construction maps the file and checks its header. It can raise
+`FileNotFoundError` or `InvalidDemoError`. Later decoding can also fail
+if the demo is incomplete or corrupt.
 
-The header is a plain dict with the map, server, and playback info:
+The header contains map, server, and playback data:
 
 ```python
 demo.header["map_name"]        # "de_ancient"
@@ -51,8 +47,7 @@ demo.header["playback_ticks"]  # 186620  -> 64 ticks per second
 
 ## The datasets
 
-Everything analytical is a property on `Demo` returning a
-[Polars](https://pola.rs) DataFrame, parsed on first access and cached:
+Dataset properties return cached [Polars](https://pola.rs) DataFrames:
 
 ```python
 demo.rounds     # one row per round: ticks, winner, reason
@@ -64,8 +59,7 @@ demo.grenades   # grenade trajectories, tick by tick
 demo.stats      # per-player scoreboard: KAST, ADR, openings, trades
 ```
 
-Polars makes the follow-up questions one-liners. How did rounds break down by
-side?
+Count round wins by side:
 
 ```python
 demo.rounds.group_by("winner_side").len()
@@ -77,7 +71,7 @@ demo.rounds.group_by("winner_side").len()
 # └───────────────────┴─────┘
 ```
 
-Who led the server, and how clean was their aim?
+Count kills and calculate the headshot fraction:
 
 ```python
 demo.kills.group_by("attacker_name").len().sort("len", descending=True).head(3)
@@ -92,7 +86,7 @@ demo.kills.group_by("attacker_name").len().sort("len", descending=True).head(3)
 demo.kills["headshot"].mean()   # 0.446 — 44.6% of kills were headshots
 ```
 
-The scoreboard is precomputed — including KAST and ADR:
+Read player statistics, including KAST and ADR:
 
 ```python
 demo.stats.sort("adr", descending=True).select("name", "kills", "deaths", "kast", "adr").head(3)
@@ -105,9 +99,10 @@ demo.stats.sort("adr", descending=True).select("name", "kills", "deaths", "kast"
 # └────────┴───────┴────────┴───────┴────────┘
 ```
 
-Every column of every dataset is documented in {doc}`datasets`.
+Use `demo.load("kills", "damages", "shots")` to combine compatible requests.
+See {doc}`datasets` for columns.
 
-## Who played, what they said, how the server was set up
+## Players, chat, and server settings
 
 ```python
 demo.players
@@ -120,20 +115,17 @@ demo.players
 # │ ...               ┆ ...      ┆ ...       │
 # └───────────────────┴──────────┴───────────┘
 
-demo.chat                       # tick, name, message, channel (may be empty —
-                                # server-side recordings often strip chat)
+demo.chat                     # recorded chat; can be empty
 
 demo.convars["mp_maxrounds"]    # "24"
 demo.convars["mp_freezetime"]   # "20"
 ```
 
-`side` in `players` is the *last* side a player was seen on — sides swap at
-halftime, so treat it as "where they finished", not a team identity.
+`players.side` is the last observed side. It is not a team identity.
 
 ## Any game event
 
-The headline datasets cover the common cases; `demo.events` covers everything
-else. It behaves like a read-only mapping from event name to DataFrame:
+Use `demo.events` to read game events by name:
 
 ```python
 demo.events.names               # every event in this demo (40 kinds here)
@@ -143,15 +135,13 @@ demo.events.flashbang_detonate  # one event as a DataFrame (133 rows here)
 demo.events["player_ping"]      # same thing, by key
 ```
 
-Event frames are long-form: a `tick` column plus one string column per event
-key. Note that raw event keys like `attacker` are *user ids* (server slots),
-not Steam ids — use `demo.kills` / `demo.damages` when you want participants
-resolved, or join through `demo.players`.
+Event frames contain `tick` and string columns for event keys.
+Fields such as `attacker` contain user IDs, not Steam IDs.
+Use `demo.kills` or `demo.damages` for resolved participants.
 
 ## Game state at any moment
 
-`snapshots` reconstructs every player's state — position, view angles, health,
-armor — at a tick, or at every tick in a range:
+Use `snapshots` to read player state at selected ticks:
 
 ```python
 freeze_end = demo.rounds.row(4, named=True)["freeze_end_tick"]
@@ -168,9 +158,7 @@ demo.snapshots(ticks=freeze_end + 640)   # 10 seconds into round 5
 demo.snapshots(start_tick=freeze_end, end_tick=freeze_end + 640)   # every tick of those 10 seconds
 ```
 
-For arbitrary networked properties beyond what `snapshots` curates, `ticks`
-returns one row per player per tick — keyed by `steamid`, natively typed, and
-decoded in parallel:
+Use `ticks` for other networked properties. It returns one row per player per tick:
 
 ```python
 demo.ticks()                              # default: X, Y, Z, health, armor, team_num
@@ -183,10 +171,9 @@ Names accept friendly aliases (`X`/`Y`/`Z` for computed position, `health`,
 
 ## Maps: line-of-sight and radar assets
 
-Positions are in world coordinates (Hammer units, Z-up). To reason about them
-spatially, Awpy fetches per-map assets — collision meshes, radar images, and
-coordinate transforms — from [awpy-data](https://github.com/pnxenopoulos/awpy-data),
-downloading on first use and caching under `~/.awpy`:
+Positions use Hammer units, with Z as the vertical axis.
+Awpy downloads missing map assets from [awpy-data](https://github.com/pnxenopoulos/awpy-data)
+and caches them under `~/.awpy`:
 
 ```python
 from awpy import VisibilityChecker
@@ -197,7 +184,7 @@ kill = demo.kills.row(0, named=True)
 vc.is_visible(
     (kill["attacker_x"], kill["attacker_y"], kill["attacker_z"]),
     (kill["victim_x"], kill["victim_y"], kill["victim_z"]),
-)  # True — a clean line of sight (this one was an AWP pick)
+)  # True if the static collision mesh does not block this segment
 ```
 
 Pin a game version with `version=` (an integer ClientVersion like `2000873`),
@@ -217,8 +204,7 @@ fig, ax = plot.heatmap(demo.header["map_name"], deaths, method="kde")
 fig.savefig("deaths.png")
 ```
 
-And because `snapshots` rows carry exactly what a marker needs, any moment of
-the match is a frame:
+Plot a snapshot:
 
 ```python
 snap = demo.snapshots(ticks=freeze_end + 640)
@@ -235,8 +221,7 @@ Multi-level maps, animated GIFs, and layered plots are covered in {doc}`plot`.
 
 ## The command line
 
-Everything above has a no-code counterpart — installing the package installs
-the `awpy` command:
+The package also installs the `awpy` command:
 
 ```sh
 awpy info match.dem              # header + playback info
@@ -257,4 +242,4 @@ See {doc}`cli` for the full command list.
 - {doc}`plot` — frames, heatmaps, multi-level maps, GIFs.
 - {doc}`visibility` — line-of-sight, map data, and the asset cache.
 - {doc}`api` — the full API reference.
-- {doc}`faq` — common questions and sharp edges.
+- {doc}`faq` — common questions.

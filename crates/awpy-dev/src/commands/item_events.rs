@@ -1,19 +1,16 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let items = parser.item_events()?;
 
-    let display_limit = limit.unwrap_or(items.len());
-    let shown = &items[..display_limit.min(items.len())];
+    let shown = super::limited(&items, limit);
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&shown)?);
-        return Ok(());
+        return super::print_json(&shown);
     }
 
     println!(
@@ -37,14 +34,6 @@ pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
                 .unwrap_or_else(|| "-".into()),
         );
     }
-    println!(
-        "\n{} item events total{}",
-        items.len(),
-        if display_limit < items.len() {
-            format!(" (showing first {display_limit})")
-        } else {
-            String::new()
-        }
-    );
+    super::print_total("item events", items.len(), shown.len());
     Ok(())
 }

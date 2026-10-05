@@ -1,11 +1,10 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 pub fn run(file: &Path, filter: Option<String>, limit: Option<usize>, json: bool) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let class_info = parser.parse_class_info()?;
 
     let mut classes: Vec<_> = class_info
@@ -20,12 +19,10 @@ pub fn run(file: &Path, filter: Option<String>, limit: Option<usize>, json: bool
         .collect();
     classes.sort_by_key(|c| c.class_id);
 
-    let display_limit = limit.unwrap_or(classes.len());
-    let shown: Vec<_> = classes.iter().take(display_limit).collect();
+    let shown = super::limited(&classes, limit);
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&shown)?);
-        return Ok(());
+        return super::print_json(&shown);
     }
 
     println!(
@@ -35,7 +32,7 @@ pub fn run(file: &Path, filter: Option<String>, limit: Option<usize>, json: bool
         "Table".bold()
     );
     println!("{}", "-".repeat(72));
-    for c in &shown {
+    for c in shown {
         println!("{:<8} {:<40} {}", c.class_id, c.network_name, c.table_name);
     }
     println!(

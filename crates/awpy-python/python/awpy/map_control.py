@@ -1,46 +1,16 @@
-"""Map control: how much of the map each team holds, tick by tick.
+"""Estimate map control from player snapshots.
 
-*Map control* turns a snapshot of player positions into a partition of the
-map's navigation mesh — every walkable area is labelled ``"ct"``, ``"t"``,
-``"contested"`` (both teams hold it), or ``"neutral"`` (neither does) — and
-aggregates that, weighted by area size, into a single fraction of the map held
-by each side. Three models are offered, because "control" means more than one
-thing:
+Models:
 
-- ``method="raycast"`` — *what a team could see.* An area is held by a side if any
-  living, un-blinded player on it has line of sight to the area (a ray through
-  the map's collision mesh) **in any direction**. Active smokes block the rays
-  that cross them, and a flashed player projects no vision.
+- ``raycast``: line of sight in any direction.
+- ``vision``: line of sight within the horizontal field of view.
+- ``reachability``: shortest travel distance over the nav graph.
 
-- ``method="vision"`` — *what a team can actually see.* The same rays, narrowed to
-  each player's **field of view**: within ``fov / 2`` degrees of where they are
-  looking (default 90°, CS2's own FOV). A player watching one angle no longer
-  holds the space behind them, so this reports notably less control than
-  ``"raycast"``.
+Smokes block rays. Blinded players do not contribute to line-of-sight models.
+Fires block travel paths. Results estimate control, not exact player perception.
 
-- ``method="reachability"`` — *what space a team can take first.* Whichever
-  side's nearest player can travel to an area first (over the nav graph) holds
-  it; a near-tie is contested and unreachable space is neutral. Burning
-  molotovs deny the ground under them, so paths route around it.
-
-Two entry points, sharing one per-tick computation:
-
-- :func:`map_control` returns a **time series** — one row of summary fractions
-  per selected tick (choose ticks exactly as with :meth:`awpy.Demo.snapshots`).
-- :func:`map_control_at` returns the **per-area** labels at a single tick, which
-  is what :func:`awpy.plot.map_control` draws.
-
-::
-
-    from awpy import Demo
-    from awpy import map_control as mc
-
-    demo = Demo("match.dem")
-    ts = mc.map_control(demo, method="vision", seconds=1)   # a momentum series
-    areas = mc.map_control_at(demo, tick=29000, method="reachability")
-
-Requires the map's ``.nav`` (all three models) and ``.mesh`` (the line-of-sight
-models, ``"raycast"`` and ``"vision"``), fetched on demand by :mod:`awpy.data`.
+Use :func:`map_control` for a time series or :func:`map_control_at` for
+per-area labels. Assets are supplied by :mod:`awpy.data`.
 """
 
 from __future__ import annotations
@@ -78,24 +48,18 @@ _SUMMARY_COLUMNS = ("ct", "t", "contested", "neutral", "net_control")
 
 @dataclass(frozen=True)
 class MapControlParams:
-    """Knobs for the map-control models (all optional; the defaults are sane).
-
-    Grouped by what they affect: *vision geometry* (the first four, in Hammer
-    units), *reachability* (``contest_margin``), and the *dynamic occluders* that
-    smokes, molotovs, and flashes create.
+    """Map-control parameters. Distances use Hammer units.
 
     Attributes:
         eye_height: Standing eye height above the feet — where vision rays start.
         crouch_eye_height: Eye height when crouched.
-        target_height: Height above an area's floor that vision aims at, modelling
-            "would I see a player standing here" rather than the bare floor.
+        target_height: Ray endpoint height above each area's floor.
         max_distance: Optional cap on vision range; ``None`` is unbounded.
         contest_margin: Travel-distance tie band — areas whose two sides' travel
             distances differ by no more than this are contested.
         fov: Horizontal field of view in degrees for ``method="vision"`` — an area
             counts only within ``fov / 2`` either side of where the player looks.
-            The default matches CS2's own FOV; ``360`` or more removes the limit,
-            making ``"vision"`` equivalent to ``"raycast"``.
+            ``360`` or more removes the limit.
         smoke_radius: Radius of a smoke cloud that blocks vision.
         smoke_height: How far above its landing point a smoke's blocking sphere
             is centred.
@@ -117,7 +81,7 @@ class MapControlParams:
     flash_threshold: float = 1.0
 
     def _core_kwargs(self) -> dict:
-        """The subset passed straight to the Rust primitive."""
+        """Parameters passed to the Rust computation."""
         return {
             "eye_height": self.eye_height,
             "crouch_eye_height": self.crouch_eye_height,
@@ -149,11 +113,9 @@ def _resolve_map(demo: Demo, map_name: str | None) -> str:
 
 
 def _players_at(group: pl.DataFrame, flash_threshold: float) -> list[tuple]:
-    """``(x, y, z, side, crouched, blind, yaw)`` tuples for the living players in
-    one tick's snapshot rows (dead players and non-playing sides are dropped).
+    """Return living players as ``(x, y, z, side, crouched, blind, yaw)`` tuples.
 
-    ``yaw`` is where the player is looking, which ``method="vision"`` needs for its
-    field-of-view cone; it is ``None`` when the snapshot does not resolve it.
+    Exclude non-playing sides. Unresolved yaw is ``None``.
     """
     alive = group.filter(
         (pl.col("health") > 0)
@@ -183,6 +145,15 @@ def _active(events: pl.DataFrame, tick: int, radius: float, z_offset: float = 0.
         (x, y, z + z_offset, radius)
         for x, y, z in zip(live["x"], live["y"], live["z"], strict=True)
     ]
+
+
+def _occluders(demo: Demo, method: Method) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Load only the projectile dataset required by the model."""
+    if method in LINE_OF_SIGHT_METHODS:
+        demo.load("smokes")
+        return demo.smokes, pl.DataFrame()
+    demo.load("fires")
+    return pl.DataFrame(), demo.fires
 
 
 def _compute_at(
@@ -240,8 +211,8 @@ def map_control(
 
     Ticks are chosen exactly as in :meth:`awpy.Demo.snapshots` — pass any of
     ``ticks`` / ``every`` / ``seconds`` / ``events`` / ``start_tick`` /
-    ``end_tick``. Since this samples the whole demo, prefer a coarse cadence
-    (e.g. ``seconds=1``) or event ticks over every single tick.
+    ``end_tick``. Use a coarse stride
+    (for example, ``seconds=1``) or event ticks to reduce computation.
 
     Args:
         demo: The parsed demo.
@@ -273,12 +244,7 @@ def map_control(
         start_tick=start_tick,
         end_tick=end_tick,
     ).sort("tick")
-    if method in LINE_OF_SIGHT_METHODS:
-        demo.load("smokes")
-        smokes, fires = demo.smokes, pl.DataFrame()
-    else:
-        demo.load("fires")
-        smokes, fires = pl.DataFrame(), demo.fires
+    smokes, fires = _occluders(demo, method)
 
     rows: list[dict] = []
     for (tick,), group in snaps.group_by("tick", maintain_order=True):
@@ -346,12 +312,7 @@ def map_control_at(
 
     snap = demo.snapshots(ticks=tick)
     group = snap.filter(pl.col("tick") == tick) if "tick" in snap.columns else snap
-    if method in LINE_OF_SIGHT_METHODS:
-        demo.load("smokes")
-        smokes, fires = demo.smokes, pl.DataFrame()
-    else:
-        demo.load("fires")
-        smokes, fires = pl.DataFrame(), demo.fires
+    smokes, fires = _occluders(demo, method)
     detail = _compute_at(
         tick,
         group,

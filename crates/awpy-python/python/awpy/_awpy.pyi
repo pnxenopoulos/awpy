@@ -1,12 +1,7 @@
-"""Type stubs for the compiled ``awpy._awpy`` extension.
+"""Types and summaries for the compiled extension.
 
-These exist for type checkers and editor tooltips, so each entry carries its types
-plus a summary. The **authoritative** prose lives in the ``///`` docstrings in
-``crates/awpy-python/src/lib.rs``: those are what ``help()`` returns and what the
-published API reference is built from, since ``sphinx.ext.autodoc`` reads the
-compiled objects rather than this file. Keep the two consistent, and put new detail
-in the Rust docstrings rather than only here — anything added only here is invisible
-on the website.
+Keep these summaries consistent with ``crates/awpy-python/src/lib.rs``.
+Rust docstrings supply ``help()`` and the published API reference.
 """
 
 from collections.abc import Iterator, Sequence
@@ -86,16 +81,14 @@ class Demo:
         """Dataset names accepted by load()."""
 
     def load(self, *datasets: str) -> None:
-        """Materialize and cache one or more DataFrame datasets.
+        """Load and cache the named DataFrames.
 
-        Compatible event and projectile requests are unioned into one pass.
-        Loading stats also prepares rounds, players, and requested combat
-        datasets, including fully enriched bomb/shot rows, so mixed loads do
-        not decode the same events twice. Ordinary property access still
-        eagerly prepares its compatible group for efficient sequential use.
+        Compatible event requests share one pass, as do projectile requests.
+        Stats reuse combat, round, and roster inputs. A combined stats request can
+        also collect bomb and shot rows. Cached datasets are skipped.
 
         Raises:
-            ValueError: If a dataset name is unknown.
+            ValueError: If any dataset name is unknown, before loading begins.
         """
 
     @property
@@ -109,13 +102,9 @@ class Demo:
 
     @property
     def tick_rate(self) -> float:
-        """Ticks per second, for converting tick counts to seconds.
+        """Ticks per second, from ``playback_ticks / playback_time``.
 
-        Computed from the demo's playback timing (``playback_ticks`` divided by
-        ``playback_time``), falling back to ``64.0`` when the demo does not
-        report it. Competitive demos are 64 tick; some are recorded at 128::
-
-            seconds = (row["end_tick"] - row["start_tick"]) / demo.tick_rate
+        Returns ``64.0`` when playback timing is unavailable.
         """
 
     def tick_to_seconds(self, tick: int) -> float:
@@ -130,57 +119,38 @@ class Demo:
 
     @property
     def events(self) -> Events:
-        """The demo's game events, keyed by name.
+        """Cached game events, indexed by name.
 
-        Returns an :class:`Events` mapping: iterate it (or read ``.names``) to
-        see which events the demo contains, and index or use attribute access
-        to get one event as a DataFrame::
+        Use ``demo.events.names`` to list names and ``demo.events[name]`` or
+        attribute access to read a cached DataFrame::
 
-            demo.events.names          # ['bomb_planted', 'player_death', ...]
-            demo.events.player_death   # -> DataFrame (parsed once, then cached)
+            demo.events.player_death
             demo.events["player_ping"]
-
-        The event stream is parsed on first access and cached, as is each
-        event's DataFrame.
         """
 
     def ticks(self, props: list[str] | None = ..., players_only: bool = ...) -> pl.DataFrame:
-        """Sample per-tick entity properties into a long-format DataFrame.
+        """Read selected entity properties at every tick.
 
-        With ``players_only=True`` (the default) there is **one row per player
-        per tick**: each player's pawn and controller are merged into a single
-        row identified by ``steamid``, and each requested property is read from
-        whichever of the two entities carries it (so both pawn fields like
-        ``m_iHealth`` and controller fields like ``m_iszPlayerName`` work).
-        Columns: ``tick``, ``steamid``, then one column per requested property.
-        Only the player pawn/controller entities are decoded.
+        With ``players_only=True``, merge each player pawn and controller into
+        one row per tick. Columns are ``tick``, ``steamid``, and the requested
+        properties. Only player pawns and controllers are decoded.
 
-        With ``players_only=False`` every entity is dumped raw — one row per
-        (tick, entity) with columns ``tick``, ``entity_id``,
-        ``entity_serial``, ``class_name``, then the requested properties. The
-        id and serial together uniquely identify a slot occupant.
+        With ``players_only=False``, return one row per entity per tick.
+        Identity columns are ``tick``, ``entity_id``, ``entity_serial``, and
+        ``class_name``. Use the id and serial together as the entity identity.
 
-        Each property column is typed from its values: integer fields become
-        Int64, floats Float64, bools Boolean, and strings Utf8 (a column mixing
-        integers and floats widens to Float64).
+        Property types are inferred: Int64, Float64, Boolean, or Utf8.
+        Mixed integer and float values use Float64.
+        Names can be raw network fields or aliases: ``X``, ``Y``, ``Z``,
+        ``velocity_x``, ``velocity_y``, ``velocity_z``, ``velocity`` (3D speed),
+        ``health``, ``armor``, ``team_num``, ``name``, and ``money``.
 
-        Property names accept friendly aliases — ``"X"``/``"Y"``/``"Z"`` for
-        computed world position; ``"velocity_x"`` / ``"velocity_y"`` /
-        ``"velocity_z"``, ``"velocity"`` (3D speed), and ``"health"``, ``"armor"``,
-        ``"team_num"``,
-        ``"name"``, ``"money"`` — as well as raw network names (``"m_iHealth"``).
-        Omitting ``props`` uses a sensible default (position, health, armor,
-        team).
-
-        This decodes the demo in parallel across keyframe segments, so it is
-        fast even over a full match. The result is **not** cached (each call
-        re-decodes); keep the returned DataFrame if you need it again.
+        Each call decodes keyframe segments in parallel. Results are not cached.
 
         Args:
-            props: Property names to extract. Defaults to
-                ``["X","Y","Z","health","armor","team_num"]``.
-            players_only: When ``True`` (default), return one merged row per
-                player; otherwise dump every entity separately.
+            props: Property names. Defaults to
+                ``["X", "Y", "Z", "health", "armor", "team_num"]``.
+            players_only: Merge player entities if true; otherwise, return all entities.
         """
 
     def snapshots(
@@ -193,50 +163,35 @@ class Demo:
         start_tick: int | None = ...,
         end_tick: int | None = ...,
     ) -> pl.DataFrame:
-        """Per-player game state at chosen ticks, as a DataFrame.
+        """Read player state at selected ticks as a DataFrame.
 
-        One row per active player per tick, with the full player + equipment
-        schema (see :data:`awpy.SNAPSHOT_PROPERTIES`) — ready to feed
-        :func:`awpy.plot.frame` via :class:`awpy.plot.Player`. Choose the ticks
-        with any combination of:
+        Return one row per active player per tick. See :data:`awpy.SNAPSHOT_PROPERTIES`
+        for the schema. Select ticks with:
 
-        - ``ticks`` — a single tick or a list of ticks.
-        - ``every`` / ``seconds`` — a periodic stride (mutually exclusive).
-          ``every=64`` is one sample per 64 ticks; ``seconds=1.0`` converts via
-          the tick rate.
-        - ``events`` — the ticks on which these game events fired (a name or list).
-        - ``start_tick`` / ``end_tick`` — restrict to this window. Given **on
-          their own**, they yield every tick in the window (a contiguous range);
-          combined with a sampler, they bound it.
+        - ``ticks``: one tick or a list.
+        - ``every`` or ``seconds``: a stride in ticks or seconds. Do not set both.
+        - ``events``: ticks with a named game event, or a list of event names.
+        - ``start_tick`` and ``end_tick``: an inclusive window. Alone, this selects
+          every tick in the window. With other selectors, it bounds the selection.
 
-        At least one selector is required. Without other selectors, one tick
-        or a list of up to four ticks uses direct keyframe seeks. Larger lists,
-        windows, strides, and event queries decode in parallel across keyframes.
+        At least one selector is required. One to four explicit ticks without
+        other selectors use keyframe seeks. Other requests decode keyframe
+        segments in parallel. Results are not cached.
 
         Examples::
 
-            demo.snapshots(ticks=29000)                    # one moment
-            demo.snapshots(ticks=[29000, 30000])           # specific ticks
-            demo.snapshots(start_tick=29000, end_tick=30000)  # a contiguous range
-            demo.snapshots(every=64)                       # every 64 ticks
-            demo.snapshots(seconds=1.0)                    # ~1 sample / second
-            demo.snapshots(events="player_death")          # at kill ticks
-            demo.snapshots(every=64, start_tick=0, end_tick=64000)
+            demo.snapshots(ticks=[29000, 30000])
+            demo.snapshots(seconds=1, start_tick=0, end_tick=64000)
+            demo.snapshots(events="player_death")
         """
 
     @property
     def players(self) -> pl.DataFrame:
-        """The roster: every player seen in the demo (cached).
+        """Cached roster with one row per observed player.
 
-        One row per player with ``steamid``, ``name``, ``side`` (the last team
-        observed — players swap at halftime), and ``team_clan_name``. Bots have
-        ``steamid`` 0.
-
-        ``team_clan_name`` is the organization the player's team was playing
-        under (e.g. ``"Imperial"``), from the ``CCSTeam`` entities. Tournament
-        servers set it; casual matchmaking leaves it null. It is captured
-        alongside ``side``, so a player who leaves mid-match keeps the team they
-        actually played for rather than whoever held their side afterwards.
+        Columns: ``steamid``, ``name``, ``side``, and ``team_clan_name``.
+        Bots have Steam ID 0. Side and team name are the last observed values.
+        Team names come from ``CCSTeam`` and are null when not set.
         """
 
     @property
@@ -252,7 +207,7 @@ class Demo:
     def chat(self) -> pl.DataFrame:
         """Chat messages as a DataFrame (cached).
 
-        Decoded from ``SayText`` / ``SayText2`` user messages. Columns:
+        Decoded from ``SayText``, ``SayText2``, and ``SayTextChannel``. Columns:
         ``tick``, ``entity_index`` (the sender's controller slot), ``name``,
         ``message``, and ``channel`` (e.g. ``Cstrike_Chat_All`` for all-chat,
         ``Cstrike_Chat_T`` / ``Cstrike_Chat_CT`` for team chat). Server-side
@@ -301,27 +256,11 @@ class Demo:
 
     @property
     def kills(self) -> pl.DataFrame:
-        """Every kill (``player_death`` event) as a DataFrame, all fields typed (cached).
+        """Cached ``player_death`` events with resolved participants.
 
-        Includes two trade flags:
-
-        - ``is_trade`` — this kill **is** a trade: the attacker killed someone
-          who had just killed one of their teammates (within 5 seconds).
-        - ``victim_traded`` — this kill's **victim was traded**: a teammate of
-          the victim killed this attacker within the window.
-
-        The two are duals, so the kill that avenges a death carries ``is_trade``
-        and the death it avenged carries ``victim_traded``. The latter is what
-        :attr:`stats` tallies as ``traded_deaths`` — both come from one
-        classifier, so they cannot disagree::
-
-            demo.kills.filter(pl.col("is_trade"))        # every trade kill
-            demo.kills.filter(pl.col("victim_traded"))   # every traded death
-
-        The two counts need not be equal: one kill can avenge several teammates
-        at once (a player who kills two enemies and is then killed by a third
-        trades both of those deaths), so ``victim_traded`` is typically the
-        larger of the two.
+        ``is_trade`` marks a kill that avenges a teammate within 5 seconds.
+        ``victim_traded`` marks the earlier death; stats count it as ``traded_deaths``.
+        One kill can avenge several deaths, and a kill can have both flags.
         """
 
     @property
@@ -353,34 +292,21 @@ class Demo:
 
     @property
     def stats(self) -> pl.DataFrame:
-        """Per-player match statistics (kills, KAST, ADR, openings, trades,
-        clutches, ...; cached).
+        """Cached match statistics, with one row per player.
 
-        One row per player, knife rounds excluded. See the docs for the full
-        column list and the definitions of opening kills/deaths, traded deaths,
-        clutches, KAST, and ADR.
-
-        Clutch columns: ``clutches_played`` (rounds entered as the last player
-        alive against at least one opponent), ``clutches_won``, and
-        ``clutch_1v1`` … ``clutch_1v5`` (clutches *won*, bucketed by how many
-        opponents were alive at the moment the player was left alone).
-
-        This is the **cached** form: it is computed once (as part of the shared
-        first-parse pass) and returned instantly thereafter. Use it unless you
-        need to include knife rounds — for which call :meth:`player_stats`.
+        Knife rounds are excluded. Includes kills, deaths, assists, headshots,
+        openings, trades, multikills, KAST, ADR, clutches, and utility.
+        ``clutch_1v1`` through ``clutch_1v5`` count wins by the opponent count
+        when the clutch started. Their sum is ``clutches_won``.
+        See the dataset and reference guides for columns and definitions.
         """
 
     def player_stats(self, include_knife_rounds: bool = ...) -> pl.DataFrame:
-        """Per-player stats, with control over knife rounds.
+        """Read player statistics with optional knife rounds.
 
-        The :attr:`stats` property excludes knife rounds (a side-decider round
-        of all-melee kills) from every tally and denominator, matching
-        competitive scoreboards. Pass ``include_knife_rounds=True`` here to
-        count them instead. See :attr:`rounds` (``is_knife_round``) for which
-        rounds these are.
-
-        Both variants reuse decoded inputs and cache their resulting DataFrame.
-        The default variant is the same cached object as :attr:`stats`.
+        Set ``include_knife_rounds=True`` to include rounds marked ``is_knife_round``.
+        Both variants reuse decoded inputs and cache their DataFrames.
+        The default returns the same cached object as :attr:`stats`.
         """
 
 class VisibilityChecker:

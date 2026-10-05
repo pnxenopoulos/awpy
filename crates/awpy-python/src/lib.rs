@@ -315,11 +315,14 @@ impl Demo {
         VALID_DATASETS.to_vec()
     }
 
-    /// Materialize and cache one or more DataFrame datasets.
+    /// Load and cache the named DataFrames.
     ///
-    /// Compatible event and projectile requests are unioned into one pass.
-    /// Loading `stats` also prepares rounds, players, and requested combat
-    /// datasets, so mixed loads do not decode the same events twice.
+    /// Compatible event requests share one pass, as do projectile requests.
+    /// Stats reuse combat, round, and roster inputs. A combined stats request can
+    /// also collect bomb and shot rows. Cached datasets are skipped.
+    ///
+    /// Raises:
+    ///     ValueError: If any dataset name is unknown, before loading begins.
     #[pyo3(signature = (*datasets))]
     fn load(&self, py: Python<'_>, datasets: Vec<String>) -> PyResult<()> {
         for name in &datasets {
@@ -376,50 +379,22 @@ impl Demo {
 
         for name in datasets {
             match name.as_str() {
-                "stats" => {
-                    let _ = self.stats(py)?;
-                }
-                "rounds" => {
-                    let _ = self.rounds(py)?;
-                }
-                "kills" => {
-                    let _ = self.kills(py)?;
-                }
-                "damages" => {
-                    let _ = self.damages(py)?;
-                }
-                "bomb" => {
-                    let _ = self.bomb(py)?;
-                }
-                "grenades" => {
-                    let _ = self.grenades(py)?;
-                }
-                "fires" => {
-                    let _ = self.fires(py)?;
-                }
-                "smokes" => {
-                    let _ = self.smokes(py)?;
-                }
-                "shots" => {
-                    let _ = self.shots(py)?;
-                }
-                "players" => {
-                    let _ = self.players(py)?;
-                }
-                "round_economy" => {
-                    let _ = self.round_economy(py)?;
-                }
-                "chat" => {
-                    let _ = self.chat(py)?;
-                }
-                "blinds" => {
-                    let _ = self.blinds(py)?;
-                }
-                "item_events" => {
-                    let _ = self.item_events(py)?;
-                }
+                "stats" => self.stats(py),
+                "rounds" => self.rounds(py),
+                "kills" => self.kills(py),
+                "damages" => self.damages(py),
+                "bomb" => self.bomb(py),
+                "grenades" => self.grenades(py),
+                "fires" => self.fires(py),
+                "smokes" => self.smokes(py),
+                "shots" => self.shots(py),
+                "players" => self.players(py),
+                "round_economy" => self.round_economy(py),
+                "chat" => self.chat(py),
+                "blinds" => self.blinds(py),
+                "item_events" => self.item_events(py),
                 _ => unreachable!("dataset names validated above"),
-            }
+            }?;
         }
         Ok(())
     }
@@ -444,13 +419,9 @@ impl Demo {
         Ok(dict)
     }
 
-    /// Ticks per second as a ``float``, for converting tick counts to seconds.
+    /// Ticks per second, from ``playback_ticks / playback_time``.
     ///
-    /// Computed from the demo's playback timing (``playback_ticks`` divided by
-    /// ``playback_time``), falling back to ``64.0`` when the demo does not report
-    /// it. Competitive demos are 64 tick; some are recorded at 128::
-    ///
-    ///     seconds = (row["end_tick"] - row["freeze_end_tick"]) / demo.tick_rate
+    /// Returns ``64.0`` when playback timing is unavailable.
     #[getter]
     fn tick_rate(&self) -> f32 {
         self.parser.tickrate()
@@ -475,18 +446,13 @@ impl Demo {
         Ok(tick as i32)
     }
 
-    /// The demo's game events, keyed by name.
+    /// Cached game events, indexed by name.
     ///
-    /// Returns an :class:`Events` mapping: iterate it (or read ``.names``) to
-    /// see which events the demo contains, and index or use attribute access
-    /// to get one event as a DataFrame::
+    /// Use ``demo.events.names`` to list names and ``demo.events[name]`` or
+    /// attribute access to read a cached DataFrame::
     ///
-    ///     demo.events.names          # ['bomb_planted', 'player_death', ...]
-    ///     demo.events.player_death   # -> DataFrame (parsed once, then cached)
+    ///     demo.events.player_death
     ///     demo.events["player_ping"]
-    ///
-    /// The event stream is parsed on first access and cached, as is each
-    /// event's DataFrame.
     #[getter]
     fn events(&self, py: Python<'_>) -> PyResult<Py<Events>> {
         if let Some(cached) = self.events_cache.get() {
@@ -519,37 +485,28 @@ impl Demo {
             .clone_ref(py))
     }
 
-    /// Sample per-tick entity properties into a long-format DataFrame.
+    /// Read selected entity properties at every tick.
     ///
-    /// With ``players_only=True`` (the default) there is **one row per player
-    /// per tick**: each player's pawn and controller are merged into a single
-    /// row identified by ``steamid``, and each requested property is read from
-    /// whichever of the two entities carries it (so both pawn fields like
-    /// ``m_iHealth`` and controller fields like ``m_iszPlayerName`` work).
-    /// Columns: ``tick``, ``steamid``, then one column per requested property.
-    /// Only the player pawn/controller entities are decoded.
+    /// With ``players_only=True``, merge each player pawn and controller into
+    /// one row per tick. Columns are ``tick``, ``steamid``, and the requested
+    /// properties. Only player pawns and controllers are decoded.
     ///
-    /// With ``players_only=False`` every entity is dumped raw — one row per
-    /// (tick, entity) with columns ``tick``, ``entity_id``,
-    /// ``entity_serial``, ``class_name``, then the requested properties.
-    /// The id and serial together uniquely identify a slot occupant.
+    /// With ``players_only=False``, return one row per entity per tick.
+    /// Identity columns are ``tick``, ``entity_id``, ``entity_serial``, and
+    /// ``class_name``. Use the id and serial together as the entity identity.
     ///
-    /// Each property column is typed from its values: integer fields become
-    /// Int64, floats Float64, bools Boolean, and strings Utf8 (a column mixing
-    /// integers and floats widens to Float64).
+    /// Property types are inferred: Int64, Float64, Boolean, or Utf8.
+    /// Mixed integer and float values use Float64.
+    /// Names can be raw network fields or aliases: ``X``, ``Y``, ``Z``,
+    /// ``velocity_x``, ``velocity_y``, ``velocity_z``, ``velocity`` (3D speed),
+    /// ``health``, ``armor``, ``team_num``, ``name``, and ``money``.
     ///
-    /// Property names accept friendly aliases — ``"X"``/``"Y"``/``"Z"`` for
-    /// computed world position, ``"velocity_x"`` / ``"velocity_y"`` / ``"velocity_z"``,
-    /// ``"velocity"`` (3D speed), and ``"health"``, ``"armor"``, ``"team_num"``,
-    /// ``"name"``, ``"money"`` — as well as raw network names (``"m_iHealth"``).
-    /// Omitting ``props`` uses a sensible default (position, health, armor,
-    /// team).
+    /// Each call decodes keyframe segments in parallel. Results are not cached.
     ///
     /// Args:
-    ///     props: Property names to extract. Defaults to
-    ///         ``["X","Y","Z","health","armor","team_num"]``.
-    ///     players_only: When ``True`` (default), return one merged row per
-    ///         player; otherwise dump every entity separately.
+    ///     props: Property names. Defaults to
+    ///         ``["X", "Y", "Z", "health", "armor", "team_num"]``.
+    ///     players_only: Merge player entities if true; otherwise, return all entities.
     #[pyo3(signature = (props=None, players_only=true))]
     #[pyo3(text_signature = "($self, props=None, players_only=True)")]
     fn ticks(
@@ -628,20 +585,11 @@ impl Demo {
         })
     }
 
-    /// Every kill (``player_death`` event) as a DataFrame, all fields typed (cached).
+    /// Cached ``player_death`` events with resolved participants.
     ///
-    /// Includes two trade flags:
-    ///
-    /// * ``is_trade`` — this kill **is** a trade: the attacker killed someone who
-    ///   had just killed one of their teammates (within 5 seconds).
-    /// * ``victim_traded`` — this kill's **victim was traded**: a teammate of the
-    ///   victim killed this attacker within the window.
-    ///
-    /// The two are duals, so the kill that avenges a death carries ``is_trade``
-    /// and the death it avenged carries ``victim_traded``; the latter is what
-    /// :attr:`stats` tallies as ``traded_deaths``, from the same classifier, so
-    /// they cannot disagree. Their totals differ, though: one kill can avenge
-    /// several teammates at once, so ``victim_traded`` is usually more common.
+    /// ``is_trade`` marks a kill that avenges a teammate within 5 seconds.
+    /// ``victim_traded`` marks the earlier death; stats count it as ``traded_deaths``.
+    /// One kill can avenge several deaths, and a kill can have both flags.
     #[getter]
     fn kills(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.event_frame(py, "kills")
@@ -685,24 +633,13 @@ impl Demo {
         self.event_frame(py, "shots")
     }
 
-    /// Per-player match statistics as a DataFrame (cached).
+    /// Cached match statistics, with one row per player.
     ///
-    /// One row per player, knife rounds excluded. Columns: ``steamid``, ``name``,
-    /// ``rounds_played``, ``kills``, ``deaths``, ``assists``, ``flash_assists``,
-    /// ``headshot_kills``, ``headshot_pct``, ``opening_kills``,
-    /// ``opening_deaths``, ``traded_deaths``, ``multikill_2k`` …
-    /// ``multikill_5k``, ``kast``, ``adr``, the clutch columns below, and utility
-    /// (``utility_damage``, ``flashes_thrown``, ``enemies_flashed``,
-    /// ``flash_duration_dealt``).
-    ///
-    /// Clutches: ``clutches_played`` (rounds entered as the last player alive
-    /// against at least one opponent), ``clutches_won``, and ``clutch_1v1`` …
-    /// ``clutch_1v5`` — clutches *won*, bucketed by how many opponents were alive
-    /// at the moment the player was left alone, so the five sum to
-    /// ``clutches_won``.
-    ///
-    /// See the reference docs for how opening kills/deaths, traded deaths,
-    /// clutches, KAST, and ADR are defined.
+    /// Knife rounds are excluded. Includes kills, deaths, assists, headshots,
+    /// openings, trades, multikills, KAST, ADR, clutches, and utility.
+    /// ``clutch_1v1`` through ``clutch_1v5`` count wins by the opponent count
+    /// when the clutch started. Their sum is ``clutches_won``.
+    /// See the dataset and reference guides for columns and definitions.
     #[getter]
     fn stats(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         if let Some((kills, damages, blinds, shots)) = self.event_datasets_cache.stats_parts() {
@@ -724,16 +661,11 @@ impl Demo {
         })
     }
 
-    /// Per-player stats, with control over knife rounds.
+    /// Read player statistics with optional knife rounds.
     ///
-    /// The :attr:`stats` property excludes knife rounds (a side-decider round of
-    /// all-melee kills) from every tally and denominator, matching competitive
-    /// scoreboards. Pass ``include_knife_rounds=True`` here to count them
-    /// instead. See :attr:`rounds` (``is_knife_round``) for which rounds these
-    /// are.
-    ///
-    /// Both variants reuse decoded inputs and cache their resulting DataFrame.
-    /// The default variant is the same cached object as :attr:`stats`.
+    /// Set ``include_knife_rounds=True`` to include rounds marked ``is_knife_round``.
+    /// Both variants reuse decoded inputs and cache their DataFrames.
+    /// The default returns the same cached object as :attr:`stats`.
     #[pyo3(signature = (include_knife_rounds=false))]
     #[pyo3(text_signature = "($self, include_knife_rounds=False)")]
     fn player_stats(&self, py: Python<'_>, include_knife_rounds: bool) -> PyResult<Py<PyAny>> {
@@ -749,17 +681,11 @@ impl Demo {
         })
     }
 
-    /// The roster: every player seen in the demo (cached).
+    /// Cached roster with one row per observed player.
     ///
-    /// One row per player with ``steamid``, ``name``, ``side`` (the last team
-    /// observed — players swap at halftime), and ``team_clan_name``. Bots have
-    /// ``steamid`` 0.
-    ///
-    /// ``team_clan_name`` is the organization the player's team was playing under
-    /// (e.g. ``"Imperial"``), from the ``CCSTeam`` entities. Tournament servers
-    /// set it; casual matchmaking leaves it null. It is captured alongside
-    /// ``side``, so a player who leaves mid-match keeps the team they actually
-    /// played for rather than whoever held their side afterwards.
+    /// Columns: ``steamid``, ``name``, ``side``, and ``team_clan_name``.
+    /// Bots have Steam ID 0. Side and team name are the last observed values.
+    /// Team names come from ``CCSTeam`` and are null when not set.
     #[getter]
     fn players(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         let players = self.parsed_players(py)?;
@@ -771,7 +697,7 @@ impl Demo {
     /// Per-team economy and buy type per round (cached).
     ///
     /// One row per (round, side): ``round_num``, ``side``, ``equipment_value``
-    /// (team total at round start), ``buy_type`` (``pistol`` / ``eco`` /
+    /// (team total at freeze end), ``buy_type`` (``pistol`` / ``eco`` /
     /// ``force`` / ``full``), and ``n_players``.
     #[getter]
     fn round_economy(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
@@ -783,7 +709,7 @@ impl Demo {
 
     /// Chat messages as a DataFrame (cached).
     ///
-    /// Decoded from ``SayText`` / ``SayText2`` user messages. Columns:
+    /// Decoded from ``SayText``, ``SayText2``, and ``SayTextChannel``. Columns:
     /// ``tick``, ``entity_index`` (the sender's controller slot), ``name``,
     /// ``message``, and ``channel`` (e.g. ``Cstrike_Chat_All`` for all-chat,
     /// ``Cstrike_Chat_T`` / ``Cstrike_Chat_CT`` for team chat).
@@ -837,35 +763,26 @@ impl Demo {
         Ok(dict)
     }
 
-    /// Per-player game state at chosen ticks, as a DataFrame.
+    /// Read player state at selected ticks as a DataFrame.
     ///
-    /// One row per active player per tick, with the full player + equipment
-    /// schema (see :data:`awpy.SNAPSHOT_PROPERTIES`) — ready to feed
-    /// :func:`awpy.plot.frame` via :class:`awpy.plot.Player`. Choose the ticks
-    /// with any combination of:
+    /// Return one row per active player per tick. See :data:`awpy.SNAPSHOT_PROPERTIES`
+    /// for the schema. Select ticks with:
     ///
-    /// - ``ticks`` — a single tick or a list of ticks.
-    /// - ``every`` / ``seconds`` — a periodic stride (mutually exclusive).
-    ///   ``every=64`` is one sample per 64 ticks; ``seconds=1.0`` converts via
-    ///   the tick rate.
-    /// - ``events`` — the ticks on which these game events fired (a name or list).
-    /// - ``start_tick`` / ``end_tick`` — restrict to this window. Given **on
-    ///   their own**, they yield every tick in the window (a contiguous range);
-    ///   combined with a sampler, they bound it.
+    /// - ``ticks``: one tick or a list.
+    /// - ``every`` or ``seconds``: a stride in ticks or seconds. Do not set both.
+    /// - ``events``: ticks with a named game event, or a list of event names.
+    /// - ``start_tick`` and ``end_tick``: an inclusive window. Alone, this selects
+    ///   every tick in the window. With other selectors, it bounds the selection.
     ///
-    /// At least one selector is required. Without other selectors, one tick
-    /// or a list of up to four ticks uses direct keyframe seeks. Larger lists,
-    /// windows, strides, and event queries decode in parallel across keyframes.
+    /// At least one selector is required. One to four explicit ticks without
+    /// other selectors use keyframe seeks. Other requests decode keyframe
+    /// segments in parallel. Results are not cached.
     ///
     /// Examples::
     ///
-    ///     demo.snapshots(ticks=29000)                    # one moment
-    ///     demo.snapshots(ticks=[29000, 30000])           # specific ticks
-    ///     demo.snapshots(start_tick=29000, end_tick=30000)  # a contiguous range
-    ///     demo.snapshots(every=64)                       # every 64 ticks
-    ///     demo.snapshots(seconds=1.0)                    # ~1 sample / second
-    ///     demo.snapshots(events="player_death")          # at kill ticks
-    ///     demo.snapshots(every=64, start_tick=0, end_tick=64000)
+    ///     demo.snapshots(ticks=[29000, 30000])
+    ///     demo.snapshots(seconds=1, start_tick=0, end_tick=64000)
+    ///     demo.snapshots(events="player_death")
     #[pyo3(signature = (*, ticks=None, every=None, seconds=None, events=None, start_tick=None, end_tick=None))]
     #[pyo3(
         text_signature = "($self, *, ticks=None, every=None, seconds=None, events=None, start_tick=None, end_tick=None)"

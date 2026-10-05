@@ -1,17 +1,12 @@
 # Reference
 
-Three lookups: the per-player **properties**, the game **events**, and how the
-derived numbers (buy types, ADR, KAST, trades, …) are **defined**.
+Snapshot properties, game events, and metric definitions.
 
 ## Player properties
 
-The per-player features returned by {meth}`Demo.snapshot` / {meth}`Demo.snapshots`,
-each mapped to the CS2 network property it is read from. Available
-programmatically as `awpy.SNAPSHOT_PROPERTIES`.
-
-The scalar fields can also be requested in {meth}`Demo.ticks` — by these readable
-names (the aliases `x`/`y`/`z`, `health`, `armor`, `team_num`, `name`, `money`) or
-by any raw network name (`m_iHealth`, `m_bIsScoped`, …).
+{meth}`Demo.snapshots` returns the properties below.
+The mapping is also available as `awpy.SNAPSHOT_PROPERTIES`.
+Use {meth}`Demo.ticks` for supported aliases or raw network fields.
 
 ### Identity & position
 
@@ -22,6 +17,8 @@ by any raw network name (`m_iHealth`, `m_bIsScoped`, …).
 | `side` | `m_iTeamNum` (2 = terrorist, 3 = counter-terrorist) |
 | `x` / `y` / `z` | `CBodyComponent…m_cell{X,Y,Z}` + `m_vec{X,Y,Z}` (computed world position) |
 | `pitch` / `yaw` | `m_angEyeAngles` |
+| `velocity_x` / `velocity_y` / `velocity_z` | `m_vecVelocity` components |
+| `velocity` | Three-dimensional speed from the velocity components |
 
 ### Health & equipment
 
@@ -63,28 +60,26 @@ by any raw network name (`m_iHealth`, `m_bIsScoped`, …).
 | `is_reloading` | Active weapon: `m_bInReload` |
 | `is_silent_reloading` | Active weapon: `m_bInReload && m_bStealthy` |
 | `is_defusing` | `m_bIsDefusing` |
-| `flash_duration` | `m_flFlashDuration` (seconds of blindness remaining) |
+| `is_blinded` | `m_bFlashing` |
+| `flash_duration` | `m_flFlashDuration` (onset duration, not remaining time) |
 
-Both reload properties are snapshot columns. Awpy reads them from the active
-weapon, not from the player pawn. Both return `false` when there is no active
-weapon. They return `null` if a required schema field on the active weapon is
-unavailable. Omitted Boolean values default to `false` when the schema has
-the field. The silent-reload mapping has not yet been checked against a demo
-that contains quiet reloads.
+Reload properties come from the active weapon.
+Both are false without an active weapon and null if a required schema field is missing.
+Omitted Boolean values default to false when the field exists.
+Quiet reloads have synthetic tests but no demo-backed validation.
 
 ## Game events
 
-Common CS2 game events. The events actually present in a demo are
-`demo.events.names` (and `demo.events.counts`); `demo.events[name]` returns any of
-them as a DataFrame. This catalog is available programmatically as
-`awpy.GAME_EVENTS`.
+Use `demo.events.names` and `demo.events.counts` to inspect a demo.
+Use `demo.events[name]` to read an event DataFrame.
+This catalog is also available as `awpy.GAME_EVENTS`.
 
 | Event | Description |
 | --- | --- |
 | `round_start` | A round begins. |
 | `round_freeze_end` | Freeze time ends; players can move. |
 | `round_end` | A round is decided (carries winner + reason). |
-| `round_officially_ended` | The round is fully wrapped up (post-round). |
+| `round_officially_ended` | The post-round period ends. |
 | `begin_new_match` | A new match starts. |
 | `announce_phase_end` | A phase (e.g. the first half) ends. |
 | `player_death` | A player is killed (attacker, victim, assister, weapon). |
@@ -153,37 +148,27 @@ player is treated as having played every round, so KAST / ADR denominators are t
 match's round count and players who join or leave mid-match are approximate.
 
 - **Kills / deaths** — enemy kills (suicides and team kills excluded) and deaths.
-- **Assists** — the game's attribution: dealing the victim ≥ 40 HP **or** blinding
-  them (a *flash assist*) before a teammate got the kill. Only ever credited
-  against opponents.
-- **Flash assists** (`flash_assists`) — the subset of assists that came from a
-  flashbang, so `flash_assists ≤ assists`. (Third-party sites often compute a
-  different flash-assist figure from flash→kill correlation; the two are not
-  directly comparable.)
+- **Assists** — the game's assist attribution against opponents.
+- **Flash assists** (`flash_assists`) — assists attributed to flashbangs.
+  These are a subset of assists, not a separate flash-to-kill correlation.
 - **Headshot %** (`headshot_pct`) — `headshot_kills / kills × 100` (0 with no
   kills).
 - **Opening kill / death** — the attacker / victim of the **first** kill of a
   round.
-- **Traded death** — a death that was avenged: the player who killed you is
-  themselves killed by one of **your** teammates within the **trade window** (5
-  seconds by default). This is what the *T* in KAST rewards — you count for the
-  round even though you died, because your death was traded back. The `kills`
-  dataset exposes the same classification per kill as `victim_traded`, and the
-  avenging kill as `is_trade`.
+- **Traded death** — a teammate kills the attacker within the trade window
+  (5 seconds by default). The death has `victim_traded` in `kills`;
+  the revenge kill has `is_trade`.
 - **KAST** — the percentage of rounds in which the player got a **K**ill, an
   **A**ssist, **S**urvived (was not killed), or was **T**raded.
-- **ADR** — average damage per round, using the **actual HP removed** from
-  enemies: each hit is capped at the victim's remaining health and chained across
-  the round, so a killing blow counts only what the victim had left (an AWP that
-  "does 115" to a 40 HP enemy removes 40, not 115). Team, self, and world (e.g.
-  fall) damage are excluded.
+- **ADR** — enemy health removed per round. Each hit is capped at the victim's
+  remaining health. Team, self, and world damage are excluded.
 - **Multi-kill rounds** (`multikill_2k` … `multikill_5k`) — rounds with exactly
   2 / 3 / 4 / 5-or-more kills.
 
 #### Clutches
 
-A **clutch** is a round the player was left to finish alone: they became the last
-player alive on their side while at least one opponent was still up.
+A clutch starts when a player becomes the last survivor on their side
+with at least one living opponent.
 
 - **`clutches_played`** — how many such situations the player was in.
 - **`clutches_won`** — how many of those rounds their side went on to win.
@@ -191,14 +176,10 @@ player alive on their side while at least one opponent was still up.
   opponents were alive at the moment the player was left alone. Losses are counted
   in `clutches_played` only, so `clutch_1v1 + … + clutch_1v5 == clutches_won`.
 
-Two details worth knowing:
-
-- The situation is **fixed at the moment the player is left alone**. A 1v3 stays a
-  1v3 in `clutch_1v3` even if two of the three die to a teammate's grenade
-  afterwards — it is not re-graded as a 1v1.
-- The player must *become* last alive. A side that fields a single player for the
-  whole round (after a disconnect, say) never registers a clutch, because there was
-  no transition.
+The opponent count is fixed when the clutch starts.
+Later deaths do not change a 1v3 to a 1v1.
+A side with one player for the complete round does not register a clutch:
+the player must become the last survivor.
 
 Alive / dead state is reconstructed from the event datasets rather than from
 per-tick entity state, so each side's roster for a round is inferred from who
@@ -217,6 +198,5 @@ only for the rounds they actually appear in.
 
 ### Positions
 
-All coordinates are world coordinates in **Hammer units**, Z-up — the same frame
-used by {doc}`nav <nav>` and {doc}`visibility <visibility>`, so entity positions
-can be passed straight in.
+Positions use Hammer units, with Z as the vertical axis.
+The {doc}`nav` and {doc}`visibility` APIs use the same coordinates.

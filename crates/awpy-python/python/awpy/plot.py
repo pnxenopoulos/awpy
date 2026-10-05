@@ -1,13 +1,10 @@
 """Plot CS2 demo data on radar images.
 
-Everything draws onto a map's **radar image** — the 1024x1024 PNGs shipped by
-``awpy-data`` and fetched on demand by :mod:`awpy.data`. Like the rest of awpy,
-pass a map name and optionally pin an ``awpy-data`` release with ``version=``
-(an integer ClientVersion); by default the newest cached release is used.
+Use radar images from :mod:`awpy.data`.
+Set ``version=`` to select a release; otherwise, use the newest cached release.
+Install dependencies with ``pip install 'awpy[plot]'``.
 
-Requires matplotlib — install with ``pip install 'awpy[plot]'``.
-
-Draw a game-state frame (players and the bomb at one moment)::
+Draw players and the bomb::
 
     from awpy import plot
 
@@ -26,14 +23,11 @@ Heatmap of demo positions (any ``(x, y, z)`` rows — e.g. death locations)::
     deaths = kills.select(["victim_x", "victim_y", "victim_z"]).rows()
     fig, ax = plot.heatmap("de_inferno", deaths, method="kde")
 
-The building blocks are exposed too: :func:`radar` draws the bare map (pass its
-``ax`` to other calls to layer plots), and :func:`world_to_pixel` /
-:func:`pixel_to_world` convert between world and radar-pixel coordinates.
-Multi-level maps (Nuke, Vertigo, Train, Baggage) have a second radar for the
-lower level: pass ``lower=True`` to draw it; points are matched to the level
-they're on via the map's altitude bands (:func:`is_lower_level`). To show a
-game state spanning both levels, :func:`frame_levels` / :func:`heatmap_levels`
-render one panel per level::
+Use :func:`radar` and pass its ``ax`` to other functions to combine plots.
+:func:`world_to_pixel` and :func:`pixel_to_world` convert coordinates.
+
+For multi-level maps, set ``lower=True`` to draw the lower radar.
+:func:`frame_levels` and :func:`heatmap_levels` draw one panel per level::
 
     fig, (upper, lower) = plot.frame_levels("de_nuke", players, bomb=bomb)
 """

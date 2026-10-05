@@ -1,29 +1,17 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let damages = parser.damages()?;
 
-    let display_limit = limit.unwrap_or(damages.len());
-    let shown = &damages[..display_limit.min(damages.len())];
+    let shown = super::limited(&damages, limit);
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&shown)?);
-        return Ok(());
+        return super::print_json(&shown);
     }
-
-    let who = |name: &Option<String>, side: &Option<String>| -> String {
-        let n = name.clone().unwrap_or_else(|| "?".into());
-        match side.as_deref() {
-            Some("terrorist") => n.red().to_string(),
-            Some("counter-terrorist") => n.blue().to_string(),
-            _ => n,
-        }
-    };
 
     println!(
         "{:<8} {:<18} {:<18} {:<14} {:<6} {:<9} {}",
@@ -41,8 +29,8 @@ pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
         println!(
             "{:<8} {:<18} {:<18} {:<14} {:<6} {:<9} {}→{}",
             d.tick,
-            who(&d.attacker_name, &d.attacker_side),
-            who(&d.victim_name, &d.victim_side),
+            super::player_label(d.attacker_name.as_deref(), d.attacker_side.as_deref()),
+            super::player_label(d.victim_name.as_deref(), d.victim_side.as_deref()),
             d.weapon,
             d.dmg_health,
             d.hitgroup_name,
@@ -51,14 +39,6 @@ pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
         );
     }
 
-    println!(
-        "\n{} damage events total{}",
-        damages.len(),
-        if display_limit < damages.len() {
-            format!(" (showing first {display_limit})")
-        } else {
-            String::new()
-        }
-    );
+    super::print_total("damage events", damages.len(), shown.len());
     Ok(())
 }

@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 #[allow(clippy::too_many_arguments)]
@@ -15,8 +15,7 @@ pub fn run(
     limit: Option<usize>,
     json: bool,
 ) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let events = parser.events(max_tick)?;
 
     let matches = |name: &str, tick: i32| -> bool {
@@ -46,8 +45,7 @@ pub fn run(
             *counts.entry(e.name.as_str()).or_default() += 1;
         }
         if json {
-            println!("{}", serde_json::to_string_pretty(&counts)?);
-            return Ok(());
+            return super::print_json(&counts);
         }
         println!("{:<40} {}", "Event".bold(), "Count".bold());
         println!("{}", "-".repeat(52));
@@ -61,15 +59,13 @@ pub fn run(
         return Ok(());
     }
 
-    let display_limit = limit.unwrap_or(filtered.len());
-    let shown: Vec<_> = filtered.iter().take(display_limit).collect();
+    let shown = super::limited(&filtered, limit);
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&shown)?);
-        return Ok(());
+        return super::print_json(&shown);
     }
 
-    for e in &shown {
+    for e in shown {
         let keys = if e.keys.is_empty() {
             String::new()
         } else {
@@ -84,15 +80,7 @@ pub fn run(
         );
     }
 
-    println!(
-        "\n{} events total{}",
-        filtered.len(),
-        if display_limit < filtered.len() {
-            format!(" (showing first {})", display_limit)
-        } else {
-            String::new()
-        }
-    );
+    super::print_total("events", filtered.len(), shown.len());
 
     Ok(())
 }

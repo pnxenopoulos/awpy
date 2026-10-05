@@ -1,10 +1,13 @@
-# 📝 Changelog
+# Changelog
 
 ## 3.0.0 (unreleased)
 
-A full rewrite: a Rust core parser for Counter-Strike 2 (Source 2) demo files
-with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
+Rust parser for CS2 demos with Python bindings and Polars DataFrames.
 
+- Shortened documentation and corrected cache, chat, and snapshot descriptions.
+- Shared developer CLI helpers for file opening, JSON output, row limits,
+  and player labels. Removed redundant output buffers and an unused dependency.
+- Simplified Python dataset dispatch and shared map-control dataset selection.
 - Combat datasets: `rounds`, `kills`, `damages`, `bomb`, `shots`, `stats`.
 - Grenade datasets: `grenades` (trajectories), `fires`, `smokes`, and `blinds`
   (flash events — who was blinded, by whom, and for how long).
@@ -66,11 +69,9 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   inventory tracking now keys entities by slot plus serial, preventing state
   from leaking when Source 2 reuses a slot. Raw `ticks(players_only=False)` rows
   expose `entity_serial` alongside `entity_id`.
-- Fast by default: event-based combat datasets now collect their protobuf
-  events while decoding entity state, eliminating a separate full event-stream
-  traversal. That pass materializes only the legacy event names those datasets
-  consume, skips all user messages, and omits unused raw payload copies;
-  `ticks` and `snapshots` decode in parallel across keyframes.
+- Combat datasets collect selected game events during entity decoding.
+  This removes a separate event scan and unused payload copies.
+  `ticks` and `snapshots` decode keyframe segments in parallel.
 - Reduced parser overhead in entity-heavy datasets. Field-key caches now use
   numeric class IDs and do not allocate a class-name string for each lookup.
 - Fixed truncated command streams. Message, event, and console-variable scans
@@ -80,10 +81,8 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   needed for clutch reconstruction without decoding active-weapon entities.
   Player and blind tracking process only entities changed on the current tick.
 - New `Demo.load(*datasets)` plans, batches, and caches compatible datasets.
-  Requested enriched event tables share one decode, as do requested projectile
-  tables. Loading `stats` also prepares `rounds`, `players`, `kills`, `damages`,
-  and `blinds`, and can fully enrich requested `bomb` / `shots` rows in the same
-  fused pass. Ordinary property access retains eager group reuse;
+  Compatible event and projectile tables share passes. Stats reuse combat,
+  round, and roster inputs and can collect requested bomb and shot rows.
   `Demo.available_datasets()` lists valid names.
 - Enriched event and projectile datasets now expose each resolved entity's
   create serial with its slot. This identity stays stable when Source 2 reuses a
@@ -107,10 +106,8 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   — e.g. a route from `NavMesh.find_path`.
 - `awpy.VisibilityChecker` for line-of-sight queries against map meshes, and
   `awpy.NavMesh` for navigation-mesh area lookups and pathfinding.
-- `awpy.map_control` — how much of the map each team holds at a tick, by
-  `raycast` (line of sight in any direction, smoke-aware), `vision` (the same,
-  clipped to each player's field of view — 90° by default, matching CS2), or
-  `reachability` (who reaches each area first, molotov-aware);
+- `awpy.map_control` estimates control with `raycast`, `vision`, or
+  `reachability`;
   `awpy.plot.map_control` shades the radar by controlling side.
 - `awpy.data` — map-data cache (mesh / nav / radar assets, versioned releases).
 - `awpy` command-line tool; `awpy-dev` developer CLI for parser internals.

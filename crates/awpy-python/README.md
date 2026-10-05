@@ -11,10 +11,11 @@ demo = Demo("match.dem")
 # File header + playback info
 print(demo.header["map_name"])
 
-# Structured datasets (Polars DataFrames)
-rounds = demo.rounds    # round_num, start/freeze_end/end tick, winner_side, reason_name
-kills = demo.kills      # player_death, all fields typed (headshot: bool, distance: f32, …)
-damages = demo.damages  # player_hurt, all fields
+# Cached Polars DataFrames
+demo.load("rounds", "kills", "damages")
+rounds = demo.rounds
+kills = demo.kills
+damages = demo.damages
 
 # Any game event, long-form (demo.events.names lists them)
 pings = demo.events.player_ping
@@ -43,7 +44,7 @@ VisibilityChecker("de_inferno", version=2000873)   # pin an awpy-data release
 VisibilityChecker("path/to/de_inferno.mesh")       # or load a mesh file directly
 ```
 
-Navigation mesh — area lookups and pathfinding over a map's `.nav`:
+Find nav areas and routes:
 
 ```python
 from awpy import NavMesh
@@ -54,8 +55,7 @@ b = nav.find_area((1258.0, 455.5, 181.2))
 path = nav.find_path(a, b)                 # area ids along the shortest path
 ```
 
-Plotting, with the `awpy[plot]` extra — game-state frames and heatmaps drawn
-on the radar images:
+Install `awpy[plot]` to draw frames and heatmaps:
 
 ```python
 from awpy import plot
@@ -70,7 +70,7 @@ Installing the package also installs the `awpy` command — demo inspection
 (`awpy info`, `awpy kills`, `awpy stats`, ... with `--json` output) and
 map-data management (`awpy get`, `awpy versions`, `awpy maps`, `awpy clear`).
 
-See the [documentation](https://github.com/pnxenopoulos/awpy) for the full API,
+See the [documentation](https://awpy.readthedocs.io) for the API,
 dataset reference, and CLI guide.
 
 Built with [PyO3](https://pyo3.rs) and [Polars](https://pola.rs).

@@ -1,16 +1,14 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 pub fn run(file: &Path, json: bool) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let bomb = parser.bomb()?;
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&bomb)?);
-        return Ok(());
+        return super::print_json(&bomb);
     }
 
     println!(

@@ -19,7 +19,6 @@ serde.workspace = true
 serde_json.workspace = true
 awpy = { workspace = true }
 awpy-proto = { workspace = true }
-prost.workspace = true
 
 [lib]
 name = "awpy_dev"

@@ -1,18 +1,17 @@
 # awpy-proto
 
-Generated [prost](https://docs.rs/prost) types for the **Counter-Strike 2**
-protobuf definitions used when parsing demo files.
+Generated [prost](https://docs.rs/prost) types for CS2 demo protobufs.
 
 The `.proto` sources under `proto/` are synced from
 [GameTracking-CS2](https://github.com/SteamDatabase/GameTracking-CS2); the
-allowlist in `proto/allowlist.txt` records which files are compiled (it must be
-closed under `import`). The checked-in `src/proto.rs` is regenerated with:
+allowlist in `proto/allowlist.txt` selects files and must include their imports.
+From the workspace root, generate `src/proto.rs` with:
 
 ```sh
 cargo run --manifest-path scripts/build-protos/Cargo.toml
 ```
 
-from the workspace root. Do not edit `src/proto.rs` by hand.
+Do not edit `src/proto.rs` by hand.
 
 ## Check for updates
 

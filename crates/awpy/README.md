@@ -14,15 +14,9 @@ println!("map: {:?}", header.map_name);
 
 ## What it does
 
-- Reads the Source 2 `PBDEMS2` container: command stream, Snappy decompression,
-  string tables, flattened serializers, class info.
-- Decodes game events (`player_death`, `round_end`, `weapon_fire`, …) with their
-  key/value payloads.
-- Decodes the entity system tick by tick (`run_to_end`), including CS2-specific
-  field encodings (clip ammo, polymorphic game-mode rules, binary blocks,
-  `CTransform`/`Quaternion` vectors).
-- Provides name lookups: [`team_name`], [`hitgroup_name`],
-  [`round_end_reason_name`], [`game_phase_name`], and world-position helpers.
+- Uses [pbdems2](https://docs.rs/pbdems2/latest/pbdems2/) for shared Source 2 decoding.
+- Adds CS2 field decoders, datasets, and name tables.
+- Returns game events and per-tick entity state.
 
 ## Entry points
 

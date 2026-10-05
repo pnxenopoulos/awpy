@@ -1,33 +1,12 @@
-"""Download and cache the CS2 map assets published by the ``awpy-data`` project.
+"""Download and cache versioned CS2 assets from ``awpy-data``.
 
-Awpy's map assets — collision meshes for line-of-sight, radar images, nav
-meshes, and the world→radar coordinate table — are built from a clean CS2
-install and published as GitHub Releases at
-`pnxenopoulos/awpy-data <https://github.com/pnxenopoulos/awpy-data>`_. Each
-release is pinned to the game's ``ClientVersion`` (e.g. ``2000873``).
+Assets include collision meshes, nav meshes, radar images, and coordinate tables.
+The cache is ``~/.awpy/<ClientVersion>/``. Set ``AWPY_DATA_DIR`` to change its root.
 
-This module fetches those assets on demand and caches them under
-``$HOME/.awpy/<version>/`` (override the root with the ``AWPY_DATA_DIR``
-environment variable)::
-
-    $HOME/.awpy/2000873/
-        manifest.json          version identifiers + per-file checksums
-        map_data.json          per-map world->radar transform
-        radars/<map>.png       radar image (+ <map>_lower.png for Nuke/Vertigo/Train)
-        navs/<map>.nav         nav mesh
-        geometry/<map>.mesh    collision mesh for VisibilityChecker
-
-The path helpers download whatever they need the first time and return a local
-path, so a collision mesh for line-of-sight is one call away::
-
-    from awpy import VisibilityChecker, data
-
-    vc = VisibilityChecker(data.mesh_path("de_inferno"))
-    vc.is_visible((1258.04, 455.47, 181.22), (-158.62, 819.09, 103.73))
-
-Pass ``version=`` to pin a specific release; omit it to use the newest release
-already in the cache (the latest release is fetched only when the cache is
-empty). Move the cache forward explicitly with :func:`update` or ``awpy get``.
+Path helpers download missing assets and return local paths.
+Set ``version=`` to select a release. Otherwise, use the newest cached release,
+or the latest release if the cache is empty.
+Use :func:`update` or ``awpy get`` to check for updates.
 """
 
 from __future__ import annotations
@@ -147,7 +126,7 @@ def resolve_version(version: int | None = None) -> str:
 
 
 def data_dir(version: int | None = None) -> Path:
-    """Local cache directory for a release (resolving ``None`` to the latest)."""
+    """Return a release directory; default to the newest cached or latest release."""
     return AWPY_DATA_DIR / resolve_version(version)
 
 

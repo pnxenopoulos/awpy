@@ -1,25 +1,14 @@
-# 🧭 Navigation meshes
+# Navigation meshes
 
-Every CS2 map ships a **navigation mesh** — the surface the game's bots walk on,
-tiled into convex polygonal **areas** that are wired together by **connections**
-(which area you can step into, and from which edge). It's a compact model of
-"where you can stand and how areas join up," useful for tagging positions,
-measuring routes, and reasoning about map control.
-
-Awpy parses these `.nav` files — published by
-[`awpy-data`](https://github.com/pnxenopoulos/awpy-data) alongside the collision
-meshes and radars — and answers the two questions you'd actually ask of one:
-**which area is this point in**, and **what's the shortest path between two
-areas**.
+A navigation mesh divides walkable space into connected polygonal areas.
+Use `NavMesh` to locate a point or find a route.
+[awpy-data](https://github.com/pnxenopoulos/awpy-data) supplies CS2 `.nav` files.
 
 ```{figure} img/nav-mesh.webp
 :alt: Dust 2's navigation mesh drawn over its radar image, with 2242 walkable areas outlined in amber
 :width: 100%
 
-Dust 2's 2,242 nav areas, drawn with {func}`awpy.plot.nav`. The tiling is
-finer in the chokepoints and coarser across open ground — area size tracks how
-much detail the bots need, which is why `weight="size"` routes away from open
-areas.
+Dust 2 nav areas, drawn with {func}`awpy.plot.nav`.
 ```
 
 ## `NavMesh`
@@ -46,15 +35,12 @@ A string counts as a file path when it ends in `.nav` or contains a path
 separator; a `pathlib.Path` always does. Anything else is treated as a map name
 and resolved through `awpy.data.nav_path`.
 
-Points are `(x, y, z)` tuples (or lists) in **Hammer units, Z-up** — the same
-frame as demo world positions, so the `*_x` / `*_y` / `*_z` columns from
-`demo.kills`, `demo.grenades`, `demo.snapshots(...)`, etc. pass straight in.
-
-Areas are identified by a numeric `area_id`; `find_area` returns that id.
+Points use `(x, y, z)` in Hammer units, with Z vertical.
+`find_area` returns a numeric `area_id`.
 
 ### Areas
 
-`nav.areas` is a DataFrame with one row per area — the analysis-friendly view:
+`nav.areas` has one row per area:
 
 ```python
 nav.areas
@@ -112,7 +98,7 @@ nav.find_path(a, b, weight="hops")      # fewest areas
 nav.find_path(a, b, weight="size")      # sum of area sizes; routes away from large areas
 ```
 
-Pass a route straight to {func}`awpy.plot.nav` to see it:
+Draw a route with {func}`awpy.plot.nav`:
 
 ```python
 from awpy.plot import nav as plot_nav
@@ -125,9 +111,7 @@ fig, ax = plot_nav("de_dust2", highlight=route)
 :alt: The same Dust 2 nav mesh with a 70-area route highlighted in cyan, running from T spawn through mid toward the A site
 :width: 100%
 
-A 70-area route highlighted with `highlight=`. Because `find_path` returns plain
-area ids, anything you can express as a set of areas — a route, a bombsite, the
-output of your own search — can be drawn the same way.
+Use `highlight=` to draw a route or another set of area IDs.
 ```
 
 | Member | Type | Description |
@@ -163,5 +147,4 @@ kills = demo.kills.with_columns(
 )
 ```
 
-For where the assets come from and how to manage the cache (`awpy.data`, the
-`awpy get` CLI), see {doc}`visibility`.
+See {doc}`visibility` for assets and cache management.

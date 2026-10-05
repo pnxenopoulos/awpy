@@ -1,7 +1,6 @@
-# 📊 Datasets
+# Datasets
 
-Awpy's headline datasets are properties on `Demo` — Polars DataFrames with
-typed columns, computed on first access and cached.
+Dataset properties on `Demo` return cached Polars DataFrames with typed columns.
 
 ## Batch loading
 
@@ -13,23 +12,18 @@ players = demo.players
 stats = demo.stats
 ```
 
-The method returns `None` and warms the same objects used by the properties.
-Already-cached datasets are skipped. `load()` plans the complete request before
-decoding: requested enriched event tables share one pass, as do requested
-`grenades` / `fires` / `smokes`. Loading `stats` also prepares `rounds`,
-`players`, `kills`, `damages`, and `blinds`; when `bomb` or `shots` are requested
-alongside it, their fully enriched rows are collected in that same fused pass.
+The method returns `None` and caches the requested DataFrames.
+It validates all names before decoding and skips cached datasets.
+Use `Demo.available_datasets()` to list valid names.
 
-Ordinary property access still eagerly prepares its compatible event or
-projectile group, so sequential code remains efficient. Use `load()` when the
-complete set is known up front so Awpy can restrict the pass to that union.
-`Demo.available_datasets()` lists every accepted name; an unknown name raises
-`ValueError` before any loading begins.
+Requested event datasets share one pass, as do requested `grenades`, `fires`,
+and `smokes`. Stats reuse combat, round, and roster inputs.
+A combined stats request can also collect bomb and shot rows in that pass.
+Direct property access prepares its compatible event or projectile group.
+Use `load()` to restrict collection to a known set.
 
-Rows that refer to a Source 2 entity expose its slot as `entity_id` and its
-generation as `entity_serial`. Treat the pair as the identity. The engine can
-reuse a slot after an entity is deleted, but the serial changes and prevents
-unrelated lifetimes from being joined.
+Entity rows expose a slot (`entity_id`) and generation (`entity_serial`).
+Use both as the identity: the engine can reuse slots after deletion.
 
 All Steam ID columns use Polars `UInt64`, including columns that are empty or
 contain only null values. Keep this type when you join datasets. To convert a
@@ -50,11 +44,8 @@ cannot represent nullable integers and can change a nullable Steam ID column to
 demo.rounds
 ```
 
-One row per round, reconstructed from the `CCSGameRules` entity state. Because
-it relies on game-rules state rather than `round_start` / `round_end` game
-events (which many competitive CS2 demos omit), it works across demos — and it
-correctly includes the overtime-deciding round, which coincides with the "game
-over" broadcast.
+One row per round, reconstructed from `CCSGameRules`.
+Round events are not required. Overtime rounds are included.
 
 | Column | Type | Description |
 | --- | --- | --- |
@@ -80,11 +71,8 @@ demo.rounds.group_by("winner_side").len()
 demo.kills
 ```
 
-One row per `player_death` game event, with each participant **resolved** to a
-real player: the attacker, victim, and assister each get a Steam id, name, side,
-and world position `(x, y, z)` at the kill tick. This performs a full entity
-decode (of the player pawns and controllers), so it is slower than the
-event-only datasets.
+One row per `player_death` event. Entity decoding resolves participants and
+positions, so this costs more than reading raw events.
 
 For each of `attacker`, `victim`, `assister`:
 
@@ -101,8 +89,7 @@ Plus the kill's own fields: `weapon` (str), `headshot` (bool), `dominated`,
 `noscope` (bool), `penetrated`, `revenge`, `thrusmoke` (bool), `hitgroup`,
 `hitgroup_name`, `is_trade` (bool), `victim_traded` (bool), and `tick`.
 
-Participant columns are **null** when that participant is absent (no assister)
-or can't be resolved (e.g. a world kill).
+Participant columns are null if the participant is absent or cannot be resolved.
 
 ### Trades
 
@@ -114,13 +101,10 @@ teammate killed within the last 5 seconds:
 | `is_trade` | This kill **is** a trade — the attacker killed someone who had just killed one of their teammates. |
 | `victim_traded` | This kill's **victim was traded** — a teammate of the victim killed this attacker within the window. |
 
-The two are duals: the kill that avenges a death carries `is_trade`, and the death
-it avenged carries `victim_traded`. `victim_traded` is what the `stats` dataset
-counts as `traded_deaths` — both come from one classifier, so they cannot
-disagree. Note that the totals differ: one kill can avenge several teammates at
-once (kill two enemies, get killed by a third, and both of those deaths are
-traded), so `victim_traded` is usually the more common of the two. A kill can also
-carry both flags — a trade that was itself traded back.
+The revenge kill has `is_trade`; the earlier death has `victim_traded`.
+Stats count `victim_traded` as `traded_deaths`.
+The totals can differ because one kill can avenge several deaths.
+A kill can have both flags.
 
 ```python
 # Headshot rate per weapon
@@ -155,11 +139,10 @@ health/armor before and after the hit.
 
 For each of `attacker`, `victim`: `<who>_entity_id`, `<who>_entity_serial`,
 `<who>_steamid`, `<who>_name`, `<who>_side`, and `<who>_x` / `_y` / `_z`.
-Plus: `weapon`, `dmg_health`, `dmg_armor`, `hitgroup`, `hitgroup_name`,
-`health_pre` / `health_post`, `armor_pre` / `armor_post`, and `tick`. Pre-values
-are reconstructed as `post + damage`, clamped to the 100 HP /
-armor cap — CS2 reports raw damage, so a lethal hit's `dmg_health` can exceed the
-victim's health (e.g. an AWP for 115), which would otherwise imply >100 pre-HP.
+Other columns: `weapon`, `dmg_health`, `dmg_armor`, `hitgroup`, `hitgroup_name`,
+`health_pre`, `health_post`, `armor_pre`, `armor_post`, and `tick`.
+Pre-hit values are `post + damage`, capped at 100.
+Raw damage can exceed the victim's remaining health.
 
 ## `bomb`
 
@@ -172,8 +155,7 @@ Bomb actions with the acting player and their position. Columns: `tick`,
 `finish_plant`, `defuse`), `entity_id`, `entity_serial`, `steamid`, `name`,
 `bombsite` (`A` / `B`; null before the plant), `x`, `y`, `z`.
 
-Some demos don't emit the begin/abort-plant events, so `start_plant` /
-`interrupt_plant` rows may be absent.
+`start_plant` and `interrupt_plant` rows require the corresponding events.
 
 ## `grenades`
 
@@ -195,17 +177,15 @@ demo.smokes   # deployed smoke clouds
 
 **One row per fire / smoke.** Columns: `start_tick`, `end_tick`,
 `thrower_name`, `thrower_steamid`, `thrower_side`, `entity_id`,
-`entity_serial`, `x`, `y`, `z` (`fires` also has a `type` column). Each sits at
-a fixed position, so one row with its `[start_tick, end_tick]` window fully
-describes it.
+`entity_serial`, `x`, `y`, `z`. `fires` also has a `type` column.
 
 The window is the game's own event pair, not the (longer) entity lifetime:
 `inferno_startburn` → `inferno_expire` for fires (the ~7 s burn, cut short when a
 molotov is smoked out) and `smokegrenade_detonate` → `smokegrenade_expired` for
 smokes (the deployed cloud, excluding the throw).
 
-To find which players stood in a fire, interval-join positions against the
-`[start_tick, end_tick]` window rather than an equijoin on tick:
+Use an interval join to find player samples during fires.
+Apply a spatial filter to test whether a player was inside a fire:
 
 ```python
 import polars as pl
@@ -253,12 +233,9 @@ The attacker may be a teammate (a team-flash) or the victim themselves (a
 self-flash), so filter on `attacker_side` / `victim_side` or compare Steam ids
 as needed.
 
-CS2 **GOTV demos usually omit the `player_blind` game event** (as they omit chat
-and round events), so awpy reconstructs blinds from entity state instead — a
-rising edge of a pawn's networked flash duration, attributed to the
-`flashbang_detonate` on the same tick. This works on every demo; the only
-requirement is that the demo carries `flashbang_detonate` (an empty frame is
-returned if it doesn't).
+Awpy reconstructs blinds from increases in a pawn's flash duration.
+It attributes the flash to a `flashbang_detonate` event on the same tick.
+Without those events, the result is empty.
 
 ```python
 # Enemy flashes only, longest first
@@ -289,13 +266,10 @@ with the acting player resolved.
 | `cost` | i32? | Money spent, for a `purchase` (null otherwise). May bundle other buys made on the same tick. |
 | `near_buy_zone` | bool? | For a `drop`, whether it was dropped near a buy zone (e.g. dropping a weapon for a teammate); null otherwise. |
 
-Like `blinds`, this is **reconstructed from entity state** rather than events,
-because CS2 GOTV/broadcast demos omit the `item_purchase` event. Each player's
-inventory (`m_hMyWeapons`) is tracked over time: a weapon entering it is an
-acquisition — a **purchase** if the player's money drops that tick, otherwise a
-**pickup** — and a weapon left on the ground is a **drop**. Thrown grenades
-(which are *used*, not dropped) are excluded, as is the knife and free default
-loadout equipment.
+Awpy tracks each player's inventory (`m_hMyWeapons`).
+An acquired weapon is a purchase if money decreases on that tick; otherwise,
+it is a pickup. A weapon left on the ground is a drop.
+Thrown grenades, knives, and free default equipment are excluded.
 
 Scope is weapon-type items (guns, pistols, grenades, C4, taser). Armor, helmet,
 and defuser purchases are not included (they are pawn fields, not weapon
@@ -333,22 +307,16 @@ common scoreboard metrics. Columns: `steamid`, `name`, `rounds_played`, `kills`,
 `clutch_1v1` … `clutch_1v5`), plus utility: `utility_damage`, `flashes_thrown`,
 `enemies_flashed`, `flash_duration_dealt`.
 
-Precise definitions of every metric — assists and flash assists, opening
-kills / deaths, **traded deaths**, **clutches**, KAST, ADR, multi-kills, and the
-utility stats — are in the {doc}`Reference <reference>`. In brief: **KAST** is the
-share of rounds where the player got a **K**ill, **A**ssist, **S**urvived, or was
-**T**raded (their death was avenged by a teammate within 5 s), and **ADR** is
-average damage per round counting the actual HP removed from enemies.
+See {doc}`reference` for metric definitions.
+KAST is the percentage of rounds with a kill, assist, survival, or traded death.
+ADR is the average enemy health removed per round.
 
 Every player is treated as having played every round (the denominator for KAST
 and ADR is the match's round count), so players who join or leave mid-match are
 approximate.
 
-**Knife rounds are excluded by default.** A knife round (a side-decider round of
-all-melee kills — see `is_knife_round` on the `rounds` dataset) doesn't count
-toward the score, so its kills, deaths, assists, and damage are dropped and it's
-removed from every denominator, matching competitive scoreboards. To count them
-instead, use the method form and pass the flag:
+Knife rounds are excluded from counts and denominators by default.
+Set `include_knife_rounds=True` to include them:
 
 ```python
 demo.stats                                    # excludes knife rounds (default)
@@ -377,8 +345,7 @@ demo.stats.filter(pl.col("clutches_played") > 0).select(
 demo.round_economy
 ```
 
-One row per (round, side): a team's total equipment value once the buy is locked
-(read at freeze end) and its buy-type classification. Columns: `round_num`,
+One row per (round, side), with equipment value at freeze end and buy type. Columns: `round_num`,
 `side`, `equipment_value`, `buy_type`, `n_players`. `buy_type` is `pistol` / `eco`
 / `force` / `full` — see the {doc}`Reference <reference>` for the thresholds and
 how pistol rounds are detected. (This is the *current* equipment at freeze end —
@@ -386,7 +353,7 @@ the finished buy; the `equipment_value_round_start` snapshot column is the pre-b
 carry-over.) Knife rounds are excluded.
 
 ```python
-# Rounds a team full-bought but lost
+# Full-buy rounds
 demo.round_economy.filter(pl.col("buy_type") == "full")
 ```
 
@@ -400,11 +367,8 @@ The roster: one row per player seen in the demo. `side` is the last team the
 player was observed on (players swap at halftime); bots (e.g. the GOTV camera
 controller) have `steamid` 0.
 
-`team_clan_name` is the organization the player's team was playing under — e.g.
-`"Imperial"` — read from the `CCSTeam` entities. Tournament and league servers set
-it; casual matchmaking leaves it empty, in which case the column is null. Because
-it is captured at the same moment as `side`, a player who leaves mid-match keeps
-the team they actually played for rather than whoever held their side afterwards.
+`team_clan_name` comes from `CCSTeam` entities and is null if not set.
+It is recorded with `side`, so players who leave retain their last team name.
 
 ```python
 # Group a match's players by organization
@@ -422,12 +386,11 @@ demo.stats.join(
 demo.chat  # tick, entity_index, name, message, channel
 ```
 
-Chat messages, decoded from `SayText` / `SayText2` user messages. `channel`
-distinguishes all-chat from team chat (`Cstrike_Chat_All`, `Cstrike_Chat_T`,
-`Cstrike_Chat_CT`, ...). Note that server-side (GOTV) recordings may strip
-chat entirely — an empty frame with this schema is normal for some demos. You
-can confirm the source contains no chat payload by checking that
-`demo.events.counts` has no `SayText` / `SayText2` entry.
+Chat messages from `SayText`, `SayText2`, and `SayTextChannel`.
+`channel` identifies the chat channel, such as `Cstrike_Chat_All`.
+The DataFrame is empty if no supported chat messages are recorded.
+The absence of chat entries in `demo.events` does not establish this:
+user messages and game events are different streams.
 
 ## `convars`
 
@@ -452,12 +415,8 @@ demo.snapshots(events="player_death")             # at each kill tick
 demo.snapshots(every=64, start_tick=29000, end_tick=64000)  # stride, bounded
 ```
 
-**This is the way to read player state** for analysis and plotting: a fixed,
-curated schema — position, aim, health, weapons, economy, and status for every
-player, with resolved side and weapon names — that drops straight into
-{doc}`plot <plot>`. For anything it doesn't cover — a raw or derived network
-property, non-player entities, or a leaner slice of columns over every tick —
-drop down to the raw `ticks` reader (below).
+Read a fixed schema of player position, aim, health, weapons, economy, and status.
+Use `ticks` for other properties or non-player entities.
 
 One row per active player per tick. Pass any combination of `ticks` (an int or a
 list), a stride (`every` / `seconds`), `events` (a name or list), and a
@@ -510,11 +469,10 @@ The silent-reload column reports stealth reload mode, not measured sound.
 The mapping has synthetic tests but has not yet been checked against a
 demo that contains quiet reloads.
 
-Each column and the CS2 engine property it comes from is listed in the
-{doc}`Reference <reference>` (also `awpy.SNAPSHOT_PROPERTIES`). Weapon names match
-the `weapon` field of `kills` / `shots` (e.g. `ak47`, `awp`,
-`usp_silencer`). Dead players report no weapons (they drop on death) but retain
-their last `equipment_value`. Rows feed straight into {doc}`plot <plot>`:
+See {doc}`reference` or `awpy.SNAPSHOT_PROPERTIES` for engine properties.
+Snapshot weapon names are short names, such as `ak47` and `usp_silencer`.
+Event weapon strings can differ.
+Dead players have no weapons but retain their last `equipment_value`.
 
 ```python
 from awpy import plot
@@ -528,10 +486,9 @@ players = [
 fig, ax = plot.frame(demo.header["map_name"], players)
 ```
 
-A single `ticks` value seeks directly to that tick (fast anywhere in the demo);
-every other form decodes in parallel across keyframe segments — the cost is the
-decode, not the (usually small) sampled output, so a coarse stride over a big demo
-is cheap.
+Requests for one to four explicit ticks, without other selectors, use seeking.
+Other requests decode keyframe segments in parallel.
+A coarse stride reduces output, but decoding can still be required between samples.
 
 ## Any game event: demo.events
 
@@ -557,20 +514,9 @@ demo.ticks(["X", "Y", "Z", "health"])     # friendly aliases
 demo.ticks(["m_iHealth", "m_iTeamNum"])   # raw CS2 field names
 ```
 
-The **raw, low-level reader** — the escape hatch beneath `snapshots` (above).
-For curated player state, prefer `snapshots`; reach for `ticks` when you need one
-of the things its fixed schema can't give you:
-
-- **A lean subset of player properties** — e.g.
-  `demo.ticks(["velocity_x", "velocity_y", "velocity_z", "velocity"])` for
-  networked velocity components plus derived 3D speed. Any CS2 field is fair
-  game, by friendly alias or raw name.
-- **Non-player entities**, via `players_only=False` — projectiles, the planted
-  C4, hostages, and every other entity, not just players.
-- **A lean slice over every tick** — request only the columns you need (e.g.
-  just `X`/`Y`/`Z`) instead of the full ~30-column snapshot, which is markedly
-  faster and lighter when you're pulling the whole match (e.g. movement or
-  heatmap features across a corpus).
+Use `ticks` for a selected set of network properties or for non-player entities.
+For example, `demo.ticks(["velocity_x", "velocity_y", "velocity_z", "velocity"])`
+returns velocity components and derived speed without the full snapshot schema.
 
 With `players_only=True` (the default) there is **one row per player per tick**,
 keyed by `steamid`: each player's pawn and controller are merged into a single
@@ -580,9 +526,8 @@ Columns: `tick`, `steamid`, then one column per requested property, each **typed
 natively** — integers → Int64, floats → Float64, booleans → Boolean, strings →
 Utf8.
 
-Omitting `props` uses a sensible default: `["X", "Y", "Z", "health", "armor",
-"team_num"]`. Property names accept friendly aliases as well as raw CS2 network
-names:
+The default `props` are `["X", "Y", "Z", "health", "armor", "team_num"]`.
+Use aliases or raw CS2 network names:
 
 | Alias | Meaning |
 | --- | --- |
@@ -596,8 +541,7 @@ names:
 | `velocity` / `speed` | Derived three-dimensional speed. |
 | *(anything else)* | Used verbatim as a raw network field name. |
 
-`ticks()` decodes the demo in parallel across keyframe segments, so it is fast
-even over a full match.
+`ticks()` decodes keyframe segments in parallel.
 
 Set `players_only=False` for a raw per-entity dump instead — one row per (tick,
 entity), with columns `tick`, `entity_id`, `entity_serial`,

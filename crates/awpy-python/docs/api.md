@@ -1,16 +1,13 @@
-# 📚 API reference
+# API reference
 
-Every entry on this page is generated from the docstrings in the installed
-package, so it always matches the version of Awpy you have. For the columns each
-dataset returns, and worked examples of using them, see {doc}`datasets`; for how
-the derived numbers are defined, see {doc}`reference`.
+This page uses the installed package docstrings.
+See {doc}`datasets` for columns and {doc}`reference` for definitions.
 
 ## `Demo`
 
-The entry point: open a demo, then read datasets off it as
-[Polars](https://pola.rs) DataFrames. Construction is cheap — it memory-maps the
-file and checks its magic bytes — and decoding happens on first dataset access,
-where the headline datasets are built together in one parallel pass and cached.
+Open a demo and read datasets as Polars DataFrames.
+Construction maps the file and checks its header. Dataset access triggers decoding.
+Results are cached; `Demo.load(...)` combines compatible requests.
 
 ```{eval-rst}
 .. autoclass:: awpy.Demo
@@ -20,8 +17,7 @@ where the headline datasets are built together in one parallel pass and cached.
 
 ## `Events`
 
-The mapping returned by `Demo.events`: every game event in the demo, by name —
-for the events without a curated dataset of their own.
+Read game events by name when no dedicated dataset is available.
 
 ```{eval-rst}
 .. autoclass:: awpy._awpy.Events
@@ -31,9 +27,8 @@ for the events without a curated dataset of their own.
 
 ## `VisibilityChecker`
 
-Line-of-sight queries against a map's collision geometry. Building the checker
-loads the `.mesh` and builds a bounding-volume hierarchy once, so reuse a single
-checker across many queries. See {doc}`visibility`.
+Check lines of sight against static collision geometry.
+Reuse the checker to avoid rebuilding its spatial index. See {doc}`visibility`.
 
 ```{eval-rst}
 .. autoclass:: awpy.VisibilityChecker
@@ -55,22 +50,18 @@ A map's navigation mesh: the walkable areas and the graph connecting them. See
 
 ## awpy.map_control
 
-How much of the map each team holds — the demo-oriented interface. See
+Calculate map control from a demo. See
 {doc}`map_control`.
 
 ```{eval-rst}
 .. automodule:: awpy.map_control
    :members:
 ```
-<!-- No `:undoc-members:` here: MapControlParams documents its fields in the
-     class docstring's `Attributes:` section, and pulling the bare dataclass
-     fields in as well would document each one twice. -->
-
+<!-- Omit :undoc-members: to avoid duplicate dataclass field documentation. -->
 
 ### `compute_map_control`
 
-The low-level primitive the above is built on, for callers who already hold a nav
-mesh and a list of player positions.
+Calculate map control from a nav mesh and player positions.
 
 ```{eval-rst}
 .. autofunction:: awpy._awpy.compute_map_control
@@ -89,13 +80,10 @@ extra — `pip install 'awpy[plot]'`. See {doc}`plot`.
 
 ## awpy.data
 
-Downloads and caches CS2 map assets (collision meshes, nav meshes, radar images,
-coordinate transforms) from the
-[`awpy-data`](https://github.com/pnxenopoulos/awpy-data) releases, under
-`$HOME/.awpy/<version>/` — override with `AWPY_DATA_DIR`. Resolution is
-local-first, so once a release is cached no network access is involved. Every
-accessor takes an optional `version=` (an integer ClientVersion); omit it for the
-newest cached release. See {doc}`visibility`.
+Download and cache [awpy-data](https://github.com/pnxenopoulos/awpy-data) assets
+under `~/.awpy/<version>/`. Set `AWPY_DATA_DIR` to change the root path.
+Accessors use the newest cached release unless `version=` is set.
+See {doc}`visibility`.
 
 ```{eval-rst}
 .. automodule:: awpy.data
@@ -104,13 +92,9 @@ newest cached release. See {doc}`visibility`.
 
 ## awpy.schema
 
-Discoverable catalogs: which per-player features `snapshots` can return (mapped to
-the engine properties they come from), and what the common game events are. Both
-are plain dicts, so they are useful before you have parsed anything — the events a
-*particular* demo contains are `demo.events.names`.
-
-Both are re-exported at the top level, so `awpy.SNAPSHOT_PROPERTIES` and
-`awpy.schema.SNAPSHOT_PROPERTIES` are the same object.
+List snapshot properties and common game events without parsing a demo.
+Both catalogs are also available from `awpy`.
+Use `demo.events.names` for the events in a specific demo.
 
 ```{eval-rst}
 .. autodata:: awpy.schema.SNAPSHOT_PROPERTIES

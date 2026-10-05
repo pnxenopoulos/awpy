@@ -1,17 +1,15 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 pub fn run(file: &Path, json: bool) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let grenades = parser.grenades()?;
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&grenades)?);
-        return Ok(());
+        return super::print_json(&grenades);
     }
 
     // Summarize by grenade type (rows are per-tick trajectory samples).

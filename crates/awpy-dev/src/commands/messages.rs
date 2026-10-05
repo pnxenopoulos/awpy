@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 #[allow(clippy::too_many_arguments)]
@@ -13,8 +13,7 @@ pub fn run(
     limit: Option<usize>,
     json: bool,
 ) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let messages = parser.messages()?;
 
     let filtered: Vec<_> = messages
@@ -45,11 +44,10 @@ pub fn run(
         .collect();
 
     let display_limit = limit.unwrap_or(filtered.len());
-    let output: Vec<_> = filtered.iter().take(display_limit).collect();
+    let output = super::limited(&filtered, limit);
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&output)?);
-        return Ok(());
+        return super::print_json(&output);
     }
 
     println!(
@@ -62,7 +60,7 @@ pub fn run(
     );
     println!("{}", "-".repeat(60));
 
-    for msg in &output {
+    for msg in output {
         let compressed = if msg.compressed {
             "yes".yellow().to_string()
         } else {

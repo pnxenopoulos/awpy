@@ -1,29 +1,17 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 
 pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
     let kills = parser.kills()?;
 
-    let display_limit = limit.unwrap_or(kills.len());
-    let shown = &kills[..display_limit.min(kills.len())];
+    let shown = super::limited(&kills, limit);
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&shown)?);
-        return Ok(());
+        return super::print_json(&shown);
     }
-
-    let who = |name: &Option<String>, side: &Option<String>| -> String {
-        let n = name.clone().unwrap_or_else(|| "?".into());
-        match side.as_deref() {
-            Some("terrorist") => n.red().to_string(),
-            Some("counter-terrorist") => n.blue().to_string(),
-            _ => n,
-        }
-    };
 
     println!(
         "{:<8} {:<18} {:<18} {:<16} {:<8} {:<12} {}",
@@ -54,8 +42,8 @@ pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
         println!(
             "{:<8} {:<18} {:<18} {:<16} {:<8} {:<12} {}",
             k.tick,
-            who(&k.attacker_name, &k.attacker_side),
-            who(&k.victim_name, &k.victim_side),
+            super::player_label(k.attacker_name.as_deref(), k.attacker_side.as_deref()),
+            super::player_label(k.victim_name.as_deref(), k.victim_side.as_deref()),
             k.weapon,
             hs,
             trade,
@@ -63,14 +51,6 @@ pub fn run(file: &Path, limit: Option<usize>, json: bool) -> Result<()> {
         );
     }
 
-    println!(
-        "\n{} kills total{}",
-        kills.len(),
-        if display_limit < kills.len() {
-            format!(" (showing first {display_limit})")
-        } else {
-            String::new()
-        }
-    );
+    super::print_total("kills", kills.len(), shown.len());
     Ok(())
 }

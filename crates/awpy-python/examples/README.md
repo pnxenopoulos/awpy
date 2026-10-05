@@ -1,8 +1,6 @@
 # Awpy examples
 
-Runnable scripts, each self-contained and each taking a demo path on the command
-line. They are smoke-tested against a real demo in CI (see
-`tests/test_examples.py`), so they cannot silently rot as the API changes.
+Each script takes a demo path. CI tests these scripts with a demo.
 
 ```sh
 pip install awpy          # or: pip install 'awpy[plot]' for clutch_reel.py
@@ -27,9 +25,7 @@ python scoreboard.py match.dem
 Awpy reads CS2 (Source 2, `PBDEMS2`) demos; the older CS:GO format is not
 supported.
 
-## A note on sample size
+## Sample size
 
-`economy.py` and `trades.py` compute rates from a single match, which is far too
-small a sample to draw conclusions from. The reusable part is the join, not the
-number — run them across many demos (start from `batch_parse.py`) before believing
-anything.
+Do not draw conclusions from one match.
+Use `batch_parse.py` to prepare multiple demos for analysis.

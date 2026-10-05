@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 use serde::Serialize;
 
@@ -12,16 +12,14 @@ struct InfoOutput {
 }
 
 pub fn run(file: &Path, json: bool) -> Result<()> {
-    let parser = awpy::Parser::from_file(file)
-        .with_context(|| format!("failed to open {}", file.display()))?;
+    let parser = super::open_demo(file)?;
 
     let header = parser.file_header()?;
 
     if json {
         let info = parser.file_info().ok();
         let output = InfoOutput { header, info };
-        println!("{}", serde_json::to_string_pretty(&output)?);
-        return Ok(());
+        return super::print_json(&output);
     }
 
     println!("{}", "File Header".green().bold());

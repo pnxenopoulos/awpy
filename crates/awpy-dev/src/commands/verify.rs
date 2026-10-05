@@ -23,7 +23,7 @@ pub fn run(file: &Path, json: bool) -> Result<()> {
                     file: file.display().to_string(),
                     error: None,
                 };
-                println!("{}", serde_json::to_string_pretty(&output)?);
+                super::print_json(&output)?;
             } else {
                 println!("{} {}", "Valid demo file:".green().bold(), file.display());
             }
@@ -36,7 +36,7 @@ pub fn run(file: &Path, json: bool) -> Result<()> {
                     file: file.display().to_string(),
                     error: Some(e.to_string()),
                 };
-                println!("{}", serde_json::to_string_pretty(&output)?);
+                super::print_json(&output)?;
                 Err(e.into())
             } else {
                 eprintln!("{} {}", "Invalid demo file:".red().bold(), file.display());

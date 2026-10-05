@@ -1,6 +1,7 @@
 """Tests for the map-control primitive (offline; synthetic nav + mesh)."""
 
 from pathlib import Path
+from unittest.mock import Mock
 
 import polars as pl
 import pytest
@@ -250,3 +251,40 @@ def test_current_flash_state_controls_blindness() -> None:
     players = map_control_module._players_at(states, flash_threshold=1.0)
 
     assert [player[5] for player in players] == [False, False, True]
+
+
+@pytest.mark.parametrize("method", ["raycast", "vision", "reachability"])
+@pytest.mark.parametrize("entry_point", ["map_control", "map_control_at"])
+def test_models_load_only_required_occluders(
+    method: str,
+    entry_point: str,
+    three_areas: NavMesh,
+    empty_mesh: VisibilityChecker,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    states = pl.DataFrame(
+        {
+            "tick": [10],
+            "health": [100],
+            "x": [0.5],
+            "y": [0.5],
+            "z": [0.0],
+            "side": ["counter-terrorist"],
+            "is_crouched": [False],
+            "is_blinded": [False],
+            "flash_duration": [0.0],
+            "yaw": [0.0],
+        }
+    )
+    demo = Mock(smokes=pl.DataFrame(), fires=pl.DataFrame())
+    demo.snapshots.return_value = states
+    monkeypatch.setattr(map_control_module, "_nav", lambda *_: three_areas)
+    monkeypatch.setattr(map_control_module, "_visibility", lambda *_: empty_mesh)
+
+    selector = {"tick": 10} if entry_point == "map_control_at" else {"ticks": [10]}
+    result = getattr(map_control_module, entry_point)(
+        demo, map_name="test_map", method=method, **selector
+    )
+
+    demo.load.assert_called_once_with("fires" if method == "reachability" else "smokes")
+    assert not result.is_empty()
