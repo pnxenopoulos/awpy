@@ -69,7 +69,7 @@ select = ["E", "F", "I", "UP", "B", "W"]
 
 [tool.pytest.ini_options]
 minversion = "9.0"
-testpaths = ["tests"]
+testpaths = ["tests", "benchmarks"]
 addopts = ["--strict-config", "--strict-markers", "-ra"]
 xfail_strict = true
 markers = [

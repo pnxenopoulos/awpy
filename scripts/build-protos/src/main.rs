@@ -14,6 +14,7 @@ use std::{
     fs,
     io::Write,
     path::{Path, PathBuf},
+    sync::LazyLock,
 };
 
 fn read_allowlist(manifest: &Path) -> Vec<String> {
@@ -39,6 +40,45 @@ fn read_allowlist(manifest: &Path) -> Vec<String> {
     out
 }
 
+// Valve's C++ annotations are not standard protobuf options. Remove only these
+// annotations from temporary compiler inputs; keep defaults and wire fields.
+fn rust_proto(source: &str) -> String {
+    static OPTIONS: LazyLock<regex::Regex> = LazyLock::new(|| {
+        regex::Regex::new(concat!(
+            r#"(?P<include>\boption\s+additional_includes\s*=\s*"(?:\\.|[^"\\])*"\s*;)"#,
+            r#"|(?P<before>[\[,])\s*(?:boxed_type|synthetic_default)\s*=\s*"(?:\\.|[^"\\])*"\s*(?P<after>[,\]])"#,
+            r#"|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|//[^\n]*|/\*(?s:.*?)\*/"#,
+        ))
+        .expect("C++ option pattern")
+    });
+
+    let mut source = source.to_owned();
+    loop {
+        let updated = OPTIONS.replace_all(&source, |captures: &regex::Captures<'_>| {
+            if captures.name("include").is_some() {
+                String::new()
+            } else if let (Some(before), Some(after)) =
+                (captures.name("before"), captures.name("after"))
+            {
+                match (before.as_str(), after.as_str()) {
+                    ("[", "]") => "",
+                    ("[", ",") => "[",
+                    (",", "]") => "]",
+                    _ => ",",
+                }
+                .to_owned()
+            } else {
+                captures[0].to_owned()
+            }
+        });
+        if updated == source {
+            return source;
+        }
+        // Adjacent annotations share a delimiter and need another pass.
+        source = updated.into_owned();
+    }
+}
+
 fn main() {
     let manifest = Path::new("crates/awpy-proto/proto/allowlist.txt");
     let proto_root = Path::new("crates/awpy-proto/proto");
@@ -56,29 +96,38 @@ fn main() {
 
     let allow = read_allowlist(manifest);
 
-    let mut protos: Vec<PathBuf> = Vec::with_capacity(allow.len());
-    for name in &allow {
-        let p = proto_root.join(name);
-        if !p.exists() {
-            eprintln!("missing proto: {}", p.display());
-            std::process::exit(1);
-        }
-        protos.push(p);
-    }
-
     let tmp = tempfile::tempdir().expect("tmp dir");
-    let out_tmp = tmp.path().to_path_buf();
+    let input_dir = tmp.path().join("proto");
+    fs::create_dir(&input_dir).expect("create temporary inputs");
+    let protos: Vec<PathBuf> = allow
+        .iter()
+        .map(|name| {
+            let original = proto_root.join(name);
+            let source = fs::read_to_string(&original)
+                .unwrap_or_else(|e| panic!("read {}: {}", original.display(), e));
+            let input = input_dir.join(name);
+            fs::write(&input, rust_proto(&source)).expect("write temporary proto");
+            input
+        })
+        .collect();
 
+    let out_tmp = tmp.path();
     let mut cfg = prost_build::Config::new();
-    cfg.out_dir(&out_tmp);
+    cfg.out_dir(out_tmp);
+    cfg.protoc_executable(protoc_bin_vendored::protoc_bin_path().expect("protoc path"));
     cfg.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");
-
-    cfg.compile_protos(&protos, &[proto_root])
-        .expect("prost compile");
+    cfg.compile_protos(
+        &protos,
+        &[
+            input_dir,
+            protoc_bin_vendored::include_path().expect("protoc includes"),
+        ],
+    )
+    .expect("prost compile");
 
     fs::create_dir_all(dest_dir).expect("create dest");
 
-    let mut files: Vec<PathBuf> = fs::read_dir(&out_tmp)
+    let mut files: Vec<PathBuf> = fs::read_dir(out_tmp)
         .expect("read tmp out")
         .filter_map(|e| {
             let p = e.ok()?.path();
@@ -97,4 +146,41 @@ fn main() {
     }
 
     println!("Wrote {}", out_file.display());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::rust_proto;
+
+    #[test]
+    fn cpp_annotations_do_not_change_wire_options() {
+        for (input, expected) in [
+            (r#"[boxed_type = "Token"]"#, ""),
+            (r#"[boxed_type = "Token", synthetic_default = "0"]"#, ""),
+            (r#"[boxed_type = "Token", default = 42]"#, "[ default = 42]"),
+            (
+                r#"[default = 42, boxed_type = "Token", synthetic_default = "0"]"#,
+                "[default = 42]",
+            ),
+            (
+                r#"[boxed_type = "Pair<A, B>", packed = true, synthetic_default = "0", (key_field) = true]"#,
+                "[ packed = true, (key_field) = true]",
+            ),
+            (r#"option additional_includes = "some/header.h";"#, ""),
+        ] {
+            assert_eq!(rust_proto(input), expected);
+        }
+    }
+
+    #[test]
+    fn strings_comments_and_other_options_are_unchanged() {
+        let source = r#"
+// [boxed_type = "Token"]
+/* option additional_includes = "header.h"; */
+optional string label = 1 [default = "a, [boxed_type = \"Token\"]"];
+optional uint32 value = 2 [default = 42, (key_field) = true];
+option unsupported_future_annotation = true;
+"#;
+        assert_eq!(rust_proto(source), source);
+    }
 }

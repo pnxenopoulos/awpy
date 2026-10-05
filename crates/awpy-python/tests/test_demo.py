@@ -822,3 +822,33 @@ def test_schema_constants() -> None:
     assert isinstance(GAME_EVENTS, dict) and "player_death" in GAME_EVENTS
     # Values map to engine property names / descriptions (all strings).
     assert all(isinstance(v, str) for v in SNAPSHOT_PROPERTIES.values())
+
+
+@pytest.mark.fixtures
+@pytest.mark.parametrize("segments", [1, 4])
+@pytest.mark.parametrize(
+    "match_demo",
+    ["valve-de_mirage-472514809", "faceit-de_mirage-6de46e85", "hltv-de_mirage-2394170"],
+    indirect=True,
+)
+def test_sparse_snapshots_match_full_scan(
+    match_demo: Demo, segments: int, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AWPY_TICK_SEGMENTS", str(segments))
+    end = match_demo.header["playback_ticks"]
+    queries = [
+        [end // 3, end * 2 // 3],
+        [end * i // 5 for i in range(1, 5)],
+        [end // 2, end // 3, end // 2],
+        [-2_000_000_000, -1, 0, 1],
+        [1919, 1920, 1921],
+        [2_000_000_000, 2_000_000_001],
+    ]
+    ticks = sorted({tick for query in queries for tick in query})
+    # A window forces the scan path, even when a query has few ticks.
+    reference = match_demo.snapshots(ticks=ticks, start_tick=-2_000_000_000, end_tick=2_000_000_001)
+    assert reference.height > 0
+    for query in queries:
+        expected = reference.filter(pl.col("tick").is_in(query))
+        actual = match_demo.snapshots(ticks=query)
+        assert_frame_equal(actual, expected, check_exact=True)

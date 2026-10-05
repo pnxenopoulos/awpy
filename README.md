@@ -288,6 +288,9 @@ AWPY_BENCH_DEMO=/absolute/path/to/match.dem cargo criterion -p awpy --bench pars
 See the [benchmark guide](crates/awpy/benches/README.md) for runner installation,
 workload filters, fixed parallelism, and baseline comparisons.
 
+Use the [Python API benchmark guide](crates/awpy-python/benchmarks/README.md)
+for isolated timing, peak memory, and output checks through `Demo`.
+
 ### Regenerating protobufs
 
 `crates/awpy-proto/src/proto.rs` is generated from the `.proto` files in
@@ -295,8 +298,12 @@ workload filters, fixed parallelism, and baseline comparisons.
 [GameTracking-CS2](https://github.com/SteamDatabase/GameTracking-CS2)):
 
 ```sh
-cargo run --manifest-path scripts/build-protos/Cargo.toml
+cargo run --locked --manifest-path scripts/build-protos/Cargo.toml
 ```
+
+The generator uses a bundled `protoc`. It removes unsupported C++ annotations
+from temporary compiler inputs. It keeps the upstream `.proto` files unchanged.
+Run its tests with `cargo test --locked --manifest-path scripts/build-protos/Cargo.toml`.
 
 ## License
 

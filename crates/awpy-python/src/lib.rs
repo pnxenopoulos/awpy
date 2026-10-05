@@ -853,9 +853,9 @@ impl Demo {
     ///   their own**, they yield every tick in the window (a contiguous range);
     ///   combined with a sampler, they bound it.
     ///
-    /// At least one of the above must be given. A single ``ticks`` value seeks
-    /// directly to that tick (fast); everything else decodes in parallel across
-    /// the demo's keyframes.
+    /// At least one selector is required. Without other selectors, one tick
+    /// or a list of up to four ticks uses direct keyframe seeks. Larger lists,
+    /// windows, strides, and event queries decode in parallel across keyframes.
     ///
     /// Examples::
     ///
@@ -886,7 +886,7 @@ impl Demo {
                 "pass either `every` or `seconds`, not both",
             ));
         }
-        let explicit = ticks.map(TicksArg::into_vec).unwrap_or_default();
+        let mut explicit = ticks.map(TicksArg::into_vec).unwrap_or_default();
         let has_window = start_tick.is_some() || end_tick.is_some();
 
         // A single tick with no other selector seeks directly (fast path).
@@ -905,6 +905,26 @@ impl Demo {
                         .into_frame()
                         .map_err(polars_err)?,
                 ))
+            });
+        }
+
+        // A small explicit query needs only a few keyframe seeks.
+        if (2..=4).contains(&explicit.len())
+            && every.is_none()
+            && seconds.is_none()
+            && events.is_none()
+            && !has_window
+        {
+            return py.detach(|| {
+                explicit.sort_unstable();
+                explicit.dedup();
+                let mut columns = SnapshotColumns::default();
+                for tick in explicit {
+                    let states = self.parser.snapshot(tick).map_err(to_py_err)?;
+                    // A seek can stop at a nearby tick. A list selects exact ticks.
+                    columns.extend(states.into_iter().filter(|state| state.tick == tick));
+                }
+                Ok(PyDataFrame(columns.into_frame().map_err(polars_err)?))
             });
         }
 
@@ -948,11 +968,15 @@ impl Demo {
                 )
                 .map_err(to_py_err)?;
             let mut chunks = chunks.into_iter();
-            let mut columns = chunks.next().unwrap_or_default();
+            let mut df = chunks
+                .next()
+                .unwrap_or_default()
+                .into_frame()
+                .map_err(polars_err)?;
             for chunk in chunks {
-                columns.append(chunk);
+                df.vstack_mut(&chunk.into_frame().map_err(polars_err)?)
+                    .map_err(polars_err)?;
             }
-            let df = columns.into_frame().map_err(polars_err)?;
             Ok(PyDataFrame(df))
         })
     }

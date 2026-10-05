@@ -127,8 +127,8 @@ jobs:
         working-directory: crates/awpy-python
         run: |
           uv sync --locked --no-install-project
-          uv run --no-sync ruff check python tests examples
-          uv run --no-sync ruff format --check python tests examples
+          uv run --no-sync ruff check python tests examples benchmarks
+          uv run --no-sync ruff format --check python tests examples benchmarks
 
       - name: ty
         working-directory: crates/awpy-python

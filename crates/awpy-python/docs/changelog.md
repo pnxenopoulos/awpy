@@ -32,9 +32,11 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
 - Metadata: `header`, `tick_rate`, `chat`, `convars`.
 - Fixed `Demo.chat`. Awpy now reads user messages that packets store directly
   and messages inside `svc_UserMessage`. It also reads `SayTextChannel`.
-- Updated CS2 protobuf definitions to game build `2000922` (source revision
-  `11064488`), including the newly required Valve extension definitions; hit
-  group names now cover the engine's `unused` (9) and `special` (11) values.
+- Updated CS2 protobuf definitions to game build `2000924` (source revision
+  `11076591`). The generator uses a bundled compiler and removes unsupported
+  C++ annotations from temporary inputs. Upstream files stay unchanged.
+- Added the required Valve extension definitions. Hit group names now cover
+  the engine's `unused` (9) and `special` (11) values.
 - Added an advisory protobuf freshness check to CI. Run
   `./scripts/sync-protos.sh --check` to compare local files with upstream without
   changing them. This check does not block CI Check or releases.
@@ -44,8 +46,17 @@ with a Python `Demo` class that returns [Polars](https://pola.rs) DataFrames.
   typed row per player per tick, with default props and friendly aliases
   (`X`/`Y`/`Z`, velocity components and 3D speed, `health`, `armor`,
   `team_num`, `name`, `money`).
-- Updated the locked pbdems2 version to `0.3.2`. The version requirement
-  remains `0.3`.
+- Updated the locked pbdems2 version to `0.3.3` for the fixed8 field decoder
+  fix. The version requirement remains `0.3`.
+- Snapshot queries with two to four explicit ticks now use direct keyframe
+  seeks when no other selector is set. These queries return only exact ticks,
+  in tick order, without duplicates. Single-tick behavior is unchanged.
+- Reduced snapshot memory use. Segment columns stay separate, and plain
+  numeric columns use their existing buffers when passed to Polars.
+- Added isolated Python API benchmarks with output checks, peak memory,
+  runtime samples, and environment metadata.
+- Enabled level-one optimization for Awpy and pbdems2 in debug builds to
+  reduce local and CI test time. Release settings are unchanged.
 - Kept the public names of legacy CS user messages after upstream enum renames.
 - Fixed weapon variant names in snapshots and item events. Shared entity
   classes now use the item-definition index, with a subclass-token fallback

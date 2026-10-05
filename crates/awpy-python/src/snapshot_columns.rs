@@ -2,7 +2,27 @@
 use awpy::PlayerState;
 use polars::prelude::*;
 
-// Keep storage, appending, and output order in one schema declaration.
+trait IntoSnapshotColumn {
+    fn into_snapshot_column(self, name: PlSmallStr) -> Column;
+}
+
+macro_rules! column_conversions {
+    ($constructor:path; $($ty:ty),+ $(,)?) => {
+        $(impl IntoSnapshotColumn for Vec<$ty> {
+            fn into_snapshot_column(self, name: PlSmallStr) -> Column {
+                $constructor(name, self).into_column()
+            }
+        })+
+    };
+}
+
+// Plain numeric columns can use their existing buffers.
+column_conversions!(Series::from_vec; i32, f32);
+column_conversions!(Series::new;
+    bool, String, Option<u64>, Option<String>, Option<&'static str>, Option<f32>, Option<bool>,
+);
+
+// Keep storage and output order in one schema declaration.
 macro_rules! snapshot_columns {
     ($($field:ident: $ty:ty),+ $(,)?) => {
         #[derive(Default)]
@@ -17,13 +37,9 @@ macro_rules! snapshot_columns {
                 $(self.$field.push(state.$field);)+
             }
 
-            pub fn append(&mut self, mut other: Self) {
-                $(self.$field.append(&mut other.$field);)+
-            }
-
             pub fn into_frame(self) -> PolarsResult<DataFrame> {
                 DataFrame::new(self.tick.len(), vec![
-                    $(Column::new(stringify!($field).into(), self.$field)),+
+                    $(self.$field.into_snapshot_column(stringify!($field).into())),+
                 ])
             }
         }

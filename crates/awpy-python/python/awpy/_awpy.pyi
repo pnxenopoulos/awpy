@@ -209,9 +209,9 @@ class Demo:
           their own**, they yield every tick in the window (a contiguous range);
           combined with a sampler, they bound it.
 
-        At least one of the above must be given. A single ``ticks`` value seeks
-        directly to that tick (fast); everything else decodes in parallel across
-        the demo's keyframes.
+        At least one selector is required. Without other selectors, one tick
+        or a list of up to four ticks uses direct keyframe seeks. Larger lists,
+        windows, strides, and event queries decode in parallel across keyframes.
 
         Examples::
 
