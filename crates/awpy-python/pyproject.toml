@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Games/Entertainment",
     "Topic :: Software Development :: Libraries",
 ]
-dependencies = ["polars>=1.0", "typer>=0.12"]
+dependencies = ["polars>=2.0,<3", "typer>=0.12"]
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.8"]

@@ -4,6 +4,11 @@
 
 Rust parser for CS2 demos with Python bindings and Polars DataFrames.
 
+- Require Python Polars 2.x. The lockfile now selects `2.0.0`.
+  Awpy dataset schemas are unchanged. See the
+  [Polars migration guide](https://docs.pola.rs/releases/upgrade/2/) for changes
+  to downstream queries, including lazy-query ordering.
+
 - Shortened documentation and corrected cache, chat, and snapshot descriptions.
 - Shared developer CLI helpers for file opening, JSON output, row limits,
   and player labels. Removed redundant output buffers and an unused dependency.
@@ -49,8 +54,7 @@ Rust parser for CS2 demos with Python bindings and Polars DataFrames.
   typed row per player per tick, with default props and friendly aliases
   (`X`/`Y`/`Z`, velocity components and 3D speed, `health`, `armor`,
   `team_num`, `name`, `money`).
-- Updated the locked pbdems2 version to `0.3.3` for the fixed8 field decoder
-  fix. The version requirement remains `0.3`.
+- Updated pbdems2 to `0.4.0` for field-path fixes and faster decoding.
 - Snapshot queries with two to four explicit ticks now use direct keyframe
   seeks when no other selector is set. These queries return only exact ticks,
   in tick order, without duplicates. Single-tick behavior is unchanged.
