@@ -4,6 +4,8 @@
 
 Rust parser for CS2 demos with Python bindings and Polars DataFrames.
 
+- Correct player IDs in combat events. Convert legacy event handles before serial validation.
+
 - Require Python Polars 2.x. The lockfile now selects `2.0.0`.
   Awpy dataset schemas are unchanged. See the
   [Polars migration guide](https://docs.pola.rs/releases/upgrade/2/) for changes

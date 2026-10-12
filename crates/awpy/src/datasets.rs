@@ -27,7 +27,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::num::NonZeroUsize;
 
 use crate::demo::{Context, GameEvent, Parser};
-use crate::entity::{Entity, EntityChangeKind, EntityId};
+use crate::entity::{ENTITY_HANDLE_INDEX_MASK, Entity, EntityChangeKind, EntityId};
 use crate::error::Result;
 use crate::hitgroups::hitgroup_name;
 use crate::position::cell_to_world;
@@ -144,16 +144,22 @@ const VELOCITY_PATHS: [&str; 3] = [
 /// missing keys and unparseable values fall back to the type's default.
 struct Keys<'a>(&'a [(String, String)]);
 
-/// Convert an event value to an entity handle.
+/// Convert a legacy event handle to the networked `CHandle` layout.
 ///
-/// Source 1 stores entity handles in signed 32-bit event fields. Preserve
-/// the bit pattern when the decoded value is negative.
+/// Events use 15 index bits and 10 serial bits; the upper seven bits are not
+/// part of the serial. Values can arrive as signed 32-bit integers.
 fn event_entity_handle(value: i64) -> Option<u32> {
-    u32::try_from(value).ok().or_else(|| {
+    let raw = u32::try_from(value).ok().or_else(|| {
         i32::try_from(value)
             .ok()
             .map(|signed| u32::from_ne_bytes(signed.to_ne_bytes()))
-    })
+    })?;
+    let index = raw & 0x7fff;
+    if index > ENTITY_HANDLE_INDEX_MASK {
+        return None;
+    }
+    let serial = (raw >> 15) & 0x3ff;
+    Some(index | (serial << ENTITY_HANDLE_INDEX_MASK.count_ones()))
 }
 
 impl Keys<'_> {
@@ -3360,10 +3366,54 @@ mod tests {
     }
 
     #[test]
-    fn event_handles_preserve_signed_bits() {
-        assert_eq!(event_entity_handle(-1), Some(u32::MAX));
-        assert_eq!(event_entity_handle(i64::from(u32::MAX)), Some(u32::MAX));
-        assert_eq!(event_entity_handle(i64::from(u32::MAX) + 1), None);
+    fn event_handles_ignore_unused_bits_and_preserve_signed_values() {
+        // Valve fixture: pawn 351, serial 165, reported as event handle 1582465375.
+        let expected = Some((165 << 14) | 351);
+        for tag in 0_u32..128 {
+            let raw = (tag << 25) | (165 << 15) | 351;
+            assert_eq!(event_entity_handle(i64::from(raw)), expected);
+            assert_eq!(event_entity_handle(i64::from(raw as i32)), expected);
+        }
+        for invalid in [-1, i64::from(u32::MAX), i64::from(u32::MAX) + 1, 1 << 14] {
+            assert_eq!(event_entity_handle(invalid), None);
+        }
+    }
+
+    #[test]
+    fn event_handles_resolve_serials_and_reject_reused_slots() {
+        use crate::entity::EntityContainer;
+
+        let mut entities = EntityContainer::new();
+        for (raw, index, serial) in [
+            (1582465375, 351, 165),
+            (1968308566, 342, 676),
+            (1957364059, 347, 342),
+        ] {
+            let pawn = Entity::from_fields(
+                index,
+                serial,
+                0,
+                PLAYER_PAWN_CLASS,
+                true,
+                Default::default(),
+            )
+            .unwrap();
+            entities.insert(pawn).unwrap();
+            let handle = event_entity_handle(raw).unwrap();
+            assert_eq!(entities.get_by_handle(handle).unwrap().serial, serial);
+
+            let replacement = Entity::from_fields(
+                index,
+                serial + 1,
+                0,
+                PLAYER_PAWN_CLASS,
+                true,
+                Default::default(),
+            )
+            .unwrap();
+            entities.insert(replacement).unwrap();
+            assert!(entities.get_by_handle(handle).is_none());
+        }
     }
 
     #[test]
