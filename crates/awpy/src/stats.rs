@@ -5,11 +5,11 @@
 //! and reuse; [`Parser::player_stats`] is the convenience entry point that
 //! parses the demo and calls it with a trade window derived from the tick rate.
 //!
-//! Definitions (standard CS analytics conventions):
+//! Definitions:
 //! - **Opening kill / death** — the attacker / victim of the *first* kill of a
 //!   round.
-//! - **Traded death** — a death whose killer is themselves killed by a teammate
-//!   of the victim within the trade window (default 5 seconds).
+//! - **Traded death** — the earliest qualifying teammate death avenged by a kill
+//!   within the trade window (default 5.25 seconds). Each kill trades one death.
 //! - **Clutch** — a round in which the player was the last alive on their side
 //!   against one or more living opponents. The situation is fixed at the moment
 //!   they become last alive (so a 1v3 that becomes a 1v1 is still a 1v3), and is
@@ -460,7 +460,8 @@ fn is_utility_weapon(weapon: &str) -> bool {
 /// Compute per-player statistics from the kill / damage / round datasets.
 ///
 /// `trade_ticks` is the trade window in ticks (see [`Parser::player_stats`] for
-/// the default derived from the tick rate).
+/// the default derived from the tick rate). Flash timing uses the CS2 default
+/// of 64 ticks per second; use [`player_stats_at_tickrate`] for another rate.
 pub fn player_stats(
     kills: &[Kill],
     damages: &[Damage],
@@ -470,6 +471,40 @@ pub fn player_stats(
     trade_ticks: i32,
     exclude_knife_rounds: bool,
 ) -> Vec<PlayerStats> {
+    player_stats_at_tickrate(
+        kills,
+        damages,
+        blinds,
+        shots,
+        rounds,
+        trade_ticks,
+        exclude_knife_rounds,
+        DEFAULT_TICKRATE,
+    )
+}
+
+/// Compute stats with an explicit tick rate for flash-assist timing.
+///
+/// Recorded assisters and qualifying flash throwers each receive one assist per
+/// kill. Flash assists require an active enemy blind in the same round; the
+/// victim's full pawn identity is checked when available. Invalid tick rates
+/// use the CS2 default of 64 ticks per second.
+#[allow(clippy::too_many_arguments)]
+pub fn player_stats_at_tickrate(
+    kills: &[Kill],
+    damages: &[Damage],
+    blinds: &[Blind],
+    shots: &[Shot],
+    rounds: &[Round],
+    trade_ticks: i32,
+    exclude_knife_rounds: bool,
+    tickrate: f32,
+) -> Vec<PlayerStats> {
+    let tickrate = if tickrate.is_finite() && tickrate > 0.0 {
+        f64::from(tickrate)
+    } else {
+        f64::from(DEFAULT_TICKRATE)
+    };
     let total_rounds = rounds.len();
     // Knife rounds don't count toward the score, so their kills / deaths /
     // assists / damage — and the rounds themselves in every denominator — are
@@ -499,6 +534,20 @@ pub fn player_stats(
 
     let mut acc: HashMap<u64, Acc> = HashMap::new();
     let mut round_has_opening: HashSet<usize> = HashSet::new();
+    let mut blinds_by_victim: HashMap<u64, Vec<(usize, &Blind)>> = HashMap::new();
+    for blind in blinds {
+        if let Some(victim) = blind.victim_steamid
+            && let Some(round) = round_of(blind.tick, &starts, &freezes)
+            && blind.duration.is_finite()
+            && blind.duration > 0.0
+        {
+            blinds_by_victim
+                .entry(victim)
+                .or_default()
+                .push((round, blind));
+        }
+    }
+    let mut assisters: HashMap<u64, (Option<&String>, bool)> = HashMap::new();
 
     for &i in &order {
         let k = &kills[i];
@@ -542,26 +591,62 @@ pub fn player_stats(
             }
         }
 
-        // Assister. An assist only counts against an opponent — a player never
-        // gets an assist for damaging a teammate. Flash assists are a subset of
-        // assists (counted only when the assist itself is), never a separate
-        // total.
-        if let Some(assister) = k.assister_steamid {
-            let team_assist =
-                matches!((&k.assister_side, &k.victim_side), (Some(s), Some(v)) if s == v);
-            if !team_assist {
-                let a = acc.entry(assister).or_default();
-                if a.name.is_empty()
-                    && let Some(name) = &k.assister_name
+        // Keep the game's assister, then add active flash throwers. The event
+        // can name a different player from the one observed blinding the victim.
+        assisters.clear();
+        if let Some(assister) = k.assister_steamid
+            && Some(assister) != k.attacker_steamid
+            && Some(assister) != k.victim_steamid
+            && !matches!((&k.assister_side, &k.victim_side), (Some(s), Some(v)) if s == v)
+        {
+            assisters.insert(assister, (k.assister_name.as_ref(), k.assist_flash));
+        }
+        if let Some(victim) = k.victim_steamid
+            && k.attacker_steamid
+                .is_some_and(|attacker| attacker != victim)
+            && is_confirmed_enemy(k.attacker_side.as_deref(), k.victim_side.as_deref())
+        {
+            for &(blind_round, blind) in blinds_by_victim.get(&victim).into_iter().flatten() {
+                let Some(thrower) = blind.attacker_steamid else {
+                    continue;
+                };
+                let elapsed = (f64::from(k.tick) - f64::from(blind.tick)) / tickrate;
+                let different_pawn = k
+                    .victim_entity_id
+                    .zip(k.victim_entity_serial)
+                    .zip(blind.victim_entity_id.zip(blind.victim_entity_serial))
+                    .is_some_and(|(kill_pawn, blind_pawn)| kill_pawn != blind_pawn);
+                if blind_round != round
+                    || elapsed < 0.0
+                    || elapsed >= f64::from(blind.duration)
+                    || different_pawn
+                    || Some(thrower) == k.attacker_steamid
+                    || thrower == victim
+                    || blind.attacker_side != k.attacker_side
                 {
-                    a.name.clone_from(name);
+                    continue;
                 }
-                a.assists += 1;
-                if k.assist_flash {
-                    a.flash_assists += 1;
-                }
-                a.assist_rounds.insert(round);
+                assisters
+                    .entry(thrower)
+                    .and_modify(|(name, flash)| {
+                        *flash = true;
+                        if name.is_none() {
+                            *name = blind.attacker_name.as_ref();
+                        }
+                    })
+                    .or_insert((blind.attacker_name.as_ref(), true));
             }
+        }
+        for (&assister, &(name, flash)) in &assisters {
+            let a = acc.entry(assister).or_default();
+            if a.name.is_empty()
+                && let Some(name) = name
+            {
+                a.name.clone_from(name);
+            }
+            a.assists += 1;
+            a.flash_assists += i32::from(flash);
+            a.assist_rounds.insert(round);
         }
 
         // Opening kill / death: the first kill seen for this round.
@@ -808,7 +893,7 @@ impl Parser {
         exclude_knife_rounds: bool,
     ) -> Vec<PlayerStats> {
         let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
-        player_stats(
+        player_stats_at_tickrate(
             kills,
             damages,
             blinds,
@@ -816,6 +901,7 @@ impl Parser {
             rounds,
             trade_ticks,
             exclude_knife_rounds,
+            self.tickrate(),
         )
     }
 
@@ -869,28 +955,242 @@ mod tests {
         stats.iter().find(|s| s.steamid == steamid).unwrap()
     }
 
+    fn blind(
+        tick: i32,
+        duration: f32,
+        thrower: u64,
+        side: &str,
+        victim: u64,
+        vside: &str,
+    ) -> Blind {
+        Blind {
+            tick,
+            duration,
+            attacker_steamid: Some(thrower),
+            attacker_name: Some(format!("p{thrower}")),
+            attacker_side: Some(side.into()),
+            victim_steamid: Some(victim),
+            victim_side: Some(vside.into()),
+            ..Default::default()
+        }
+    }
+
+    fn assist_kills(recorded_flash: bool) -> [Kill; 2] {
+        [
+            Kill {
+                assister_steamid: Some(3),
+                assister_name: Some("p3".into()),
+                assister_side: Some(T.into()),
+                assist_flash: recorded_flash,
+                ..kill(100, 1, T, 2, CT)
+            },
+            kill(150, 5, CT, 4, T),
+        ]
+    }
+
     #[test]
-    fn opening_and_multikills() {
-        let rounds = vec![round(1, 0, 1000), round(2, 2000, 3000)];
-        // Round 1: player 1 (T) triple-kills CTs; player 4 opens on player 1.
-        let kills = vec![
-            kill(100, 4, "counter-terrorist", 1, "terrorist"), // opening: 4 kills 1
-            kill(200, 1, "terrorist", 5, "counter-terrorist"),
-            kill(250, 1, "terrorist", 6, "counter-terrorist"),
-            kill(300, 1, "terrorist", 7, "counter-terrorist"),
+    fn recorded_and_inferred_flash_assisters_both_get_credit() {
+        let blinds = [blind(50, 2.0, 4, T, 2, CT)];
+        let stats = player_stats(
+            &assist_kills(true),
+            &[],
+            &blinds,
+            &[],
+            &[round(1, 0, 1000)],
+            320,
+            false,
+        );
+        for id in [3, 4] {
+            assert_eq!(
+                (find(&stats, id).assists, find(&stats, id).flash_assists),
+                (1, 1)
+            );
+        }
+    }
+
+    #[test]
+    fn repeated_flash_sources_do_not_duplicate_assist_credit() {
+        let blinds = [
+            blind(50, 2.0, 3, T, 2, CT),
+            blind(50, 2.0, 4, T, 2, CT),
+            blind(60, 2.0, 4, T, 2, CT),
         ];
-        let stats = player_stats(&kills, &[], &[], &[], &rounds, 320, false);
+        for recorded_flash in [false, true] {
+            let stats = player_stats(
+                &assist_kills(recorded_flash),
+                &[],
+                &blinds,
+                &[],
+                &[round(1, 0, 1000)],
+                320,
+                false,
+            );
+            for id in [3, 4] {
+                assert_eq!(
+                    (find(&stats, id).assists, find(&stats, id).flash_assists),
+                    (1, 1)
+                );
+            }
+        }
+    }
 
-        let p1 = find(&stats, 1);
-        assert_eq!(p1.kills, 3);
-        assert_eq!(p1.multikill_3k, 1);
-        assert_eq!(p1.multikill_2k, 0);
-        assert_eq!(p1.deaths, 1);
-        assert_eq!(p1.opening_deaths, 1);
+    #[test]
+    fn the_killer_cannot_receive_a_flash_assist() {
+        let blinds = [blind(50, 2.0, 1, T, 2, CT)];
+        let stats = player_stats(
+            &assist_kills(false),
+            &[],
+            &blinds,
+            &[],
+            &[round(1, 0, 1000)],
+            320,
+            false,
+        );
+        assert_eq!(find(&stats, 1).assists, 0);
+    }
 
-        let p4 = find(&stats, 4);
-        assert_eq!(p4.opening_kills, 1);
-        assert_eq!(p4.kills, 1);
+    #[test]
+    fn self_and_team_flashes_do_not_receive_assists() {
+        let blinds = [blind(50, 2.0, 2, CT, 2, CT), blind(50, 2.0, 5, CT, 2, CT)];
+        let stats = player_stats(
+            &assist_kills(false),
+            &[],
+            &blinds,
+            &[],
+            &[round(1, 0, 1000)],
+            320,
+            false,
+        );
+        for id in [2, 5] {
+            assert_eq!(find(&stats, id).assists, 0);
+        }
+    }
+
+    #[test]
+    fn inferred_flash_assists_count_toward_kast() {
+        let blinds = [blind(50, 2.0, 4, T, 2, CT)];
+        let stats = player_stats(
+            &assist_kills(false),
+            &[],
+            &blinds,
+            &[],
+            &[round(1, 0, 1000)],
+            320,
+            false,
+        );
+        assert_eq!(find(&stats, 4).kast, 100.0);
+    }
+
+    #[test]
+    fn flash_assists_require_an_active_blind_at_the_replay_tickrate() {
+        let rounds = [round(1, 0, 1000)];
+        let kills = [kill(500, 1, T, 2, CT)];
+        for (tick, duration, tickrate, expected) in [
+            (437, 1.0, 64.0, 1),
+            (436, 1.0, 64.0, 0), // expires exactly at the kill
+            (400, 1.0, 64.0, 0),
+            (400, 1.0, 128.0, 1),
+            (501, 1.0, 64.0, 0), // starts after the kill
+            (500, 1.0, 64.0, 1),
+            (500, 0.0, 64.0, 0),
+            (500, -1.0, 64.0, 0),
+            (500, f32::NAN, 64.0, 0),
+            (500, f32::INFINITY, 64.0, 0),
+        ] {
+            let blinds = [blind(tick, duration, 3, T, 2, CT)];
+            let stats =
+                player_stats_at_tickrate(&kills, &[], &blinds, &[], &rounds, 320, false, tickrate);
+            assert_eq!(
+                find(&stats, 3).flash_assists,
+                expected,
+                "{tick}, {duration}, {tickrate}"
+            );
+        }
+    }
+
+    #[test]
+    fn flash_assists_cannot_cross_round_boundaries() {
+        let rounds = [round(1, 0, 1000), round(2, 2000, 3000)];
+        let stats = player_stats(
+            &[kill(2200, 1, T, 2, CT)],
+            &[],
+            &[blind(100, 100.0, 3, T, 2, CT)],
+            &[],
+            &rounds,
+            320,
+            false,
+        );
+        assert_eq!(find(&stats, 3).flash_assists, 0);
+    }
+
+    #[test]
+    fn flash_assists_require_the_same_full_pawn_identity() {
+        let kills = [Kill {
+            victim_entity_id: Some(10),
+            victim_entity_serial: Some(7),
+            ..kill(2200, 1, T, 2, CT)
+        }];
+        for (index, serial, expected) in [(10, 6, 0), (11, 7, 0), (10, 7, 1)] {
+            let blinds = [Blind {
+                victim_entity_id: Some(index),
+                victim_entity_serial: Some(serial),
+                ..blind(2150, 100.0, 3, T, 2, CT)
+            }];
+            let stats = player_stats(
+                &kills,
+                &[],
+                &blinds,
+                &[],
+                &[round(1, 2000, 3000)],
+                320,
+                false,
+            );
+            assert_eq!(find(&stats, 3).flash_assists, expected);
+        }
+    }
+
+    #[test]
+    fn excluded_knife_rounds_do_not_produce_player_stats() {
+        let mut knife_round = round(1, 2000, 3000);
+        knife_round.is_knife_round = true;
+        let stats = player_stats(
+            &[kill(2200, 1, T, 2, CT)],
+            &[],
+            &[blind(2150, 2.0, 3, T, 2, CT)],
+            &[],
+            &[knife_round],
+            320,
+            true,
+        );
+        assert!(stats.is_empty());
+    }
+
+    fn opening_round_stats() -> Vec<PlayerStats> {
+        let rounds = [round(1, 0, 1000), round(2, 2000, 3000)];
+        let kills = [
+            kill(100, 4, CT, 1, T),
+            kill(200, 1, T, 5, CT),
+            kill(250, 1, T, 6, CT),
+            kill(300, 1, T, 7, CT),
+        ];
+        player_stats(&kills, &[], &[], &[], &rounds, 320, false)
+    }
+
+    #[test]
+    fn opening_stats_credit_only_the_first_kill_and_death() {
+        let stats = opening_round_stats();
+        assert_eq!(find(&stats, 4).opening_kills, 1);
+        assert_eq!(find(&stats, 1).opening_deaths, 1);
+    }
+
+    #[test]
+    fn triple_kills_count_as_one_three_kill_round() {
+        let stats = opening_round_stats();
+        let player = find(&stats, 1);
+        assert_eq!(
+            (player.kills, player.multikill_3k, player.multikill_2k),
+            (3, 1, 0)
+        );
     }
 
     #[test]
@@ -1215,24 +1515,42 @@ mod tests {
         assert!(!rosters[2][T].contains(&1));
     }
 
-    #[test]
-    fn traded_deaths_agree_with_the_kills_dataset() {
-        // `traded_deaths` and `Kill::victim_traded` come from one classifier, so
-        // the tallied count must equal the flags on the kills themselves.
-        let rounds = vec![round(1, 0, 1000)];
-        let kills = vec![
+    fn competing_trade_kills() -> [Kill; 4] {
+        [
             kill(100, 11, CT, 1, T),
-            kill(200, 2, T, 11, CT), // trades player 1
-            kill(400, 12, CT, 2, T), // untraded
-        ];
-        let flags = trade_flags(&kills, 320);
-        assert!(flags[0].1); // player 1's death was traded
-        assert!(flags[1].0); // by player 2's kill
-        assert!(!flags[2].1); // player 2's own death was not
+            kill(150, 11, CT, 3, T),
+            kill(200, 2, T, 11, CT),
+            kill(400, 12, CT, 2, T),
+        ]
+    }
 
-        let stats = player_stats(&kills, &[], &[], &[], &rounds, 320, false);
+    #[test]
+    fn traded_death_totals_agree_with_the_kills_dataset() {
+        let kills = competing_trade_kills();
+        let flags = trade_flags(&kills, 320);
+        let stats = player_stats(&kills, &[], &[], &[], &[round(1, 0, 1000)], 320, false);
         let tallied: i32 = stats.iter().map(|s| s.traded_deaths).sum();
-        let flagged = flags.iter().filter(|(_, traded)| *traded).count() as i32;
-        assert_eq!(tallied, flagged);
+        assert_eq!(
+            tallied,
+            flags.iter().filter(|(_, traded)| *traded).count() as i32
+        );
+        assert_eq!(
+            (find(&stats, 1).traded_deaths, find(&stats, 3).traded_deaths),
+            (1, 0)
+        );
+    }
+
+    #[test]
+    fn only_the_matched_trade_victim_gets_kast_credit() {
+        let stats = player_stats(
+            &competing_trade_kills(),
+            &[],
+            &[],
+            &[],
+            &[round(1, 0, 1000)],
+            320,
+            false,
+        );
+        assert_eq!((find(&stats, 1).kast, find(&stats, 3).kast), (100.0, 0.0));
     }
 }

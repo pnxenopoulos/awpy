@@ -148,16 +148,20 @@ player is treated as having played every round, so KAST / ADR denominators are t
 match's round count and players who join or leave mid-match are approximate.
 
 - **Kills / deaths** — enemy kills (suicides and team kills excluded) and deaths.
-- **Assists** — the game's assist attribution against opponents.
-- **Flash assists** (`flash_assists`) — assists attributed to flashbangs.
-  These are a subset of assists, not a separate flash-to-kill correlation.
+- **Assists** — the game's recorded assister, plus teammates whose enemy blind
+  is still active at the kill. Each player receives at most one assist per kill.
+  The killer cannot also receive an assist.
+- **Flash assists** (`flash_assists`) — recorded flash assists and active blind
+  matches. These are a subset of assists. Several players can assist one kill.
+  Blind matches must use the same round and victim pawn (when its ID and serial
+  are available). Timing uses the demo's tick rate.
 - **Headshot %** (`headshot_pct`) — `headshot_kills / kills × 100` (0 with no
   kills).
 - **Opening kill / death** — the attacker / victim of the **first** kill of a
   round.
-- **Traded death** — a teammate kills the attacker within the trade window
-  (5 seconds by default). The death has `victim_traded` in `kills`;
-  the revenge kill has `is_trade`.
+- **Traded death** — each revenge kill trades only the earliest qualifying
+  teammate death within 5.25 seconds. Each death can be traded once.
+  The matched death has `victim_traded` in `kills`; the revenge kill has `is_trade`.
 - **KAST** — the percentage of rounds in which the player got a **K**ill, an
   **A**ssist, **S**urvived (was not killed), or was **T**raded.
 - **ADR** — enemy health removed per round. Each hit is capped at the victim's

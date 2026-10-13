@@ -39,27 +39,49 @@ def test_shared_class_loadouts(
 ) -> None:
     monkeypatch.setenv("AWPY_TICK_SEGMENTS", str(segments))
     _check_loadout(match_demo, weapon, column)
-    assert weapon in match_demo.item_events["item"].to_list()
+
+
+@pytest.fixture(scope="module")
+def legacy_reload_states(match_demo: Demo) -> pl.DataFrame:
+    states = match_demo.snapshots(every=64)
+    assert states.height > 0
+    return states
 
 
 @pytest.mark.fixtures
 @pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
-def test_reload_fields_on_demo_before_quiet_reload_update(match_demo: Demo) -> None:
-    states = match_demo.snapshots(every=64)
-    assert states.height > 0
-    assert states["is_reloading"].dtype == pl.Boolean
-    assert states["is_reloading"].any()
-    assert states["is_reloading"].eq(False).any()
-    assert states["is_silent_reloading"].dtype == pl.Boolean
-    armed = states.filter(pl.col("active_weapon").is_not_null())
+def test_legacy_reload_column_types(legacy_reload_states: pl.DataFrame) -> None:
+    assert legacy_reload_states.schema["is_reloading"] == pl.Boolean
+    assert legacy_reload_states.schema["is_silent_reloading"] == pl.Boolean
+
+
+@pytest.mark.fixtures
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+def test_legacy_reload_records_active_and_inactive_states(
+    legacy_reload_states: pl.DataFrame,
+) -> None:
+    assert legacy_reload_states["is_reloading"].any()
+    assert legacy_reload_states["is_reloading"].eq(False).any()
+
+
+@pytest.mark.fixtures
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+def test_legacy_armed_silent_reload_state_is_unknown(legacy_reload_states: pl.DataFrame) -> None:
+    armed = legacy_reload_states.filter(pl.col("active_weapon").is_not_null())
     assert armed.height > 0
     assert armed["is_silent_reloading"].null_count() == armed.height
 
-    unarmed = states.filter(pl.col("active_weapon").is_null())
+
+@pytest.mark.fixtures
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+@pytest.mark.parametrize("column", ["is_reloading", "is_silent_reloading"])
+def test_legacy_unarmed_reload_state_is_false(
+    legacy_reload_states: pl.DataFrame, column: str
+) -> None:
+    unarmed = legacy_reload_states.filter(pl.col("active_weapon").is_null())
     assert unarmed.height > 0
-    for name in ("is_reloading", "is_silent_reloading"):
-        assert unarmed[name].null_count() == 0
-        assert unarmed[name].eq(False).all()
+    assert unarmed[column].null_count() == 0
+    assert unarmed[column].eq(False).all()
 
 
 @pytest.mark.fixtures
@@ -79,3 +101,20 @@ def test_kensizor_round_two_revolver(
     assert states["inventory"].to_list() == ["knife,revolver", "knife,revolver"]
     shots = match_demo.shots.filter(pl.col("tick").is_in(ticks) & (pl.col("name") == "kensizor"))
     assert shots["weapon"].to_list() == ["weapon_revolver", "weapon_revolver"]
+
+
+@pytest.mark.fixtures
+@pytest.mark.parametrize(
+    ("match_demo", "weapon"),
+    [
+        ("valve-de_mirage-472514809", "revolver"),
+        ("faceit-de_mirage-6de46e85", "deagle"),
+        ("faceit-de_mirage-6de46e85", "usp_silencer"),
+        ("faceit-de_mirage-6de46e85", "m4a1"),
+        ("faceit-de_mirage-6de46e85", "m4a1_silencer"),
+    ],
+    indirect=["match_demo"],
+    scope="module",
+)
+def test_item_events_resolve_shared_class_variants(match_demo: Demo, weapon: str) -> None:
+    assert weapon in match_demo.item_events["item"].to_list()

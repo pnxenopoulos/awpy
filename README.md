@@ -267,6 +267,13 @@ CI installs dependencies from the lockfile and tests the prebuilt wheel with
 `uv run --no-sync`. This prevents uv from replacing the wheel with a source
 build. Keep timing reports enabled when changing fixtures or test scheduling.
 
+Each test checks one behavior. Several assertions can describe the same result.
+Use named tests for independent results and parameters for input variants.
+Share expensive, unchanged query results through module fixtures.
+Keep mutable test doubles, files, and settings local to each test.
+Remove duplicate checks only when the same behavior and parsing path remain covered.
+Use exact DataFrame comparisons when the result must match exactly.
+
 ### Parsing benchmarks
 
 Run the Criterion suite with a local demo:

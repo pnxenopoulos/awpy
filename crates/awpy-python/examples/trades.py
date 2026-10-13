@@ -1,6 +1,6 @@
 """Who trades for whom, from the kills dataset's trade flags.
 
-A *trade* is a kill that avenges a teammate killed moments earlier (within 5
+A *trade* is a kill that avenges a teammate killed moments earlier (within 5.25
 seconds). ``demo.kills`` marks both halves of that exchange:
 
 * ``is_trade`` — this kill **is** the revenge.
@@ -17,49 +17,38 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from collections import deque
 from pathlib import Path
 
 import polars as pl
 from awpy import Demo
 
-TRADE_WINDOW_SECONDS = 5.0
+TRADE_WINDOW_SECONDS = 5.25
 
 
 def trade_pairs(demo: Demo) -> pl.DataFrame:
-    """Match each trade kill to the teammate's death it avenged.
-
-    A trade kill avenges the most recent death that (a) is flagged
-    ``victim_traded``, (b) was inflicted by the player this kill just killed, and
-    (c) happened within the trade window. Rebuilding the link this way — rather
-    than trusting adjacency — keeps it correct when several players die at once.
-    """
-    kills = demo.kills.sort("tick")
-    window = int(TRADE_WINDOW_SECONDS * demo.tick_rate)
-
-    avenged = kills.filter(pl.col("victim_traded")).select(
-        died_tick="tick",
-        avenged_name="victim_name",
-        # The player who got this kill is the one a teammate then traded.
-        killer="attacker_steamid",
-    )
-    revenge = kills.filter(pl.col("is_trade")).select(
-        "tick",
-        trader_name="attacker_name",
-        # This kill's victim is the killer being punished.
-        killer="victim_steamid",
-    )
-
-    # Join on the punished killer, then keep the closest preceding death.
-    return (
-        revenge.join(avenged, on="killer", how="inner")
-        .filter(
-            (pl.col("died_tick") < pl.col("tick"))
-            & (pl.col("tick") - pl.col("died_tick") <= window)
-        )
-        .sort("tick", "died_tick")
-        .group_by("tick", "trader_name", maintain_order=True)
-        .last()
-        .select("tick", "trader_name", "avenged_name")
+    """Pair each trade kill with its earliest eligible, unmatched death."""
+    window = round(TRADE_WINDOW_SECONDS * demo.tick_rate)
+    pending: dict[int, deque[tuple[int, str | None, str | None]]] = {}
+    pairs: list[tuple[int, str | None, str | None]] = []
+    for row in demo.kills.sort("tick", maintain_order=True).iter_rows(named=True):
+        tick = row["tick"]
+        if row["is_trade"] and (queue := pending.get(row["victim_steamid"])):
+            while queue and tick - queue[0][0] > window:
+                queue.popleft()
+            for index, (died_tick, name, side) in enumerate(queue):
+                if died_tick < tick and side == row["attacker_side"]:
+                    pairs.append((tick, row["attacker_name"], name))
+                    del queue[index]
+                    break
+        if row["victim_traded"]:
+            pending.setdefault(row["attacker_steamid"], deque()).append(
+                (tick, row["victim_name"], row["victim_side"])
+            )
+    return pl.DataFrame(
+        pairs,
+        schema={"tick": pl.Int32, "trader_name": pl.String, "avenged_name": pl.String},
+        orient="row",
     )
 
 
@@ -75,7 +64,7 @@ def main() -> None:
     n_traded = int(kills["victim_traded"].sum())
     print(f"{demo.header['map_name']}: {kills.height} kills")
     print(f"  {n_trades} trade kills avenging {n_traded} deaths")
-    print("  (one kill can avenge several teammates, so these differ)")
+    print("  (each trade kill avenges one death)")
 
     # Per player: how often their death gets answered.
     print("\nDeaths avenged")

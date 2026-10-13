@@ -587,9 +587,9 @@ impl Demo {
 
     /// Cached ``player_death`` events with resolved participants.
     ///
-    /// ``is_trade`` marks a kill that avenges a teammate within 5 seconds.
+    /// ``is_trade`` marks a kill that avenges a teammate within 5.25 seconds.
     /// ``victim_traded`` marks the earlier death; stats count it as ``traded_deaths``.
-    /// One kill can avenge several deaths, and a kill can have both flags.
+    /// Each kill trades only the earliest qualifying death. A kill can have both flags.
     #[getter]
     fn kills(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.event_frame(py, "kills")

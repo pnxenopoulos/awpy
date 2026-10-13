@@ -33,9 +33,9 @@ def stub_release(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return src
 
 
-def test_resolve_version_explicit(asset_cache: Path) -> None:
-    assert data.resolve_version(2000873) == "2000873"
-    assert data.resolve_version("2000873") == "2000873"  # strings are tolerated at runtime
+@pytest.mark.parametrize("version", [2000873, "2000873"], ids=["integer", "string"])
+def test_resolve_version_explicit(asset_cache: Path, version) -> None:
+    assert data.resolve_version(version) == "2000873"
 
 
 def test_resolve_version_prefers_cache_over_network(
@@ -68,20 +68,33 @@ def test_data_dir(asset_cache: Path) -> None:
     assert data.data_dir("2000873") == asset_cache / "2000873"
 
 
-def test_path_helpers_download_and_extract(asset_cache: Path, stub_release: Path) -> None:
-    assert data.mesh_path("de_inferno", "9").read_bytes() == b"AWMH-mesh"
-    assert data.nav_path("de_inferno", "9").name == "de_inferno.nav"
-    assert data.radar_path("de_inferno", "9").name == "de_inferno.png"
-    assert data.radar_path("de_nuke", "9", lower=True).name == "de_nuke_lower.png"
+@pytest.mark.parametrize(
+    ("helper", "map_name", "options", "relative_path", "contents"),
+    [
+        (data.mesh_path, "de_inferno", {}, "geometry/de_inferno.mesh", b"AWMH-mesh"),
+        (data.nav_path, "de_inferno", {}, "navs/de_inferno.nav", b"nav"),
+        (data.radar_path, "de_inferno", {}, "radars/de_inferno.png", b"png"),
+        (data.radar_path, "de_nuke", {"lower": True}, "radars/de_nuke_lower.png", b"png"),
+    ],
+    ids=["mesh", "nav", "radar", "lower-radar"],
+)
+def test_path_helper_extracts_the_requested_asset(
+    asset_cache: Path, stub_release: Path, helper, map_name, options, relative_path, contents
+) -> None:
+    path = helper(map_name, "9", **options)
+    assert path == asset_cache / "9" / relative_path
+    assert path.read_bytes() == contents
 
-    # Files land in the documented per-kind subdirs.
-    assert data.mesh_path("de_inferno", "9").parent == asset_cache / "9" / "geometry"
-    assert data.radar_path("de_inferno", "9").parent == asset_cache / "9" / "radars"
 
-
-def test_manifest_and_map_data(asset_cache: Path, stub_release: Path) -> None:
+def test_manifest_reads_release_metadata(asset_cache: Path, stub_release: Path) -> None:
     assert data.manifest("9")["release_key"] == "9"
+
+
+def test_map_data_reads_map_settings(asset_cache: Path, stub_release: Path) -> None:
     assert data.map_data("9")["de_inferno"]["scale"] == 4.9
+
+
+def test_available_maps_uses_the_release_manifest(asset_cache: Path, stub_release: Path) -> None:
     assert data.available_maps("9") == ["de_inferno"]
 
 
@@ -90,12 +103,15 @@ def test_missing_map_raises(asset_cache: Path, stub_release: Path) -> None:
         data.mesh_path("de_nonexistent", "9")
 
 
-def test_update_then_clear(asset_cache: Path, stub_release: Path) -> None:
-    out = data.update("9")
-    assert out == asset_cache / "9"
-    assert (out / "geometry" / "de_inferno.mesh").exists()
-    assert (out / "manifest.json").exists()
+def test_update_installs_the_complete_release(asset_cache: Path, stub_release: Path) -> None:
+    directory = data.update("9")
+    assert directory == asset_cache / "9"
+    assert (directory / "geometry" / "de_inferno.mesh").exists()
+    assert (directory / "manifest.json").exists()
 
+
+def test_clear_removes_an_installed_release(asset_cache: Path, stub_release: Path) -> None:
+    data.update("9")
     data.clear("9")
     assert not (asset_cache / "9").exists()
 

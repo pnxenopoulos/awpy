@@ -23,21 +23,34 @@ def chain_nav(tmp_path: Path) -> Path:
     return nav
 
 
-def test_parses_header_and_areas(chain_nav: Path) -> None:
-    nav = NavMesh(chain_nav)
-    assert nav.path == chain_nav
-    assert len(nav) == 3
-    assert nav.area_count == 3
-    assert nav.version == 35
-    assert nav.sub_version == 1
-    assert nav.is_analyzed is True
-    assert "areas=3" in repr(nav)
+@pytest.fixture
+def chain_mesh(chain_nav: Path) -> NavMesh:
+    return NavMesh(chain_nav)
 
 
-def test_areas_dataframe(chain_nav: Path) -> None:
-    df = NavMesh(chain_nav).areas
-    assert df.shape == (3, 9)
-    assert df.columns == [
+@pytest.mark.parametrize(
+    ("attribute", "expected"),
+    [("area_count", 3), ("version", 35), ("sub_version", 1), ("is_analyzed", True)],
+)
+def test_nav_header_values(chain_mesh: NavMesh, attribute, expected) -> None:
+    assert getattr(chain_mesh, attribute) == expected
+
+
+def test_nav_remembers_its_source_path(chain_mesh: NavMesh, chain_nav: Path) -> None:
+    assert chain_mesh.path == chain_nav
+
+
+def test_nav_length_is_its_area_count(chain_mesh: NavMesh) -> None:
+    assert len(chain_mesh) == 3
+
+
+def test_nav_repr_shows_the_area_count(chain_mesh: NavMesh) -> None:
+    assert "areas=3" in repr(chain_mesh)
+
+
+def test_area_table_schema(chain_mesh: NavMesh) -> None:
+    assert chain_mesh.areas.shape == (3, 9)
+    assert chain_mesh.areas.columns == [
         "area_id",
         "hull_index",
         "dynamic_attribute_flags",
@@ -48,34 +61,58 @@ def test_areas_dataframe(chain_nav: Path) -> None:
         "size",
         "n_connections",
     ]
-    assert df["area_id"].to_list() == [1, 2, 3]
-    assert df["n_corners"].to_list() == [4, 4, 4]
-    # Area 2 connects to both neighbours; the ends connect to one each.
-    assert df["n_connections"].to_list() == [1, 2, 1]
-    # Unit square -> centroid at (0.5, 0.5) and area 1.0.
-    assert df["size"].to_list() == pytest.approx([1.0, 1.0, 1.0])
 
 
-def test_area_detail(chain_nav: Path) -> None:
-    nav = NavMesh(chain_nav)
-    a = nav.area(2)
-    assert a is not None
-    assert a["area_id"] == 2
-    assert a["connections"] == [1, 3]
-    assert len(a["corners"]) == 4
-    assert a["centroid"] == pytest.approx((1.5, 0.5, 0.0))
-    assert a["size"] == pytest.approx(1.0)
-    assert a["ladders_above"] == []
-    assert nav.area(999) is None
+@pytest.mark.parametrize(
+    ("column", "expected"),
+    [("area_id", [1, 2, 3]), ("n_corners", [4, 4, 4]), ("n_connections", [1, 2, 1])],
+)
+def test_area_table_values(chain_mesh: NavMesh, column, expected) -> None:
+    assert chain_mesh.areas[column].to_list() == expected
 
 
-def test_find_area(chain_nav: Path) -> None:
-    nav = NavMesh(chain_nav)
-    assert nav.find_area((0.5, 0.5, 0.0)) == 1
-    assert nav.find_area((1.5, 0.5, 0.0)) == 2
-    assert nav.find_area((2.5, 0.5, 0.0)) == 3
-    # Over no area.
-    assert nav.find_area((100.0, 100.0, 0.0)) is None
+def test_area_table_sizes_use_square_units(chain_mesh: NavMesh) -> None:
+    assert chain_mesh.areas["size"].to_list() == pytest.approx([1.0, 1.0, 1.0])
+
+
+@pytest.fixture
+def middle_area(chain_mesh: NavMesh):
+    area = chain_mesh.area(2)
+    assert area is not None
+    return area
+
+
+@pytest.mark.parametrize(
+    ("field", "expected"),
+    [("area_id", 2), ("connections", [1, 3]), ("ladders_above", [])],
+)
+def test_area_detail_values(middle_area, field, expected) -> None:
+    assert middle_area[field] == expected
+
+
+def test_area_detail_has_all_corners(middle_area) -> None:
+    assert len(middle_area["corners"]) == 4
+
+
+def test_area_detail_centroid(middle_area) -> None:
+    assert middle_area["centroid"] == pytest.approx((1.5, 0.5, 0.0))
+
+
+def test_area_detail_size(middle_area) -> None:
+    assert middle_area["size"] == pytest.approx(1.0)
+
+
+def test_unknown_area_has_no_detail(chain_mesh: NavMesh) -> None:
+    assert chain_mesh.area(999) is None
+
+
+@pytest.mark.parametrize(
+    ("position", "expected"),
+    [((0.5, 0.5, 0.0), 1), ((1.5, 0.5, 0.0), 2), ((2.5, 0.5, 0.0), 3), ((100.0, 100.0, 0.0), None)],
+    ids=["first", "middle", "last", "outside"],
+)
+def test_find_area(chain_mesh: NavMesh, position, expected) -> None:
+    assert chain_mesh.find_area(position) == expected
 
 
 def test_find_area_disambiguates_by_height(tmp_path: Path) -> None:
@@ -89,27 +126,37 @@ def test_find_area_disambiguates_by_height(tmp_path: Path) -> None:
     assert nav.find_area((0.5, 0.5, 95.0)) == 2
 
 
-def test_neighbors(chain_nav: Path) -> None:
-    nav = NavMesh(chain_nav)
-    assert nav.neighbors(2) == [1, 3]
-    assert nav.neighbors(1) == [2]
-    assert nav.neighbors(999) == []
+@pytest.mark.parametrize(
+    ("area_id", "expected"),
+    [(2, [1, 3]), (1, [2]), (999, [])],
+    ids=["middle", "end", "unknown"],
+)
+def test_neighbors(chain_mesh: NavMesh, area_id, expected) -> None:
+    assert chain_mesh.neighbors(area_id) == expected
 
 
-def test_find_path_by_area_id(chain_nav: Path) -> None:
-    nav = NavMesh(chain_nav)
-    assert nav.find_path(1, 3) == [1, 2, 3]
-    assert nav.find_path(3, 1) == [3, 2, 1]
-    assert nav.find_path(1, 1) == [1]
-    assert nav.find_path(1, 3, weight="hops") == [1, 2, 3]
-    assert nav.find_path(1, 3, weight="size") == [1, 2, 3]
+@pytest.mark.parametrize(
+    ("start", "end", "weight", "expected"),
+    [
+        (1, 3, "distance", [1, 2, 3]),
+        (3, 1, "distance", [3, 2, 1]),
+        (1, 1, "distance", [1]),
+        (1, 3, "hops", [1, 2, 3]),
+        (1, 3, "size", [1, 2, 3]),
+    ],
+    ids=["forward", "reverse", "same-area", "hop-weight", "size-weight"],
+)
+def test_find_path_by_area_id(chain_mesh: NavMesh, start, end, weight, expected) -> None:
+    assert chain_mesh.find_path(start, end, weight=weight) == expected
 
 
-def test_find_path_by_point(chain_nav: Path) -> None:
-    nav = NavMesh(chain_nav)
-    assert nav.find_path((0.5, 0.5, 0.0), (2.5, 0.5, 0.0)) == [1, 2, 3]
-    # A point over no area -> empty path.
-    assert nav.find_path((0.5, 0.5, 0.0), (100.0, 100.0, 0.0)) == []
+@pytest.mark.parametrize(
+    ("end", "expected"),
+    [((2.5, 0.5, 0.0), [1, 2, 3]), ((100.0, 100.0, 0.0), [])],
+    ids=["connected", "outside"],
+)
+def test_find_path_by_point(chain_mesh: NavMesh, end, expected) -> None:
+    assert chain_mesh.find_path((0.5, 0.5, 0.0), end) == expected
 
 
 def test_find_path_no_route(tmp_path: Path) -> None:
@@ -181,8 +228,8 @@ def test_unknown_map_raises(asset_cache: Path) -> None:
         NavMesh("de_missing")
 
 
-def test_version_with_file_path_raises(chain_nav: Path) -> None:
+@pytest.mark.parametrize("as_string", [False, True], ids=["path", "string"])
+def test_version_with_file_path_raises(chain_nav: Path, as_string: bool) -> None:
+    path = str(chain_nav) if as_string else chain_nav
     with pytest.raises(ValueError, match="version"):
-        NavMesh(chain_nav, version=2000873)
-    with pytest.raises(ValueError, match="version"):
-        NavMesh(str(chain_nav), version=2000873)
+        NavMesh(path, version=2000873)

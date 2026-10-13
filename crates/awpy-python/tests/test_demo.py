@@ -12,6 +12,67 @@ from awpy import SNAPSHOT_PROPERTIES, Demo, InvalidDemoError
 from polars.testing import assert_frame_equal
 
 
+@pytest.fixture(scope="module")
+def default_ticks(demo: Demo) -> pl.DataFrame:
+    return demo.ticks()
+
+
+@pytest.fixture(scope="module")
+def named_ticks(demo: Demo) -> pl.DataFrame:
+    return demo.ticks(["m_iTeamNum", "name", "velocity_x", "velocity"])
+
+
+@pytest.fixture(scope="module")
+def entity_ticks(demo: Demo) -> pl.DataFrame:
+    return demo.ticks(["m_iTeamNum"], players_only=False)
+
+
+@pytest.fixture(scope="module")
+def first_snapshot(demo: Demo) -> pl.DataFrame:
+    return demo.snapshots(ticks=demo.rounds["freeze_end_tick"][0])
+
+
+@pytest.fixture(scope="module")
+def sampled_snapshots(demo: Demo) -> pl.DataFrame:
+    return demo.snapshots(every=256)
+
+
+BATCH_DATASETS = (
+    "kills",
+    "damages",
+    "blinds",
+    "bomb",
+    "shots",
+    "grenades",
+    "fires",
+    "smokes",
+    "rounds",
+    "players",
+    "stats",
+)
+
+
+@pytest.fixture(scope="module")
+def grouped_load(demo_path: Path) -> tuple[Demo, None]:
+    parsed = Demo(demo_path)
+    result = parsed.load(*BATCH_DATASETS)
+    return parsed, result
+
+
+@pytest.fixture(scope="module")
+def combat_demo(demo_path: Path) -> Demo:
+    parsed = Demo(demo_path)
+    parsed.load("kills", "damages", "blinds", "shots")
+    return parsed
+
+
+@pytest.fixture(scope="module")
+def fused_demo(demo_path: Path) -> Demo:
+    parsed = Demo(demo_path)
+    _ = parsed.stats
+    return parsed
+
+
 def test_missing_file_raises() -> None:
     with pytest.raises(FileNotFoundError):
         Demo("does-not-exist.dem")
@@ -31,60 +92,86 @@ def test_header(demo: Demo) -> None:
     assert header["map_name"].startswith("de_")
 
 
-def test_events_listing(demo: Demo) -> None:
+def test_event_names_are_sorted_and_iterable(demo: Demo) -> None:
     events = demo.events
     assert "player_death" in events
     assert "player_death" in events.names
     assert list(events) == events.names == sorted(events.names)
     assert len(events) == len(events.names)
+
+
+def test_event_counts_include_recorded_deaths(demo: Demo) -> None:
+    events = demo.events
     assert events.counts["player_death"] > 0
+
+
+def test_event_repr_lists_known_names(demo: Demo) -> None:
+    events = demo.events
     assert "player_death" in repr(events)
 
 
-def test_events_access_and_caching(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_death_events_have_recorded_columns(demo: Demo) -> None:
     deaths = demo.events.player_death
     assert isinstance(deaths, pl.DataFrame)
     assert "tick" in deaths.columns
     assert "attacker" in deaths.columns
     assert deaths.height > 0
-    # Item access hits the same cached frame; the accessor itself is cached too.
+
+
+def test_event_item_access_reuses_the_attribute_frame(demo: Demo) -> None:
+    deaths = demo.events.player_death
     assert demo.events["player_death"] is deaths
+
+
+def test_event_accessor_is_cached(demo: Demo) -> None:
     assert demo.events is demo.events
 
 
-def test_events_unknown_name_raises(demo: Demo) -> None:
+def test_unknown_event_item_raises_key_error(demo: Demo) -> None:
     events = demo.events
     with pytest.raises(KeyError, match="no_such_event"):
         events["no_such_event"]
+
+
+def test_unknown_event_attribute_raises_attribute_error(demo: Demo) -> None:
+    events = demo.events
     with pytest.raises(AttributeError, match="no_such_event"):
         _ = events.no_such_event
 
 
-def test_parse_ticks(demo: Demo) -> None:
-    # Default props: one row per player per tick, keyed by steamid, with computed
-    # world position and core state.
-    ticks = demo.ticks()
+def test_default_ticks_have_core_schema(default_ticks: pl.DataFrame) -> None:
+    ticks = default_ticks
     assert isinstance(ticks, pl.DataFrame)
     assert {"tick", "steamid", "X", "Y", "Z", "health", "armor", "team_num"} <= set(ticks.columns)
     assert ticks["steamid"].dtype == pl.UInt64
     assert ticks.height > 0
-    # Identity is complete (filled from the global slot map) and unique per tick:
-    # no pawn/controller double-emission.
+
+
+def test_tick_identity_is_complete_and_unique(default_ticks: pl.DataFrame) -> None:
+    ticks = default_ticks
     assert ticks["steamid"].is_null().sum() == 0
     assert ticks.select(["tick", "steamid"]).n_unique() == ticks.height
-    # A standard match has 10 humans; each tick should have ~10 player rows.
+
+
+def test_ticks_cover_the_match_roster(default_ticks: pl.DataFrame) -> None:
+    ticks = default_ticks
     per_tick = ticks.group_by("tick").len()["len"]
     assert per_tick.max() <= 12  # 10 players (+ occasional connecting/GOTV)
     assert per_tick.median() >= 8
-    # X/Y/Z are world coordinates (computed from cell + offset), not raw offsets.
+
+
+def test_tick_positions_use_world_coordinates(default_ticks: pl.DataFrame) -> None:
+    ticks = default_ticks
     assert ticks["X"].abs().max() > 100.0
-    # Health is a sane 0..100.
+
+
+def test_tick_health_stays_in_the_player_range(default_ticks: pl.DataFrame) -> None:
+    ticks = default_ticks
     assert 0 <= ticks["health"].min() and ticks["health"].max() <= 100
 
-    # Friendly aliases and raw names both work; a pawn field (team) and a
-    # controller field (name) resolve in one call.
-    named = demo.ticks(["m_iTeamNum", "name", "velocity_x", "velocity"])
+
+def test_tick_aliases_resolve_pawn_and_controller_fields(named_ticks: pl.DataFrame) -> None:
+    named = named_ticks
     assert {
         "tick",
         "steamid",
@@ -98,8 +185,11 @@ def test_parse_ticks(demo: Demo) -> None:
     assert named["velocity_x"].is_not_null().any()
     assert named["velocity"].max() > 0
 
-    # players_only=False still dumps every entity separately.
-    raw = demo.ticks(["m_iTeamNum"], players_only=False)
+
+def test_raw_ticks_keep_separate_entity_identities(
+    entity_ticks: pl.DataFrame, default_ticks: pl.DataFrame
+) -> None:
+    raw, ticks = entity_ticks, default_ticks
     assert {
         "tick",
         "entity_id",
@@ -137,7 +227,7 @@ def test_players(demo: Demo) -> None:
     assert set(humans["side"].unique()) <= {"terrorist", "counter-terrorist"}
 
 
-def test_players_team_clan_names(demo: Demo) -> None:
+def test_playing_sides_have_consistent_clan_names(demo: Demo) -> None:
     players = demo.players
     playing = players.filter(pl.col("side").is_in(["terrorist", "counter-terrorist"]))
     named = playing.drop_nulls("team_clan_name")
@@ -151,12 +241,15 @@ def test_players_team_clan_names(demo: Demo) -> None:
     # so the two can never describe different moments.
     per_side = named.group_by("side").agg(pl.col("team_clan_name").n_unique().alias("clans"))
     assert (per_side["clans"] == 1).all()
-    # Spectators and unassigned players are on no team, so they carry no clan.
+
+
+def test_spectators_have_no_clan_name(demo: Demo) -> None:
+    players = demo.players
     bench = players.filter(~pl.col("side").is_in(["terrorist", "counter-terrorist"]))
     assert bench["team_clan_name"].null_count() == bench.height
 
 
-def test_tick_rate(demo: Demo) -> None:
+def test_tick_rate_matches_recorded_playback(demo: Demo) -> None:
     assert isinstance(demo.tick_rate, float)
     # Every competitive demo is 64 or 128 tick; the fallback is 64.
     assert demo.tick_rate in (64.0, 128.0)
@@ -166,20 +259,35 @@ def test_tick_rate(demo: Demo) -> None:
     if ticks and seconds:
         assert demo.tick_rate == pytest.approx(ticks / seconds, rel=1e-3)
 
+
+def test_tick_to_seconds_uses_the_tick_rate(demo: Demo) -> None:
     tick = 12_345
     elapsed = demo.tick_to_seconds(tick)
     assert elapsed == pytest.approx(tick / demo.tick_rate)
+
+
+def test_seconds_to_tick_round_trips_ticks(demo: Demo) -> None:
+    tick = 12_345
+    elapsed = demo.tick_to_seconds(tick)
     assert demo.seconds_to_tick(elapsed) == tick
+
+
+def test_seconds_to_tick_accepts_negative_time(demo: Demo) -> None:
     assert demo.seconds_to_tick(-1.0) == -round(demo.tick_rate)
+
+
+def test_seconds_to_tick_rejects_infinity(demo: Demo) -> None:
     with pytest.raises(ValueError):
         demo.seconds_to_tick(float("inf"))
+
+
+def test_seconds_to_tick_rejects_nan(demo: Demo) -> None:
     with pytest.raises(ValueError):
         demo.seconds_to_tick(float("nan"))
 
 
-def test_snapshot_single_tick(demo: Demo) -> None:
-    tick = demo.rounds.row(0, named=True)["freeze_end_tick"]
-    snap = demo.snapshots(ticks=tick)
+def test_snapshot_schema_matches_the_property_catalog(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     assert {
         "tick",
         "steamid",
@@ -198,20 +306,43 @@ def test_snapshot_single_tick(demo: Demo) -> None:
         "yaw",
     } <= set(snap.columns)
     assert set(snap.columns) == {"tick", *SNAPSHOT_PROPERTIES}
-    assert snap.height == 10  # every player, alive at freeze end
-    assert snap["tick"].unique().to_list() == [tick]
-    assert snap["health"].min() == 100
-    assert snap["x"].null_count() == 0
-    assert snap["velocity_x"].null_count() == 0
-    assert snap["velocity"].min() >= 0
     for name in ("is_reloading", "is_silent_reloading"):
         assert snap[name].dtype == pl.Boolean
-    # Empty samples must keep the nullable Boolean schema.
+
+
+def test_single_snapshot_contains_all_players_at_the_selected_tick(
+    demo: Demo, first_snapshot: pl.DataFrame
+) -> None:
+    snap = first_snapshot
+    tick = demo.rounds["freeze_end_tick"][0]
+    assert snap.height == 10  # every player, alive at freeze end
+    assert snap["tick"].unique().to_list() == [tick]
+
+
+def test_freeze_end_players_have_full_health(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
+    assert snap["health"].min() == 100
+
+
+def test_snapshot_positions_are_resolved(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
+    assert snap["x"].null_count() == 0
+
+
+def test_snapshot_velocity_is_resolved_and_nonnegative(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
+    assert snap["velocity_x"].null_count() == 0
+    assert snap["velocity"].min() >= 0
+
+
+def test_empty_snapshot_selection_keeps_reload_schema(demo: Demo) -> None:
     empty = demo.snapshots(ticks=[2_000_000_000, 2_000_000_001])
     assert empty.is_empty()
     for name in ("is_reloading", "is_silent_reloading"):
         assert empty[name].dtype == pl.Boolean
-    # Snapshots must work anywhere in the demo, not just near full packets.
+
+
+def test_single_seeks_work_away_from_full_packets(demo: Demo) -> None:
     for probe in (2000, 29000, 60000, 150000):
         assert demo.snapshots(ticks=probe).height == 10, f"empty snapshot at tick {probe}"
 
@@ -225,52 +356,80 @@ def test_snapshot_tick_range(demo: Demo) -> None:
     assert span.height == ticks.n_unique() * 10
 
 
-def test_snapshots_sampled(demo: Demo) -> None:
-    # `every=N`: evenly spaced ticks, same schema as a single snapshot, 10 players each.
-    every = demo.snapshots(every=256)
+def test_sampled_snapshot_schema_matches_single_seeks(
+    demo: Demo, sampled_snapshots: pl.DataFrame
+) -> None:
+    every = sampled_snapshots
     one = demo.snapshots(ticks=demo.rounds["freeze_end_tick"][0])
     assert set(every.columns) == set(one.columns)
+
+
+def test_snapshot_stride_keeps_even_tick_spacing(sampled_snapshots: pl.DataFrame) -> None:
+    every = sampled_snapshots
     gaps = every["tick"].unique().sort().diff().drop_nulls()
     assert gaps.min() >= 256 and gaps.max() == 256  # gap-robust stride hits exactly N
+
+
+def test_sampled_snapshots_keep_the_full_roster(sampled_snapshots: pl.DataFrame) -> None:
+    every = sampled_snapshots
     assert every.height == every["tick"].n_unique() * 10
-    # Weapons must resolve in the sampled pass, not just single snapshot() — the
-    # filtered decode has to keep weapon entities, else the loadout is all null.
+
+
+def test_sampled_snapshots_resolve_weapon_entities(sampled_snapshots: pl.DataFrame) -> None:
+    every = sampled_snapshots
     assert every["primary_weapon"].drop_nulls().len() > 0
     assert every.filter(pl.col("inventory") != "").height > 0
 
-    # `seconds=S` converts via the tick rate (64-tick demo -> 256-tick stride).
+
+def test_seconds_sampling_converts_to_a_tick_stride(demo: Demo) -> None:
     per_sec = demo.snapshots(seconds=4.0)
     assert per_sec["tick"].unique().sort().diff().drop_nulls().max() == 256
 
-    # `events=` samples exactly the ticks those events fired on (they are real
-    # frame ticks, so every kill tick is present).
+
+def test_death_sampling_uses_exact_event_ticks(demo: Demo) -> None:
     kill_ticks = set(demo.kills["tick"].to_list())
     on_kills = demo.snapshots(events="player_death")
     assert set(on_kills["tick"].to_list()) == kill_ticks
 
+
+def test_multiple_event_selectors_form_a_tick_union(demo: Demo) -> None:
+    kill_ticks = set(demo.kills["tick"].to_list())
     plant_ticks = set(demo.bomb.filter(pl.col("event") == "finish_plant")["tick"].to_list())
     on_kills_or_plants = demo.snapshots(events=["player_death", "bomb_planted"])
     assert set(on_kills_or_plants["tick"].to_list()) == kill_ticks | plant_ticks
 
-    # Explicit ticks (drawn from real frames), and the stride ∪ events union.
+
+def test_explicit_snapshot_selection_uses_only_requested_ticks(
+    demo: Demo, sampled_snapshots: pl.DataFrame
+) -> None:
+    every = sampled_snapshots
     some_ticks = every["tick"].unique().to_list()[:3]
     picked = demo.snapshots(ticks=some_ticks)
     assert set(picked["tick"].to_list()) == set(some_ticks)
+
+
+def test_stride_and_event_selectors_form_a_tick_union(
+    demo: Demo, sampled_snapshots: pl.DataFrame
+) -> None:
+    every = sampled_snapshots
+    kill_ticks = set(demo.kills["tick"].to_list())
     union = demo.snapshots(every=256, events="player_death")
     assert kill_ticks <= set(union["tick"].to_list())
     assert set(every["tick"].to_list()) <= set(union["tick"].to_list())
 
-    # Selectors are required, and every/seconds are mutually exclusive.
+
+def test_snapshots_require_a_selector(demo: Demo) -> None:
     with pytest.raises(ValueError):
         demo.snapshots()
+
+
+def test_snapshot_time_and_tick_strides_are_mutually_exclusive(demo: Demo) -> None:
     with pytest.raises(ValueError):
         demo.snapshots(every=64, seconds=1.0)
 
 
-def test_snapshot_economy(demo: Demo) -> None:
-    # Freeze end of the first (pistol) round: all 10 players alive and armed.
-    tick = demo.rounds.row(0, named=True)["freeze_end_tick"]
-    snap = demo.snapshots(ticks=tick)
+def test_snapshot_economy_schema(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     econ = {
         "health",
         "armor",
@@ -299,31 +458,61 @@ def test_snapshot_economy(demo: Demo) -> None:
         "inventory",
     }
     assert econ <= set(snap.columns)
-    assert snap.height == 10
     assert snap["equipment_value"].dtype == pl.Int32
-    # Every alive player bought something and carries a knife.
+
+
+def test_freeze_end_equipment_has_positive_value(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     assert (snap["equipment_value"] > 0).all()
+
+
+def test_freeze_end_loadouts_include_a_knife(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     assert snap["inventory"].str.contains("knife").all()
-    # Pistol round: everyone has a pistol, nobody has a rifle.
+
+
+def test_pistol_round_loadouts_have_pistols_and_no_primary_weapon(
+    first_snapshot: pl.DataFrame,
+) -> None:
+    snap = first_snapshot
     assert snap["secondary_weapon"].null_count() == 0
     assert snap["primary_weapon"].null_count() == 10
-    # Exactly one player carries the bomb.
+
+
+def test_one_player_carries_the_bomb_at_freeze_end(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     assert snap["has_bomb"].sum() == 1
-    # Money is a sane amount and typed; the active weapon resolves for everyone.
+
+
+def test_snapshot_money_is_nonnegative(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     assert snap["money"].min() >= 0
+
+
+def test_snapshot_active_weapons_are_resolved(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     assert snap["active_weapon"].null_count() == 0
-    # Grenade counts are non-negative; the loadout never lists two bombs (the
-    # over-scan bug that a stale inventory slot would cause).
+
+
+def test_snapshot_grenade_counts_are_nonnegative(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     for col in ("he_grenades", "flashbangs", "smoke_grenades", "fire_grenades", "decoy_grenades"):
         assert snap[col].min() >= 0
+
+
+def test_loadouts_do_not_repeat_the_bomb(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     assert (snap["inventory"].str.count_matches("c4") <= 1).all()
-    # The primary/secondary names, when present, appear in the inventory string.
+
+
+def test_secondary_weapon_names_match_the_inventory(first_snapshot: pl.DataFrame) -> None:
+    snap = first_snapshot
     for row in snap.iter_rows(named=True):
         if row["secondary_weapon"]:
             assert row["secondary_weapon"] in row["inventory"]
 
 
-def test_blinds(demo: Demo) -> None:
+def test_blinds_schema(demo: Demo) -> None:
     blinds = demo.blinds
     assert isinstance(blinds, pl.DataFrame)
     expected = {
@@ -345,22 +534,29 @@ def test_blinds(demo: Demo) -> None:
     }
     assert expected <= set(blinds.columns)
     assert blinds["duration"].dtype == pl.Float32
-    # Demos without flashbang_detonate (rare) yield an empty frame; the fixture
-    # is a real match, so it has flashes.
-    if blinds.height:
-        assert (blinds["duration"] > 0).all()
-        assert blinds["duration"].max() <= 6.0  # engine flash cap is ~5 s
-        # Every blinded victim is resolved to a side and a position.
-        assert blinds["victim_side"].null_count() == 0
-        assert set(blinds["victim_side"].unique()) <= {"terrorist", "counter-terrorist"}
-        assert blinds["victim_x"].null_count() == 0
-        # Rows are in tick order.
-        assert blinds["victim_entity_id"].null_count() == 0
-        assert blinds["victim_entity_serial"].dtype == pl.UInt32
-        assert blinds["tick"].to_list() == sorted(blinds["tick"].to_list())
+    assert blinds["victim_entity_serial"].dtype == pl.UInt32
 
 
-def test_item_events(demo: Demo) -> None:
+def test_blind_duration_stays_within_the_flash_limit(demo: Demo) -> None:
+    blinds = demo.blinds
+    assert (blinds["duration"] > 0).all()
+    assert blinds["duration"].max() <= 6.0  # engine flash cap is ~5 s
+
+
+def test_blind_victim_identity_is_resolved(demo: Demo) -> None:
+    blinds = demo.blinds
+    assert blinds["victim_side"].null_count() == 0
+    assert set(blinds["victim_side"].unique()) <= {"terrorist", "counter-terrorist"}
+    assert blinds["victim_x"].null_count() == 0
+    assert blinds["victim_entity_id"].null_count() == 0
+
+
+def test_blinds_are_in_tick_order(demo: Demo) -> None:
+    blinds = demo.blinds
+    assert blinds["tick"].to_list() == sorted(blinds["tick"].to_list())
+
+
+def test_item_event_schema(demo: Demo) -> None:
     items = demo.item_events
     assert isinstance(items, pl.DataFrame)
     expected = {
@@ -384,22 +580,41 @@ def test_item_events(demo: Demo) -> None:
     assert set(items["action"].unique()) <= {"purchase", "pickup", "drop"}
     assert items["entity_id"].null_count() == 0
     assert items["entity_serial"].dtype == pl.UInt32
-    # The knife is excluded (default loadout, never bought/dropped meaningfully).
+
+
+def test_item_events_exclude_default_knives(demo: Demo) -> None:
+    items = demo.item_events
     assert "knife" not in set(items["item"].unique())
-    # Rows are in tick order.
+
+
+def test_item_events_are_in_tick_order(demo: Demo) -> None:
+    items = demo.item_events
     assert items["tick"].to_list() == sorted(items["tick"].to_list())
 
+
+def test_purchases_record_the_buyers_own_weapon(demo: Demo) -> None:
+    items = demo.item_events
     purchases = items.filter(pl.col("action") == "purchase")
     assert purchases.height > 0
     # A purchase is the buyer's own weapon, at a plausible cost (never a money
     # reset, which would show as a huge "cost").
     assert (purchases["original_owner_steamid"] == purchases["steamid"]).all()
+
+
+def test_purchase_costs_stay_in_the_item_price_range(demo: Demo) -> None:
+    purchases = demo.item_events.filter(pl.col("action") == "purchase")
     assert purchases["cost"].min() > 0
     assert purchases["cost"].max() <= 6500
-    # Pickups and drops carry no cost.
+
+
+def test_pickups_and_drops_have_no_purchase_cost(demo: Demo) -> None:
+    items = demo.item_events
     non_purchase = items.filter(pl.col("action") != "purchase")
     assert non_purchase["cost"].null_count() == non_purchase.height
-    # Drops record whether they happened near a buy zone.
+
+
+def test_drops_record_buy_zone_state(demo: Demo) -> None:
+    items = demo.item_events
     drops = items.filter(pl.col("action") == "drop")
     if drops.height:
         assert drops["near_buy_zone"].null_count() == 0
@@ -425,15 +640,23 @@ def test_nullable_steamid_columns_use_uint64(demo: Demo) -> None:
         assert all(frame.schema[name] == pl.UInt64 for name in steamid_columns)
 
 
-def test_chat(demo: Demo) -> None:
+def test_chat_schema(demo: Demo) -> None:
     chat = demo.chat
     assert isinstance(chat, pl.DataFrame)
     # Server-side demos may strip chat entirely; the schema must hold anyway.
     assert {"tick", "entity_index", "name", "message", "channel"} <= set(chat.columns)
+
+
+def test_chat_includes_each_saytext_message(demo: Demo) -> None:
+    chat = demo.chat
     say_text_count = sum(
         count for name, count in demo.events.counts.items() if "saytext" in name.lower()
     )
     assert chat.height == say_text_count
+
+
+def test_chat_text_is_not_null(demo: Demo) -> None:
+    chat = demo.chat
     assert chat["message"].null_count() == 0
 
 
@@ -445,7 +668,7 @@ def test_convars(demo: Demo) -> None:
     assert any(key.startswith("mp_") for key in convars)
 
 
-def test_rounds(demo: Demo) -> None:
+def test_round_schema(demo: Demo) -> None:
     rounds = demo.rounds
     assert isinstance(rounds, pl.DataFrame)
     assert {
@@ -459,14 +682,20 @@ def test_rounds(demo: Demo) -> None:
         "reason_name",
     } <= set(rounds.columns)
     assert rounds.height > 0
-    # Winners are terrorist / counter-terrorist.
+
+
+def test_round_winners_are_playing_sides(demo: Demo) -> None:
+    rounds = demo.rounds
     assert set(rounds["winner_side"].unique()) <= {"terrorist", "counter-terrorist"}
-    # End ticks are strictly increasing across rounds.
+
+
+def test_round_end_ticks_are_ordered(demo: Demo) -> None:
+    rounds = demo.rounds
     end = rounds["end_tick"].to_list()
     assert end == sorted(end)
 
 
-def test_kills(demo: Demo) -> None:
+def test_kill_schema(demo: Demo) -> None:
     kills = demo.kills
     assert isinstance(kills, pl.DataFrame)
     expected = {
@@ -501,19 +730,30 @@ def test_kills(demo: Demo) -> None:
     assert kills["headshot"].dtype == pl.Boolean
     assert kills["attacker_x"].dtype == pl.Float32
     assert kills["attacker_steamid"].dtype == pl.UInt64
-    # Sides are terrorist / counter-terrorist (or null for world kills).
-    sides = set(kills["attacker_side"].drop_nulls().unique())
-    assert kills["victim_entity_id"].null_count() == 0
     assert kills["victim_entity_serial"].dtype == pl.UInt32
+
+
+def test_kill_victims_have_entity_identity(demo: Demo) -> None:
+    kills = demo.kills
+    assert kills["victim_entity_id"].null_count() == 0
+
+
+def test_resolved_kill_attackers_have_entity_identity(demo: Demo) -> None:
+    kills = demo.kills
     assert (
         kills.filter(pl.col("attacker_steamid").is_not_null())["attacker_entity_id"]
         .is_not_null()
         .all()
     )
+
+
+def test_kill_attackers_have_playing_sides_when_present(demo: Demo) -> None:
+    kills = demo.kills
+    sides = set(kills["attacker_side"].drop_nulls().unique())
     assert sides <= {"terrorist", "counter-terrorist"}
 
 
-def test_damages(demo: Demo) -> None:
+def test_damage_schema(demo: Demo) -> None:
     damages = demo.damages
     assert isinstance(damages, pl.DataFrame)
     assert {
@@ -533,16 +773,22 @@ def test_damages(demo: Demo) -> None:
         "tick",
     } <= set(damages.columns)
     assert damages.height > 0
-    # Pre-health is health_post + dmg_health, clamped to the 100 HP maximum
-    # (raw damage can exceed remaining health on a lethal hit).
+    assert damages["victim_entity_serial"].dtype == pl.UInt32
+
+
+def test_damage_pre_health_is_reconstructed_and_capped(demo: Demo) -> None:
+    damages = demo.damages
     bad = damages.filter(
         pl.col("health_pre")
         != pl.min_horizontal(pl.col("health_post") + pl.col("dmg_health"), pl.lit(100))
     )
-    assert damages["victim_entity_id"].null_count() == 0
-    assert damages["victim_entity_serial"].dtype == pl.UInt32
     assert bad.height == 0
     assert damages["health_pre"].max() <= 100
+
+
+def test_damage_victims_have_entity_identity(demo: Demo) -> None:
+    damages = demo.damages
+    assert damages["victim_entity_id"].null_count() == 0
 
 
 def test_bomb(demo: Demo) -> None:
@@ -560,16 +806,21 @@ def test_bomb(demo: Demo) -> None:
     assert {"entity_id", "entity_serial"} <= set(bomb.columns)
 
 
-def test_grenades(demo: Demo) -> None:
+def test_grenade_schema(demo: Demo) -> None:
     g = demo.grenades
     assert isinstance(g, pl.DataFrame)
     assert {"tick", "thrower_name", "type", "entity_id", "x", "y", "z"} <= set(g.columns)
-    # The smoke-grenade projectile is BOTH a grenade (its throw) and a smoke (its
-    # cloud); its throw trajectory must still land in grenades. Guards the shared
-    # projectile pass against dropping the class's second role.
-    assert g.filter(pl.col("type") == "smoke").height > 0
     assert "entity_serial" in g.columns
     assert g["entity_serial"].dtype == pl.UInt32
+
+
+def test_smoke_projectiles_keep_their_grenade_role(demo: Demo) -> None:
+    g = demo.grenades
+    assert g.filter(pl.col("type") == "smoke").height > 0
+
+
+def test_grenades_use_known_type_labels(demo: Demo) -> None:
+    g = demo.grenades
     assert set(g["type"].unique()) <= {"smoke", "he", "flashbang", "molotov", "decoy", "grenade"}
 
 
@@ -594,7 +845,7 @@ def test_fires_and_smokes(demo: Demo) -> None:
         assert (df["end_tick"] > df["start_tick"]).all()
 
 
-def test_shots(demo: Demo) -> None:
+def test_shot_schema(demo: Demo) -> None:
     shots = demo.shots
     assert isinstance(shots, pl.DataFrame)
     assert {
@@ -615,26 +866,28 @@ def test_shots(demo: Demo) -> None:
         "num_bullets_remaining",
     } <= set(shots.columns)
     assert shots.height > 0
-
-    # Every shot resolves its shooter from the pawn handle.
-    assert shots["steamid"].is_not_null().all()
-    assert shots["entity_id"].is_not_null().all()
     assert shots["entity_serial"].dtype == pl.UInt32
 
-    # Clip / accuracy come from following the shooter's active-weapon handle to a
-    # weapon entity, which the shared event pass decodes via the weapon-class
-    # filter. If that filter ever stops covering a fired weapon, clip/accuracy
-    # silently go null — so guard the common case: firearm shots dominate
-    # weapon_fire events, so the large majority of shots must resolve a clip, and
-    # at least one must carry a real (positive) round count.
+
+def test_shot_identity_is_resolved(demo: Demo) -> None:
+    shots = demo.shots
+    assert shots["steamid"].is_not_null().all()
+    assert shots["entity_id"].is_not_null().all()
+
+
+def test_shots_resolve_recorded_clip_counts(demo: Demo) -> None:
+    shots = demo.shots
     clip_frac = shots["num_bullets_remaining"].is_not_null().mean()
     assert clip_frac >= 0.7, f"only {clip_frac:.1%} of shots resolved a weapon clip"
-    assert shots["inaccuracy"].is_not_null().mean() >= 0.7
     assert (shots["num_bullets_remaining"] > 0).sum() > 0
 
 
-def test_stats(demo_path: Path) -> None:
-    demo = Demo(demo_path)
+def test_shots_resolve_weapon_inaccuracy(demo: Demo) -> None:
+    shots = demo.shots
+    assert shots["inaccuracy"].is_not_null().mean() >= 0.7
+
+
+def test_scoreboard_schema(demo: Demo) -> None:
     stats = demo.stats
     assert isinstance(stats, pl.DataFrame)
     assert {
@@ -653,125 +906,125 @@ def test_stats(demo_path: Path) -> None:
         "adr",
     } <= set(stats.columns)
     assert stats.height > 0
-    # KAST is a percentage; ADR is non-negative; every opening kill has a death.
-    assert stats["kast"].max() <= 100.0
-    assert stats["adr"].min() >= 0.0
-    assert stats["opening_kills"].sum() == stats["opening_deaths"].sum()
-    # Non-negative counts throughout.
-    assert stats["kills"].min() >= 0
-    assert stats is demo.player_stats()
-    with_knife_rounds = demo.player_stats(include_knife_rounds=True)
-    assert with_knife_rounds is demo.player_stats(include_knife_rounds=True)
-    # Flash assists are a subset of assists (every flash assist is an assist).
-    assert (stats["flash_assists"] <= stats["assists"]).all()
-
-    # Utility stats: present, non-negative, and something happened over a match.
     assert {
         "utility_damage",
         "flashes_thrown",
         "enemies_flashed",
         "flash_duration_dealt",
     } <= set(stats.columns)
+
+
+def test_kast_is_a_percentage(demo: Demo) -> None:
+    stats = demo.stats
+    assert stats["kast"].max() <= 100.0
+
+
+def test_adr_is_nonnegative(demo: Demo) -> None:
+    stats = demo.stats
+    assert stats["adr"].min() >= 0.0
+
+
+def test_opening_kill_and_death_totals_match(demo: Demo) -> None:
+    stats = demo.stats
+    assert stats["opening_kills"].sum() == stats["opening_deaths"].sum()
+
+
+def test_kill_counts_are_nonnegative(demo: Demo) -> None:
+    stats = demo.stats
+    assert stats["kills"].min() >= 0
+
+
+def test_stats_property_reuses_the_default_method_result(demo: Demo) -> None:
+    stats = demo.stats
+    assert stats is demo.player_stats()
+
+
+def test_stats_including_knife_rounds_are_cached(demo: Demo) -> None:
+    with_knife_rounds = demo.player_stats(include_knife_rounds=True)
+    assert with_knife_rounds is demo.player_stats(include_knife_rounds=True)
+
+
+def test_flash_assists_are_a_subset_of_assists(demo: Demo) -> None:
+    stats = demo.stats
+    assert (stats["flash_assists"] <= stats["assists"]).all()
+
+
+def test_utility_counts_are_nonnegative(demo: Demo) -> None:
+    stats = demo.stats
     for col in ("utility_damage", "flashes_thrown", "enemies_flashed", "flash_duration_dealt"):
         assert stats[col].min() >= 0
+
+
+def test_scoreboard_counts_recorded_flashes(demo: Demo) -> None:
+    stats = demo.stats
     assert stats["flashes_thrown"].sum() > 0
+
+
+def test_scoreboard_counts_utility_damage(demo: Demo) -> None:
+    stats = demo.stats
     assert stats["utility_damage"].sum() > 0
-    # You can't blind more enemies than you threw flashes at (loosely).
+
+
+def test_scoreboard_counts_blind_duration(demo: Demo) -> None:
+    stats = demo.stats
     assert stats["flash_duration_dealt"].sum() > 0
-
-
-def test_fused_stats_matches_full_datasets(demo_path: Path) -> None:
-    # Stats-first uses the selective fused pass.
-    fused = Demo(demo_path)
-    fused_stats = fused.stats
-
-    # A planned union of the four stats event inputs exercises aggregation
-    # from independently cached parts, including fully enriched shots.
-    full = Demo(demo_path)
-    full.load("kills", "damages", "blinds", "shots")
-    full_kills = full.kills
-    full_stats = full.stats
-
-    assert fused_stats.equals(full_stats)
-    assert fused.kills.equals(full_kills)
-    assert fused.damages.equals(full.damages)
-    assert fused.blinds.equals(full.blinds)
-    assert fused.rounds.equals(full.rounds)
-
-    # The fused pass also tracks the roster using changed entity indices.
-    assert fused.players.equals(Demo(demo_path).players)
-
-
-def test_load_unions_and_caches_datasets(demo_path: Path) -> None:
-    assert {"players", "stats", "rounds", "kills"} <= set(Demo.available_datasets())
-
-    demo = Demo(demo_path)
-    requested = (
-        "kills",
-        "damages",
-        "blinds",
-        "bomb",
-        "shots",
-        "grenades",
-        "fires",
-        "smokes",
-        "rounds",
-        "players",
-        "stats",
-    )
-    assert demo.load(*requested) is None
-
-    cached = {name: getattr(demo, name) for name in requested}
-    for name, frame in cached.items():
-        assert getattr(demo, name) is frame, name
-
-    # Compare the planned union with incremental loads on a new Demo.
-    fresh = Demo(demo_path)
-    for name in requested:
-        assert_frame_equal(cached[name], getattr(fresh, name), check_exact=True)
-
-    with pytest.raises(ValueError, match="unknown dataset"):
-        demo.load("not_a_dataset")
 
 
 CLUTCH_COLS = ("clutch_1v1", "clutch_1v2", "clutch_1v3", "clutch_1v4", "clutch_1v5")
 
 
-def test_stats_clutches(demo: Demo) -> None:
+def test_clutch_schema_and_nonnegative_counts(demo: Demo) -> None:
     stats = demo.stats
     assert {"clutches_played", "clutches_won", *CLUTCH_COLS} <= set(stats.columns)
     for col in ("clutches_played", "clutches_won", *CLUTCH_COLS):
         assert stats[col].min() >= 0
 
-    # You cannot win more clutches than you played.
+
+def test_clutch_wins_do_not_exceed_attempts(demo: Demo) -> None:
+    stats = demo.stats
     assert (stats["clutches_won"] <= stats["clutches_played"]).all()
-    # The 1vN breakdown covers exactly the wins.
+
+
+def test_clutch_size_breakdown_covers_each_win(demo: Demo) -> None:
+    stats = demo.stats
     breakdown = sum(stats[col] for col in CLUTCH_COLS)
     assert (breakdown == stats["clutches_won"]).all()
 
-    # At most one clutch per side per round, so never more than 2 per round.
+
+def test_clutch_attempts_are_bounded_per_round(demo: Demo) -> None:
+    stats = demo.stats
     n_rounds = demo.rounds.filter(~pl.col("is_knife_round")).height
     assert stats["clutches_played"].sum() <= 2 * n_rounds
-    # A full match always leaves someone last alive at least once.
+
+
+def test_scoreboard_records_clutch_attempts(demo: Demo) -> None:
+    stats = demo.stats
     assert stats["clutches_played"].sum() > 0
 
 
-def test_kills_trade_flags(demo: Demo) -> None:
+def test_trade_flag_schema(demo: Demo) -> None:
     kills = demo.kills
     assert {"is_trade", "victim_traded"} <= set(kills.columns)
     assert kills["is_trade"].dtype == pl.Boolean
     assert kills["victim_traded"].dtype == pl.Boolean
 
+
+def test_each_trade_kill_matches_one_death(demo: Demo) -> None:
+    kills = demo.kills
     trades = kills.filter(pl.col("is_trade"))
     traded = kills.filter(pl.col("victim_traded"))
     assert trades.height > 0, "a full match always has trade kills"
-    # Duals: every trade kill must be preceded by a traded death on the other
-    # side, and one kill can avenge several teammates at once — so traded deaths
-    # are at least as numerous as the kills that avenged them, never fewer.
-    assert traded.height >= trades.height
-    # A trade kill is by definition against the opposing side.
+    # Each trade kill matches one earlier death, so the flag totals are equal.
+    assert traded.height == trades.height
+
+
+def test_trade_kills_are_against_opponents(demo: Demo) -> None:
+    trades = demo.kills.filter(pl.col("is_trade"))
     assert (trades["attacker_side"] != trades["victim_side"]).all()
-    # A death with no resolved victim side has no team to avenge it.
+
+
+def test_traded_deaths_have_a_resolved_side(demo: Demo) -> None:
+    traded = demo.kills.filter(pl.col("victim_traded"))
     assert traded["victim_side"].null_count() == 0
 
 
@@ -796,20 +1049,36 @@ def test_traded_deaths_match_the_kills_dataset(demo: Demo) -> None:
         assert (joined["traded_deaths"] <= joined["flagged"]).all()
 
 
-def test_round_economy(demo: Demo) -> None:
+def test_round_economy_schema(demo: Demo) -> None:
     econ = demo.round_economy
     assert isinstance(econ, pl.DataFrame)
     assert {"round_num", "side", "equipment_value", "buy_type", "n_players"} <= set(econ.columns)
     assert econ.height > 0
-    # One row per (round, side).
+
+
+def test_round_economy_has_one_row_per_side(demo: Demo) -> None:
+    econ = demo.round_economy
     assert econ.select("round_num", "side").n_unique() == econ.height
+
+
+def test_round_economy_uses_known_categories(demo: Demo) -> None:
+    econ = demo.round_economy
     assert set(econ["side"].unique()) <= {"terrorist", "counter-terrorist"}
     assert set(econ["buy_type"].unique()) <= {"pistol", "eco", "force", "full"}
-    # Team equipment is non-negative, and a real match has a mix of buy types.
+
+
+def test_round_equipment_values_are_nonnegative(demo: Demo) -> None:
+    econ = demo.round_economy
     assert econ["equipment_value"].min() >= 0
+
+
+def test_match_economy_contains_different_buy_types(demo: Demo) -> None:
+    econ = demo.round_economy
     assert econ["buy_type"].n_unique() >= 2
-    # Round 1 is a pistol round for both teams (detected via the halftime side
-    # flip, so there is a second pistol round later too).
+
+
+def test_both_halves_start_with_pistol_buys(demo: Demo) -> None:
+    econ = demo.round_economy
     assert (econ.filter(pl.col("round_num") == 1)["buy_type"] == "pistol").all()
     pistol_rounds = econ.filter(pl.col("buy_type") == "pistol")["round_num"].unique()
     assert len(pistol_rounds) == 2  # round 1 and the second-half pistol
@@ -852,3 +1121,38 @@ def test_sparse_snapshots_match_full_scan(
         expected = reference.filter(pl.col("tick").is_in(query))
         actual = match_demo.snapshots(ticks=query)
         assert_frame_equal(actual, expected, check_exact=True)
+
+
+@pytest.mark.parametrize("dataset", ["stats", "kills", "damages", "blinds", "rounds", "players"])
+def test_fused_pass_matches_separately_loaded_inputs(
+    fused_demo: Demo, combat_demo: Demo, dataset: str
+) -> None:
+    assert_frame_equal(
+        getattr(fused_demo, dataset), getattr(combat_demo, dataset), check_exact=True
+    )
+
+
+@pytest.mark.parametrize("dataset", BATCH_DATASETS)
+def test_grouped_load_matches_incremental_loads(
+    grouped_load: tuple[Demo, None], demo: Demo, dataset: str
+) -> None:
+    assert_frame_equal(getattr(grouped_load[0], dataset), getattr(demo, dataset), check_exact=True)
+
+
+@pytest.mark.parametrize("dataset", BATCH_DATASETS)
+def test_loaded_dataset_is_cached(grouped_load: tuple[Demo, None], dataset: str) -> None:
+    parsed = grouped_load[0]
+    assert getattr(parsed, dataset) is getattr(parsed, dataset)
+
+
+def test_load_returns_none(grouped_load: tuple[Demo, None]) -> None:
+    assert grouped_load[1] is None
+
+
+def test_available_datasets_include_the_core_tables() -> None:
+    assert {"players", "stats", "rounds", "kills"} <= set(Demo.available_datasets())
+
+
+def test_load_rejects_unknown_datasets(demo_path: Path) -> None:
+    with pytest.raises(ValueError, match="unknown dataset"):
+        Demo(demo_path).load("not_a_dataset")

@@ -94,17 +94,18 @@ Participant columns are null if the participant is absent or cannot be resolved.
 ### Trades
 
 Two flags mark each kill's place in a trade. A **trade** is a kill that avenges a
-teammate killed within the last 5 seconds:
+teammate killed within the last 5.25 seconds:
 
 | Column | Description |
 | --- | --- |
 | `is_trade` | This kill **is** a trade — the attacker killed someone who had just killed one of their teammates. |
 | `victim_traded` | This kill's **victim was traded** — a teammate of the victim killed this attacker within the window. |
 
-The revenge kill has `is_trade`; the earlier death has `victim_traded`.
+Each revenge kill trades only the earliest qualifying teammate death within
+5.25 seconds. Each death can be traded once. Equal-tick deaths use event order.
+The revenge kill has `is_trade`; the matched death has `victim_traded`.
 Stats count `victim_traded` as `traded_deaths`.
-The totals can differ because one kill can avenge several deaths.
-A kill can have both flags.
+The two flag totals are equal. A kill can have both flags.
 
 ```python
 # Headshot rate per weapon
@@ -306,6 +307,11 @@ common scoreboard metrics. Columns: `steamid`, `name`, `rounds_played`, `kills`,
 `multikill_5k`, `kast`, `adr`, clutches (`clutches_played`, `clutches_won`,
 `clutch_1v1` … `clutch_1v5`), plus utility: `utility_damage`, `flashes_thrown`,
 `enemies_flashed`, `flash_duration_dealt`.
+
+Assists include the kill event's recorded assister and teammates with an active
+blind on the victim at the kill. Each player counts once per kill. Flash assists
+are a subset of assists. Several players can receive credit for one kill.
+The `kills` table retains the event's single recorded assister.
 
 See {doc}`reference` for metric definitions.
 KAST is the percentage of rounds with a kill, assist, survival, or traded death.

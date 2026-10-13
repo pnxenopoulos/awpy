@@ -49,7 +49,7 @@ docs = [
     "myst-parser==5.1.0",
     # `api.md` autodocs `awpy.plot`, so the docs build has to be able to import
     # it — which needs the `plot` extra's matplotlib.
-    "matplotlib==3.11",
+    "matplotlib==3.11.2",
 ]
 
 [build-system]

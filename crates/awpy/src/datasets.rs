@@ -27,7 +27,9 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::num::NonZeroUsize;
 
 use crate::demo::{Context, GameEvent, Parser};
-use crate::entity::{ENTITY_HANDLE_INDEX_MASK, Entity, EntityChangeKind, EntityId};
+use crate::entity::{
+    ENTITY_HANDLE_INDEX_MASK, Entity, EntityChangeKind, EntityContainer, EntityId,
+};
 use crate::error::Result;
 use crate::hitgroups::hitgroup_name;
 use crate::position::cell_to_world;
@@ -283,7 +285,7 @@ pub struct Kill {
 
 /// Default trade window in seconds — how long after a death a teammate's
 /// revenge kill still counts as a trade.
-pub const TRADE_SECONDS: f32 = 5.0;
+pub const TRADE_SECONDS: f32 = 5.25;
 
 /// Classify every kill as a trade and/or a traded death.
 ///
@@ -296,10 +298,9 @@ pub const TRADE_SECONDS: f32 = 5.0;
 /// (which need not be sorted). A kill with an unresolved attacker or victim side
 /// can neither trade nor be traded, since there is no team to compare against.
 ///
-/// The two flags do not occur in equal numbers: one kill can avenge several
-/// teammates at once — a player who kills two enemies and is then killed by a
-/// third trades both of those deaths — so `victim_traded` is usually the more
-/// common of the two.
+/// Each revenge kill trades only the earliest qualifying death. Each death
+/// can be traded once. Equal-tick deaths use input order. The two flag totals
+/// are equal; a kill can have both flags.
 pub fn trade_flags(kills: &[Kill], trade_ticks: i32) -> Vec<(bool, bool)> {
     let mut flags = vec![(false, false); kills.len()];
 
@@ -322,7 +323,9 @@ pub fn trade_flags(kills: &[Kill], trade_ticks: i32) -> Vec<(bool, bool)> {
             if revenge.tick - death.tick > trade_ticks {
                 break;
             }
-            if revenge.tick > death.tick
+            // Deaths are visited oldest first; do not reuse their revenge kill.
+            if !flags[j].0
+                && revenge.tick > death.tick
                 && revenge.victim_steamid == Some(killer)
                 && revenge.attacker_side.as_ref() == Some(victim_side)
             {
@@ -718,6 +721,7 @@ struct PawnKeys {
     offset: [Option<u64>; 3],
     team: Option<u64>,
     controller: Option<u64>,
+    original_controller: Option<u64>,
 }
 
 impl PawnKeys {
@@ -737,7 +741,18 @@ impl PawnKeys {
             ],
             team: key("m_iTeamNum"),
             controller: key("m_hController"),
+            original_controller: key("m_hOriginalController"),
         }
+    }
+
+    fn controller<'a>(&self, pawn: &Entity, entities: &'a EntityContainer) -> Option<&'a Entity> {
+        // Dead pawns can lose m_hController while events still refer to them.
+        // Preserve serial validation and prefer the current controller.
+        [self.controller, self.original_controller]
+            .into_iter()
+            .filter_map(|key| pawn.get_handle(key))
+            .filter_map(|handle| entities.get_by_handle(handle))
+            .find(|entity| entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS)
     }
 }
 
@@ -974,8 +989,8 @@ fn resolve_player(ctx: &Context, pawn_handle: i64, pk: &PawnKeys, ck: &CtrlKeys)
 
 /// Resolve a participant from a player-pawn entity already in hand.
 ///
-/// Reads side and world position off the pawn, then follows its controller
-/// handle for the persistent Steam id and name. Use [`resolve_player`] when you
+/// Reads side and world position off the pawn, then follows its current or
+/// original controller handle for the persistent Steam id and name. Use [`resolve_player`] when you
 /// only have a pawn `CHandle` (e.g. from a game event).
 fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
     let mut player = ResolvedPlayer {
@@ -996,10 +1011,7 @@ fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys)
     }
 
     // Follow the controller handle for the persistent Steam id and name.
-    if let Some(controller) = pawn
-        .get_handle(pk.controller)
-        .and_then(|handle| ctx.entities().get_by_handle(handle))
-    {
+    if let Some(controller) = pk.controller(pawn, ctx.entities()) {
         player.steamid = controller.get_u64(ck.steamid);
         player.name = controller.get_string(ck.name);
     }
@@ -3301,15 +3313,14 @@ mod tests {
         }
     }
 
-    #[test]
-    fn reload_flags_follow_current_values_and_schema() {
+    fn reload_schemas() -> crate::entity::SerializerContainer {
         use crate::entity::{
-            BareCharEncoding, DecodeProfile, FieldValue, FlattenedField, FlattenedSerializer,
+            BareCharEncoding, DecodeProfile, FlattenedField, FlattenedSerializer,
             FlattenedSerializerDefinition, PreciseQAngleMode, SerializerContainer,
         };
 
         // The two weapon classes use different field orders.
-        let serializers = SerializerContainer::parse(
+        SerializerContainer::parse(
             FlattenedSerializer::new(
                 vec![
                     FlattenedSerializerDefinition::new(Some(0), vec![0, 1]),
@@ -3336,32 +3347,146 @@ mod tests {
                 PreciseQAngleMode::Centered,
             ),
         )
-        .unwrap();
+        .unwrap()
+    }
 
+    fn reload_weapon(class: &str) -> (ReloadKeys, Entity) {
+        let serializers = reload_schemas();
+        (
+            ReloadKeys::resolve(serializers.get(class).unwrap()),
+            Entity::from_fields(1, 0, 0, class, true, Default::default()).unwrap(),
+        )
+    }
+
+    #[test]
+    fn reload_keys_resolve_each_class_schema() {
+        let serializers = reload_schemas();
         for class in ["CAK47", "CDEagle", "CWeaponM4A1"] {
-            let keys = ReloadKeys::resolve(serializers.get(class).unwrap());
-            let mut weapon = Entity::from_fields(1, 0, 0, class, true, Default::default()).unwrap();
-            // No stored value means false when the schema has the field.
-            let initial_silent = keys.stealthy.map(|_| false);
-            assert_eq!(keys.read(&weapon), (Some(false), initial_silent));
-            let reload = keys.reloading.unwrap();
-            weapon.fields.insert(reload, FieldValue::Bool(true));
-            if let Some(stealth) = keys.stealthy {
-                weapon.fields.insert(stealth, FieldValue::Bool(true));
-                assert_eq!(keys.read(&weapon), (Some(true), Some(true)));
-                weapon.fields.insert(stealth, FieldValue::Bool(false));
-                assert_eq!(keys.read(&weapon), (Some(true), Some(false)));
-                weapon.fields.insert(stealth, FieldValue::U32(1));
+            let schema = serializers.get(class).unwrap();
+            let keys = ReloadKeys::resolve(schema);
+            assert_eq!(keys.reloading, schema.resolve_field_key("m_bInReload"));
+            assert_eq!(keys.stealthy, schema.resolve_field_key("m_bStealthy"));
+        }
+    }
+
+    #[test]
+    fn reload_fields_default_false_when_known_but_unstored() {
+        for class in ["CAK47", "CDEagle", "CWeaponM4A1"] {
+            let (keys, weapon) = reload_weapon(class);
+            assert_eq!(
+                keys.read(&weapon),
+                (Some(false), keys.stealthy.map(|_| false))
+            );
+        }
+    }
+
+    #[test]
+    fn silent_reload_follows_the_current_stealth_flag() {
+        use crate::entity::FieldValue;
+        for class in ["CAK47", "CDEagle"] {
+            for stealthy in [false, true] {
+                let (keys, mut weapon) = reload_weapon(class);
+                weapon
+                    .fields
+                    .insert(keys.reloading.unwrap(), FieldValue::Bool(true));
+                weapon
+                    .fields
+                    .insert(keys.stealthy.unwrap(), FieldValue::Bool(stealthy));
+                assert_eq!(keys.read(&weapon), (Some(true), Some(stealthy)));
+            }
+        }
+    }
+
+    #[test]
+    fn silent_reload_is_unknown_for_missing_or_incompatible_stealth_fields() {
+        use crate::entity::FieldValue;
+        for class in ["CAK47", "CDEagle", "CWeaponM4A1"] {
+            let (keys, mut weapon) = reload_weapon(class);
+            weapon
+                .fields
+                .insert(keys.reloading.unwrap(), FieldValue::Bool(true));
+            if let Some(key) = keys.stealthy {
+                weapon.fields.insert(key, FieldValue::U32(1));
             }
             assert_eq!(keys.read(&weapon), (Some(true), None));
-
-            weapon.fields.insert(reload, FieldValue::Bool(false));
+            weapon
+                .fields
+                .insert(keys.reloading.unwrap(), FieldValue::Bool(false));
             assert_eq!(keys.read(&weapon), (Some(false), None));
-            weapon.fields.insert(reload, FieldValue::U32(1));
-            assert_eq!(keys.read(&weapon), (None, None));
+        }
+    }
+
+    #[test]
+    fn incompatible_reload_fields_keep_both_flags_unknown() {
+        use crate::entity::FieldValue;
+        let (keys, mut weapon) = reload_weapon("CAK47");
+        weapon
+            .fields
+            .insert(keys.reloading.unwrap(), FieldValue::U32(1));
+        assert_eq!(keys.read(&weapon), (None, None));
+    }
+
+    #[test]
+    fn inactive_weapons_cannot_be_reloading() {
+        use crate::entity::FieldValue;
+        for class in ["CAK47", "CDEagle", "CWeaponM4A1"] {
+            let (keys, mut weapon) = reload_weapon(class);
+            weapon
+                .fields
+                .insert(keys.reloading.unwrap(), FieldValue::Bool(true));
             weapon.active = false;
-            weapon.fields.insert(reload, FieldValue::Bool(true));
             assert_eq!(keys.read(&weapon), (Some(false), Some(false)));
+        }
+    }
+
+    #[test]
+    fn controller_fallback_validates_handles_and_prefers_the_current_owner() {
+        use crate::entity::FieldValue;
+
+        let keys = PawnKeys {
+            cell: [None; 3],
+            offset: [None; 3],
+            team: None,
+            controller: Some(0),
+            original_controller: Some(1),
+        };
+        let mut entities = EntityContainer::new();
+        for (index, serial, class) in [
+            (1, 7, PLAYER_CONTROLLER_CLASS),
+            (2, 8, PLAYER_CONTROLLER_CLASS),
+            (3, 9, PLAYER_PAWN_CLASS),
+        ] {
+            entities
+                .insert(
+                    Entity::from_fields(index, serial, 0, class, true, Default::default()).unwrap(),
+                )
+                .unwrap();
+        }
+        let current = (7 << 14) | 1;
+        let original = (8 << 14) | 2;
+        let reused_slot = (6 << 14) | 1;
+        let wrong_class = (9 << 14) | 3;
+        for (controller, original_controller, expected) in [
+            (Some(current), Some(original), Some(1)),
+            (None, Some(original), Some(2)),
+            (Some(16_777_215), Some(original), Some(2)),
+            (Some(reused_slot), Some(original), Some(2)),
+            (Some(wrong_class), Some(original), Some(2)),
+            (None, Some(reused_slot), None),
+            (None, Some(wrong_class), None),
+            (None, None, None),
+        ] {
+            let mut pawn =
+                Entity::from_fields(4, 1, 0, PLAYER_PAWN_CLASS, true, Default::default()).unwrap();
+            for (key, handle) in [(0, controller), (1, original_controller)] {
+                if let Some(handle) = handle {
+                    pawn.fields.insert(key, FieldValue::U32(handle));
+                }
+            }
+            assert_eq!(
+                keys.controller(&pawn, &entities).map(|entity| entity.index),
+                expected
+            );
         }
     }
 
@@ -3550,10 +3675,60 @@ mod tests {
     }
 
     #[test]
+    fn one_revenge_kill_trades_only_the_earliest_qualifying_death() {
+        for (revenge_tick, expected) in [
+            (326, [(false, false), (false, true), (true, false)]),
+            (426, [(false, true), (false, false), (true, false)]),
+        ] {
+            // Input order differs from tick order; the oldest death can expire.
+            let kills = [
+                kill(300, 2, CT, 3, T),
+                kill(100, 2, CT, 1, T),
+                kill(revenge_tick, 4, T, 2, CT),
+            ];
+            assert_eq!(trade_flags(&kills, 320), expected);
+        }
+    }
+
+    #[test]
+    fn a_trade_kill_can_itself_be_traded() {
+        let kills = [
+            kill(100, 2, CT, 1, T),
+            kill(150, 2, CT, 3, T),
+            kill(200, 4, T, 2, CT),
+            kill(250, 5, CT, 4, T),
+        ];
+        assert_eq!(
+            trade_flags(&kills, 320),
+            [(false, true), (false, false), (true, true), (true, false)]
+        );
+    }
+
+    #[test]
+    fn equal_tick_deaths_use_input_order() {
+        let kills = [
+            kill(100, 2, CT, 1, T),
+            kill(100, 2, CT, 3, T),
+            kill(200, 4, T, 2, CT),
+        ];
+        assert_eq!(
+            trade_flags(&kills, 320),
+            [(false, true), (false, false), (true, false)]
+        );
+    }
+
+    #[test]
     fn trade_flags_respect_the_window() {
-        let kills = vec![kill(100, 2, CT, 1, T), kill(500, 3, T, 2, CT)];
-        let flags = trade_flags(&kills, 320); // 400 ticks apart, window is 320
-        assert_eq!(flags, vec![(false, false), (false, false)]);
+        for (tickrate, window) in [(64.0, 336), (128.0, 672)] {
+            assert_eq!((TRADE_SECONDS * tickrate).round() as i32, window);
+            for (delay, traded) in [(window - 1, true), (window, true), (window + 1, false)] {
+                let kills = [kill(100, 2, CT, 1, T), kill(100 + delay, 3, T, 2, CT)];
+                assert_eq!(
+                    trade_flags(&kills, window),
+                    [(false, traded), (traded, false)]
+                );
+            }
+        }
     }
 
     #[test]

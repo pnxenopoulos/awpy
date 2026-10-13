@@ -5,6 +5,10 @@
 Rust parser for CS2 demos with Python bindings and Polars DataFrames.
 
 - Correct player IDs in combat events. Convert legacy event handles before serial validation.
+- Keep dead players' event IDs through validated original-controller handles.
+- Count recorded assisters and active flash throwers once each per kill.
+- Match each trade kill to the earliest qualifying death within 5.25 seconds.
+  Use the same rule for kill flags, traded deaths, and KAST.
 
 - Require Python Polars 2.x. The lockfile now selects `2.0.0`.
   Awpy dataset schemas are unchanged. See the

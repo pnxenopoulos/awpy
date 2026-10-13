@@ -10,11 +10,14 @@ are right (the stats themselves are covered by ``test_demo.py`` and
 
 from __future__ import annotations
 
+import runpy
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+from awpy import Demo
+from polars.testing import assert_frame_equal
 
 EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
 
@@ -48,6 +51,21 @@ def test_example_runs(name: str, demo_path: Path) -> None:
     result = _run(EXAMPLES_DIR / name, str(demo_path))
     assert result.returncode == 0, f"{name} failed:\n{result.stderr}"
     assert result.stdout.strip(), f"{name} printed nothing"
+
+
+def test_trade_pairs_match_the_flagged_deaths(demo: Demo) -> None:
+    trade_pairs = runpy.run_path(str(EXAMPLES_DIR / "trades.py"))["trade_pairs"]
+    pairs = trade_pairs(demo)
+    assert pairs.height == demo.kills["is_trade"].sum()
+    expected = (
+        demo.kills.filter("victim_traded")
+        .group_by("victim_name")
+        .len()
+        .rename({"victim_name": "avenged_name"})
+        .sort("avenged_name")
+    )
+    actual = pairs.group_by("avenged_name").len().sort("avenged_name")
+    assert_frame_equal(actual, expected)
 
 
 def test_batch_parse_writes_parquet(demo_path: Path, tmp_path: Path) -> None:

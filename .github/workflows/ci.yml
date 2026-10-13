@@ -142,7 +142,13 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          args: --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13
+          args: --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13 3.14
+      # PyO3 0.27 supports Python through 3.14. Use the stable ABI on 3.15.
+      - name: Build compatible wheel for Python 3.15
+        uses: PyO3/maturin-action@v1
+        with:
+          args: --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.14 --features pyo3/abi3-py314
+
       - uses: actions/upload-artifact@v7
         with:
           name: python-wheels
@@ -155,7 +161,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
     steps:
       - uses: actions/checkout@v6
 
@@ -174,9 +180,7 @@ jobs:
         working-directory: crates/awpy-python
         run: |
           uv sync --locked --no-install-project
-          CPVER="cp$(echo ${{ matrix.python-version }} | tr -d .)"
-          WHEEL=$(ls ../../dist/awpy-*-${CPVER}-*.whl)
-          uv pip install "$WHEEL"
+          uv pip install --no-deps --no-index --find-links ../../dist awpy
 
       - name: Run pytest
         working-directory: crates/awpy-python
