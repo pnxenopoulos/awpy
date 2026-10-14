@@ -409,6 +409,57 @@ Server console variables collected from the demo stream — useful for round
 math (`mp_maxrounds`, `mp_freezetime`, `mp_overtime_enable`) and for telling
 match formats apart programmatically.
 
+## Multipart demos
+
+Pass a path or an ordered sequence of paths to `Demo`. Strings are converted
+to paths. A sequence can contain both strings and `Path` objects.
+
+```python
+from pathlib import Path
+from awpy import Demo
+
+demo = Demo([
+    Path("apeks-vs-gamerlegion-m2-overpass-p1.dem"),
+    "apeks-vs-gamerlegion-m2-overpass-p2.dem",
+])
+
+demo.rounds                              # Match round numbers across all parts
+demo.stats                               # One combined row per player
+demo.snapshots(every=64)                  # Sample all parts
+demo.snapshots(part=1, ticks=5333)         # Local tick in the second part
+demo.ticks(["health", "armor"], part=1)   # Networked fields from one part
+```
+
+Parts must have the same map, game build, and tick rate. Their completed match
+rounds must be consecutive. Awpy rejects repeated paths, overlapping or missing
+rounds, and recordings that start or end during live play. It also rejects
+boundaries without enough game-state evidence. Do not join the binary files.
+Splits inside a round are not supported.
+
+Multipart event, round, snapshot, and tick tables have a `part` column (`UInt32`).
+Part numbers start at zero and follow the supplied file order. Ticks, interval
+bounds, and entity handles stay local. Join moments on `(part, tick)` and
+entities on `(part, entity_id, entity_serial)`; never join parts on tick alone.
+Raw events retain warmup and restart events. Match statistics exclude them
+under the same rules as a single file.
+
+`stats` and `players` combine players by Steam ID and have no `part` column.
+Only completed rounds contribute to match totals. ADR, KAST, and headshot
+percentages use combined counts. Trades, flash effects,
+and entity state do not cross file boundaries. Pistol rounds are found across
+the whole map; a new recording does not start a new pistol round.
+
+Use `part=` for explicit ticks or tick windows. Stride and event-name queries
+can read all parts. `demo.parts[index]` gives one recording as a `Demo`,
+which is useful for plots and other tools that take one demo. `demo.paths` and
+`demo.headers` keep the source paths and playback metadata. The combined
+`header` has no playback fields because there is no shared tick counter.
+`convars` uses the last recorded value; use a part's `convars` for local values.
+
+A single file, including a one-element sequence, keeps its existing schema.
+Single-file construction remains lazy. Multipart construction reads round
+boundaries to check that the files can be combined.
+
 ## Game state: `snapshots`
 
 ```python
@@ -427,7 +478,7 @@ Use `ticks` for other properties or non-player entities.
 One row per active player per tick. Pass any combination of `ticks` (an int or a
 list), a stride (`every` / `seconds`), `events` (a name or list), and a
 `start_tick` / `end_tick` window — given on their own, the window is a contiguous
-range; combined with a sampler, they bound it. At least one must be given.
+range; combined with a sampler, they bound it. At least one must be given. An event query with no matches returns an empty table.
 
 **Identity, position & movement:** `tick`, `steamid`, `name`, `side`, `x`, `y`, `z`,
 `velocity_x`, `velocity_y`, `velocity_z`, `velocity`, `pitch`, `yaw`.

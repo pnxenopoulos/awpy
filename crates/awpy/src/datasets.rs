@@ -1601,6 +1601,38 @@ impl Parser {
         Ok(tracker.rounds)
     }
 
+    /// Whether the first and last recorded game states are outside live play.
+    ///
+    /// Used to reject multipart recordings that cut through an unfinished round.
+    /// A missing game-rules schema or entity provides no boundary evidence.
+    pub fn round_coverage(&self) -> Result<(Option<bool>, Option<bool>)> {
+        let mut first = None;
+        let mut last = None;
+        let mut keys = None;
+        self.run_to_end_filtered(&HashSet::from([GAME_RULES_CLASS]), |ctx| {
+            let Some((_, entity)) = ctx
+                .entities()
+                .iter()
+                .find(|(_, e)| e.class_name.as_ref() == GAME_RULES_CLASS)
+            else {
+                return;
+            };
+            let Some(serializer) = ctx.serializers().get(GAME_RULES_CLASS) else {
+                return;
+            };
+            let keys = keys.get_or_insert_with(|| GameRulesKeys::resolve(serializer));
+            if keys.freeze.is_none() || keys.warmup.is_none() || keys.win_status.is_none() {
+                return;
+            }
+            let outside_live = entity.get_bool(keys.freeze)
+                || entity.get_bool(keys.warmup)
+                || entity.get_i64(keys.win_status) != 0;
+            first.get_or_insert(outside_live);
+            last = Some(outside_live);
+        })?;
+        Ok((first, last))
+    }
+
     /// Flag knife rounds in place: a round with at least one kill whose kills are
     /// all melee (knife / bayonet) and none from a firearm or grenade. Uses only
     /// the (cheap) `player_death` event stream — no entity decode.
@@ -2823,6 +2855,14 @@ impl Parser {
     /// the sampled-snapshot pass over the rounds' freeze-end ticks. Knife rounds
     /// are excluded.
     pub fn round_economy(&self) -> Result<Vec<RoundEconomy>> {
+        self.round_economy_with_pistols(None)
+    }
+
+    /// Read round economy with match-wide pistol round numbers for multipart demos.
+    pub fn round_economy_with_pistols(
+        &self,
+        pistols: Option<&HashSet<i32>>,
+    ) -> Result<Vec<RoundEconomy>> {
         let rounds = self.rounds()?;
         // Freeze-end tick per round → its index. Knife rounds are skipped: their
         // "buy" is meaningless, and CS2 often numbers the knife round the same as
@@ -2867,6 +2907,15 @@ impl Parser {
                 pistol_rounds.insert(pair[1]);
                 break;
             }
+        }
+
+        if let Some(pistols) = pistols {
+            pistol_rounds = rounds
+                .iter()
+                .enumerate()
+                .filter(|(_, round)| pistols.contains(&round.round_num))
+                .map(|(index, _)| index)
+                .collect();
         }
 
         let mut out: Vec<RoundEconomy> = agg

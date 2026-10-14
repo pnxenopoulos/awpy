@@ -694,6 +694,23 @@ impl Demo {
         })
     }
 
+    fn _round_coverage(&self, py: Python<'_>) -> PyResult<(Option<bool>, Option<bool>)> {
+        py.detach(|| self.parser.round_coverage())
+            .map_err(to_py_err)
+    }
+
+    fn _round_economy(&self, py: Python<'_>, pistol_rounds: Vec<i32>) -> PyResult<PyDataFrame> {
+        py.detach(|| {
+            let rows = self
+                .parser
+                .round_economy_with_pistols(Some(&pistol_rounds.into_iter().collect()))
+                .map_err(to_py_err)?;
+            Ok(PyDataFrame(
+                round_economy_to_frame(&rows).map_err(polars_err)?,
+            ))
+        })
+    }
+
     /// Per-team economy and buy type per round (cached).
     ///
     /// One row per (round, side): ``round_num``, ``side``, ``equipment_value``
@@ -857,6 +874,7 @@ impl Demo {
             (None, None) => None,
         };
 
+        let has_events = events.is_some();
         let mut tick_set: HashSet<i32> = HashSet::new();
         if let Some(events) = events {
             let names = events.into_vec();
@@ -867,6 +885,14 @@ impl Demo {
         }
         tick_set.extend(&explicit);
 
+        if has_events && stride.is_none() && tick_set.is_empty() {
+            // An explicit event selection may have no matches in one part.
+            return Ok(PyDataFrame(
+                SnapshotColumns::default()
+                    .into_frame()
+                    .map_err(polars_err)?,
+            ));
+        }
         if stride.is_none() && tick_set.is_empty() && !has_window {
             return Err(PyValueError::new_err(
                 "specify at least one of `ticks`, `every`, `seconds`, `events`, \
@@ -2844,6 +2870,35 @@ mod tests {
     }
 }
 
+/// Combine exact stat totals without joining tick or entity namespaces.
+#[pyfunction]
+#[pyo3(signature = (parts, include_knife_rounds=false))]
+fn multipart_player_stats(
+    py: Python<'_>,
+    parts: Vec<Py<Demo>>,
+    include_knife_rounds: bool,
+) -> PyResult<PyDataFrame> {
+    let borrowed: Vec<_> = parts.iter().map(|part| part.borrow(py)).collect();
+    let inputs: Vec<_> = borrowed
+        .iter()
+        .map(|part| Ok((part.parsed_player_stats_inputs(py)?, part.parser.tickrate())))
+        .collect::<PyResult<_>>()?;
+    py.detach(|| {
+        let mut total = awpy::stats::PlayerStatsAccumulator::default();
+        for (inputs, tickrate) in inputs {
+            total.add_part(
+                inputs.event_datasets(),
+                inputs.rounds(),
+                tickrate,
+                !include_knife_rounds,
+            );
+        }
+        Ok(PyDataFrame(
+            stats_to_frame(&total.finish()).map_err(polars_err)?,
+        ))
+    })
+}
+
 #[pymodule]
 fn _awpy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Demo>()?;
@@ -2851,6 +2906,7 @@ fn _awpy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<VisibilityChecker>()?;
     m.add_class::<NavMesh>()?;
     m.add_function(wrap_pyfunction!(compute_map_control, m)?)?;
+    m.add_function(wrap_pyfunction!(multipart_player_stats, m)?)?;
     m.add("InvalidDemoError", m.py().get_type::<InvalidDemoError>())?;
     Ok(())
 }

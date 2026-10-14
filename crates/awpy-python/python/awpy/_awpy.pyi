@@ -1,7 +1,7 @@
 """Types and summaries for the compiled extension.
 
 Keep these summaries consistent with ``crates/awpy-python/src/lib.rs``.
-Rust docstrings supply ``help()`` and the published API reference.
+Rust docstrings supply native ``help()``. The public Demo is in ``awpy.demo``.
 """
 
 from collections.abc import Iterator, Sequence
@@ -194,6 +194,8 @@ class Demo:
         Team names come from ``CCSTeam`` and are null when not set.
         """
 
+    def _round_coverage(self) -> tuple[bool | None, bool | None]: ...
+    def _round_economy(self, pistol_rounds: list[int]) -> pl.DataFrame: ...
     @property
     def round_economy(self) -> pl.DataFrame:
         """Per-team economy and buy type per round (cached).
@@ -308,6 +310,12 @@ class Demo:
         Both variants reuse decoded inputs and cache their DataFrames.
         The default returns the same cached object as :attr:`stats`.
         """
+
+def multipart_player_stats(
+    parts: list[Demo],
+    include_knife_rounds: bool = ...,
+) -> pl.DataFrame:
+    """Combine exact totals from independently decoded complete rounds."""
 
 class VisibilityChecker:
     """Line-of-sight visibility over a map's collision geometry.
