@@ -6,6 +6,7 @@ Rust parser for CS2 demos with Python bindings and Polars DataFrames.
 
 - Publish wheels for Python 3.11–3.15 on Linux, macOS, and Windows.
   Python 3.15 uses a stable-ABI wheel built with Python 3.14.
+- Release Rust and Python packages from manual workflows with a version check.
 - Split tests by behavior and share replay fixtures.
 - Correct player IDs in combat events. Convert legacy event handles before serial validation.
 - Keep dead players' event IDs through validated original-controller handles.

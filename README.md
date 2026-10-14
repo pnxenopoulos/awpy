@@ -281,19 +281,35 @@ Use exact DataFrame comparisons when the result must match exactly.
 
 ### Releases
 
-Update the workspace version in `Cargo.toml` and finalize the changelog.
-Push the changes and wait for **CI Check** to pass on the exact release commit.
+Update the package version and finalize the changelog. Push to `main` and wait
+for **CI Check** to pass on the release commit.
 
-The `awpy-python-v<version>` tag starts **Release Python**.
-This workflow publishes a source archive and wheels for Python 3.11–3.15:
+In GitHub Actions, select `main`, then run:
+
+- **Release Parser**: select `awpy-proto` or `awpy` and enter its Cargo version.
+- **Release Python**: enter the `awpy-python` version from the Cargo workspace.
+
+Release in this order: `awpy-proto`, `awpy`, then the Python package. Each
+workflow checks that the preceding Rust package version is on crates.io.
+Skip a Rust package if its version is already published.
+
+Enter the full version without a leading `v`. Each workflow checks the version,
+publishes the package, then creates its tag and GitHub release. Tags use
+`awpy-proto-v<version>`, `awpy-v<version>`, or `awpy-python-v<version>`.
+Existing tags must refer to the release commit. A retry skips published files
+and existing releases. A tag push does not start publication.
+
+The Python workflow publishes a source archive and wheels for Python 3.11–3.15:
 
 - Linux: x86-64 and ARM64.
 - macOS: Intel and Apple silicon.
 - Windows: x86-64.
 
 Python 3.15 uses a stable-ABI wheel built with Python 3.14, as in CI.
-The `awpy-v<version>` tag starts the separate **Release Parser** workflow for Rust crates.
-Both tags must match the workspace version.
+Configure trusted publishers for `release-parser.yml` with environment `crates`
+and `release-python.yml` with environment `pypi`.
+Publish each new Rust crate once with an API token before you configure its
+trusted publisher.
 
 ### Parsing benchmarks
 
