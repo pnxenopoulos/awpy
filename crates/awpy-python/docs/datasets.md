@@ -142,8 +142,10 @@ For each of `attacker`, `victim`: `<who>_entity_id`, `<who>_entity_serial`,
 `<who>_steamid`, `<who>_name`, `<who>_side`, and `<who>_x` / `_y` / `_z`.
 Other columns: `weapon`, `dmg_health`, `dmg_armor`, `hitgroup`, `hitgroup_name`,
 `health_pre`, `health_post`, `armor_pre`, `armor_post`, and `tick`.
-Pre-hit values are `post + damage`, capped at 100.
+Pre-hit values are estimates: `post + damage`, capped at 100.
+They are not recorded pre-hit values. Do not use `health_pre` to cap successive hits.
 Raw damage can exceed the victim's remaining health.
+`stats` caps event damage at the previous reported health; it does not sum health changes.
 
 ## `bomb`
 
@@ -315,7 +317,7 @@ The `kills` table retains the event's single recorded assister.
 
 See {doc}`reference` for metric definitions.
 KAST is the percentage of rounds with a kill, assist, survival, or traded death.
-ADR is the average enemy health removed per round.
+ADR is the average recorded enemy damage per round, capped at remaining health.
 
 Every player is treated as having played every round (the denominator for KAST
 and ADR is the match's round count), so players who join or leave mid-match are

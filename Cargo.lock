@@ -218,7 +218,7 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "awpy"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "anyhow",
  "awpy-proto",
@@ -234,7 +234,7 @@ dependencies = [
 
 [[package]]
 name = "awpy-dev"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "anyhow",
  "awpy",
@@ -257,7 +257,7 @@ dependencies = [
 
 [[package]]
 name = "awpy-python"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "awpy",
  "awpy-proto",

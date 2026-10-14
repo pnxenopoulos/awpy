@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.1
+
+- Fix ADR and utility damage. Use recorded damage capped at remaining health.
+  Exclude extra points from health rounding and cap hits in the same tick.
+
 ## 3.0.0
 
 Rust parser for CS2 demos with Python bindings and Polars DataFrames.
