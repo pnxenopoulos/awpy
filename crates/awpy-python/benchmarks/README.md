@@ -1,0 +1,75 @@
+# Python API benchmarks
+
+Use `bench_api.py` to measure the Python API in isolated processes.
+The older `bench_parse.py` script remains available for basic dataset timings.
+Use the Rust Criterion suite to separate parser costs from Python API costs.
+See [RESULTS.md](RESULTS.md) for the measured Boon-inspired experiments.
+
+## Build and run
+
+Run these commands from `crates/awpy-python`:
+
+```sh
+uv sync --locked --no-install-project
+uv run --no-sync maturin develop --release --locked
+uv run --no-sync python benchmarks/bench_api.py --list
+uv run --no-sync python benchmarks/bench_api.py \
+  --demo /absolute/path/match.dem --repeat 5 --warmup 1 \
+  --threads 4 --segments 4 --output ../../target/benchmarks/before.json
+```
+
+Repeat the measurement after the change. Use the same demo contents, cases,
+harness, build profile, Python version, and thread limits.
+
+```sh
+uv run --no-sync python benchmarks/compare.py \
+  ../../target/benchmarks/before.json ../../target/benchmarks/after.json
+```
+
+Use repeated `--case` arguments to select workloads. For example:
+
+```sh
+uv run --no-sync python benchmarks/bench_api.py \
+  --demo /absolute/path/match.dem --case snapshot/two --case snapshot/four \
+  --case snapshot/sampled --case snapshot/dense \
+  --output ../../target/benchmarks/snapshots.json
+```
+
+The harness does not download demos or assets. `--all` includes large full-tick
+outputs. Use `--build-profile debug` to label a debug build. This option does not
+build the extension. Use `--allow-config-change` in the comparison tool only for
+deliberate profile or thread experiments. Output checks remain active.
+
+## Measurement rules
+
+Each demo/case pair runs in a separate process. Each sample creates a new
+`Demo`. Only `cached/*` cases load datasets before the timer starts.
+Construction is reported separately, except for the `construct` case.
+The operating system file cache is warmed before measurement.
+
+Reports include wall and CPU time, output size, process peak RSS, schemas,
+null counts, row counts, and value/order fingerprints. They also record demo,
+harness, and native-extension hashes. Fingerprints detect drift; they do not
+replace exact DataFrame comparisons and fixture tests.
+
+Peak RSS includes imports, mapped input, warmups, output checks, and retained
+allocator memory. It is not a count of dataset allocations. RSS is unavailable
+on platforms without the supported process resource API.
+
+Run each revision more than once, in alternating order, on an idle machine.
+Compare representative demos and both sparse and dense queries. Do not accept
+a small difference that is within the sample variation.
+
+## Existing order diagnostic
+
+The harness checks row order as well as values. The current `item_events`
+implementation iterates inventory hash sets, so events on the same tick can
+change order across runs. `--all` can therefore fail for `dataset/item_events`
+on the unchanged parser too. The default case list does not include it.
+
+Keep this diagnostic visible. Use explicit `--case` selections for repeatable
+optimization comparisons; do not treat an order failure as a timing result.
+See [RESULTS.md](RESULTS.md) for the separate exact-value checks.
+
+CI runs the harness unit tests with the offline pytest selection. CI has no
+hardware-dependent timing threshold.

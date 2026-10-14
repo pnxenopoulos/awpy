@@ -1,0 +1,29 @@
+# CS2 protobuf files to compile into src/proto.rs, via scripts/build-protos.
+# This list must be closed under `import` (google/protobuf/descriptor.proto is
+# provided by protoc's well-known-types include path).
+#
+# Source: https://github.com/SteamDatabase/GameTracking-CS2 (Protobufs/)
+
+# Source 2 demo container + netcode (shared across Source 2 games)
+valveextensions.proto
+demo.proto
+netmessages.proto
+networkbasetypes.proto
+network_connection.proto
+source2_steam_stats.proto
+
+# Game events + user messages
+gameevents.proto
+cs_gameevents.proto
+usermessages.proto
+cstrike15_usermessages.proto
+
+# User commands
+usercmd.proto
+cs_usercmd.proto
+
+# Game coordinator / econ (referenced by user messages)
+engine_gcmessages.proto
+gcsdk_gcmessages.proto
+steammessages.proto
+cstrike15_gcmessages.proto

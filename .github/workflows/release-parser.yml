@@ -1,0 +1,116 @@
+name: Release Parser
+
+# Publishes the Rust parser crates to crates.io: `awpy-proto` (the protobuf
+# definitions) and `awpy` (the parser core). Triggered by pushing an `awpy-v*`
+# tag whose version matches the workspace version, or manually for a single
+# crate. `awpy-dev` and `awpy-python` are `publish = false` and never go here
+# (the Python package ships to PyPI via release-python.yml).
+
+on:
+  push:
+    tags:
+      - "awpy-v*"
+  workflow_dispatch:
+    inputs:
+      crate:
+        description: "Which crate to publish"
+        type: choice
+        options:
+          - both
+          - awpy-proto
+          - awpy
+        default: both
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci-gate:
+    name: Verify CI passed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CI status on tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.sha }}"
+          RESULT=$(gh api "repos/${{ github.repository }}/commits/${SHA}/check-runs" \
+            --jq '.check_runs[] | select(.name == "CI Check") | .conclusion')
+          if [ "$RESULT" != "success" ]; then
+            echo "CI Check has not passed on ${SHA} (got: ${RESULT:-not found})"
+            echo "Push to main and wait for CI before tagging a release."
+            exit 1
+          fi
+
+  publish:
+    name: Publish to crates.io
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    environment: crates
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+
+      - name: Resolve and verify versions
+        id: version
+        run: |
+          CARGO_VERSION=$(grep -A2 '^\[workspace\.package\]' Cargo.toml | grep '^version' | sed 's/.*"\(.*\)"/\1/')
+          PROTO_VERSION=$(grep '^version' crates/awpy-proto/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          echo "version=$CARGO_VERSION" >> "$GITHUB_OUTPUT"
+          echo "proto_version=$PROTO_VERSION" >> "$GITHUB_OUTPUT"
+          # On a tag push, the tag must match the workspace (awpy) version.
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#awpy-v}"
+            if [ "$CARGO_VERSION" != "$TAG_VERSION" ]; then
+              echo "Tag version ($TAG_VERSION) does not match workspace version ($CARGO_VERSION)"
+              exit 1
+            fi
+          fi
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache cargo/target
+        uses: Swatinem/rust-cache@v2
+
+      # awpy-proto is versioned independently and is usually unchanged between
+      # awpy releases, so skip it when that exact version is already on
+      # crates.io. This keeps both the tag-push and manual paths idempotent.
+      - name: Publish awpy-proto
+        id: proto
+        if: github.event_name == 'push' || inputs.crate == 'both' || inputs.crate == 'awpy-proto'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+          PROTO_VERSION: ${{ steps.version.outputs.proto_version }}
+        run: |
+          if curl -sfL -A "awpy-release-ci" -o /dev/null \
+            "https://crates.io/api/v1/crates/awpy-proto/${PROTO_VERSION}"; then
+            echo "awpy-proto ${PROTO_VERSION} is already published — skipping."
+          else
+            cargo publish -p awpy-proto --registry crates-io
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Only needed when awpy-proto was freshly published, so `awpy` can resolve
+      # its new dependency from the index.
+      - name: Wait for crates.io index propagation
+        if: steps.proto.outputs.published == 'true'
+        run: sleep 30
+
+      - name: Publish awpy
+        if: github.event_name == 'push' || inputs.crate == 'both' || inputs.crate == 'awpy'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish -p awpy --registry crates-io
