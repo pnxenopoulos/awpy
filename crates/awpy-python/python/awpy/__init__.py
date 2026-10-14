@@ -8,8 +8,7 @@ except PackageNotFoundError:  # pragma: no cover - source checkout without insta
     __version__ = "0.0.0"
 
 from awpy import data, map_control
-from awpy._awpy import InvalidDemoError, NavMesh, VisibilityChecker
-from awpy.demo import Demo
+from awpy._awpy import Demo, InvalidDemoError, NavMesh, VisibilityChecker
 from awpy.schema import GAME_EVENTS, SNAPSHOT_PROPERTIES
 
 __all__ = [

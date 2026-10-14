@@ -411,23 +411,14 @@ match formats apart programmatically.
 
 ## Multipart demos
 
-Pass a path or an ordered sequence of paths to `Demo`. Strings are converted
-to paths. A sequence can contain both strings and `Path` objects.
+Pass files in recording order. You can mix strings and `Path` objects.
 
 ```python
-from pathlib import Path
 from awpy import Demo
 
-demo = Demo([
-    Path("apeks-vs-gamerlegion-m2-overpass-p1.dem"),
-    "apeks-vs-gamerlegion-m2-overpass-p2.dem",
-])
-
-demo.rounds                              # Match round numbers across all parts
-demo.stats                               # One combined row per player
-demo.snapshots(every=64)                  # Sample all parts
-demo.snapshots(part=1, ticks=5333)         # Local tick in the second part
-demo.ticks(["health", "armor"], part=1)   # Networked fields from one part
+demo = Demo(["overpass-p1.dem", "overpass-p2.dem"])
+demo.stats                                # Combined player statistics
+demo.snapshots(part=1, ticks=5333)          # Local tick in the second file
 ```
 
 Parts must have the same map, game build, and tick rate. Their completed match

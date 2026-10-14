@@ -11,9 +11,11 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
 
 use polars::prelude::*;
-use pyo3::exceptions::{PyAttributeError, PyFileNotFoundError, PyKeyError, PyValueError};
+use pyo3::exceptions::{
+    PyAttributeError, PyFileNotFoundError, PyKeyError, PyTypeError, PyValueError,
+};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyIterator, PyList, PyString};
+use pyo3::types::{PyByteArray, PyBytes, PyDict, PyIterator, PyList, PyString, PyTuple};
 use pyo3_polars::PyDataFrame;
 use snapshot_columns::SnapshotColumns;
 
@@ -37,7 +39,7 @@ pyo3::create_exception!(_awpy, InvalidDemoError, pyo3::exceptions::PyException);
 /// Event name(s) for `Demo.snapshots(events=...)`: a single name or a list of
 /// names. `One(String)` is tried first so a bare `str` is taken whole rather
 /// than as a sequence of one-character strings.
-#[derive(FromPyObject)]
+#[derive(Clone, FromPyObject)]
 enum EventNames {
     One(String),
     Many(Vec<String>),
@@ -53,7 +55,7 @@ impl EventNames {
 }
 
 /// Tick(s) for `Demo.snapshots(ticks=...)`: a single tick or a list.
-#[derive(FromPyObject)]
+#[derive(Clone, FromPyObject)]
 enum TicksArg {
     One(i32),
     Many(Vec<i32>),
@@ -255,21 +257,33 @@ fn to_py_err(e: awpy::Error) -> PyErr {
     }
 }
 
-/// A parsed Counter-Strike 2 demo file.
+/// Open one CS2 demo or an ordered sequence of recordings of one map.
+///
+/// Multipart tables include a zero-based ``part`` column. Ticks and entity
+/// handles stay local to that recording. ``players`` and ``stats`` combine
+/// Steam IDs. Multipart recordings must share a map, build, and tick rate,
+/// with consecutive completed rounds. Splits during live play are rejected.
 ///
 /// Args:
-///     path: Path to the ``.dem`` file.
+///     path: A string or path, or a nonempty sequence of strings and paths.
 ///
 /// Raises:
-///     FileNotFoundError: If the file does not exist.
-///     InvalidDemoError: If the file is not a valid CS2 demo.
-#[pyclass]
+///     FileNotFoundError: If a file does not exist.
+///     InvalidDemoError: If a file is not a valid CS2 demo.
+///     ValueError: If multipart recordings are incompatible or incomplete.
+#[pyclass(weakref)]
 struct Demo {
-    parser: Parser,
-    #[pyo3(get)]
-    path: PathBuf,
+    recording: Arc<Recording>,
+    // Empty for a single file. Multipart sources share their parsed inputs
+    // with the first recording, but keep their own DataFrame caches.
+    parts: Vec<Py<Demo>>,
     events_cache: OnceLock<Py<Events>>,
     frames_cache: Mutex<HashMap<&'static str, Py<PyAny>>>,
+}
+
+struct Recording {
+    parser: Parser,
+    path: PathBuf,
     convars_cache: LazyCache<Vec<(String, String)>>,
     event_datasets_cache: EventDatasetCache,
     player_stats_inputs_cache: LazyCache<PlayerStatsInputs>,
@@ -282,31 +296,106 @@ struct Demo {
 impl Demo {
     #[new]
     #[pyo3(text_signature = "(path)")]
-    fn new(path: PathBuf) -> PyResult<Self> {
-        if !path.exists() {
-            return Err(PyFileNotFoundError::new_err(format!(
-                "no such file: {}",
-                path.display()
-            )));
+    fn new(py: Python<'_>, path: &Bound<'_, PyAny>) -> PyResult<Self> {
+        let path_type = py.import("pathlib")?.getattr("Path")?;
+        let paths = if path.is_instance_of::<PyString>() || path.hasattr("__fspath__")? {
+            vec![path_type.call1((path,))?]
+        } else if !path.is_instance_of::<PyBytes>()
+            && !path.is_instance_of::<PyByteArray>()
+            && path.is_instance(&py.import("collections.abc")?.getattr("Sequence")?)?
+        {
+            path.try_iter()?
+                .map(|item| path_type.call1((item?,)))
+                .collect::<PyResult<Vec<_>>>()?
+        } else {
+            return Err(PyTypeError::new_err("pass a path or a sequence of paths"));
+        };
+        if paths.is_empty() {
+            return Err(PyValueError::new_err("pass at least one demo path"));
         }
-        let parser = Parser::from_file(&path).map_err(to_py_err)?;
-        parser.verify().map_err(to_py_err)?;
-        Ok(Self {
-            parser,
-            path,
-            events_cache: OnceLock::new(),
-            frames_cache: Mutex::new(HashMap::new()),
-            convars_cache: LazyCache::default(),
-            event_datasets_cache: EventDatasetCache::default(),
-            player_stats_inputs_cache: LazyCache::default(),
-            projectiles_cache: ProjectileCache::default(),
-            rounds_cache: LazyCache::default(),
-            players_cache: LazyCache::default(),
-        })
+        let mut seen = HashSet::new();
+        for path in &paths {
+            let resolved: PathBuf = path.call_method0("resolve")?.extract()?;
+            if !seen.insert(resolved) {
+                return Err(PyValueError::new_err("demo paths must not repeat"));
+            }
+        }
+        let mut sources = paths
+            .into_iter()
+            .map(|path| Self::open(path.extract()?))
+            .collect::<PyResult<Vec<_>>>()?;
+        let mut demo = sources.remove(0);
+        if !sources.is_empty() {
+            let recording = Arc::clone(&demo.recording);
+            let parts = std::iter::once(demo)
+                .chain(sources)
+                .map(|part| Py::new(py, part))
+                .collect::<PyResult<_>>()?;
+            demo = Self::from_recording(recording);
+            demo.parts = parts;
+            demo.validate_parts(py)?;
+        }
+        Ok(demo)
+    }
+
+    /// Source paths in the supplied order, as Path objects.
+    #[getter]
+    fn paths<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyTuple>> {
+        let paths = if self.parts.is_empty() {
+            vec![self.path(py)?]
+        } else {
+            self.parts
+                .iter()
+                .map(|part| part.borrow(py).path(py))
+                .collect::<PyResult<_>>()?
+        };
+        PyTuple::new(py, paths)
+    }
+
+    /// The single source path. For multipart recordings, use ``paths``.
+    #[getter]
+    fn path<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        if !self.parts.is_empty() {
+            return Err(PyValueError::new_err(
+                "multipart demos have multiple paths; use paths",
+            ));
+        }
+        py.import("pathlib")?
+            .getattr("Path")?
+            .call1((&self.recording.path,))
+    }
+
+    /// Each source recording as a Demo, indexed from zero.
+    #[getter]
+    fn parts(slf: PyRef<'_, Self>) -> PyResult<Bound<'_, PyTuple>> {
+        let py = slf.py();
+        if slf.parts.is_empty() {
+            PyTuple::new(py, [slf.into_pyobject(py)?])
+        } else {
+            PyTuple::new(py, slf.parts.iter().map(|part| part.bind(py)))
+        }
+    }
+
+    /// Header and playback metadata for each source recording.
+    #[getter]
+    fn headers<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyTuple>> {
+        let headers = if self.parts.is_empty() {
+            vec![self.header(py)?]
+        } else {
+            self.parts
+                .iter()
+                .map(|part| part.borrow(py).header(py))
+                .collect::<PyResult<_>>()?
+        };
+        PyTuple::new(py, headers)
     }
 
     fn __repr__(&self) -> String {
-        format!("Demo(path={:?})", self.path)
+        if self.parts.is_empty() {
+            format!("Demo(path={:?})", self.recording.path)
+        } else {
+            format!("Demo(parts={})", self.parts.len())
+        }
     }
 
     /// Dataset names accepted by [`load`](Self::load).
@@ -333,6 +422,21 @@ impl Demo {
             }
         }
 
+        if !self.parts.is_empty() {
+            let native: Vec<_> = datasets
+                .iter()
+                .filter(|name| *name != "round_economy")
+                .cloned()
+                .collect();
+            for part in &self.parts {
+                part.borrow(py).load(py, native.clone())?;
+            }
+            for name in datasets {
+                self.dataset(py, &name)?;
+            }
+            return Ok(());
+        }
+
         let wants_stats = datasets.iter().any(|name| name == "stats");
         let mut event_selection = EventDatasetSelection::default();
         let mut projectile_selection = ProjectileSelection::default();
@@ -353,8 +457,8 @@ impl Demo {
         // A fresh stats pass can fully enrich requested bomb/shot rows while it
         // is already tracking combat, rounds, and players.
         if wants_stats
-            && self.event_datasets_cache.stats_parts().is_none()
-            && self.player_stats_inputs_cache.get().is_none()
+            && self.recording.event_datasets_cache.stats_parts().is_none()
+            && self.recording.player_stats_inputs_cache.get().is_none()
         {
             let extras = EventDatasetSelection {
                 bomb: event_selection.bomb,
@@ -365,7 +469,7 @@ impl Demo {
         }
 
         // Rows prepared by the fused stats pass need not be decoded again.
-        if let Some(inputs) = self.player_stats_inputs_cache.get() {
+        if let Some(inputs) = self.recording.player_stats_inputs_cache.get() {
             let full = inputs.full_datasets();
             event_selection.kills &= !full.kills;
             event_selection.damages &= !full.damages;
@@ -378,23 +482,7 @@ impl Demo {
         self.ensure_projectiles(py, projectile_selection)?;
 
         for name in datasets {
-            match name.as_str() {
-                "stats" => self.stats(py),
-                "rounds" => self.rounds(py),
-                "kills" => self.kills(py),
-                "damages" => self.damages(py),
-                "bomb" => self.bomb(py),
-                "grenades" => self.grenades(py),
-                "fires" => self.fires(py),
-                "smokes" => self.smokes(py),
-                "shots" => self.shots(py),
-                "players" => self.players(py),
-                "round_economy" => self.round_economy(py),
-                "chat" => self.chat(py),
-                "blinds" => self.blinds(py),
-                "item_events" => self.item_events(py),
-                _ => unreachable!("dataset names validated above"),
-            }?;
+            self.dataset(py, &name)?;
         }
         Ok(())
     }
@@ -402,7 +490,7 @@ impl Demo {
     /// The demo file header and playback info as a dict.
     #[getter]
     fn header<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
-        let header = self.parser.file_header().map_err(to_py_err)?;
+        let header = self.recording.parser.file_header().map_err(to_py_err)?;
         let dict = PyDict::new(py);
         dict.set_item("map_name", header.map_name)?;
         dict.set_item("server_name", header.server_name)?;
@@ -411,7 +499,9 @@ impl Demo {
         dict.set_item("demo_version_name", header.demo_version_name)?;
         dict.set_item("game_directory", header.game_directory)?;
 
-        if let Ok(info) = self.parser.file_info() {
+        if self.parts.is_empty()
+            && let Ok(info) = self.recording.parser.file_info()
+        {
             dict.set_item("playback_ticks", info.playback_ticks)?;
             dict.set_item("playback_frames", info.playback_frames)?;
             dict.set_item("playback_time", info.playback_time)?;
@@ -424,12 +514,12 @@ impl Demo {
     /// Returns ``64.0`` when playback timing is unavailable.
     #[getter]
     fn tick_rate(&self) -> f32 {
-        self.parser.tickrate()
+        self.recording.parser.tickrate()
     }
 
     /// Convert a demo tick to seconds from the start of the demo.
     fn tick_to_seconds(&self, tick: i32) -> f64 {
-        f64::from(tick) / f64::from(self.parser.tickrate())
+        f64::from(tick) / f64::from(self.recording.parser.tickrate())
     }
 
     /// Convert seconds from the start of the demo to the nearest demo tick.
@@ -437,7 +527,7 @@ impl Demo {
     /// Negative values are valid for demos whose first packet has a negative
     /// tick. The value must be finite and fit in a signed 32-bit tick.
     fn seconds_to_tick(&self, seconds: f64) -> PyResult<i32> {
-        let tick = (seconds * f64::from(self.parser.tickrate())).round();
+        let tick = (seconds * f64::from(self.recording.parser.tickrate())).round();
         if !tick.is_finite() || !(f64::from(i32::MIN)..=f64::from(i32::MAX)).contains(&tick) {
             return Err(PyValueError::new_err(
                 "seconds must convert to a finite 32-bit demo tick",
@@ -458,15 +548,29 @@ impl Demo {
         if let Some(cached) = self.events_cache.get() {
             return Ok(cached.clone_ref(py));
         }
-        let events = py
-            .detach(|| self.parser.events_shared())
-            .map_err(to_py_err)?;
-        let mut groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
-        for (index, event) in events.iter().enumerate() {
-            if let Some(group) = groups.get_mut(&event.name) {
-                group.push(index);
-            } else {
-                groups.insert(event.name.clone(), vec![index]);
+        let events = if self.parts.is_empty() {
+            vec![
+                py.detach(|| self.recording.parser.events_shared())
+                    .map_err(to_py_err)?,
+            ]
+        } else {
+            self.parts
+                .iter()
+                .map(|part| {
+                    let part = part.borrow(py);
+                    let parser = &part.recording.parser;
+                    py.detach(|| parser.events_shared()).map_err(to_py_err)
+                })
+                .collect::<PyResult<_>>()?
+        };
+        let mut groups: BTreeMap<String, Vec<(usize, usize)>> = BTreeMap::new();
+        for (part, stream) in events.iter().enumerate() {
+            for (index, event) in stream.iter().enumerate() {
+                if let Some(group) = groups.get_mut(&event.name) {
+                    group.push((part, index));
+                } else {
+                    groups.insert(event.name.clone(), vec![(part, index)]);
+                }
             }
         }
         let obj = Py::new(
@@ -502,19 +606,26 @@ impl Demo {
     /// ``health``, ``armor``, ``team_num``, ``name``, and ``money``.
     ///
     /// Each call decodes keyframe segments in parallel. Results are not cached.
+    /// Set ``part`` to select one source recording in a multipart demo.
     ///
     /// Args:
     ///     props: Property names. Defaults to
     ///         ``["X", "Y", "Z", "health", "armor", "team_num"]``.
     ///     players_only: Merge player entities if true; otherwise, return all entities.
-    #[pyo3(signature = (props=None, players_only=true))]
-    #[pyo3(text_signature = "($self, props=None, players_only=True)")]
+    #[pyo3(signature = (props=None, players_only=true, *, part=None))]
+    #[pyo3(text_signature = "($self, props=None, players_only=True, *, part=None)")]
     fn ticks(
         &self,
         py: Python<'_>,
         props: Option<Vec<String>>,
         players_only: bool,
+        part: Option<i64>,
     ) -> PyResult<PyDataFrame> {
+        if !self.parts.is_empty() || part.is_some() {
+            return self.query_parts(py, part, |source| {
+                source.ticks(py, props.clone(), players_only, None)
+            });
+        }
         py.detach(move || {
             let props = props.unwrap_or_else(default_tick_props);
             if players_only {
@@ -533,7 +644,8 @@ impl Demo {
 
             // `players_only=False`: dump every entity separately (the merged
             // one-row-per-player path returned earlier).
-            self.parser
+            self.recording
+                .parser
                 .run_to_end(|ctx| {
                     for (_, entity) in ctx.entities().iter() {
                         if !entity.active {
@@ -642,10 +754,13 @@ impl Demo {
     /// See the dataset and reference guides for columns and definitions.
     #[getter]
     fn stats(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        if let Some((kills, damages, blinds, shots)) = self.event_datasets_cache.stats_parts() {
+        if let Some((kills, damages, blinds, shots)) =
+            self.recording.event_datasets_cache.stats_parts()
+        {
             let rounds = self.parsed_rounds(py)?;
             return self.cached_frame(py, "stats", move || {
                 let stats = self
+                    .recording
                     .parser
                     .player_stats_from_parts(kills, damages, blinds, shots, rounds, true);
                 stats_to_frame(&stats).map_err(polars_err)
@@ -654,9 +769,11 @@ impl Demo {
 
         let inputs = self.parsed_player_stats_inputs(py)?;
         self.cached_frame(py, "stats", move || {
-            let stats =
-                self.parser
-                    .player_stats_from(inputs.event_datasets(), inputs.rounds(), true);
+            let stats = self.recording.parser.player_stats_from(
+                inputs.event_datasets(),
+                inputs.rounds(),
+                true,
+            );
             stats_to_frame(&stats).map_err(polars_err)
         })
     }
@@ -674,9 +791,11 @@ impl Demo {
         }
         let inputs = self.parsed_player_stats_inputs(py)?;
         self.cached_frame(py, "stats_with_knife_rounds", move || {
-            let stats =
-                self.parser
-                    .player_stats_from(inputs.event_datasets(), inputs.rounds(), false);
+            let stats = self.recording.parser.player_stats_from(
+                inputs.event_datasets(),
+                inputs.rounds(),
+                false,
+            );
             stats_to_frame(&stats).map_err(polars_err)
         })
     }
@@ -694,23 +813,6 @@ impl Demo {
         })
     }
 
-    fn _round_coverage(&self, py: Python<'_>) -> PyResult<(Option<bool>, Option<bool>)> {
-        py.detach(|| self.parser.round_coverage())
-            .map_err(to_py_err)
-    }
-
-    fn _round_economy(&self, py: Python<'_>, pistol_rounds: Vec<i32>) -> PyResult<PyDataFrame> {
-        py.detach(|| {
-            let rows = self
-                .parser
-                .round_economy_with_pistols(Some(&pistol_rounds.into_iter().collect()))
-                .map_err(to_py_err)?;
-            Ok(PyDataFrame(
-                round_economy_to_frame(&rows).map_err(polars_err)?,
-            ))
-        })
-    }
-
     /// Per-team economy and buy type per round (cached).
     ///
     /// One row per (round, side): ``round_num``, ``side``, ``equipment_value``
@@ -719,7 +821,7 @@ impl Demo {
     #[getter]
     fn round_economy(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.cached_frame(py, "round_economy", || {
-            let econ = self.parser.round_economy().map_err(to_py_err)?;
+            let econ = self.recording.parser.round_economy().map_err(to_py_err)?;
             round_economy_to_frame(&econ).map_err(polars_err)
         })
     }
@@ -733,7 +835,7 @@ impl Demo {
     #[getter]
     fn chat(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.cached_frame(py, "chat", || {
-            let chat = self.parser.chat().map_err(to_py_err)?;
+            let chat = self.recording.parser.chat().map_err(to_py_err)?;
             chat_to_frame(&chat).map_err(polars_err)
         })
     }
@@ -759,7 +861,7 @@ impl Demo {
     #[getter]
     fn item_events(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.cached_frame(py, "item_events", || {
-            let items = self.parser.item_events().map_err(to_py_err)?;
+            let items = self.recording.parser.item_events().map_err(to_py_err)?;
             item_events_to_frame(&items).map_err(polars_err)
         })
     }
@@ -771,11 +873,18 @@ impl Demo {
     #[getter]
     fn convars<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         let convars = py
-            .detach(|| self.convars_cache.get_or_try_init(|| self.parser.convars()))
+            .detach(|| {
+                self.recording
+                    .convars_cache
+                    .get_or_try_init(|| self.recording.parser.convars())
+            })
             .map_err(to_py_err)?;
         let dict = PyDict::new(py);
         for (name, value) in convars {
             dict.set_item(name, value)?;
+        }
+        for part in self.parts.iter().skip(1) {
+            dict.call_method1("update", (part.borrow(py).convars(py)?,))?;
         }
         Ok(dict)
     }
@@ -791,6 +900,8 @@ impl Demo {
     /// - ``start_tick`` and ``end_tick``: an inclusive window. Alone, this selects
     ///   every tick in the window. With other selectors, it bounds the selection.
     ///
+    /// Multipart local ticks and tick windows require ``part``.
+    /// Stride and event queries can read all parts.
     /// At least one selector is required. One to four explicit ticks without
     /// other selectors use keyframe seeks. Other requests decode keyframe
     /// segments in parallel. Results are not cached.
@@ -800,9 +911,9 @@ impl Demo {
     ///     demo.snapshots(ticks=[29000, 30000])
     ///     demo.snapshots(seconds=1, start_tick=0, end_tick=64000)
     ///     demo.snapshots(events="player_death")
-    #[pyo3(signature = (*, ticks=None, every=None, seconds=None, events=None, start_tick=None, end_tick=None))]
+    #[pyo3(signature = (*, ticks=None, every=None, seconds=None, events=None, start_tick=None, end_tick=None, part=None))]
     #[pyo3(
-        text_signature = "($self, *, ticks=None, every=None, seconds=None, events=None, start_tick=None, end_tick=None)"
+        text_signature = "($self, *, ticks=None, every=None, seconds=None, events=None, start_tick=None, end_tick=None, part=None)"
     )]
     #[allow(clippy::too_many_arguments)]
     fn snapshots(
@@ -814,7 +925,30 @@ impl Demo {
         events: Option<EventNames>,
         start_tick: Option<i32>,
         end_tick: Option<i32>,
+        part: Option<i64>,
     ) -> PyResult<PyDataFrame> {
+        if !self.parts.is_empty() || part.is_some() {
+            if !self.parts.is_empty()
+                && part.is_none()
+                && (ticks.is_some() || start_tick.is_some() || end_tick.is_some())
+            {
+                return Err(PyValueError::new_err(
+                    "select part when querying local ticks in a multipart demo",
+                ));
+            }
+            return self.query_parts(py, part, |source| {
+                source.snapshots(
+                    py,
+                    ticks.clone(),
+                    every,
+                    seconds,
+                    events.clone(),
+                    start_tick,
+                    end_tick,
+                    None,
+                )
+            });
+        }
         if every.is_some() && seconds.is_some() {
             return Err(PyValueError::new_err(
                 "pass either `every` or `seconds`, not both",
@@ -831,7 +965,11 @@ impl Demo {
             && !has_window
         {
             return py.detach(|| {
-                let states = self.parser.snapshot(explicit[0]).map_err(to_py_err)?;
+                let states = self
+                    .recording
+                    .parser
+                    .snapshot(explicit[0])
+                    .map_err(to_py_err)?;
                 Ok(PyDataFrame(
                     states
                         .into_iter()
@@ -854,7 +992,7 @@ impl Demo {
                 explicit.dedup();
                 let mut columns = SnapshotColumns::default();
                 for tick in explicit {
-                    let states = self.parser.snapshot(tick).map_err(to_py_err)?;
+                    let states = self.recording.parser.snapshot(tick).map_err(to_py_err)?;
                     // A seek can stop at a nearby tick. A list selects exact ticks.
                     columns.extend(states.into_iter().filter(|state| state.tick == tick));
                 }
@@ -870,7 +1008,9 @@ impl Demo {
             (_, Some(secs)) if !secs.is_finite() || secs <= 0.0 => {
                 return Err(PyValueError::new_err("`seconds` must be a positive number"));
             }
-            (_, Some(secs)) => Some(((secs * self.parser.tickrate()).round() as i32).max(1)),
+            (_, Some(secs)) => {
+                Some(((secs * self.recording.parser.tickrate()).round() as i32).max(1))
+            }
             (None, None) => None,
         };
 
@@ -880,7 +1020,7 @@ impl Demo {
             let names = events.into_vec();
             let refs: HashSet<&str> = names.iter().map(String::as_str).collect();
             tick_set = py
-                .detach(|| self.parser.event_ticks(&refs))
+                .detach(|| self.recording.parser.event_ticks(&refs))
                 .map_err(to_py_err)?;
         }
         tick_set.extend(&explicit);
@@ -902,6 +1042,7 @@ impl Demo {
 
         py.detach(|| {
             let chunks = self
+                .recording
                 .parser
                 .snapshots_query_chunks::<SnapshotColumns>(
                     stride,
@@ -926,20 +1067,235 @@ impl Demo {
 }
 
 impl Demo {
+    fn open(path: PathBuf) -> PyResult<Self> {
+        if !path.exists() {
+            return Err(PyFileNotFoundError::new_err(format!(
+                "no such file: {}",
+                path.display()
+            )));
+        }
+        let parser = Parser::from_file(&path).map_err(to_py_err)?;
+        parser.verify().map_err(to_py_err)?;
+        Ok(Self::from_recording(Arc::new(Recording {
+            parser,
+            path,
+            convars_cache: LazyCache::default(),
+            event_datasets_cache: EventDatasetCache::default(),
+            player_stats_inputs_cache: LazyCache::default(),
+            projectiles_cache: ProjectileCache::default(),
+            rounds_cache: LazyCache::default(),
+            players_cache: LazyCache::default(),
+        })))
+    }
+
+    fn from_recording(recording: Arc<Recording>) -> Self {
+        Self {
+            recording,
+            parts: Vec::new(),
+            events_cache: OnceLock::new(),
+            frames_cache: Mutex::new(HashMap::new()),
+        }
+    }
+
+    fn dataset(&self, py: Python<'_>, name: &str) -> PyResult<Py<PyAny>> {
+        match name {
+            "stats" => self.stats(py),
+            "stats_with_knife_rounds" => self.player_stats(py, true),
+            "rounds" => self.rounds(py),
+            "kills" => self.kills(py),
+            "damages" => self.damages(py),
+            "bomb" => self.bomb(py),
+            "grenades" => self.grenades(py),
+            "fires" => self.fires(py),
+            "smokes" => self.smokes(py),
+            "shots" => self.shots(py),
+            "players" => self.players(py),
+            "round_economy" => self.round_economy(py),
+            "chat" => self.chat(py),
+            "blinds" => self.blinds(py),
+            "item_events" => self.item_events(py),
+            _ => unreachable!("dataset names validated above"),
+        }
+    }
+
+    fn validate_parts(&self, py: Python<'_>) -> PyResult<()> {
+        let header = self.recording.parser.file_header().map_err(to_py_err)?;
+        let rate = self.tick_rate();
+        let mut previous = None;
+        for (index, part) in self.parts.iter().enumerate() {
+            let part = part.borrow(py);
+            let other = part.recording.parser.file_header().map_err(to_py_err)?;
+            for (key, same) in [
+                ("map_name", other.map_name == header.map_name),
+                ("build_num", other.build_num == header.build_num),
+            ] {
+                if !same {
+                    return Err(PyValueError::new_err(format!(
+                        "part {index} has a different {key}"
+                    )));
+                }
+            }
+            if (part.tick_rate() - rate).abs() > 1e-6 * rate.max(part.tick_rate()) {
+                return Err(PyValueError::new_err(format!(
+                    "part {index} has a different tick rate"
+                )));
+            }
+            let parser = &part.recording.parser;
+            let coverage = py.detach(|| parser.round_coverage()).map_err(to_py_err)?;
+            previous = Some(
+                validate_rounds(previous, part.parsed_rounds(py)?, coverage)
+                    .map_err(|error| PyValueError::new_err(format!("part {index} {error}")))?,
+            );
+        }
+        Ok(())
+    }
+
+    fn query_parts(
+        &self,
+        py: Python<'_>,
+        part: Option<i64>,
+        mut query: impl FnMut(&Self) -> PyResult<PyDataFrame>,
+    ) -> PyResult<PyDataFrame> {
+        let count = self.parts.len().max(1);
+        if part.is_some_and(|index| index < 0 || index as u64 >= count as u64) {
+            return Err(PyValueError::new_err(format!(
+                "part must be between 0 and {}",
+                count - 1
+            )));
+        }
+        if self.parts.is_empty() {
+            return query(self);
+        }
+        let indices: Vec<_> = part.map_or_else(|| (0..count).collect(), |i| vec![i as usize]);
+        let frames = indices
+            .into_iter()
+            .map(|i| Ok((i, query(&self.parts[i].borrow(py))?.0)))
+            .collect::<PyResult<_>>()?;
+        Ok(PyDataFrame(combine_frames(py, frames)?))
+    }
+
+    fn multipart_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<DataFrame> {
+        let parts: Vec<_> = self.parts.iter().map(|part| part.borrow(py)).collect();
+        if matches!(key, "stats" | "stats_with_knife_rounds") {
+            let inputs = parts
+                .iter()
+                .map(|part| Ok((part.parsed_player_stats_inputs(py)?, part.tick_rate())))
+                .collect::<PyResult<Vec<_>>>()?;
+            return py.detach(|| {
+                let mut total = awpy::stats::PlayerStatsAccumulator::default();
+                for (inputs, rate) in inputs {
+                    total.add_part(
+                        inputs.event_datasets(),
+                        inputs.rounds(),
+                        rate,
+                        key == "stats",
+                    );
+                }
+                stats_to_frame(&total.finish()).map_err(polars_err)
+            });
+        }
+        if key == "players" {
+            let mut players: Vec<Player> = Vec::new();
+            for part in &parts {
+                for player in part.parsed_players(py)? {
+                    let known = player.steamid.is_some_and(|id| id != 0);
+                    if let Some(existing) = players
+                        .iter_mut()
+                        .find(|p| p.steamid == player.steamid && (known || p.name == player.name))
+                    {
+                        *existing = player.clone();
+                    } else {
+                        players.push(player.clone());
+                    }
+                }
+            }
+            players.sort_by_key(|p| p.steamid.is_none_or(|id| id == 0));
+            return players_to_frame(&players).map_err(polars_err);
+        }
+        let pistols = if key == "round_economy" {
+            Some(self.pistol_rounds(py)?)
+        } else {
+            None
+        };
+        let frames = parts
+            .iter()
+            .enumerate()
+            .map(|(i, part)| {
+                let frame = if let Some(pistols) = &pistols {
+                    let parser = &part.recording.parser;
+                    let rows = py
+                        .detach(|| parser.round_economy_with_pistols(Some(pistols)))
+                        .map_err(to_py_err)?;
+                    round_economy_to_frame(&rows).map_err(polars_err)?
+                } else {
+                    part.dataset(py, key)?.bind(py).extract::<PyDataFrame>()?.0
+                };
+                Ok((i, frame))
+            })
+            .collect::<PyResult<_>>()?;
+        combine_frames(py, frames)
+    }
+
+    fn pistol_rounds(&self, py: Python<'_>) -> PyResult<HashSet<i32>> {
+        let mut pistols = HashSet::new();
+        let mut previous = HashMap::new();
+        for part in &self.parts {
+            let part = part.borrow(py);
+            let rounds: Vec<_> = part
+                .parsed_rounds(py)?
+                .iter()
+                .filter(|r| !r.is_knife_round)
+                .collect();
+            let ticks = rounds.iter().filter_map(|r| r.freeze_end_tick).collect();
+            let parser = &part.recording.parser;
+            let states = py
+                .detach(|| parser.snapshots_query(None, &ticks, i32::MIN, i32::MAX))
+                .map_err(to_py_err)?;
+            for round in rounds {
+                let current: HashMap<_, _> = states
+                    .iter()
+                    .filter(|s| Some(s.tick) == round.freeze_end_tick)
+                    .filter_map(|s| s.steamid.filter(|&id| id != 0).zip(s.side))
+                    .collect();
+                if pistols.is_empty() {
+                    pistols.insert(round.round_num);
+                }
+                let common: Vec<_> = current
+                    .iter()
+                    .filter_map(|(id, side)| previous.get(id).map(|old| side != old))
+                    .collect();
+                if !common.is_empty()
+                    && common.iter().filter(|&&flipped| flipped).count() * 2 > common.len()
+                {
+                    pistols.insert(round.round_num);
+                    return Ok(pistols);
+                }
+                if !current.is_empty() {
+                    previous = current;
+                }
+            }
+        }
+        Ok(pistols)
+    }
+
     fn ensure_event_datasets(
         &self,
         py: Python<'_>,
         selection: EventDatasetSelection,
     ) -> PyResult<()> {
-        py.detach(|| self.event_datasets_cache.ensure(&self.parser, selection))
-            .map_err(to_py_err)
+        py.detach(|| {
+            self.recording
+                .event_datasets_cache
+                .ensure(&self.recording.parser, selection)
+        })
+        .map_err(to_py_err)
     }
 
     /// Preserve eager group reuse for ordinary property access. `load()` skips
     /// this helper and prepares exactly the caller's requested union instead.
     fn ensure_default_event_group(&self, py: Python<'_>) -> PyResult<()> {
         let mut selection = EventDatasetSelection::ALL;
-        if let Some(inputs) = self.player_stats_inputs_cache.get() {
+        if let Some(inputs) = self.recording.player_stats_inputs_cache.get() {
             let full = inputs.full_datasets();
             selection.kills &= !full.kills;
             selection.damages &= !full.damages;
@@ -959,43 +1315,58 @@ impl Demo {
         py: Python<'_>,
         extra_full: EventDatasetSelection,
     ) -> PyResult<&PlayerStatsInputs> {
-        let existing_rounds = self.rounds_cache.get().map(Vec::as_slice);
+        let existing_rounds = self.recording.rounds_cache.get().map(Vec::as_slice);
         py.detach(|| {
-            self.player_stats_inputs_cache.get_or_try_init(|| {
-                self.parser
-                    .player_stats_inputs_selected(existing_rounds, extra_full)
-            })
+            self.recording
+                .player_stats_inputs_cache
+                .get_or_try_init(|| {
+                    self.recording
+                        .parser
+                        .player_stats_inputs_selected(existing_rounds, extra_full)
+                })
         })
         .map_err(to_py_err)
     }
 
     fn ensure_projectiles(&self, py: Python<'_>, selection: ProjectileSelection) -> PyResult<()> {
-        py.detach(|| self.projectiles_cache.ensure(&self.parser, selection))
-            .map_err(to_py_err)
+        py.detach(|| {
+            self.recording
+                .projectiles_cache
+                .ensure(&self.recording.parser, selection)
+        })
+        .map_err(to_py_err)
     }
 
     fn parsed_rounds(&self, py: Python<'_>) -> PyResult<&[Round]> {
-        if let Some(rounds) = self.rounds_cache.get() {
+        if let Some(rounds) = self.recording.rounds_cache.get() {
             return Ok(rounds);
         }
-        if let Some(inputs) = self.player_stats_inputs_cache.get() {
+        if let Some(inputs) = self.recording.player_stats_inputs_cache.get() {
             return Ok(inputs.rounds());
         }
-        py.detach(|| self.rounds_cache.get_or_try_init(|| self.parser.rounds()))
-            .map(Vec::as_slice)
-            .map_err(to_py_err)
+        py.detach(|| {
+            self.recording
+                .rounds_cache
+                .get_or_try_init(|| self.recording.parser.rounds())
+        })
+        .map(Vec::as_slice)
+        .map_err(to_py_err)
     }
 
     fn parsed_players(&self, py: Python<'_>) -> PyResult<&[Player]> {
-        if let Some(players) = self.players_cache.get() {
+        if let Some(players) = self.recording.players_cache.get() {
             return Ok(players);
         }
-        if let Some(inputs) = self.player_stats_inputs_cache.get() {
+        if let Some(inputs) = self.recording.player_stats_inputs_cache.get() {
             return Ok(inputs.players());
         }
-        py.detach(|| self.players_cache.get_or_try_init(|| self.parser.players()))
-            .map(Vec::as_slice)
-            .map_err(to_py_err)
+        py.detach(|| {
+            self.recording
+                .players_cache
+                .get_or_try_init(|| self.recording.parser.players())
+        })
+        .map(Vec::as_slice)
+        .map_err(to_py_err)
     }
 
     /// `ticks(players_only=True)`: one row per player per tick, decoded in
@@ -1010,7 +1381,11 @@ impl Demo {
     /// classes are decoded.
     fn ticks_by_player(&self, props: &[String]) -> PyResult<PyDataFrame> {
         let filter: HashSet<&str> = HashSet::from([PLAYER_CLASSES[0], PLAYER_CLASSES[1]]);
-        let offsets = self.parser.full_packet_offsets().map_err(to_py_err)?;
+        let offsets = self
+            .recording
+            .parser
+            .full_packet_offsets()
+            .map_err(to_py_err)?;
 
         // A cold-restarted segment can't populate a *controller-only* field at its
         // first ticks: the pawn→controller link is a sticky field CS2 does not
@@ -1021,7 +1396,7 @@ impl Demo {
         // matches a single pass exactly; pure pawn-state props (the default) stay
         // parallel.
         let needs_serial = {
-            let ctx = self.parser.parse_init().map_err(to_py_err)?;
+            let ctx = self.recording.parser.parse_init().map_err(to_py_err)?;
             let keys = PlayerTickKeys::resolve(&ctx, props);
             keys.props.iter().any(|p| {
                 matches!(
@@ -1059,7 +1434,7 @@ impl Demo {
             })
             .collect();
 
-        let parser = &self.parser;
+        let parser = &self.recording.parser;
         let props_ref = props;
         let filter_ref = &filter;
         let parts: Vec<TickSegment> = if n == 1 {
@@ -1133,7 +1508,11 @@ impl Demo {
             return Ok(df.clone_ref(py));
         }
 
-        let built = py.detach(build)?;
+        let built = if self.parts.is_empty() {
+            py.detach(build)?
+        } else {
+            self.multipart_frame(py, key)?
+        };
         let obj = PyDataFrame(built).into_pyobject(py)?.unbind();
         let mut cache = self.frames_cache.lock().expect("dataset cache poisoned");
         if let Some(existing) = cache.get(key) {
@@ -1149,15 +1528,16 @@ impl Demo {
     fn event_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<Py<PyAny>> {
         match key {
             "kills" => {
-                let rows = if let Some(rows) = self.event_datasets_cache.kills.get() {
+                let rows = if let Some(rows) = self.recording.event_datasets_cache.kills.get() {
                     rows.as_slice()
-                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
                     && inputs.full_datasets().kills
                 {
                     inputs.event_datasets().kills.as_slice()
                 } else {
                     self.ensure_default_event_group(py)?;
-                    self.event_datasets_cache
+                    self.recording
+                        .event_datasets_cache
                         .kills
                         .get()
                         .expect("kills cache populated")
@@ -1165,15 +1545,16 @@ impl Demo {
                 self.cached_frame(py, key, move || kills_to_frame(rows).map_err(polars_err))
             }
             "damages" => {
-                let rows = if let Some(rows) = self.event_datasets_cache.damages.get() {
+                let rows = if let Some(rows) = self.recording.event_datasets_cache.damages.get() {
                     rows.as_slice()
-                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
                     && inputs.full_datasets().damages
                 {
                     inputs.event_datasets().damages.as_slice()
                 } else {
                     self.ensure_default_event_group(py)?;
-                    self.event_datasets_cache
+                    self.recording
+                        .event_datasets_cache
                         .damages
                         .get()
                         .expect("damages cache populated")
@@ -1181,15 +1562,16 @@ impl Demo {
                 self.cached_frame(py, key, move || damages_to_frame(rows).map_err(polars_err))
             }
             "bomb" => {
-                let rows = if let Some(rows) = self.event_datasets_cache.bomb.get() {
+                let rows = if let Some(rows) = self.recording.event_datasets_cache.bomb.get() {
                     rows.as_slice()
-                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
                     && inputs.full_datasets().bomb
                 {
                     inputs.event_datasets().bomb.as_slice()
                 } else {
                     self.ensure_default_event_group(py)?;
-                    self.event_datasets_cache
+                    self.recording
+                        .event_datasets_cache
                         .bomb
                         .get()
                         .expect("bomb cache populated")
@@ -1197,15 +1579,16 @@ impl Demo {
                 self.cached_frame(py, key, move || bomb_to_frame(rows).map_err(polars_err))
             }
             "blinds" => {
-                let rows = if let Some(rows) = self.event_datasets_cache.blinds.get() {
+                let rows = if let Some(rows) = self.recording.event_datasets_cache.blinds.get() {
                     rows.as_slice()
-                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
                     && inputs.full_datasets().blinds
                 {
                     inputs.event_datasets().blinds.as_slice()
                 } else {
                     self.ensure_default_event_group(py)?;
-                    self.event_datasets_cache
+                    self.recording
+                        .event_datasets_cache
                         .blinds
                         .get()
                         .expect("blinds cache populated")
@@ -1213,15 +1596,16 @@ impl Demo {
                 self.cached_frame(py, key, move || blinds_to_frame(rows).map_err(polars_err))
             }
             "shots" => {
-                let rows = if let Some(rows) = self.event_datasets_cache.shots.get() {
+                let rows = if let Some(rows) = self.recording.event_datasets_cache.shots.get() {
                     rows.as_slice()
-                } else if let Some(inputs) = self.player_stats_inputs_cache.get()
+                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
                     && inputs.full_datasets().shots
                 {
                     inputs.event_datasets().shots.as_slice()
                 } else {
                     self.ensure_default_event_group(py)?;
-                    self.event_datasets_cache
+                    self.recording
+                        .event_datasets_cache
                         .shots
                         .get()
                         .expect("shots cache populated")
@@ -1237,10 +1621,11 @@ impl Demo {
     fn projectile_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<Py<PyAny>> {
         match key {
             "grenades" => {
-                if self.projectiles_cache.grenades.get().is_none() {
+                if self.recording.projectiles_cache.grenades.get().is_none() {
                     self.ensure_projectiles(py, ProjectileSelection::ALL)?;
                 }
                 let rows = self
+                    .recording
                     .projectiles_cache
                     .grenades
                     .get()
@@ -1248,10 +1633,11 @@ impl Demo {
                 self.cached_frame(py, key, move || grenades_to_frame(rows).map_err(polars_err))
             }
             "fires" => {
-                if self.projectiles_cache.fires.get().is_none() {
+                if self.recording.projectiles_cache.fires.get().is_none() {
                     self.ensure_projectiles(py, ProjectileSelection::ALL)?;
                 }
                 let rows = self
+                    .recording
                     .projectiles_cache
                     .fires
                     .get()
@@ -1259,10 +1645,11 @@ impl Demo {
                 self.cached_frame(py, key, move || fires_to_frame(rows).map_err(polars_err))
             }
             "smokes" => {
-                if self.projectiles_cache.smokes.get().is_none() {
+                if self.recording.projectiles_cache.smokes.get().is_none() {
                     self.ensure_projectiles(py, ProjectileSelection::ALL)?;
                 }
                 let rows = self
+                    .recording
                     .projectiles_cache
                     .smokes
                     .get()
@@ -1272,6 +1659,58 @@ impl Demo {
             _ => unreachable!("unknown projectile dataset"),
         }
     }
+}
+
+/// Keep original coordinates and allow schema differences across recordings.
+fn combine_frames(py: Python<'_>, frames: Vec<(usize, DataFrame)>) -> PyResult<DataFrame> {
+    let frames = frames
+        .into_iter()
+        .map(|(index, mut frame)| {
+            let height = frame.height();
+            frame
+                .with_column(Column::new_scalar(
+                    "part".into(),
+                    Scalar::new(DataType::UInt32, AnyValue::UInt32(index as u32)),
+                    height,
+                ))
+                .map_err(polars_err)?;
+            Ok(PyDataFrame(frame).into_pyobject(py)?.unbind())
+        })
+        .collect::<PyResult<Vec<_>>>()?;
+    let kwargs = PyDict::new(py);
+    kwargs.set_item("how", "diagonal_relaxed")?;
+    Ok(py
+        .import("polars")?
+        .getattr("concat")?
+        .call((frames,), Some(&kwargs))?
+        .extract::<PyDataFrame>()?
+        .0)
+}
+
+fn validate_rounds(
+    previous: Option<i32>,
+    rounds: &[Round],
+    coverage: (Option<bool>, Option<bool>),
+) -> std::result::Result<i32, &'static str> {
+    if coverage != (Some(true), Some(true)) {
+        return Err("has incomplete or unknown live-round boundaries");
+    }
+    let mut last = previous;
+    let mut found = false;
+    for round in rounds.iter().filter(|r| !r.is_knife_round) {
+        if round.freeze_end_tick.is_none() {
+            return Err("has incomplete round-start evidence");
+        }
+        if last.is_some_and(|number| number.checked_add(1) != Some(round.round_num)) {
+            return Err("has overlapping, unordered, or missing rounds");
+        }
+        last = Some(round.round_num);
+        found = true;
+    }
+    if !found {
+        return Err("has no completed match rounds");
+    }
+    Ok(last.expect("nonempty round list"))
 }
 
 /// A demo's game events, keyed by name. Returned by :attr:`Demo.events`.
@@ -1291,9 +1730,9 @@ impl Demo {
 #[pyclass]
 struct Events {
     /// The parser's single shared copy of the decoded event stream.
-    events: Arc<[GameEvent]>,
-    /// Event indices grouped by name (sorted, so listings are deterministic).
-    groups: BTreeMap<String, Vec<usize>>,
+    events: Vec<Arc<[GameEvent]>>,
+    /// (part, event) indices grouped by name, in recording order.
+    groups: BTreeMap<String, Vec<(usize, usize)>>,
     /// Frames already built, by event name.
     frames: Mutex<HashMap<String, Py<PyAny>>>,
 }
@@ -1309,8 +1748,25 @@ impl Events {
         if let Some(frame) = self.frames.lock().expect("events cache poisoned").get(name) {
             return Ok(Some(frame.clone_ref(py)));
         }
-        let events: Vec<&GameEvent> = group.iter().map(|&index| &self.events[index]).collect();
-        let frame = py.detach(|| events_to_frame(&events).map_err(polars_err))?;
+        let events: Vec<&GameEvent> = group
+            .iter()
+            .map(|&(part, index)| &self.events[part][index])
+            .collect();
+        let frame = py.detach(|| {
+            let mut frame = events_to_frame(&events).map_err(polars_err)?;
+            if self.events.len() > 1 {
+                frame
+                    .with_column(Column::new(
+                        "part".into(),
+                        group
+                            .iter()
+                            .map(|&(part, _)| part as u32)
+                            .collect::<Vec<_>>(),
+                    ))
+                    .map_err(polars_err)?;
+            }
+            Ok::<_, PyErr>(frame)
+        })?;
         let object = PyDataFrame(frame).into_pyobject(py)?.unbind();
         let mut cache = self.frames.lock().expect("events cache poisoned");
         if let Some(existing) = cache.get(name) {
@@ -2870,35 +3326,6 @@ mod tests {
     }
 }
 
-/// Combine exact stat totals without joining tick or entity namespaces.
-#[pyfunction]
-#[pyo3(signature = (parts, include_knife_rounds=false))]
-fn multipart_player_stats(
-    py: Python<'_>,
-    parts: Vec<Py<Demo>>,
-    include_knife_rounds: bool,
-) -> PyResult<PyDataFrame> {
-    let borrowed: Vec<_> = parts.iter().map(|part| part.borrow(py)).collect();
-    let inputs: Vec<_> = borrowed
-        .iter()
-        .map(|part| Ok((part.parsed_player_stats_inputs(py)?, part.parser.tickrate())))
-        .collect::<PyResult<_>>()?;
-    py.detach(|| {
-        let mut total = awpy::stats::PlayerStatsAccumulator::default();
-        for (inputs, tickrate) in inputs {
-            total.add_part(
-                inputs.event_datasets(),
-                inputs.rounds(),
-                tickrate,
-                !include_knife_rounds,
-            );
-        }
-        Ok(PyDataFrame(
-            stats_to_frame(&total.finish()).map_err(polars_err)?,
-        ))
-    })
-}
-
 #[pymodule]
 fn _awpy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Demo>()?;
@@ -2906,7 +3333,81 @@ fn _awpy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<VisibilityChecker>()?;
     m.add_class::<NavMesh>()?;
     m.add_function(wrap_pyfunction!(compute_map_control, m)?)?;
-    m.add_function(wrap_pyfunction!(multipart_player_stats, m)?)?;
     m.add("InvalidDemoError", m.py().get_type::<InvalidDemoError>())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod multipart_tests {
+    use super::*;
+
+    fn round(number: i32) -> Round {
+        Round {
+            round_num: number,
+            start_tick: Some(0),
+            freeze_end_tick: Some(10),
+            end_tick: 100,
+            official_end_tick: Some(100),
+            winner: 2,
+            winner_side: "terrorist".into(),
+            reason: 0,
+            reason_name: "t_win".into(),
+            is_knife_round: false,
+        }
+    }
+
+    #[test]
+    fn consecutive_rounds_keep_match_numbers() {
+        assert_eq!(
+            validate_rounds(Some(22), &[round(23), round(24)], (Some(true), Some(true))).unwrap(),
+            24
+        );
+    }
+
+    #[test]
+    fn unknown_boundaries_are_rejected() {
+        assert!(validate_rounds(None, &[round(1)], (None, None)).is_err());
+    }
+
+    #[test]
+    fn live_round_cuts_are_rejected() {
+        assert!(validate_rounds(None, &[round(1)], (Some(true), Some(false))).is_err());
+    }
+
+    #[test]
+    fn missing_round_start_is_rejected() {
+        let mut r = round(1);
+        r.freeze_end_tick = None;
+        assert!(validate_rounds(None, &[r], (Some(true), Some(true))).is_err());
+    }
+
+    #[test]
+    fn empty_match_rounds_are_rejected() {
+        assert!(validate_rounds(None, &[], (Some(true), Some(true))).is_err());
+    }
+
+    #[test]
+    fn overlapping_recordings_are_rejected() {
+        assert!(validate_rounds(Some(22), &[round(22)], (Some(true), Some(true))).is_err());
+    }
+
+    #[test]
+    fn gaps_between_recordings_are_rejected() {
+        assert!(validate_rounds(Some(22), &[round(24)], (Some(true), Some(true))).is_err());
+    }
+
+    #[test]
+    fn gaps_within_a_recording_are_rejected() {
+        assert!(validate_rounds(None, &[round(1), round(3)], (Some(true), Some(true))).is_err());
+    }
+
+    #[test]
+    fn knife_rounds_do_not_interrupt_match_round_numbers() {
+        let mut knife = round(23);
+        knife.is_knife_round = true;
+        assert_eq!(
+            validate_rounds(Some(22), &[knife, round(23)], (Some(true), Some(true))).unwrap(),
+            23
+        );
+    }
 }

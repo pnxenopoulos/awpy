@@ -1,13 +1,16 @@
 # Changelog
 
+## 3.1.0
+
+- Add multipart demos. Pass paths to `Demo` in recording order. Combine stats by
+  Steam ID. Keep local ticks with a `part` column. Reject incompatible files,
+  missing or overlapping rounds, and splits during live play.
+- Return an empty snapshot table when a selected event has no matches.
+
 ## 3.0.0
 
 Rust parser for CS2 demos with Python bindings and Polars DataFrames.
 
-- Accept a path or ordered path sequence in `Demo`. Combine multipart stats by
-  Steam ID. Keep local ticks with a `part` column. Reject incompatible files,
-  missing or overlapping rounds, and splits during live play.
-- Return an empty snapshot table when a selected event has no matches.
 - Publish wheels for Python 3.11–3.15 on Linux, macOS, and Windows.
   Python 3.15 uses a stable-ABI wheel built with Python 3.14.
 - Release Rust and Python packages from manual workflows with a version check.
