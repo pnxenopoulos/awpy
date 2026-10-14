@@ -4,7 +4,9 @@ Open a demo, read datasets, and plot player state.
 
 ## Install
 
-Awpy requires Python 3.11 or later. Pre-built wheels do not need a Rust compiler.
+Awpy requires Python 3.11 or later and Polars 2.x.
+Wheels support Python 3.11–3.15 on Linux, macOS, and Windows.
+Installing a wheel does not require a Rust compiler.
 
 ```sh
 uv add awpy          # or: pip install awpy

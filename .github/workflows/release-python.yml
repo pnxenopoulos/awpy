@@ -20,6 +20,9 @@ jobs:
   ci-gate:
     name: Verify CI passed
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
     steps:
       - name: Check CI status on tagged commit
         env:
@@ -71,7 +74,15 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13
+          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13 3.14
+          manylinux: auto
+
+      # Build on Python 3.14, as in CI, for compatibility with Python 3.15.
+      - name: Build compatible wheel for Python 3.15
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.14 --features pyo3/abi3-py314
           manylinux: auto
 
       - name: Upload wheels
@@ -95,7 +106,14 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13
+          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13 3.14
+
+      # Build on Python 3.14, as in CI, for compatibility with Python 3.15.
+      - name: Build compatible wheel for Python 3.15
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.14 --features pyo3/abi3-py314
 
       - name: Upload wheels
         uses: actions/upload-artifact@v7
@@ -115,7 +133,14 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: x86_64
-          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13
+          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.11 3.12 3.13 3.14
+
+      # Build on Python 3.14, as in CI, for compatibility with Python 3.15.
+      - name: Build compatible wheel for Python 3.15
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          args: --release --out dist -m crates/awpy-python/Cargo.toml --interpreter 3.14 --features pyo3/abi3-py314
 
       - name: Upload wheels
         uses: actions/upload-artifact@v7

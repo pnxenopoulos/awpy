@@ -1,20 +1,21 @@
 # Changelog
 
-## 3.0.0 (unreleased)
+## 3.0.0
 
 Rust parser for CS2 demos with Python bindings and Polars DataFrames.
 
+- Publish wheels for Python 3.11–3.15 on Linux, macOS, and Windows.
+  Python 3.15 uses a stable-ABI wheel built with Python 3.14.
+- Split tests by behavior and share replay fixtures.
 - Correct player IDs in combat events. Convert legacy event handles before serial validation.
 - Keep dead players' event IDs through validated original-controller handles.
 - Count recorded assisters and active flash throwers once each per kill.
 - Match each trade kill to the earliest qualifying death within 5.25 seconds.
   Use the same rule for kill flags, traded deaths, and KAST.
-
 - Require Python Polars 2.x. The lockfile now selects `2.0.0`.
   Awpy dataset schemas are unchanged. See the
   [Polars migration guide](https://docs.pola.rs/releases/upgrade/2/) for changes
   to downstream queries, including lazy-query ordering.
-
 - Shortened documentation and corrected cache, chat, and snapshot descriptions.
 - Shared developer CLI helpers for file opening, JSON output, row limits,
   and player labels. Removed redundant output buffers and an unused dependency.
@@ -75,8 +76,8 @@ Rust parser for CS2 demos with Python bindings and Polars DataFrames.
   classes now use the item-definition index, with a subclass-token fallback
   when that index is absent or unknown. This distinguishes Deagle/Revolver,
   M4A4/M4A1-S, and P2000/USP-S. Combat event weapon names are unchanged.
-- Updated to `pbdems2 0.3`: long-lived player, flash, projectile, and
-  inventory tracking now keys entities by slot plus serial, preventing state
+- Player, flash, projectile, and inventory tracking keys entities by slot
+  plus serial, preventing state
   from leaking when Source 2 reuses a slot. Raw `ticks(players_only=False)` rows
   expose `entity_serial` alongside `entity_id`.
 - Combat datasets collect selected game events during entity decoding.

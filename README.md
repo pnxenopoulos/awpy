@@ -55,7 +55,9 @@ You can also use pip:
 pip install awpy
 ```
 
-Python 3.11 or later is required. Pre-built wheels do not need a Rust compiler.
+Python 3.11 or later is required. Awpy requires Polars 2.x.
+Releases include wheels for Python 3.11–3.15 on Linux, macOS, and Windows.
+Installing a wheel does not require a Rust compiler.
 
 ### CLI
 
@@ -74,7 +76,7 @@ awpy get              # download the latest map-data release
 
 ### Rust library
 
-The crates aren't published to crates.io yet — use a git dependency:
+Add the Rust library from the repository:
 
 ```toml
 [dependencies]
@@ -225,6 +227,9 @@ uv run --no-sync ruff check python tests
 uv run --no-sync ty check python
 ```
 
+Use Python 3.11–3.14 for source builds with `maturin develop`.
+The release workflow builds a stable-ABI wheel with Python 3.14 for Python 3.15.
+
 ### Python tests
 
 The `fixtures` marker selects all tests that need demo files, including schema,
@@ -273,6 +278,22 @@ Share expensive, unchanged query results through module fixtures.
 Keep mutable test doubles, files, and settings local to each test.
 Remove duplicate checks only when the same behavior and parsing path remain covered.
 Use exact DataFrame comparisons when the result must match exactly.
+
+### Releases
+
+Update the workspace version in `Cargo.toml` and finalize the changelog.
+Push the changes and wait for **CI Check** to pass on the exact release commit.
+
+The `awpy-python-v<version>` tag starts **Release Python**.
+This workflow publishes a source archive and wheels for Python 3.11–3.15:
+
+- Linux: x86-64 and ARM64.
+- macOS: Intel and Apple silicon.
+- Windows: x86-64.
+
+Python 3.15 uses a stable-ABI wheel built with Python 3.14, as in CI.
+The `awpy-v<version>` tag starts the separate **Release Parser** workflow for Rust crates.
+Both tags must match the workspace version.
 
 ### Parsing benchmarks
 

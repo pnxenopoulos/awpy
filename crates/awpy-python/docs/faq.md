@@ -5,6 +5,12 @@
 Awpy reads Counter-Strike 2 demos in the [PBDEMS2 format](https://docs.rs/pbdems2/latest/pbdems2/guide/file_structure/index.html).
 It does not read CS:GO demos. For Deadlock, use [Boon](https://github.com/pnxenopoulos/boon).
 
+## Which Python versions does Awpy support?
+
+Use Python 3.11–3.15. Awpy requires Polars 2.x.
+Wheels are available for Linux, macOS, and Windows.
+Installing a wheel does not require Rust. See {doc}`getting-started`.
+
 ## How do I get Steam IDs and names?
 
 Use the resolved participants in `demo.kills` and `demo.damages`.

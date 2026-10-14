@@ -3,6 +3,10 @@
 Python bindings for [Awpy](https://github.com/pnxenopoulos/awpy), a
 Counter-Strike 2 demo parser with a Rust backend.
 
+Awpy requires Python 3.11 or later and Polars 2.x.
+Wheels support Python 3.11–3.15 on Linux, macOS, and Windows.
+Installing a wheel does not require a Rust compiler.
+
 ```python
 from awpy import Demo
 

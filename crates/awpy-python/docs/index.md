@@ -12,6 +12,8 @@ Awpy parses [Counter-Strike 2](https://www.counter-strike.net/cs2) demo files in
 
 ## Get started
 
+Awpy requires Python 3.11 or later and Polars 2.x.
+
 Install with `uv add awpy` or `pip install awpy`. See {doc}`getting-started` and {doc}`examples`. Report problems in [GitHub issues](https://github.com/pnxenopoulos/awpy/issues).
 
 ```python
