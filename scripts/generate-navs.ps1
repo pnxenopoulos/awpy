@@ -33,7 +33,7 @@ Get-ChildItem -Path $inputPath -Filter "*.vpk" | Where-Object {
     New-Item -ItemType Directory -Path $tempOutputDir | Out-Null
 
     # Run Source2Viewer-CLI to generate the .nav file into the temporary folder.
-    .\Source2Viewer-CLI.exe -i $filePath -e "nav" -o $tempOutputDir -d
+    .\Source2Viewer-CLI.exe -i $filePath -e "nav" -o $tempOutputDir
 
     # Construct the expected path for the generated .nav file.
     $navFilePath = Join-Path -Path $tempOutputDir -ChildPath "maps\$fileNameWithoutExtension.nav"
