@@ -368,7 +368,8 @@ pub struct Damage {
     pub dmg_armor: i32,
     pub hitgroup: i32,
     pub hitgroup_name: String,
-    /// Victim health before the hit (`health_post + dmg_health`).
+    /// Estimated pre-hit health (`health_post + dmg_health`, capped at 100).
+    /// This is not recorded pre-hit health; do not use it to cap successive hits.
     pub health_pre: i32,
     /// Victim health after the hit (the event's `health`).
     pub health_post: i32,

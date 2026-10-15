@@ -6,6 +6,8 @@
   Steam ID. Keep local ticks with a `part` column. Reject incompatible files,
   missing or overlapping rounds, and splits during live play.
 - Return an empty snapshot table when a selected event has no matches.
+- Fix ADR and utility damage. Use recorded damage capped at remaining health.
+  Exclude extra points from health rounding and cap hits in the same tick.
 
 ## 3.0.0
 

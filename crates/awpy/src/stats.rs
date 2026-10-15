@@ -16,10 +16,10 @@
 //!   *won* if their side wins the round.
 //! - **KAST** — percentage of rounds in which the player got a **K**ill,
 //!   **A**ssist, **S**urvived, or was **T**raded.
-//! - **ADR** — average damage per round, using the actual HP removed from
-//!   enemies (each hit capped at the victim's remaining health, chained across
-//!   the round, so a killing blow counts only what the victim had left),
-//!   divided by rounds played. Team, self, and world damage are excluded.
+//! - **ADR** — recorded enemy damage per round. Each hit's integer damage is
+//!   capped at the victim's previous reported health (100 for the first hit).
+//!   All hits update that health, including team, self, and world damage,
+//!   which do not receive credit. Health rounding does not add damage.
 //! - **Multi-kill rounds** — rounds with exactly 2 / 3 / 4 / 5+ kills.
 //!
 //! Player rosters are taken from everyone who appears in a kill or damage, and
@@ -77,8 +77,8 @@ pub struct PlayerStats {
     pub clutch_1v4: i32,
     pub clutch_1v5: i32,
     // ── Utility ──
-    /// Grenade damage dealt to enemies (HE + molotov / incendiary), as actual HP
-    /// removed (chained like ADR).
+    /// Recorded grenade damage dealt to enemies (HE + molotov / incendiary),
+    /// capped at remaining health like ADR.
     pub utility_damage: i32,
     /// Flashbangs thrown.
     pub flashes_thrown: i32,
@@ -793,16 +793,10 @@ fn collect_stats(
         }
     }
 
-    // Damage for ADR: the *actual* HP removed from enemies during live rounds.
-    //
-    // A victim's health before a hit is their health after the previous hit
-    // that round (100 at the round's first hit). Chaining this way caps a
-    // killing blow at the victim's remaining HP rather than the weapon's raw
-    // damage — an AWP that "does 115" to a 40 HP enemy removes 40, not 115, so
-    // reconstructing `health_pre = min(post + dmg, 100)` per hit over-counts
-    // finishing blows on wounded enemies. Every hit on a victim (team, self,
-    // world included) advances the chain, but only confirmed enemy damage is
-    // credited to the attacker.
+    // Use the event's integer damage, capped at remaining health. Reported
+    // health can fall by an extra point due to rounding; do not credit it as
+    // damage. All hits advance the health chain, including excluded damage,
+    // so successive hits in the same tick cannot reuse the victim's health.
     let mut victim_health: HashMap<(usize, u64), i32> = HashMap::new();
     for d in damages {
         let Some(round) = round_of(d.tick, &starts, &freezes) else {
@@ -811,16 +805,14 @@ fn collect_stats(
         if knife_rounds.contains(&round) {
             continue;
         }
-        let removed = match d.victim_steamid {
-            Some(victim) => {
-                // 100 (full health) at the round's first hit on this victim.
-                let before = victim_health.get(&(round, victim)).copied().unwrap_or(100);
-                victim_health.insert((round, victim), d.health_post);
-                (before - d.health_post).max(0)
-            }
-            // Unresolved victim — cannot chain; fall back to the per-hit value.
-            None => (d.health_pre - d.health_post).max(0),
+        let before = match d.victim_steamid {
+            Some(victim) => victim_health
+                .insert((round, victim), d.health_post)
+                .unwrap_or(100),
+            // Unresolved victim: only the per-event estimate is available.
+            None => d.health_pre,
         };
+        let removed = d.dmg_health.max(0).min(before.max(0));
         let Some(attacker) = d.attacker_steamid else {
             continue;
         };
@@ -1175,6 +1167,7 @@ mod tests {
                     victim_side: Some(CT.into()),
                     health_pre: 100,
                     health_post,
+                    dmg_health: 100 - health_post,
                     ..Default::default()
                 }],
                 ..Default::default()
@@ -1543,6 +1536,117 @@ mod tests {
         assert_eq!(find(&stats, 1).adr, 50.0); // 100 damage / 2 rounds
     }
 
+    fn damage(tick: i32, attacker: u64, amount: i32, health_post: i32) -> Damage {
+        Damage {
+            tick,
+            attacker_steamid: Some(attacker),
+            attacker_side: Some(T.into()),
+            victim_steamid: Some(5),
+            victim_side: Some(CT.into()),
+            dmg_health: amount,
+            health_pre: (health_post + amount).min(100),
+            health_post,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn adr_does_not_credit_health_rounding() {
+        // HOTU–Astralis Ancient, round 2: mizu has 57 HP before Staehr's
+        // 35-damage hit at tick 10711, which reports 21 HP afterward.
+        let damages = [damage(100, 1, 43, 57), damage(10711, 1, 35, 21)];
+        let stats = player_stats(&[], &damages, &[], &[], &[round(2, 0, 12000)], 320, false);
+        assert_eq!(find(&stats, 1).adr, 78.0);
+    }
+
+    #[test]
+    fn adr_caps_same_tick_shotgun_pellets() {
+        let damages = [damage(100, 1, 79, 21), damage(100, 1, 79, 0)];
+        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        assert_eq!(find(&stats, 1).adr, 100.0);
+    }
+
+    #[test]
+    fn adr_caps_same_tick_damage_from_different_attackers() {
+        let damages = [
+            damage(50, 1, 31, 69),
+            damage(100, 2, 9, 60),
+            damage(100, 1, 128, 0),
+        ];
+        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        assert_eq!(find(&stats, 1).adr, 91.0); // 31 + the remaining 60 HP
+    }
+
+    #[test]
+    fn adr_uses_reported_health_after_excluded_damage() {
+        let damages = [
+            Damage {
+                attacker_steamid: None,
+                attacker_side: None,
+                ..damage(50, 1, 30, 69)
+            },
+            damage(100, 1, 128, 0),
+        ];
+        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        assert_eq!(find(&stats, 1).adr, 69.0);
+    }
+
+    #[test]
+    fn adr_does_not_credit_zero_reported_damage() {
+        let stats = player_stats(
+            &[],
+            &[damage(100, 1, 0, 99)],
+            &[],
+            &[],
+            &[round(1, 0, 1000)],
+            320,
+            false,
+        );
+        assert_eq!(find(&stats, 1).adr, 0.0);
+    }
+
+    #[test]
+    fn adr_ignores_negative_reported_damage() {
+        let stats = player_stats(
+            &[],
+            &[damage(100, 1, -1, 99)],
+            &[],
+            &[],
+            &[round(1, 0, 1000)],
+            320,
+            false,
+        );
+        assert_eq!(find(&stats, 1).adr, 0.0);
+    }
+
+    #[test]
+    fn adr_resets_remaining_health_each_round() {
+        let damages = [damage(100, 1, 90, 10), damage(2100, 1, 90, 10)];
+        let rounds = [round(1, 0, 1000), round(2, 2000, 3000)];
+        let stats = player_stats(&[], &damages, &[], &[], &rounds, 320, false);
+        assert_eq!(find(&stats, 1).adr, 90.0);
+    }
+
+    #[test]
+    fn adr_caps_unresolved_victims_using_the_per_event_estimate() {
+        let damages = [Damage {
+            victim_steamid: None,
+            ..damage(100, 1, 128, 0)
+        }];
+        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        assert_eq!(find(&stats, 1).adr, 100.0);
+    }
+
+    #[test]
+    fn utility_damage_does_not_credit_health_rounding() {
+        let damages = [Damage {
+            weapon: "inferno".into(),
+            ..damage(100, 1, 6, 93)
+        }];
+        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        assert_eq!(find(&stats, 1).utility_damage, 6);
+    }
+
     #[test]
     fn adr_excludes_team_self_and_world_damage() {
         let rounds = vec![round(1, 0, 1000)];
@@ -1560,6 +1664,7 @@ mod tests {
             victim_side: Some(vside.into()),
             health_pre: pre,
             health_post: post,
+            dmg_health: pre - post,
             ..Default::default()
         };
         let damages = vec![

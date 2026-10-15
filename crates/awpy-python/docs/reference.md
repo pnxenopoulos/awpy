@@ -83,7 +83,7 @@ This catalog is also available as `awpy.GAME_EVENTS`.
 | `begin_new_match` | A new match starts. |
 | `announce_phase_end` | A phase (e.g. the first half) ends. |
 | `player_death` | A player is killed (attacker, victim, assister, weapon). |
-| `player_hurt` | A player takes damage (health / armor before & after). |
+| `player_hurt` | A player takes damage (damage and remaining health / armor). |
 | `player_blind` | A player is blinded by a flashbang. |
 | `player_team` | A player joins or switches team (fires for everyone at halftime). |
 | `player_spawn` / `player_connect_full` / `player_disconnect` | Spawn / connect / disconnect. |
@@ -164,8 +164,10 @@ match's round count and players who join or leave mid-match are approximate.
   The matched death has `victim_traded` in `kills`; the revenge kill has `is_trade`.
 - **KAST** — the percentage of rounds in which the player got a **K**ill, an
   **A**ssist, **S**urvived (was not killed), or was **T**raded.
-- **ADR** — enemy health removed per round. Each hit is capped at the victim's
-  remaining health. Team, self, and world damage are excluded.
+- **ADR** — recorded enemy damage per round. Each hit uses `dmg_health`, capped
+  at the victim's previous `health_post` (100 for the first hit in a round).
+  All hits update that health, including hits in the same tick.
+  Team, self, and world damage are excluded. Health rounding adds no damage.
 - **Multi-kill rounds** (`multikill_2k` … `multikill_5k`) — rounds with exactly
   2 / 3 / 4 / 5-or-more kills.
 
@@ -194,7 +196,7 @@ only for the rounds they actually appear in.
 #### Utility
 
 - **`utility_damage`** — grenade damage dealt to enemies (HE + molotov /
-  incendiary), as actual HP removed (chained like ADR).
+  incendiary), capped by the same rule as ADR.
 - **`flashes_thrown`** — flashbangs the player threw.
 - **`enemies_flashed`** — times an enemy was blinded by one of the player's
   flashes (team-flashes and self-flashes are not counted).
