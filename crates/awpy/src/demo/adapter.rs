@@ -61,11 +61,30 @@ struct LegacyEventIdentity {
     event_id: Option<i32>,
 }
 
+#[derive(Clone)]
+pub(crate) struct MetadataUpdate {
+    pub(crate) offset: usize,
+    value: MetadataValue,
+}
+
+#[derive(Clone)]
+enum MetadataValue {
+    Create(CsvcMsgCreateStringTable),
+    Update(CsvcMsgUpdateStringTable),
+    TickInterval(f32),
+    Descriptor(i32, EventDescriptor),
+}
+
 #[derive(Default)]
 pub(super) struct Cs2Adapter {
     packet_body: Vec<u8>,
     descriptors: HashMap<i32, EventDescriptor>,
-    tick_events: Vec<GameEvent>,
+    pub(super) tick_events: Vec<GameEvent>,
+    pub(super) metadata_only: bool,
+    pub(super) metadata_updates: Vec<MetadataUpdate>,
+    pub(super) class_schema_changed: bool,
+    metadata_seed: Option<Vec<MetadataUpdate>>,
+    command_offset: usize,
     event_collection: EventCollection,
 }
 
@@ -78,12 +97,35 @@ impl DemoAdapter for Cs2Adapter {
         body: &[u8],
         context: &mut CommandContext<'_, '_>,
     ) -> Result<()> {
+        self.command_offset = frame.offset();
+        if let Some(seed) = self.metadata_seed.take() {
+            for update in seed {
+                match update.value {
+                    MetadataValue::Create(message) => {
+                        context.create_string_table(create_string_table(message))?
+                    }
+                    MetadataValue::Update(message) => {
+                        context.update_string_table(UpdateStringTable::new(
+                            message.table_id.unwrap_or_default(),
+                            message.num_changed_entries.unwrap_or_default(),
+                            message.string_data.unwrap_or_default(),
+                        ))?
+                    }
+                    MetadataValue::TickInterval(interval) => context.set_tick_interval(interval)?,
+                    MetadataValue::Descriptor(id, descriptor) => {
+                        self.install_descriptor(id, descriptor)
+                    }
+                }
+            }
+        }
         match frame.header().cmd {
             demo_command::SEND_TABLES => {
+                self.class_schema_changed |= self.metadata_only;
                 let command = CDemoSendTables::decode(body)?;
                 context.install_serializers(decode_send_tables(command)?, DECODE_PROFILE)?;
             }
             demo_command::CLASS_INFO => {
+                self.class_schema_changed |= self.metadata_only;
                 let command = CDemoClassInfo::decode(body)?;
                 context.install_class_info(command.classes.into_iter().map(|class| {
                     ClassEntry::new(
@@ -143,6 +185,30 @@ impl CheckpointAdapter for Cs2Adapter {
 }
 
 impl Cs2Adapter {
+    pub(super) fn seed_metadata(&mut self, updates: &[MetadataUpdate]) {
+        self.metadata_seed = Some(updates.to_vec());
+    }
+
+    fn record_metadata(&mut self, value: MetadataValue) {
+        if self.metadata_only {
+            self.metadata_updates.push(MetadataUpdate {
+                offset: self.command_offset,
+                value,
+            });
+        }
+    }
+
+    fn install_descriptor(&mut self, event_id: i32, descriptor: EventDescriptor) {
+        let selected = matches!(
+            &self.event_collection, EventCollection::Legacy { names, .. }
+                if names.contains(descriptor.name.as_str())
+        );
+        self.descriptors.insert(event_id, descriptor);
+        if selected && let EventCollection::Legacy { event_ids, .. } = &mut self.event_collection {
+            event_ids.insert(event_id);
+        }
+    }
+
     pub(super) fn enable_events(&mut self) {
         self.event_collection = EventCollection::All;
     }
@@ -231,6 +297,11 @@ impl Cs2Adapter {
                 continue;
             }
 
+            // Metadata preparation skips entity payloads entirely: it does not
+            // decode or allocate field values for a serial preparation pass.
+            if self.metadata_only && message_type == svc::PACKET_ENTITIES {
+                continue;
+            }
             let payload = if let Some(payload) = message.payload() {
                 payload
             } else {
@@ -241,10 +312,16 @@ impl Cs2Adapter {
             match message_type {
                 svc::CREATE_STRING_TABLE => {
                     let message = CsvcMsgCreateStringTable::decode(payload)?;
+                    if self.metadata_only {
+                        self.record_metadata(MetadataValue::Create(message.clone()));
+                    }
                     context.create_string_table(create_string_table(message))?;
                 }
                 svc::UPDATE_STRING_TABLE => {
                     let message = CsvcMsgUpdateStringTable::decode(payload)?;
+                    if self.metadata_only {
+                        self.record_metadata(MetadataValue::Update(message.clone()));
+                    }
                     context.update_string_table(UpdateStringTable::new(
                         message.table_id.unwrap_or_default(),
                         message.num_changed_entries.unwrap_or_default(),
@@ -254,6 +331,7 @@ impl Cs2Adapter {
                 svc::SERVER_INFO => {
                     let message = CsvcMsgServerInfo::decode(payload)?;
                     if let Some(tick_interval) = message.tick_interval {
+                        self.record_metadata(MetadataValue::TickInterval(tick_interval));
                         context.set_tick_interval(tick_interval)?;
                     }
                 }
@@ -270,18 +348,13 @@ impl Cs2Adapter {
                     for descriptor in message.descriptors {
                         let event_id = descriptor.eventid.unwrap_or_default();
                         let descriptor = EventDescriptor::from(descriptor);
-                        let selected = matches!(
-                            &self.event_collection,
-                            EventCollection::Legacy { names, .. }
-                                if names.contains(descriptor.name.as_str())
-                        );
-                        self.descriptors.insert(event_id, descriptor);
-                        if selected
-                            && let EventCollection::Legacy { event_ids, .. } =
-                                &mut self.event_collection
-                        {
-                            event_ids.insert(event_id);
+                        if self.metadata_only {
+                            self.record_metadata(MetadataValue::Descriptor(
+                                event_id,
+                                descriptor.clone(),
+                            ));
                         }
+                        self.install_descriptor(event_id, descriptor);
                     }
                 }
                 ge::SOURCE1_LEGACY_GAME_EVENT if self.collects_legacy_events() => {

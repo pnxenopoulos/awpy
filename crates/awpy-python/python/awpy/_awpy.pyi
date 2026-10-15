@@ -158,7 +158,8 @@ class Demo:
         ``velocity_x``, ``velocity_y``, ``velocity_z``, ``velocity`` (3D speed),
         ``health``, ``armor``, ``team_num``, ``name``, and ``money``.
 
-        Each call decodes keyframe segments in parallel. Results are not cached.
+        Player pawn fields and names can decode in parallel. Other controller-only
+        fields and raw entity queries use serial decoding. Results are not cached.
         Set ``part`` to select a source recording in a multipart demo.
 
         Args:

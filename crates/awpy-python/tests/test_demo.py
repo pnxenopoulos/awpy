@@ -202,11 +202,16 @@ def test_raw_ticks_keep_separate_entity_identities(
 
 @pytest.mark.parametrize(
     ("method", "options"),
-    [("ticks", {}), ("snapshots", {"every": 64})],
-    ids=["ticks", "snapshots"],
+    [
+        ("ticks", {}),
+        ("ticks", {"props": ["X", "health", "name"]}),
+        ("ticks", {"props": ["m_iszPlayerName"]}),
+        ("snapshots", {"every": 64}),
+    ],
+    ids=["ticks", "ticks-with-names", "raw-player-name", "snapshots"],
 )
 def test_parallel_matches_serial(
-    demo_path: Path, monkeypatch: pytest.MonkeyPatch, method: str, options: dict[str, int]
+    demo_path: Path, monkeypatch: pytest.MonkeyPatch, method: str, options: dict
 ) -> None:
     """Check both decode paths with one and eight segments."""
     monkeypatch.setenv("AWPY_TICK_SEGMENTS", "1")
@@ -215,6 +220,25 @@ def test_parallel_matches_serial(
     parallel = getattr(Demo(demo_path), method)(**options)
     keys = ["tick", "steamid"]
     assert_frame_equal(serial.sort(keys), parallel.sort(keys), check_exact=True)
+
+
+@pytest.fixture(scope="module")
+def combat_pair(demo_path: Path) -> tuple[dict[str, pl.DataFrame], dict[str, pl.DataFrame]]:
+    names = ("kills", "damages", "shots", "blinds", "bomb")
+    results = []
+    for segments in (1, 8):
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setenv("AWPY_TICK_SEGMENTS", str(segments))
+            parsed = Demo(demo_path)
+            parsed.load(*names)
+            results.append({name: getattr(parsed, name) for name in names})
+    return results[0], results[1]
+
+
+@pytest.mark.parametrize("dataset", ["kills", "damages", "shots", "blinds", "bomb"])
+def test_parallel_combat_matches_serial(combat_pair, dataset: str) -> None:
+    serial, parallel = combat_pair
+    assert_frame_equal(serial[dataset], parallel[dataset], check_exact=True)
 
 
 def test_players(demo: Demo) -> None:

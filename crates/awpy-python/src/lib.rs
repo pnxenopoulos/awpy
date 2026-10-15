@@ -29,9 +29,9 @@ use awpy::map_control::{
 };
 use awpy::nav::{Nav, PathWeight};
 use awpy::{
-    Blind, BombEvent, ChatMessage, Context, Damage, Entity, EntityId, FieldValue, Fire, GameEvent,
-    Grenade, ItemEvent, Kill, Parser, Player, PlayerStats, Round, RoundEconomy, Serializer, Shot,
-    Smoke, cell_to_world,
+    Blind, BombEvent, ChatMessage, Context, Damage, Entity, EntityContainer, EntityId, FieldValue,
+    Fire, GameEvent, Grenade, ItemEvent, Kill, Parser, Player, PlayerStats, Round, RoundEconomy,
+    Serializer, Shot, Smoke, cell_to_world,
 };
 
 pyo3::create_exception!(_awpy, InvalidDemoError, pyo3::exceptions::PyException);
@@ -605,7 +605,8 @@ impl Demo {
     /// ``velocity_x``, ``velocity_y``, ``velocity_z``, ``velocity`` (3D speed),
     /// ``health``, ``armor``, ``team_num``, ``name``, and ``money``.
     ///
-    /// Each call decodes keyframe segments in parallel. Results are not cached.
+    /// Player pawn fields and names can decode in parallel. Other controller-only
+    /// fields and raw entity queries use serial decoding. Results are not cached.
     /// Set ``part`` to select one source recording in a multipart demo.
     ///
     /// Args:
@@ -1387,26 +1388,14 @@ impl Demo {
             .full_packet_offsets()
             .map_err(to_py_err)?;
 
-        // A cold-restarted segment can't populate a *controller-only* field at its
-        // first ticks: the pawn→controller link is a sticky field CS2 does not
-        // re-key on full packets, so the fallback (name, money, …) would read null
-        // until a later delta re-sends it. Steamid is exempt — it's constant, so
-        // it's filled from a global slot map after the merge. When any other
-        // controller-only field is requested, decode serially so every value
-        // matches a single pass exactly; pure pawn-state props (the default) stay
-        // parallel.
+        // The original controller identifies dead pawns at a cold keyframe.
+        // Names can therefore stay parallel and are read at each tick, including
+        // name changes. Other controller-only fields retain the serial fallback
+        // until their keyframe behavior has been verified independently.
         let needs_serial = {
             let ctx = self.recording.parser.parse_init().map_err(to_py_err)?;
             let keys = PlayerTickKeys::resolve(&ctx, props);
-            keys.props.iter().any(|p| {
-                matches!(
-                    p,
-                    ResolvedProp::Field {
-                        pawn: None,
-                        ctrl: Some(_)
-                    }
-                )
-            })
+            requires_serial_controller(&keys.props, keys.name)
         };
 
         // One segment per worker: segment 0 from the signon baseline, the rest
@@ -2804,6 +2793,8 @@ struct PlayerTickKeys {
     pawn_id: i32,
     /// Pawn's `m_hController` handle and the controller's `m_steamID`.
     controller: Option<u64>,
+    original_controller: Option<u64>,
+    name: Option<u64>,
     steamid: Option<u64>,
     /// Cell index and in-cell offset keys per axis, for computed position.
     cell: [Option<u64>; 3],
@@ -2822,6 +2813,9 @@ impl PlayerTickKeys {
         PlayerTickKeys {
             pawn_id: ctx.class_info().id_of(PLAYER_CLASSES[0]).unwrap_or(-1),
             controller: pawn_ser.and_then(|s| s.resolve_field_key("m_hController")),
+            original_controller: pawn_ser
+                .and_then(|s| s.resolve_field_key("m_hOriginalController")),
+            name: ctrl_ser.and_then(|s| s.resolve_field_key("m_iszPlayerName")),
             steamid: ctrl_ser.and_then(|s| s.resolve_field_key("m_steamID")),
             cell: [axis("m_cellX"), axis("m_cellY"), axis("m_cellZ")],
             offset: [axis("m_vecX"), axis("m_vecY"), axis("m_vecZ")],
@@ -2843,6 +2837,50 @@ fn read_position(pawn: &Entity, cell_key: Option<u64>, off_key: Option<u64>) -> 
     Some(cell_to_world(cell, offset))
 }
 
+/// Keep controller-only properties serial except for the verified name field.
+fn requires_serial_controller(props: &[ResolvedProp], name: Option<u64>) -> bool {
+    props.iter().any(|prop| {
+        matches!(
+            prop,
+            ResolvedProp::Field { pawn: None, ctrl: Some(key) } if Some(*key) != name
+        )
+    })
+}
+
+/// Resolve a current or remembered controller, then the recorded original.
+/// Cache full identities so neither a reused pawn nor controller slot inherits
+/// another player's fields. The original is needed for dead pawns at keyframes.
+#[inline]
+fn tick_controller<'a>(
+    pawn: &Entity,
+    entities: &'a EntityContainer,
+    current_key: Option<u64>,
+    original_key: Option<u64>,
+    remembered: &mut HashMap<EntityId, EntityId>,
+) -> Option<&'a Entity> {
+    let resolve = |key| {
+        pawn.get_handle(key)
+            .and_then(|handle| entities.get_by_handle(handle))
+            .filter(|entity| entity.class_name.as_ref() == PLAYER_CLASSES[1])
+    };
+    if let Some(controller) = pawn
+        .get_handle(current_key)
+        .and_then(|handle| entities.get_by_handle(handle))
+    {
+        remembered.insert(pawn.id(), controller.id());
+        return Some(controller);
+    }
+    if let Some(controller) = remembered
+        .get(&pawn.id())
+        .and_then(|id| entities.get(id.index).filter(|entity| entity.id() == *id))
+    {
+        return Some(controller);
+    }
+    let controller = resolve(original_key)?;
+    remembered.insert(pawn.id(), controller.id());
+    Some(controller)
+}
+
 /// One keyframe segment's accumulated tick rows, merged with its peers afterward.
 struct TickSegment {
     ticks: Vec<i64>,
@@ -2860,8 +2898,8 @@ struct TickSegment {
 /// A pawn's `m_hController` link is a sticky field CS2 does not re-send every
 /// tick, so when the live lookup misses, the last resolved controller slot is
 /// reused — keeping steamid / name / money populated. Because each segment
-/// cold-restarts at a full packet where players are fully re-keyframed, this is
-/// exact per segment (see [`Parser::decode_segment`]).
+/// cold-restarts at a full packet, a validated original-controller handle also
+/// supplies identity when the current link is absent (see [`Parser::decode_segment`]).
 fn run_tick_segment(
     parser: &Parser,
     filter: &HashSet<&str>,
@@ -2885,20 +2923,13 @@ fn run_tick_segment(
                 continue;
             }
             let pawn_id = pawn.id();
-            let controller = match pawn
-                .get_handle(k.controller)
-                .and_then(|h| ctx.entities().get_by_handle(h))
-            {
-                Some(c) => {
-                    pawn_to_ctrl.insert(pawn_id, c.id());
-                    Some(c)
-                }
-                None => pawn_to_ctrl.get(&pawn_id).and_then(|id| {
-                    ctx.entities()
-                        .get(id.index)
-                        .filter(|entity| entity.id() == *id)
-                }),
-            };
+            let controller = tick_controller(
+                pawn,
+                ctx.entities(),
+                k.controller,
+                k.original_controller,
+                &mut pawn_to_ctrl,
+            );
             seg.ticks.push(i64::from(ctx.tick()));
             seg.pawn_ids.push(pawn_id);
             if let Some(sid) = controller
@@ -3302,6 +3333,103 @@ fn polars_err(e: PolarsError) -> PyErr {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn identity_entity(index: i32, serial: u32, class: &str) -> Entity {
+        Entity::from_fields(index, serial, 0, class, true, Default::default()).unwrap()
+    }
+
+    fn handle(entity: &Entity) -> FieldValue {
+        FieldValue::U32(entity.serial * (awpy::ENTITY_HANDLE_INDEX_MASK + 1) + entity.index as u32)
+    }
+
+    #[test]
+    fn names_allow_parallel_controller_reads() {
+        let props = [ResolvedProp::Field {
+            pawn: None,
+            ctrl: Some(7),
+        }];
+        assert!(!requires_serial_controller(&props, Some(7)));
+    }
+
+    #[test]
+    fn other_controller_fields_keep_serial_reads() {
+        let props = [ResolvedProp::Field {
+            pawn: None,
+            ctrl: Some(8),
+        }];
+        assert!(requires_serial_controller(&props, Some(7)));
+    }
+
+    #[test]
+    fn tick_controller_prefers_the_current_handle() {
+        let mut entities = EntityContainer::new();
+        let current = identity_entity(1, 1, PLAYER_CLASSES[1]);
+        let original = identity_entity(2, 1, PLAYER_CLASSES[1]);
+        let mut pawn = identity_entity(3, 1, PLAYER_CLASSES[0]);
+        pawn.fields.insert(0, handle(&current));
+        pawn.fields.insert(1, handle(&original));
+        entities.insert(current).unwrap();
+        entities.insert(original).unwrap();
+        let controller = tick_controller(&pawn, &entities, Some(0), Some(1), &mut HashMap::new());
+        assert_eq!(controller.unwrap().index, 1);
+    }
+
+    #[test]
+    fn tick_controller_uses_original_after_a_cold_start() {
+        let mut entities = EntityContainer::new();
+        let original = identity_entity(1, 1, PLAYER_CLASSES[1]);
+        let mut pawn = identity_entity(2, 1, PLAYER_CLASSES[0]);
+        pawn.fields.insert(1, handle(&original));
+        entities.insert(original).unwrap();
+        let controller = tick_controller(&pawn, &entities, Some(0), Some(1), &mut HashMap::new());
+        assert_eq!(controller.unwrap().id(), EntityId::new(1, 1));
+    }
+
+    #[test]
+    fn tick_controller_keeps_a_verified_link_when_the_field_clears() {
+        let mut entities = EntityContainer::new();
+        entities
+            .insert(identity_entity(1, 1, PLAYER_CLASSES[1]))
+            .unwrap();
+        let pawn = identity_entity(2, 1, PLAYER_CLASSES[0]);
+        let mut remembered = HashMap::from([(pawn.id(), EntityId::new(1, 1))]);
+        let controller = tick_controller(&pawn, &entities, None, None, &mut remembered);
+        assert_eq!(controller.unwrap().id(), EntityId::new(1, 1));
+    }
+
+    #[test]
+    fn tick_controller_rejects_a_reused_controller_slot() {
+        let mut entities = EntityContainer::new();
+        let old = identity_entity(1, 1, PLAYER_CLASSES[1]);
+        let mut pawn = identity_entity(2, 1, PLAYER_CLASSES[0]);
+        pawn.fields.insert(1, handle(&old));
+        entities
+            .insert(identity_entity(1, 2, PLAYER_CLASSES[1]))
+            .unwrap();
+        let mut remembered = HashMap::from([(pawn.id(), old.id())]);
+        assert!(tick_controller(&pawn, &entities, None, Some(1), &mut remembered).is_none());
+    }
+
+    #[test]
+    fn tick_controller_rejects_the_wrong_entity_class() {
+        let mut entities = EntityContainer::new();
+        let wrong = identity_entity(1, 1, "CAK47");
+        let mut pawn = identity_entity(2, 1, PLAYER_CLASSES[0]);
+        pawn.fields.insert(1, handle(&wrong));
+        entities.insert(wrong).unwrap();
+        assert!(tick_controller(&pawn, &entities, None, Some(1), &mut HashMap::new()).is_none());
+    }
+
+    #[test]
+    fn tick_controller_does_not_reuse_a_previous_pawn_identity() {
+        let mut entities = EntityContainer::new();
+        entities
+            .insert(identity_entity(1, 1, PLAYER_CLASSES[1]))
+            .unwrap();
+        let pawn = identity_entity(2, 2, PLAYER_CLASSES[0]);
+        let mut remembered = HashMap::from([(EntityId::new(2, 1), EntityId::new(1, 1))]);
+        assert!(tick_controller(&pawn, &entities, None, None, &mut remembered).is_none());
+    }
 
     #[test]
     fn unsigned_conversion_rejects_negative_values() {

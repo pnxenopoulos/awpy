@@ -99,15 +99,15 @@ impl AsRef<[u8]> for Storage {
 /// The main parser. Owns the demo file data (memory-mapped or in-memory).
 pub struct Parser {
     storage: Storage,
-    /// The fully-decoded game-event stream, decoded once on first use. Every
-    /// higher-level dataset (kills, damages, bomb, ...) reads the events, so
-    /// caching the decode here means the demo's event stream is walked once per
-    /// `Parser`, not once per dataset.
+    /// Raw game events, decoded once for the generic event API.
+    /// Enriched combat datasets use their own selected-event playback.
     events_cache: OnceLock<Arc<[GameEvent]>>,
     events_lock: Mutex<()>,
     /// Signon state is expensive to decode but immutable between parse passes.
     prepared_cache: OnceLock<PreparedPlayback<Cs2Adapter>>,
     prepared_lock: Mutex<()>,
+    combat_bootstrap: OnceLock<playback::CombatBootstrap>,
+    combat_bootstrap_lock: Mutex<()>,
     file_header_cache: OnceLock<CDemoFileHeader>,
     file_info_cache: OnceLock<CDemoFileInfo>,
 }
@@ -133,6 +133,8 @@ impl Parser {
             events_lock: Mutex::new(()),
             prepared_cache: OnceLock::new(),
             prepared_lock: Mutex::new(()),
+            combat_bootstrap: OnceLock::new(),
+            combat_bootstrap_lock: Mutex::new(()),
             file_header_cache: OnceLock::new(),
             file_info_cache: OnceLock::new(),
         })
@@ -149,6 +151,8 @@ impl Parser {
             events_lock: Mutex::new(()),
             prepared_cache: OnceLock::new(),
             prepared_lock: Mutex::new(()),
+            combat_bootstrap: OnceLock::new(),
+            combat_bootstrap_lock: Mutex::new(()),
             file_header_cache: OnceLock::new(),
             file_info_cache: OnceLock::new(),
         }
