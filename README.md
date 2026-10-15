@@ -116,6 +116,22 @@ ticks = demo.ticks(["health", "m_iTeamNum"])
 demo.rounds.group_by("winner_side").len()
 ```
 
+### Multipart demos
+
+Pass files in recording order. Strings and `Path` objects can be mixed:
+
+```python
+demo = Demo(["overpass-p1.dem", "overpass-p2.dem"])
+print(demo.stats)
+state = demo.snapshots(part=1, ticks=5333)
+```
+
+Multipart tables keep each file's ticks and add a zero-based `part` column.
+`stats` and `players` combine Steam IDs. Explicit tick queries require `part`.
+Awpy checks map, build, tick rate, round continuity, and recording boundaries.
+Splits during live play are not supported. See the
+[multipart guide](https://awpy.readthedocs.io/en/latest/datasets.html#multipart-demos).
+
 ### CLI
 
 ```bash

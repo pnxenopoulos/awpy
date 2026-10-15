@@ -116,6 +116,114 @@ struct Acc {
     clutch_wins: HashMap<usize, i32>,
 }
 
+/// Exact totals across recordings of separate, complete rounds.
+///
+/// Each part is evaluated separately: tick counters and entity identities may
+/// restart, and trades or flash effects must not cross recording boundaries.
+/// Callers must reject overlapping or missing rounds before adding parts.
+#[derive(Default)]
+pub struct PlayerStatsAccumulator {
+    total_rounds: usize,
+    knife_rounds: HashSet<usize>,
+    acc: HashMap<u64, Acc>,
+}
+
+impl PlayerStatsAccumulator {
+    /// Add one independently decoded recording without rounding its totals.
+    ///
+    /// Event datasets must be in recorded tick order. Events after the last
+    /// completed round's official end are excluded, including a following freeze.
+    pub fn add_part(
+        &mut self,
+        events: &EventDatasets,
+        rounds: &[Round],
+        tickrate: f32,
+        exclude_knife_rounds: bool,
+    ) {
+        let Some(last) = rounds.last() else {
+            return;
+        };
+        let end = last.official_end_tick.unwrap_or(last.end_tick);
+        let tickrate = if tickrate.is_finite() && tickrate > 0.0 {
+            tickrate
+        } else {
+            DEFAULT_TICKRATE
+        };
+        let other = collect_stats(
+            completed_rows(&events.kills, end, |row| row.tick),
+            completed_rows(&events.damages, end, |row| row.tick),
+            completed_rows(&events.blinds, end, |row| row.tick),
+            completed_rows(&events.shots, end, |row| row.tick),
+            rounds,
+            (TRADE_SECONDS * tickrate).round() as i32,
+            exclude_knife_rounds,
+            tickrate,
+        );
+        let offset = self.total_rounds;
+        self.knife_rounds
+            .extend(other.knife_rounds.into_iter().map(|round| round + offset));
+        self.total_rounds += other.total_rounds;
+        for (steamid, incoming) in other.acc {
+            let total = self.acc.entry(steamid).or_default();
+            if !incoming.name.is_empty() {
+                total.name = incoming.name;
+            }
+            macro_rules! sum {
+                ($($field:ident),+ $(,)?) => { $(total.$field += incoming.$field;)+ };
+            }
+            sum!(
+                kills,
+                deaths,
+                assists,
+                flash_assists,
+                headshot_kills,
+                opening_kills,
+                opening_deaths,
+                traded_deaths,
+                damage,
+                utility_damage,
+                flashes_thrown,
+                enemies_flashed,
+                flash_duration_dealt,
+                clutches_played,
+                clutches_won
+            );
+            total.kill_rounds.extend(
+                incoming
+                    .kill_rounds
+                    .into_iter()
+                    .map(|(round, count)| (round + offset, count)),
+            );
+            total.assist_rounds.extend(
+                incoming
+                    .assist_rounds
+                    .into_iter()
+                    .map(|round| round + offset),
+            );
+            total.death_rounds.extend(
+                incoming
+                    .death_rounds
+                    .into_iter()
+                    .map(|round| round + offset),
+            );
+            total.traded_rounds.extend(
+                incoming
+                    .traded_rounds
+                    .into_iter()
+                    .map(|round| round + offset),
+            );
+            for (opponents, wins) in incoming.clutch_wins {
+                *total.clutch_wins.entry(opponents).or_default() += wins;
+            }
+        }
+    }
+}
+
+/// Borrow the complete-round prefix without copying event payloads.
+fn completed_rows<T>(rows: &[T], end_tick: i32, tick: impl Fn(&T) -> i32) -> &[T] {
+    &rows[..rows.partition_point(|row| tick(row) <= end_tick)]
+}
+
 /// Live start tick of each round (freeze start where known).
 fn round_starts(rounds: &[Round]) -> Vec<i32> {
     rounds
@@ -500,6 +608,30 @@ pub fn player_stats_at_tickrate(
     exclude_knife_rounds: bool,
     tickrate: f32,
 ) -> Vec<PlayerStats> {
+    collect_stats(
+        kills,
+        damages,
+        blinds,
+        shots,
+        rounds,
+        trade_ticks,
+        exclude_knife_rounds,
+        tickrate,
+    )
+    .finish()
+}
+
+#[allow(clippy::too_many_arguments)]
+fn collect_stats(
+    kills: &[Kill],
+    damages: &[Damage],
+    blinds: &[Blind],
+    shots: &[Shot],
+    rounds: &[Round],
+    trade_ticks: i32,
+    exclude_knife_rounds: bool,
+    tickrate: f32,
+) -> PlayerStatsAccumulator {
     let tickrate = if tickrate.is_finite() && tickrate > 0.0 {
         f64::from(tickrate)
     } else {
@@ -519,7 +651,6 @@ pub fn player_stats_at_tickrate(
     } else {
         HashSet::new()
     };
-    let num_rounds = i32::try_from(total_rounds - knife_rounds.len()).unwrap_or(i32::MAX);
     let starts = round_starts(rounds);
     let freezes = freeze_windows(rounds);
 
@@ -774,76 +905,94 @@ pub fn player_stats_at_tickrate(
         }
     }
 
-    let denom = num_rounds.max(1) as f32;
-    let mut out: Vec<PlayerStats> = acc
-        .into_iter()
-        .map(|(steamid, a)| {
-            let (mut m2, mut m3, mut m4, mut m5) = (0, 0, 0, 0);
-            for &count in a.kill_rounds.values() {
-                match count {
-                    2 => m2 += 1,
-                    3 => m3 += 1,
-                    4 => m4 += 1,
-                    c if c >= 5 => m5 += 1,
-                    _ => {}
+    PlayerStatsAccumulator {
+        total_rounds,
+        knife_rounds,
+        acc,
+    }
+}
+
+impl PlayerStatsAccumulator {
+    /// Convert exact accumulated counts to the public statistics.
+    #[must_use]
+    pub fn finish(self) -> Vec<PlayerStats> {
+        let Self {
+            total_rounds,
+            knife_rounds,
+            acc,
+        } = self;
+        let num_rounds = i32::try_from(total_rounds - knife_rounds.len()).unwrap_or(i32::MAX);
+        let denom = num_rounds.max(1) as f32;
+        let mut out: Vec<PlayerStats> = acc
+            .into_iter()
+            .map(|(steamid, a)| {
+                let (mut m2, mut m3, mut m4, mut m5) = (0, 0, 0, 0);
+                for &count in a.kill_rounds.values() {
+                    match count {
+                        2 => m2 += 1,
+                        3 => m3 += 1,
+                        4 => m4 += 1,
+                        c if c >= 5 => m5 += 1,
+                        _ => {}
+                    }
                 }
-            }
 
-            // KAST: a round counts if the player got a kill or assist, survived,
-            // or was traded.
-            let kast_rounds = (0..total_rounds)
-                .filter(|r| !knife_rounds.contains(r))
-                .filter(|r| {
-                    a.kill_rounds.contains_key(r)
-                        || a.assist_rounds.contains(r)
-                        || !a.death_rounds.contains(r)
-                        || a.traded_rounds.contains(r)
-                })
-                .count() as f32;
+                // KAST: a round counts if the player got a kill or assist, survived,
+                // or was traded.
+                let kast_rounds = (0..total_rounds)
+                    .filter(|r| !knife_rounds.contains(r))
+                    .filter(|r| {
+                        a.kill_rounds.contains_key(r)
+                            || a.assist_rounds.contains(r)
+                            || !a.death_rounds.contains(r)
+                            || a.traded_rounds.contains(r)
+                    })
+                    .count() as f32;
 
-            let headshot_pct = if a.kills > 0 {
-                a.headshot_kills as f32 / a.kills as f32 * 100.0
-            } else {
-                0.0
-            };
+                let headshot_pct = if a.kills > 0 {
+                    a.headshot_kills as f32 / a.kills as f32 * 100.0
+                } else {
+                    0.0
+                };
 
-            PlayerStats {
-                steamid,
-                name: a.name,
-                rounds_played: num_rounds,
-                kills: a.kills,
-                deaths: a.deaths,
-                assists: a.assists,
-                flash_assists: a.flash_assists,
-                headshot_kills: a.headshot_kills,
-                headshot_pct,
-                opening_kills: a.opening_kills,
-                opening_deaths: a.opening_deaths,
-                traded_deaths: a.traded_deaths,
-                multikill_2k: m2,
-                multikill_3k: m3,
-                multikill_4k: m4,
-                multikill_5k: m5,
-                kast: kast_rounds / denom * 100.0,
-                adr: a.damage as f32 / denom,
-                clutches_played: a.clutches_played,
-                clutches_won: a.clutches_won,
-                clutch_1v1: a.clutch_wins.get(&1).copied().unwrap_or(0),
-                clutch_1v2: a.clutch_wins.get(&2).copied().unwrap_or(0),
-                clutch_1v3: a.clutch_wins.get(&3).copied().unwrap_or(0),
-                clutch_1v4: a.clutch_wins.get(&4).copied().unwrap_or(0),
-                clutch_1v5: a.clutch_wins.get(&5).copied().unwrap_or(0),
-                utility_damage: a.utility_damage,
-                flashes_thrown: a.flashes_thrown,
-                enemies_flashed: a.enemies_flashed,
-                flash_duration_dealt: a.flash_duration_dealt,
-            }
-        })
-        .collect();
+                PlayerStats {
+                    steamid,
+                    name: a.name,
+                    rounds_played: num_rounds,
+                    kills: a.kills,
+                    deaths: a.deaths,
+                    assists: a.assists,
+                    flash_assists: a.flash_assists,
+                    headshot_kills: a.headshot_kills,
+                    headshot_pct,
+                    opening_kills: a.opening_kills,
+                    opening_deaths: a.opening_deaths,
+                    traded_deaths: a.traded_deaths,
+                    multikill_2k: m2,
+                    multikill_3k: m3,
+                    multikill_4k: m4,
+                    multikill_5k: m5,
+                    kast: kast_rounds / denom * 100.0,
+                    adr: a.damage as f32 / denom,
+                    clutches_played: a.clutches_played,
+                    clutches_won: a.clutches_won,
+                    clutch_1v1: a.clutch_wins.get(&1).copied().unwrap_or(0),
+                    clutch_1v2: a.clutch_wins.get(&2).copied().unwrap_or(0),
+                    clutch_1v3: a.clutch_wins.get(&3).copied().unwrap_or(0),
+                    clutch_1v4: a.clutch_wins.get(&4).copied().unwrap_or(0),
+                    clutch_1v5: a.clutch_wins.get(&5).copied().unwrap_or(0),
+                    utility_damage: a.utility_damage,
+                    flashes_thrown: a.flashes_thrown,
+                    enemies_flashed: a.enemies_flashed,
+                    flash_duration_dealt: a.flash_duration_dealt,
+                }
+            })
+            .collect();
 
-    // Most kills first, then Steam id for a stable order.
-    out.sort_by(|a, b| b.kills.cmp(&a.kills).then(a.steamid.cmp(&b.steamid)));
-    out
+        // Most kills first, then Steam id for a stable order.
+        out.sort_by(|a, b| b.kills.cmp(&a.kills).then(a.steamid.cmp(&b.steamid)));
+        out
+    }
 }
 
 impl Parser {
@@ -986,6 +1135,159 @@ mod tests {
             },
             kill(150, 5, CT, 4, T),
         ]
+    }
+
+    #[test]
+    fn multipart_kills_with_equal_local_ticks_are_separate_rounds() {
+        let mut total = PlayerStatsAccumulator::default();
+        for number in [1, 2] {
+            let events = EventDatasets {
+                kills: vec![kill(100, 1, T, 2, CT)],
+                ..Default::default()
+            };
+            total.add_part(&events, &[round(number, 0, 1000)], 64.0, true);
+        }
+        let stats = total.finish();
+        let player = find(&stats, 1);
+        assert_eq!((player.kills, player.multikill_2k), (2, 0));
+    }
+
+    #[test]
+    fn multipart_adr_uses_exact_damage_and_all_rounds() {
+        let mut total = PlayerStatsAccumulator::default();
+        for (health_post, rounds) in [
+            (
+                0,
+                vec![
+                    round(1, 0, 1000),
+                    round(2, 2000, 3000),
+                    round(3, 4000, 5000),
+                ],
+            ),
+            (99, vec![round(4, 0, 1000)]),
+        ] {
+            let events = EventDatasets {
+                damages: vec![Damage {
+                    tick: 100,
+                    attacker_steamid: Some(1),
+                    attacker_side: Some(T.into()),
+                    victim_steamid: Some(2),
+                    victim_side: Some(CT.into()),
+                    health_pre: 100,
+                    health_post,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            };
+            total.add_part(&events, &rounds, 64.0, true);
+        }
+        assert_eq!(find(&total.finish(), 1).adr, 25.25);
+    }
+
+    #[test]
+    fn multipart_kast_counts_rounds_before_calculating_the_percentage() {
+        let mut total = PlayerStatsAccumulator::default();
+        total.add_part(
+            &EventDatasets {
+                kills: vec![kill(100, 2, CT, 1, T)],
+                ..Default::default()
+            },
+            &[
+                round(1, 0, 1000),
+                round(2, 2000, 3000),
+                round(3, 4000, 5000),
+            ],
+            64.0,
+            true,
+        );
+        total.add_part(
+            &EventDatasets {
+                kills: vec![kill(100, 1, T, 2, CT)],
+                ..Default::default()
+            },
+            &[round(4, 0, 1000)],
+            64.0,
+            true,
+        );
+        assert_eq!(find(&total.finish(), 1).kast, 75.0);
+    }
+
+    #[test]
+    fn multipart_trades_cannot_cross_recording_boundaries() {
+        let mut total = PlayerStatsAccumulator::default();
+        for (number, kill) in [(1, kill(100, 2, CT, 1, T)), (2, kill(101, 3, T, 2, CT))] {
+            total.add_part(
+                &EventDatasets {
+                    kills: vec![kill],
+                    ..Default::default()
+                },
+                &[round(number, 0, 1000)],
+                64.0,
+                true,
+            );
+        }
+        assert_eq!(find(&total.finish(), 1).traded_deaths, 0);
+    }
+
+    #[test]
+    fn multipart_trailing_freeze_deaths_do_not_enter_the_last_round() {
+        let mut total = PlayerStatsAccumulator::default();
+        total.add_part(
+            &EventDatasets {
+                kills: vec![kill(100, 1, T, 2, CT), kill(1001, 1, T, 1, T)],
+                ..Default::default()
+            },
+            &[round(1, 0, 1000)],
+            64.0,
+            true,
+        );
+        assert_eq!(find(&total.finish(), 1).deaths, 0);
+    }
+
+    #[test]
+    fn multipart_restart_deaths_stay_out_of_match_totals() {
+        let mut total = PlayerStatsAccumulator::default();
+        for number in [1, 2] {
+            total.add_part(
+                &EventDatasets {
+                    kills: vec![kill(9, 1, T, 1, T), kill(100, 1, T, 2, CT)],
+                    ..Default::default()
+                },
+                &[round_with_freeze(number, 0, 50, 1000)],
+                64.0,
+                true,
+            );
+        }
+        assert_eq!(find(&total.finish(), 1).deaths, 0);
+    }
+
+    #[test]
+    fn multipart_knife_rounds_keep_their_exclusion_after_offsets() {
+        for exclude in [false, true] {
+            let mut total = PlayerStatsAccumulator::default();
+            let mut knife = round(1, 0, 1000);
+            knife.is_knife_round = true;
+            total.add_part(
+                &EventDatasets {
+                    kills: vec![kill(100, 1, T, 2, CT), kill(2100, 1, T, 2, CT)],
+                    ..Default::default()
+                },
+                &[knife, round(1, 2000, 3000)],
+                64.0,
+                exclude,
+            );
+            total.add_part(
+                &EventDatasets {
+                    kills: vec![kill(100, 1, T, 2, CT)],
+                    ..Default::default()
+                },
+                &[round(2, 0, 1000)],
+                64.0,
+                exclude,
+            );
+            let expected = if exclude { 2 } else { 3 };
+            assert_eq!(find(&total.finish(), 1).rounds_played, expected);
+        }
     }
 
     #[test]

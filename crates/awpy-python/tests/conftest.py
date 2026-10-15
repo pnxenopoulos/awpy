@@ -26,7 +26,7 @@ def asset_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     """Put all demo-backed tests in the CI fixture job."""
     for item in items:
-        if {"demo_path", "match_demo"}.intersection(getattr(item, "fixturenames", ())):
+        if {"demo_path", "match_demo", "multipart"}.intersection(getattr(item, "fixturenames", ())):
             item.add_marker(pytest.mark.fixtures)
 
 

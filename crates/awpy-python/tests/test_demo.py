@@ -418,6 +418,13 @@ def test_stride_and_event_selectors_form_a_tick_union(
     assert set(every["tick"].to_list()) <= set(union["tick"].to_list())
 
 
+@pytest.mark.parametrize("window", [{}, {"start_tick": 0, "end_tick": 1000}])
+def test_snapshot_event_selection_without_matches_returns_empty(demo: Demo, window: dict) -> None:
+    frame = demo.snapshots(events="__awpy_missing_event__", **window)
+    assert frame.is_empty()
+    assert frame.schema["inventory"] == pl.String
+
+
 def test_snapshots_require_a_selector(demo: Demo) -> None:
     with pytest.raises(ValueError):
         demo.snapshots()
