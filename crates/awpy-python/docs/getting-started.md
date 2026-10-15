@@ -35,7 +35,7 @@ from awpy import Demo
 demo = Demo("match.dem")
 ```
 
-Construction maps the file and checks its header. It can raise
+Single-file construction maps the file and checks its header. It can raise
 `FileNotFoundError` or `InvalidDemoError`. Later decoding can also fail
 if the demo is incomplete or corrupt.
 
@@ -245,3 +245,17 @@ See {doc}`cli` for the full command list.
 - {doc}`visibility` — line-of-sight, map data, and the asset cache.
 - {doc}`api` — the full API reference.
 - {doc}`faq` — common questions.
+
+## Multipart recordings
+
+Pass an ordered sequence to combine recordings of the same map:
+
+```python
+demo = Demo(["overpass-p1.dem", "overpass-p2.dem"])
+print(demo.stats)
+state = demo.snapshots(part=1, ticks=5333)
+```
+
+Strings and `Path` objects are accepted. Multipart tables add a zero-based
+`part` column and keep local ticks. Explicit tick queries require `part`.
+See {doc}`datasets` for validation rules and multipart data formats.

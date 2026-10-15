@@ -1,7 +1,11 @@
 # Changelog
 
-## 3.0.1
+## 3.1.0
 
+- Add multipart demos. Pass paths to `Demo` in recording order. Combine stats by
+  Steam ID. Keep local ticks with a `part` column. Reject incompatible files,
+  missing or overlapping rounds, and splits during live play.
+- Return an empty snapshot table when a selected event has no matches.
 - Fix ADR and utility damage. Use recorded damage capped at remaining health.
   Exclude extra points from health rounding and cap hits in the same tick.
 

@@ -203,6 +203,7 @@ def map_control(
     events: str | list[str] | None = None,
     start_tick: int | None = None,
     end_tick: int | None = None,
+    part: int | None = None,
     params: MapControlParams | None = None,
     map_name: str | None = None,
     version: int | None = None,
@@ -218,6 +219,7 @@ def map_control(
         demo: The parsed demo.
         method: ``"raycast"``, ``"vision"``, or ``"reachability"`` (see the
             module docs).
+        part: Source recording for a multipart local-tick query.
         ticks, every, seconds, events, start_tick, end_tick: Tick selection,
             forwarded to :meth:`awpy.Demo.snapshots`.
         params: Model parameters (defaults if omitted).
@@ -243,24 +245,33 @@ def map_control(
         events=events,
         start_tick=start_tick,
         end_tick=end_tick,
-    ).sort("tick")
+        **({"part": part} if part is not None else {}),
+    )
     smokes, fires = _occluders(demo, method)
 
     rows: list[dict] = []
-    for (tick,), group in snaps.group_by("tick", maintain_order=True):
+    keys = ["part", "tick"] if "part" in snaps.columns else ["tick"]
+    for coordinate, group in snaps.sort(keys).group_by(keys, maintain_order=True):
+        tick = coordinate[-1]
+        source = coordinate[0] if len(coordinate) == 2 else None
+        part_smokes = (
+            smokes.filter(pl.col("part") == source) if "part" in smokes.columns else smokes
+        )
+        part_fires = fires.filter(pl.col("part") == source) if "part" in fires.columns else fires
         summary = _compute_at(
             int(tick),
             group,
             method=method,
             nav=nav,
             vis=vis,
-            smokes=smokes,
-            fires=fires,
+            smokes=part_smokes,
+            fires=part_fires,
             params=params,
             detail=False,
         )
         rows.append(
             {
+                **({"part": int(source)} if source is not None else {}),
                 "tick": int(tick),
                 "method": method,
                 "ct": summary["ct_fraction"],
@@ -272,6 +283,7 @@ def map_control(
         )
 
     schema = {
+        **({"part": pl.UInt32} if "part" in snaps.columns else {}),
         "tick": pl.Int64,
         "method": pl.String,
         **{c: pl.Float64 for c in _SUMMARY_COLUMNS},
@@ -283,6 +295,7 @@ def map_control_at(
     demo: Demo,
     tick: int,
     *,
+    part: int | None = None,
     method: Method = "vision",
     params: MapControlParams | None = None,
     map_name: str | None = None,
@@ -292,7 +305,8 @@ def map_control_at(
 
     Args:
         demo: The parsed demo.
-        tick: The tick to evaluate.
+        tick: The local tick to evaluate.
+        part: Source recording when the demo has multiple parts.
         method: ``"raycast"``, ``"vision"``, or ``"reachability"`` (see the
             module docs).
         params: Model parameters (defaults if omitted).
@@ -310,9 +324,12 @@ def map_control_at(
     nav = _nav(name, version)
     vis = _visibility(name, version) if method in LINE_OF_SIGHT_METHODS else None
 
-    snap = demo.snapshots(ticks=tick)
+    snap = demo.snapshots(ticks=tick, **({"part": part} if part is not None else {}))
     group = snap.filter(pl.col("tick") == tick) if "tick" in snap.columns else snap
     smokes, fires = _occluders(demo, method)
+    if "part" in snap.columns:
+        smokes = smokes.filter(pl.col("part") == part) if "part" in smokes.columns else smokes
+        fires = fires.filter(pl.col("part") == part) if "part" in fires.columns else fires
     detail = _compute_at(
         tick,
         group,
@@ -333,4 +350,9 @@ def map_control_at(
         }
     )
     geometry = nav.areas.select(["area_id", "centroid_x", "centroid_y", "centroid_z", "size"])
-    return areas.join(geometry, on="area_id", how="left")
+    result = areas.join(geometry, on="area_id", how="left")
+    return (
+        result.with_columns(pl.lit(part, dtype=pl.UInt32).alias("part"))
+        if "part" in snap.columns
+        else result
+    )

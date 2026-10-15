@@ -1,10 +1,11 @@
 """Types and summaries for the compiled extension.
 
 Keep these summaries consistent with ``crates/awpy-python/src/lib.rs``.
-Rust docstrings supply ``help()`` and the published API reference.
+Rust docstrings supply ``help()`` for the public native classes.
 """
 
 from collections.abc import Iterator, Sequence
+from os import PathLike
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -57,16 +58,16 @@ class Events:
         """
 
 class Demo:
-    """A parsed Counter-Strike 2 demo file.
+    """Open one CS2 demo or ordered recordings of one map.
 
-    Construction is cheap: it opens and memory-maps the file and verifies its
-    magic bytes, but does not decode it. Decoding happens lazily on the first
-    access to a dataset or event, and every dataset is cached on the object
-    afterwards (see the individual properties). Open a new ``Demo`` to re-read
-    the file from scratch.
+    Single-file construction maps the file and checks its header. Multipart
+    construction also checks round continuity and recording boundaries.
+    Dataset access triggers decoding and caches the result.
+    Multipart tables include ``part``; ticks and entity handles remain local.
+    ``players`` and ``stats`` combine Steam IDs without a ``part`` column.
 
     Args:
-        path: Path to the ``.dem`` file.
+        path: A string or path, or a nonempty sequence of strings and paths.
 
     Raises:
         FileNotFoundError: If the file does not exist.
@@ -74,7 +75,16 @@ class Demo:
     """
 
     path: Path
-    def __init__(self, path: str | Path) -> None: ...
+    def __init__(self, path: str | PathLike[str] | Sequence[str | PathLike[str]]) -> None: ...
+    @property
+    def paths(self) -> tuple[Path, ...]:
+        """Source paths in the supplied order."""
+    @property
+    def parts(self) -> tuple[Demo, ...]:
+        """Each source recording as a Demo, indexed from zero."""
+    @property
+    def headers(self) -> tuple[dict[str, Any], ...]:
+        """Header and playback metadata for each source recording."""
     def __repr__(self) -> str: ...
     @staticmethod
     def available_datasets() -> list[str]:
@@ -98,6 +108,7 @@ class Demo:
         Keys: ``map_name``, ``server_name``, ``client_name``, ``build_num``,
         ``demo_version_name``, ``game_directory``, and (when available)
         ``playback_ticks``, ``playback_frames``, ``playback_time``.
+        Multipart playback fields are in ``headers`` instead.
         """
 
     @property
@@ -128,7 +139,9 @@ class Demo:
             demo.events["player_ping"]
         """
 
-    def ticks(self, props: list[str] | None = ..., players_only: bool = ...) -> pl.DataFrame:
+    def ticks(
+        self, props: list[str] | None = ..., players_only: bool = ..., *, part: int | None = ...
+    ) -> pl.DataFrame:
         """Read selected entity properties at every tick.
 
         With ``players_only=True``, merge each player pawn and controller into
@@ -146,6 +159,7 @@ class Demo:
         ``health``, ``armor``, ``team_num``, ``name``, and ``money``.
 
         Each call decodes keyframe segments in parallel. Results are not cached.
+        Set ``part`` to select a source recording in a multipart demo.
 
         Args:
             props: Property names. Defaults to
@@ -162,6 +176,7 @@ class Demo:
         events: str | Sequence[str] | None = ...,
         start_tick: int | None = ...,
         end_tick: int | None = ...,
+        part: int | None = ...,
     ) -> pl.DataFrame:
         """Read player state at selected ticks as a DataFrame.
 
@@ -174,6 +189,8 @@ class Demo:
         - ``start_tick`` and ``end_tick``: an inclusive window. Alone, this selects
           every tick in the window. With other selectors, it bounds the selection.
 
+        Multipart local ticks and tick windows require ``part``.
+        Stride and event queries can read all parts.
         At least one selector is required. One to four explicit ticks without
         other selectors use keyframe seeks. Other requests decode keyframe
         segments in parallel. Results are not cached.

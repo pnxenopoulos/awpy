@@ -1,12 +1,13 @@
 # API reference
 
 This page uses the installed package docstrings.
-See {doc}`datasets` for columns and {doc}`reference` for definitions.
+See {doc}`datasets` for columns, multipart queries, and {doc}`reference` for definitions.
 
 ## `Demo`
 
-Open a demo and read datasets as Polars DataFrames.
-Construction maps the file and checks its header. Dataset access triggers decoding.
+Open one demo or an ordered sequence of demo paths. Read datasets as Polars DataFrames.
+Single-file construction maps the file and checks its header. Multipart construction
+also checks round continuity and recording boundaries. Dataset access triggers decoding.
 Results are cached; `Demo.load(...)` combines compatible requests.
 
 ```{eval-rst}
