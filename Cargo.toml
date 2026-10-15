@@ -17,7 +17,7 @@ rust-version = "1.88.0"
 [workspace.dependencies]
 awpy = { path = "crates/awpy", version = "3.1.0" }
 awpy-proto = { path = "crates/awpy-proto", version = "0.1" }
-pbdems2 = "0.4"
+pbdems2 = "0.4.1"
 anyhow = "1.0"
 prost = "0.14"
 serde = { version = "1.0.228", features = ["derive"] }

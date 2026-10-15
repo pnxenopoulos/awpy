@@ -110,6 +110,7 @@ you accept a parser change.
 | `datasets/players`, `rounds`, `stats` | Build the roster, rounds, or player stats. Stats exclude knife rounds. |
 | `datasets/event_datasets` | Collect kills, damages, bomb events, blinds, and shots together. |
 | `datasets/kills` | Collect kills only. |
+| `datasets/kills_damage_shots` | Collect kills, damages, and shots in one call. |
 | `datasets/kills_bomb_shots_combined` | Collect three selected datasets in one call. |
 | `datasets/kills_bomb_shots_separate` | Collect the same three datasets in separate calls on one parser. |
 | `datasets/projectiles` | Collect grenade trajectories, fires, and smokes together. |

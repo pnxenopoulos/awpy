@@ -1197,6 +1197,26 @@ impl EventDatasetSelection {
         }
     }
 
+    pub(crate) fn legacy_event_names(self) -> HashSet<&'static str> {
+        let mut names = HashSet::new();
+        if self.kills {
+            names.insert("player_death");
+        }
+        if self.damages {
+            names.insert("player_hurt");
+        }
+        if self.shots {
+            names.insert("weapon_fire");
+        }
+        if self.blinds {
+            names.insert("flashbang_detonate");
+        }
+        if self.bomb {
+            names.extend(BOMB_EVENTS.iter().map(|(name, _)| *name));
+        }
+        names
+    }
+
     const fn any(self) -> bool {
         self.kills || self.damages || self.bomb || self.blinds || self.shots
     }
@@ -1275,6 +1295,46 @@ fn det_dist2(d: &Detonation, x: f32, y: f32, z: f32) -> f32 {
         (Some(dx), Some(dy), Some(dz)) => (dx - x).powi(2) + (dy - y).powi(2) + (dz - z).powi(2),
         _ => f32::INFINITY,
     }
+}
+
+/// Stateful observations needed when joining independently decoded event segments.
+#[derive(Default)]
+struct EventSegment {
+    events: EventDatasets,
+    rounds: Vec<Round>,
+    players: Vec<Player>,
+    first_tick: Option<i32>,
+    last_flash: HashMap<EntityId, f32>,
+}
+
+fn merge_event_segments(parts: Vec<EventSegment>) -> EventSegment {
+    let mut merged = EventSegment::default();
+    for mut part in parts {
+        // A cold keyframe has no previous flash observation. Check its candidate
+        // rising edges against the preceding segment, using full pawn identities.
+        part.events.blinds.retain(|blind| {
+            if Some(blind.tick) != part.first_tick {
+                return true;
+            }
+            let previous = blind
+                .victim_entity_id
+                .zip(blind.victim_entity_serial)
+                .and_then(|(index, serial)| merged.last_flash.get(&EntityId::new(index, serial)))
+                .copied()
+                .unwrap_or(0.0);
+            matches!(
+                blind.duration.partial_cmp(&(previous + FLASH_EDGE_MARGIN)),
+                None | Some(std::cmp::Ordering::Greater)
+            )
+        });
+        merged.events.kills.append(&mut part.events.kills);
+        merged.events.damages.append(&mut part.events.damages);
+        merged.events.bomb.append(&mut part.events.bomb);
+        merged.events.blinds.append(&mut part.events.blinds);
+        merged.events.shots.append(&mut part.events.shots);
+        merged.last_flash.extend(part.last_flash);
+    }
+    merged
 }
 
 /// Fill a [`Kill`] row from the player-death event and entity state at its tick.
@@ -1775,6 +1835,131 @@ impl Parser {
         selection: EventDatasetSelection,
         full_shots: bool,
     ) -> Result<(EventDatasets, Vec<Round>, Vec<Player>)> {
+        let properties = if mode == EventDatasetMode::Full {
+            self.combat_properties(selection, full_shots)?
+        } else {
+            None
+        };
+        let properties = properties.as_ref();
+        let budget = parallel_segment_budget();
+        // A metadata-only scan carries late baselines and descriptors to workers.
+        // Round and roster reconstruction remains serial.
+        let mut segment = if mode == EventDatasetMode::Full && !collect_rounds && budget > 1 {
+            if self.combat_bootstrap()?.class_schema_changed {
+                self.collect_event_segment(
+                    mode,
+                    collect_rounds,
+                    selection,
+                    full_shots,
+                    properties,
+                    None,
+                )?
+            } else {
+                let offsets = self.full_packet_offsets()?;
+                let ranges = segment_ranges(&offsets, budget.min(offsets.len().max(1)));
+                let parts = std::thread::scope(|scope| {
+                    let workers: Vec<_> = ranges
+                        .into_iter()
+                        .map(|range| {
+                            scope.spawn(move || {
+                                self.collect_event_segment(
+                                    mode,
+                                    collect_rounds,
+                                    selection,
+                                    full_shots,
+                                    properties,
+                                    Some(range),
+                                )
+                            })
+                        })
+                        .collect();
+                    workers
+                        .into_iter()
+                        .map(|worker| worker.join().expect("event segment panicked"))
+                        .collect::<Result<Vec<_>>>()
+                })?;
+                merge_event_segments(parts)
+            }
+        } else {
+            self.collect_event_segment(
+                mode,
+                collect_rounds,
+                selection,
+                full_shots,
+                properties,
+                None,
+            )?
+        };
+        if selection.kills {
+            // A trade can cross a segment boundary. Classify the ordered union once.
+            let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
+            let flags = trade_flags(&segment.events.kills, trade_ticks);
+            for (kill, (is_trade, victim_traded)) in segment.events.kills.iter_mut().zip(flags) {
+                kill.is_trade = is_trade;
+                kill.victim_traded = victim_traded;
+            }
+        }
+        Ok((segment.events, segment.rounds, segment.players))
+    }
+
+    /// Inputs read by full combat rows. Round/roster collection keeps full fields.
+    fn combat_properties(
+        &self,
+        selection: EventDatasetSelection,
+        full_shots: bool,
+    ) -> Result<Option<pbdems2::PropertyFilter>> {
+        let mut pawn: Vec<String> = ["m_iTeamNum", "m_hController", "m_hOriginalController"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect();
+        pawn.extend(
+            [
+                "m_cellX", "m_cellY", "m_cellZ", "m_vecX", "m_vecY", "m_vecZ",
+            ]
+            .map(|axis| format!("{ORIGIN_PATH}.{axis}")),
+        );
+        if selection.blinds {
+            pawn.push("m_flFlashDuration".into());
+        }
+        if selection.shots && full_shots {
+            pawn.extend(
+                [
+                    "m_angEyeAngles",
+                    "m_bIsScoped",
+                    "m_pWeaponServices.m_hActiveWeapon",
+                ]
+                .map(str::to_owned),
+            );
+        }
+        let mut classes = vec![
+            (PLAYER_PAWN_CLASS, pawn),
+            (
+                PLAYER_CONTROLLER_CLASS,
+                vec!["m_steamID".into(), "m_iszPlayerName".into()],
+            ),
+        ];
+        if selection.bomb {
+            classes.push((PLANTED_C4_CLASS, vec!["m_nBombSite".into()]));
+        }
+        if selection.shots && full_shots {
+            classes.extend(
+                weapon_classes()
+                    .map(|class| (class, vec!["m_iClip1".into(), "m_fAccuracyPenalty".into()])),
+            );
+        }
+        self.property_filter(classes)
+    }
+
+    fn collect_event_segment(
+        &self,
+        mode: EventDatasetMode,
+        collect_rounds: bool,
+        selection: EventDatasetSelection,
+        full_shots: bool,
+        properties: Option<&pbdems2::PropertyFilter>,
+        segment: Option<(Option<usize>, i32)>,
+    ) -> Result<EventSegment> {
+        let mut first_tick = None;
         let mut kills = Vec::new();
         let mut damages = Vec::new();
         let mut bomb = Vec::new();
@@ -1811,110 +1996,92 @@ impl Parser {
         // These datasets consume legacy key/value pairs only. Select their
         // event names up front so unrelated legacy events and all CS2 user
         // messages are skipped without materializing owned payloads.
-        let mut event_names: HashSet<&str> = HashSet::new();
-        if selection.kills {
-            event_names.insert("player_death");
-        }
-        if selection.damages {
-            event_names.insert("player_hurt");
-        }
-        if selection.blinds {
-            event_names.insert("flashbang_detonate");
-        }
-        if selection.shots {
-            event_names.insert("weapon_fire");
-        }
-        if selection.bomb {
-            event_names.extend(BOMB_EVENTS.iter().map(|(name, _)| *name));
-        }
+        let event_names = selection.legacy_event_names();
+        self.run_legacy_event_segment(
+            &filter,
+            &event_names,
+            properties,
+            segment,
+            |ctx, events| {
+                first_tick.get_or_insert(ctx.tick());
+                if let Some(tracker) = &mut round_tracker {
+                    tracker.observe(ctx);
+                }
+                if let Some(tracker) = &mut player_tracker {
+                    tracker.observe(ctx);
+                }
+                let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
+                let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
 
-        self.run_to_end_with_legacy_events_filtered(&filter, &event_names, |ctx, events| {
-            if let Some(tracker) = &mut round_tracker {
-                tracker.observe(ctx);
-            }
-            if let Some(tracker) = &mut player_tracker {
-                tracker.observe(ctx);
-            }
-            let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
-            let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
-
-            for event in events {
-                match event.name.as_str() {
-                    "player_death" if selection.kills => {
-                        let mut kill = kill_event_fields(event);
-                        fill_kill(&mut kill, event, ctx, pk, ck);
-                        kills.push(kill);
-                    }
-                    "player_hurt" if selection.damages => {
-                        let mut damage = damage_event_fields(event);
-                        fill_damage(&mut damage, event, ctx, pk, ck);
-                        damages.push(damage);
-                    }
-                    "flashbang_detonate" if selection.blinds => {
-                        let keys = Keys(&event.keys);
-                        detonations.entry(event.tick).or_default().push(Detonation {
-                            thrower_user_id: keys.i32("userid"),
-                            thrower_pawn: keys.i64("userid_pawn"),
-                            x: keys.f32("x"),
-                            y: keys.f32("y"),
-                            z: keys.f32("z"),
-                        });
-                    }
-                    "weapon_fire" => {
-                        let mut shot = Shot {
-                            tick: event.tick,
-                            weapon: Keys(&event.keys).string("weapon"),
-                            ..Default::default()
-                        };
-                        if full_shots {
-                            let sk = shot_keys.get_or_insert_with(|| ShotKeys::resolve(ctx));
-                            fill_shot(&mut shot, event, ctx, pk, ck, sk, &mut weapon_keys);
-                        } else {
-                            fill_stats_shot(&mut shot, event, ctx, pk, ck);
+                for event in events {
+                    match event.name.as_str() {
+                        "player_death" if selection.kills => {
+                            let mut kill = kill_event_fields(event);
+                            fill_kill(&mut kill, event, ctx, pk, ck);
+                            kills.push(kill);
                         }
-                        shots.push(shot);
-                    }
-                    _ => {
-                        if let Some((_, label)) =
-                            BOMB_EVENTS.iter().find(|(name, _)| *name == event.name)
-                        {
-                            let sk = *site_key.get_or_insert_with(|| {
-                                ctx.serializers()
-                                    .get(PLANTED_C4_CLASS)
-                                    .and_then(|s| s.resolve_field_key("m_nBombSite"))
+                        "player_hurt" if selection.damages => {
+                            let mut damage = damage_event_fields(event);
+                            fill_damage(&mut damage, event, ctx, pk, ck);
+                            damages.push(damage);
+                        }
+                        "flashbang_detonate" if selection.blinds => {
+                            let keys = Keys(&event.keys);
+                            detonations.entry(event.tick).or_default().push(Detonation {
+                                thrower_user_id: keys.i32("userid"),
+                                thrower_pawn: keys.i64("userid_pawn"),
+                                x: keys.f32("x"),
+                                y: keys.f32("y"),
+                                z: keys.f32("z"),
                             });
-                            let mut row = BombEvent {
+                        }
+                        "weapon_fire" if selection.shots => {
+                            let mut shot = Shot {
                                 tick: event.tick,
-                                event: (*label).to_string(),
+                                weapon: Keys(&event.keys).string("weapon"),
                                 ..Default::default()
                             };
-                            fill_bomb(&mut row, event, ctx, pk, ck, bomb_site(ctx, sk));
-                            bomb.push(row);
+                            if full_shots {
+                                let sk = shot_keys.get_or_insert_with(|| ShotKeys::resolve(ctx));
+                                fill_shot(&mut shot, event, ctx, pk, ck, sk, &mut weapon_keys);
+                            } else {
+                                fill_stats_shot(&mut shot, event, ctx, pk, ck);
+                            }
+                            shots.push(shot);
+                        }
+                        _ => {
+                            if selection.bomb
+                                && let Some((_, label)) =
+                                    BOMB_EVENTS.iter().find(|(name, _)| *name == event.name)
+                            {
+                                let sk = *site_key.get_or_insert_with(|| {
+                                    ctx.serializers()
+                                        .get(PLANTED_C4_CLASS)
+                                        .and_then(|s| s.resolve_field_key("m_nBombSite"))
+                                });
+                                let mut row = BombEvent {
+                                    tick: event.tick,
+                                    event: (*label).to_string(),
+                                    ..Default::default()
+                                };
+                                fill_bomb(&mut row, event, ctx, pk, ck, bomb_site(ctx, sk));
+                                bomb.push(row);
+                            }
                         }
                     }
                 }
-            }
 
-            if selection.blinds {
-                // Blinds are found from a per-tick rising edge, so this runs every tick.
-                let fk = *flash_key.get_or_insert_with(|| {
-                    ctx.serializers()
-                        .get(PLAYER_PAWN_CLASS)
-                        .and_then(|s| s.resolve_field_key("m_flFlashDuration"))
-                });
-                detect_blinds(ctx, &detonations, &mut prev_flash, fk, pk, ck, &mut blinds);
-            }
-        })?;
-
-        if selection.kills {
-            // Trades need every kill's resolved sides, so classify after enrichment.
-            let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
-            let flags = trade_flags(&kills, trade_ticks);
-            for (kill, (is_trade, victim_traded)) in kills.iter_mut().zip(flags) {
-                kill.is_trade = is_trade;
-                kill.victim_traded = victim_traded;
-            }
-        }
+                if selection.blinds {
+                    // Blinds are found from a per-tick rising edge, so this runs every tick.
+                    let fk = *flash_key.get_or_insert_with(|| {
+                        ctx.serializers()
+                            .get(PLAYER_PAWN_CLASS)
+                            .and_then(|s| s.resolve_field_key("m_flFlashDuration"))
+                    });
+                    detect_blinds(ctx, &detonations, &mut prev_flash, fk, pk, ck, &mut blinds);
+                }
+            },
+        )?;
 
         let events = EventDatasets {
             kills,
@@ -1931,7 +2098,13 @@ impl Parser {
             .map(PlayerTracker::into_players)
             .unwrap_or_default();
 
-        Ok((events, rounds, players))
+        Ok(EventSegment {
+            events,
+            rounds,
+            players,
+            first_tick,
+            last_flash: prev_flash,
+        })
     }
 
     /// Collect every kill (`player_death` game event), enriched with each
@@ -3319,6 +3492,80 @@ mod tests {
     use super::*;
     use awpy_proto::proto::{CUserMessageSayText, CUserMessageSayText2};
     use prost::Message as _;
+
+    fn boundary_blind(index: i32, serial: u32, duration: f32) -> Blind {
+        Blind {
+            tick: 100,
+            victim_entity_id: Some(index),
+            victim_entity_serial: Some(serial),
+            duration,
+            ..Default::default()
+        }
+    }
+
+    fn flash_segment(blind: Blind) -> EventSegment {
+        EventSegment {
+            first_tick: Some(100),
+            events: EventDatasets {
+                blinds: vec![blind],
+                ..Default::default()
+            },
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn segment_merge_rejects_an_ongoing_flash_as_a_new_blind() {
+        let before = EventSegment {
+            last_flash: HashMap::from([(EntityId::new(1, 2), 3.0)]),
+            ..Default::default()
+        };
+        let merged = merge_event_segments(vec![before, flash_segment(boundary_blind(1, 2, 3.0))]);
+        assert!(merged.events.blinds.is_empty());
+    }
+
+    #[test]
+    fn segment_merge_preserves_a_flash_that_increases_at_the_boundary() {
+        let before = EventSegment {
+            last_flash: HashMap::from([(EntityId::new(1, 2), 1.0)]),
+            ..Default::default()
+        };
+        let merged = merge_event_segments(vec![before, flash_segment(boundary_blind(1, 2, 3.0))]);
+        assert_eq!(merged.events.blinds.len(), 1);
+    }
+
+    #[test]
+    fn segment_merge_keeps_flash_history_separate_for_reused_pawn_slots() {
+        let before = EventSegment {
+            last_flash: HashMap::from([(EntityId::new(1, 1), 3.0)]),
+            ..Default::default()
+        };
+        let merged = merge_event_segments(vec![before, flash_segment(boundary_blind(1, 2, 3.0))]);
+        assert_eq!(merged.events.blinds.len(), 1);
+    }
+
+    #[test]
+    fn segment_merge_preserves_event_order_within_a_tick() {
+        let parts = ["first", "second"].map(|weapon| EventSegment {
+            events: EventDatasets {
+                damages: vec![Damage {
+                    tick: 100,
+                    weapon: weapon.into(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+        let merged = merge_event_segments(Vec::from(parts));
+        let weapons: Vec<_> = merged
+            .events
+            .damages
+            .iter()
+            .map(|row| row.weapon.as_str())
+            .collect();
+        assert_eq!(weapons, ["first", "second"]);
+    }
 
     fn ev(name: &str, tick: i32, keys: &[(&str, &str)]) -> GameEvent {
         GameEvent {

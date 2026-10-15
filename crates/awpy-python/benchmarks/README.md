@@ -3,7 +3,7 @@
 Use `bench_api.py` to measure the Python API in isolated processes.
 The older `bench_parse.py` script remains available for basic dataset timings.
 Use the Rust Criterion suite to separate parser costs from Python API costs.
-See [RESULTS.md](RESULTS.md) for the measured Boon-inspired experiments.
+See [RESULTS.md](RESULTS.md) for local measurements.
 
 ## Build and run
 
@@ -30,9 +30,9 @@ Use repeated `--case` arguments to select workloads. For example:
 
 ```sh
 uv run --no-sync python benchmarks/bench_api.py \
-  --demo /absolute/path/match.dem --case snapshot/two --case snapshot/four \
-  --case snapshot/sampled --case snapshot/dense \
-  --output ../../target/benchmarks/snapshots.json
+  --demo /absolute/path/match.dem --case ticks --case ticks/names \
+  --case load/combat --threads 4 --segments 4 \
+  --output ../../target/benchmarks/parsing.json
 ```
 
 The harness does not download demos or assets. `--all` includes large full-tick
@@ -73,3 +73,40 @@ See [RESULTS.md](RESULTS.md) for the separate exact-value checks.
 
 CI runs the harness unit tests with the offline pytest selection. CI has no
 hardware-dependent timing threshold.
+
+## Compare with demoparser2
+
+Use one Python environment with a release build of Awpy and demoparser2.
+The comparison script needs Linux CPU affinity and process resource counters.
+
+```sh
+uv pip install demoparser2==0.42.0 pandas pyarrow
+uv run --no-sync python benchmarks/bench_demoparser2.py \
+  --demo /absolute/path/ancient.dem --demo /absolute/path/mirage.dem \
+  --threads 1 4 --repeat 7 --output ../../target/parser-comparison/results.json
+```
+
+Cases are grouped combat events, all player ticks with or without names,
+alive players every 64 ticks,
+and alive players at four exact ticks. Each case returns common Polars columns.
+The script checks every row and value on every run. It stops on a mismatch.
+
+Each sample uses a fresh process and parser. The OS file cache is warm. Imports
+and output checks are outside the timer. Construction, decoding, native table
+creation, and conversion to the common schema are inside the timer. Native API
+time is also reported. One pair warms each case; subsequent pairs alternate
+parser order. CPU affinity and thread limits apply to both parsers. Use `--cpus`
+to select physical cores on the host.
+
+The APIs can do extra work to produce the requested columns. Awpy combat
+datasets include positions and trade flags. Its snapshots include inventory
+and other state. demoparser2 receives only the requested properties. Thus these
+results compare public API tasks, not decoder loops. Event-time positions are
+not part of the common combat output because the APIs can sample different
+states. The full-tick query includes dead players; sparse queries select only
+alive players. Peak RSS includes imports and resident mapped input.
+
+The comparison script's `ticks` case requests names; `ticks-pawn` omits them.
+Both retain all player rows, including dead players. Awpy 3.1 supports parallel
+decoding for both cases. Other controller-only fields still use serial decoding.
+The original Awpy 3.1 baseline used serial decoding for names.

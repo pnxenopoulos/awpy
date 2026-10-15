@@ -136,6 +136,14 @@ fn bench_datasets(c: &mut Criterion, demo: &DemoInput) {
     });
     bench_parse(&mut group, demo, "event_datasets", Parser::event_datasets);
     bench_parse(&mut group, demo, "kills", Parser::kills);
+    bench_parse(&mut group, demo, "kills_damage_shots", |parser| {
+        parser.event_datasets_selected(EventDatasetSelection {
+            kills: true,
+            damages: true,
+            shots: true,
+            ..Default::default()
+        })
+    });
     let selection = EventDatasetSelection {
         kills: true,
         bomb: true,

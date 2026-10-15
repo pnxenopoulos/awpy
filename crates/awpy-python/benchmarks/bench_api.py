@@ -45,6 +45,7 @@ def cases() -> list[str]:
     return [
         "construct",
         "ticks",
+        "ticks/names",
         *(f"dataset/{name}" for name in Demo.available_datasets()),
         *(f"{mode}/{name}" for mode in ("load", "sequential", "cached") for name in GROUPS),
         *(f"snapshot/{name}" for name in SNAPSHOTS),
@@ -90,7 +91,8 @@ def execute(demo: Any, case: str) -> Any:
     if mode == "construct":
         return demo.header
     if mode == "ticks":
-        return {"ticks": demo.ticks()}
+        props = ["X", "Y", "Z", "health", "armor", "team_num", "name"] if name == "names" else None
+        return {"ticks": demo.ticks(props)}
     if mode == "dataset":
         return {name: getattr(demo, name)}
     if mode in ("load", "cached", "sequential"):

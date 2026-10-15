@@ -3,7 +3,7 @@
 # Awpy
 
 <p>
-  <a href="https://discord.gg/W34XjsSs2H"><img src="https://img.shields.io/discord/868146581419999232?color=blue&label=Discord&logo=discord&logoColor=white&style=for-the-badge" alt="Awpy Discord"></a>
+  <a href="https://discord.gg/W34XjsSs2H"><img src="https://img.shields.io/discord/868146581419999232?color=5865F2&label=Discord&logo=discord&logoColor=white&style=for-the-badge" alt="Awpy Discord"></a>
   <a href="https://awpy.readthedocs.io"><img src="https://readthedocs.org/projects/awpy/badge/?version=latest&style=for-the-badge" alt="Docs"></a>
   <a href="https://github.com/pnxenopoulos/awpy/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/pnxenopoulos/awpy/ci.yml?style=for-the-badge" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge" alt="License: MIT"></a>

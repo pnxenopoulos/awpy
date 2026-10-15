@@ -2,6 +2,10 @@
 
 ## 3.1.0
 
+- Parse player ticks with names and combat datasets in parallel. Preserve event
+  order, late baselines, and flash history across combat segments.
+- Use pbdems2 0.4.1 to decode only the properties needed by combat datasets.
+  Keep full decoding for round and roster collection and later schema changes.
 - Add multipart demos. Pass paths to `Demo` in recording order. Combine stats by
   Steam ID. Keep local ticks with a `part` column. Reject incompatible files,
   missing or overlapping rounds, and splits during live play.

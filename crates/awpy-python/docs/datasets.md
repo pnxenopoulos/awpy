@@ -16,8 +16,10 @@ The method returns `None` and caches the requested DataFrames.
 It validates all names before decoding and skips cached datasets.
 Use `Demo.available_datasets()` to list valid names.
 
-Requested event datasets share one pass, as do requested `grenades`, `fires`,
-and `smokes`. Stats reuse combat, round, and roster inputs.
+Combat datasets decode segments in parallel after a shared metadata scan.
+They retain only the entity properties needed by the requested tables.
+Requested `grenades`, `fires`, and `smokes` share one pass.
+Stats reuse combat, round, and roster inputs; their combined pass is serial.
 A combined stats request can also collect bomb and shot rows in that pass.
 Direct property access prepares its compatible event or projectile group.
 Use `load()` to restrict collection to a known set.
@@ -591,7 +593,9 @@ Use aliases or raw CS2 network names:
 | `velocity` / `speed` | Derived three-dimensional speed. |
 | *(anything else)* | Used verbatim as a raw network field name. |
 
-`ticks()` decodes keyframe segments in parallel.
+Player pawn fields and names can decode in parallel. Names come from the
+controller at each tick, so name changes are retained. Other controller-only
+fields, such as `money`, use serial decoding. Raw entity queries are also serial.
 
 Set `players_only=False` for a raw per-entity dump instead — one row per (tick,
 entity), with columns `tick`, `entity_id`, `entity_serial`,
