@@ -300,30 +300,29 @@ Use exact DataFrame comparisons when the result must match exactly.
 Update the package version and finalize the changelog. Push to `main` and wait
 for **CI Check** to pass on the release commit.
 
-In GitHub Actions, select `main`, then run:
+In GitHub Actions, select **Release Awpy** (`release.yml`) on `main`.
+Select `awpy-proto`, `awpy`, or `awpy-python` and enter its Cargo version.
 
-- **Release Parser**: select `awpy-proto` or `awpy` and enter its Cargo version.
-- **Release Python**: enter the `awpy-python` version from the Cargo workspace.
-
-Release in this order: `awpy-proto`, `awpy`, then the Python package. Each
-workflow checks that the preceding Rust package version is on crates.io.
+Release in this order: `awpy-proto`, `awpy`, then the Python package.
+The workflow checks that the preceding Rust package version is on crates.io.
 Skip a Rust package if its version is already published.
 
-Enter the full version without a leading `v`. Each workflow checks the version,
+Enter the full version without a leading `v`. The workflow checks the version,
 publishes the package, then creates its tag and GitHub release. Tags use
 `awpy-proto-v<version>`, `awpy-v<version>`, or `awpy-python-v<version>`.
 Existing tags must refer to the release commit. A retry skips published files
 and existing releases. A tag push does not start publication.
 
-The Python workflow publishes a source archive and wheels for Python 3.11–3.15:
+The `awpy-python` choice publishes a source archive and wheels for Python 3.11–3.15:
 
 - Linux: x86-64 and ARM64.
 - macOS: Intel and Apple silicon.
 - Windows: x86-64.
 
 Python 3.15 uses a stable-ABI wheel built with Python 3.14, as in CI.
-Configure trusted publishers for `release-parser.yml` with environment `crates`
-and `release-python.yml` with environment `pypi`.
+Configure the crates.io trusted publishers for `release.yml` with environment
+`crates`, and the PyPI trusted publisher for `release.yml` with environment `pypi`.
+Update existing publishers that refer to the old workflow filenames.
 Publish each new Rust crate once with an API token before you configure its
 trusted publisher.
 

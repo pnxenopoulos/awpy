@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared checks and finalization for the manual package release workflows.
+# Checks and finalization for the manual package release workflow.
 set -euo pipefail
 
 check_tag() {

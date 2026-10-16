@@ -1,8 +1,16 @@
-name: Release Python
+name: Release Awpy
 
 on:
   workflow_dispatch:
     inputs:
+      component:
+        description: "Component to release"
+        required: true
+        type: choice
+        options:
+          - awpy-proto
+          - awpy
+          - awpy-python
       version:
         description: "Expected package version (without a leading v)"
         required: true
@@ -40,13 +48,14 @@ jobs:
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
-          PACKAGE: awpy-python
+          PACKAGE: ${{ inputs.component }}
           REQUESTED_VERSION: ${{ inputs.version }}
         run: bash scripts/release.sh check
 
   build-linux:
     name: Build wheels (Linux)
     needs: ci-gate
+    if: inputs.component == 'awpy-python'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -81,6 +90,7 @@ jobs:
   build-macos:
     name: Build wheels (macOS)
     needs: ci-gate
+    if: inputs.component == 'awpy-python'
     runs-on: macos-latest
     strategy:
       matrix:
@@ -113,6 +123,7 @@ jobs:
   build-windows:
     name: Build wheels (Windows)
     needs: ci-gate
+    if: inputs.component == 'awpy-python'
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -142,6 +153,7 @@ jobs:
   build-sdist:
     name: Build sdist
     needs: ci-gate
+    if: inputs.component == 'awpy-python'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -161,9 +173,46 @@ jobs:
           name: wheels-sdist
           path: dist
 
-  publish:
-    name: Publish to PyPI
-    needs: [build-linux, build-macos, build-windows, build-sdist]
+  publish-rust:
+    name: Publish ${{ inputs.component }} to crates.io
+    needs: ci-gate
+    if: inputs.component == 'awpy-proto' || inputs.component == 'awpy'
+    runs-on: ubuntu-latest
+    environment: crates
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+          PACKAGE: ${{ inputs.component }}
+          VERSION: ${{ needs.ci-gate.outputs.version }}
+        run: |
+          encoded_version=$(printf '%s' "$VERSION" | jq -sRr @uri)
+          status=$(curl -sSL --retry 3 -A awpy-release-ci -o /dev/null -w '%{http_code}' \
+            "https://crates.io/api/v1/crates/$PACKAGE/$encoded_version")
+          case "$status" in
+            200) echo "$PACKAGE $VERSION is already published; skipping." ;;
+            404) cargo publish --locked -p "$PACKAGE" --registry crates-io ;;
+            *) echo "Could not check $PACKAGE publication (HTTP $status)." >&2; exit 1 ;;
+          esac
+
+  publish-python:
+    name: Publish awpy-python to PyPI
+    needs: [ci-gate, build-linux, build-macos, build-windows, build-sdist]
+    if: inputs.component == 'awpy-python'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -184,7 +233,16 @@ jobs:
 
   finalize:
     name: Tag and publish the GitHub release
-    needs: [ci-gate, publish]
+    needs: [ci-gate, publish-rust, publish-python]
+    if: >-
+      ${{
+        always() &&
+        needs.ci-gate.result == 'success' &&
+        (
+          (inputs.component == 'awpy-python' && needs.publish-python.result == 'success') ||
+          (inputs.component != 'awpy-python' && needs.publish-rust.result == 'success')
+        )
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
