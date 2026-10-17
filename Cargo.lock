@@ -1709,6 +1709,8 @@ dependencies = [
 [[package]]
 name = "pbdems2"
 version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83cefe6c2eca3cb48b386ddbf538a861d4e9cbfae6c6a89373f93ba2b854dbe0"
 dependencies = [
  "rustc-hash",
  "serde",

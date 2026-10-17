@@ -34,7 +34,8 @@ case "${1:-}" in
       exit 1
     fi
 
-    metadata=$(cargo metadata --locked --no-deps --format-version 1)
+    # Resolve dependencies so a stale lockfile fails before publication.
+    metadata=$(cargo metadata --locked --format-version 1)
     version=$(printf '%s' "$metadata" | jq -er --arg package "$PACKAGE" \
       '.packages[] | select(.name == $package) | .version')
     if [ "$version" != "$REQUESTED_VERSION" ]; then
