@@ -19,6 +19,7 @@ import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
+from typing import Any
 
 __all__ = [
     "AWPY_DATA_DIR",
@@ -46,6 +47,11 @@ _USER_AGENT = "awpy"
 
 
 def _default_data_dir() -> Path:
+    """Select the Awpy cache root from the environment or home directory.
+
+    Returns:
+        The expanded ``AWPY_DATA_DIR`` path, or ``~/.awpy``.
+    """
     env = os.environ.get("AWPY_DATA_DIR")
     return Path(env).expanduser() if env else Path.home() / ".awpy"
 
@@ -78,10 +84,17 @@ _latest_cache: str | None = None
 
 
 def latest_version() -> str:
-    """Return the tag of the most recent ``awpy-data`` release (a ClientVersion).
+    """Read the latest awpy-data release tag from GitHub.
 
-    Queries the GitHub API (once per process; the result is cached). Raises on
-    a network or API failure.
+    Returns:
+        The ClientVersion tag as a string.
+
+    Raises:
+        urllib.error.URLError: If the network or GitHub API request fails.
+        RuntimeError: If the response has no release tag.
+
+    Notes:
+        The successful result is cached for this Python process.
     """
     global _latest_cache
     if _latest_cache is not None:
@@ -100,7 +113,11 @@ def latest_version() -> str:
 
 
 def local_versions() -> list[str]:
-    """Version directories already present in the cache, oldest first."""
+    """List cached awpy-data version directories.
+
+    Returns:
+        Version names, oldest first; numeric names use numeric order.
+    """
     if not AWPY_DATA_DIR.is_dir():
         return []
     versions = [p.name for p in AWPY_DATA_DIR.iterdir() if p.is_dir()]
@@ -109,13 +126,18 @@ def local_versions() -> list[str]:
 
 
 def resolve_version(version: int | None = None) -> str:
-    """Resolve ``version`` to a concrete release tag.
+    """Select an awpy-data release without downloading its assets.
 
-    A given ``version`` is returned as-is (stringified). ``None`` resolves to
-    the newest release already in the cache — no network involved — so pinned
-    analyses keep working offline and don't shift under you mid-session. Only
-    an empty cache falls through to the latest GitHub release. Move the cache
-    forward explicitly with :func:`update` (or ``awpy get``).
+    Args:
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+
+    Returns:
+        The selected release tag as a string.
+
+    Notes:
+        An explicit version does not make a network request. An empty cache can require a GitHub API
+        request.
     """
     if version is not None:
         return str(version)
@@ -126,7 +148,15 @@ def resolve_version(version: int | None = None) -> str:
 
 
 def data_dir(version: int | None = None) -> Path:
-    """Return a release directory; default to the newest cached or latest release."""
+    """Get the local directory for an awpy-data release.
+
+    Args:
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+
+    Returns:
+        The release path. This call does not create the directory or download assets.
+    """
     return AWPY_DATA_DIR / resolve_version(version)
 
 
@@ -134,7 +164,19 @@ def data_dir(version: int | None = None) -> Path:
 
 
 def _download(url: str, dest: Path) -> Path:
-    """Download ``url`` to ``dest`` atomically, returning ``dest``."""
+    """Download an asset and replace its destination after success.
+
+    Args:
+        url: HTTPS asset URL.
+        dest: Local destination file.
+
+    Returns:
+        The destination path.
+
+    Raises:
+        FileNotFoundError: If the server returns HTTP 404.
+        urllib.error.URLError: If the download fails.
+    """
     dest.parent.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
     tmp = dest.with_name(dest.name + ".part")
@@ -154,7 +196,15 @@ def _download(url: str, dest: Path) -> Path:
 
 
 def _ensure_json(version: str, name: str) -> Path:
-    """Ensure a plain JSON asset is cached locally; return its path."""
+    """Download a missing awpy-data JSON asset.
+
+    Args:
+        version: Release tag.
+        name: JSON filename in the release.
+
+    Returns:
+        The cached JSON path.
+    """
     path = AWPY_DATA_DIR / version / name
     if not path.exists():
         _download(_DOWNLOAD_URL.format(repo=DATA_REPO, version=version, name=name), path)
@@ -162,7 +212,15 @@ def _ensure_json(version: str, name: str) -> Path:
 
 
 def _safe_extract(zf: zipfile.ZipFile, root: Path) -> None:
-    """Extract all members under ``root``, rejecting path-traversal entries."""
+    """Extract archive members within the requested directory.
+
+    Args:
+        zf: Open ZIP archive.
+        root: Destination directory.
+
+    Raises:
+        ValueError: If a member resolves outside the destination.
+    """
     root = root.resolve()
     for info in zf.infolist():
         target = (root / info.filename).resolve()
@@ -172,7 +230,16 @@ def _safe_extract(zf: zipfile.ZipFile, root: Path) -> None:
 
 
 def _ensure_zip(version: str, kind: str, *, force: bool = False) -> Path:
-    """Ensure a kind's archive is downloaded and extracted; return its subdir."""
+    """Download and extract an awpy-data asset archive.
+
+    Args:
+        version: Release tag.
+        kind: Asset kind: ``geometry``, ``nav``, or ``radar``.
+        force: Download again even if the extraction marker exists.
+
+    Returns:
+        The extracted asset directory.
+    """
     spec = _KIND[kind]
     version_dir = AWPY_DATA_DIR / version
     dest = version_dir / spec["subdir"]
@@ -197,6 +264,20 @@ def _ensure_zip(version: str, kind: str, *, force: bool = False) -> Path:
 
 
 def _asset_path(kind: str, map_name: str, version: int | None) -> Path:
+    """Find a map asset and download its archive if needed.
+
+    Args:
+        kind: Asset kind: ``geometry``, ``nav``, or ``radar``.
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+
+    Returns:
+        The existing local asset path.
+
+    Raises:
+        FileNotFoundError: If the release has no matching asset.
+    """
     tag = resolve_version(version)
     spec = _KIND[kind]
     dest = _ensure_zip(tag, kind)
@@ -210,46 +291,135 @@ def _asset_path(kind: str, map_name: str, version: int | None) -> Path:
 
 
 def mesh_path(map_name: str, version: int | None = None) -> Path:
-    """Local path to a map's collision ``.mesh`` (for :class:`~awpy.VisibilityChecker`)."""
+    """Get a CS2 collision .mesh file from awpy-data.
+
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+
+    Returns:
+        The local file path. Collision geometry for ``VisibilityChecker``.
+
+    Raises:
+        FileNotFoundError: If the selected release has no matching map asset.
+        urllib.error.URLError: If a required download fails.
+
+    Notes:
+        Missing assets download on demand. Cached assets can be used offline.
+    """
     return _asset_path("geometry", map_name, version)
 
 
 def nav_path(map_name: str, version: int | None = None) -> Path:
-    """Local path to a map's ``.nav`` mesh."""
+    """Get a CS2 navigation .nav file from awpy-data.
+
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+
+    Returns:
+        The local file path. Walkable areas for ``NavMesh``.
+
+    Raises:
+        FileNotFoundError: If the selected release has no matching map asset.
+        urllib.error.URLError: If a required download fails.
+
+    Notes:
+        Missing assets download on demand. Cached assets can be used offline.
+    """
     return _asset_path("nav", map_name, version)
 
 
 def radar_path(map_name: str, version: int | None = None, *, lower: bool = False) -> Path:
-    """Local path to a map's radar ``.png``.
+    """Get a CS2 radar .png file from awpy-data.
 
-    Set ``lower=True`` for the lower level of a multi-level map (Nuke, Vertigo,
-    Train).
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+        lower: Select the lower-level radar image for a map with multiple levels.
+
+    Returns:
+        The local file path. Radar background for ``awpy.plot``.
+
+    Raises:
+        FileNotFoundError: If the selected release has no matching map asset.
+        urllib.error.URLError: If a required download fails.
+
+    Notes:
+        Missing assets download on demand. Cached assets can be used offline.
     """
     name = f"{map_name}_lower" if lower else map_name
     return _asset_path("radar", name, version)
 
 
-def manifest(version: int | None = None) -> dict:
-    """The release manifest (version identifiers + per-file checksums) as a dict."""
+def manifest(version: int | None = None) -> dict[str, Any]:
+    """Read awpy-data release metadata.
+
+    Args:
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+
+    Returns:
+        Version identifiers, map names, and per-file checksums as a dictionary.
+
+    Notes:
+        A missing JSON file downloads on demand.
+    """
     return json.loads(_ensure_json(resolve_version(version), "manifest.json").read_text())
 
 
-def map_data(version: int | None = None) -> dict:
-    """The per-map world→radar coordinate table (``map_data.json``) as a dict."""
+def map_data(version: int | None = None) -> dict[str, Any]:
+    """Read CS2 world-to-radar transforms from awpy-data.
+
+    Args:
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+
+    Returns:
+        Map names mapped to coordinate transforms and vertical sections.
+
+    Notes:
+        A missing JSON file downloads on demand.
+    """
     return json.loads(_ensure_json(resolve_version(version), "map_data.json").read_text())
 
 
 def available_maps(version: int | None = None) -> list[str]:
-    """Map names shipped in a release (from the manifest's ``maps`` list)."""
+    """List CS2 maps in an awpy-data release.
+
+    Args:
+        version: awpy-data ClientVersion. Use the newest cached release when omitted; download the
+            latest release if the cache is empty.
+
+    Returns:
+        The map names from the release manifest.
+
+    Notes:
+        A missing JSON file downloads on demand.
+    """
     return list(manifest(version).get("maps", []))
 
 
 def update(version: int | None = None, *, force: bool = False) -> Path:
-    """Download every asset for a release into the cache; return its directory.
+    """Download every asset for an awpy-data release.
 
-    Unlike the read helpers, ``version=None`` here means the latest GitHub
-    release — this is the "check for updates" entry point — not the newest
-    cached one. With ``force=True``, re-download even if already cached.
+    Args:
+        version: ClientVersion to install. Omit it to query the latest GitHub release.
+        force: Delete this release cache and download it again.
+
+    Returns:
+        The local release directory.
+
+    Raises:
+        FileNotFoundError: If a required release asset does not exist.
+        urllib.error.URLError: If a required download fails.
+
+    Notes:
+        This update operation checks the latest release when no version is supplied. Read helpers
+        instead prefer the newest cached release.
     """
     tag = str(version) if version is not None else latest_version()
     if force and (AWPY_DATA_DIR / tag).exists():
@@ -262,7 +432,14 @@ def update(version: int | None = None, *, force: bool = False) -> Path:
 
 
 def clear(version: int | None = None) -> None:
-    """Delete cached assets — one release, or the whole cache if ``version`` is None."""
+    """Delete cached awpy-data assets.
+
+    Args:
+        version: ClientVersion to delete. Omit it to delete the entire asset cache.
+
+    Raises:
+        OSError: If the cache cannot be removed.
+    """
     target = AWPY_DATA_DIR / str(version) if version is not None else AWPY_DATA_DIR
     if target.exists():
         shutil.rmtree(target)

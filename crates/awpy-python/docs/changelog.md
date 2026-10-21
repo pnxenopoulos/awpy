@@ -2,6 +2,7 @@
 
 ## 3.1.1
 
+- Add code-first guides, llms.txt, and complete Python API docstrings and type hints.
 - Update locked TLS dependencies to rustls 0.23.46 and rustls-webpki 0.103.16.
 
 ## 3.1.0

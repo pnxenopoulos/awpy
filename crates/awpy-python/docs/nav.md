@@ -1,5 +1,14 @@
 # Navigation meshes
 
+```python
+from awpy import NavMesh
+
+nav = NavMesh("de_dust2")
+route = nav.find_path((-680.0, 1500.0, 0.0), (1200.0, 2400.0, 0.0))
+print(route)
+print(nav.areas)
+```
+
 A navigation mesh divides walkable space into connected polygonal areas.
 Use `NavMesh` to locate a point or find a route.
 [awpy-data](https://github.com/pnxenopoulos/awpy-data) supplies CS2 `.nav` files.
@@ -11,15 +20,16 @@ Use `NavMesh` to locate a point or find a route.
 Dust 2 nav areas, drawn with {func}`awpy.plot.nav`.
 ```
 
-## `NavMesh`
+<a id="navmesh"></a>
+
+## Load CS2 navigation meshes with Awpy NavMesh
 
 ```python
 from awpy import NavMesh
 
 nav = NavMesh("de_dust2")
-
-nav.find_area((-1500.0, 900.0, 60.0))   # -> an area id, e.g. 812
-nav.find_path(812, 42)                   # -> [812, ..., 42]  (area ids along the way)
+print(nav.find_area((-1500.0, 900.0, 60.0)))
+print(nav.find_path((-680.0, 1500.0, 0.0), (1200.0, 2400.0, 0.0)))
 ```
 
 The constructor takes a map name or a `.nav` file:
@@ -38,7 +48,9 @@ and resolved through `awpy.data.nav_path`.
 Points use `(x, y, z)` in Hammer units, with Z vertical.
 `find_area` returns a numeric `area_id`.
 
-### Areas
+<a id="areas"></a>
+
+### Read Awpy navigation area geometry
 
 `nav.areas` has one row per area:
 
@@ -73,12 +85,17 @@ nav.area(1)
 #  'centroid': (162.5, 25.1, 11.0), 'size': 520.9}
 ```
 
-### Queries
+<a id="queries"></a>
+
+### Find CS2 areas and paths with Awpy NavMesh
 
 ```python
-area = nav.find_area((x, y, z))    # area containing a world point (or None)
-nav.neighbors(area)                # -> [ids reachable directly]
-nav.find_path(start, end)          # -> [ids] from start to end, inclusive
+start = (-680.0, 1500.0, 0.0)
+end = (1200.0, 2400.0, 0.0)
+area = nav.find_area(start)
+if area is not None:
+    print(nav.neighbors(area))
+print(nav.find_path(start, end))
 ```
 
 `find_area` handles overlapping floors: when several areas cover the same
@@ -93,9 +110,9 @@ or no route connects them. Connections are directional, matching the mesh.
 Edges can be weighted three ways:
 
 ```python
-nav.find_path(a, b, weight="distance")  # default: 3D distance between centroids
-nav.find_path(a, b, weight="hops")      # fewest areas
-nav.find_path(a, b, weight="size")      # sum of area sizes; routes away from large areas
+nav.find_path(start, end, weight="distance")  # default: 3D distance between centroids
+nav.find_path(start, end, weight="hops")      # fewest areas
+nav.find_path(start, end, weight="size")      # sum of area sizes; routes away from large areas
 ```
 
 Draw a route with {func}`awpy.plot.nav`:
@@ -127,7 +144,9 @@ Use `highlight=` to draw a route or another set of area IDs.
 | `area_count` / `len(nav)` | `int` | Number of areas. |
 | `path` | `Path \| None` | The file the nav was loaded from. |
 
-### Example: tag every kill with its area
+<a id="example-tag-every-kill-with-its-area"></a>
+
+### Assign CS2 kills to Awpy navigation areas
 
 ```python
 import polars as pl

@@ -1,12 +1,21 @@
 # Reference
 
+```python
+from awpy import GAME_EVENTS, SNAPSHOT_PROPERTIES
+
+print(SNAPSHOT_PROPERTIES)
+print(GAME_EVENTS)
+```
+
 Snapshot properties, game events, and metric definitions.
 
-## Player properties
+<a id="player-properties"></a>
 
-{meth}`Demo.snapshots` returns the properties below.
+## List Awpy player snapshot properties
+
+{meth}`awpy.Demo.snapshots` returns the properties below.
 The mapping is also available as `awpy.SNAPSHOT_PROPERTIES`.
-Use {meth}`Demo.ticks` for supported aliases or raw network fields.
+Use {meth}`awpy.Demo.ticks` for supported aliases or raw network fields.
 
 ### Identity & position
 
@@ -68,7 +77,9 @@ Both are false without an active weapon and null if a required schema field is m
 Omitted Boolean values default to false when the field exists.
 Quiet reloads have synthetic tests but no demo-backed validation.
 
-## Game events
+<a id="game-events"></a>
+
+## List common CS2 game events in Awpy
 
 Use `demo.events.names` and `demo.events.counts` to inspect a demo.
 Use `demo.events[name]` to read an event DataFrame.
@@ -99,7 +110,9 @@ This catalog is also available as `awpy.GAME_EVENTS`.
 | `decoy_started` / `decoy_detonate` | Decoy start / finish. |
 | `inferno_startburn` / `inferno_expire` | Molotov / incendiary fire starts / burns out. |
 
-## Definitions
+<a id="definitions"></a>
+
+## Read Awpy metric definitions
 
 How the reconstructed and aggregated numbers are computed.
 
@@ -143,7 +156,7 @@ Knife rounds are excluded.
 ### Player stats (`stats`)
 
 One row per player, over the match. Knife rounds are excluded by default (pass
-`include_knife_rounds=True` to {meth}`Demo.player_stats` to keep them). Every
+`include_knife_rounds=True` to {meth}`awpy.Demo.player_stats` to keep them). Every
 player is treated as having played every round, so KAST / ADR denominators are the
 match's round count and players who join or leave mid-match are approximate.
 
@@ -178,7 +191,7 @@ with at least one living opponent.
 
 - **`clutches_played`** — how many such situations the player was in.
 - **`clutches_won`** — how many of those rounds their side went on to win.
-- **`clutch_1v1` … `clutch_1v5`** — clutches **won**, bucketed by how many
+- **`clutch_1v1` … `clutch_1v5`** — clutches **won**, grouped by how many
   opponents were alive at the moment the player was left alone. Losses are counted
   in `clutches_played` only, so `clutch_1v1 + … + clutch_1v5 == clutches_won`.
 
@@ -191,7 +204,7 @@ Alive / dead state is reconstructed from the event datasets rather than from
 per-tick entity state, so each side's roster for a round is inferred from who
 appears in that round's events — carried across rounds a player was quiet in, and
 re-derived after each side swap. Players who join or leave mid-match are covered
-only for the rounds they actually appear in.
+only for the rounds in which they appear.
 
 #### Utility
 

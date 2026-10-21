@@ -1,5 +1,14 @@
 # Map control
 
+```python
+from awpy import Demo
+from awpy.map_control import map_control
+
+demo = Demo("match.dem")
+control = map_control(demo, method="raycast", seconds=1.0)
+print(control)
+```
+
 Map control labels each {doc}`nav area <nav>` as `"ct"`, `"t"`,
 `"contested"` (both sides), or `"neutral"` (neither side).
 Summary fractions are weighted by area size. `net_control = ct - t`.
@@ -29,10 +38,13 @@ Walls and smokes can block areas within the cone.
 Team results combine the visible areas of all eligible players.
 ```
 
-## Time series: `map_control`
+<a id="time-series-map_control"></a>
+<a id="time-series-map-control"></a>
+
+## Calculate Awpy map control over time
 
 Returns one summary row per selected tick.
-Use {meth}`Demo.snapshots` selectors. Prefer `seconds=1` or event ticks
+Use {meth}`awpy.Demo.snapshots` selectors. Prefer `seconds=1` or event ticks
 to reduce computation.
 
 ```python
@@ -51,9 +63,12 @@ ts = mc.map_control(demo, method="raycast", seconds=1)
 ```
 
 `ct` / `t` / `contested` / `neutral` are the size-weighted fraction of the map in
-each bucket (they sum to 1); `net_control = ct - t`.
+each category (they sum to 1); `net_control = ct - t`.
 
-## Per area: `map_control_at`
+<a id="per-area-map_control_at"></a>
+<a id="per-area-map-control-at"></a>
+
+## Calculate Awpy control for each navigation area
 
 Returns one row per nav area at one tick, for analysis or {func}`awpy.plot.map_control`.
 
@@ -66,9 +81,12 @@ areas = mc.map_control_at(demo, tick=29000, method="reachability")
 or contested). The `centroid_*` / `size` come from the nav mesh so you can weight
 or place each area without a second lookup.
 
-## Visualizing: plot.map_control
+<a id="visualizing-plotmap_control"></a>
+<a id="visualizing-plot-map-control"></a>
 
-Shade the map by who controls each area, with players and the shaping occluders
+## Plot CS2 map control with Awpy and matplotlib
+
+Shade the map by who controls each area, with players and the active smokes or fires
 (smokes for vision, molotovs for reachability) overlaid:
 
 ```python
@@ -112,7 +130,9 @@ from both sides.
 Use raycast for possible sightlines, vision for view-direction limits,
 and reachability for travel distance.
 
-## Tuning: `MapControlParams`
+<a id="tuning-mapcontrolparams"></a>
+
+## Set Awpy map-control parameters
 
 Pass `params=MapControlParams(...)` to change the defaults.
 "Line of sight" below means both `raycast` and `vision`.
@@ -137,7 +157,10 @@ ts = mc.map_control(demo, method="vision", seconds=1, params=params)
 | `fire_radius` | `150.0` | reachability | Blocked ground radius around a fire. |
 | `flash_threshold` | `1.0` | line of sight | A currently flashing player projects no vision when the replicated onset duration exceeds this value. This filters short partial flashes. |
 
-## Notes & limitations
+<a id="notes--limitations"></a>
+<a id="notes-limitations"></a>
+
+## Understand Awpy map-control limits
 
 - Each side's visible area set in `vision` is a subset of its `raycast` set.
   Exclusive `ct` and `t` fractions need not decrease: a contested area can

@@ -1,24 +1,32 @@
 # awpy
 
-Core library for parsing **Counter-Strike 2** demo (`.dem`) files.
-
 ```rust
 use std::path::Path;
 use awpy::Parser;
 
-let parser = Parser::from_file(Path::new("match.dem"))?;
-let header = parser.file_header()?;
-println!("map: {:?}", header.map_name);
-# Ok::<(), awpy::Error>(())
+fn main() -> awpy::Result<()> {
+    let parser = Parser::from_file(Path::new("match.dem"))?;
+    let header = parser.file_header()?;
+    println!("map: {:?}", header.map_name);
+    Ok(())
+}
 ```
 
-## What it does
+Core library for parsing **Counter-Strike 2** demo (`.dem`) files.
+
+
+
+<a id="what-it-does"></a>
+
+## Read CS2 data with the Awpy Rust crate
 
 - Uses [pbdems2](https://docs.rs/pbdems2/latest/pbdems2/) for shared Source 2 decoding.
 - Adds CS2 field decoders, datasets, and name tables.
 - Returns game events and per-tick entity state.
 
-## Entry points
+<a id="entry-points"></a>
+
+## Select Awpy Rust parser methods
 
 - [`Parser::file_header`] / [`Parser::file_info`] — metadata.
 - [`Parser::messages`] — enumerate the command stream.

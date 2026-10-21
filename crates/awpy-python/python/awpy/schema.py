@@ -1,12 +1,10 @@
-"""Reference tables for what a demo exposes.
+"""List Awpy snapshot properties and common Counter-Strike 2 game events.
 
-Two lookups, so you can discover what to ask for without parsing first:
+``SNAPSHOT_PROPERTIES`` maps player snapshot columns to CS2 network fields or
+calculations. ``GAME_EVENTS`` describes common event names.
 
-- :data:`SNAPSHOT_PROPERTIES` — the per-player features returned by
-  :meth:`Demo.snapshots`, each mapped to the CS2 network property (or derivation)
-  it comes from.
-- :data:`GAME_EVENTS` — common CS2 game events and what they mean. The actual
-  events in a given demo are ``demo.events.names`` (and ``demo.events.counts``).
+These catalogs do not parse a replay. Use ``demo.events.names`` and
+``demo.events.counts`` to inspect the events recorded in one demo.
 """
 
 from __future__ import annotations
@@ -62,10 +60,10 @@ SNAPSHOT_PROPERTIES: dict[str, str] = {
 }
 """Per-player snapshot feature name -> the CS2 network property it is read from.
 
-Every key is a column of :meth:`Demo.snapshots` (besides ``tick``), and the value
+Every key is a column of :meth:`awpy.Demo.snapshots` (besides ``tick``), and the value
 is the engine property — or the derivation, for computed ones like world
 position. The direct fields (``health``, ``money``, the ``is_*`` flags, ...) can
-also be passed to :meth:`Demo.ticks`, either by these readable names or by their
+also be passed to :meth:`awpy.Demo.ticks`, either by these readable names or by their
 raw network names.
 """
 

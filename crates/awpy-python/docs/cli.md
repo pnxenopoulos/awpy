@@ -1,13 +1,17 @@
 # Command-line tool
 
-Install the package to use `awpy` or `python -m awpy`:
-
 ```sh
 pip install awpy
 awpy --help
 ```
 
-## Demo inspection
+Install the package to use `awpy` or `python -m awpy`:
+
+
+
+<a id="demo-inspection"></a>
+
+## Inspect CS2 demos with the Awpy CLI
 
 Each inspection command takes a demo path and accepts `--json`.
 Dataset commands other than `stats` also accept `--limit N`.
@@ -38,7 +42,9 @@ awpy stats match.dem
 
 Dataset commands print Polars tables. With `--json`, they return row arrays.
 
-## Map-data cache
+<a id="map-data-cache"></a>
+
+## Manage awpy-data with the Awpy CLI
 
 The same command manages the [`awpy-data`](https://github.com/pnxenopoulos/awpy-data)
 asset cache under `~/.awpy` (see [Visibility & map data](visibility.md)):
@@ -51,7 +57,9 @@ awpy maps            # maps available in a release
 awpy clear 2000873   # delete one cached release (--all for everything)
 ```
 
-## Parser internals: `awpy-dev`
+<a id="parser-internals-awpy-dev"></a>
+
+## Inspect Source 2 internals with awpy-dev
 
 Use `awpy-dev` to inspect parser internals:
 

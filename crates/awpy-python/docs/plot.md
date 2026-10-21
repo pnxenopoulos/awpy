@@ -1,5 +1,14 @@
 # Plotting
 
+```python
+from awpy import Demo, plot
+
+demo = Demo("match.dem")
+deaths = demo.kills.select("victim_x", "victim_y", "victim_z").rows()
+fig, ax = plot.heatmap(demo.header["map_name"], deaths, method="kde")
+fig.savefig("deaths.png")
+```
+
 Use `awpy.plot` to draw demo data on radar images.
 Install the plotting dependencies:
 
@@ -10,7 +19,9 @@ pip install 'awpy[plot]'
 Functions take a map name and an optional `version=`.
 Assets use the newest cached release, or the latest release if none is cached.
 
-## Game state: `frame`
+<a id="game-state-frame"></a>
+
+## Plot CS2 player state with Awpy frame
 
 Use `plot.Player` for each player. Only `x` and `y` are required:
 
@@ -55,19 +66,22 @@ fig, ax = plot.frame(demo.header["map_name"], players)
 Inferno player markers with names, view directions, health, and armor.
 ```
 
-## Heatmaps: `heatmap`
+<a id="heatmaps-heatmap"></a>
+
+## Plot CS2 position density with Awpy heatmap
 
 Pass world `(x, y)` or `(x, y, z)` rows:
 
 ```python
 from awpy import Demo, plot
 
-kills = Demo("match.dem").kills
-deaths = kills.select(["victim_x", "victim_y", "victim_z"]).rows()
+demo = Demo("match.dem")
+map_name = demo.header["map_name"]
+deaths = demo.kills.select(["victim_x", "victim_y", "victim_z"]).rows()
 
-fig, ax = plot.heatmap("de_inferno", deaths, method="kde")
-fig, ax = plot.heatmap("de_inferno", deaths, method="hex", bins=36)
-fig, ax = plot.heatmap("de_inferno", deaths, method="hist", bins=64, cmap="viridis")
+fig, ax = plot.heatmap(map_name, deaths, method="kde")
+fig, ax = plot.heatmap(map_name, deaths, method="hex", bins=36)
+fig, ax = plot.heatmap(map_name, deaths, method="hist", bins=64, cmap="viridis")
 ```
 
 `method` is `"hex"` (hexagonal binning), `"hist"` (square binning), or
@@ -83,10 +97,13 @@ radar shows through.
 Death locations from one match, drawn with `method="kde"`.
 ```
 
-## Map control: `map_control`
+<a id="map-control-map_control"></a>
+<a id="map-control-map-control"></a>
+
+## Draw CS2 map control with Awpy
 
 Shade the map by which side controls each area at one tick, players and the
-shaping occluders overlaid:
+active smokes or fires overlaid:
 
 ```python
 from awpy import Demo, plot
@@ -114,7 +131,9 @@ mean.
 all three models — the raycast, vision, and reachability pictures differ a lot.
 ```
 
-## Multi-level maps
+<a id="multi-level-maps"></a>
+
+## Plot CS2 map levels with Awpy
 
 Nuke, Vertigo, Train, and Baggage have two radar images. Pass `lower=True` to
 draw the lower level; points are matched to their level by altitude, using
@@ -132,7 +151,7 @@ game state spans both levels, use the `_levels` variants — one panel per level
 each point at full opacity on its level:
 
 ```python
-fig, (upper, lower) = plot.frame_levels("de_nuke", players, bomb=bomb)
+fig, (upper, lower) = plot.frame_levels("de_nuke", players, bomb=(200, 480, -600))
 fig, axes = plot.heatmap_levels("de_nuke", deaths, method="kde")
 ```
 
@@ -154,7 +173,9 @@ Altitude determines each player's panel.
 `heatmap_levels` groups points by level.
 ```
 
-## Animation: `gif`
+<a id="animation-gif"></a>
+
+## Create CS2 replay GIFs with Awpy
 
 Render a sequence of frames to an animated GIF — each entry is a list of
 players, or a dict of `frame` keyword arguments:
@@ -171,7 +192,9 @@ plot.gif(
 )
 ```
 
-## Navigation meshes: `nav`
+<a id="navigation-meshes-nav"></a>
+
+## Draw CS2 navigation routes with Awpy
 
 Draw nav areas and highlight selected area IDs:
 
@@ -196,16 +219,17 @@ Areas are filtered to the level being drawn, so a multi-level map needs one call
 per level (`lower=True`). `edge=False` drops the outlines for a flatter fill, and
 `legend=False` removes the area count.
 
-## Building blocks
+<a id="building-blocks"></a>
+
+## Combine Awpy plots with matplotlib axes
 
 `radar` draws the bare map and returns `(fig, ax)`; every other function
-accepts `ax=` so you can layer plots — e.g. a heatmap under a frame, or your
-own matplotlib artists on top. Positions are drawn in **radar pixel
+accepts `ax=` so you can layer plots — a heatmap below player markers, or additional matplotlib artists. Positions are drawn in **radar pixel
 coordinates**, and the transforms are public:
 
 ```python
 fig, ax = plot.radar("de_inferno", version=2000873)
-plot.heatmap("de_inferno", deaths, method="kde", ax=ax)
+plot.heatmap(map_name, deaths, method="kde", ax=ax)
 plot.frame("de_inferno", players, ax=ax)
 
 px, py = plot.world_to_pixel("de_inferno", (1258.0, 455.5))

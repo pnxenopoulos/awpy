@@ -1,11 +1,5 @@
 # Visibility & map data
 
-Use map collision geometry to check whether a straight segment is blocked.
-[awpy-data](https://github.com/pnxenopoulos/awpy-data) supplies collision meshes,
-nav meshes, radar images, and coordinate tables by game `ClientVersion`.
-
-## `VisibilityChecker`
-
 ```python
 from awpy import VisibilityChecker
 
@@ -16,6 +10,16 @@ b = (-158.62, 819.09, 103.73)
 vc.is_visible(a, b)             # -> True  (clear line)
 vc.is_visible((1398.43, 705.44, 192.33), b)  # -> False (a wall is in the way)
 ```
+
+Use map collision geometry to check whether a straight segment is blocked.
+[awpy-data](https://github.com/pnxenopoulos/awpy-data) supplies collision meshes,
+nav meshes, radar images, and coordinate tables by game `ClientVersion`.
+
+<a id="visibilitychecker"></a>
+
+## Check CS2 line of sight with Awpy VisibilityChecker
+
+
 
 The constructor takes a map name or a mesh file:
 
@@ -53,7 +57,10 @@ victim = (row["victim_x"], row["victim_y"], row["victim_z"])
 had_los = vc.is_visible(attacker, victim)
 ```
 
-## Fetching assets: awpy.data
+<a id="fetching-assets-awpydata"></a>
+<a id="fetching-assets-awpy-data"></a>
+
+## Download and cache CS2 assets with awpy.data
 
 `awpy.data` downloads assets on demand and caches them under
 `$HOME/.awpy/<version>/` (override the root with the `AWPY_DATA_DIR`
@@ -105,7 +112,9 @@ data.clear(2000873)   # delete one release's cache
 data.clear()          # delete the whole cache
 ```
 
-## Command line: `awpy get`
+<a id="command-line-awpy-get"></a>
+
+## Manage Awpy map assets from the command line
 
 The [`awpy` command](cli.md) also manages the asset cache:
 

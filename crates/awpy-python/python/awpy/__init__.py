@@ -1,4 +1,8 @@
-"""Awpy — a Counter-Strike 2 demo parser with a Rust backend."""
+"""Parse Counter-Strike 2 demos with Rust and query typed Polars DataFrames.
+
+Use Polars for filters, joins, and Apache Parquet output.
+Use the optional ``awpy.plot`` module for matplotlib radar plots and GIFs.
+"""
 
 from importlib.metadata import PackageNotFoundError, version
 

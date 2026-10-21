@@ -11,7 +11,7 @@ state, and playback and seeking. The game adapters supply their own protobufs,
 field decoders, name tables, and higher-level datasets.
 
 Its [PBDEMS2 format guide](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html)
-is the canonical reference for these shared internals. It includes focused
+documents these shared internals. It includes
 chapters on [file structure](https://docs.rs/pbdems2/latest/pbdems2/guide/file_structure/index.html),
 [packet messages](https://docs.rs/pbdems2/latest/pbdems2/guide/packet_messages/index.html),
 [flattened serializers](https://docs.rs/pbdems2/latest/pbdems2/guide/serializers/index.html),

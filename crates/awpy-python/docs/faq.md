@@ -1,5 +1,13 @@
 # FAQ
 
+```python
+from awpy import Demo
+
+demo = Demo("match.dem")
+print(demo.header)
+print(demo.players)
+```
+
 ## Which games does Awpy support?
 
 Awpy reads Counter-Strike 2 demos in the [PBDEMS2 format](https://docs.rs/pbdems2/latest/pbdems2/guide/file_structure/index.html).

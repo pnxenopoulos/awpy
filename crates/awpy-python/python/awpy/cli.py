@@ -36,6 +36,11 @@ ReleaseArg = Annotated[int | None, typer.Argument(help="Release ClientVersion, e
 
 
 def _version_callback(value: bool) -> None:
+    """Print the Awpy version when requested.
+
+    Args:
+        value: Whether the eager version option was selected.
+    """
     if value:
         typer.echo(f"awpy {__version__}")
         raise typer.Exit()
@@ -53,10 +58,22 @@ def _root(
         ),
     ] = False,
 ) -> None:
-    """Awpy — parse CS2 demos and manage map-data assets from the command line."""
+    """Parse CS2 demos and manage map assets with the Awpy CLI.
+
+    Args:
+        version: Show the package version and exit.
+    """
 
 
 def _load(file: Path) -> Demo:
+    """Open a CS2 demo for CLI inspection.
+
+    Args:
+        file: Path to a CS2 demo.
+
+    Returns:
+        The opened ``Demo``.
+    """
     try:
         return Demo(file)
     except InvalidDemoError as exc:
@@ -65,7 +82,13 @@ def _load(file: Path) -> Demo:
 
 
 def _emit_df(df: pl.DataFrame, *, limit: int | None = None, as_json: bool = False) -> None:
-    """Print a DataFrame as JSON rows or a full-width terminal table."""
+    """Print Polars rows as JSON or a terminal table.
+
+    Args:
+        df: Polars DataFrame to print.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     if limit is not None:
         df = df.head(limit)
     if as_json:
@@ -81,7 +104,12 @@ def _emit_df(df: pl.DataFrame, *, limit: int | None = None, as_json: bool = Fals
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def verify(file: DemoArg, as_json: JsonOpt = False) -> None:
-    """Check that a file parses as a valid CS2 demo (magic bytes + header)."""
+    """Check the CS2 demo header and file signature.
+
+    Args:
+        file: Path to a CS2 demo.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     try:
         _ = Demo(file).header  # parsing the header is the validity check
         payload = {"valid": True, "file": str(file)}
@@ -100,7 +128,12 @@ def verify(file: DemoArg, as_json: JsonOpt = False) -> None:
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def info(file: DemoArg, as_json: JsonOpt = False) -> None:
-    """Print the demo file header and playback info."""
+    """Print CS2 demo header and playback metadata.
+
+    Args:
+        file: Path to a CS2 demo.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     header = _load(file).header
     if as_json:
         typer.echo(json.dumps(header, indent=2))
@@ -121,7 +154,15 @@ def events(
     limit: LimitOpt = None,
     as_json: JsonOpt = False,
 ) -> None:
-    """List the demo's event names, dump one event, or show counts (--summary)."""
+    """List CS2 game events, counts, or rows for one event.
+
+    Args:
+        file: Path to a CS2 demo.
+        name: Game-event name, or ``None`` to list names.
+        summary: Print event counts instead of event rows.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     events_ = _load(file).events
     if name is not None:
         if name not in events_:
@@ -149,67 +190,132 @@ def events(
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def rounds(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """Per-round table: start/freeze-end/end ticks, winner, and end reason."""
+    """Print CS2 round timings, winners, and end reasons.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).rounds, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def kills(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """List kills (from player_death events) with all fields."""
+    """Print CS2 kills with resolved participants.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).kills, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def damage(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """List damage instances (from player_hurt events) with all fields."""
+    """Print CS2 damage events with resolved participants.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).damages, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def bomb(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """List bomb actions (pickup / drop / plant / defuse) with site."""
+    """Print CS2 bomb actions and sites.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).bomb, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def shots(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """List shots fired (from weapon_fire events) with shooter/weapon state."""
+    """Print CS2 shots with player and weapon state.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).shots, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def grenades(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """Summarize thrown-grenade trajectories."""
+    """Print thrown CS2 grenade trajectories.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).grenades, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def fires(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """Summarize burning infernos (molotov / incendiary areas)."""
+    """Print CS2 fire intervals.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).fires, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def smokes(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """Summarize deployed smoke clouds."""
+    """Print CS2 smoke intervals.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).smokes, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def blinds(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """List flash events: who was blinded, by whom, and for how long."""
+    """Print CS2 flash victims, throwers, and durations.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).blinds, limit=limit, as_json=as_json)
 
 
 @app.command(name="item-events", rich_help_panel=_DEMO_PANEL)
 def item_events(file: DemoArg, limit: LimitOpt = None, as_json: JsonOpt = False) -> None:
-    """List weapon-item transactions: purchases, pickups, and drops."""
+    """Print CS2 item purchases, pickups, and drops.
+
+    Args:
+        file: Path to a CS2 demo.
+        limit: Maximum output rows, or ``None`` for all rows.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).item_events, limit=limit, as_json=as_json)
 
 
 @app.command(rich_help_panel=_DEMO_PANEL)
 def stats(file: DemoArg, as_json: JsonOpt = False) -> None:
-    """Per-player scoreboard: kills, KAST, ADR, openings, trades, and more."""
+    """Print CS2 player statistics.
+
+    Args:
+        file: Path to a CS2 demo.
+        as_json: Write JSON rows instead of a terminal table.
+    """
     _emit_df(_load(file).stats, as_json=as_json)
 
 
@@ -223,7 +329,12 @@ def get(
         bool, typer.Option("--force", help="Re-download even if already cached.")
     ] = False,
 ) -> None:
-    """Download a release of the awpy-data map assets (default: the latest)."""
+    """Download an awpy-data release.
+
+    Args:
+        release: awpy-data ClientVersion, or ``None`` for the command default.
+        force: Download the selected release again.
+    """
     path = data.update(release, force=force)
     maps_list = json.loads((path / "manifest.json").read_text()).get("maps", [])
     typer.echo(f"{data.DATA_REPO} {path.name}: {len(maps_list)} maps in {path}")
@@ -231,7 +342,7 @@ def get(
 
 @app.command(rich_help_panel=_DATA_PANEL)
 def versions() -> None:
-    """List cached awpy-data releases, and whether a newer one exists."""
+    """List cached awpy-data versions and check for an update."""
     local = data.local_versions()
     try:
         latest = data.latest_version()
@@ -249,7 +360,11 @@ def versions() -> None:
 
 @app.command(rich_help_panel=_DATA_PANEL)
 def maps(release: ReleaseArg = None) -> None:
-    """List maps available in an awpy-data release (default: newest cached)."""
+    """List maps in an awpy-data release.
+
+    Args:
+        release: awpy-data ClientVersion, or ``None`` for the command default.
+    """
     for map_name in data.available_maps(release):
         typer.echo(map_name)
 
@@ -259,7 +374,12 @@ def clear(
     release: ReleaseArg = None,
     delete_all: Annotated[bool, typer.Option("--all", help="Delete the whole cache.")] = False,
 ) -> None:
-    """Delete one cached awpy-data release, or the whole cache with --all."""
+    """Delete one awpy-data release or the complete cache.
+
+    Args:
+        release: awpy-data ClientVersion, or ``None`` for the command default.
+        delete_all: Delete the entire cache instead of one release.
+    """
     if release is None and not delete_all:
         raise typer.BadParameter("specify a release to clear, or --all for the whole cache")
     data.clear(None if delete_all else release)
@@ -267,7 +387,7 @@ def clear(
 
 
 def main() -> None:
-    """Entry point for the ``awpy`` console script."""
+    """Run the Awpy console application."""
     app()
 
 

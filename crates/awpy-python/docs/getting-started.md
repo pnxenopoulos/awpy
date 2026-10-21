@@ -1,261 +1,202 @@
-# Getting started
-
-Open a demo, read datasets, and plot player state.
-
-## Install
-
-Awpy requires Python 3.11 or later and Polars 2.x.
-Wheels support Python 3.11–3.15 on Linux, macOS, and Windows.
-Installing a wheel does not require a Rust compiler.
-
-```sh
-uv add awpy          # or: pip install awpy
-uv add 'awpy[plot]'  # + matplotlib, for the plotting module
-```
-
-## Get a demo
-
-Demos are `.dem` files recorded by the game server. Common sources:
-
-- **Your own matches** — CS2 downloads them under *Watch → Your Matches*, into
-  `.../Counter-Strike Global Offensive/game/csgo/replays/`.
-- **Pro matches** — HLTV match pages ship GOTV demos for most tier-1 events.
-- **Third-party platforms** — FACEIT and other platforms offer demo downloads
-  on the match room page.
-
-Awpy parses CS2 (Source 2,
-[`PBDEMS2`](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html)) demos. The
-older CS:GO format is not supported.
-
-## Open a demo
+# Get started with Awpy
 
 ```python
 from awpy import Demo
 
 demo = Demo("match.dem")
+demo.load("kills", "damages", "shots")
+print(demo.header["map_name"])
+print(demo.stats.select("name", "kills", "deaths", "assists", "adr", "kast"))
+print(demo.snapshots(seconds=1.0))
 ```
 
-Single-file construction maps the file and checks its header. It can raise
-`FileNotFoundError` or `InvalidDemoError`. Later decoding can also fail
-if the demo is incomplete or corrupt.
+Awpy reads Counter-Strike 2 (CS2) Source 2 `.dem` recordings.
+Its Rust parser returns Polars DataFrames through the Python API.
+Replace `match.dem` with a local replay. The older CS:GO format is not supported.
 
-The header contains map, server, and playback data:
+<a id="install"></a>
 
-```python
-demo.header["map_name"]        # "de_ancient"
-demo.header["playback_time"]   # 2915.94 (seconds)
-demo.header["playback_ticks"]  # 186620  -> 64 ticks per second
+## Install Awpy and its plotting extra
+
+```bash
+uv add awpy
+uv add 'awpy[plot]'  # Optional matplotlib plots.
+# Or: pip install 'awpy[plot]'
 ```
 
-## The datasets
+Use Python 3.11 or later and Polars 2.x. Wheels support Python 3.11–3.15 on
+Linux, macOS, and Windows. A wheel installation does not need Rust.
 
-Dataset properties return cached [Polars](https://pola.rs) DataFrames:
+<a id="get-a-demo"></a>
+
+## Get a CS2 demo for Awpy
+
+Download recordings from the CS2 match history, a tournament match page, or
+your match platform. CS2 stores downloaded recordings in
+`Counter-Strike Global Offensive/game/csgo/replays/`.
+
+<a id="open-a-demo"></a>
+
+## Open CS2 files with Awpy Demo
 
 ```python
-demo.rounds     # one row per round: ticks, winner, reason
-demo.kills      # every player_death, participants fully resolved
-demo.damages    # every player_hurt, health/armor before + after
-demo.bomb       # plants, defuses, drops, pickups
-demo.shots      # every weapon_fire, with shooter/weapon state
-demo.grenades   # grenade trajectories, tick by tick
-demo.stats      # per-player scoreboard: KAST, ADR, openings, trades
+from pathlib import Path
+from awpy import Demo
+
+demo = Demo(Path("match.dem"))
+print(demo.header)
+print(demo.tick_rate)
 ```
 
-Count round wins by side:
+Single-file construction maps the file and checks its header. A missing file
+raises `FileNotFoundError`. Invalid data raises `InvalidDemoError`.
+Later decoding can also fail for an incomplete or corrupt recording.
+
+<a id="the-datasets"></a>
+
+## Read Awpy datasets with Polars
 
 ```python
-demo.rounds.group_by("winner_side").len()
-# ┌───────────────────┬─────┐
-# │ winner_side       ┆ len │
-# ╞═══════════════════╪═════╡
-# │ counter-terrorist ┆ 21  │
-# │ terrorist         ┆ 3   │
-# └───────────────────┴─────┘
+import polars as pl
+from awpy import Demo
+
+demo = Demo("match.dem")
+demo.load("kills", "damages", "shots")
+headshots = demo.kills.filter(pl.col("headshot"))
+print(headshots.group_by("attacker_name").len().sort("len", descending=True))
+print(demo.rounds.select("round_num", "winner_side", "reason_name"))
+print(demo.stats.sort("adr", descending=True))
 ```
 
-Count kills and calculate the headshot fraction:
+Dataset properties cache their DataFrames. `load()` combines compatible requests
+and skips cached inputs. Use {doc}`datasets` for columns and {doc}`reference`
+for ADR, KAST, trades, and other metric definitions.
+
+<a id="players-chat-and-server-settings"></a>
+
+## Read Awpy players, chat, and server settings
 
 ```python
-demo.kills.group_by("attacker_name").len().sort("len", descending=True).head(3)
-# ┌───────────────┬─────┐
-# │ attacker_name ┆ len │
-# ╞═══════════════╪═════╡
-# │ blameF        ┆ 23  │
-# │ npl           ┆ 21  │
-# │ s1zzi         ┆ 20  │
-# └───────────────┴─────┘
+from awpy import Demo
 
-demo.kills["headshot"].mean()   # 0.446 — 44.6% of kills were headshots
+demo = Demo("match.dem")
+print(demo.players)
+print(demo.chat)
+print(demo.convars.get("mp_maxrounds"))
 ```
 
-Read player statistics, including KAST and ADR:
+Join players by `steamid`. Keep Steam IDs as Polars `UInt64` values.
+The roster's `side` is the last observed side; sides change at halftime.
+`team_clan_name` records the team name when the server supplies it.
+Chat can be empty when the replay contains no supported messages.
+
+<a id="any-game-event"></a>
+
+## Read raw CS2 game events with Awpy
 
 ```python
-demo.stats.sort("adr", descending=True).select("name", "kills", "deaths", "kast", "adr").head(3)
-# ┌────────┬───────┬────────┬───────┬────────┐
-# │ name   ┆ kills ┆ deaths ┆ kast  ┆ adr    │
-# ╞════════╪═══════╪════════╪═══════╪════════╡
-# │ npl    ┆ 19    ┆ 19     ┆ 70.83 ┆ 98.13  │
-# │ blameF ┆ 23    ┆ 13     ┆ 87.5  ┆ 97.75  │
-# │ JDC    ┆ 19    ┆ 16     ┆ 75.0  ┆ 90.5   │
-# └────────┴───────┴────────┴───────┴────────┘
+from awpy import Demo
+
+demo = Demo("match.dem")
+print(demo.events.names)
+print(demo.events.counts)
+print(demo.events["player_death"])
 ```
 
-Use `demo.load("kills", "damages", "shots")` to combine compatible requests.
-See {doc}`datasets` for columns.
+Raw event frames have a `tick` column and string columns for event fields.
+Fields such as `attacker` contain user IDs. Use the dedicated `kills` and
+`damages` tables for resolved Steam IDs and positions.
 
-## Players, chat, and server settings
+<a id="game-state-at-any-moment"></a>
+
+## Select Awpy player snapshots and entity properties
 
 ```python
-demo.players
-# ┌───────────────────┬──────────┬───────────┐
-# │ steamid           ┆ name     ┆ side      │
-# ╞═══════════════════╪══════════╪═══════════╡
-# │ 0                 ┆ PWA CSTV ┆ null      │   <- the GOTV bot
-# │ 76561198370176682 ┆ gr1ks    ┆ terrorist │
-# │ 76561198118196092 ┆ faveN    ┆ terrorist │
-# │ ...               ┆ ...      ┆ ...       │
-# └───────────────────┴──────────┴───────────┘
+from awpy import Demo
 
-demo.chat                     # recorded chat; can be empty
-
-demo.convars["mp_maxrounds"]    # "24"
-demo.convars["mp_freezetime"]   # "20"
+demo = Demo("match.dem")
+state = demo.snapshots(seconds=1.0)
+kill_ticks = demo.snapshots(events="player_death")
+properties = demo.ticks(["health", "m_iTeamNum"])
+print(state.select("tick", "steamid", "health", "inventory"))
 ```
 
-`players.side` is the last observed side. It is not a team identity.
+Use `ticks=10000` for one demo tick, or `ticks=[10000, 10100]` for several.
+Use `start_tick` and `end_tick` for an inclusive window.
+`ticks()` reads selected properties at every recorded tick.
+These two methods run for each call; retain their results for reuse.
 
-## Any game event
+<a id="maps-line-of-sight-and-radar-assets"></a>
 
-Use `demo.events` to read game events by name:
+## Check CS2 lines of sight with Awpy
 
 ```python
-demo.events.names               # every event in this demo (40 kinds here)
-demo.events.counts              # {"player_death": 166, "weapon_fire": 3954, ...}
+from awpy import NavMesh, VisibilityChecker
 
-demo.events.flashbang_detonate  # one event as a DataFrame (133 rows here)
-demo.events["player_ping"]      # same thing, by key
+start = (-158.6, 819.1, 103.7)
+end = (1258.0, 455.5, 181.2)
+checker = VisibilityChecker("de_inferno")
+nav = NavMesh("de_inferno")
+print(checker.is_visible(start, end))
+print(nav.find_path(start, end))
 ```
 
-Event frames contain `tick` and string columns for event keys.
-Fields such as `attacker` contain user IDs, not Steam IDs.
-Use `demo.kills` or `demo.damages` for resolved participants.
+Positions use Hammer units, with Z vertical. Map names resolve through
+[awpy-data](https://github.com/pnxenopoulos/awpy-data).
+Missing assets download to `~/.awpy`. Set `version=` to select a game release.
+The visibility check uses static collision geometry. See {doc}`visibility` and {doc}`nav`.
 
-## Game state at any moment
+<a id="draw-it"></a>
 
-Use `snapshots` to read player state at selected ticks:
-
-```python
-freeze_end = demo.rounds.row(4, named=True)["freeze_end_tick"]
-
-demo.snapshots(ticks=freeze_end + 640)   # 10 seconds into round 5
-# ┌────────┬───────────────────┬────────┬──────────┬─────────┬────────┬─────────┐
-# │ name   ┆ side              ┆ health ┆ x        ┆ y       ┆ z      ┆ yaw     │
-# ╞════════╪═══════════════════╪════════╪══════════╪═════════╪════════╪═════════╡
-# │ JDC    ┆ counter-terrorist ┆ 100    ┆ -967.71  ┆ -147.31 ┆ 92.32  ┆ -36.08  │
-# │ faveN  ┆ counter-terrorist ┆ 100    ┆ 1072.47  ┆ 782.02  ┆ 167.17 ┆ -88.98  │
-# │ ...    ┆ ...               ┆ ...    ┆ ...      ┆ ...     ┆ ...    ┆ ...     │
-# └────────┴───────────────────┴────────┴──────────┴─────────┴────────┴─────────┘
-
-demo.snapshots(start_tick=freeze_end, end_tick=freeze_end + 640)   # every tick of those 10 seconds
-```
-
-Use `ticks` for other networked properties. It returns one row per player per tick:
+## Plot CS2 death positions with Awpy and matplotlib
 
 ```python
-demo.ticks()                              # default: X, Y, Z, health, armor, team_num
-demo.ticks(["health", "m_iTeamNum"])
-# columns: tick, steamid, health, m_iTeamNum
-```
+from awpy import Demo, plot
 
-Names accept friendly aliases (`X`/`Y`/`Z` for computed position, `health`,
-`armor`, `team_num`, `name`, `money`) or raw CS2 field names.
-
-## Maps: line-of-sight and radar assets
-
-Positions use Hammer units, with Z as the vertical axis.
-Awpy downloads missing map assets from [awpy-data](https://github.com/pnxenopoulos/awpy-data)
-and caches them under `~/.awpy`:
-
-```python
-from awpy import VisibilityChecker
-
-vc = VisibilityChecker(demo.header["map_name"])   # downloads the mesh if needed
-
-kill = demo.kills.row(0, named=True)
-vc.is_visible(
-    (kill["attacker_x"], kill["attacker_y"], kill["attacker_z"]),
-    (kill["victim_x"], kill["victim_y"], kill["victim_z"]),
-)  # True if the static collision mesh does not block this segment
-```
-
-Pin a game version with `version=` (an integer ClientVersion like `2000873`),
-or manage the cache from the shell: `awpy get`, `awpy versions`, `awpy clear`.
-See {doc}`visibility`.
-
-## Draw it
-
-With the `awpy[plot]` extra, `awpy.plot` renders game states and heatmaps on
-the map's radar image. Death locations for the whole match:
-
-```python
-from awpy import plot
-
-deaths = demo.kills.select(["victim_x", "victim_y", "victim_z"]).rows()
+demo = Demo("match.dem")
+deaths = demo.kills.select("victim_x", "victim_y", "victim_z").rows()
 fig, ax = plot.heatmap(demo.header["map_name"], deaths, method="kde")
 fig.savefig("deaths.png")
 ```
 
-Plot a snapshot:
+Install the `awpy[plot]` extra first. See {doc}`plot` for player markers,
+map levels, navigation areas, and animated GIFs.
+Use {doc}`map_control` for area-control estimates.
 
-```python
-snap = demo.snapshots(ticks=freeze_end + 640)
-players = [
-    plot.Player(x=r["x"], y=r["y"], z=r["z"], yaw=r["yaw"], hp=r["health"],
-                armor=r["armor"], side=r["side"], label=r["name"])
-    for r in snap.iter_rows(named=True)
-]
-fig, ax = plot.frame(demo.header["map_name"], players)
-fig.savefig("round5.png")
+<a id="the-command-line"></a>
+
+## Inspect CS2 demos with the Awpy CLI
+
+```bash
+awpy info match.dem
+awpy stats match.dem
+awpy events match.dem --summary
+awpy rounds match.dem --json
+awpy get
 ```
 
-Multi-level maps, animated GIFs, and layered plots are covered in {doc}`plot`.
+The Python package installs `awpy` and `python -m awpy`. See {doc}`cli`.
 
-## The command line
+<a id="multipart-recordings"></a>
 
-The package also installs the `awpy` command:
-
-```sh
-awpy info match.dem              # header + playback info
-awpy stats match.dem             # the scoreboard
-awpy kills match.dem --limit 10  # first ten kills
-awpy events match.dem --summary  # event counts
-awpy rounds match.dem --json     # any table as JSON
-awpy get                         # prefetch the latest map assets
-```
-
-See {doc}`cli` for the full command list.
-
-## Where next
-
-- {doc}`examples` — complete, runnable scripts: scoreboards, trade graphs, buy-type
-  win rates, clutch GIFs, and batch parsing to Parquet.
-- {doc}`datasets` — every dataset, every column.
-- {doc}`plot` — frames, heatmaps, multi-level maps, GIFs.
-- {doc}`visibility` — line-of-sight, map data, and the asset cache.
-- {doc}`api` — the full API reference.
-- {doc}`faq` — common questions.
-
-## Multipart recordings
-
-Pass an ordered sequence to combine recordings of the same map:
+## Read multipart CS2 recordings with Awpy
 
 ```python
-demo = Demo(["overpass-p1.dem", "overpass-p2.dem"])
+from awpy import Demo
+
+demo = Demo(["match-p1.dem", "match-p2.dem"])
 print(demo.stats)
-state = demo.snapshots(part=1, ticks=5333)
+state = demo.snapshots(part=1, ticks=10000)
 ```
 
-Strings and `Path` objects are accepted. Multipart tables add a zero-based
-`part` column and keep local ticks. Explicit tick queries require `part`.
-See {doc}`datasets` for validation rules and multipart data formats.
+Pass paths in recording order. Strings and `Path` objects can be mixed.
+Multipart tables add `part` and retain local ticks. Explicit tick queries need
+`part=`. Awpy checks recording compatibility and completed round boundaries.
+Splits during live play are not supported. See {doc}`datasets`.
+
+<a id="where-next"></a>
+
+## Find Awpy examples and API details
+
+Use {doc}`examples` for complete scripts, {doc}`datasets` for columns,
+and {doc}`api` for function parameters and return types.

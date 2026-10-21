@@ -1,35 +1,17 @@
-"""Plot CS2 demo data on radar images.
+"""Draw Counter-Strike 2 replay data with matplotlib and awpy-data.
 
-Use radar images from :mod:`awpy.data`.
-Set ``version=`` to select a release; otherwise, use the newest cached release.
-Install dependencies with ``pip install 'awpy[plot]'``.
+Install the ``awpy[plot]`` extra. Map images and coordinate transforms come from
+``awpy.data``. Set ``version=`` to select an awpy-data release.
 
-Draw players and the bomb::
+Use ``frame`` for player state, ``heatmap`` for position density, and ``gif`` for
+animations. Plot functions return matplotlib figures and axes for customization.
 
-    from awpy import plot
-
-    players = [
-        plot.Player(x=-158.6, y=819.1, z=103.7, side="ct", hp=87, label="ct1"),
-        plot.Player(x=1258.0, y=455.5, z=181.2, side="t", yaw=135.0),
-    ]
-    fig, ax = plot.frame("de_inferno", players, bomb=(200.0, 480.0, 90.0))
-    fig.savefig("frame.png")
-
-Heatmap of demo positions (any ``(x, y, z)`` rows — e.g. death locations)::
-
-    from awpy import Demo, plot
-
-    kills = Demo("match.dem").kills
-    deaths = kills.select(["victim_x", "victim_y", "victim_z"]).rows()
-    fig, ax = plot.heatmap("de_inferno", deaths, method="kde")
-
-Use :func:`radar` and pass its ``ax`` to other functions to combine plots.
-:func:`world_to_pixel` and :func:`pixel_to_world` convert coordinates.
-
-For multi-level maps, set ``lower=True`` to draw the lower radar.
-:func:`frame_levels` and :func:`heatmap_levels` draw one panel per level::
-
-    fig, (upper, lower) = plot.frame_levels("de_nuke", players, bomb=bomb)
+Examples:
+    >>> from awpy import Demo, plot
+    >>> demo = Demo("match.dem")
+    >>> deaths = demo.kills.select("victim_x", "victim_y", "victim_z").rows()
+    >>> fig, ax = plot.heatmap(demo.header["map_name"], deaths, method="kde")
+    >>> fig.savefig("deaths.png")
 """
 
 from __future__ import annotations
@@ -50,7 +32,7 @@ try:
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
     from matplotlib.patches import Circle, Patch, Polygon, Rectangle
-    from matplotlib.transforms import Affine2D, ScaledTranslation
+    from matplotlib.transforms import Affine2D, ScaledTranslation, Transform
 except ImportError as exc:  # pragma: no cover - exercised only without the extra
     _msg = (
         "awpy.plot requires matplotlib -- install it with: "
@@ -152,8 +134,17 @@ Point3 = tuple[float, float, float]
 # --- coordinates ---------------------------------------------------------------
 
 
-def _meta(map_name: str, version: int | None) -> dict:
-    """The map's entry in ``map_data.json`` (world->radar transform + levels)."""
+def _meta(map_name: str, version: int | None) -> dict[str, Any]:
+    """Read a CS2 map coordinate transform and vertical sections.
+
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+
+    Returns:
+        The map metadata dictionary from ``map_data.json``.
+    """
     map_data = data.map_data(version)
     try:
         return map_data[map_name]
@@ -163,10 +154,16 @@ def _meta(map_name: str, version: int | None) -> dict:
 
 
 def world_to_pixel(map_name: str, point: Sequence[float], *, version: int | None = None) -> Point2:
-    """Convert a world ``(x, y, ...)`` position to radar-pixel ``(px, py)``.
+    """Convert CS2 world coordinates to radar pixels.
 
-    Pixel coordinates have the origin at the radar's top-left corner, with
-    ``py`` growing downward (matplotlib image convention).
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        point: World or radar coordinates, as specified by the function.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+
+    Returns:
+        ``(px, py)`` pixels, with origin at the upper left and Y increasing downward.
     """
     meta = _meta(map_name, version)
     scale = meta["scale"]
@@ -174,17 +171,33 @@ def world_to_pixel(map_name: str, point: Sequence[float], *, version: int | None
 
 
 def pixel_to_world(map_name: str, point: Sequence[float], *, version: int | None = None) -> Point2:
-    """Convert a radar-pixel ``(px, py)`` back to a world ``(x, y)`` position."""
+    """Convert radar pixels to CS2 world coordinates.
+
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        point: World or radar coordinates, as specified by the function.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+
+    Returns:
+        ``(x, y)`` in Hammer units.
+    """
     meta = _meta(map_name, version)
     scale = meta["scale"]
     return point[0] * scale + meta["pos_x"], meta["pos_y"] - point[1] * scale
 
 
 def is_lower_level(map_name: str, z: float, *, version: int | None = None) -> bool:
-    """Is altitude ``z`` in the map's ``lower`` vertical section?
+    """Check whether a CS2 altitude belongs to the lower radar level.
 
-    Multi-level maps (Nuke, Vertigo, Train, Baggage) publish altitude bands in
-    ``map_data.json``; single-level maps have none, so this returns ``False``.
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        z: World altitude in Hammer units.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+
+    Returns:
+        Whether the altitude is in the lower section. False for a single-level map.
     """
     sections = _meta(map_name, version).get("verticalsections") or {}
     lower = sections.get("lower")
@@ -194,7 +207,16 @@ def is_lower_level(map_name: str, z: float, *, version: int | None = None) -> bo
 
 
 def has_lower_level(map_name: str, *, version: int | None = None) -> bool:
-    """Does the map have a lower vertical level (and a ``_lower`` radar)?"""
+    """Check whether awpy-data defines a lower radar level.
+
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+
+    Returns:
+        Whether the map defines a lower section.
+    """
     sections = _meta(map_name, version).get("verticalsections") or {}
     return "lower" in sections
 
@@ -206,11 +228,18 @@ def _split_by_level(
     lower: bool,
     version: int | None,
 ) -> tuple[list[float], list[float], int]:
-    """Project points to on-radar pixels; return (xs, ys, n_dropped_off_level).
+    """Project positions onto one radar level.
 
-    A point is on-level when its z altitude matches the radar being drawn
-    (points without a z count as upper-level). Off-radar points are dropped
-    silently; off-level points are counted so callers can warn.
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        points: World ``(x, y)`` or ``(x, y, z)`` positions.
+        lower: Select the lower-level radar.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+
+    Returns:
+        Pixel X values, pixel Y values, and the number of off-level points. Off-radar points are
+        omitted.
     """
     xs: list[float] = []
     ys: list[float] = []
@@ -237,7 +266,7 @@ def radar(
     lower: bool = False,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
-    """Draw a map's radar image — the canvas every other function draws onto.
+    """Draw a CS2 radar image on matplotlib axes.
 
     Args:
         map_name: Map to draw, e.g. ``"de_inferno"``.
@@ -246,8 +275,7 @@ def radar(
         ax: Draw onto an existing axes instead of creating a new figure.
 
     Returns:
-        The matplotlib ``(Figure, Axes)``, axis off, one radar pixel per
-        data unit.
+        The matplotlib ``(Figure, Axes)`` pair, with hidden axes and radar-pixel coordinates.
     """
     image = mpimg.imread(data.radar_path(map_name, version, lower=lower))
     if ax is None:
@@ -270,14 +298,19 @@ def radar(
 
 @dataclass
 class Player:
-    """Render state for one player in a :func:`frame`.
+    """Set the drawing attributes for one CS2 player marker.
 
-    Only ``x``/``y`` are required. ``side`` picks the marker color (``"t"`` /
-    ``"ct"``, or the demo dataframes' ``"terrorist"`` / ``"counter-terrorist"``,
-    any case); ``hp=0`` draws the player as dead (a dim cross);
-    ``yaw`` (degrees, 0 = +x, counter-clockwise) draws a view-direction tick;
-    ``hp``/``armor`` draw bars under the marker; ``label`` prints below;
-    ``has_bomb`` gives the marker a red border (the player carrying the bomb).
+    Attributes:
+        x: World X position in Hammer units.
+        y: World Y position in Hammer units.
+        z: World altitude in Hammer units; default 0.
+        side: ``t`` or ``terrorist``, or ``ct`` or ``counter-terrorist``. Matching ignores case.
+        hp: Health for the marker bar. Zero draws a dim death marker; ``None`` omits the bar.
+        armor: Armor for the marker bar, or ``None`` to omit it.
+        yaw: View direction in degrees, counterclockwise from positive X. ``None`` omits it.
+        label: Text beside the marker, or ``None``.
+        color: Matplotlib color override, or ``None`` to use the side color.
+        has_bomb: Add a red border for the bomb carrier.
     """
 
     x: float
@@ -293,6 +326,11 @@ class Player:
 
     @property
     def _color(self) -> str:
+        """Select an explicit marker color or the CS2 side color.
+
+        Returns:
+            The matplotlib color string.
+        """
         if self.color is not None:
             return self.color
         # Demo dataframes say "terrorist"/"counter-terrorist"; people say "t"/"ct".
@@ -304,15 +342,20 @@ class Player:
         return NEUTRAL_COLOR
 
 
-def _marker_offset(ax: Axes, px: float, py: float):
-    """A transform whose coordinates are *screen points* offset from the data
-    point ``(px, py)``: ``+x`` right, ``+y`` down. Anchored at the marker so
-    attachments (HP/armor bars, label) track it, but sized in points so they
-    don't grow when the axes is zoomed — the same trick the yaw tick uses.
+def _marker_offset(ax: Axes, px: float, py: float) -> Transform:
+    """Create a screen-point transform anchored at a player marker.
 
-    The anchor is snapped to whole data units so every player's bars share one
-    sub-pixel grid and rasterize to identical heights (a fractional anchor makes
-    a bar's height wobble by a pixel with the player's sub-pixel position).
+    Args:
+        ax: Existing matplotlib axes, or ``None`` to create a figure.
+        px: Radar pixel X coordinate.
+        py: Radar pixel Y coordinate.
+
+    Returns:
+        A matplotlib transform with positive X right and positive Y down. Marker attachments retain
+        their screen size when the axes or DPI changes.
+
+    Raises:
+        ValueError: If the axes are not attached to a figure.
     """
     fig = ax.get_figure(root=True)
     if fig is None:  # pragma: no cover - an Axes detached from any figure
@@ -341,6 +384,15 @@ def _marker_offset(ax: Axes, px: float, py: float):
 
 
 def _draw_player(ax: Axes, px: float, py: float, player: Player, alpha: float) -> None:
+    """Draw one CS2 player marker and its labels.
+
+    Args:
+        ax: Existing matplotlib axes, or ``None`` to create a figure.
+        px: Radar pixel X coordinate.
+        py: Radar pixel Y coordinate.
+        player: Player marker attributes.
+        alpha: Opacity from 0 to 1.
+    """
     color = player._color
     if player.hp == 0:
         ax.scatter(
@@ -464,14 +516,34 @@ def _draw_player(ax: Axes, px: float, py: float, player: Player, alpha: float) -
 
 
 def _pixel_radius(map_name: str, world_radius: float, *, version: int | None) -> float:
-    """A world-unit radius in radar pixels (the transform's scale is uniform)."""
+    """Convert a Hammer-unit radius to radar pixels.
+
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        world_radius: Radius in Hammer units.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+
+    Returns:
+        The radius in radar pixels.
+    """
     return world_radius / _meta(map_name, version)["scale"]
 
 
 def _draw_area(
     ax: Axes, px: float, py: float, radius: float, color: str, alpha: float, zorder: int
 ) -> None:
-    """A soft translucent disc (a smoke cloud or a burning inferno)."""
+    """Draw a smoke or fire disc on the radar.
+
+    Args:
+        ax: Existing matplotlib axes, or ``None`` to create a figure.
+        px: Radar pixel X coordinate.
+        py: Radar pixel Y coordinate.
+        radius: Radius in radar pixels.
+        color: Matplotlib color.
+        alpha: Opacity from 0 to 1.
+        zorder: Matplotlib drawing order.
+    """
     ax.add_patch(
         Circle(
             (px, py),
@@ -486,7 +558,15 @@ def _draw_area(
 
 
 def _draw_grenade(ax: Axes, px: float, py: float, color: str, alpha: float) -> None:
-    """A live grenade projectile: a small circle at its current position."""
+    """Draw a live grenade projectile on the radar.
+
+    Args:
+        ax: Existing matplotlib axes, or ``None`` to create a figure.
+        px: Radar pixel X coordinate.
+        py: Radar pixel Y coordinate.
+        color: Matplotlib color.
+        alpha: Opacity from 0 to 1.
+    """
     ax.scatter(
         px,
         py,
@@ -502,11 +582,13 @@ def _draw_grenade(ax: Axes, px: float, py: float, color: str, alpha: float) -> N
 def _grenade_marker(
     entry: Sequence[float] | Mapping[str, Any],
 ) -> tuple[Sequence[float], str] | None:
-    """Resolve one grenade entry to its ``(position, color)``, or ``None`` to skip.
+    """Resolve a grenade position and marker color.
 
-    An entry is either a world ``(x, y[, z])`` position, or a mapping carrying
-    the position (``pos``, or ``x``/``y``/``z`` keys — the shape of a
-    ``Demo.grenades`` row) and an optional ``type``/``color``.
+    Args:
+        entry: World position or a mapping with position and optional grenade type or color.
+
+    Returns:
+        The position and color, or ``None`` for an unsupported entry.
     """
     if not isinstance(entry, Mapping):
         return entry, _GRENADE_DEFAULT_COLOR
@@ -537,44 +619,51 @@ def frame(
     off_level_alpha: float = 0.3,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
-    """Plot one game-state frame: players, bomb, smokes, fires and grenade paths.
+    """Draw CS2 players, bomb state, and projectiles with matplotlib.
 
     Args:
-        map_name: Map to draw, e.g. ``"de_inferno"``.
-        players: A :class:`Player` per player to draw. Set ``has_bomb`` on the
-            carrier to give its marker a red border.
-        bomb: World ``(x, y, z)`` of the bomb, drawn as an orange diamond.
-        bomb_planted: Give the bomb a green border to mark it planted and ticking.
-        smokes: World ``(x, y[, z])`` centers of active smoke clouds, each drawn
-            as a translucent grey disc of ``smoke_radius`` world units.
-        fires: World ``(x, y[, z])`` origins of burning infernos (molotov /
-            incendiary), each drawn as a translucent orange disc of
-            ``fire_radius`` world units.
-        grenades: Live grenade projectiles, each drawn as a small circle at its
-            current position. An entry is either a world ``(x, y[, z])``
-            position, or a dict carrying the position (``pos``, or ``x``/``y``/
-            ``z`` keys — a ``Demo.grenades`` row) plus an optional ``type``
-            (e.g. ``"smoke"``, ``"molotov"``, ``"he"``) that colors it, or an
-            explicit ``color``. Pass only in-flight grenades (filter the row to
-            the frame's tick): a projectile's rows end when it detonates, so the
-            grenade naturally disappears as its smoke or inferno appears.
-        smoke_radius: Smoke-cloud radius in world units (default ~144).
-        fire_radius: Inferno radius in world units (default ~150).
-        version: awpy-data release to use (default: newest cached).
-        lower: Draw the lower-level radar of a multi-level map.
-        off_level_alpha: Opacity for markers whose altitude is on the *other*
-            level of a multi-level map; ``0`` hides them entirely.
-        ax: Draw onto an existing axes instead of creating a new figure.
+        map_name: CS2 map name.
+        players: Player markers. Set ``has_bomb=True`` on the bomb carrier.
+        bomb: World ``(x, y, z)`` bomb position, or ``None``. Drawn as an orange diamond.
+        bomb_planted: Add a green border to the planted bomb.
+        smokes: World ``(x, y)`` or ``(x, y, z)`` centers of active smoke clouds.
+        fires: World ``(x, y)`` or ``(x, y, z)`` origins of active fires.
+        grenades: Projectile positions or mappings with ``pos`` or ``x``/``y``/``z`` fields. A
+            mapping can set ``type`` or ``color``. Include only rows at this tick.
+        smoke_radius: Smoke radius in Hammer units; default 144.
+        fire_radius: Fire radius in Hammer units; default 150.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+        lower: Draw the lower-level radar.
+        off_level_alpha: Opacity for markers on the other map level. Zero hides them.
+        ax: Existing matplotlib axes, or ``None`` to create a figure.
 
     Returns:
-        The matplotlib ``(Figure, Axes)``.
+        The matplotlib ``(Figure, Axes)`` pair.
     """
     fig, ax = radar(map_name, version=version, lower=lower, ax=ax)
 
     def _level_alpha(z: float) -> float:
+        """Select marker opacity for the current radar level.
+
+        Args:
+            z: World altitude in Hammer units.
+
+        Returns:
+            Full opacity on this level, or the configured off-level opacity.
+        """
         return 1.0 if is_lower_level(map_name, z, version=version) == lower else off_level_alpha
 
     def _in_bounds(px: float, py: float) -> bool:
+        """Check whether a radar point is inside the image.
+
+        Args:
+            px: Radar pixel X coordinate.
+            py: Radar pixel Y coordinate.
+
+        Returns:
+            Whether both coordinates are within the radar bounds.
+        """
         return 0 <= px <= RADAR_SIZE and 0 <= py <= RADAR_SIZE
 
     # Area effects sit under the players; fires under smokes (smoke smothers fire).
@@ -638,7 +727,16 @@ def frame(
 
 
 def _level_panels(map_name: str, *, version: int | None) -> tuple[Figure, tuple[Axes, ...]]:
-    """A figure with one radar-sized panel per vertical level (upper first)."""
+    """Create one matplotlib radar panel for each map level.
+
+    Args:
+        map_name: CS2 map name, such as ``"de_inferno"``.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+
+    Returns:
+        The figure and a tuple of axes, upper level first.
+    """
     n_panels = 2 if has_lower_level(map_name, version=version) else 1
     fig, axes_grid = plt.subplots(
         1,
@@ -674,24 +772,19 @@ def frame_levels(
     bomb_planted: bool = False,
     version: int | None = None,
 ) -> tuple[Figure, tuple[Axes, ...]]:
-    """Plot a game-state frame with one radar panel per vertical level.
-
-    On a multi-level map (Nuke, Vertigo, Train, Baggage) this returns two
-    panels — upper and lower — with every player and the bomb drawn at full
-    opacity on the panel matching their altitude. On a single-level map it
-    degrades to one panel, so callers never need to special-case the map.
+    """Draw CS2 player state on one panel per map level.
 
     Args:
         map_name: Map to draw, e.g. ``"de_nuke"``.
-        players: A :class:`Player` per player to draw. Set ``has_bomb`` on the
-            carrier to give its marker a red border.
+        players: A :class:`Player` per player to draw. Set ``has_bomb`` on the carrier to give its
+            marker a red border.
         bomb: World ``(x, y, z)`` of the bomb, drawn as an orange diamond.
         bomb_planted: Give the bomb a green border to mark it planted and ticking.
         version: awpy-data release to use (default: newest cached).
 
     Returns:
-        The matplotlib ``(Figure, (Axes, ...))`` — ``(upper, lower)`` panels,
-        or a 1-tuple for single-level maps.
+        The figure and axes tuple. Two-level maps return upper and lower panels; single-level maps
+        return one panel.
     """
     players = list(players)  # drawn once per panel
     fig, axes = _level_panels(map_name, version=version)
@@ -736,13 +829,7 @@ def _fill_nav_areas(
     edge: bool = False,
     linewidth: float = 0.4,
 ) -> int:
-    """Fill nav areas on ``ax``, one color per area id. Returns the count drawn.
-
-    Shared by :func:`nav` and :func:`map_control`, which differ only in how they
-    choose each area's color. Areas are convex polygons, so projecting their
-    corners to radar pixels and dropping a patch is enough. Areas whose floor is
-    on the other level of a multi-level map are skipped, so each radar only shows
-    what belongs on it.
+    """Fill navigation polygons on one radar level.
 
     Args:
         ax: Axes to draw on.
@@ -753,9 +840,12 @@ def _fill_nav_areas(
         lower: Whether ``ax`` is showing the lower level.
         alpha: Fill opacity.
         zorder: Draw order for the patches.
-        edge: Outline each area in its fill color — this is what makes a mesh
-            legible *as* a mesh rather than one flat blob.
+        edge: Outline each area in its fill color — this is what makes a mesh legible *as* a mesh
+            rather than one flat blob.
         linewidth: Outline width when ``edge`` is set.
+
+    Returns:
+        The number of areas drawn.
     """
     drawn = 0
     for area_id, color in colors.items():
@@ -793,35 +883,23 @@ def nav(
     legend: bool = True,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
-    """Draw a map's navigation mesh over its radar image.
-
-    Fills every walkable area from the map's :class:`awpy.NavMesh`, outlined so the
-    tiling is visible. Useful for seeing what the bot navigation actually covers —
-    and, with ``highlight``, for showing a route across it.
+    """Draw CS2 navigation areas and selected routes.
 
     Args:
         map_name: Map to draw, e.g. ``"de_dust2"``.
-        highlight: Area ids to emphasize in a contrasting color, drawn above the
-            rest. Pass the result of :meth:`awpy.NavMesh.find_path` to show a route.
+        highlight: Area ids to emphasize in a contrasting color, drawn above the rest. Pass the
+            result of :meth:`awpy.NavMesh.find_path` to show a route.
         version: awpy-data release to use (default: newest cached).
-        lower: Draw the lower-level radar of a multi-level map. Areas are filtered
-            to the level being drawn, so a two-level map needs one call per level
-            (or use :func:`frame_levels`-style side-by-side axes).
+        lower: Draw the lower-level radar of a multi-level map. Areas are filtered to the level
+            being drawn, so a two-level map needs one call per level (or use
+            :func:`frame_levels`-style side-by-side axes).
         alpha: Fill opacity of the areas.
         edge: Outline each area, which is what makes the mesh legible as a mesh.
         legend: Label the area count (and highlighted count, if any).
         ax: Draw onto an existing axes instead of creating a new figure.
 
     Returns:
-        The matplotlib ``(Figure, Axes)``.
-
-    Example:
-        >>> from awpy import NavMesh
-        >>> from awpy.plot import nav
-        >>> fig, ax = nav("de_dust2")  # doctest: +SKIP
-        >>> mesh = NavMesh("de_dust2")  # doctest: +SKIP
-        >>> route = mesh.find_path((-680.0, 1500.0, 0.0), (1200.0, 2400.0, 0.0))
-        >>> fig, ax = nav("de_dust2", highlight=route)  # doctest: +SKIP
+        The matplotlib ``(Figure, Axes)`` pair.
     """
     from awpy import NavMesh
 
@@ -887,19 +965,12 @@ def map_control(
     lower: bool = False,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
-    """Shade the map by which side controls each area at one tick.
-
-    Computes :func:`awpy.map_control.map_control_at` for the tick and fills every
-    nav area with its controlling side's color — blue (CT), yellow (T), purple
-    (contested) — leaving neutral areas unshaded. The players are overlaid, along
-    with the occluders that shaped the picture (smokes for the line-of-sight
-    models, molotovs for ``"reachability"``).
+    """Draw estimated CS2 map control at one demo tick.
 
     Args:
         demo: The parsed demo.
         tick: The tick to draw.
-        method: ``"raycast"``, ``"vision"``, or ``"reachability"`` (see
-            :mod:`awpy.map_control`).
+        method: ``"raycast"``, ``"vision"``, or ``"reachability"`` (see :mod:`awpy.map_control`).
         params: Model parameters (defaults if omitted).
         players: Overlay the players at the tick.
         occluders: Draw the active smokes (vision) or fires (reachability).
@@ -911,7 +982,7 @@ def map_control(
         ax: Draw onto an existing axes instead of creating a new figure.
 
     Returns:
-        The matplotlib ``(Figure, Axes)``.
+        The matplotlib ``(Figure, Axes)`` pair.
     """
     from awpy import NavMesh
 
@@ -990,7 +1061,12 @@ def map_control(
 
 
 def _map_control_legend(ax: Axes, control: pl.DataFrame) -> None:
-    """A legend keying each control color to its size-weighted share of the map."""
+    """Draw each control label and its share of the map.
+
+    Args:
+        ax: Existing matplotlib axes, or ``None`` to create a figure.
+        control: Per-area control rows.
+    """
     total = float(control["size"].sum()) or 1.0
     share = {
         row["control"]: row["size"] / total
@@ -1023,7 +1099,15 @@ def _map_control_legend(ax: Axes, control: pl.DataFrame) -> None:
 
 
 def _gaussian_blur(grid: np.ndarray, sigma: float) -> np.ndarray:
-    """Separable gaussian blur (so 'kde' heatmaps need no scipy)."""
+    """Smooth a density array with a separable Gaussian filter.
+
+    Args:
+        grid: Two-dimensional density array.
+        sigma: Gaussian smoothing radius in grid cells.
+
+    Returns:
+        The smoothed density array.
+    """
     radius = max(1, int(3 * sigma))
     offsets = np.arange(-radius, radius + 1)
     kernel = np.exp(-(offsets**2) / (2 * sigma**2))
@@ -1045,30 +1129,31 @@ def heatmap(
     lower: bool = False,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
-    """Plot a density heatmap of world positions over the radar.
+    """Draw CS2 position density over a radar image.
 
     Args:
-        map_name: Map to draw, e.g. ``"de_inferno"``.
-        points: World positions — ``(x, y)`` or ``(x, y, z)`` rows, e.g.
-            ``kills.select(["victim_x", "victim_y", "victim_z"]).rows()``.
-        method: ``"hex"`` (hexagonal binning), ``"hist"`` (square binning),
-            or ``"kde"`` (gaussian-smoothed density).
-        bins: Grid resolution — hexagons across the radar for ``hex``, cells
-            per side for ``hist``. (``kde`` evaluates on a fixed fine grid.)
+        map_name: CS2 map name.
+        points: World ``(x, y)`` or ``(x, y, z)`` positions.
+        method: ``hex`` for hexagonal bins, ``hist`` for square bins, or ``kde`` for Gaussian
+            smoothing.
+        bins: Grid resolution for hexagonal and square bins. Gaussian smoothing uses a fixed grid.
         cmap: Matplotlib colormap name.
-        alpha: Overlay opacity.
-        bandwidth: ``kde`` smoothing radius, in radar pixels.
-        version: awpy-data release to use (default: newest cached).
-        lower: Draw the lower-level radar; only points at lower-level
-            altitudes are included (and vice versa for the upper radar —
-            off-level points are skipped with a warning).
-        ax: Draw onto an existing axes instead of creating a new figure.
+        alpha: Overlay opacity from 0 to 1.
+        bandwidth: Gaussian smoothing width in radar pixels.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+        lower: Draw the lower-level radar.
+        ax: Existing matplotlib axes, or ``None`` to create a figure.
 
     Returns:
-        The matplotlib ``(Figure, Axes)``.
+        The matplotlib ``(Figure, Axes)`` pair.
 
     Raises:
-        ValueError: On an unknown ``method``.
+        ValueError: If the method is unknown.
+
+    Notes:
+        Positions on another radar level are omitted with a warning. Use ``heatmap_levels`` to draw
+        all levels.
     """
     if method not in ("hex", "hist", "kde"):
         raise ValueError(f"method must be 'hex', 'hist', or 'kde', not {method!r}")
@@ -1123,16 +1208,25 @@ def heatmap_levels(
     bandwidth: float = 16.0,
     version: int | None = None,
 ) -> tuple[Figure, tuple[Axes, ...]]:
-    """Plot a density heatmap with one radar panel per vertical level.
+    """Draw CS2 position density on one panel per map level.
 
-    The multi-panel counterpart of :func:`heatmap`: on a multi-level map every
-    point lands on the panel matching its altitude (no points are skipped); on
-    a single-level map it degrades to one panel. Arguments are those of
-    :func:`heatmap`.
+    Args:
+        map_name: CS2 map name.
+        points: World ``(x, y)`` or ``(x, y, z)`` positions.
+        method: ``hex`` for hexagonal bins, ``hist`` for square bins, or ``kde`` for Gaussian
+            smoothing.
+        bins: Grid resolution for hexagonal and square bins. Gaussian smoothing uses a fixed grid.
+        cmap: Matplotlib colormap name.
+        alpha: Overlay opacity from 0 to 1.
+        bandwidth: Gaussian smoothing width in radar pixels.
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
 
     Returns:
-        The matplotlib ``(Figure, (Axes, ...))`` — ``(upper, lower)`` panels,
-        or a 1-tuple for single-level maps.
+        The figure and axes tuple, upper level first. A single-level map returns one panel.
+
+    Raises:
+        ValueError: If the method is unknown.
     """
     points = [tuple(point) for point in points]  # split once per panel
     fig, axes = _level_panels(map_name, version=version)
@@ -1164,7 +1258,7 @@ def heatmap_levels(
 
 def gif(
     map_name: str,
-    frames: Sequence[Iterable[Player] | dict],
+    frames: Sequence[Iterable[Player] | dict[str, Any]],
     path: str,
     *,
     fps: int = 2,
@@ -1172,18 +1266,17 @@ def gif(
     lower: bool = False,
     dpi: int = 150,
 ) -> None:
-    """Render a sequence of :func:`frame` calls to an animated GIF.
+    """Save CS2 player-state frames as an animated GIF.
 
     Args:
-        map_name: Map to draw, e.g. ``"de_inferno"``.
-        frames: One entry per GIF frame — either an iterable of
-            :class:`Player`, or a dict of :func:`frame` keyword arguments
-            (e.g. ``{"players": [...], "bomb": (x, y, z)}``).
-        path: Output ``.gif`` file path.
+        map_name: CS2 map name.
+        frames: One player iterable or ``frame`` keyword dictionary for each output frame.
+        path: Destination GIF file path.
         fps: Frames per second.
-        version: awpy-data release to use (default: newest cached).
-        lower: Draw the lower-level radar of a multi-level map.
-        dpi: Render resolution (150 → a 512px GIF).
+        version: awpy-data ClientVersion. Omit to use the newest cached release; an empty cache
+            selects the latest release.
+        lower: Draw the lower-level radar.
+        dpi: Render resolution in dots per inch.
     """
     from matplotlib.animation import PillowWriter
 

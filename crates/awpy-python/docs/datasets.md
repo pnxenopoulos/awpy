@@ -1,8 +1,19 @@
 # Datasets
 
+```python
+from awpy import Demo
+
+demo = Demo("match.dem")
+demo.load("players", "stats")
+print(Demo.available_datasets())
+print(demo.stats)
+```
+
 Dataset properties on `Demo` return cached Polars DataFrames with typed columns.
 
-## Batch loading
+<a id="batch-loading"></a>
+
+## Load Awpy datasets in one request
 
 Use `Demo.load()` when an analysis needs several datasets:
 
@@ -40,7 +51,9 @@ This conversion requires `pyarrow`. The default NumPy-backed pandas conversion
 cannot represent nullable integers and can change a nullable Steam ID column to
 `float64`.
 
-## `rounds`
+<a id="rounds"></a>
+
+## Read Awpy rounds data
 
 ```python
 demo.rounds
@@ -67,7 +80,9 @@ Round events are not required. Overtime rounds are included.
 demo.rounds.group_by("winner_side").len()
 ```
 
-## `kills`
+<a id="kills"></a>
+
+## Read Awpy kills data
 
 ```python
 demo.kills
@@ -130,7 +145,9 @@ kills.group_by("victim_name").agg(
 ).with_columns(trade_rate=pl.col("traded") / pl.col("deaths"))
 ```
 
-## `damages`
+<a id="damages"></a>
+
+## Read Awpy damages data
 
 ```python
 demo.damages
@@ -149,7 +166,9 @@ They are not recorded pre-hit values. Do not use `health_pre` to cap successive 
 Raw damage can exceed the victim's remaining health.
 `stats` caps event damage at the previous reported health; it does not sum health changes.
 
-## `bomb`
+<a id="bomb"></a>
+
+## Read Awpy bomb data
 
 ```python
 demo.bomb
@@ -162,7 +181,9 @@ Bomb actions with the acting player and their position. Columns: `tick`,
 
 `start_plant` and `interrupt_plant` rows require the corresponding events.
 
-## `grenades`
+<a id="grenades"></a>
+
+## Read Awpy grenades data
 
 ```python
 demo.grenades
@@ -173,7 +194,10 @@ flight (samples stop once it settles). Columns: `tick`, `thrower_name`,
 `thrower_steamid`, `thrower_side`, `type` (`smoke` / `he` / `flashbang` /
 `molotov` / `decoy`), `entity_id`, `entity_serial`, `x`, `y`, `z`.
 
-## `fires` / `smokes`
+<a id="fires--smokes"></a>
+<a id="fires-smokes"></a>
+
+## Read Awpy fire and smoke intervals
 
 ```python
 demo.fires    # burning infernos (molotov / incendiary)
@@ -203,7 +227,9 @@ in_fire = pos.join_where(
 )
 ```
 
-## `shots`
+<a id="shots"></a>
+
+## Read Awpy shots data
 
 ```python
 demo.shots
@@ -215,7 +241,9 @@ state. Columns: `tick`, `entity_id`, `entity_serial`, `steamid`, `name`, `side`,
 weapon's networked accuracy penalty), and `num_bullets_remaining` (active
 weapon's clip).
 
-## `blinds`
+<a id="blinds"></a>
+
+## Read Awpy blinds data
 
 ```python
 demo.blinds
@@ -250,7 +278,10 @@ demo.blinds.filter(pl.col("attacker_side") != pl.col("victim_side")).sort(
 )
 ```
 
-## `item_events`
+<a id="item_events"></a>
+<a id="item-events"></a>
+
+## Read Awpy item_events data
 
 ```python
 demo.item_events
@@ -298,7 +329,9 @@ demo.item_events.filter(
 )
 ```
 
-## `stats`
+<a id="stats"></a>
+
+## Read Awpy stats data
 
 ```python
 demo.stats
@@ -349,7 +382,10 @@ demo.stats.filter(pl.col("clutches_played") > 0).select(
 ).sort("rate", descending=True)
 ```
 
-## `round_economy`
+<a id="round_economy"></a>
+<a id="round-economy"></a>
+
+## Read Awpy round_economy data
 
 ```python
 demo.round_economy
@@ -367,7 +403,9 @@ carry-over.) Knife rounds are excluded.
 demo.round_economy.filter(pl.col("buy_type") == "full")
 ```
 
-## `players`
+<a id="players"></a>
+
+## Read Awpy players data
 
 ```python
 demo.players  # steamid, name, side, team_clan_name
@@ -390,7 +428,9 @@ demo.stats.join(
 ).sort("kills", descending=True)
 ```
 
-## `chat`
+<a id="chat"></a>
+
+## Read Awpy chat data
 
 ```python
 demo.chat  # tick, entity_index, name, message, channel
@@ -402,7 +442,9 @@ The DataFrame is empty if no supported chat messages are recorded.
 The absence of chat entries in `demo.events` does not establish this:
 user messages and game events are different streams.
 
-## `convars`
+<a id="convars"></a>
+
+## Read Awpy convars data
 
 ```python
 demo.convars                  # -> dict[str, str]
@@ -413,7 +455,9 @@ Server console variables collected from the demo stream — useful for round
 math (`mp_maxrounds`, `mp_freezetime`, `mp_overtime_enable`) and for telling
 match formats apart programmatically.
 
-## Multipart demos
+<a id="multipart-demos"></a>
+
+## Read multipart CS2 demos with Awpy
 
 Pass files in recording order. You can mix strings and `Path` objects.
 
@@ -455,7 +499,9 @@ A single file, including a one-element sequence, keeps its existing schema.
 Single-file construction remains lazy. Multipart construction reads round
 boundaries to check that the files can be combined.
 
-## Game state: `snapshots`
+<a id="game-state-snapshots"></a>
+
+## Select Awpy player snapshots
 
 ```python
 demo.snapshots(ticks=29000)                       # one moment
@@ -542,7 +588,10 @@ Requests for one to four explicit ticks, without other selectors, use seeking.
 Other requests decode keyframe segments in parallel.
 A coarse stride reduces output, but decoding can still be required between samples.
 
-## Any game event: demo.events
+<a id="any-game-event-demoevents"></a>
+<a id="any-game-event-demo-events"></a>
+
+## Read raw CS2 game events with Awpy Events
 
 For events without a dedicated dataset, `demo.events` maps event names to
 DataFrames — a `tick` column plus one string column per event key. Everything
@@ -558,7 +607,9 @@ demo.events["smokegrenade_detonate"]
 The {doc}`Reference <reference>` catalogs the common events (also
 `awpy.GAME_EVENTS`).
 
-## Per-tick entity state: `ticks`
+<a id="per-tick-entity-state-ticks"></a>
+
+## Read selected CS2 entity fields with Awpy ticks
 
 ```python
 demo.ticks()                              # default props (below)

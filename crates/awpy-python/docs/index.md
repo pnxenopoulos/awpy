@@ -1,8 +1,22 @@
 # Awpy
 
-Awpy parses [Counter-Strike 2](https://www.counter-strike.net/cs2) demo files in Rust. Its Python API returns [Polars](https://pola.rs) DataFrames.
+```python
+from awpy import Demo
 
-## Why Awpy?
+demo = Demo("match.dem")
+demo.load("kills", "damages", "shots")
+print(demo.header["map_name"])
+print(demo.stats.select("name", "kills", "deaths", "assists", "adr", "kast"))
+print(demo.snapshots(seconds=1.0))
+```
+
+Awpy parses [Counter-Strike 2](https://www.counter-strike.net/cs2) demo files in Rust. Its Python API returns typed [Polars](https://pola.rs) DataFrames.
+Use Polars for filters, joins, and Apache Parquet output.
+Use matplotlib for radar plots and replay animations.
+
+<a id="why-awpy"></a>
+
+## Use Awpy with Python, Polars, and Rust
 
 - Read match events, rounds, player state, and statistics.
 - Select datasets and sample player state at specified ticks.
@@ -10,26 +24,23 @@ Awpy parses [Counter-Strike 2](https://www.counter-strike.net/cs2) demo files in
 - Calculate map control and plot results on radar images.
 - Inspect demos and download map assets with the `awpy` command.
 
-## Get started
+<a id="get-started"></a>
+
+## Install Awpy for CS2 replay analysis
 
 Awpy requires Python 3.11 or later and Polars 2.x.
 
 Install with `uv add awpy` or `pip install awpy`. See {doc}`getting-started` and {doc}`examples`. Report problems in [GitHub issues](https://github.com/pnxenopoulos/awpy/issues).
 
-```python
-from awpy import Demo
 
-demo = Demo("match.dem")
-print(demo.header["map_name"])
 
-rounds = demo.rounds    # round_num, winner_side, reason_name, ...
-kills = demo.kills      # every player_death, all fields
-```
+<a id="useful-links"></a>
 
-## Useful links
+## Find Awpy and related projects
 
 - [Counter-Strike 2](https://www.counter-strike.net/cs2) — official home page
 - [Awpy on GitHub](https://github.com/pnxenopoulos/awpy)
+- [LLM documentation index](https://awpy.readthedocs.io/llms.txt)
 - [Polars](https://pola.rs) — the DataFrame library Awpy returns data in
 - [pbdems2](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html) — the shared Source 2 demo-format core and its format guide
 - [Boon](https://github.com/pnxenopoulos/boon) — a Deadlock demo parser

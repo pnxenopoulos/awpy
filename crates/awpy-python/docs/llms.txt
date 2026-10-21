@@ -1,0 +1,45 @@
+# Awpy
+
+> Awpy parses Counter-Strike 2 (CS2) Source 2 replay files with a Rust core and a typed Python API. Python results are Polars DataFrames.
+
+Use Awpy for recorded CS2 events, player snapshots, match statistics, static
+visibility, navigation, map-control estimates, and matplotlib plots.
+Use Polars for filters and joins. Export to Apache Parquet or convert to pandas.
+The Python extension uses PyO3; pbdems2 supplies the shared Source 2 decoder.
+Awpy does not parse the older CS:GO demo format.
+
+## Start here
+
+- [Getting started](https://awpy.readthedocs.io/en/latest/getting-started.html): Install Awpy, parse a local demo, and query Polars results.
+- [Examples](https://awpy.readthedocs.io/en/latest/examples.html): Complete scripts for scoreboards, trades, economy, GIFs, and Parquet output.
+- [Datasets](https://awpy.readthedocs.io/en/latest/datasets.html): Column schemas, loading, snapshot selectors, and multipart recordings.
+- [Metric and property reference](https://awpy.readthedocs.io/en/latest/reference.html): ADR, KAST, trades, snapshot fields, and CS2 game events.
+
+## Python and command-line APIs
+
+- [API reference](https://awpy.readthedocs.io/en/latest/api.html): Typed classes, parameters, return values, exceptions, and Google-style docstrings.
+- [CLI](https://awpy.readthedocs.io/en/latest/cli.html): Inspect demos and manage the awpy-data cache.
+- [FAQ](https://awpy.readthedocs.io/en/latest/faq.html): Supported inputs, Steam IDs, caching, and parse costs.
+
+## Maps and plots
+
+- [Visibility and map data](https://awpy.readthedocs.io/en/latest/visibility.html): Static collision checks, release selection, downloads, and local asset paths.
+- [Navigation](https://awpy.readthedocs.io/en/latest/nav.html): Navigation areas, point lookup, and directed paths.
+- [Map control](https://awpy.readthedocs.io/en/latest/map_control.html): Raycast, vision, and reachability models with their limits.
+- [Plotting](https://awpy.readthedocs.io/en/latest/plot.html): matplotlib radars, player frames, heatmaps, navigation plots, and GIFs.
+
+## Usage rules
+
+Use generic local paths such as `Demo("match.dem")`. Pass multipart recordings
+in recording order; ticks remain local and explicit tick queries need `part=`.
+Dataset properties cache results. `ticks()` and `snapshots()` run for each call.
+Keep Steam IDs as UInt64 when joining Polars tables. Raw game-event participant
+fields are user IDs; use dedicated datasets for resolved Steam IDs.
+Map accessors use the newest cached awpy-data version unless `version=` is set.
+Missing map assets download on demand. Map-control results are estimates.
+
+## Optional
+
+- [Changelog](https://awpy.readthedocs.io/en/latest/changelog.html): Release changes and compatibility notes.
+- [Source](https://github.com/pnxenopoulos/awpy): Rust crates, Python package, tests, and benchmarks.
+- [Issues](https://github.com/pnxenopoulos/awpy/issues): Report reproducible problems with a demo and query.
