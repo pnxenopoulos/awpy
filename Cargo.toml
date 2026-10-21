@@ -11,11 +11,11 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "3.1.1"
+version = "3.1.2"
 rust-version = "1.88.0"
 
 [workspace.dependencies]
-awpy = { path = "crates/awpy", version = "3.1.1" }
+awpy = { path = "crates/awpy", version = "3.1.2" }
 awpy-proto = { path = "crates/awpy-proto", version = "0.1" }
 pbdems2 = "0.4.1"
 anyhow = "1.0"

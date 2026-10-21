@@ -1,8 +1,12 @@
 # Changelog
 
+## 3.1.2
+
+- Add `llms.txt`. Put code examples first in the README and guides. Use clear headings.
+- Add Google-style docstrings and missing type hints. Match native API docstrings to Python stubs.
+
 ## 3.1.1
 
-- Add code-first guides, llms.txt, and complete Python API docstrings and type hints.
 - Update locked TLS dependencies to rustls 0.23.46 and rustls-webpki 0.103.16.
 
 ## 3.1.0
