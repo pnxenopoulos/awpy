@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.1.1
+
+- Update locked TLS dependencies to rustls 0.23.46 and rustls-webpki 0.103.16.
+
 ## 3.1.0
 
 - Parse player ticks with names and combat datasets in parallel. Preserve event
