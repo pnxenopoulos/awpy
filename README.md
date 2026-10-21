@@ -17,20 +17,32 @@
 
 </div>
 
-Awpy parses [Counter-Strike 2](https://www.counter-strike.net/cs2) demo files in Rust. Its Python API returns [Polars](https://pola.rs) DataFrames.
+```python
+from awpy import Demo
+
+demo = Demo("match.dem")
+demo.load("kills", "damages", "shots")
+print(demo.header["map_name"])
+print(demo.stats.select("name", "kills", "deaths", "assists", "adr", "kast"))
+print(demo.snapshots(seconds=1.0))
+```
+
+Awpy parses [Counter-Strike 2](https://www.counter-strike.net/cs2) demo files in Rust. Its Python API returns typed [Polars](https://pola.rs) DataFrames.
+Use Polars to filter and join results, write Apache Parquet files, or convert
+tables to pandas. Use the plotting extra to draw CS2 data with matplotlib.
 
 Awpy and the Deadlock parser [Boon](https://github.com/pnxenopoulos/boon) use the shared [pbdems2](https://github.com/pnxenopoulos/pbdems2) core. Awpy adds CS2 protobufs, field decoders, and name tables. See the [PBDEMS2 format guide](https://docs.rs/pbdems2/latest/pbdems2/guide/index.html) for the shared format.
 
 ## Table of Contents
 
 - [Why Awpy?](#why-awpy)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Available Datasets](#available-datasets)
-- [Project Structure](#project-structure)
-- [Documentation](#documentation)
-- [Development](#development)
-- [License](#license)
+- [Install Awpy](#installation)
+- [Parse CS2 demos with Awpy](#quick-start)
+- [Select Awpy datasets](#available-datasets)
+- [Find Awpy workspace crates](#project-structure)
+- [Read the Awpy documentation](#documentation)
+- [Build and test Awpy](#development)
+- [Awpy license](#license)
 
 ## Why Awpy?
 
@@ -39,7 +51,9 @@ Awpy and the Deadlock parser [Boon](https://github.com/pnxenopoulos/boon) use th
 - Reconstruct rounds from game state, including demos without round events.
 - Use the Python API, Rust library, or command-line interface.
 
-## Installation
+<a id="installation"></a>
+
+## Install Awpy
 
 ### Python
 
@@ -76,52 +90,29 @@ awpy get              # download the latest map-data release
 
 ### Rust library
 
-Add the Rust library from the repository:
+Add the Awpy Rust crate:
 
 ```toml
 [dependencies]
-awpy = { git = "https://github.com/pnxenopoulos/awpy" }
+awpy = "3.1"
 ```
 
-## Quick Start
+<a id="quick-start"></a>
 
-### Python
+## Parse CS2 demos with Awpy
 
-```python
-from awpy import Demo
-
-demo = Demo("match.dem")
-
-# File header + playback info
-print(demo.header["map_name"])   # "de_inferno"
-
-# Structured datasets, one call each — all Polars DataFrames
-rounds = demo.rounds           # one row per round, winner + reason
-kills = demo.kills             # every player_death, participants resolved
-damages = demo.damages         # every player_hurt, health/armor pre + post
-stats = demo.stats             # per-player scoreboard (KAST, ADR, ...)
-
-# Any game event, long-form (demo.events.names lists them)
-pings = demo.events.player_ping
-
-# Game state at a moment, or sampled across the match
-snap = demo.snapshots(ticks=29000)             # every player's state at one tick
-series = demo.snapshots(every=64)       # one sample per 64 ticks
-
-# Per-tick player state — one row per player per tick, decoded in parallel
-ticks = demo.ticks()                    # default: X, Y, Z, health, armor, team_num
-ticks = demo.ticks(["health", "m_iTeamNum"])
-
-# Round wins by side
-demo.rounds.group_by("winner_side").len()
-```
+Use the Python example above to read a scoreboard and sample player state.
+See the [getting started guide](https://awpy.readthedocs.io/en/latest/getting-started.html)
+for installation, Polars queries, and map assets.
 
 ### Multipart demos
 
 Pass files in recording order. Strings and `Path` objects can be mixed:
 
 ```python
-demo = Demo(["overpass-p1.dem", "overpass-p2.dem"])
+from awpy import Demo
+
+demo = Demo(["match-p1.dem", "match-p2.dem"])
 print(demo.stats)
 state = demo.snapshots(part=1, ticks=5333)
 ```
@@ -179,7 +170,9 @@ parser.run_to_end(|ctx| {
 # Ok::<(), awpy::Error>(())
 ```
 
-## Available Datasets
+<a id="available-datasets"></a>
+
+## Select Awpy datasets
 
 Dataset properties return cached DataFrames. Use `demo.load("kills", "damages", "shots")` to collect compatible datasets in one pass. See the [dataset reference](https://awpy.readthedocs.io/en/latest/datasets.html) for columns and selection rules.
 
@@ -206,7 +199,9 @@ For events without a dedicated dataset, the `demo.events` mapping returns any ga
 
 Use `awpy.SNAPSHOT_PROPERTIES` to find snapshot fields and their engine properties. `awpy.GAME_EVENTS` lists common events; `demo.events.names` lists events in the demo.
 
-## Project Structure
+<a id="project-structure"></a>
+
+## Find Awpy workspace crates
 
 | Crate | Description |
 |-------|-------------|
@@ -215,7 +210,9 @@ Use `awpy.SNAPSHOT_PROPERTIES` to find snapshot fields and their engine properti
 | [`awpy-proto`](crates/awpy-proto) | Generated CS2 protobuf types (prost). |
 | [`awpy-python`](crates/awpy-python) | Python bindings via PyO3 + Polars (published as `awpy` on PyPI). |
 
-## Documentation
+<a id="documentation"></a>
+
+## Read the Awpy documentation
 
 See [awpy.readthedocs.io](https://awpy.readthedocs.io):
 
@@ -225,9 +222,12 @@ See [awpy.readthedocs.io](https://awpy.readthedocs.io):
 - [API Reference](https://awpy.readthedocs.io/en/latest/api.html)
 - [CLI Reference](https://awpy.readthedocs.io/en/latest/cli.html)
 - [FAQ](https://awpy.readthedocs.io/en/latest/faq.html)
+- [LLM documentation index](https://awpy.readthedocs.io/llms.txt)
 - [Changelog](https://awpy.readthedocs.io/en/latest/changelog.html)
 
-## Development
+<a id="development"></a>
+
+## Build and test Awpy
 
 ```sh
 # Rust
@@ -354,6 +354,8 @@ The generator uses a bundled `protoc`. It removes unsupported C++ annotations
 from temporary compiler inputs. It keeps the upstream `.proto` files unchanged.
 Run its tests with `cargo test --locked --manifest-path scripts/build-protos/Cargo.toml`.
 
-## License
+<a id="license"></a>
+
+## Awpy license
 
 MIT — see [LICENSE](LICENSE) for details.

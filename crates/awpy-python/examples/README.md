@@ -1,11 +1,13 @@
 # Awpy examples
 
-Each script takes a demo path. CI tests these scripts with a demo.
-
 ```sh
 pip install awpy          # or: pip install 'awpy[plot]' for clutch_reel.py
 python scoreboard.py match.dem
 ```
+
+Each script takes a demo path. CI tests these scripts with a demo.
+
+
 
 | Script | What it shows |
 | --- | --- |
@@ -15,7 +17,9 @@ python scoreboard.py match.dem
 | [`clutch_reel.py`](clutch_reel.py) | Locates every 1-vs-many situation, then renders each as a radar GIF. Chains `rounds` + `kills` → `snapshots` → `awpy.plot.gif`. Needs `awpy[plot]`. |
 | [`batch_parse.py`](batch_parse.py) | A folder of demos → Parquet, one file per table, so later analysis never re-parses. |
 
-## Getting a demo
+<a id="getting-a-demo"></a>
+
+## Get a CS2 demo for the Awpy examples
 
 - **Your own matches** — CS2 writes them under *Watch → Your Matches*, into
   `.../Counter-Strike Global Offensive/game/csgo/replays/`.
@@ -25,7 +29,9 @@ python scoreboard.py match.dem
 Awpy reads CS2 (Source 2, `PBDEMS2`) demos; the older CS:GO format is not
 supported.
 
-## Sample size
+<a id="sample-size"></a>
+
+## Use multiple CS2 matches for Awpy analysis
 
 Do not draw conclusions from one match.
 Use `batch_parse.py` to prepare multiple demos for analysis.

@@ -1,15 +1,7 @@
 # Python API benchmarks
 
-Use `bench_api.py` to measure the Python API in isolated processes.
-The older `bench_parse.py` script remains available for basic dataset timings.
-Use the Rust Criterion suite to separate parser costs from Python API costs.
-See [RESULTS.md](RESULTS.md) for local measurements.
-
-## Build and run
-
-Run these commands from `crates/awpy-python`:
-
 ```sh
+cd crates/awpy-python
 uv sync --locked --no-install-project
 uv run --no-sync maturin develop --release --locked
 uv run --no-sync python benchmarks/bench_api.py --list
@@ -17,6 +9,19 @@ uv run --no-sync python benchmarks/bench_api.py \
   --demo /absolute/path/match.dem --repeat 5 --warmup 1 \
   --threads 4 --segments 4 --output ../../target/benchmarks/before.json
 ```
+
+Use `bench_api.py` to measure the Python API in isolated processes.
+The older `bench_parse.py` script remains available for basic dataset timings.
+Use the Rust Criterion suite to separate parser costs from Python API costs.
+See [RESULTS.md](RESULTS.md) for local measurements.
+
+<a id="build-and-run"></a>
+
+## Build and measure the Awpy Python API
+
+Run these commands from `crates/awpy-python`:
+
+
 
 Repeat the measurement after the change. Use the same demo contents, cases,
 harness, build profile, Python version, and thread limits.

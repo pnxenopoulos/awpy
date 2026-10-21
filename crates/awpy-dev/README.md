@@ -1,13 +1,17 @@
 # awpy-dev
 
-Use `awpy-dev` to inspect CS2 demos and parser internals without Python.
-For the user CLI, install the [Python package](../awpy-python).
-
 ```sh
 cargo install --path crates/awpy-dev   # installs `awpy-dev`
 ```
 
-## Commands
+Use `awpy-dev` to inspect CS2 demos and parser internals without Python.
+For the user CLI, install the [Python package](../awpy-python).
+
+
+
+<a id="commands"></a>
+
+## Inspect CS2 demos with awpy-dev
 
 Parser internals (not exposed in the Python API):
 

@@ -47,6 +47,22 @@ autodoc_member_order = "bysource"
 # field list to merge types in, which produces malformed rST for the compiled
 # functions (they have no annotations to merge).
 autodoc_typehints = "signature"
+# External types remain visible. This offline build has no external inventories.
+# Keep missing references to Awpy objects as errors.
+nitpick_ignore = [
+    ("py:class", "collections.abc.Iterable"),
+    ("py:class", "collections.abc.Mapping"),
+    ("py:class", "collections.abc.Sequence"),
+    ("py:class", "matplotlib.axes.Axes"),
+    ("py:class", "matplotlib.axes._axes.Axes"),
+    ("py:class", "matplotlib.figure.Figure"),
+    ("py:class", "pathlib.Path"),
+    ("py:class", "polars.DataFrame"),
+    ("py:class", "pl.DataFrame"),
+    ("py:class", "Axes"),
+    ("py:class", "Figure"),
+    ("py:exc", "urllib.error.URLError"),
+]
 autodoc_default_options = {
     "members": True,
     "undoc-members": False,
@@ -70,6 +86,7 @@ napoleon_use_ivar = True
 # suits the project's name.
 html_theme = "shibuya"
 html_static_path = ["_static"]
+html_extra_path = ["llms.txt"]
 html_favicon = "_static/favicon.ico"
 html_logo = "_static/logo.svg"
 html_css_files = ["custom.css"]

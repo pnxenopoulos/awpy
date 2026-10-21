@@ -17,155 +17,272 @@ class InvalidDemoError(Exception):
     """Raised when a file is not a valid CS2 demo (bad magic bytes or a parse error)."""
 
 class Events:
-    """A demo's game events, keyed by name. Returned by :attr:`Demo.events`.
+    """Read recorded CS2 game events as cached Polars DataFrames.
 
-    Behaves like a read-only mapping from event name to DataFrame: iterating
-    yields the (sorted) event names, ``in`` tests membership, and indexing or
-    attribute access parses one event::
+    Attributes:
+        names: Sorted recorded event names.
+        counts: Event names mapped to occurrence counts.
 
-        demo.events.names            # every event name in the demo
-        demo.events.counts           # {name: occurrences}
-        demo.events.player_death     # -> DataFrame
-        demo.events["player_ping"]   # -> DataFrame
+    Notes:
+        Each frame contains ``tick`` and string-valued event fields. Participant fields such as
+        ``attacker`` are user IDs. Dedicated datasets resolve Steam IDs. Multipart event frames also
+        contain ``part``.
 
-    Each frame has a ``tick`` column plus one string column per event key
-    (e.g. ``attacker``, ``weapon``, ``headshot`` for ``player_death``), is
-    built on first access, and is cached.
+    Examples:
+        >>> from awpy import Demo
+        >>> events = Demo("match.dem").events
+        >>> deaths = events["player_death"]
     """
 
     @property
     def names(self) -> list[str]:
-        """The event names present in the demo, sorted."""
+        """List recorded CS2 game-event names.
+
+        Returns:
+            Sorted event names present in the demo.
+        """
 
     @property
     def counts(self) -> dict[str, int]:
-        """Occurrence counts, as a ``{event_name: count}`` dict."""
+        """Count each recorded CS2 game-event name.
 
-    def __repr__(self) -> str: ...
-    def __len__(self) -> int: ...
-    def __contains__(self, name: str) -> bool: ...
-    def __iter__(self) -> Iterator[str]: ...
+        Returns:
+            Event names mapped to occurrence counts.
+        """
+
+    def __repr__(self) -> str:
+        """Describe the loaded Awpy object.
+
+        Returns:
+            A short object description.
+        """
+        ...
+    def __len__(self) -> int:
+        """Count the loaded entries.
+
+        Returns:
+            The number of distinct recorded event names.
+        """
+        ...
+    def __contains__(self, name: str) -> bool:
+        """Check whether a CS2 event name was recorded.
+
+        Args:
+            name: Game-event name.
+
+        Returns:
+            True if the demo contains this event.
+        """
+        ...
+    def __iter__(self) -> Iterator[str]:
+        """Iterate over recorded CS2 event names.
+
+        Returns:
+            An iterator over sorted event names.
+        """
+        ...
     def __getitem__(self, name: str) -> pl.DataFrame:
-        """One event's rows as a DataFrame (built once, then cached).
+        """Read one recorded CS2 game-event table.
 
-        Raises ``KeyError`` if the demo has no event with that name.
+        Args:
+            name: Game-event name.
+
+        Returns:
+            A cached Polars DataFrame with tick and raw event fields.
+
+        Raises:
+            KeyError: If the demo has no event with that name.
         """
 
     def __getattr__(self, name: str) -> pl.DataFrame:
-        """Attribute access for one event (e.g. ``events.player_death``).
+        """Read one recorded CS2 game-event table.
 
-        Raises ``AttributeError`` if the demo has no event with that name.
+        Args:
+            name: Game-event name.
+
+        Returns:
+            A cached Polars DataFrame with tick and raw event fields.
+
+        Raises:
+            AttributeError: If the demo has no event with that name.
         """
 
 class Demo:
-    """Open one CS2 demo or ordered recordings of one map.
-
-    Single-file construction maps the file and checks its header. Multipart
-    construction also checks round continuity and recording boundaries.
-    Dataset access triggers decoding and caches the result.
-    Multipart tables include ``part``; ticks and entity handles remain local.
-    ``players`` and ``stats`` combine Steam IDs without a ``part`` column.
+    """Read one CS2 demo or ordered recordings of one map.
 
     Args:
-        path: A string or path, or a nonempty sequence of strings and paths.
+        path: One string or path-like object, or a nonempty sequence in recording order.
+
+    Attributes:
+        path: Source ``Path`` for a single recording. Access on a multipart demo raises
+            ``ValueError``.
+        paths: Source paths in recording order.
+        parts: Each source recording as a ``Demo``.
+        headers: Header and playback metadata for each source recording.
 
     Raises:
-        FileNotFoundError: If the file does not exist.
-        InvalidDemoError: If the file is not a valid CS2 demo.
+        FileNotFoundError: If a file does not exist.
+        InvalidDemoError: If a file cannot be decoded as a supported CS2 demo.
+        ValueError: If a multipart selection is empty, incompatible, incomplete, or split during
+            live play.
+
+    Notes:
+        Single-file construction maps the file and checks its header. Multipart construction also
+        validates round continuity and recording boundaries. Dataset properties decode on access and
+        cache results. Multipart tables retain local ticks and include ``part``. ``players`` and
+        ``stats`` combine Steam IDs.
+
+    Examples:
+        >>> from awpy import Demo
+        >>> demo = Demo("match.dem")
+        >>> demo.load("kills", "damages", "shots")
+        >>> print(demo.stats)
     """
 
     path: Path
-    def __init__(self, path: str | PathLike[str] | Sequence[str | PathLike[str]]) -> None: ...
+    def __init__(self, path: str | PathLike[str] | Sequence[str | PathLike[str]]) -> None:
+        """Open CS2 demo paths in the supplied recording order.
+
+        Args:
+            path: One string or path-like object, or a nonempty sequence in recording order.
+        """
+        ...
     @property
     def paths(self) -> tuple[Path, ...]:
-        """Source paths in the supplied order."""
+        """Read the source paths in recording order.
+
+        Returns:
+            Source Path objects in supplied order.
+        """
     @property
     def parts(self) -> tuple[Demo, ...]:
-        """Each source recording as a Demo, indexed from zero."""
+        """Read each source recording as a Demo.
+
+        Returns:
+            Source Demo objects in supplied order.
+        """
     @property
     def headers(self) -> tuple[dict[str, Any], ...]:
-        """Header and playback metadata for each source recording."""
-    def __repr__(self) -> str: ...
+        """Read header and playback metadata for each recording.
+
+        Returns:
+            One header dictionary for each source recording.
+        """
+    def __repr__(self) -> str:
+        """Describe the loaded Awpy object.
+
+        Returns:
+            A short object description.
+        """
+        ...
     @staticmethod
     def available_datasets() -> list[str]:
-        """Dataset names accepted by load()."""
+        """List cached dataset names accepted by Demo.load.
+
+        Returns:
+            Supported dataset names as strings.
+        """
 
     def load(self, *datasets: str) -> None:
-        """Load and cache the named DataFrames.
+        """Decode and cache selected Awpy datasets.
 
-        Compatible event requests share one pass, as do projectile requests.
-        Stats reuse combat, round, and roster inputs. A combined stats request can
-        also collect bomb and shot rows. Cached datasets are skipped.
+        Args:
+            *datasets: Dataset names from ``available_datasets()``.
 
         Raises:
-            ValueError: If any dataset name is unknown, before loading begins.
+            ValueError: If any name is unknown, before decoding starts.
+
+        Notes:
+            Compatible combat and projectile requests share passes. Stats reuse combat, round, and
+            roster inputs. Already cached datasets are skipped.
         """
 
     @property
     def header(self) -> dict[str, Any]:
-        """The demo file header and playback info as a dict.
+        """Read cached CS2 header and playback metadata.
 
-        Keys: ``map_name``, ``server_name``, ``client_name``, ``build_num``,
-        ``demo_version_name``, ``game_directory``, and (when available)
-        ``playback_ticks``, ``playback_frames``, ``playback_time``.
-        Multipart playback fields are in ``headers`` instead.
+        Returns:
+            The header dictionary. Multipart playback fields are retained in ``headers``.
+
+        Notes:
+            Keys: ``map_name``, ``server_name``, ``client_name``, ``build_num``,
+            ``demo_version_name``, ``game_directory``, and (when available)
+            ``playback_ticks``, ``playback_frames``, ``playback_time``.
+            Multipart playback fields are in ``headers`` instead.
         """
 
     @property
     def tick_rate(self) -> float:
-        """Ticks per second, from ``playback_ticks / playback_time``.
+        """Read the CS2 recording tick rate.
 
-        Returns ``64.0`` when playback timing is unavailable.
+        Returns:
+            Ticks per second from playback timing, or 64.0 when timing is unavailable.
+
+        Notes:
+            Returns ``64.0`` when playback timing is unavailable.
         """
 
     def tick_to_seconds(self, tick: int) -> float:
-        """Convert a demo tick to seconds from the start of the demo."""
+        """Convert a local demo tick to seconds from recording start.
+
+        Args:
+            tick: Local signed demo tick.
+
+        Returns:
+            Seconds, using the demo tick rate.
+        """
 
     def seconds_to_tick(self, seconds: float) -> int:
-        """Convert seconds from the start of the demo to the nearest demo tick.
+        """Convert recording seconds to the nearest local demo tick.
 
-        Negative values are valid. The value must be finite and fit in a
-        signed 32-bit tick.
+        Args:
+            seconds: Finite seconds from recording start. Negative values are permitted.
+
+        Returns:
+            The nearest signed 32-bit tick.
+
+        Raises:
+            ValueError: If the value is nonfinite or outside the supported tick range.
         """
 
     @property
     def events(self) -> Events:
-        """Cached game events, indexed by name.
+        """Read the cached CS2 game-event mapping.
 
-        Use ``demo.events.names`` to list names and ``demo.events[name]`` or
-        attribute access to read a cached DataFrame::
+        Returns:
+            The cached Events mapping.
 
-            demo.events.player_death
-            demo.events["player_ping"]
+        Notes:
+            Use ``demo.events.names`` to list names and ``demo.events[name]`` or
+            attribute access to read a cached DataFrame::
+
+                demo.events.player_death
+                demo.events["player_ping"]
         """
 
     def ticks(
         self, props: list[str] | None = ..., players_only: bool = ..., *, part: int | None = ...
     ) -> pl.DataFrame:
-        """Read selected entity properties at every tick.
-
-        With ``players_only=True``, merge each player pawn and controller into
-        one row per tick. Columns are ``tick``, ``steamid``, and the requested
-        properties. Only player pawns and controllers are decoded.
-
-        With ``players_only=False``, return one row per entity per tick.
-        Identity columns are ``tick``, ``entity_id``, ``entity_serial``, and
-        ``class_name``. Use the id and serial together as the entity identity.
-
-        Property types are inferred: Int64, Float64, Boolean, or Utf8.
-        Mixed integer and float values use Float64.
-        Names can be raw network fields or aliases: ``X``, ``Y``, ``Z``,
-        ``velocity_x``, ``velocity_y``, ``velocity_z``, ``velocity`` (3D speed),
-        ``health``, ``armor``, ``team_num``, ``name``, and ``money``.
-
-        Player pawn fields and names can decode in parallel. Other controller-only
-        fields and raw entity queries use serial decoding. Results are not cached.
-        Set ``part`` to select a source recording in a multipart demo.
+        """Read selected networked CS2 properties at every recorded tick.
 
         Args:
-            props: Property names. Defaults to
-                ``["X", "Y", "Z", "health", "armor", "team_num"]``.
-            players_only: Merge player entities if true; otherwise, return all entities.
+            props: Raw field names or aliases. Defaults to ``X``, ``Y``, ``Z``, ``health``,
+                ``armor``, and ``team_num``.
+            players_only: Merge each player pawn and controller when true; read all entities when
+                false.
+            part: Zero-based source recording. Required for multipart explicit ticks or windows.
+
+        Returns:
+            A Polars DataFrame. Player rows include ``tick`` and ``steamid``. Entity rows include
+            ``tick``, ``entity_id``, ``entity_serial``, and ``class_name``. Multipart queries also
+            include ``part``.
+
+        Notes:
+            Aliases include ``X``, ``Y``, ``Z``, ``velocity_x``, ``velocity_y``, ``velocity_z``,
+            ``velocity``, ``health``, ``armor``, ``team_num``, ``name``, and ``money``. Types are
+            Int64, Float64, Boolean, or String; mixed integers and floats use Float64. Use entity ID
+            and serial together. Pawn fields and names can decode in parallel; other controller
+            fields and all-entity queries use serial decoding. Results are not cached.
         """
 
     def snapshots(
@@ -179,217 +296,308 @@ class Demo:
         end_tick: int | None = ...,
         part: int | None = ...,
     ) -> pl.DataFrame:
-        """Read player state at selected ticks as a DataFrame.
+        """Read CS2 player state at selected local ticks.
 
-        Return one row per active player per tick. See :data:`awpy.SNAPSHOT_PROPERTIES`
-        for the schema. Select ticks with:
+        Args:
+            ticks: One local demo tick or a sequence of local ticks.
+            every: Positive sampling stride in ticks. Do not combine with ``seconds``.
+            seconds: Positive sampling interval in seconds. Do not combine with ``every``.
+            events: One game-event name or a sequence of names whose ticks are selected.
+            start_tick: Inclusive lower bound. Alone with ``end_tick``, select every tick in the
+                window.
+            end_tick: Inclusive upper bound for the selected ticks.
+            part: Zero-based source recording. Required for multipart explicit ticks or windows.
 
-        - ``ticks``: one tick or a list.
-        - ``every`` or ``seconds``: a stride in ticks or seconds. Do not set both.
-        - ``events``: ticks with a named game event, or a list of event names.
-        - ``start_tick`` and ``end_tick``: an inclusive window. Alone, this selects
-          every tick in the window. With other selectors, it bounds the selection.
+        Returns:
+            A Polars DataFrame with one row per active player and tick. See
+            ``awpy.SNAPSHOT_PROPERTIES`` for fields. Multipart queries add ``part``.
 
-        Multipart local ticks and tick windows require ``part``.
-        Stride and event queries can read all parts.
-        At least one selector is required. One to four explicit ticks without
-        other selectors use keyframe seeks. Other requests decode keyframe
-        segments in parallel. Results are not cached.
+        Raises:
+            ValueError: If selectors conflict, no selector is supplied, or a multipart local query
+                has no part.
 
-        Examples::
+        Notes:
+            The window bounds the other selectors. One to four explicit ticks without other
+            selectors use keyframe seeks. Other requests decode keyframe segments in parallel.
+            Results are not cached.
 
-            demo.snapshots(ticks=[29000, 30000])
-            demo.snapshots(seconds=1, start_tick=0, end_tick=64000)
-            demo.snapshots(events="player_death")
+        Examples:
+            >>> from awpy import Demo
+            >>> demo = Demo("match.dem")
+            >>> sampled = demo.snapshots(seconds=1.0)
+            >>> exact = demo.snapshots(ticks=[10000, 10100])
         """
 
     @property
     def players(self) -> pl.DataFrame:
-        """Cached roster with one row per observed player.
+        """Read the cached CS2 player roster.
 
-        Columns: ``steamid``, ``name``, ``side``, and ``team_clan_name``.
-        Bots have Steam ID 0. Side and team name are the last observed values.
-        Team names come from ``CCSTeam`` and are null when not set.
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+
+        Notes:
+            Columns: ``steamid``, ``name``, ``side``, and ``team_clan_name``.
+            Bots have Steam ID 0. Side and team name are the last observed values.
+            Team names come from ``CCSTeam`` and are null when not set.
         """
 
     @property
     def round_economy(self) -> pl.DataFrame:
-        """Per-team economy and buy type per round (cached).
+        """Read cached CS2 team equipment values and buy types.
 
-        One row per (round, side): ``round_num``, ``side``, ``equipment_value``
-        (the team's total at freeze end), ``buy_type`` (``pistol`` / ``eco`` /
-        ``force`` / ``full``), and ``n_players``.
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+
+        Notes:
+            One row per (round, side): ``round_num``, ``side``, ``equipment_value``
+            (the team's total at freeze end), ``buy_type`` (``pistol`` / ``eco`` /
+            ``force`` / ``full``), and ``n_players``.
         """
 
     @property
     def chat(self) -> pl.DataFrame:
-        """Chat messages as a DataFrame (cached).
+        """Read cached CS2 chat messages.
 
-        Decoded from ``SayText``, ``SayText2``, and ``SayTextChannel``. Columns:
-        ``tick``, ``entity_index`` (the sender's controller slot), ``name``,
-        ``message``, and ``channel`` (e.g. ``Cstrike_Chat_All`` for all-chat,
-        ``Cstrike_Chat_T`` / ``Cstrike_Chat_CT`` for team chat). Server-side
-        (GOTV) demos often strip chat entirely — an empty frame is normal.
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+
+        Notes:
+            Decoded from ``SayText``, ``SayText2``, and ``SayTextChannel``. Columns:
+            ``tick``, ``entity_index`` (the sender's controller slot), ``name``,
+            ``message``, and ``channel`` (e.g. ``Cstrike_Chat_All`` for all-chat,
+            ``Cstrike_Chat_T`` / ``Cstrike_Chat_CT`` for team chat). Server-side
+            (GOTV) demos often strip chat entirely — an empty frame is normal.
         """
 
     @property
     def blinds(self) -> pl.DataFrame:
-        """Flash events as a DataFrame (cached): one row per player blinded.
+        """Read cached CS2 flash victims, throwers, and durations.
 
-        Reconstructed from pawn flash state and ``flashbang_detonate`` (so it
-        works even on GOTV demos, which omit the ``player_blind`` event).
-        Columns: ``tick``, the resolved ``attacker_*`` (thrower) and
-        ``victim_*`` (blinded player) ``steamid`` / ``name`` / ``side`` /
-        ``x`` / ``y`` / ``z``, and ``duration`` (blind seconds).
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+
+        Notes:
+            Reconstructed from pawn flash state and ``flashbang_detonate`` (so it
+            works even on GOTV demos, which omit the ``player_blind`` event).
+            Columns: ``tick``, the resolved ``attacker_*`` (thrower) and
+            ``victim_*`` (blinded player) ``steamid`` / ``name`` / ``side`` /
+            ``x`` / ``y`` / ``z``, and ``duration`` (blind seconds).
         """
 
     @property
     def item_events(self) -> pl.DataFrame:
-        """Weapon-item transactions as a DataFrame (cached): purchases, pickups,
-        and drops, reconstructed from inventory state (so they work on demos
-        that omit the ``item_purchase`` event). Columns: ``tick``, ``action``
-        (``purchase`` / ``pickup`` / ``drop``), ``steamid`` / ``name`` /
-        ``side``, ``item``, ``x`` / ``y`` / ``z``, ``original_owner_steamid``,
-        ``cost`` (purchases), and ``near_buy_zone`` (drops).
+        """Read cached CS2 item purchases, pickups, and drops.
+
+        Returns:
+            A Polars DataFrame with transaction tick, action, player, item, position, original
+            owner, cost, and buy-zone state.
+
+        Notes:
+            Transactions are reconstructed from inventory state, including demos without
+            item_purchase events.
         """
 
     @property
     def convars(self) -> dict[str, str]:
-        """Server console variables, as a ``{name: value}`` dict (cached).
+        """Read cached CS2 server console variables.
 
-        Collected from the demo's ``net_SetConVar`` messages; when a convar is
-        set more than once, the last value wins.
+        Returns:
+            dict[str, str].
+
+        Notes:
+            Collected from the demo's ``net_SetConVar`` messages; when a convar is
+            set more than once, the last value wins.
         """
 
     @property
     def rounds(self) -> pl.DataFrame:
-        """Per-round information as a DataFrame (cached).
+        """Read cached CS2 round timings, winners, and end reasons.
 
-        One row per round with ``round_num``, ``start_tick``,
-        ``freeze_end_tick``, ``end_tick``, ``winner`` (team number),
-        ``winner_side``, ``reason``, and ``reason_name``. Reconstructed from
-        ``CCSGameRules`` state, so it works on demos without ``round_start`` /
-        ``round_end`` events.
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+
+        Notes:
+            One row per round with ``round_num``, ``start_tick``,
+            ``freeze_end_tick``, ``end_tick``, ``winner`` (team number),
+            ``winner_side``, ``reason``, and ``reason_name``. Reconstructed from
+            ``CCSGameRules`` state, so it works on demos without ``round_start`` /
+            ``round_end`` events.
         """
 
     @property
     def kills(self) -> pl.DataFrame:
-        """Cached ``player_death`` events with resolved participants.
+        """Read cached CS2 kills and resolved participants.
 
-        ``is_trade`` marks a kill that avenges a teammate within 5.25 seconds.
-        ``victim_traded`` marks the earlier death; stats count it as ``traded_deaths``.
-        Each kill trades only the earliest qualifying death. A kill can have both flags.
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+
+        Notes:
+            ``is_trade`` marks a kill that avenges a teammate within 5.25 seconds.
+            ``victim_traded`` marks the earlier death; stats count it as ``traded_deaths``.
+            Each kill trades only the earliest qualifying death. A kill can have both flags.
         """
 
     @property
     def damages(self) -> pl.DataFrame:
-        """Every damage instance (``player_hurt`` event) as a DataFrame, all fields (cached)."""
+        """Read cached CS2 player_hurt events and resolved participants.
+
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+        """
 
     @property
     def bomb(self) -> pl.DataFrame:
-        """Bomb actions (pickup / drop / plant / defuse) as a DataFrame (cached)."""
+        """Read cached CS2 bomb actions.
+
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+        """
 
     @property
     def grenades(self) -> pl.DataFrame:
-        """Thrown-grenade trajectories (one row per tick each grenade is live; cached)."""
+        """Read cached CS2 grenade positions at each tick.
+
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+        """
 
     @property
     def fires(self) -> pl.DataFrame:
-        """Burning infernos (one row per fire, with its ``[start_tick, end_tick]``; cached)."""
+        """Read cached CS2 fire intervals.
+
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+        """
 
     @property
     def smokes(self) -> pl.DataFrame:
-        """Smoke clouds (one row per smoke, with its ``[start_tick, end_tick]``; cached)."""
+        """Read cached CS2 smoke intervals.
+
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+        """
 
     @property
     def shots(self) -> pl.DataFrame:
-        """Shots (``weapon_fire`` events) with shooter and weapon state (cached).
+        """Read cached CS2 shots with player and weapon state.
 
-        Built in the same single pass as kills / damages / bomb / blinds.
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+
+        Notes:
+            Built in the same single pass as kills / damages / bomb / blinds.
         """
 
     @property
     def stats(self) -> pl.DataFrame:
-        """Cached match statistics, with one row per player.
+        """Read cached CS2 match statistics for each player.
 
-        Knife rounds are excluded. Includes kills, deaths, assists, headshots,
-        openings, trades, multikills, KAST, ADR, clutches, and utility.
-        ``clutch_1v1`` through ``clutch_1v5`` count wins by the opponent count
-        when the clutch started. Their sum is ``clutches_won``.
-        See the dataset and reference guides for columns and definitions.
+        Returns:
+            The cached Polars DataFrame. See the dataset guide for all columns.
+
+        Notes:
+            Knife rounds are excluded. Includes kills, deaths, assists, headshots,
+            openings, trades, multikills, KAST, ADR, clutches, and utility.
+            ``clutch_1v1`` through ``clutch_1v5`` count wins by the opponent count
+            when the clutch started. Their sum is ``clutches_won``.
+            See the dataset and reference guides for columns and definitions.
         """
 
     def player_stats(self, include_knife_rounds: bool = ...) -> pl.DataFrame:
-        """Read player statistics with optional knife rounds.
+        """Read CS2 player statistics with optional knife rounds.
 
-        Set ``include_knife_rounds=True`` to include rounds marked ``is_knife_round``.
-        Both variants reuse decoded inputs and cache their DataFrames.
-        The default returns the same cached object as :attr:`stats`.
+        Args:
+            include_knife_rounds: Include rounds marked ``is_knife_round`` when true.
+
+        Returns:
+            A cached Polars scoreboard with one row per player.
+
+        Notes:
+            Both variants reuse decoded inputs. The default is the same cached result as ``stats``.
         """
 
 class VisibilityChecker:
-    """Line-of-sight visibility over a map's collision geometry.
-
-    Answers whether the straight segment between two world points is
-    unobstructed, using the compact ``.mesh`` files published by ``awpy-data``.
-    Construct it from either a map name or a mesh file:
-
-    - ``VisibilityChecker("de_inferno")`` — newest release cached under
-      ``~/.awpy`` (the latest release is downloaded if the cache is empty);
-    - ``VisibilityChecker("de_inferno", version=2000873)`` — a pinned
-      ``awpy-data`` release, downloaded on demand;
-    - ``VisibilityChecker("path/to/de_inferno.mesh")`` — a specific file.
-      Strings count as paths when they end in ``.mesh`` or contain a path
-      separator; ``pathlib.Path`` objects always do.
-
-    A bounding-volume hierarchy is built once at construction, so each query is
-    fast; reuse a single checker for many queries.
-
-    Coordinates are Hammer units, Z-up — the same frame as demo world positions
-    (e.g. the ``*_x`` / ``*_y`` / ``*_z`` columns of :meth:`Demo.kills`), so you
-    can pass entity positions in directly.
+    """Check CS2 line of sight against static collision geometry.
 
     Args:
-        source: Map name (e.g. ``"de_inferno"``) or path to a ``.mesh`` file.
-        version: ``awpy-data`` release to use when ``source`` is a map name —
-            an integer ClientVersion (e.g. ``2000873``); defaults to the newest
-            cached release.
+        source: CS2 map name or local ``.mesh`` path. A ``Path`` is always a file path.
+        version: awpy-data ClientVersion for a map name. Omit to select the newest cached release;
+            an empty cache selects the latest release.
+
+    Attributes:
+        path: The loaded mesh path, or ``None``.
+        triangle_count: Number of collision triangles.
 
     Raises:
-        FileNotFoundError: If the file does not exist, or the release has no
-            mesh for the map.
-        ValueError: If the file is not a valid awpy mesh, or ``version`` is
-            combined with a file path.
+        FileNotFoundError: If the mesh file or map asset is missing.
+        ValueError: If the mesh is invalid or a version is combined with a file path.
 
-    Example:
+    Notes:
+        Coordinates use Hammer units, with Z vertical. Missing map assets download through
+        ``awpy.data``. Reuse the checker to retain its spatial index. Smokes, moving doors, and
+        bullet penetration are not modeled.
+
+    Examples:
         >>> from awpy import VisibilityChecker
-        >>> vc = VisibilityChecker("de_inferno")
-        >>> vc.is_visible((1258.04, 455.47, 181.22), (-158.62, 819.09, 103.73))
-        True
+        >>> checker = VisibilityChecker("de_inferno")
+        >>> clear = checker.is_visible((-158.6, 819.1, 103.7), (1258.0, 455.5, 181.2))
     """
 
     path: Path | None
     triangle_count: int
-    def __init__(self, source: str | Path, *, version: int | None = None) -> None: ...
-    def __repr__(self) -> str: ...
-    def is_visible(self, a: Point, b: Point) -> bool:
-        """Is the straight segment from ``a`` to ``b`` clear of geometry?
+    def __init__(self, source: str | Path, *, version: int | None = None) -> None:
+        """Load a CS2 collision mesh and build its spatial index.
 
         Args:
-            a: Start point ``(x, y, z)`` in Hammer units.
-            b: End point ``(x, y, z)`` in Hammer units.
+            source: CS2 map name or local ``.mesh`` path. A ``Path`` is always a file path.
+            version: awpy-data ClientVersion for a map name. Omit to select the newest cached
+                release; an empty cache selects the latest release.
+        """
+        ...
+    def __repr__(self) -> str:
+        """Describe the loaded Awpy object.
 
         Returns:
-            ``True`` if nothing blocks the line between the two points.
+            A short object description.
+        """
+        ...
+    def is_visible(self, a: Point, b: Point) -> bool:
+        """Check whether static geometry leaves a CS2 line segment clear.
+
+        Args:
+            a: Start ``(x, y, z)`` in Hammer units.
+            b: End ``(x, y, z)`` in Hammer units.
+
+        Returns:
+            True if no collision triangle blocks the segment.
         """
 
     def is_occluded(self, a: Point, b: Point) -> bool:
-        """Does any triangle block the segment from ``a`` to ``b``?
+        """Check whether static geometry blocks a CS2 line segment.
 
-        The complement of :meth:`is_visible`.
+        Args:
+            a: Start ``(x, y, z)`` in Hammer units.
+            b: End ``(x, y, z)`` in Hammer units.
+
+        Returns:
+            True if a collision triangle blocks the segment. The complement of ``is_visible``.
         """
 
 class NavArea(TypedDict):
+    """Describe one CS2 navigation polygon returned by NavMesh.area.
+
+    Attributes:
+        area_id: Navigation area ID.
+        hull_index: Collision hull used to generate this area.
+        dynamic_attribute_flags: Recorded engine attribute bitset.
+        corners: World ``(x, y, z)`` polygon corners in Hammer units.
+        connections: Distinct outgoing neighbor area IDs.
+        ladders_above: Connected ladder IDs above the area.
+        ladders_below: Connected ladder IDs below the area.
+        centroid: Polygon center in Hammer units.
+        size: Horizontal polygon area in square Hammer units.
+    """
+
     area_id: int
     hull_index: int
     dynamic_attribute_flags: int
@@ -401,43 +609,33 @@ class NavArea(TypedDict):
     size: float
 
 class NavMesh:
-    """A map's navigation mesh: walkable areas and the graph connecting them.
-
-    CS2 tiles each map's walkable surface with convex polygonal *areas* joined
-    by *connections*. This class parses the ``.nav`` files published by
-    ``awpy-data`` and answers the two questions you'd ask of them: which area a
-    world point sits in, and the shortest area-to-area path across the graph.
-    Construct it from either a map name or a ``.nav`` file:
-
-    - ``NavMesh("de_dust2")`` — newest release cached under ``~/.awpy`` (the
-      latest release is downloaded if the cache is empty);
-    - ``NavMesh("de_dust2", version=2000873)`` — a pinned ``awpy-data`` release;
-    - ``NavMesh("path/to/de_dust2.nav")`` — a specific file. Strings count as
-      paths when they end in ``.nav`` or contain a path separator;
-      ``pathlib.Path`` objects always do.
-
-    Coordinates are Hammer units, Z-up — the same frame as demo world positions,
-    so entity positions can be passed straight into :meth:`find_area`. Areas are
-    identified by numeric ``area_id``.
+    """Read CS2 navigation areas and query directed paths.
 
     Args:
-        source: Map name (e.g. ``"de_dust2"``) or path to a ``.nav`` file.
-        version: ``awpy-data`` release to use when ``source`` is a map name — an
-            integer ClientVersion (e.g. ``2000873``); defaults to the newest
-            cached release.
+        source: CS2 map name or local ``.nav`` path. A ``Path`` is always a file path.
+        version: awpy-data ClientVersion for a map name. Omit to select the newest cached release;
+            an empty cache selects the latest release.
+
+    Attributes:
+        path: The loaded navigation file path, or ``None``.
+        version: Navigation file format version.
+        sub_version: Navigation file format subversion.
+        is_analyzed: Whether the file contains analyzed bot-navigation data.
+        area_count: Number of navigation areas.
 
     Raises:
-        FileNotFoundError: If the file does not exist, or the release has no nav
-            for the map.
-        ValueError: If the file is not a valid nav mesh, or ``version`` is
-            combined with a file path.
+        FileNotFoundError: If the file or map asset is missing.
+        ValueError: If the navigation file is invalid or a version is combined with a file path.
 
-    Example:
+    Notes:
+        World coordinates use Hammer units, with Z vertical. Missing map assets download through
+        ``awpy.data``. Keep the mesh for repeated queries. Navigation file versions differ from
+        awpy-data release versions.
+
+    Examples:
         >>> from awpy import NavMesh
         >>> nav = NavMesh("de_dust2")
-        >>> area = nav.find_area((-1500.0, 900.0, 60.0))
-        >>> nav.find_path(area, 42, weight="distance")  # doctest: +SKIP
-        [..., 42]
+        >>> route = nav.find_path((-680.0, 1500.0, 0.0), (1200.0, 2400.0, 0.0))
     """
 
     path: Path | None
@@ -445,37 +643,71 @@ class NavMesh:
     sub_version: int
     is_analyzed: bool
     area_count: int
-    def __init__(self, source: str | Path, *, version: int | None = None) -> None: ...
-    def __repr__(self) -> str: ...
-    def __len__(self) -> int: ...
+    def __init__(self, source: str | Path, *, version: int | None = None) -> None:
+        """Load a CS2 navigation mesh.
+
+        Args:
+            source: CS2 map name or local ``.nav`` path. A ``Path`` is always a file path.
+            version: awpy-data ClientVersion for a map name. Omit to select the newest cached
+                release; an empty cache selects the latest release.
+        """
+        ...
+    def __repr__(self) -> str:
+        """Describe the loaded Awpy object.
+
+        Returns:
+            A short object description.
+        """
+        ...
+    def __len__(self) -> int:
+        """Count the loaded entries.
+
+        Returns:
+            The number of navigation areas.
+        """
+        ...
     @property
     def areas(self) -> pl.DataFrame:
-        """Every area as a row: ``area_id``, ``hull_index``,
-        ``dynamic_attribute_flags``, ``n_corners``, ``centroid_x/y/z``, ``size``
-        (2D area), and ``n_connections`` (distinct neighbours).
+        """Read CS2 navigation area summaries as a Polars table.
 
-        Full polygon geometry for one area is available via :meth:`area`.
+        Returns:
+            A Polars DataFrame with area ID, hull, flags, corner count, centroid, size, and neighbor
+            count.
+
+        Notes:
+            Use ``area(area_id)`` to read polygon corners and connected IDs.
         """
 
     def area(self, area_id: int) -> NavArea | None:
-        """Full detail for one area, or ``None`` if no area has that ID.
+        """Read the complete geometry of one CS2 navigation area.
 
-        Returns a dict with ``area_id``, ``hull_index``,
-        ``dynamic_attribute_flags``, ``corners`` (list of ``(x, y, z)``),
-        ``connections`` (distinct neighbour IDs), ``ladders_above``,
-        ``ladders_below``, ``centroid`` and ``size``.
+        Args:
+            area_id: Navigation area ID.
+
+        Returns:
+            A ``NavArea`` dictionary, or ``None`` if the ID is absent.
         """
 
     def find_area(self, point: Point) -> int | None:
-        """The area containing world point ``point`` (an ``(x, y, z)`` tuple), or
-        ``None`` if the point is over no area.
+        """Find the CS2 navigation area containing a world point.
 
-        When areas overlap in the XY plane (stacked floors, a bridge over a
-        tunnel), the area whose height is closest to the point's Z wins.
+        Args:
+            point: World ``(x, y, z)`` in Hammer units.
+
+        Returns:
+            The area ID, or ``None`` if no area covers the point. Overlapping floors use the area
+            height nearest the point Z.
         """
 
     def neighbors(self, area_id: int) -> list[int]:
-        """Distinct neighbour area IDs reachable directly from ``area_id``."""
+        """List outgoing neighbors of one CS2 navigation area.
+
+        Args:
+            area_id: Navigation area ID.
+
+        Returns:
+            Distinct directly reachable area IDs.
+        """
 
     def find_path(
         self,
@@ -484,24 +716,24 @@ class NavMesh:
         *,
         weight: str = ...,
     ) -> list[int]:
-        """Shortest path from ``start`` to ``end`` across the connection graph.
-
-        ``start`` and ``end`` are each either an area ID (``int``) or a world
-        point (``(x, y, z)`` tuple), which is resolved with :meth:`find_area`.
-        Returns the list of area IDs from start to end inclusive, or an empty
-        list if either endpoint maps to no area or no path connects them.
+        """Find a directed route through the CS2 navigation graph.
 
         Args:
-            start: Start area ID or point.
-            end: End area ID or point.
-            weight: Edge cost — ``"distance"`` (default; 3D centroid distance),
-                ``"hops"`` (fewest areas), or ``"size"`` (sum of adjacent area
-                sizes; routes away from large open areas).
+            start: Start area ID or world ``(x, y, z)`` point.
+            end: End area ID or world ``(x, y, z)`` point.
+            weight: ``distance`` uses 3D centroid distances; ``hops`` uses area count; ``size`` uses
+                adjacent area sizes.
+
+        Returns:
+            Area IDs from start through end. Empty if an endpoint has no area or no route exists.
+
+        Raises:
+            ValueError: If the weight is unknown.
         """
 
 def compute_map_control(
     nav: NavMesh,
-    players: Sequence[tuple[float, float, float, str, bool, bool]],
+    players: Sequence[tuple[float, float, float, str, bool, bool, float | None]],
     *,
     visibility: VisibilityChecker | None = ...,
     method: str = ...,
@@ -513,32 +745,33 @@ def compute_map_control(
     target_height: float = ...,
     max_distance: float | None = ...,
     contest_margin: float = ...,
+    fov: float = ...,
 ) -> dict[str, Any]:
-    """Compute one snapshot's map control over a nav mesh (low-level primitive).
-
-    Behind :func:`awpy.map_control.map_control`. Labels every nav area
-    ``"ct"`` / ``"t"`` / ``"contested"`` / ``"neutral"`` and returns
-    size-weighted summary fractions.
+    """Estimate CS2 map control from player observations.
 
     Args:
-        nav: The map's :class:`NavMesh`.
-        players: ``(x, y, z, side, crouched, blind)`` for each living player.
-        visibility: The map's :class:`VisibilityChecker`; required for
-            ``method="vision"``.
-        method: ``"vision"`` (line of sight, smoke-aware) or ``"reachability"``
-            (who reaches each area first, fire-aware).
-        smokes: Active smoke spheres ``(x, y, z, radius)`` (vision only).
-        fires: Active inferno spheres ``(x, y, z, radius)`` (reachability only).
-        detail: When ``True`` include per-area ``area_ids`` / ``control`` /
-            ``ct`` / ``t`` lists; when ``False`` return only the summary.
-        eye_height: Standing eye height above the feet (vision rays start here).
-        crouch_eye_height: Eye height when crouched.
-        target_height: Height above an area's floor that vision aims at.
-        max_distance: Optional vision-range cap; ``None`` is unbounded.
-        contest_margin: Reachability travel-distance tie band.
+        nav: Loaded ``NavMesh``.
+        players: Living-player tuples ``(x, y, z, side, crouched, blind, yaw)``. Coordinates use
+            Hammer units. Yaw uses degrees and can be ``None``.
+        visibility: Collision checker, required by ``raycast`` and ``vision``.
+        method: ``raycast`` for all-direction sight, ``vision`` for horizontal field of view, or
+            ``reachability`` for graph travel distance.
+        smokes: Active ``(x, y, z, radius)`` smoke spheres for both sight models.
+        fires: Active ``(x, y, z, radius)`` fire spheres for reachability.
+        detail: Include per-area arrays. Default true.
+        eye_height: Standing ray origin above the feet; default 64 Hammer units.
+        crouch_eye_height: Crouched ray origin above the feet; default 46 Hammer units.
+        target_height: Ray target above the area floor; default 46 Hammer units.
+        max_distance: Maximum ray distance in Hammer units, or ``None`` for no limit.
+        contest_margin: Travel-distance difference for contested areas; default 200 Hammer units.
+        fov: Horizontal field of view in degrees; default 90. Values of 360 or more, or missing yaw,
+            remove the limit.
 
     Returns:
-        A dict with ``ct_fraction``, ``t_fraction``, ``contested_fraction``,
-        ``neutral_fraction``, ``net_control``, plus the per-area lists when
-        ``detail`` is set.
+        A dictionary with ``ct_fraction``, ``t_fraction``, ``contested_fraction``,
+        ``neutral_fraction``, and ``net_control``. Detailed results also contain ``area_ids``,
+        ``control``, ``ct``, and ``t`` lists.
+
+    Raises:
+        ValueError: If the method is unknown or a sight model has no collision checker.
     """

@@ -1,5 +1,11 @@
 # Parsing benchmarks
 
+```sh
+export AWPY_BENCH_DEMO=/absolute/path/to/match.dem
+export AWPY_TICK_SEGMENTS=4
+cargo bench -p awpy --bench parse -- --test
+```
+
 Run these commands from the repository root. The `parse` target uses
 Criterion.rs. It works with both `cargo criterion` and `cargo bench`.
 
@@ -7,10 +13,7 @@ Criterion.rs. It works with both `cargo criterion` and `cargo bench`.
 
 In Bash or WSL:
 
-```sh
-export AWPY_BENCH_DEMO=/absolute/path/to/match.dem
-export AWPY_TICK_SEGMENTS=4
-```
+
 
 In PowerShell:
 

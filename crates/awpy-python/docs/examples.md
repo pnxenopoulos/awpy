@@ -1,5 +1,13 @@
 # Examples
 
+```python
+from awpy import Demo
+
+demo = Demo("match.dem")
+demo.stats.write_parquet("stats.parquet")
+print(demo.rounds.select("round_num", "winner_side", "reason_name"))
+```
+
 These scripts take a demo path. CI tests them with a demo.
 Source files are in [examples](https://github.com/pnxenopoulos/awpy/tree/main/crates/awpy-python/examples).
 
@@ -10,7 +18,10 @@ python scoreboard.py match.dem
 For inline snippets of individual datasets and columns, see {doc}`datasets`; for
 plotting recipes, see {doc}`plot`.
 
-## scoreboard.py — start here
+<a id="scoreboardpy--start-here"></a>
+<a id="scoreboard-py-start-here"></a>
+
+## Read Awpy round results and player statistics
 
 Round-by-round results plus an end-of-match scoreboard, both teams in one table.
 Touches `rounds`, `stats`, and `players`, and uses `demo.tick_rate` to report
@@ -44,7 +55,10 @@ chelo           Imperial      12    12     4     6     0     4     0  90.4  70.6
 saadzin         Imperial      12    11     3     5     2     3     0  71.4  70.6
 ```
 
-## trades.py — who refrags for whom
+<a id="tradespy--who-refrags-for-whom"></a>
+<a id="trades-py-who-refrags-for-whom"></a>
+
+## Find traded CS2 deaths with Awpy
 
 Pair `is_trade` and `victim_traded` kills to count which players avenge each other.
 
@@ -64,7 +78,10 @@ vini             -> chelo               2
 tomaszin         -> buda                2
 ```
 
-## economy.py — does forcing work?
+<a id="economypy--does-forcing-work"></a>
+<a id="economy-py-does-forcing-work"></a>
+
+## Compare CS2 buy types and wins with Awpy
 
 Joins `demo.round_economy` to `demo.rounds` for win rate by buy type, overall and
 per side. Use multiple matches before drawing conclusions.
@@ -74,7 +91,10 @@ per side. Use multiple matches before drawing conclusions.
 :caption: examples/economy.py
 ```
 
-## clutch_reel.py — from stats to video
+<a id="clutch_reelpy--from-stats-to-video"></a>
+<a id="clutch-reel-py-from-stats-to-video"></a>
+
+## Create CS2 clutch animations with Awpy
 
 Find clutches from round kills, sample player positions, and render GIFs.
 Requires `pip install 'awpy[plot]'`.
@@ -84,7 +104,10 @@ Requires `pip install 'awpy[plot]'`.
 :caption: examples/clutch_reel.py
 ```
 
-## batch_parse.py — a folder of demos to Parquet
+<a id="batch_parsepy--a-folder-of-demos-to-parquet"></a>
+<a id="batch-parse-py-a-folder-of-demos-to-parquet"></a>
+
+## Export Awpy datasets to Apache Parquet
 
 Write one Parquet file per dataset and include the source demo in each row.
 Completed demos remain available if the run stops.

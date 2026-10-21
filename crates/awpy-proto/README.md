@@ -1,5 +1,9 @@
 # awpy-proto
 
+```sh
+cargo run --manifest-path scripts/build-protos/Cargo.toml
+```
+
 Generated [prost](https://docs.rs/prost) types for CS2 demo protobufs.
 
 The `.proto` sources under `proto/` are synced from
@@ -7,13 +11,13 @@ The `.proto` sources under `proto/` are synced from
 allowlist in `proto/allowlist.txt` selects files and must include their imports.
 From the workspace root, generate `src/proto.rs` with:
 
-```sh
-cargo run --manifest-path scripts/build-protos/Cargo.toml
-```
+
 
 Do not edit `src/proto.rs` by hand.
 
-## Check for updates
+<a id="check-for-updates"></a>
+
+## Check and update Awpy CS2 protobufs
 
 Run this command from the workspace root:
 
