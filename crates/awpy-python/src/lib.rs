@@ -11,12 +11,17 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
 
 use polars::prelude::*;
+use pyo3::buffer::PyBuffer;
 use pyo3::exceptions::{
     PyAttributeError, PyFileNotFoundError, PyKeyError, PyTypeError, PyValueError,
 };
 use pyo3::prelude::*;
-use pyo3::types::{PyByteArray, PyBytes, PyDict, PyIterator, PyList, PyString, PyTuple};
-use pyo3_polars::PyDataFrame;
+use pyo3::types::{
+    PyByteArray, PyBytes, PyDict, PyIterator, PyList, PyMemoryView, PyString, PyTuple,
+};
+use pyo3_polars::{PyDataFrame, PySeries};
+use rayon::iter::{IndexedParallelIterator, ParallelIterator};
+use rayon::slice::{ParallelSlice, ParallelSliceMut};
 use snapshot_columns::SnapshotColumns;
 
 use awpy::datasets::{
@@ -2146,6 +2151,235 @@ impl VisibilityChecker {
     fn is_occluded(&self, a: [f32; 3], b: [f32; 3]) -> bool {
         self.mesh.is_occluded(a, b)
     }
+
+    /// Check whether static geometry leaves each of many CS2 line segments clear.
+    ///
+    /// Args:
+    ///     a: Start ``(x, y, z)`` shared by every segment, or an ``(N, 3)`` array of starts.
+    ///     b: Ends as an ``(N, 3)`` array, in Hammer units.
+    ///     threads: Most threads to use. Omit to use a shared pool with a thread per core
+    ///         (``RAYON_NUM_THREADS`` sets its size). Pass ``1`` inside a process pool that
+    ///         already uses every core.
+    ///
+    /// Returns:
+    ///     A Boolean ``polars.Series`` named ``visible``, one value per segment. Each value
+    ///     equals ``is_visible`` on the same pair.
+    ///
+    /// Raises:
+    ///     ValueError: If a shape is wrong, ``a`` holds neither 1 nor ``N`` points, or
+    ///         ``threads`` is below 1.
+    ///     TypeError: If the points are not float values.
+    ///
+    /// Notes:
+    ///     Points may be NumPy arrays or other buffers of ``float32`` or ``float64`` values, or
+    ///     sequences of ``(x, y, z)`` triples. ``float64`` rounds to ``float32`` as
+    ///     ``is_visible`` rounds Python floats. Inputs are copied, then the segments are checked
+    ///     in parallel with the GIL released.
+    ///
+    /// Examples:
+    ///     >>> from awpy import VisibilityChecker
+    ///     >>> checker = VisibilityChecker("de_inferno")
+    ///     >>> eye = (-158.6, 819.1, 103.7)
+    ///     >>> clear = checker.is_visible_many(eye, [(1258.0, 455.5, 181.2), (0.0, 0.0, 64.0)])
+    #[pyo3(signature = (a, b, *, threads=None))]
+    #[pyo3(text_signature = "($self, a, b, *, threads=None)")]
+    fn is_visible_many(
+        &self,
+        py: Python<'_>,
+        a: &Bound<'_, PyAny>,
+        b: &Bound<'_, PyAny>,
+        threads: Option<i64>,
+    ) -> PyResult<PySeries> {
+        let mut out = self.occluded_many(py, a, b, threads)?;
+        out.iter_mut().for_each(|o| *o = !*o);
+        Ok(PySeries(Series::new("visible".into(), out)))
+    }
+
+    /// Check whether static geometry blocks each of many CS2 line segments.
+    ///
+    /// Args:
+    ///     a: Start ``(x, y, z)`` shared by every segment, or an ``(N, 3)`` array of starts.
+    ///     b: Ends as an ``(N, 3)`` array, in Hammer units.
+    ///     threads: Most threads to use, as for ``is_visible_many``.
+    ///
+    /// Returns:
+    ///     A Boolean ``polars.Series`` named ``occluded``, one value per segment. The complement
+    ///     of ``is_visible_many``.
+    ///
+    /// Raises:
+    ///     ValueError: If a shape is wrong, ``a`` holds neither 1 nor ``N`` points, or
+    ///         ``threads`` is below 1.
+    ///     TypeError: If the points are not float values.
+    #[pyo3(signature = (a, b, *, threads=None))]
+    #[pyo3(text_signature = "($self, a, b, *, threads=None)")]
+    fn is_occluded_many(
+        &self,
+        py: Python<'_>,
+        a: &Bound<'_, PyAny>,
+        b: &Bound<'_, PyAny>,
+        threads: Option<i64>,
+    ) -> PyResult<PySeries> {
+        let out = self.occluded_many(py, a, b, threads)?;
+        Ok(PySeries(Series::new("occluded".into(), out)))
+    }
+}
+
+impl VisibilityChecker {
+    /// Shared body of the batch queries: whether each segment from `a` to
+    /// `b[i]` is blocked, computed on up to `threads` threads without the GIL.
+    fn occluded_many(
+        &self,
+        py: Python<'_>,
+        a: &Bound<'_, PyAny>,
+        b: &Bound<'_, PyAny>,
+        threads: Option<i64>,
+    ) -> PyResult<Vec<bool>> {
+        let a = read_points(a, "a", true)?;
+        let b = read_points(b, "b", false)?;
+        if a.len() != 1 && a.len() != b.len() {
+            return Err(PyValueError::new_err(format!(
+                "a must hold 1 or {} points, got {}",
+                b.len(),
+                a.len()
+            )));
+        }
+        let threads = threads
+            .map(|t| {
+                usize::try_from(t)
+                    .ok()
+                    .and_then(NonZeroUsize::new)
+                    .ok_or_else(|| {
+                        PyValueError::new_err(format!("threads must be at least 1, got {t}"))
+                    })
+            })
+            .transpose()?;
+        let mut out = vec![false; b.len()];
+        py.detach(|| self.occluded_in_pool(&a, &b, &mut out, threads));
+        Ok(out)
+    }
+
+    /// [`VisibilityMesh::occluded_into`] split into chunks across a rayon pool:
+    /// the global one when `threads` is `None`, else one of `threads` threads.
+    /// Small batches and `threads == 1` stay on the calling thread.
+    fn occluded_in_pool(
+        &self,
+        a: &[[f32; 3]],
+        b: &[[f32; 3]],
+        out: &mut [bool],
+        threads: Option<NonZeroUsize>,
+    ) {
+        if threads == Some(NonZeroUsize::MIN) || b.len() < POOL_MIN_RAYS {
+            self.mesh.occluded_into(a, b, out);
+            return;
+        }
+        let mut job = || {
+            out.par_chunks_mut(POOL_CHUNK)
+                .zip(b.par_chunks(POOL_CHUNK))
+                .enumerate()
+                .for_each(|(i, (o, q))| {
+                    let p = if a.len() == 1 {
+                        a
+                    } else {
+                        &a[i * POOL_CHUNK..i * POOL_CHUNK + q.len()]
+                    };
+                    self.mesh.occluded_into(p, q, o);
+                });
+        };
+        match threads.and_then(|t| visibility_pool(t.get())) {
+            Some(pool) => pool.install(job),
+            None => job(),
+        }
+    }
+}
+
+/// Segments a pool thread takes at a time in the batch visibility queries.
+/// Small chunks keep the threads evenly loaded to the end of a batch: on
+/// recorded batches of 1–15k segments (6 cores / 12 threads), 32 and 64 tied
+/// for fastest, 256 was 14% slower and 512 29%.
+const POOL_CHUNK: usize = 32;
+/// Batches below this many segments run on the calling thread, where handing
+/// them to the pool would cost about as much as it saves. Measured alongside
+/// `POOL_CHUNK`: 64 and 256 within 2% of each other, 1024 8% slower.
+const POOL_MIN_RAYS: usize = 64;
+
+/// The rayon pool for a budget of `threads`: `None` when the global pool is no
+/// bigger anyway. A smaller budget gets a pool of its own, built on first use
+/// and kept for later calls.
+fn visibility_pool(threads: usize) -> Option<Arc<rayon::ThreadPool>> {
+    if threads >= rayon::current_num_threads() {
+        return None;
+    }
+    static POOLS: OnceLock<Mutex<HashMap<usize, Arc<rayon::ThreadPool>>>> = OnceLock::new();
+    let mut pools = POOLS
+        .get_or_init(Default::default)
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if let Some(pool) = pools.get(&threads) {
+        return Some(Arc::clone(pool));
+    }
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(threads)
+        .thread_name(|i| format!("awpy-visibility-{i}"))
+        .build()
+        .ok()?;
+    let pool = Arc::new(pool);
+    pools.insert(threads, Arc::clone(&pool));
+    Some(pool)
+}
+
+/// Copy `(x, y, z)` points for the batch visibility queries: a `float32` or
+/// `float64` buffer of shape `(N, 3)` (or `(3,)` when `single_ok`), else a
+/// sequence read by [`read_point_sequence`].
+fn read_points(obj: &Bound<'_, PyAny>, name: &str, single_ok: bool) -> PyResult<Vec<[f32; 3]>> {
+    let py = obj.py();
+    let (shape, flat) = match PyBuffer::<f32>::get(obj) {
+        Ok(buf) => (buf.shape().to_vec(), buf.to_vec(py)?),
+        Err(f32_err) => match PyBuffer::<f64>::get(obj) {
+            Ok(buf) => {
+                let flat = buf.to_vec(py)?;
+                // `as` rounds to nearest, as pyo3 does for `is_visible` floats.
+                (
+                    buf.shape().to_vec(),
+                    flat.into_iter().map(|c| c as f32).collect(),
+                )
+            }
+            Err(_) if PyMemoryView::from(obj).is_ok() => {
+                return Err(PyTypeError::new_err(format!(
+                    "{name} must hold float32 or float64 values: {f32_err}"
+                )));
+            }
+            Err(_) => return read_point_sequence(obj, name, single_ok),
+        },
+    };
+    match shape.as_slice() {
+        [3] if single_ok => {}
+        [_, 3] => {}
+        _ => {
+            return Err(PyValueError::new_err(format!(
+                "{name} must have shape (N, 3){}, got {shape:?}",
+                if single_ok { " or (3,)" } else { "" }
+            )));
+        }
+    }
+    Ok(flat.as_chunks::<3>().0.to_vec())
+}
+
+/// The non-buffer fallback of [`read_points`]: one `(x, y, z)` point (when
+/// `single_ok`) or a sequence of them, extracted as `is_visible` extracts its
+/// arguments.
+fn read_point_sequence(
+    obj: &Bound<'_, PyAny>,
+    name: &str,
+    single_ok: bool,
+) -> PyResult<Vec<[f32; 3]>> {
+    if single_ok && let Ok(point) = obj.extract::<[f32; 3]>() {
+        return Ok(vec![point]);
+    }
+    obj.extract::<Vec<[f32; 3]>>().map_err(|_| {
+        PyTypeError::new_err(format!(
+            "{name} must be an (N, 3) float array or a sequence of (x, y, z) points"
+        ))
+    })
 }
 
 /// Resolve a `NavMesh` source to a local `.nav` file.

@@ -17,6 +17,7 @@ prost.workspace = true
 pyo3 = { version = "0.27", features = ["extension-module"] }
 pyo3-polars = "0.26"
 polars = { version = "0.53", features = ["dtype-full"] }
+rayon = "1.12"
 
 [lints]
 workspace = true

@@ -12,6 +12,9 @@ from typing import Any, TypedDict
 import polars as pl
 
 Point = tuple[float, float, float]
+# Points for the batch visibility queries: an ``(N, 3)`` array (NumPy or any
+# other buffer of float32/float64 values) or a sequence of points.
+Points = Sequence[Point] | Any
 
 class InvalidDemoError(Exception):
     """Raised when a file is not a valid CS2 demo (bad magic bytes or a parse error)."""
@@ -581,6 +584,60 @@ class VisibilityChecker:
 
         Returns:
             True if a collision triangle blocks the segment. The complement of ``is_visible``.
+        """
+
+    def is_visible_many(
+        self, a: Point | Points, b: Points, *, threads: int | None = None
+    ) -> pl.Series:
+        """Check whether static geometry leaves each of many CS2 line segments clear.
+
+        Args:
+            a: Start ``(x, y, z)`` shared by every segment, or an ``(N, 3)`` array of starts.
+            b: Ends as an ``(N, 3)`` array, in Hammer units.
+            threads: Most threads to use. Omit to use a shared pool with a thread per core
+                (``RAYON_NUM_THREADS`` sets its size). Pass ``1`` inside a process pool that
+                already uses every core.
+
+        Returns:
+            A Boolean ``polars.Series`` named ``visible``, one value per segment. Each value
+            equals ``is_visible`` on the same pair.
+
+        Raises:
+            ValueError: If a shape is wrong, ``a`` holds neither 1 nor ``N`` points, or
+                ``threads`` is below 1.
+            TypeError: If the points are not float values.
+
+        Notes:
+            Points may be NumPy arrays or other buffers of ``float32`` or ``float64`` values, or
+            sequences of ``(x, y, z)`` triples. ``float64`` rounds to ``float32`` as
+            ``is_visible`` rounds Python floats. Inputs are copied, then the segments are checked
+            in parallel with the GIL released.
+
+        Examples:
+            >>> from awpy import VisibilityChecker
+            >>> checker = VisibilityChecker("de_inferno")
+            >>> eye = (-158.6, 819.1, 103.7)
+            >>> clear = checker.is_visible_many(eye, [(1258.0, 455.5, 181.2), (0.0, 0.0, 64.0)])
+        """
+
+    def is_occluded_many(
+        self, a: Point | Points, b: Points, *, threads: int | None = None
+    ) -> pl.Series:
+        """Check whether static geometry blocks each of many CS2 line segments.
+
+        Args:
+            a: Start ``(x, y, z)`` shared by every segment, or an ``(N, 3)`` array of starts.
+            b: Ends as an ``(N, 3)`` array, in Hammer units.
+            threads: Most threads to use, as for ``is_visible_many``.
+
+        Returns:
+            A Boolean ``polars.Series`` named ``occluded``, one value per segment. The complement
+            of ``is_visible_many``.
+
+        Raises:
+            ValueError: If a shape is wrong, ``a`` holds neither 1 nor ``N`` points, or
+                ``threads`` is below 1.
+            TypeError: If the points are not float values.
         """
 
 class NavArea(TypedDict):
