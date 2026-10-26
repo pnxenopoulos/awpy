@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use polars::prelude::*;
 use pyo3::buffer::PyBuffer;
 use pyo3::exceptions::{
-    PyAttributeError, PyFileNotFoundError, PyKeyError, PyTypeError, PyValueError,
+    PyAttributeError, PyFileNotFoundError, PyKeyError, PyRuntimeError, PyTypeError, PyValueError,
 };
 use pyo3::prelude::*;
 use pyo3::types::{
@@ -2169,6 +2169,7 @@ impl VisibilityChecker {
     ///     ValueError: If a shape is wrong, ``a`` holds neither 1 nor ``N`` points, or
     ///         ``threads`` is below 1.
     ///     TypeError: If the points are not float values.
+    ///     RuntimeError: If a pool of ``threads`` threads cannot be created.
     ///
     /// Notes:
     ///     Points may be NumPy arrays or other buffers of ``float32`` or ``float64`` values, or
@@ -2210,6 +2211,7 @@ impl VisibilityChecker {
     ///     ValueError: If a shape is wrong, ``a`` holds neither 1 nor ``N`` points, or
     ///         ``threads`` is below 1.
     ///     TypeError: If the points are not float values.
+    ///     RuntimeError: If a pool of ``threads`` threads cannot be created.
     #[pyo3(signature = (a, b, *, threads=None))]
     #[pyo3(text_signature = "($self, a, b, *, threads=None)")]
     fn is_occluded_many(
@@ -2253,22 +2255,30 @@ impl VisibilityChecker {
                     })
             })
             .transpose()?;
+        // Small batches and `threads == 1` stay on the calling thread. The pool
+        // is picked while the GIL is held, so one that cannot start its threads
+        // raises instead of the batch quietly running on the global pool.
+        let parallel = threads != Some(NonZeroUsize::MIN) && b.len() >= POOL_MIN_RAYS;
+        let pool = match threads {
+            Some(t) if parallel => visibility_pool(t.get())?,
+            _ => None,
+        };
         let mut out = vec![false; b.len()];
-        py.detach(|| self.occluded_in_pool(&a, &b, &mut out, threads));
+        py.detach(|| self.occluded_in_pool(&a, &b, &mut out, parallel, pool.as_deref()));
         Ok(out)
     }
 
-    /// [`VisibilityMesh::occluded_into`] split into chunks across a rayon pool:
-    /// the global one when `threads` is `None`, else one of `threads` threads.
-    /// Small batches and `threads == 1` stay on the calling thread.
+    /// [`VisibilityMesh::occluded_into`], split into chunks across `pool` (rayon's
+    /// global pool when `None`) if `parallel`, else on the calling thread.
     fn occluded_in_pool(
         &self,
         a: &[[f32; 3]],
         b: &[[f32; 3]],
         out: &mut [bool],
-        threads: Option<NonZeroUsize>,
+        parallel: bool,
+        pool: Option<&rayon::ThreadPool>,
     ) {
-        if threads == Some(NonZeroUsize::MIN) || b.len() < POOL_MIN_RAYS {
+        if !parallel {
             self.mesh.occluded_into(a, b, out);
             return;
         }
@@ -2285,7 +2295,7 @@ impl VisibilityChecker {
                     self.mesh.occluded_into(p, q, o);
                 });
         };
-        match threads.and_then(|t| visibility_pool(t.get())) {
+        match pool {
             Some(pool) => pool.install(job),
             None => job(),
         }
@@ -2304,10 +2314,11 @@ const POOL_MIN_RAYS: usize = 64;
 
 /// The rayon pool for a budget of `threads`: `None` when the global pool is no
 /// bigger anyway. A smaller budget gets a pool of its own, built on first use
-/// and kept for later calls.
-fn visibility_pool(threads: usize) -> Option<Arc<rayon::ThreadPool>> {
+/// and kept for later calls; a pool whose threads cannot start raises
+/// `RuntimeError` and is not kept.
+fn visibility_pool(threads: usize) -> PyResult<Option<Arc<rayon::ThreadPool>>> {
     if threads >= rayon::current_num_threads() {
-        return None;
+        return Ok(None);
     }
     static POOLS: OnceLock<Mutex<HashMap<usize, Arc<rayon::ThreadPool>>>> = OnceLock::new();
     let mut pools = POOLS
@@ -2315,16 +2326,20 @@ fn visibility_pool(threads: usize) -> Option<Arc<rayon::ThreadPool>> {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(pool) = pools.get(&threads) {
-        return Some(Arc::clone(pool));
+        return Ok(Some(Arc::clone(pool)));
     }
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(threads)
         .thread_name(|i| format!("awpy-visibility-{i}"))
         .build()
-        .ok()?;
+        .map_err(|error| {
+            PyRuntimeError::new_err(format!(
+                "cannot create a visibility pool with {threads} threads: {error}"
+            ))
+        })?;
     let pool = Arc::new(pool);
     pools.insert(threads, Arc::clone(&pool));
-    Some(pool)
+    Ok(Some(pool))
 }
 
 /// Copy `(x, y, z)` points for the batch visibility queries: a `float32` or

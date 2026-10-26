@@ -606,6 +606,7 @@ class VisibilityChecker:
             ValueError: If a shape is wrong, ``a`` holds neither 1 nor ``N`` points, or
                 ``threads`` is below 1.
             TypeError: If the points are not float values.
+            RuntimeError: If a pool of ``threads`` threads cannot be created.
 
         Notes:
             Points may be NumPy arrays or other buffers of ``float32`` or ``float64`` values, or
@@ -638,6 +639,7 @@ class VisibilityChecker:
             ValueError: If a shape is wrong, ``a`` holds neither 1 nor ``N`` points, or
                 ``threads`` is below 1.
             TypeError: If the points are not float values.
+            RuntimeError: If a pool of ``threads`` threads cannot be created.
         """
 
 class NavArea(TypedDict):
