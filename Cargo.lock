@@ -265,6 +265,7 @@ dependencies = [
  "prost",
  "pyo3",
  "pyo3-polars",
+ "rayon",
 ]
 
 [[package]]

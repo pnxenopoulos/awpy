@@ -323,6 +323,60 @@ impl VisibilityMesh {
 
     /// Does any triangle block the segment from `a` to `b`?
     pub fn is_occluded(&self, a: Vec3, b: Vec3) -> bool {
+        // A small stack easily covers realistic depths.
+        self.occluded_with(a, b, &mut Vec::with_capacity(64))
+    }
+
+    /// Batch form of [`is_occluded`](Self::is_occluded): `out[i]` says whether
+    /// the segment from `a[i]` to `b[i]` is blocked.
+    ///
+    /// `a` holds either one point shared by every segment or one point per
+    /// segment. Each answer equals `is_occluded` on the same pair, bit for bit,
+    /// and one traversal stack serves the whole batch. `VisibilityMesh` is
+    /// `Sync`, so a large batch can be split into chunks run on separate
+    /// threads.
+    ///
+    /// ```
+    /// use awpy::geometry::{Mesh, VisibilityMesh};
+    ///
+    /// let vis = VisibilityMesh::build(Mesh {
+    ///     vertices: vec![[0.0, -10.0, -10.0], [0.0, 10.0, -10.0], [0.0, 0.0, 10.0]],
+    ///     triangles: vec![[0, 1, 2]],
+    /// });
+    /// let eye = [[-5.0, 0.0, 0.0]];
+    /// let targets = [[5.0, 0.0, 0.0], [-5.0, 5.0, 0.0]];
+    /// let mut out = [false; 2];
+    /// vis.occluded_into(&eye, &targets, &mut out);
+    /// assert_eq!(out, [true, false]);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if `a.len()` is neither 1 nor `b.len()`, or if
+    /// `out.len() != b.len()`.
+    pub fn occluded_into(&self, a: &[Vec3], b: &[Vec3], out: &mut [bool]) {
+        assert!(
+            a.len() == 1 || a.len() == b.len(),
+            "expected 1 or {} start points, got {}",
+            b.len(),
+            a.len()
+        );
+        assert_eq!(out.len(), b.len(), "expected one output slot per segment");
+        let mut stack = Vec::with_capacity(64);
+        if let [eye] = a {
+            for (o, &q) in out.iter_mut().zip(b) {
+                *o = self.occluded_with(*eye, q, &mut stack);
+            }
+        } else {
+            for ((o, &p), &q) in out.iter_mut().zip(a).zip(b) {
+                *o = self.occluded_with(p, q, &mut stack);
+            }
+        }
+    }
+
+    /// The traversal behind every occlusion query. `stack` is scratch space,
+    /// cleared on entry, so callers can reuse one buffer across queries.
+    fn occluded_with(&self, a: Vec3, b: Vec3, stack: &mut Vec<u32>) -> bool {
         if self.nodes.is_empty() {
             return false;
         }
@@ -331,8 +385,8 @@ impl VisibilityMesh {
             return false;
         }
 
-        // Iterative traversal; a small stack easily covers realistic depths.
-        let mut stack: Vec<u32> = Vec::with_capacity(64);
+        // Iterative traversal.
+        stack.clear();
         stack.push(0);
         while let Some(ni) = stack.pop() {
             let node = self.nodes[ni as usize];
@@ -569,6 +623,102 @@ mod tests {
     }
 
     #[test]
+    fn batch_matches_single_queries() {
+        let vis = VisibilityMesh::build(tiled_wall(10));
+
+        // Random segments around the wall. Some endpoints snap to the tile
+        // grid, so rays graze shared edges and vertices or end on the wall.
+        let mut seed: u64 = 0x0bad_5eed_1234_5678;
+        let mut rnd = || {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            (seed >> 33) as f32 / (1u32 << 31) as f32
+        };
+        let mut point = |snap: bool| {
+            let p = [
+                -20.0 + 40.0 * rnd(),
+                -20.0 + 140.0 * rnd(),
+                -20.0 + 140.0 * rnd(),
+            ];
+            if snap {
+                p.map(|c| (c / 10.0).round() * 10.0)
+            } else {
+                p
+            }
+        };
+        let (mut a, mut b) = (Vec::new(), Vec::new());
+        for i in 0..2_000 {
+            a.push(point(i % 2 == 0));
+            b.push(point(i % 3 == 0));
+        }
+        // Endpoint on the wall, start on the wall, a segment lying in the
+        // wall plane, a shared tile edge, and zero length.
+        for (p, q) in [
+            ([-5.0, 50.0, 50.0], [0.0, 50.0, 50.0]),
+            ([0.0, 50.0, 50.0], [5.0, 50.0, 50.0]),
+            ([0.0, 10.0, 10.0], [0.0, 90.0, 90.0]),
+            ([-5.0, 10.0, 10.0], [5.0, 10.0, 10.0]),
+            ([-5.0, 50.0, 50.0], [-5.0, 50.0, 50.0]),
+        ] {
+            a.push(p);
+            b.push(q);
+        }
+
+        let mut out = vec![false; b.len()];
+        vis.occluded_into(&a, &b, &mut out);
+        for (i, ((&o, &p), &q)) in out.iter().zip(&a).zip(&b).enumerate() {
+            assert_eq!(o, vis.is_occluded(p, q), "segment {i}");
+        }
+        // Both answers occur, so the comparison is not vacuous.
+        assert!(out.contains(&true) && out.contains(&false));
+
+        // One shared eye, then the same eye repeated per segment.
+        let eye = [-5.0, 55.0, 45.0];
+        vis.occluded_into(&[eye], &b, &mut out);
+        for (i, (&o, &q)) in out.iter().zip(&b).enumerate() {
+            assert_eq!(o, vis.is_occluded(eye, q), "shared eye, segment {i}");
+        }
+        let mut repeated = vec![false; b.len()];
+        vis.occluded_into(&vec![eye; b.len()], &b, &mut repeated);
+        assert_eq!(out, repeated);
+    }
+
+    #[test]
+    fn empty_batch_is_a_no_op() {
+        let vis = VisibilityMesh::build(wall());
+        vis.occluded_into(&[], &[], &mut []);
+        vis.occluded_into(&[[0.0; 3]], &[], &mut []);
+    }
+
+    #[test]
+    fn batch_overwrites_output_on_empty_mesh() {
+        let vis = VisibilityMesh::build(Mesh::default());
+        let mut out = [true; 2];
+        vis.occluded_into(&[[0.0; 3]], &[[1.0; 3], [100.0; 3]], &mut out);
+        assert_eq!(out, [false, false]);
+    }
+
+    #[test]
+    #[should_panic(expected = "start points")]
+    fn batch_rejects_mismatched_start_points() {
+        let vis = VisibilityMesh::build(wall());
+        vis.occluded_into(&[[0.0; 3]; 2], &[[1.0; 3]; 3], &mut [false; 3]);
+    }
+
+    #[test]
+    #[should_panic(expected = "output slot")]
+    fn batch_rejects_wrong_output_length() {
+        let vis = VisibilityMesh::build(wall());
+        vis.occluded_into(&[[0.0; 3]], &[[1.0; 3]; 3], &mut [false; 2]);
+    }
+
+    #[test]
+    fn visibility_mesh_is_send_and_sync() {
+        // The batch docs promise one mesh can be shared across threads.
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<VisibilityMesh>();
+    }
+
+    #[test]
     fn empty_mesh_never_occludes() {
         let vis = VisibilityMesh::build(Mesh::default());
         assert_eq!(vis.triangle_count(), 0);
@@ -678,6 +828,61 @@ mod tests {
             elapsed.as_secs_f64() * 1e6 / n as f64,
         );
         assert!(vis.is_visible([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]));
+    }
+
+    /// Checks [`VisibilityMesh::occluded_into`] against per-segment
+    /// [`VisibilityMesh::is_occluded`] on a real `.mesh` (`AWPY_GEOMETRY_MESH`)
+    /// and prints both timings. Ignored by default; run with
+    /// `--ignored --nocapture`.
+    #[test]
+    #[ignore = "requires AWPY_GEOMETRY_MESH to point at a real .mesh file"]
+    fn batch_matches_single_on_real_mesh() {
+        use std::time::Instant;
+
+        let mesh =
+            Mesh::from_file(Path::new(&std::env::var("AWPY_GEOMETRY_MESH").unwrap())).unwrap();
+        let mut bb = Aabb::EMPTY;
+        for &v in &mesh.vertices {
+            bb.expand(v);
+        }
+        let vis = VisibilityMesh::build(mesh);
+
+        let mut seed: u64 = 0x2026_1024_0bad_cafe;
+        let mut rnd = || {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            (seed >> 33) as f32 / (1u32 << 31) as f32
+        };
+        let mut point = || {
+            [
+                bb.min[0] + rnd() * (bb.max[0] - bb.min[0]),
+                bb.min[1] + rnd() * (bb.max[1] - bb.min[1]),
+                bb.min[2] + rnd() * (bb.max[2] - bb.min[2]),
+            ]
+        };
+        let n = 1_000_000;
+        let a: Vec<Vec3> = (0..n).map(|_| point()).collect();
+        let b: Vec<Vec3> = (0..n).map(|_| point()).collect();
+
+        let t0 = Instant::now();
+        let single: Vec<bool> = a
+            .iter()
+            .zip(&b)
+            .map(|(&p, &q)| vis.is_occluded(p, q))
+            .collect();
+        let t_single = t0.elapsed();
+        let mut batch = vec![false; n];
+        let t1 = Instant::now();
+        vis.occluded_into(&a, &b, &mut batch);
+        let t_batch = t1.elapsed();
+
+        let disagree = single.iter().zip(&batch).filter(|(x, y)| x != y).count();
+        println!(
+            "tris={} rays={n} disagree={disagree} single={:.3} µs/ray batch={:.3} µs/ray",
+            vis.triangle_count(),
+            t_single.as_secs_f64() * 1e6 / n as f64,
+            t_batch.as_secs_f64() * 1e6 / n as f64,
+        );
+        assert_eq!(disagree, 0);
     }
 
     /// Compares occlusion answers between a reference mesh
