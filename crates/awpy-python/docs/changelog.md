@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.0
+
+- Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
+  segments per call on a rayon pool with the GIL released and return a Boolean
+  Polars Series. Answers match `is_visible` exactly.
+
 ## 3.1.2
 
 - Add `llms.txt`. Put code examples first in the README and guides. Use clear headings.
