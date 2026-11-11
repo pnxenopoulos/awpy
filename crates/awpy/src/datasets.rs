@@ -549,6 +549,44 @@ fn collapse_instances(rows: Vec<TrackedRow>) -> Vec<TrackedRow> {
         .collect()
 }
 
+/// A smoke / fire window -- `(kind, entity index, start tick)`, opened by
+/// `smokegrenade_detonate` / `inferno_startburn` -- and the entity it belongs to.
+type WindowKey = (WindowKind, i32, i32);
+
+/// Ownership and last-seen bookkeeping for the smoke / fire windows of
+/// [`Parser::track_projectiles`].
+///
+/// A window belongs to the entity first seen in it. The round reset removes a
+/// smoke / fire that is still up WITHOUT its `smokegrenade_expired` /
+/// `inferno_expire` event; such a window ends at its owner's last active tick
+/// instead of being dropped (it used to be: every late-round smoke vanished
+/// from the dataset). A different entity in the same slot -- a reused index --
+/// means the owner is gone: the caller closes the window, so the newcomer's
+/// flight is never read as the old cloud.
+#[derive(Default)]
+struct EffectWindows {
+    owner: HashMap<WindowKey, EntityId>,
+    last: HashMap<WindowKey, i32>,
+}
+
+impl EffectWindows {
+    /// Record `entity` active at `tick` inside window `key`. False when the slot
+    /// now holds another entity than the window's owner (nothing recorded).
+    fn see(&mut self, key: WindowKey, entity: EntityId, tick: i32) -> bool {
+        if *self.owner.entry(key).or_insert(entity) != entity {
+            return false;
+        }
+        self.last.insert(key, tick);
+        true
+    }
+
+    /// The window's end tick: its expire event's (`expired`), else its owner's
+    /// last active tick; `None` for a window no entity was ever seen in.
+    fn end(&self, key: WindowKey, expired: &HashMap<WindowKey, i32>) -> Option<i32> {
+        expired.get(&key).or_else(|| self.last.get(&key)).copied()
+    }
+}
+
 /// Which projectile dataset a tracked row belongs to. One entity class can feed
 /// more than one — a `CSmokeGrenadeProjectile` is both a grenade (its throw) and
 /// a smoke (its cloud) — so trackers are tagged with their destination.
@@ -2205,6 +2243,7 @@ impl Parser {
         }
         let mut active_windows: HashMap<(WindowKind, i32), i32> = HashMap::new();
         let mut window_ends: HashMap<(WindowKind, i32, i32), i32> = HashMap::new();
+        let mut windows = EffectWindows::default();
 
         self.run_to_end_with_legacy_events_filtered(&filter, &window_events, |ctx, events| {
             let mut closing = Vec::new();
@@ -2281,6 +2320,10 @@ impl Parser {
                             let Some(&start) = active_windows.get(&(*kind, e.index)) else {
                                 continue;
                             };
+                            if !windows.see((*kind, e.index, start), entity, ctx.tick()) {
+                                active_windows.remove(&(*kind, e.index));
+                                continue;
+                            }
                             (start, 0)
                         }
                         ProjMode::Trajectory => {
@@ -2329,7 +2372,8 @@ impl Parser {
                 ProjKind::Fire => WindowKind::Fire,
                 ProjKind::Smoke => WindowKind::Smoke,
             };
-            let Some(&end) = window_ends.get(&(window, row.entity.index, row.start_tick)) else {
+            let Some(end) = windows.end((window, row.entity.index, row.start_tick), &window_ends)
+            else {
                 return false;
             };
             row.end_tick = end;
@@ -3490,6 +3534,44 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── EffectWindows: smoke / fire windows with no expire event ──────────────
+    #[test]
+    fn effect_window_without_expire_ends_at_owner_last_tick() {
+        let mut w = EffectWindows::default();
+        let key = (WindowKind::Smoke, 200, 1000);
+        let smoke = EntityId::new(200, 7);
+        assert!(w.see(key, smoke, 1000));
+        assert!(w.see(key, smoke, 1500));
+        assert!(w.see(key, smoke, 2391)); // the tick before the round reset
+        assert_eq!(w.end(key, &HashMap::new()), Some(2391));
+    }
+
+    #[test]
+    fn effect_window_expire_event_wins() {
+        let mut w = EffectWindows::default();
+        let key = (WindowKind::Fire, 310, 500);
+        assert!(w.see(key, EntityId::new(310, 1), 600));
+        let expired = HashMap::from([(key, 948)]);
+        assert_eq!(w.end(key, &expired), Some(948));
+    }
+
+    #[test]
+    fn effect_window_reused_slot_is_not_the_owner() {
+        let mut w = EffectWindows::default();
+        let key = (WindowKind::Smoke, 411, 41_000);
+        let smoke = EntityId::new(411, 68);
+        let flash = EntityId::new(411, 188); // the same slot, a new grenade
+        assert!(w.see(key, smoke, 41_900));
+        assert!(!w.see(key, flash, 41_920));
+        assert_eq!(w.end(key, &HashMap::new()), Some(41_900));
+    }
+
+    #[test]
+    fn effect_window_never_seen_has_no_end() {
+        let w = EffectWindows::default();
+        assert_eq!(w.end((WindowKind::Smoke, 1, 1), &HashMap::new()), None);
+    }
     use awpy_proto::proto::{CUserMessageSayText, CUserMessageSayText2};
     use prost::Message as _;
 
