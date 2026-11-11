@@ -9,6 +9,7 @@
   resolve to a player pawn.
 - Show USP-S, M4A1-S, and Revolver variants in damage rows. Keep the same weapon
   names in serial and parallel parses.
+- Add observed `start_tick` and `end_tick` to `grenades`, including stationary ticks.
 
 ## 3.1.2
 

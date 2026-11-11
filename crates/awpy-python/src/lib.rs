@@ -2977,6 +2977,8 @@ fn grenades_to_frame(grenades: &[Grenade]) -> PolarsResult<DataFrame> {
         col!("x", grenades, |g| g.x),
         col!("y", grenades, |g| g.y),
         col!("z", grenades, |g| g.z),
+        col!("start_tick", grenades, |g| g.start_tick),
+        col!("end_tick", grenades, |g| g.end_tick),
     ])
 }
 
