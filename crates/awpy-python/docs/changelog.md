@@ -9,6 +9,15 @@
   lost `m_hController` resolves through the controller whose `m_hPlayerPawn`
   points at it, and rows report that controller's team, so a player who went
   to spectate no longer appears on their old team.
+- Count held grenades from the pawn's ammo slots. Two flashbangs are one
+  weapon entity with ammo 2, so `flashbangs` (and the other grenade counts)
+  in `snapshots()` reported 1.
+- Add `start_tick` and `end_tick` to `grenades`: the projectile's lifetime,
+  including ticks it rests without moving. Rows are only emitted while a
+  projectile moves, so the last row is not when it detonated or expired.
+- Fix null `thrower_name`, `thrower_steamid` and `thrower_side` in `grenades`,
+  `smokes` and `fires`. Look up the projectile's networked owner handle as is
+  instead of decoding it as a game-event handle.
 
 ## 3.1.2
 
