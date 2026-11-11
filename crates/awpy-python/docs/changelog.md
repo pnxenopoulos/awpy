@@ -4,6 +4,7 @@
 
 - Use pawn ammo to count held grenades in `snapshots()`, including two flashbangs.
 - Add a contributor guide for branch names, local checks, and dependency updates.
+- Keep dead players' names and Steam IDs in snapshots. Report the controller's current team.
 - Keep smokes and fires that a round reset removes without an expire event.
 - Fix thrower attribution in `grenades`, `smokes`, and `fires`. Use the
   projectile's networked handles. Try the owner if the thrower handle does not
