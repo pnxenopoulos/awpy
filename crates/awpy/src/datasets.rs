@@ -36,8 +36,8 @@ use crate::position::cell_to_world;
 use crate::round_end_reasons::round_end_reason_name;
 use crate::teams::team_name;
 use crate::weapons::{
-    VARIANT_CLASSES, VARIANT_FIELDS, WeaponResolver, WeaponSlot, damage_weapon_name,
-    grenade_projectile_classes, grenade_type, variant_name, weapon_classes,
+    VARIANT_CLASSES, VARIANT_FIELDS, WeaponResolver, WeaponSlot, damage_weapon_variant,
+    grenade_projectile_classes, grenade_type, refine_damage_weapon, variant_name, weapon_classes,
 };
 
 /// User-id sentinel meaning "no such player" (e.g. no assister).
@@ -171,6 +171,13 @@ impl Keys<'_> {
             .iter()
             .find(|(k, _)| k == key)
             .map(|(_, v)| v.as_str())
+    }
+
+    fn pawn_handle(&self, user_key: &str, pawn_key: &str) -> Option<u32> {
+        if self.i32(user_key) == NO_USER_ID {
+            return None;
+        }
+        event_entity_handle(self.get(pawn_key)?.parse().ok()?)
     }
 
     fn i32(&self, key: &str) -> i32 {
@@ -1008,33 +1015,23 @@ fn segment_ranges(offsets: &[(usize, i32)], n: usize) -> Vec<(Option<usize>, i32
         .collect()
 }
 
-/// Resolve a participant from a networked pawn `CHandle` read off an entity
-/// field (e.g. a projectile's `m_hThrower` or `m_hOwnerEntity`).
-///
-/// Networked handles already use the entity-system layout that
-/// `get_by_handle` expects, so they must not go through
-/// [`event_entity_handle`]; game-event handles use a different packing and go
-/// through [`resolve_event_player`] instead.
-///
-/// Follows the handle to the pawn (for world position and side), then the
-/// pawn's controller handle to the controller (for Steam id and name). Returns
-/// an all-`None` [`ResolvedPlayer`] when the handle does not point at a live
-/// player pawn.
-fn resolve_player(ctx: &Context, pawn_handle: u32, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
-    let Some(pawn) = ctx.entities().get_by_handle(pawn_handle) else {
-        return ResolvedPlayer::default();
-    };
-    if !pawn.class_name.contains("PlayerPawn") {
-        return ResolvedPlayer::default();
-    }
-    resolve_from_pawn(ctx, pawn, pk, ck)
+/// Try the projectile's networked thrower handle, then its owner handle.
+/// These handles use the entity-system layout expected by `get_by_handle`.
+fn projectile_thrower_pawn<'a>(
+    projectile: &Entity,
+    entities: &'a EntityContainer,
+    keys: [Option<u64>; 2],
+) -> Option<&'a Entity> {
+    keys.into_iter()
+        .filter_map(|key| projectile.get_handle(key))
+        .filter_map(|handle| entities.get_by_handle(handle))
+        .find(|entity| entity.class_name.contains("PlayerPawn"))
 }
 
 /// Resolve a participant from a player-pawn entity already in hand.
 ///
 /// Reads side and world position off the pawn, then follows its current or
-/// original controller handle for the persistent Steam id and name. Use [`resolve_player`] when you
-/// only have a networked pawn `CHandle` (e.g. from an entity field).
+/// original controller handle for the persistent Steam id and name.
 fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
     let mut player = ResolvedPlayer {
         side: Some(team_name(pawn.get_i64(pk.team)).to_string()),
@@ -1349,6 +1346,9 @@ struct EventSegment {
     players: Vec<Player>,
     first_tick: Option<i32>,
     last_flash: HashMap<EntityId, f32>,
+    last_weapon: HashMap<u32, &'static str>,
+    // Damage rows before the first local weapon observation for their pawn.
+    pending_damage_weapons: Vec<(usize, u32)>,
 }
 
 fn merge_event_segments(parts: Vec<EventSegment>) -> EventSegment {
@@ -1372,7 +1372,13 @@ fn merge_event_segments(parts: Vec<EventSegment>) -> EventSegment {
             )
         });
         merged.events.kills.append(&mut part.events.kills);
+        for (row, pawn) in part.pending_damage_weapons {
+            if let Some(&weapon) = merged.last_weapon.get(&pawn) {
+                refine_damage_weapon(&mut part.events.damages[row].weapon, weapon);
+            }
+        }
         merged.events.damages.append(&mut part.events.damages);
+        merged.last_weapon.extend(part.last_weapon);
         merged.events.bomb.append(&mut part.events.bomb);
         merged.events.blinds.append(&mut part.events.blinds);
         merged.events.shots.append(&mut part.events.shots);
@@ -2047,8 +2053,10 @@ impl Parser {
         let mut shot_keys: Option<ShotKeys> = None;
         let mut weapon_keys: HashMap<i32, (Option<u64>, Option<u64>)> = HashMap::new();
         let mut damage_weapons: Option<(WeaponResolver, Option<u64>)> = None;
-        // Last weapon name each attacker pawn fired or held, per pawn handle.
-        let mut last_weapon: HashMap<u32, &'static str> = HashMap::new();
+        // Key weapon observations by the normalized handle, including the pawn serial.
+        let mut last_weapon = HashMap::new();
+        let mut pending_damage_weapons = Vec::new();
+        let has_prior_segment = segment.is_some_and(|(start, _)| start.is_some());
 
         // These datasets consume legacy key/value pairs only. Select their
         // event names up front so unrelated legacy events and all CS2 user
@@ -2073,11 +2081,12 @@ impl Parser {
                 for event in events {
                     if selection.damages && event.name == "weapon_fire" {
                         let keys = Keys(&event.keys);
-                        let fired = keys.string("weapon");
-                        if let Some(name) =
-                            variant_name(fired.strip_prefix("weapon_").unwrap_or(&fired))
+                        if let Some(fired) = keys.get("weapon")
+                            && let Some(name) =
+                                variant_name(fired.strip_prefix("weapon_").unwrap_or(fired))
+                            && let Some(pawn) = keys.pawn_handle("userid", "userid_pawn")
                         {
-                            last_weapon.insert(keys.i64("userid_pawn") as u32, name);
+                            last_weapon.insert(pawn, name);
                         }
                     }
                     match event.name.as_str() {
@@ -2089,28 +2098,38 @@ impl Parser {
                         "player_hurt" if selection.damages => {
                             let mut damage = damage_event_fields(event);
                             fill_damage(&mut damage, event, ctx, pk, ck);
-                            let (resolver, handle_key) = damage_weapons.get_or_insert_with(|| {
-                                let key = ctx.serializers().get(PLAYER_PAWN_CLASS).and_then(|s| {
-                                    s.resolve_field_key("m_pWeaponServices.m_hActiveWeapon")
-                                });
-                                (WeaponResolver::new(ctx), key)
-                            });
-                            let attacker_pawn = Keys(&event.keys).i64("attacker_pawn") as u32;
-                            let active =
-                                event_entity_handle(Keys(&event.keys).i64("attacker_pawn"))
-                                    .and_then(|h| ctx.entities().get_by_handle(h))
+                            let keys = Keys(&event.keys);
+                            if let Some(attacker) = keys.pawn_handle("attacker", "attacker_pawn") {
+                                let (resolver, handle_key) =
+                                    damage_weapons.get_or_insert_with(|| {
+                                        let key = ctx
+                                            .serializers()
+                                            .get(PLAYER_PAWN_CLASS)
+                                            .and_then(|s| {
+                                                s.resolve_field_key(
+                                                    "m_pWeaponServices.m_hActiveWeapon",
+                                                )
+                                            });
+                                        (WeaponResolver::new(ctx), key)
+                                    });
+                                let active = ctx
+                                    .entities()
+                                    .get_by_handle(attacker)
                                     .and_then(|pawn| pawn.get_handle(*handle_key))
                                     .and_then(|h| ctx.entities().get_by_handle(h))
                                     .and_then(|weapon| resolver.info(weapon))
                                     .map(|info| info.name);
-                            if let Some(name) = active {
-                                last_weapon.insert(attacker_pawn, name);
+                                if let Some(name) = active {
+                                    last_weapon.insert(attacker, name);
+                                }
+                                if let Some(&name) = last_weapon.get(&attacker) {
+                                    refine_damage_weapon(&mut damage.weapon, name);
+                                } else if has_prior_segment
+                                    && damage_weapon_variant(&damage.weapon).is_some()
+                                {
+                                    pending_damage_weapons.push((damages.len(), attacker));
+                                }
                             }
-                            // No weapon entity left (the attacker died this tick): use the
-                            // variant they last held or fired.
-                            let known = active.or_else(|| last_weapon.get(&attacker_pawn).copied());
-                            damage.weapon =
-                                damage_weapon_name(std::mem::take(&mut damage.weapon), known);
                             damages.push(damage);
                         }
                         "flashbang_detonate" if selection.blinds => {
@@ -2192,6 +2211,8 @@ impl Parser {
             players,
             first_tick,
             last_flash: prev_flash,
+            last_weapon,
+            pending_damage_weapons,
         })
     }
 
@@ -2349,10 +2370,8 @@ impl Parser {
                         player.clone()
                     }
                     _ => {
-                        let player = e
-                            .get_handle(tk)
-                            .or_else(|| e.get_handle(ok))
-                            .map(|handle| resolve_player(ctx, handle, pk, ck))
+                        let player = projectile_thrower_pawn(e, ctx.entities(), [tk, ok])
+                            .map(|pawn| resolve_from_pawn(ctx, pawn, pk, ck))
                             .unwrap_or_default();
                         throwers.insert(entity, player.clone());
                         player
@@ -3677,6 +3696,29 @@ mod tests {
     }
 
     #[test]
+    fn segment_merge_uses_prior_damage_weapon_evidence() {
+        let pawn = (ENTITY_HANDLE_INDEX_MASK + 1) | 7;
+        let before = EventSegment {
+            last_weapon: HashMap::from([(pawn, "revolver")]),
+            ..Default::default()
+        };
+        let after = EventSegment {
+            events: EventDatasets {
+                damages: vec![Damage {
+                    weapon: "deagle".into(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            last_weapon: HashMap::from([(pawn, "deagle")]),
+            pending_damage_weapons: vec![(0, pawn)],
+            ..Default::default()
+        };
+        let merged = merge_event_segments(vec![before, EventSegment::default(), after]);
+        assert_eq!(merged.events.damages[0].weapon, "revolver");
+    }
+
+    #[test]
     fn segment_merge_preserves_event_order_within_a_tick() {
         let parts = ["first", "second"].map(|weapon| EventSegment {
             events: EventDatasets {
@@ -3916,6 +3958,37 @@ mod tests {
                 keys.controller(&pawn, &entities).map(|entity| entity.index),
                 expected
             );
+        }
+    }
+
+    #[test]
+    fn projectile_thrower_uses_first_handle_that_resolves_to_a_pawn() {
+        use crate::entity::FieldValue;
+
+        let mut entities = EntityContainer::new();
+        for (index, class) in [
+            (1, PLAYER_PAWN_CLASS),
+            (2, PLAYER_PAWN_CLASS),
+            (3, PLAYER_CONTROLLER_CLASS),
+        ] {
+            entities
+                .insert(Entity::from_fields(index, 1, 0, class, true, Default::default()).unwrap())
+                .unwrap();
+        }
+        let handle = |index| FieldValue::U32((ENTITY_HANDLE_INDEX_MASK + 1) | index);
+        let mut projectile =
+            Entity::from_fields(4, 1, 0, SMOKE_CLASS, true, Default::default()).unwrap();
+        projectile.fields.insert(1, handle(2));
+
+        for (thrower, expected) in [
+            (FieldValue::U32(u32::MAX), 2), // Invalid handle.
+            (FieldValue::U32(1), 2),        // Slot 1 with a stale serial.
+            (handle(3), 2),                 // Valid handle to a non-pawn.
+            (handle(1), 1),                 // Valid thrower takes precedence.
+        ] {
+            projectile.fields.insert(0, thrower);
+            let pawn = projectile_thrower_pawn(&projectile, &entities, [Some(0), Some(1)]);
+            assert_eq!(pawn.map(|entity| entity.index), Some(expected));
         }
     }
 

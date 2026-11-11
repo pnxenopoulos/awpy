@@ -4,9 +4,11 @@
 
 - Add a contributor guide for branch names, local checks, and dependency updates.
 - Keep smokes and fires that a round reset removes without an expire event.
-- Fix null `thrower_name`, `thrower_steamid` and `thrower_side` in `grenades`,
-  `smokes` and `fires`. Look up the projectile's networked owner handle as is
-  instead of decoding it as a game-event handle.
+- Fix thrower attribution in `grenades`, `smokes`, and `fires`. Use the
+  projectile's networked handles. Try the owner if the thrower handle does not
+  resolve to a player pawn.
+- Show USP-S, M4A1-S, and Revolver variants in damage rows. Keep the same weapon
+  names in serial and parallel parses.
 
 ## 3.1.2
 

@@ -143,22 +143,22 @@ pub(crate) fn variant_name(name: &str) -> Option<&'static str> {
     .find(|n| *n == name)
 }
 
-/// The name a `player_hurt` row should carry. The event names the item class
-/// (`hkp2000` for a USP-S hit, `m4a1` for an M4A1-S hit), so when the attacker's
-/// active weapon is a variant of that same class, its name wins. Anything else
-/// (grenades, world, bomb, knife, or no active weapon) keeps the event's name.
-pub(crate) fn damage_weapon_name(event_weapon: String, active: Option<&str>) -> String {
-    let family = |name: &str| -> Option<u8> {
-        match name {
-            "deagle" | "revolver" => Some(0),
-            "m4a1" | "m4a1_silencer" => Some(1),
-            "hkp2000" | "usp_silencer" => Some(2),
-            _ => None,
-        }
-    };
-    match (family(&event_weapon), active) {
-        (Some(f), Some(active)) if family(active) == Some(f) => active.to_string(),
-        _ => event_weapon,
+/// The specific weapon an ambiguous `player_hurt` label can represent.
+pub(crate) fn damage_weapon_variant(event_weapon: &str) -> Option<&'static str> {
+    match event_weapon {
+        "deagle" => Some("revolver"),
+        "m4a1" => Some("m4a1_silencer"),
+        "hkp2000" => Some("usp_silencer"),
+        _ => None,
+    }
+}
+
+/// Refine an ambiguous event label only with evidence for its specific variant.
+pub(crate) fn refine_damage_weapon(event_weapon: &mut String, observed: &str) {
+    if let Some(variant) = damage_weapon_variant(event_weapon)
+        && variant == observed
+    {
+        variant.clone_into(event_weapon);
     }
 }
 
@@ -341,28 +341,48 @@ mod tests {
         .info(&entity)
     }
 
-    #[test]
-    fn damage_name_takes_the_variant_of_the_same_class() {
-        let name = |event: &str, active: Option<&str>| damage_weapon_name(event.into(), active);
-        assert_eq!(name("hkp2000", Some("usp_silencer")), "usp_silencer");
-        assert_eq!(name("m4a1", Some("m4a1_silencer")), "m4a1_silencer");
-        assert_eq!(name("m4a1", Some("m4a1")), "m4a1");
-        assert_eq!(name("deagle", Some("revolver")), "revolver");
+    fn refined_damage_weapon(event_weapon: &str, observed: &str) -> String {
+        let mut name = event_weapon.to_owned();
+        refine_damage_weapon(&mut name, observed);
+        name
     }
 
     #[test]
-    fn damage_name_keeps_the_event_name_otherwise() {
-        let name = |event: &str, active: Option<&str>| damage_weapon_name(event.into(), active);
-        // no active weapon, or a different family (swapped to a knife / grenade at the hit tick)
-        assert_eq!(name("hkp2000", None), "hkp2000");
-        assert_eq!(name("m4a1", Some("knife")), "m4a1");
-        assert_eq!(name("deagle", Some("usp_silencer")), "deagle");
-        // grenades, bomb, world, knife are never rewritten
-        assert_eq!(name("hegrenade", Some("usp_silencer")), "hegrenade");
-        assert_eq!(name("inferno", Some("m4a1_silencer")), "inferno");
-        assert_eq!(name("planted_c4", Some("hkp2000")), "planted_c4");
-        assert_eq!(name("world", None), "world");
-        assert_eq!(name("knife", Some("revolver")), "knife");
+    fn damage_name_refines_an_ambiguous_label() {
+        for (event, variant) in [
+            ("hkp2000", "usp_silencer"),
+            ("m4a1", "m4a1_silencer"),
+            ("deagle", "revolver"),
+        ] {
+            assert_eq!(refined_damage_weapon(event, variant), variant);
+        }
+    }
+
+    #[test]
+    fn damage_name_preserves_explicit_variants() {
+        for (event, observed) in [
+            ("revolver", "deagle"),
+            ("m4a1_silencer", "m4a1"),
+            ("usp_silencer", "hkp2000"),
+        ] {
+            assert_eq!(refined_damage_weapon(event, observed), event);
+        }
+    }
+
+    #[test]
+    fn damage_name_preserves_labels_without_matching_evidence() {
+        for (event, observed) in [
+            ("m4a1", "m4a1"),
+            ("m4a1", "knife"),
+            ("deagle", "usp_silencer"),
+            ("hegrenade", "usp_silencer"),
+            ("inferno", "m4a1_silencer"),
+            ("planted_c4", "hkp2000"),
+            ("world", "revolver"),
+            ("knife", "revolver"),
+        ] {
+            assert_eq!(refined_damage_weapon(event, observed), event);
+        }
     }
 
     #[test]

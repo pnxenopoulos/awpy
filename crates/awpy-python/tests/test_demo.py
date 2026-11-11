@@ -845,12 +845,21 @@ def test_grenade_schema(demo: Demo) -> None:
     assert g["entity_serial"].dtype == pl.UInt32
 
 
-def test_projectile_throwers_resolve(demo: Demo) -> None:
-    # Projectiles name their thrower through a networked pawn handle. Allow a
-    # few misses (e.g. a thrower who disconnects mid-flight), not a whole column.
-    for df in (demo.grenades, demo.smokes, demo.fires):
-        assert df["thrower_steamid"].is_not_null().mean() > 0.9
-        assert df["thrower_side"].is_not_null().mean() > 0.9
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+@pytest.mark.parametrize(
+    ("dataset", "start_tick", "entity_id", "steam_id"),
+    [
+        # Dren's smoke throw at 11_473 and darkness01's Molotov throw at 5_772.
+        pytest.param("smokes", 11_697, 440, 76_561_199_054_916_855, id="smoke"),
+        pytest.param("fires", 5_841, 154, 76_561_199_143_010_129, id="inferno"),
+    ],
+)
+def test_projectile_thrower_matches_steam_id(
+    match_demo: Demo, dataset: str, start_tick: int, entity_id: int, steam_id: int
+) -> None:
+    effects = getattr(match_demo, dataset)
+    matching = effects.filter(pl.col("start_tick") == start_tick, pl.col("entity_id") == entity_id)
+    assert matching["thrower_steamid"].to_list() == [steam_id]
 
 
 def test_smoke_projectiles_keep_their_grenade_role(demo: Demo) -> None:
