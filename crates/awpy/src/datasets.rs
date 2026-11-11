@@ -1016,7 +1016,7 @@ impl SnapshotKeys {
                 .map(|i| key(&format!("m_pWeaponServices.m_hMyWeapons.{i}")))
                 .collect(),
             grenade_ammo: GRENADE_AMMO_SLOTS
-                .map(|slot| array_element_key(key("m_pWeaponServices.m_iAmmo"), slot)),
+                .map(|slot| key(&format!("m_pWeaponServices.m_iAmmo.{slot}"))),
         }
     }
 }
@@ -1026,14 +1026,6 @@ impl SnapshotKeys {
 /// weapon entity per grenade type and counts extra grenades here, so two
 /// flashbangs are one entity with ammo 2.
 const GRENADE_AMMO_SLOTS: [i16; 5] = [13, 14, 15, 16, 17];
-
-/// Key of element `index` of the fixed-size array field whose key is `array`.
-fn array_element_key(array: Option<u64>, index: i16) -> Option<u64> {
-    let mut path = crate::entity::field_path::FieldPath::unpack(array?);
-    path.last += 1;
-    *path.data.get_mut(path.last)? = index;
-    path.try_pack()
-}
 
 /// The entity filter for a snapshot pass: player pawns and controllers, plus
 /// every weapon class so held loadouts can be resolved from the filtered decode.
@@ -4041,19 +4033,6 @@ mod tests {
             .map(|row| (row.side, row.n_players, row.equipment_value))
             .collect();
         assert_eq!(totals, [("terrorist", 1, 500)]);
-    }
-
-    #[test]
-    fn array_element_key_extends_the_array_path() {
-        use crate::entity::field_path::FieldPath;
-        let mut base = FieldPath::default();
-        base.data[0] = 87;
-        base.data[1] = 2;
-        base.last = 1;
-        let element = FieldPath::unpack(array_element_key(base.try_pack(), 14).unwrap());
-        assert_eq!(element.last, 2);
-        assert_eq!(element.data[..3], [87, 2, 14]);
-        assert_eq!(array_element_key(None, 14), None);
     }
 
     #[test]

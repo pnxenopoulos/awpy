@@ -2,6 +2,7 @@
 
 ## 3.2.0
 
+- Use pbdems2 0.4.2 to look up grenade ammo slots.
 - Add Rust `Parser::events_with_players`. Read legacy events using end-of-tick
   state. Check the full user ID before using a player slot.
 - Keep smoke and fire intervals that end at round reset. Fix thrower attribution.
