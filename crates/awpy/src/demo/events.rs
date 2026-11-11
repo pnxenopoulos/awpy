@@ -102,30 +102,17 @@ pub(super) fn decode_direct_user_message(
     })
 }
 
-/// Keep the protobuf field order when more than one value is present.
+/// The key's value as text. When several values are set, the first in
+/// protobuf field order wins.
 fn format_event_key(key: KeyT) -> String {
-    if let Some(value) = key.val_string {
-        return value;
-    }
-    if let Some(value) = key.val_float {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_long {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_short {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_byte {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_bool {
-        return value.to_string();
-    }
-    if let Some(value) = key.val_uint64 {
-        return value.to_string();
-    }
-    String::new()
+    key.val_string
+        .or_else(|| key.val_float.map(|v| v.to_string()))
+        .or_else(|| key.val_long.map(|v| v.to_string()))
+        .or_else(|| key.val_short.map(|v| v.to_string()))
+        .or_else(|| key.val_byte.map(|v| v.to_string()))
+        .or_else(|| key.val_bool.map(|v| v.to_string()))
+        .or_else(|| key.val_uint64.map(|v| v.to_string()))
+        .unwrap_or_default()
 }
 
 #[cfg(test)]

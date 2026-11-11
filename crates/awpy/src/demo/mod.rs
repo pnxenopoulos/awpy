@@ -11,4 +11,5 @@ mod parser;
 
 pub use command::{CmdHeader, EDemoCommands, SvcMessages, command_name, user_message_name};
 pub use decode::decode_event_payload;
-pub use parser::{Context, GameEvent, MessageInfo, Parser};
+pub(crate) use parser::segment_budget;
+pub use parser::{Context, GameEvent, MessageInfo, Parser, Segment};

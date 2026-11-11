@@ -129,28 +129,25 @@ pub(crate) const VARIANT_FIELDS: [&str; 2] = [
     "m_nSubclassID",
 ];
 
+/// Variant pairs on [`VARIANT_CLASSES`]. `player_hurt` reports either member
+/// under the first member's name.
+const DAMAGE_AMBIGUOUS: [&[WeaponVariant]; 3] = [PISTOLS, RIFLES, STARTING_PISTOLS];
+
 /// The static name of a variant-class weapon (`usp_silencer`, `m4a1`, ...), if `name` is one.
 pub(crate) fn variant_name(name: &str) -> Option<&'static str> {
-    [
-        "deagle",
-        "revolver",
-        "m4a1",
-        "m4a1_silencer",
-        "hkp2000",
-        "usp_silencer",
-    ]
-    .into_iter()
-    .find(|n| *n == name)
+    DAMAGE_AMBIGUOUS
+        .iter()
+        .flat_map(|pair| pair.iter())
+        .map(|variant| variant.name)
+        .find(|n| *n == name)
 }
 
 /// The specific weapon an ambiguous `player_hurt` label can represent.
 pub(crate) fn damage_weapon_variant(event_weapon: &str) -> Option<&'static str> {
-    match event_weapon {
-        "deagle" => Some("revolver"),
-        "m4a1" => Some("m4a1_silencer"),
-        "hkp2000" => Some("usp_silencer"),
-        _ => None,
-    }
+    DAMAGE_AMBIGUOUS
+        .iter()
+        .find(|pair| pair[0].name == event_weapon)
+        .map(|pair| pair[1].name)
 }
 
 /// Refine an ambiguous event label only with evidence for its specific variant.
@@ -196,193 +193,65 @@ struct WeaponVariant {
     name: &'static str,
 }
 
+const fn variant(definition: u32, subclass: u32, name: &'static str) -> WeaponVariant {
+    WeaponVariant {
+        definition,
+        subclass,
+        name,
+    }
+}
+
 // Subclass tokens are MurmurHash2 hashes of decimal item-definition IDs,
 // with seed 0x31415926. Keep these constants out of the per-entity path.
 const PISTOLS: &[WeaponVariant] = &[
-    WeaponVariant {
-        definition: 1,
-        subclass: 628_863_847,
-        name: "deagle",
-    },
-    WeaponVariant {
-        definition: 64,
-        subclass: 966_714_057,
-        name: "revolver",
-    },
+    variant(1, 628_863_847, "deagle"),
+    variant(64, 966_714_057, "revolver"),
 ];
 const RIFLES: &[WeaponVariant] = &[
-    WeaponVariant {
-        definition: 16,
-        subclass: 2_746_029_779,
-        name: "m4a1",
-    },
-    WeaponVariant {
-        definition: 60,
-        subclass: 4_152_478_990,
-        name: "m4a1_silencer",
-    },
+    variant(16, 2_746_029_779, "m4a1"),
+    variant(60, 4_152_478_990, "m4a1_silencer"),
 ];
 const STARTING_PISTOLS: &[WeaponVariant] = &[
-    WeaponVariant {
-        definition: 32,
-        subclass: 1_721_431_921,
-        name: "hkp2000",
-    },
-    WeaponVariant {
-        definition: 61,
-        subclass: 2_343_690_088,
-        name: "usp_silencer",
-    },
+    variant(32, 1_721_431_921, "hkp2000"),
+    variant(61, 2_343_690_088, "usp_silencer"),
 ];
 /// The MP7 and MP5-SD can share the MP7 network class.
 const SMGS: &[WeaponVariant] = &[
-    WeaponVariant {
-        definition: 33,
-        subclass: 10_406_947,
-        name: "mp7",
-    },
-    WeaponVariant {
-        definition: 23,
-        subclass: 45_975_715,
-        name: "mp5sd",
-    },
+    variant(33, 10_406_947, "mp7"),
+    variant(23, 45_975_715, "mp5sd"),
 ];
 /// Some demos carry a CZ75-Auto in the P250 network class.
 const P250_VARIANTS: &[WeaponVariant] = &[
-    WeaponVariant {
-        definition: 36,
-        subclass: 1_573_262_270,
-        name: "p250",
-    },
-    WeaponVariant {
-        definition: 63,
-        subclass: 3_464_182_751,
-        name: "cz75a",
-    },
+    variant(36, 1_573_262_270, "p250"),
+    variant(63, 3_464_182_751, "cz75a"),
 ];
 /// Knives share one network class; the item definition names the model.
 /// Names follow the CS2 item names without the `weapon_` prefix.
 const KNIVES: &[WeaponVariant] = &[
-    WeaponVariant {
-        definition: 41,
-        subclass: 338_620_472,
-        name: "knifegg",
-    },
-    WeaponVariant {
-        definition: 42,
-        subclass: 294_910_436,
-        name: "knife",
-    },
-    WeaponVariant {
-        definition: 59,
-        subclass: 1_058_568_214,
-        name: "knife_t",
-    },
-    WeaponVariant {
-        definition: 80,
-        subclass: 839_540_137,
-        name: "knife_ghost",
-    },
-    WeaponVariant {
-        definition: 500,
-        subclass: 3_933_374_535,
-        name: "bayonet",
-    },
-    WeaponVariant {
-        definition: 503,
-        subclass: 3_787_235_507,
-        name: "knife_css",
-    },
-    WeaponVariant {
-        definition: 505,
-        subclass: 4_046_390_180,
-        name: "knife_flip",
-    },
-    WeaponVariant {
-        definition: 506,
-        subclass: 2_047_704_618,
-        name: "knife_gut",
-    },
-    WeaponVariant {
-        definition: 507,
-        subclass: 1_731_408_398,
-        name: "knife_karambit",
-    },
-    WeaponVariant {
-        definition: 508,
-        subclass: 1_638_561_588,
-        name: "knife_m9_bayonet",
-    },
-    WeaponVariant {
-        definition: 509,
-        subclass: 2_282_479_884,
-        name: "knife_tactical",
-    },
-    WeaponVariant {
-        definition: 512,
-        subclass: 3_412_259_219,
-        name: "knife_falchion",
-    },
-    WeaponVariant {
-        definition: 514,
-        subclass: 2_511_498_851,
-        name: "knife_survival_bowie",
-    },
-    WeaponVariant {
-        definition: 515,
-        subclass: 1_353_709_123,
-        name: "knife_butterfly",
-    },
-    WeaponVariant {
-        definition: 516,
-        subclass: 4_269_888_884,
-        name: "knife_push",
-    },
-    WeaponVariant {
-        definition: 517,
-        subclass: 1_105_782_941,
-        name: "knife_cord",
-    },
-    WeaponVariant {
-        definition: 518,
-        subclass: 275_962_944,
-        name: "knife_canis",
-    },
-    WeaponVariant {
-        definition: 519,
-        subclass: 1_338_637_359,
-        name: "knife_ursus",
-    },
-    WeaponVariant {
-        definition: 520,
-        subclass: 3_230_445_913,
-        name: "knife_gypsy_jackknife",
-    },
-    WeaponVariant {
-        definition: 521,
-        subclass: 3_206_681_373,
-        name: "knife_outdoor",
-    },
-    WeaponVariant {
-        definition: 522,
-        subclass: 2_595_277_776,
-        name: "knife_stiletto",
-    },
-    WeaponVariant {
-        definition: 523,
-        subclass: 4_029_975_521,
-        name: "knife_widowmaker",
-    },
-    WeaponVariant {
-        definition: 525,
-        subclass: 365_028_728,
-        name: "knife_skeleton",
-    },
-    WeaponVariant {
-        definition: 526,
-        subclass: 3_845_286_452,
-        name: "knife_kukri",
-    },
+    variant(41, 338_620_472, "knifegg"),
+    variant(42, 294_910_436, "knife"),
+    variant(59, 1_058_568_214, "knife_t"),
+    variant(80, 839_540_137, "knife_ghost"),
+    variant(500, 3_933_374_535, "bayonet"),
+    variant(503, 3_787_235_507, "knife_css"),
+    variant(505, 4_046_390_180, "knife_flip"),
+    variant(506, 2_047_704_618, "knife_gut"),
+    variant(507, 1_731_408_398, "knife_karambit"),
+    variant(508, 1_638_561_588, "knife_m9_bayonet"),
+    variant(509, 2_282_479_884, "knife_tactical"),
+    variant(512, 3_412_259_219, "knife_falchion"),
+    variant(514, 2_511_498_851, "knife_survival_bowie"),
+    variant(515, 1_353_709_123, "knife_butterfly"),
+    variant(516, 4_269_888_884, "knife_push"),
+    variant(517, 1_105_782_941, "knife_cord"),
+    variant(518, 275_962_944, "knife_canis"),
+    variant(519, 1_338_637_359, "knife_ursus"),
+    variant(520, 3_230_445_913, "knife_gypsy_jackknife"),
+    variant(521, 3_206_681_373, "knife_outdoor"),
+    variant(522, 2_595_277_776, "knife_stiletto"),
+    variant(523, 4_029_975_521, "knife_widowmaker"),
+    variant(525, 365_028_728, "knife_skeleton"),
+    variant(526, 3_845_286_452, "knife_kukri"),
 ];
 
 /// Field keys and the class fallback for one weapon class.
@@ -442,18 +311,19 @@ impl WeaponResolver {
                 let fallback = weapon_info(&class.network_name)?;
                 let variants = WeaponIdentity::variants(&class.network_name);
                 let serializer = ctx.serializers().get(&class.network_name);
-                let key = |path| serializer.and_then(|s| s.resolve_field_key(path));
+                let key = |path| {
+                    serializer
+                        .filter(|_| !variants.is_empty())
+                        .and_then(|s| s.resolve_field_key(path))
+                };
+                let [definition, subclass] = VARIANT_FIELDS.map(key);
                 Some((
                     class.class_id,
                     WeaponIdentity {
                         fallback,
                         variants,
-                        definition: (!variants.is_empty())
-                            .then(|| key("m_AttributeManager.m_Item.m_iItemDefinitionIndex"))
-                            .flatten(),
-                        subclass: (!variants.is_empty())
-                            .then(|| key("m_nSubclassID"))
-                            .flatten(),
+                        definition,
+                        subclass,
                     },
                 ))
             })

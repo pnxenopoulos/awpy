@@ -18,38 +18,12 @@ const TEAMS: &[(i64, &str)] = &[
     (3, "counter-terrorist"),
 ];
 
-/// Look up a team name by number. Returns `"TEAM_NOT_FOUND"` for unknown numbers.
+/// Look up a team name by ID. Returns `"TEAM_NOT_FOUND"` for unknown IDs.
 pub fn team_name(id: i64) -> &'static str {
-    TEAMS
-        .iter()
-        .find(|&&(key, _)| key == id)
-        .map_or("TEAM_NOT_FOUND", |&(_, value)| value)
+    crate::find_name(TEAMS, id).unwrap_or("TEAM_NOT_FOUND")
 }
 
-/// Return all known (team number, team name) pairs.
+/// Return all known (team ID, name) pairs.
 pub fn all_teams() -> &'static [(i64, &'static str)] {
     TEAMS
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn known_teams() {
-        assert_eq!(team_name(0), "unassigned");
-        assert_eq!(team_name(1), "spectator");
-        assert_eq!(team_name(2), "terrorist");
-        assert_eq!(team_name(3), "counter-terrorist");
-    }
-
-    #[test]
-    fn unknown_team() {
-        assert_eq!(team_name(99), "TEAM_NOT_FOUND");
-    }
-
-    #[test]
-    fn all_teams_count() {
-        assert_eq!(all_teams().len(), 4);
-    }
 }

@@ -52,15 +52,15 @@ const SEG_EPS: f32 = 1e-4;
 /// Determinant below which a ray is treated as parallel to a triangle.
 const PARALLEL_EPS: f32 = 1e-8;
 
-type Vec3 = [f32; 3];
+pub(crate) type Vec3 = [f32; 3];
 
 #[inline]
-fn sub(a: Vec3, b: Vec3) -> Vec3 {
+pub(crate) fn sub(a: Vec3, b: Vec3) -> Vec3 {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
 #[inline]
-fn dot(a: Vec3, b: Vec3) -> f32 {
+pub(crate) fn dot(a: Vec3, b: Vec3) -> f32 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 

@@ -65,6 +65,7 @@ pub mod game_phases;
 pub mod geometry;
 pub mod hitgroups;
 pub mod io;
+pub mod lazy;
 pub mod map_control;
 pub mod nav;
 pub mod position;
@@ -102,3 +103,36 @@ pub use round_end_reasons::{all_round_end_reasons, round_end_reason_name};
 pub use stats::PlayerStats;
 pub use teams::{all_teams, team_name};
 pub use weapons::{WeaponInfo, WeaponSlot, weapon_info};
+
+/// The name paired with `id` in an `(id, name)` table.
+fn find_name(table: &[(i64, &'static str)], id: i64) -> Option<&'static str> {
+    table
+        .iter()
+        .find(|&&(key, _)| key == id)
+        .map(|&(_, name)| name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn name_tables_are_sorted_by_unique_id() {
+        for table in [
+            all_teams(),
+            all_hitgroups(),
+            all_game_phases(),
+            all_round_end_reasons(),
+        ] {
+            assert!(table.windows(2).all(|pair| pair[0].0 < pair[1].0));
+        }
+    }
+
+    #[test]
+    fn unknown_ids_get_a_not_found_name() {
+        assert_eq!(team_name(99), "TEAM_NOT_FOUND");
+        assert_eq!(hitgroup_name(99), "HITGROUP_NOT_FOUND");
+        assert_eq!(game_phase_name(99), "GAME_PHASE_NOT_FOUND");
+        assert_eq!(round_end_reason_name(99), "ROUND_END_REASON_NOT_FOUND");
+    }
+}

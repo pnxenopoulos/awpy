@@ -29,9 +29,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::datasets::{
-    Blind, Damage, EventDatasets, Kill, Round, Shot, TRADE_SECONDS, trade_flags,
-};
+use crate::datasets::{Blind, Damage, EventDatasets, Kill, Round, Shot, trade_flags, trade_ticks};
 use crate::demo::Parser;
 use crate::error::Result;
 
@@ -112,8 +110,28 @@ struct Acc {
     traded_rounds: HashSet<usize>,
     clutches_played: i32,
     clutches_won: i32,
-    /// Opponents faced (1-based, capped at [`MAX_CLUTCH`]) → clutches won.
-    clutch_wins: HashMap<usize, i32>,
+    /// Clutches won, indexed by opponents faced minus one (capped at [`MAX_CLUTCH`]).
+    clutch_wins: [i32; MAX_CLUTCH],
+}
+
+impl Acc {
+    /// Record a name if none is known yet.
+    fn note_name(&mut self, name: Option<&String>) {
+        if self.name.is_empty()
+            && let Some(name) = name
+        {
+            self.name.clone_from(name);
+        }
+    }
+}
+
+/// A usable tick rate, else the CS2 default.
+fn valid_tickrate(tickrate: f32) -> f32 {
+    if tickrate.is_finite() && tickrate > 0.0 {
+        tickrate
+    } else {
+        DEFAULT_TICKRATE
+    }
 }
 
 /// Exact totals across recordings of separate, complete rounds.
@@ -144,18 +162,14 @@ impl PlayerStatsAccumulator {
             return;
         };
         let end = last.official_end_tick.unwrap_or(last.end_tick);
-        let tickrate = if tickrate.is_finite() && tickrate > 0.0 {
-            tickrate
-        } else {
-            DEFAULT_TICKRATE
-        };
+        let tickrate = valid_tickrate(tickrate);
         let other = collect_stats(
             completed_rows(&events.kills, end, |row| row.tick),
             completed_rows(&events.damages, end, |row| row.tick),
             completed_rows(&events.blinds, end, |row| row.tick),
             completed_rows(&events.shots, end, |row| row.tick),
             rounds,
-            (TRADE_SECONDS * tickrate).round() as i32,
+            trade_ticks(tickrate),
             exclude_knife_rounds,
             tickrate,
         );
@@ -188,32 +202,18 @@ impl PlayerStatsAccumulator {
                 clutches_played,
                 clutches_won
             );
+            let shift = |rounds: HashSet<usize>| rounds.into_iter().map(|r| r + offset);
+            total.assist_rounds.extend(shift(incoming.assist_rounds));
+            total.death_rounds.extend(shift(incoming.death_rounds));
+            total.traded_rounds.extend(shift(incoming.traded_rounds));
             total.kill_rounds.extend(
                 incoming
                     .kill_rounds
                     .into_iter()
                     .map(|(round, count)| (round + offset, count)),
             );
-            total.assist_rounds.extend(
-                incoming
-                    .assist_rounds
-                    .into_iter()
-                    .map(|round| round + offset),
-            );
-            total.death_rounds.extend(
-                incoming
-                    .death_rounds
-                    .into_iter()
-                    .map(|round| round + offset),
-            );
-            total.traded_rounds.extend(
-                incoming
-                    .traded_rounds
-                    .into_iter()
-                    .map(|round| round + offset),
-            );
-            for (opponents, wins) in incoming.clutch_wins {
-                *total.clutch_wins.entry(opponents).or_default() += wins;
+            for (total, wins) in total.clutch_wins.iter_mut().zip(incoming.clutch_wins) {
+                *total += wins;
             }
         }
     }
@@ -226,10 +226,7 @@ fn completed_rows<T>(rows: &[T], end_tick: i32, tick: impl Fn(&T) -> i32) -> &[T
 
 /// Live start tick of each round (freeze start where known).
 fn round_starts(rounds: &[Round]) -> Vec<i32> {
-    rounds
-        .iter()
-        .map(|r| r.start_tick.or(r.freeze_end_tick).unwrap_or(r.end_tick))
-        .collect()
+    rounds.iter().map(Round::live_start).collect()
 }
 
 /// Each round's freeze period as a half-open `[start_tick, freeze_end_tick)`
@@ -299,10 +296,30 @@ fn side_observations(
     starts: &[i32],
     windows: &[(i32, i32)],
 ) -> SideObservations {
+    let kills = kills.iter().flat_map(|k| {
+        [
+            (k.tick, k.attacker_steamid, &k.attacker_side),
+            (k.tick, k.victim_steamid, &k.victim_side),
+            (k.tick, k.assister_steamid, &k.assister_side),
+        ]
+    });
+    let damages = damages.iter().flat_map(|d| {
+        [
+            (d.tick, d.attacker_steamid, &d.attacker_side),
+            (d.tick, d.victim_steamid, &d.victim_side),
+        ]
+    });
+    let blinds = blinds.iter().flat_map(|b| {
+        [
+            (b.tick, b.attacker_steamid, &b.attacker_side),
+            (b.tick, b.victim_steamid, &b.victim_side),
+        ]
+    });
+    let shots = shots.iter().map(|s| (s.tick, s.steamid, &s.side));
     let mut obs: SideObservations = HashMap::new();
-    let mut note = |tick: i32, steamid: Option<u64>, side: Option<&str>| {
+    for (tick, steamid, side) in kills.chain(damages).chain(blinds).chain(shots) {
         if let Some(steamid) = steamid
-            && let Some(side) = side
+            && let Some(side) = side.as_deref()
             && SIDES.contains(&side)
             && let Some(round) = round_of(tick, starts, windows)
         {
@@ -310,46 +327,6 @@ fn side_observations(
                 .or_default()
                 .insert(round, side.to_owned());
         }
-    };
-    for kill in kills {
-        note(
-            kill.tick,
-            kill.attacker_steamid,
-            kill.attacker_side.as_deref(),
-        );
-        note(kill.tick, kill.victim_steamid, kill.victim_side.as_deref());
-        note(
-            kill.tick,
-            kill.assister_steamid,
-            kill.assister_side.as_deref(),
-        );
-    }
-    for damage in damages {
-        note(
-            damage.tick,
-            damage.attacker_steamid,
-            damage.attacker_side.as_deref(),
-        );
-        note(
-            damage.tick,
-            damage.victim_steamid,
-            damage.victim_side.as_deref(),
-        );
-    }
-    for blind in blinds {
-        note(
-            blind.tick,
-            blind.attacker_steamid,
-            blind.attacker_side.as_deref(),
-        );
-        note(
-            blind.tick,
-            blind.victim_steamid,
-            blind.victim_side.as_deref(),
-        );
-    }
-    for shot in shots {
-        note(shot.tick, shot.steamid, shot.side.as_deref());
     }
     obs
 }
@@ -632,11 +609,7 @@ fn collect_stats(
     exclude_knife_rounds: bool,
     tickrate: f32,
 ) -> PlayerStatsAccumulator {
-    let tickrate = if tickrate.is_finite() && tickrate > 0.0 {
-        f64::from(tickrate)
-    } else {
-        f64::from(DEFAULT_TICKRATE)
-    };
+    let tickrate = f64::from(valid_tickrate(tickrate));
     let total_rounds = rounds.len();
     // Knife rounds don't count toward the score, so their kills / deaths /
     // assists / damage — and the rounds themselves in every denominator — are
@@ -653,6 +626,9 @@ fn collect_stats(
     };
     let starts = round_starts(rounds);
     let freezes = freeze_windows(rounds);
+    // The counted round of a tick: live play outside excluded knife rounds.
+    let counted_round =
+        |tick: i32| round_of(tick, &starts, &freezes).filter(|round| !knife_rounds.contains(round));
 
     // Kill indices in tick order, for opening-kill detection and the clutch walk.
     let mut order: Vec<usize> = (0..kills.len()).collect();
@@ -668,7 +644,7 @@ fn collect_stats(
     let mut blinds_by_victim: HashMap<u64, Vec<(usize, &Blind)>> = HashMap::new();
     for blind in blinds {
         if let Some(victim) = blind.victim_steamid
-            && let Some(round) = round_of(blind.tick, &starts, &freezes)
+            && let Some(round) = counted_round(blind.tick)
             && blind.duration.is_finite()
             && blind.duration > 0.0
         {
@@ -682,12 +658,9 @@ fn collect_stats(
 
     for &i in &order {
         let k = &kills[i];
-        let Some(round) = round_of(k.tick, &starts, &freezes) else {
+        let Some(round) = counted_round(k.tick) else {
             continue;
         };
-        if knife_rounds.contains(&round) {
-            continue;
-        }
 
         // Attacker: a kill counts if it is against an enemy (not a suicide or
         // team kill).
@@ -709,11 +682,7 @@ fn collect_stats(
         // Victim.
         if let Some(victim) = k.victim_steamid {
             let a = acc.entry(victim).or_default();
-            if a.name.is_empty()
-                && let Some(name) = &k.victim_name
-            {
-                a.name.clone_from(name);
-            }
+            a.note_name(k.victim_name.as_ref());
             a.deaths += 1;
             a.death_rounds.insert(round);
             if trades[i].1 {
@@ -770,11 +739,7 @@ fn collect_stats(
         }
         for (&assister, &(name, flash)) in &assisters {
             let a = acc.entry(assister).or_default();
-            if a.name.is_empty()
-                && let Some(name) = name
-            {
-                a.name.clone_from(name);
-            }
+            a.note_name(name);
             a.assists += 1;
             a.flash_assists += i32::from(flash);
             a.assist_rounds.insert(round);
@@ -799,12 +764,9 @@ fn collect_stats(
     // so successive hits in the same tick cannot reuse the victim's health.
     let mut victim_health: HashMap<(usize, u64), i32> = HashMap::new();
     for d in damages {
-        let Some(round) = round_of(d.tick, &starts, &freezes) else {
+        let Some(round) = counted_round(d.tick) else {
             continue;
         };
-        if knife_rounds.contains(&round) {
-            continue;
-        }
         let before = match d.victim_steamid {
             Some(victim) => victim_health
                 .insert((round, victim), d.health_post)
@@ -831,43 +793,23 @@ fn collect_stats(
     // Flashes thrown (every flashbang the player fired), and how many enemies it
     // blinded / for how long (from resolved flash events on opposing sides).
     for s in shots {
-        if !s.weapon.contains("flashbang") {
-            continue;
-        }
-        let Some(round) = round_of(s.tick, &starts, &freezes) else {
-            continue;
-        };
-        if knife_rounds.contains(&round) {
-            continue;
-        }
-        if let Some(thrower) = s.steamid {
+        if s.weapon.contains("flashbang")
+            && counted_round(s.tick).is_some()
+            && let Some(thrower) = s.steamid
+        {
             let a = acc.entry(thrower).or_default();
-            if a.name.is_empty()
-                && let Some(name) = &s.name
-            {
-                a.name.clone_from(name);
-            }
+            a.note_name(s.name.as_ref());
             a.flashes_thrown += 1;
         }
     }
     for b in blinds {
-        let Some(round) = round_of(b.tick, &starts, &freezes) else {
-            continue;
-        };
-        if knife_rounds.contains(&round) {
-            continue;
-        }
         // Only enemy blinds count — a team-flash or self-flash is not credited.
-        if !is_confirmed_enemy(b.attacker_side.as_deref(), b.victim_side.as_deref()) {
-            continue;
-        }
-        if let Some(attacker) = b.attacker_steamid {
+        if counted_round(b.tick).is_some()
+            && is_confirmed_enemy(b.attacker_side.as_deref(), b.victim_side.as_deref())
+            && let Some(attacker) = b.attacker_steamid
+        {
             let a = acc.entry(attacker).or_default();
-            if a.name.is_empty()
-                && let Some(name) = &b.attacker_name
-            {
-                a.name.clone_from(name);
-            }
+            a.note_name(b.attacker_name.as_ref());
             a.enemies_flashed += 1;
             a.flash_duration_dealt += b.duration;
         }
@@ -891,9 +833,7 @@ fn collect_stats(
         a.clutches_played += 1;
         if clutch.won {
             a.clutches_won += 1;
-            *a.clutch_wins
-                .entry(clutch.opponents.min(MAX_CLUTCH))
-                .or_default() += 1;
+            a.clutch_wins[clutch.opponents.min(MAX_CLUTCH) - 1] += 1;
         }
     }
 
@@ -941,6 +881,7 @@ impl PlayerStatsAccumulator {
                     })
                     .count() as f32;
 
+                let [clutch_1v1, clutch_1v2, clutch_1v3, clutch_1v4, clutch_1v5] = a.clutch_wins;
                 let headshot_pct = if a.kills > 0 {
                     a.headshot_kills as f32 / a.kills as f32 * 100.0
                 } else {
@@ -968,11 +909,11 @@ impl PlayerStatsAccumulator {
                     adr: a.damage as f32 / denom,
                     clutches_played: a.clutches_played,
                     clutches_won: a.clutches_won,
-                    clutch_1v1: a.clutch_wins.get(&1).copied().unwrap_or(0),
-                    clutch_1v2: a.clutch_wins.get(&2).copied().unwrap_or(0),
-                    clutch_1v3: a.clutch_wins.get(&3).copied().unwrap_or(0),
-                    clutch_1v4: a.clutch_wins.get(&4).copied().unwrap_or(0),
-                    clutch_1v5: a.clutch_wins.get(&5).copied().unwrap_or(0),
+                    clutch_1v1,
+                    clutch_1v2,
+                    clutch_1v3,
+                    clutch_1v4,
+                    clutch_1v5,
                     utility_damage: a.utility_damage,
                     flashes_thrown: a.flashes_thrown,
                     enemies_flashed: a.enemies_flashed,
@@ -1033,14 +974,13 @@ impl Parser {
         rounds: &[Round],
         exclude_knife_rounds: bool,
     ) -> Vec<PlayerStats> {
-        let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
         player_stats_at_tickrate(
             kills,
             damages,
             blinds,
             shots,
             rounds,
-            trade_ticks,
+            trade_ticks(self.tickrate()),
             exclude_knife_rounds,
             self.tickrate(),
         )
@@ -1073,9 +1013,8 @@ mod tests {
             official_end_tick: Some(end),
             winner: 2,
             winner_side: "terrorist".into(),
-            reason: 0,
             reason_name: "t_win".into(),
-            is_knife_round: false,
+            ..Default::default()
         }
     }
 
@@ -1088,6 +1027,24 @@ mod tests {
             victim_steamid: Some(victim),
             victim_name: Some(format!("p{victim}")),
             victim_side: Some(vside.into()),
+            ..Default::default()
+        }
+    }
+
+    /// [`player_stats`] without shots, with a 320-tick trade window, keeping
+    /// knife rounds.
+    fn stats_for(
+        kills: &[Kill],
+        damages: &[Damage],
+        blinds: &[Blind],
+        rounds: &[Round],
+    ) -> Vec<PlayerStats> {
+        player_stats(kills, damages, blinds, &[], rounds, 320, false)
+    }
+
+    fn kills_only(kills: Vec<Kill>) -> EventDatasets {
+        EventDatasets {
+            kills,
             ..Default::default()
         }
     }
@@ -1133,10 +1090,7 @@ mod tests {
     fn multipart_kills_with_equal_local_ticks_are_separate_rounds() {
         let mut total = PlayerStatsAccumulator::default();
         for number in [1, 2] {
-            let events = EventDatasets {
-                kills: vec![kill(100, 1, T, 2, CT)],
-                ..Default::default()
-            };
+            let events = kills_only(vec![kill(100, 1, T, 2, CT)]);
             total.add_part(&events, &[round(number, 0, 1000)], 64.0, true);
         }
         let stats = total.finish();
@@ -1181,10 +1135,7 @@ mod tests {
     fn multipart_kast_counts_rounds_before_calculating_the_percentage() {
         let mut total = PlayerStatsAccumulator::default();
         total.add_part(
-            &EventDatasets {
-                kills: vec![kill(100, 2, CT, 1, T)],
-                ..Default::default()
-            },
+            &kills_only(vec![kill(100, 2, CT, 1, T)]),
             &[
                 round(1, 0, 1000),
                 round(2, 2000, 3000),
@@ -1194,10 +1145,7 @@ mod tests {
             true,
         );
         total.add_part(
-            &EventDatasets {
-                kills: vec![kill(100, 1, T, 2, CT)],
-                ..Default::default()
-            },
+            &kills_only(vec![kill(100, 1, T, 2, CT)]),
             &[round(4, 0, 1000)],
             64.0,
             true,
@@ -1210,10 +1158,7 @@ mod tests {
         let mut total = PlayerStatsAccumulator::default();
         for (number, kill) in [(1, kill(100, 2, CT, 1, T)), (2, kill(101, 3, T, 2, CT))] {
             total.add_part(
-                &EventDatasets {
-                    kills: vec![kill],
-                    ..Default::default()
-                },
+                &kills_only(vec![kill]),
                 &[round(number, 0, 1000)],
                 64.0,
                 true,
@@ -1226,10 +1171,7 @@ mod tests {
     fn multipart_trailing_freeze_deaths_do_not_enter_the_last_round() {
         let mut total = PlayerStatsAccumulator::default();
         total.add_part(
-            &EventDatasets {
-                kills: vec![kill(100, 1, T, 2, CT), kill(1001, 1, T, 1, T)],
-                ..Default::default()
-            },
+            &kills_only(vec![kill(100, 1, T, 2, CT), kill(1001, 1, T, 1, T)]),
             &[round(1, 0, 1000)],
             64.0,
             true,
@@ -1242,10 +1184,7 @@ mod tests {
         let mut total = PlayerStatsAccumulator::default();
         for number in [1, 2] {
             total.add_part(
-                &EventDatasets {
-                    kills: vec![kill(9, 1, T, 1, T), kill(100, 1, T, 2, CT)],
-                    ..Default::default()
-                },
+                &kills_only(vec![kill(9, 1, T, 1, T), kill(100, 1, T, 2, CT)]),
                 &[round_with_freeze(number, 0, 50, 1000)],
                 64.0,
                 true,
@@ -1261,19 +1200,13 @@ mod tests {
             let mut knife = round(1, 0, 1000);
             knife.is_knife_round = true;
             total.add_part(
-                &EventDatasets {
-                    kills: vec![kill(100, 1, T, 2, CT), kill(2100, 1, T, 2, CT)],
-                    ..Default::default()
-                },
+                &kills_only(vec![kill(100, 1, T, 2, CT), kill(2100, 1, T, 2, CT)]),
                 &[knife, round(1, 2000, 3000)],
                 64.0,
                 exclude,
             );
             total.add_part(
-                &EventDatasets {
-                    kills: vec![kill(100, 1, T, 2, CT)],
-                    ..Default::default()
-                },
+                &kills_only(vec![kill(100, 1, T, 2, CT)]),
                 &[round(2, 0, 1000)],
                 64.0,
                 exclude,
@@ -1286,15 +1219,7 @@ mod tests {
     #[test]
     fn recorded_and_inferred_flash_assisters_both_get_credit() {
         let blinds = [blind(50, 2.0, 4, T, 2, CT)];
-        let stats = player_stats(
-            &assist_kills(true),
-            &[],
-            &blinds,
-            &[],
-            &[round(1, 0, 1000)],
-            320,
-            false,
-        );
+        let stats = stats_for(&assist_kills(true), &[], &blinds, &[round(1, 0, 1000)]);
         for id in [3, 4] {
             assert_eq!(
                 (find(&stats, id).assists, find(&stats, id).flash_assists),
@@ -1311,14 +1236,11 @@ mod tests {
             blind(60, 2.0, 4, T, 2, CT),
         ];
         for recorded_flash in [false, true] {
-            let stats = player_stats(
+            let stats = stats_for(
                 &assist_kills(recorded_flash),
                 &[],
                 &blinds,
-                &[],
                 &[round(1, 0, 1000)],
-                320,
-                false,
             );
             for id in [3, 4] {
                 assert_eq!(
@@ -1332,30 +1254,14 @@ mod tests {
     #[test]
     fn the_killer_cannot_receive_a_flash_assist() {
         let blinds = [blind(50, 2.0, 1, T, 2, CT)];
-        let stats = player_stats(
-            &assist_kills(false),
-            &[],
-            &blinds,
-            &[],
-            &[round(1, 0, 1000)],
-            320,
-            false,
-        );
+        let stats = stats_for(&assist_kills(false), &[], &blinds, &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 1).assists, 0);
     }
 
     #[test]
     fn self_and_team_flashes_do_not_receive_assists() {
         let blinds = [blind(50, 2.0, 2, CT, 2, CT), blind(50, 2.0, 5, CT, 2, CT)];
-        let stats = player_stats(
-            &assist_kills(false),
-            &[],
-            &blinds,
-            &[],
-            &[round(1, 0, 1000)],
-            320,
-            false,
-        );
+        let stats = stats_for(&assist_kills(false), &[], &blinds, &[round(1, 0, 1000)]);
         for id in [2, 5] {
             assert_eq!(find(&stats, id).assists, 0);
         }
@@ -1364,15 +1270,7 @@ mod tests {
     #[test]
     fn inferred_flash_assists_count_toward_kast() {
         let blinds = [blind(50, 2.0, 4, T, 2, CT)];
-        let stats = player_stats(
-            &assist_kills(false),
-            &[],
-            &blinds,
-            &[],
-            &[round(1, 0, 1000)],
-            320,
-            false,
-        );
+        let stats = stats_for(&assist_kills(false), &[], &blinds, &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 4).kast, 100.0);
     }
 
@@ -1406,14 +1304,11 @@ mod tests {
     #[test]
     fn flash_assists_cannot_cross_round_boundaries() {
         let rounds = [round(1, 0, 1000), round(2, 2000, 3000)];
-        let stats = player_stats(
+        let stats = stats_for(
             &[kill(2200, 1, T, 2, CT)],
             &[],
             &[blind(100, 100.0, 3, T, 2, CT)],
-            &[],
             &rounds,
-            320,
-            false,
         );
         assert_eq!(find(&stats, 3).flash_assists, 0);
     }
@@ -1431,15 +1326,7 @@ mod tests {
                 victim_entity_serial: Some(serial),
                 ..blind(2150, 100.0, 3, T, 2, CT)
             }];
-            let stats = player_stats(
-                &kills,
-                &[],
-                &blinds,
-                &[],
-                &[round(1, 2000, 3000)],
-                320,
-                false,
-            );
+            let stats = stats_for(&kills, &[], &blinds, &[round(1, 2000, 3000)]);
             assert_eq!(find(&stats, 3).flash_assists, expected);
         }
     }
@@ -1468,7 +1355,7 @@ mod tests {
             kill(250, 1, T, 6, CT),
             kill(300, 1, T, 7, CT),
         ];
-        player_stats(&kills, &[], &[], &[], &rounds, 320, false)
+        stats_for(&kills, &[], &[], &rounds)
     }
 
     #[test]
@@ -1496,14 +1383,14 @@ mod tests {
             kill(100, 2, "counter-terrorist", 1, "terrorist"),
             kill(300, 3, "terrorist", 2, "counter-terrorist"),
         ];
-        let stats = player_stats(&kills, &[], &[], &[], &rounds, 320, false);
+        let stats = stats_for(&kills, &[], &[], &rounds);
         assert_eq!(find(&stats, 1).traded_deaths, 1);
         // Outside the window: no trade.
         let kills_late = vec![
             kill(100, 2, "counter-terrorist", 1, "terrorist"),
             kill(500, 3, "terrorist", 2, "counter-terrorist"),
         ];
-        let stats_late = player_stats(&kills_late, &[], &[], &[], &rounds, 320, false);
+        let stats_late = stats_for(&kills_late, &[], &[], &rounds);
         assert_eq!(find(&stats_late, 1).traded_deaths, 0);
     }
 
@@ -1512,7 +1399,7 @@ mod tests {
         let rounds = vec![round(1, 0, 1000), round(2, 2000, 3000)];
         // Player 1 kills in round 1 (KAST), survives round 2 (KAST) => 100%.
         let kills = vec![kill(100, 1, "terrorist", 5, "counter-terrorist")];
-        let stats = player_stats(&kills, &[], &[], &[], &rounds, 320, false);
+        let stats = stats_for(&kills, &[], &[], &rounds);
         assert_eq!(find(&stats, 1).kast, 100.0);
         // Player 5 died round 1 untraded, absent round 2 (survived) => 50%.
         assert_eq!(find(&stats, 5).kast, 50.0);
@@ -1532,7 +1419,7 @@ mod tests {
             dmg_health: 444, // raw overkill ignored; capped HP removed is 100
             ..Default::default()
         }];
-        let stats = player_stats(&[], &damages, &[], &[], &rounds, 320, false);
+        let stats = stats_for(&[], &damages, &[], &rounds);
         assert_eq!(find(&stats, 1).adr, 50.0); // 100 damage / 2 rounds
     }
 
@@ -1555,14 +1442,14 @@ mod tests {
         // HOTU–Astralis Ancient, round 2: mizu has 57 HP before Staehr's
         // 35-damage hit at tick 10711, which reports 21 HP afterward.
         let damages = [damage(100, 1, 43, 57), damage(10711, 1, 35, 21)];
-        let stats = player_stats(&[], &damages, &[], &[], &[round(2, 0, 12000)], 320, false);
+        let stats = stats_for(&[], &damages, &[], &[round(2, 0, 12000)]);
         assert_eq!(find(&stats, 1).adr, 78.0);
     }
 
     #[test]
     fn adr_caps_same_tick_shotgun_pellets() {
         let damages = [damage(100, 1, 79, 21), damage(100, 1, 79, 0)];
-        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        let stats = stats_for(&[], &damages, &[], &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 1).adr, 100.0);
     }
 
@@ -1573,7 +1460,7 @@ mod tests {
             damage(100, 2, 9, 60),
             damage(100, 1, 128, 0),
         ];
-        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        let stats = stats_for(&[], &damages, &[], &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 1).adr, 91.0); // 31 + the remaining 60 HP
     }
 
@@ -1587,35 +1474,19 @@ mod tests {
             },
             damage(100, 1, 128, 0),
         ];
-        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        let stats = stats_for(&[], &damages, &[], &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 1).adr, 69.0);
     }
 
     #[test]
     fn adr_does_not_credit_zero_reported_damage() {
-        let stats = player_stats(
-            &[],
-            &[damage(100, 1, 0, 99)],
-            &[],
-            &[],
-            &[round(1, 0, 1000)],
-            320,
-            false,
-        );
+        let stats = stats_for(&[], &[damage(100, 1, 0, 99)], &[], &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 1).adr, 0.0);
     }
 
     #[test]
     fn adr_ignores_negative_reported_damage() {
-        let stats = player_stats(
-            &[],
-            &[damage(100, 1, -1, 99)],
-            &[],
-            &[],
-            &[round(1, 0, 1000)],
-            320,
-            false,
-        );
+        let stats = stats_for(&[], &[damage(100, 1, -1, 99)], &[], &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 1).adr, 0.0);
     }
 
@@ -1623,7 +1494,7 @@ mod tests {
     fn adr_resets_remaining_health_each_round() {
         let damages = [damage(100, 1, 90, 10), damage(2100, 1, 90, 10)];
         let rounds = [round(1, 0, 1000), round(2, 2000, 3000)];
-        let stats = player_stats(&[], &damages, &[], &[], &rounds, 320, false);
+        let stats = stats_for(&[], &damages, &[], &rounds);
         assert_eq!(find(&stats, 1).adr, 90.0);
     }
 
@@ -1633,7 +1504,7 @@ mod tests {
             victim_steamid: None,
             ..damage(100, 1, 128, 0)
         }];
-        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        let stats = stats_for(&[], &damages, &[], &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 1).adr, 100.0);
     }
 
@@ -1643,7 +1514,7 @@ mod tests {
             weapon: "inferno".into(),
             ..damage(100, 1, 6, 93)
         }];
-        let stats = player_stats(&[], &damages, &[], &[], &[round(1, 0, 1000)], 320, false);
+        let stats = stats_for(&[], &damages, &[], &[round(1, 0, 1000)]);
         assert_eq!(find(&stats, 1).utility_damage, 6);
     }
 
@@ -1681,7 +1552,7 @@ mod tests {
             dmg(120, Some(1), Some("terrorist"), 1, "terrorist", 100, 80), // self: excluded
             dmg(130, None, None, 5, "counter-terrorist", 100, 60),         // world: excluded
         ];
-        let stats = player_stats(&[], &damages, &[], &[], &rounds, 320, false);
+        let stats = stats_for(&[], &damages, &[], &rounds);
         // Only the 50 enemy damage counts, over 1 round.
         assert_eq!(find(&stats, 1).adr, 50.0);
     }
@@ -1731,7 +1602,7 @@ mod tests {
             kill(1050, 1, "terrorist", 7, "counter-terrorist"), // round 2 freeze: ignored
             kill(1500, 1, "terrorist", 8, "counter-terrorist"), // live: counts
         ];
-        let stats = player_stats(&kills, &[], &[], &[], &rounds, 320, false);
+        let stats = stats_for(&kills, &[], &[], &rounds);
         assert_eq!(find(&stats, 1).kills, 2);
         // Freeze-period victims must not be charged with a death either.
         assert!(stats.iter().all(|s| s.steamid != 5 && s.steamid != 7));
@@ -1803,7 +1674,7 @@ mod tests {
             // T 3 clutches it out.
             kill(300, 3, T, 11, CT),
         ];
-        let stats = player_stats(&kills, &damages, &[], &[], &rounds, 320, false);
+        let stats = stats_for(&kills, &damages, &[], &rounds);
 
         let p3 = find(&stats, 3);
         assert_eq!(p3.clutches_played, 1);
@@ -1821,7 +1692,7 @@ mod tests {
         let rounds = vec![round_won_by(1, 0, 1000, CT)]; // CT take the round
         let damages = seed_both(10, &[1, 2, 3], &[11, 12, 13]);
         let kills = vec![kill(100, 11, CT, 1, T), kill(200, 11, CT, 2, T)];
-        let stats = player_stats(&kills, &damages, &[], &[], &rounds, 320, false);
+        let stats = stats_for(&kills, &damages, &[], &rounds);
 
         let p3 = find(&stats, 3);
         assert_eq!(p3.clutches_played, 1);
@@ -1849,7 +1720,7 @@ mod tests {
         // Round 2 has no evidence for player 3, but they are mid-match.
         assert!(rosters[1][T].contains(&3));
 
-        let stats = player_stats(&kills, &damages, &[], &[], &rounds, 320, false);
+        let stats = stats_for(&kills, &damages, &[], &rounds);
         assert!(stats.iter().all(|s| s.clutches_played == 0));
     }
 
@@ -1861,7 +1732,7 @@ mod tests {
         let rounds = vec![round_won_by(1, 0, 1000, T)];
         let damages = seed_both(10, &[1], &[11, 12]);
         let kills = vec![kill(100, 1, T, 11, CT)];
-        let stats = player_stats(&kills, &damages, &[], &[], &rounds, 320, false);
+        let stats = stats_for(&kills, &damages, &[], &rounds);
         assert_eq!(find(&stats, 1).clutches_played, 0);
         assert_eq!(find(&stats, 12).clutches_played, 1);
     }
@@ -1893,7 +1764,7 @@ mod tests {
         assert_eq!(rosters[3][T], HashSet::from([11, 12]));
         assert_eq!(rosters[3][CT], HashSet::from([1, 2]));
 
-        let stats = player_stats(&kills, &damages, &[], &[], &rounds, 320, false);
+        let stats = stats_for(&kills, &damages, &[], &rounds);
         let p12 = find(&stats, 12);
         assert_eq!(p12.clutches_played, 1);
         assert_eq!(p12.clutches_won, 0); // CT won round 4
@@ -1935,7 +1806,7 @@ mod tests {
     fn traded_death_totals_agree_with_the_kills_dataset() {
         let kills = competing_trade_kills();
         let flags = trade_flags(&kills, 320);
-        let stats = player_stats(&kills, &[], &[], &[], &[round(1, 0, 1000)], 320, false);
+        let stats = stats_for(&kills, &[], &[], &[round(1, 0, 1000)]);
         let tallied: i32 = stats.iter().map(|s| s.traded_deaths).sum();
         assert_eq!(
             tallied,
@@ -1949,15 +1820,7 @@ mod tests {
 
     #[test]
     fn only_the_matched_trade_victim_gets_kast_credit() {
-        let stats = player_stats(
-            &competing_trade_kills(),
-            &[],
-            &[],
-            &[],
-            &[round(1, 0, 1000)],
-            320,
-            false,
-        );
+        let stats = stats_for(&competing_trade_kills(), &[], &[], &[round(1, 0, 1000)]);
         assert_eq!((find(&stats, 1).kast, find(&stats, 3).kast), (100.0, 0.0));
     }
 }

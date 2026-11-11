@@ -25,9 +25,8 @@
 
 use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::num::NonZeroUsize;
 
-use crate::demo::{Context, GameEvent, Parser};
+use crate::demo::{Context, GameEvent, Parser, Segment, segment_budget};
 use crate::entity::{
     ENTITY_HANDLE_INDEX_MASK, Entity, EntityChangeKind, EntityContainer, EntityId, StringTable,
 };
@@ -166,8 +165,8 @@ fn event_entity_handle(value: i64) -> Option<u32> {
     Some(index | (serial << ENTITY_HANDLE_INDEX_MASK.count_ones()))
 }
 
-impl Keys<'_> {
-    fn get(&self, key: &str) -> Option<&str> {
+impl<'a> Keys<'a> {
+    fn get(&self, key: &str) -> Option<&'a str> {
         self.0
             .iter()
             .find(|(k, _)| k == key)
@@ -203,7 +202,7 @@ impl Keys<'_> {
 }
 
 /// A single round, reconstructed from `CCSGameRules` state transitions.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct Round {
     /// 1-indexed round number (the value of `m_totalRoundsPlayed` at round end).
     pub round_num: i32,
@@ -231,6 +230,40 @@ pub struct Round {
     /// count toward the score and are excluded from [`Parser::player_stats`] by
     /// default.
     pub is_knife_round: bool,
+}
+
+impl Round {
+    /// The round's first known tick: freeze start, else freeze end, else end.
+    pub(crate) fn live_start(&self) -> i32 {
+        self.start_tick
+            .or(self.freeze_end_tick)
+            .unwrap_or(self.end_tick)
+    }
+}
+
+/// Flag knife rounds in place: a round with at least one kill, all of them
+/// melee (knife / bayonet), and none from a firearm or grenade. `kills` yields
+/// `(tick, weapon)`; kills before the first round are warmup and ignored.
+fn mark_knife_rounds<'a>(rounds: &mut [Round], kills: impl IntoIterator<Item = (i32, &'a str)>) {
+    let starts: Vec<i32> = rounds.iter().map(Round::live_start).collect();
+    // Per round: (knife kills, firearm/grenade kills).
+    let mut tally = vec![(0u32, 0u32); rounds.len()];
+    for (tick, weapon) in kills {
+        let Some(round) = starts
+            .partition_point(|&start| start <= tick)
+            .checked_sub(1)
+        else {
+            continue;
+        };
+        if weapon.contains("knife") || weapon.contains("bayonet") {
+            tally[round].0 += 1;
+        } else if weapon != "world" && !weapon.is_empty() {
+            tally[round].1 += 1;
+        }
+    }
+    for (round, (knife, firearm)) in rounds.iter_mut().zip(tally) {
+        round.is_knife_round = knife > 0 && firearm == 0;
+    }
 }
 
 /// A single kill, from a `player_death` game event, enriched with each resolved
@@ -295,6 +328,11 @@ pub struct Kill {
 /// Default trade window in seconds — how long after a death a teammate's
 /// revenge kill still counts as a trade.
 pub const TRADE_SECONDS: f32 = 5.25;
+
+/// The [`TRADE_SECONDS`] window in ticks at `tickrate`.
+pub(crate) fn trade_ticks(tickrate: f32) -> i32 {
+    (TRADE_SECONDS * tickrate).round() as i32
+}
 
 /// Classify every kill as a trade and/or a traded death.
 ///
@@ -704,28 +742,28 @@ fn kill_event_fields(e: &GameEvent) -> Kill {
     }
 }
 
+/// Resolve field keys on one class's serializer. Every key is `None` when the
+/// class is absent.
+fn class_keys<'a>(ctx: &'a Context, class: &str) -> impl Fn(&str) -> Option<u64> + 'a {
+    let ser = ctx.serializers().get(class);
+    move |name| ser.and_then(|s| s.resolve_field_key(name))
+}
+
 /// Cell + in-cell-offset field keys for an entity's networked world position
 /// (any entity with the standard body-component scene node — pawns, grenade
 /// projectiles, infernos). Resolved once per serializer.
+#[derive(Default)]
 struct PositionKeys {
     cell: [Option<u64>; 3],
     offset: [Option<u64>; 3],
 }
 
 impl PositionKeys {
-    fn resolve(ser: &crate::entity::Serializer) -> Self {
-        let key = |name: &str| ser.resolve_field_key(name);
+    fn resolve(key: impl Fn(&str) -> Option<u64>) -> Self {
+        let axes = |names: [&str; 3]| names.map(|axis| key(&format!("{ORIGIN_PATH}.{axis}")));
         Self {
-            cell: [
-                key(&format!("{ORIGIN_PATH}.m_cellX")),
-                key(&format!("{ORIGIN_PATH}.m_cellY")),
-                key(&format!("{ORIGIN_PATH}.m_cellZ")),
-            ],
-            offset: [
-                key(&format!("{ORIGIN_PATH}.m_vecX")),
-                key(&format!("{ORIGIN_PATH}.m_vecY")),
-                key(&format!("{ORIGIN_PATH}.m_vecZ")),
-            ],
+            cell: axes(["m_cellX", "m_cellY", "m_cellZ"]),
+            offset: axes(["m_vecX", "m_vecY", "m_vecZ"]),
         }
     }
 
@@ -743,9 +781,9 @@ impl PositionKeys {
 }
 
 /// Field keys on the `CCSPlayerPawn` serializer, resolved once.
+#[derive(Default)]
 struct PawnKeys {
-    cell: [Option<u64>; 3],
-    offset: [Option<u64>; 3],
+    position: PositionKeys,
     team: Option<u64>,
     controller: Option<u64>,
     original_controller: Option<u64>,
@@ -753,19 +791,9 @@ struct PawnKeys {
 
 impl PawnKeys {
     fn resolve(ctx: &Context) -> Self {
-        let ser = ctx.serializers().get(PLAYER_PAWN_CLASS);
-        let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
+        let key = class_keys(ctx, PLAYER_PAWN_CLASS);
         Self {
-            cell: [
-                key(&format!("{ORIGIN_PATH}.m_cellX")),
-                key(&format!("{ORIGIN_PATH}.m_cellY")),
-                key(&format!("{ORIGIN_PATH}.m_cellZ")),
-            ],
-            offset: [
-                key(&format!("{ORIGIN_PATH}.m_vecX")),
-                key(&format!("{ORIGIN_PATH}.m_vecY")),
-                key(&format!("{ORIGIN_PATH}.m_vecZ")),
-            ],
+            position: PositionKeys::resolve(&key),
             team: key("m_iTeamNum"),
             controller: key("m_hController"),
             original_controller: key("m_hOriginalController"),
@@ -784,6 +812,7 @@ impl PawnKeys {
 }
 
 /// Field keys on the `CCSPlayerController` serializer, resolved once.
+#[derive(Default)]
 struct CtrlKeys {
     steamid: Option<u64>,
     name: Option<u64>,
@@ -794,8 +823,7 @@ struct CtrlKeys {
 
 impl CtrlKeys {
     fn resolve(ctx: &Context) -> Self {
-        let ser = ctx.serializers().get(PLAYER_CONTROLLER_CLASS);
-        let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
+        let key = class_keys(ctx, PLAYER_CONTROLLER_CLASS);
         Self {
             steamid: key("m_steamID"),
             name: key("m_iszPlayerName"),
@@ -978,8 +1006,7 @@ struct SnapshotKeys {
 
 impl SnapshotKeys {
     fn resolve(ctx: &Context) -> Self {
-        let ser = ctx.serializers().get(PLAYER_PAWN_CLASS);
-        let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
+        let key = class_keys(ctx, PLAYER_PAWN_CLASS);
         SnapshotKeys {
             pawn_class: ctx.class_info().id_of(PLAYER_PAWN_CLASS).unwrap_or(-1),
             weapon_resolver: WeaponResolver::new(ctx),
@@ -994,7 +1021,7 @@ impl SnapshotKeys {
             ctrl: CtrlKeys::resolve(ctx),
             health: key("m_iHealth"),
             armor: key("m_ArmorValue"),
-            velocity: VELOCITY_PATHS.map(key),
+            velocity: VELOCITY_PATHS.map(&key),
             angles: key("m_angEyeAngles"),
             equip: key("m_unCurrentEquipmentValue"),
             equip_round_start: key("m_unRoundStartEquipmentValue"),
@@ -1036,33 +1063,6 @@ fn snapshot_filter() -> HashSet<&'static str> {
     filter
 }
 
-/// Number of keyframe segments to decode a player-exact pass across: the CPU
-/// count, overridable via `AWPY_TICK_SEGMENTS` (read fresh so a test can force
-/// the serial path with `1`). `1` disables parallelism.
-fn parallel_segment_budget() -> usize {
-    std::env::var("AWPY_TICK_SEGMENTS")
-        .ok()
-        .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, NonZeroUsize::get))
-}
-
-/// Split the demo into `n` contiguous `(start_offset, end_tick)` segments at
-/// full-packet keyframes: segment 0 from the signon baseline, the rest
-/// cold-restarting at an evenly-spaced full packet.
-fn segment_ranges(offsets: &[(usize, i32)], n: usize) -> Vec<(Option<usize>, i32)> {
-    (0..n)
-        .map(|i| {
-            let start = (i != 0).then(|| offsets[i * offsets.len() / n].0);
-            let end_tick = if i == n - 1 {
-                i32::MAX
-            } else {
-                offsets[(i + 1) * offsets.len() / n].1
-            };
-            (start, end_tick)
-        })
-        .collect()
-}
-
 /// Try the projectile's networked thrower handle, then its owner handle.
 /// These handles use the entity-system layout expected by `get_by_handle`.
 fn projectile_thrower_pawn<'a>(
@@ -1086,16 +1086,8 @@ fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys)
         ..Default::default()
     };
 
-    // World position: cell index + in-cell offset per axis. Only reported when
-    // the offset field is actually present on the pawn.
-    if pk.offset[0].is_some_and(|k| pawn.fields.contains_key(&k)) {
-        let coord = |axis: usize| {
-            let cell = i32::try_from(pawn.get_i64(pk.cell[axis])).ok()?;
-            Some(cell_to_world(cell, pawn.get_f32(pk.offset[axis])))
-        };
-        player.x = coord(0);
-        player.y = coord(1);
-        player.z = coord(2);
+    if let Some((x, y, z)) = pk.position.world(pawn) {
+        (player.x, player.y, player.z) = (Some(x), Some(y), Some(z));
     }
 
     // Follow the controller handle for the persistent Steam id and name.
@@ -1143,10 +1135,7 @@ impl EventPlayerKeys {
         Self {
             pawn: PawnKeys::resolve(ctx),
             controller: CtrlKeys::resolve(ctx),
-            angles: ctx
-                .serializers()
-                .get(PLAYER_PAWN_CLASS)
-                .and_then(|s| s.resolve_field_key("m_angEyeAngles")),
+            angles: class_keys(ctx, PLAYER_PAWN_CLASS)("m_angEyeAngles"),
         }
     }
 }
@@ -1512,7 +1501,9 @@ struct EventSegment {
 }
 
 fn merge_event_segments(parts: Vec<EventSegment>) -> EventSegment {
-    let mut merged = EventSegment::default();
+    let mut parts = parts.into_iter();
+    // The first segment has no preceding boundary. Reuse its buffers directly.
+    let mut merged = parts.next().unwrap_or_default();
     for mut part in parts {
         // A cold keyframe has no previous flash observation. Check its candidate
         // rising edges against the preceding segment, using full pawn identities.
@@ -1542,6 +1533,9 @@ fn merge_event_segments(parts: Vec<EventSegment>) -> EventSegment {
         merged.events.bomb.append(&mut part.events.bomb);
         merged.events.blinds.append(&mut part.events.blinds);
         merged.events.shots.append(&mut part.events.shots);
+        // Only a serial pass reconstructs rounds and the roster.
+        merged.rounds.append(&mut part.rounds);
+        merged.players.append(&mut part.players);
         merged.last_flash.extend(part.last_flash);
     }
     merged
@@ -1680,8 +1674,7 @@ struct ShotKeys {
 
 impl ShotKeys {
     fn resolve(ctx: &Context) -> Self {
-        let ser = ctx.serializers().get(PLAYER_PAWN_CLASS);
-        let key = |name: &str| ser.and_then(|s| s.resolve_field_key(name));
+        let key = class_keys(ctx, PLAYER_PAWN_CLASS);
         Self {
             angles: key("m_angEyeAngles"),
             scoped: key("m_bIsScoped"),
@@ -1864,11 +1857,16 @@ impl Parser {
     pub fn rounds(&self) -> Result<Vec<Round>> {
         let filter: HashSet<&str> = HashSet::from([GAME_RULES_CLASS]);
         let mut tracker = RoundTracker::default();
-        self.run_to_end_filtered(&filter, |ctx| {
-            tracker.observe(ctx);
-        })?;
-
-        self.mark_knife_rounds(&mut tracker.rounds)?;
+        self.run_to_end_filtered(&filter, |ctx| tracker.observe(ctx))?;
+        // Knife rounds need only the (cheap) `player_death` event stream.
+        if !tracker.rounds.is_empty() {
+            let deaths = self
+                .events_ref()?
+                .iter()
+                .filter(|e| e.name == "player_death");
+            let kills = deaths.map(|e| (e.tick, Keys(&e.keys).get("weapon").unwrap_or_default()));
+            mark_knife_rounds(&mut tracker.rounds, kills);
+        }
         Ok(tracker.rounds)
     }
 
@@ -1902,68 +1900,6 @@ impl Parser {
             last = Some(outside_live);
         })?;
         Ok((first, last))
-    }
-
-    /// Flag knife rounds in place: a round with at least one kill whose kills are
-    /// all melee (knife / bayonet) and none from a firearm or grenade. Uses only
-    /// the (cheap) `player_death` event stream — no entity decode.
-    fn mark_knife_rounds(&self, rounds: &mut [Round]) -> Result<()> {
-        if rounds.is_empty() {
-            return Ok(());
-        }
-        // Round start ticks, ascending, for bucketing deaths; anything before
-        // the first round's start is warmup and ignored.
-        let starts: Vec<i32> = rounds
-            .iter()
-            .map(|r| r.start_tick.or(r.freeze_end_tick).unwrap_or(r.end_tick))
-            .collect();
-        // Per round: (knife kills, firearm/grenade kills).
-        let mut tally = vec![(0u32, 0u32); rounds.len()];
-        for e in self.events_ref()? {
-            if e.name != "player_death" || e.tick < starts[0] {
-                continue;
-            }
-            let idx = starts.partition_point(|&s| s <= e.tick) - 1;
-            let weapon = Keys(&e.keys).string("weapon");
-            if weapon.contains("knife") || weapon.contains("bayonet") {
-                tally[idx].0 += 1;
-            } else if weapon != "world" && !weapon.is_empty() {
-                tally[idx].1 += 1;
-            }
-        }
-        for (r, (knife, firearm)) in rounds.iter_mut().zip(tally) {
-            r.is_knife_round = knife > 0 && firearm == 0;
-        }
-        Ok(())
-    }
-
-    /// Mark knife rounds from the already-collected kill rows in the fused
-    /// player-stats pass, avoiding a separate raw-event scan.
-    fn mark_knife_rounds_from_kills(rounds: &mut [Round], kills: &[Kill]) {
-        if rounds.is_empty() {
-            return;
-        }
-        let starts: Vec<i32> = rounds
-            .iter()
-            .map(|round| {
-                round
-                    .start_tick
-                    .or(round.freeze_end_tick)
-                    .unwrap_or(round.end_tick)
-            })
-            .collect();
-        let mut tally = vec![(0u32, 0u32); rounds.len()];
-        for kill in kills.iter().filter(|kill| kill.tick >= starts[0]) {
-            let index = starts.partition_point(|&start| start <= kill.tick) - 1;
-            if kill.weapon.contains("knife") || kill.weapon.contains("bayonet") {
-                tally[index].0 += 1;
-            } else if kill.weapon != "world" && !kill.weapon.is_empty() {
-                tally[index].1 += 1;
-            }
-        }
-        for (round, (knife, firearm)) in rounds.iter_mut().zip(tally) {
-            round.is_knife_round = knife > 0 && firearm == 0;
-        }
     }
 
     /// Build [`kills`](Self::kills), [`damages`](Self::damages),
@@ -2051,59 +1987,26 @@ impl Parser {
             None
         };
         let properties = properties.as_ref();
-        let budget = parallel_segment_budget();
         // A metadata-only scan carries late baselines and descriptors to workers.
         // Round and roster reconstruction remains serial.
-        let mut segment = if mode == EventDatasetMode::Full && !collect_rounds && budget > 1 {
-            if self.combat_bootstrap()?.class_schema_changed {
-                self.collect_event_segment(
-                    mode,
-                    collect_rounds,
-                    selection,
-                    full_shots,
-                    properties,
-                    None,
-                )?
-            } else {
-                let offsets = self.full_packet_offsets()?;
-                let ranges = segment_ranges(&offsets, budget.min(offsets.len().max(1)));
-                let parts = std::thread::scope(|scope| {
-                    let workers: Vec<_> = ranges
-                        .into_iter()
-                        .map(|range| {
-                            scope.spawn(move || {
-                                self.collect_event_segment(
-                                    mode,
-                                    collect_rounds,
-                                    selection,
-                                    full_shots,
-                                    properties,
-                                    Some(range),
-                                )
-                            })
-                        })
-                        .collect();
-                    workers
-                        .into_iter()
-                        .map(|worker| worker.join().expect("event segment panicked"))
-                        .collect::<Result<Vec<_>>>()
-                })?;
-                merge_event_segments(parts)
-            }
-        } else {
+        let parallel = mode == EventDatasetMode::Full
+            && !collect_rounds
+            && segment_budget() > 1
+            && !self.combat_bootstrap()?.class_schema_changed;
+        let parts = self.map_segments(parallel, |segment| {
             self.collect_event_segment(
                 mode,
                 collect_rounds,
                 selection,
                 full_shots,
                 properties,
-                None,
-            )?
-        };
+                segment,
+            )
+        })?;
+        let mut segment = merge_event_segments(parts);
         if selection.kills {
             // A trade can cross a segment boundary. Classify the ordered union once.
-            let trade_ticks = (TRADE_SECONDS * self.tickrate()).round() as i32;
-            let flags = trade_flags(&segment.events.kills, trade_ticks);
+            let flags = trade_flags(&segment.events.kills, trade_ticks(self.tickrate()));
             for (kill, (is_trade, victim_traded)) in segment.events.kills.iter_mut().zip(flags) {
                 kill.is_trade = is_trade;
                 kill.victim_traded = victim_traded;
@@ -2174,7 +2077,7 @@ impl Parser {
         selection: EventDatasetSelection,
         full_shots: bool,
         properties: Option<&pbdems2::PropertyFilter>,
-        segment: Option<(Option<usize>, i32)>,
+        segment: Option<Segment>,
     ) -> Result<EventSegment> {
         let mut first_tick = None;
         let mut kills = Vec::new();
@@ -2262,15 +2165,9 @@ impl Parser {
                             if let Some(attacker) = keys.pawn_handle("attacker", "attacker_pawn") {
                                 let (resolver, handle_key) =
                                     damage_weapons.get_or_insert_with(|| {
-                                        let key = ctx
-                                            .serializers()
-                                            .get(PLAYER_PAWN_CLASS)
-                                            .and_then(|s| {
-                                                s.resolve_field_key(
-                                                    "m_pWeaponServices.m_hActiveWeapon",
-                                                )
-                                            });
-                                        (WeaponResolver::new(ctx), key)
+                                        let key = class_keys(ctx, PLAYER_PAWN_CLASS);
+                                        let handle = key("m_pWeaponServices.m_hActiveWeapon");
+                                        (WeaponResolver::new(ctx), handle)
                                     });
                                 let active = ctx
                                     .entities()
@@ -2322,9 +2219,7 @@ impl Parser {
                                     BOMB_EVENTS.iter().find(|(name, _)| *name == event.name)
                             {
                                 let sk = *site_key.get_or_insert_with(|| {
-                                    ctx.serializers()
-                                        .get(PLANTED_C4_CLASS)
-                                        .and_then(|s| s.resolve_field_key("m_nBombSite"))
+                                    class_keys(ctx, PLANTED_C4_CLASS)("m_nBombSite")
                                 });
                                 let mut row = BombEvent {
                                     tick: event.tick,
@@ -2341,9 +2236,7 @@ impl Parser {
                 if selection.blinds {
                     // Blinds are found from a per-tick rising edge, so this runs every tick.
                     let fk = *flash_key.get_or_insert_with(|| {
-                        ctx.serializers()
-                            .get(PLAYER_PAWN_CLASS)
-                            .and_then(|s| s.resolve_field_key("m_flFlashDuration"))
+                        class_keys(ctx, PLAYER_PAWN_CLASS)("m_flFlashDuration")
                     });
                     detect_blinds(ctx, &detonations, &mut prev_flash, fk, pk, ck, &mut blinds);
                 }
@@ -2360,7 +2253,10 @@ impl Parser {
         let mut rounds = round_tracker
             .map(|tracker| tracker.rounds)
             .unwrap_or_default();
-        Self::mark_knife_rounds_from_kills(&mut rounds, &events.kills);
+        mark_knife_rounds(
+            &mut rounds,
+            events.kills.iter().map(|k| (k.tick, k.weapon.as_str())),
+        );
         let players = player_tracker
             .map(PlayerTracker::into_players)
             .unwrap_or_default();
@@ -2499,7 +2395,7 @@ impl Parser {
                 };
                 let posk = pos_keys
                     .entry(e.class_id)
-                    .or_insert_with(|| PositionKeys::resolve(ser));
+                    .or_insert_with(|| PositionKeys::resolve(|name| ser.resolve_field_key(name)));
                 let Some((x, y, z)) = posk.world(e) else {
                     continue;
                 };
@@ -2642,71 +2538,58 @@ impl Parser {
                 .push(ProjectileKind::Effect(WindowKind::Smoke));
         }
 
-        let mut grenade_rows = Vec::new();
-        let mut fire_rows = Vec::new();
-        let mut smoke_rows = Vec::new();
-        for (kind, row) in self.track_projectiles(&kinds_by_class)? {
+        let mut out = Projectiles::default();
+        for (kind, r) in self.track_projectiles(&kinds_by_class)? {
+            let (entity_id, entity_serial) = (r.entity.index, r.entity.serial);
+            let ResolvedPlayer {
+                name: thrower_name,
+                steamid: thrower_steamid,
+                side: thrower_side,
+                ..
+            } = r.thrower;
             match kind {
-                ProjectileKind::Grenade => grenade_rows.push(row),
-                ProjectileKind::Effect(WindowKind::Fire) => fire_rows.push(row),
-                ProjectileKind::Effect(WindowKind::Smoke) => smoke_rows.push(row),
+                ProjectileKind::Grenade => out.grenades.push(Grenade {
+                    tick: r.tick,
+                    thrower_name,
+                    thrower_steamid,
+                    thrower_side,
+                    grenade_type: r.projectile_type.to_string(),
+                    entity_id,
+                    entity_serial,
+                    x: r.x,
+                    y: r.y,
+                    z: r.z,
+                    start_tick: r.start_tick,
+                    end_tick: r.end_tick,
+                }),
+                ProjectileKind::Effect(WindowKind::Fire) => out.fires.push(Fire {
+                    start_tick: r.start_tick,
+                    end_tick: r.end_tick,
+                    thrower_name,
+                    thrower_steamid,
+                    thrower_side,
+                    fire_type: "inferno".to_string(),
+                    entity_id,
+                    entity_serial,
+                    x: r.x,
+                    y: r.y,
+                    z: r.z,
+                }),
+                ProjectileKind::Effect(WindowKind::Smoke) => out.smokes.push(Smoke {
+                    start_tick: r.start_tick,
+                    end_tick: r.end_tick,
+                    thrower_name,
+                    thrower_steamid,
+                    thrower_side,
+                    entity_id,
+                    entity_serial,
+                    x: r.x,
+                    y: r.y,
+                    z: r.z,
+                }),
             }
         }
-
-        let grenades = grenade_rows
-            .into_iter()
-            .map(|r| Grenade {
-                tick: r.tick,
-                thrower_name: r.thrower.name,
-                thrower_steamid: r.thrower.steamid,
-                thrower_side: r.thrower.side,
-                grenade_type: r.projectile_type.to_string(),
-                entity_id: r.entity.index,
-                entity_serial: r.entity.serial,
-                x: r.x,
-                y: r.y,
-                z: r.z,
-                start_tick: r.start_tick,
-                end_tick: r.end_tick,
-            })
-            .collect();
-        let fires = fire_rows
-            .into_iter()
-            .map(|r| Fire {
-                start_tick: r.start_tick,
-                end_tick: r.end_tick,
-                thrower_name: r.thrower.name,
-                thrower_steamid: r.thrower.steamid,
-                thrower_side: r.thrower.side,
-                fire_type: "inferno".to_string(),
-                entity_id: r.entity.index,
-                entity_serial: r.entity.serial,
-                x: r.x,
-                y: r.y,
-                z: r.z,
-            })
-            .collect();
-        let smokes = smoke_rows
-            .into_iter()
-            .map(|r| Smoke {
-                start_tick: r.start_tick,
-                end_tick: r.end_tick,
-                thrower_name: r.thrower.name,
-                thrower_steamid: r.thrower.steamid,
-                thrower_side: r.thrower.side,
-                entity_id: r.entity.index,
-                entity_serial: r.entity.serial,
-                x: r.x,
-                y: r.y,
-                z: r.z,
-            })
-            .collect();
-
-        Ok(Projectiles {
-            grenades,
-            fires,
-            smokes,
-        })
+        Ok(out)
     }
 
     /// Position samples and observed bounds for thrown grenade trajectories.
@@ -2804,59 +2687,41 @@ struct PlayerTracker {
 
 impl PlayerTracker {
     fn observe(&mut self, ctx: &Context) {
-        let full_scan = !self.initialized;
-        self.initialized = true;
-
+        let full_scan = !std::mem::replace(&mut self.initialized, true);
         let (team_num_key, clan_key) = *self.team_keys.get_or_insert_with(|| {
-            let serializer = ctx.serializers().get(TEAM_CLASS);
-            let key = |name: &str| serializer.and_then(|s| s.resolve_field_key(name));
+            let key = class_keys(ctx, TEAM_CLASS);
             (key("m_iTeamNum"), key("m_szClanTeamname"))
         });
+        let (steamid_key, name_key, team_key) = *self.keys.get_or_insert_with(|| {
+            let key = class_keys(ctx, PLAYER_CONTROLLER_CLASS);
+            (key("m_steamID"), key("m_iszPlayerName"), key("m_iTeamNum"))
+        });
+        // Active entities of `class`: all of them, or only those updated this tick.
+        let visit = |class: &str, all: bool| -> Vec<&Entity> {
+            let entities = ctx.entities();
+            let wanted = |e: &&Entity| e.active && e.class_name.as_ref() == class;
+            if all {
+                entities.iter().map(|(_, e)| e).filter(wanted).collect()
+            } else {
+                let updated = entities.updated_indices().iter();
+                updated
+                    .filter_map(|&i| entities.get(i))
+                    .filter(wanted)
+                    .collect()
+            }
+        };
 
         // Team entities must be applied before controllers on the same tick so
         // a player's side and clan always describe the same moment. A team
         // update refreshes every active controller because the clan can change
         // without the controller itself receiving an entity delta.
-        let mut team_changed = full_scan;
-        if full_scan {
-            for (_, entity) in ctx.entities().iter() {
-                if entity.active && entity.class_name.as_ref() == TEAM_CLASS {
-                    Self::observe_team(&mut self.clans, entity, team_num_key, clan_key);
-                }
-            }
-        } else {
-            for &index in ctx.entities().updated_indices() {
-                let Some(entity) = ctx.entities().get(index) else {
-                    continue;
-                };
-                if entity.active && entity.class_name.as_ref() == TEAM_CLASS {
-                    team_changed = true;
-                    Self::observe_team(&mut self.clans, entity, team_num_key, clan_key);
-                }
-            }
+        let teams = visit(TEAM_CLASS, full_scan);
+        let team_changed = full_scan || !teams.is_empty();
+        for team in teams {
+            Self::observe_team(&mut self.clans, team, team_num_key, clan_key);
         }
-
-        let (steamid_key, name_key, team_key) = *self.keys.get_or_insert_with(|| {
-            let serializer = ctx.serializers().get(PLAYER_CONTROLLER_CLASS);
-            let key = |name: &str| serializer.and_then(|s| s.resolve_field_key(name));
-            (key("m_steamID"), key("m_iszPlayerName"), key("m_iTeamNum"))
-        });
-
-        if full_scan || team_changed {
-            for (_, entity) in ctx.entities().iter() {
-                if entity.active && entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS {
-                    self.observe_controller(entity, steamid_key, name_key, team_key);
-                }
-            }
-        } else {
-            for &index in ctx.entities().updated_indices() {
-                let Some(entity) = ctx.entities().get(index) else {
-                    continue;
-                };
-                if entity.active && entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS {
-                    self.observe_controller(entity, steamid_key, name_key, team_key);
-                }
-            }
+        for controller in visit(PLAYER_CONTROLLER_CLASS, team_changed) {
+            self.observe_controller(controller, steamid_key, name_key, team_key);
         }
     }
 
@@ -3243,46 +3108,21 @@ impl Parser {
     where
         C: Default + Extend<PlayerState> + Send,
     {
-        let n = parallel_segment_budget();
-        if n <= 1 {
+        self.map_segments(true, |segment| {
             let mut out = C::default();
             let mut keys: Option<SnapshotKeys> = None;
-            self.run_to_end_filtered(filter, |ctx| {
+            let on_tick = |ctx: &Context| {
                 if predicate(ctx.tick()) {
                     let keys = keys.get_or_insert_with(|| SnapshotKeys::resolve(ctx));
                     out.extend(Self::player_states(ctx, keys));
                 }
-            })?;
-            return Ok(vec![out]);
-        }
-
-        let offsets = self.full_packet_offsets()?;
-        let n = n.min(offsets.len().max(1));
-        let segments = segment_ranges(&offsets, n);
-        let (predicate, this) = (&predicate, self);
-        let parts: Vec<C> = std::thread::scope(|s| {
-            let handles: Vec<_> = segments
-                .iter()
-                .map(|&(seg_start, seg_end)| {
-                    s.spawn(move || -> Result<C> {
-                        let mut out = C::default();
-                        let mut keys: Option<SnapshotKeys> = None;
-                        this.decode_segment(seg_start, seg_end, filter, |ctx| {
-                            if predicate(ctx.tick()) {
-                                let keys = keys.get_or_insert_with(|| SnapshotKeys::resolve(ctx));
-                                out.extend(Self::player_states(ctx, keys));
-                            }
-                        })?;
-                        Ok(out)
-                    })
-                })
-                .collect();
-            handles
-                .into_iter()
-                .map(|h| h.join().expect("snapshot segment panicked"))
-                .collect::<Result<Vec<_>>>()
-        })?;
-        Ok(parts)
+            };
+            match segment {
+                None => self.run_to_end_filtered(filter, on_tick)?,
+                Some((start, end_tick)) => self.decode_segment(start, end_tick, filter, on_tick)?,
+            }
+            Ok(out)
+        })
     }
 
     /// Per-team economy and buy type for each round.
@@ -3429,9 +3269,7 @@ impl Parser {
                 tick: ctx.tick(),
                 ..Default::default()
             };
-            // Position is only meaningful once the offset fields are present.
-            if pk.offset[0].is_some_and(|k| pawn.fields.contains_key(&k)) {
-                let [x, y, z] = pawn.world_position(pk.cell, pk.offset);
+            if let Some((x, y, z)) = pk.position.world(pawn) {
                 (state.x, state.y, state.z) = (Some(x), Some(y), Some(z));
             }
             let velocity = keys.velocity.map(|key| {
@@ -3612,195 +3450,149 @@ impl Parser {
             near_buy_zone: Option<u64>,
         }
 
-        /// Combine the split `m_OriginalOwnerXuid{Low,High}` into a Steam id.
-        fn original_owner(w: &Entity, wk: &WeaponKeys) -> Option<u64> {
-            let id = (u64::from(w.get_u32(wk.xuid_high)) << 32) | u64::from(w.get_u32(wk.xuid_low));
-            (id > 0).then_some(id)
-        }
-
-        let mut inv: HashMap<EntityId, HashSet<u32>> = HashMap::new();
-        let mut prev_money: HashMap<u64, i32> = HashMap::new();
-        let mut weapon_keys: HashMap<i32, WeaponKeys> = HashMap::new();
-        let mut weapon_resolver: Option<WeaponResolver> = None;
-        let mut pk: Option<PawnKeys> = None;
-        let mut ck: Option<CtrlKeys> = None;
-        let mut money_key: Option<Option<u64>> = None;
-        let mut count_key: Option<Option<u64>> = None;
-        let mut slot_keys: Option<Vec<Option<u64>>> = None;
-        let mut out: Vec<ItemEvent> = Vec::new();
-
-        let filter = snapshot_filter();
-        self.run_to_end_filtered(&filter, |ctx| {
-            for change in ctx.entities().entity_changes() {
-                if change.kind == EntityChangeKind::Deleted
-                    && change.class_name.as_ref() == PLAYER_PAWN_CLASS
-                {
-                    inv.remove(&change.id());
-                }
-            }
-            let resolver = weapon_resolver.get_or_insert_with(|| WeaponResolver::new(ctx));
-            let pkr = pk.get_or_insert_with(|| PawnKeys::resolve(ctx));
-            let ckr = ck.get_or_insert_with(|| CtrlKeys::resolve(ctx));
-            let mkey = *money_key.get_or_insert_with(|| {
-                ctx.serializers()
-                    .get(PLAYER_CONTROLLER_CLASS)
-                    .and_then(|s| s.resolve_field_key("m_pInGameMoneyServices.m_iAccount"))
-            });
-            let pawn_ser = ctx.serializers().get(PLAYER_PAWN_CLASS);
-            let ckey = *count_key.get_or_insert_with(|| {
-                pawn_ser.and_then(|s| s.resolve_field_key("m_pWeaponServices.m_hMyWeapons"))
-            });
-            let skeys = slot_keys.get_or_insert_with(|| {
-                (0..MAX_INVENTORY)
-                    .map(|i| {
-                        pawn_ser.and_then(|s| {
-                            s.resolve_field_key(&format!("m_pWeaponServices.m_hMyWeapons.{i}"))
-                        })
-                    })
-                    .collect()
-            });
-
-            // Resolve the field keys for a weapon's serializer.
-            let keys_for = |class: &str| -> WeaponKeys {
-                let s = ctx.serializers().get(class);
-                let key = |n: &str| s.and_then(|s| s.resolve_field_key(n));
-                WeaponKeys {
+        impl WeaponKeys {
+            fn resolve(ctx: &Context, class: &str) -> Self {
+                let key = class_keys(ctx, class);
+                Self {
                     owner: key("m_hOwnerEntity"),
                     xuid_low: key("m_OriginalOwnerXuidLow"),
                     xuid_high: key("m_OriginalOwnerXuidHigh"),
                     dropped_time: key("m_flDroppedAtTime"),
                     near_buy_zone: key("m_bDroppedNearBuyZone"),
                 }
-            };
+            }
+
+            /// Combine the split `m_OriginalOwnerXuid{Low,High}` into a Steam id.
+            fn original_owner(&self, w: &Entity) -> Option<u64> {
+                let id = (u64::from(w.get_u32(self.xuid_high)) << 32)
+                    | u64::from(w.get_u32(self.xuid_low));
+                (id > 0).then_some(id)
+            }
+        }
+
+        // Each pawn's held weapon handles, in loadout-slot order.
+        let mut inventories: HashMap<EntityId, Vec<u32>> = HashMap::new();
+        let mut prev_money: HashMap<u64, i32> = HashMap::new();
+        let mut weapon_keys: HashMap<i32, WeaponKeys> = HashMap::new();
+        let mut keys: Option<SnapshotKeys> = None;
+        let mut out: Vec<ItemEvent> = Vec::new();
+
+        self.run_to_end_filtered(&snapshot_filter(), |ctx| {
+            for change in ctx.entities().entity_changes() {
+                if change.kind == EntityChangeKind::Deleted
+                    && change.class_name.as_ref() == PLAYER_PAWN_CLASS
+                {
+                    inventories.remove(&change.id());
+                }
+            }
+            let keys = keys.get_or_insert_with(|| SnapshotKeys::resolve(ctx));
 
             for (_, pawn) in ctx.entities().iter() {
-                if !pawn.active || pawn.class_name.as_ref() != PLAYER_PAWN_CLASS {
+                if !pawn.active || pawn.class_id != keys.pawn_class {
                     continue;
                 }
-                let actor = resolve_from_pawn(ctx, pawn, pkr, ckr);
                 let pawn_id = pawn.id();
-
-                // Current inventory: the live `m_hMyWeapons` handles.
-                let count = usize::try_from(pawn.get_i64(ckey))
+                let count = usize::try_from(pawn.get_i64(keys.weapon_count))
                     .unwrap_or_default()
-                    .min(skeys.len());
-                let mut cur: HashSet<u32> = HashSet::new();
-                for &sk in &skeys[..count] {
-                    if let Some(h) = pawn.get_handle(sk) {
-                        cur.insert(h);
+                    .min(keys.weapons.len());
+                let mut current: Vec<u32> = Vec::with_capacity(count);
+                for handle in keys.weapons[..count]
+                    .iter()
+                    .filter_map(|&k| pawn.get_handle(k))
+                {
+                    if !current.contains(&handle) {
+                        current.push(handle);
                     }
                 }
-                let prev = inv.remove(&pawn_id).unwrap_or_default();
+                let previous = inventories.remove(&pawn_id).unwrap_or_default();
+                let actor = resolve_from_pawn(ctx, pawn, &keys.pawn, &keys.ctrl);
 
-                // Without a Steam id we cannot classify or key money; keep the
-                // inventory current so a later resolved tick diffs cleanly.
-                let Some(steamid) = actor.steamid else {
-                    inv.insert(pawn_id, cur);
-                    continue;
-                };
-
-                // Money change for this player this tick (purchases spend money).
-                let account = pawn
-                    .get_handle(pkr.controller)
-                    .and_then(|h| ctx.entities().get_by_handle(h))
-                    .and_then(|controller| i32::try_from(controller.get_i64(mkey)).ok());
-                let delta = match (account, prev_money.get(&steamid)) {
-                    (Some(a), Some(&p)) => a - p,
-                    _ => 0,
-                };
-                if let Some(a) = account {
-                    prev_money.insert(steamid, a);
-                }
-
-                // Acquisitions.
-                for &h in cur.difference(&prev) {
-                    let Some(weapon) = ctx.entities().get_by_handle(h) else {
-                        continue;
+                // Without a Steam id we cannot classify or key money; the
+                // inventory still updates so a later resolved tick diffs cleanly.
+                if let Some(steamid) = actor.steamid {
+                    // Money change for this player this tick (purchases spend money).
+                    let account = pawn
+                        .get_handle(keys.pawn.controller)
+                        .and_then(|h| ctx.entities().get_by_handle(h))
+                        .and_then(|controller| {
+                            i32::try_from(controller.get_i64(keys.ctrl.money)).ok()
+                        });
+                    let delta = match (account, prev_money.get(&steamid)) {
+                        (Some(a), Some(&p)) => a - p,
+                        _ => 0,
                     };
-                    let Some(info) = resolver.info(weapon) else {
-                        continue;
-                    };
-                    if info.slot == WeaponSlot::Melee {
-                        continue;
+                    if let Some(a) = account {
+                        prev_money.insert(steamid, a);
                     }
-                    let wk = weapon_keys
-                        .entry(weapon.class_id)
-                        .or_insert_with(|| keys_for(&weapon.class_name));
-                    let orig = original_owner(weapon, wk);
-                    let dropped = weapon.get_f32(wk.dropped_time) > 0.0;
-                    // Free default items (side pistols, bomb) are never bought;
-                    // their grant coincides with a money reset, so gate them out
-                    // of the purchase branch. A large drop is likewise a reset.
-                    let buyable = !FREE_DEFAULT_ITEMS.contains(&info.name);
-                    let (action, cost) = if buyable && delta < 0 && -delta <= MAX_PURCHASE_COST {
-                        ("purchase", Some(-delta))
-                    } else if orig != Some(steamid) || dropped {
-                        // Someone else's weapon, or your own previously-dropped
-                        // one — a real pickup. Free fresh self-owned gear is the
-                        // default spawn loadout, which we skip.
-                        ("pickup", None)
-                    } else {
-                        continue;
-                    };
-                    out.push(ItemEvent {
-                        tick: ctx.tick(),
-                        entity_id: Some(pawn_id.index),
-                        entity_serial: Some(pawn_id.serial),
-                        action: action.to_string(),
-                        steamid: actor.steamid,
-                        name: actor.name.clone(),
-                        side: actor.side.clone(),
-                        item: info.name.to_string(),
-                        x: actor.x,
-                        y: actor.y,
-                        z: actor.z,
-                        original_owner_steamid: orig,
-                        cost,
-                        near_buy_zone: None,
-                    });
-                }
 
-                // Releases: a weapon left on the ground (live entity, no owner)
-                // is a drop; a consumed one (thrown grenade) is skipped.
-                for &h in prev.difference(&cur) {
-                    let Some(weapon) = ctx.entities().get_by_handle(h) else {
-                        continue;
-                    };
-                    let Some(info) = resolver.info(weapon) else {
-                        continue;
-                    };
-                    if info.slot == WeaponSlot::Melee {
-                        continue;
+                    let acquired = current.iter().filter(|h| !previous.contains(h));
+                    let released = previous.iter().filter(|h| !current.contains(h));
+                    let changes = acquired
+                        .map(|&h| (h, true))
+                        .chain(released.map(|&h| (h, false)));
+                    for (handle, is_acquired) in changes {
+                        let Some(weapon) = ctx.entities().get_by_handle(handle) else {
+                            continue;
+                        };
+                        let Some(info) = keys.weapon_resolver.info(weapon) else {
+                            continue;
+                        };
+                        if info.slot == WeaponSlot::Melee {
+                            continue;
+                        }
+                        let wk = weapon_keys
+                            .entry(weapon.class_id)
+                            .or_insert_with(|| WeaponKeys::resolve(ctx, &weapon.class_name));
+                        let original_owner = wk.original_owner(weapon);
+                        let (action, cost, near_buy_zone) = if is_acquired {
+                            // Free default items (side pistols, bomb) are never
+                            // bought; their grant coincides with a money reset, so
+                            // gate them out of the purchase branch. A large drop is
+                            // likewise a reset.
+                            let buyable = !FREE_DEFAULT_ITEMS.contains(&info.name);
+                            if buyable && delta < 0 && -delta <= MAX_PURCHASE_COST {
+                                ("purchase", Some(-delta), None)
+                            } else if original_owner != Some(steamid)
+                                || weapon.get_f32(wk.dropped_time) > 0.0
+                            {
+                                // Someone else's weapon, or your own previously
+                                // dropped one. Fresh self-owned gear is the default
+                                // spawn loadout, which is skipped.
+                                ("pickup", None, None)
+                            } else {
+                                continue;
+                            }
+                        } else {
+                            // A weapon left on the ground (live, no pawn owner) is a
+                            // drop; a consumed one (a thrown grenade) is not.
+                            let still_held = weapon
+                                .get_handle(wk.owner)
+                                .and_then(|h| ctx.entities().get_by_handle(h))
+                                .is_some_and(|owner| owner.class_name.contains("PlayerPawn"));
+                            if still_held {
+                                continue;
+                            }
+                            ("drop", None, Some(weapon.get_bool(wk.near_buy_zone)))
+                        };
+                        out.push(ItemEvent {
+                            tick: ctx.tick(),
+                            entity_id: Some(pawn_id.index),
+                            entity_serial: Some(pawn_id.serial),
+                            action: action.to_string(),
+                            steamid: Some(steamid),
+                            name: actor.name.clone(),
+                            side: actor.side.clone(),
+                            item: info.name.to_string(),
+                            x: actor.x,
+                            y: actor.y,
+                            z: actor.z,
+                            original_owner_steamid: original_owner,
+                            cost,
+                            near_buy_zone,
+                        });
                     }
-                    let wk = weapon_keys
-                        .entry(weapon.class_id)
-                        .or_insert_with(|| keys_for(&weapon.class_name));
-                    let still_held = weapon
-                        .get_handle(wk.owner)
-                        .and_then(|oh| ctx.entities().get_by_handle(oh))
-                        .is_some_and(|o| o.class_name.contains("PlayerPawn"));
-                    if still_held {
-                        continue;
-                    }
-                    out.push(ItemEvent {
-                        tick: ctx.tick(),
-                        entity_id: Some(pawn_id.index),
-                        entity_serial: Some(pawn_id.serial),
-                        action: "drop".to_string(),
-                        steamid: actor.steamid,
-                        name: actor.name.clone(),
-                        side: actor.side.clone(),
-                        item: info.name.to_string(),
-                        x: actor.x,
-                        y: actor.y,
-                        z: actor.z,
-                        original_owner_steamid: original_owner(weapon, wk),
-                        cost: None,
-                        near_buy_zone: Some(weapon.get_bool(wk.near_buy_zone)),
-                    });
                 }
-
-                inv.insert(pawn_id, cur);
+                inventories.insert(pawn_id, current);
             }
         })?;
 
@@ -3811,6 +3603,11 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// An active entity with no fields.
+    fn entity(index: i32, serial: u32, class: &str) -> Entity {
+        Entity::from_fields(index, serial, 0, class, true, Default::default()).unwrap()
+    }
 
     #[test]
     fn grenade_reappearance_starts_a_new_trajectory() {
@@ -3878,15 +3675,7 @@ mod tests {
                 .unwrap();
         };
         let write_controller = |entities: &mut EntityContainer, serial, steamid| {
-            let mut controller = Entity::from_fields(
-                1,
-                serial,
-                0,
-                PLAYER_CONTROLLER_CLASS,
-                true,
-                Default::default(),
-            )
-            .unwrap();
+            let mut controller = entity(1, serial, PLAYER_CONTROLLER_CLASS);
             controller.fields.insert(0, FieldValue::U64(steamid));
             entities.insert(controller).unwrap();
         };
@@ -3953,25 +3742,18 @@ mod tests {
         use crate::entity::FieldValue;
 
         let pk = PawnKeys {
-            cell: [None; 3],
-            offset: [None; 3],
-            team: None,
             controller: Some(0),
-            original_controller: None,
+            ..Default::default()
         };
         let ck = CtrlKeys {
             steamid: Some(0),
-            name: None,
-            money: None,
             player_pawn: Some(1),
             team: Some(2),
+            ..Default::default()
         };
         let mut entities = EntityContainer::new();
-        let mut pawn =
-            Entity::from_fields(7, 1, 0, PLAYER_PAWN_CLASS, true, Default::default()).unwrap();
-        let mut controller =
-            Entity::from_fields(2, 1, 0, PLAYER_CONTROLLER_CLASS, true, Default::default())
-                .unwrap();
+        let mut pawn = entity(7, 1, PLAYER_PAWN_CLASS);
+        let mut controller = entity(2, 1, PLAYER_CONTROLLER_CLASS);
         let handle = |slot| FieldValue::U32((ENTITY_HANDLE_INDEX_MASK + 1) | slot);
         pawn.fields.insert(0, handle(2));
         controller.fields.insert(0, FieldValue::U64(42));
@@ -4036,33 +3818,29 @@ mod tests {
     }
 
     #[test]
-    fn segment_merge_rejects_an_ongoing_flash_as_a_new_blind() {
-        let before = EventSegment {
-            last_flash: HashMap::from([(EntityId::new(1, 2), 3.0)]),
-            ..Default::default()
-        };
-        let merged = merge_event_segments(vec![before, flash_segment(boundary_blind(1, 2, 3.0))]);
-        assert!(merged.events.blinds.is_empty());
+    fn segment_merge_checks_boundary_blinds_against_the_same_pawn_identity() {
+        // (prior flash identity, prior duration, kept): an ongoing flash is not a
+        // new blind, but a rising one or a reused pawn slot's is.
+        for (serial, previous, kept) in [(2, 3.0, false), (2, 1.0, true), (1, 3.0, true)] {
+            let before = EventSegment {
+                last_flash: HashMap::from([(EntityId::new(1, serial), previous)]),
+                ..Default::default()
+            };
+            let merged =
+                merge_event_segments(vec![before, flash_segment(boundary_blind(1, 2, 3.0))]);
+            assert_eq!(merged.events.blinds.len(), usize::from(kept));
+        }
     }
 
     #[test]
-    fn segment_merge_preserves_a_flash_that_increases_at_the_boundary() {
-        let before = EventSegment {
-            last_flash: HashMap::from([(EntityId::new(1, 2), 1.0)]),
+    fn segment_merge_keeps_serially_reconstructed_rounds_and_players() {
+        let serial = EventSegment {
+            rounds: vec![Round::default()],
+            players: vec![Player::default()],
             ..Default::default()
         };
-        let merged = merge_event_segments(vec![before, flash_segment(boundary_blind(1, 2, 3.0))]);
-        assert_eq!(merged.events.blinds.len(), 1);
-    }
-
-    #[test]
-    fn segment_merge_keeps_flash_history_separate_for_reused_pawn_slots() {
-        let before = EventSegment {
-            last_flash: HashMap::from([(EntityId::new(1, 1), 3.0)]),
-            ..Default::default()
-        };
-        let merged = merge_event_segments(vec![before, flash_segment(boundary_blind(1, 2, 3.0))]);
-        assert_eq!(merged.events.blinds.len(), 1);
+        let merged = merge_event_segments(vec![serial]);
+        assert_eq!((merged.rounds.len(), merged.players.len()), (1, 1));
     }
 
     #[test]
@@ -4143,8 +3921,7 @@ mod tests {
                 reloading: reload.map(|_| 0),
                 stealthy: stealth.map(|_| 1),
             };
-            let mut weapon =
-                Entity::from_fields(1, 0, 0, "CAK47", true, Default::default()).unwrap();
+            let mut weapon = entity(1, 0, "CAK47");
             for (key, value) in [(0, reload), (1, stealth)] {
                 if let Some(value) = value {
                     weapon.fields.insert(key, FieldValue::Bool(value));
@@ -4195,7 +3972,7 @@ mod tests {
         let serializers = reload_schemas();
         (
             ReloadKeys::resolve(serializers.get(class).unwrap()),
-            Entity::from_fields(1, 0, 0, class, true, Default::default()).unwrap(),
+            entity(1, 0, class),
         )
     }
 
@@ -4285,11 +4062,9 @@ mod tests {
         use crate::entity::FieldValue;
 
         let keys = PawnKeys {
-            cell: [None; 3],
-            offset: [None; 3],
-            team: None,
             controller: Some(0),
             original_controller: Some(1),
+            ..Default::default()
         };
         let mut entities = EntityContainer::new();
         for (index, serial, class) in [
@@ -4297,11 +4072,7 @@ mod tests {
             (2, 8, PLAYER_CONTROLLER_CLASS),
             (3, 9, PLAYER_PAWN_CLASS),
         ] {
-            entities
-                .insert(
-                    Entity::from_fields(index, serial, 0, class, true, Default::default()).unwrap(),
-                )
-                .unwrap();
+            entities.insert(entity(index, serial, class)).unwrap();
         }
         let current = (7 << 14) | 1;
         let original = (8 << 14) | 2;
@@ -4317,8 +4088,7 @@ mod tests {
             (None, Some(wrong_class), None),
             (None, None, None),
         ] {
-            let mut pawn =
-                Entity::from_fields(4, 1, 0, PLAYER_PAWN_CLASS, true, Default::default()).unwrap();
+            let mut pawn = entity(4, 1, PLAYER_PAWN_CLASS);
             for (key, handle) in [(0, controller), (1, original_controller)] {
                 if let Some(handle) = handle {
                     pawn.fields.insert(key, FieldValue::U32(handle));
@@ -4341,13 +4111,10 @@ mod tests {
             (2, PLAYER_PAWN_CLASS),
             (3, PLAYER_CONTROLLER_CLASS),
         ] {
-            entities
-                .insert(Entity::from_fields(index, 1, 0, class, true, Default::default()).unwrap())
-                .unwrap();
+            entities.insert(entity(index, 1, class)).unwrap();
         }
         let handle = |index| FieldValue::U32((ENTITY_HANDLE_INDEX_MASK + 1) | index);
-        let mut projectile =
-            Entity::from_fields(4, 1, 0, SMOKE_CLASS, true, Default::default()).unwrap();
+        let mut projectile = entity(4, 1, SMOKE_CLASS);
         projectile.fields.insert(1, handle(2));
 
         for (thrower, expected) in [
@@ -4386,28 +4153,12 @@ mod tests {
             (1968308566, 342, 676),
             (1957364059, 347, 342),
         ] {
-            let pawn = Entity::from_fields(
-                index,
-                serial,
-                0,
-                PLAYER_PAWN_CLASS,
-                true,
-                Default::default(),
-            )
-            .unwrap();
+            let pawn = entity(index, serial, PLAYER_PAWN_CLASS);
             entities.insert(pawn).unwrap();
             let handle = event_entity_handle(raw).unwrap();
             assert_eq!(entities.get_by_handle(handle).unwrap().serial, serial);
 
-            let replacement = Entity::from_fields(
-                index,
-                serial + 1,
-                0,
-                PLAYER_PAWN_CLASS,
-                true,
-                Default::default(),
-            )
-            .unwrap();
+            let replacement = entity(index, serial + 1, PLAYER_PAWN_CLASS);
             entities.insert(replacement).unwrap();
             assert!(entities.get_by_handle(handle).is_none());
         }
@@ -4592,7 +4343,7 @@ mod tests {
     #[test]
     fn trade_flags_respect_the_window() {
         for (tickrate, window) in [(64.0, 336), (128.0, 672)] {
-            assert_eq!((TRADE_SECONDS * tickrate).round() as i32, window);
+            assert_eq!(trade_ticks(tickrate), window);
             for (delay, traded) in [(window - 1, true), (window, true), (window + 1, false)] {
                 let kills = [kill(100, 2, CT, 1, T), kill(100 + delay, 3, T, 2, CT)];
                 assert_eq!(

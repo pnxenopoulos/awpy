@@ -45,6 +45,7 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::path::Path;
 
 use crate::error::{Error, Result};
+use crate::geometry::Vec3;
 
 /// Magic number at the start of a `.nav` file.
 const MAGIC: u32 = 0xFEED_FACE;
@@ -52,8 +53,6 @@ const MAGIC: u32 = 0xFEED_FACE;
 const MIN_VERSION: u32 = 30;
 /// Highest nav-mesh version this parser understands.
 const MAX_VERSION: u32 = 36;
-
-type Vec3 = [f32; 3];
 
 /// A single walkable area in the navigation mesh.
 ///
@@ -329,55 +328,22 @@ impl Nav {
             return vec![start];
         }
 
-        // Dijkstra over area IDs. Costs are f64 so distance/size weights compose
-        // cleanly; the heap is a min-heap via `Reverse`-style ordering in `HeapItem`.
-        let mut dist: HashMap<u32, f64> = HashMap::new();
-        let mut prev: HashMap<u32, u32> = HashMap::new();
-        let mut heap: BinaryHeap<HeapItem> = BinaryHeap::new();
-
-        dist.insert(start, 0.0);
-        heap.push(HeapItem {
-            cost: 0.0,
-            area: start,
-        });
-
-        while let Some(HeapItem { cost, area }) = heap.pop() {
-            if area == end {
-                break;
-            }
-            // Stale heap entry (a shorter route to `area` was already settled).
-            if cost > *dist.get(&area).unwrap_or(&f64::INFINITY) {
-                continue;
-            }
-            for next in self.neighbors(area) {
-                let step = self.edge_cost(area, next, weight);
-                let nd = cost + step;
-                if nd < *dist.get(&next).unwrap_or(&f64::INFINITY) {
-                    dist.insert(next, nd);
-                    prev.insert(next, area);
-                    heap.push(HeapItem {
-                        cost: nd,
-                        area: next,
-                    });
-                }
-            }
-        }
-
+        let mut predecessors = HashMap::new();
+        let dist = self.dijkstra(
+            &[start],
+            weight,
+            &HashSet::new(),
+            Some(end),
+            |area, from| {
+                predecessors.insert(area, from);
+            },
+        );
         if !dist.contains_key(&end) {
             return Vec::new();
         }
-        // Walk predecessors back from `end` to `start`, then reverse.
-        let mut path = vec![end];
-        let mut cur = end;
-        while cur != start {
-            match prev.get(&cur) {
-                Some(&p) => {
-                    path.push(p);
-                    cur = p;
-                }
-                None => return Vec::new(),
-            }
-        }
+        // Walk predecessors back from `end`; only `start` has none.
+        let mut path: Vec<u32> =
+            std::iter::successors(Some(end), |area| predecessors.get(area).copied()).collect();
         path.reverse();
         path
     }
@@ -399,33 +365,52 @@ impl Nav {
         weight: PathWeight,
         blocked: &HashSet<u32>,
     ) -> HashMap<u32, f64> {
+        self.dijkstra(sources, weight, blocked, None, |_, _| {})
+    }
+
+    /// Dijkstra over area IDs from every known, unblocked source at cost 0,
+    /// never entering `blocked` areas and stopping once `target` is settled.
+    /// Reports each improved route as (area, predecessor) and returns its costs.
+    fn dijkstra(
+        &self,
+        sources: &[u32],
+        weight: PathWeight,
+        blocked: &HashSet<u32>,
+        target: Option<u32>,
+        mut record_predecessor: impl FnMut(u32, u32),
+    ) -> HashMap<u32, f64> {
         let mut dist: HashMap<u32, f64> = HashMap::new();
         let mut heap: BinaryHeap<HeapItem> = BinaryHeap::new();
-        for &s in sources {
-            if self.area(s).is_none() || blocked.contains(&s) {
-                continue;
-            }
-            // First time we see this source, seed it at 0; duplicates are skipped
-            // (the entry already exists) so we don't push it onto the heap twice.
-            if dist.insert(s, 0.0).is_none() {
-                heap.push(HeapItem { cost: 0.0, area: s });
+        for &source in sources {
+            // Seed each source once, at cost 0.
+            if self.area(source).is_some()
+                && !blocked.contains(&source)
+                && dist.insert(source, 0.0).is_none()
+            {
+                heap.push(HeapItem {
+                    cost: 0.0,
+                    area: source,
+                });
             }
         }
-
         while let Some(HeapItem { cost, area }) = heap.pop() {
+            if Some(area) == target {
+                break;
+            }
             // Stale heap entry (a shorter route to `area` was already settled).
-            if cost > *dist.get(&area).unwrap_or(&f64::INFINITY) {
+            if cost > dist[&area] {
                 continue;
             }
             for next in self.neighbors(area) {
                 if blocked.contains(&next) {
                     continue;
                 }
-                let nd = cost + self.edge_cost(area, next, weight);
-                if nd < *dist.get(&next).unwrap_or(&f64::INFINITY) {
-                    dist.insert(next, nd);
+                let next_cost = cost + self.edge_cost(area, next, weight);
+                if next_cost < *dist.get(&next).unwrap_or(&f64::INFINITY) {
+                    dist.insert(next, next_cost);
+                    record_predecessor(next, area);
                     heap.push(HeapItem {
-                        cost: nd,
+                        cost: next_cost,
                         area: next,
                     });
                 }

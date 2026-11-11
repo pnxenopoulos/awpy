@@ -323,7 +323,7 @@ class FakeNav:
         self._areas = areas
 
     @property
-    def areas(self):  # noqa: ANN201 - mirrors the real polars-returning property
+    def areas(self):
         import polars as pl
 
         return pl.DataFrame({"area_id": list(self._areas)})
@@ -345,7 +345,7 @@ def _square(x: float, y: float, z: float = 0.0, size: float = 10.0) -> tuple[lis
 
 
 @pytest.fixture
-def fake_nav(monkeypatch: pytest.MonkeyPatch):  # noqa: ANN201
+def fake_nav(monkeypatch: pytest.MonkeyPatch):
     """Install a FakeNav factory in place of ``awpy.NavMesh``."""
 
     def install(areas: dict[int, tuple[list, float]]) -> None:
@@ -356,14 +356,14 @@ def fake_nav(monkeypatch: pytest.MonkeyPatch):  # noqa: ANN201
     return install
 
 
-def test_nav_fills_every_area(cache: Path, fake_nav) -> None:  # noqa: ANN001
+def test_nav_fills_every_area(cache: Path, fake_nav) -> None:
     fake_nav({1: _square(0, 0), 2: _square(20, 0), 3: _square(40, 0)})
     fig, ax = plot.nav("de_flat")
     assert len(ax.patches) == 3
     assert len(ax.images) == 1  # the radar underneath
 
 
-def test_nav_highlight_uses_a_distinct_color_on_top(cache: Path, fake_nav) -> None:  # noqa: ANN001
+def test_nav_highlight_uses_a_distinct_color_on_top(cache: Path, fake_nav) -> None:
     fake_nav({1: _square(0, 0), 2: _square(20, 0), 3: _square(40, 0)})
     fig, ax = plot.nav("de_flat", highlight=[2])
     assert len(ax.patches) == 3  # every area still drawn, just recolored
@@ -376,21 +376,21 @@ def test_nav_highlight_uses_a_distinct_color_on_top(cache: Path, fake_nav) -> No
     assert highlighted[0].get_facecolor() != base[0].get_facecolor()
 
 
-def test_nav_highlight_ignores_unknown_areas(cache: Path, fake_nav) -> None:  # noqa: ANN001
+def test_nav_highlight_ignores_unknown_areas(cache: Path, fake_nav) -> None:
     """An id that isn't in the mesh is skipped, not an error."""
     fake_nav({1: _square(0, 0)})
     fig, ax = plot.nav("de_flat", highlight=[999])
     assert len(ax.patches) == 1  # area 1 only, drawn as base
 
 
-def test_nav_skips_degenerate_areas(cache: Path, fake_nav) -> None:  # noqa: ANN001
+def test_nav_skips_degenerate_areas(cache: Path, fake_nav) -> None:
     """Fewer than three corners is not a polygon."""
     fake_nav({1: _square(0, 0), 2: ([(0.0, 0.0, 0.0), (1.0, 1.0, 0.0)], 0.0)})
     fig, ax = plot.nav("de_flat")
     assert len(ax.patches) == 1
 
 
-def test_nav_filters_to_the_level_being_drawn(cache: Path, fake_nav) -> None:  # noqa: ANN001
+def test_nav_filters_to_the_level_being_drawn(cache: Path, fake_nav) -> None:
     # de_duplex puts z < -100 on the lower level.
     fake_nav({1: _square(0, 0, z=0.0), 2: _square(20, 0, z=-500.0), 3: _square(40, 0, z=-600.0)})
 
@@ -401,7 +401,7 @@ def test_nav_filters_to_the_level_being_drawn(cache: Path, fake_nav) -> None:  #
     assert len(ax.patches) == 2  # the two lower areas
 
 
-def test_nav_legend_reports_counts_and_level(cache: Path, fake_nav) -> None:  # noqa: ANN001
+def test_nav_legend_reports_counts_and_level(cache: Path, fake_nav) -> None:
     fake_nav({1: _square(0, 0), 2: _square(20, 0)})
 
     fig, ax = plot.nav("de_flat")
@@ -421,7 +421,7 @@ def test_nav_legend_reports_counts_and_level(cache: Path, fake_nav) -> None:  # 
     assert "lower level" in ax.texts[0].get_text()
 
 
-def test_nav_accepts_an_existing_axes(cache: Path, fake_nav) -> None:  # noqa: ANN001
+def test_nav_accepts_an_existing_axes(cache: Path, fake_nav) -> None:
     fake_nav({1: _square(0, 0)})
     fig, ax = plot.radar("de_flat")
     fig2, ax2 = plot.nav("de_flat", ax=ax)
@@ -495,13 +495,13 @@ class FakeDemo:
         self._rows = rows
         self.header = {"map_name": "de_flat"}
 
-    def snapshots(self, *, ticks: int) -> "pl.DataFrame":  # noqa: F821, ARG002
+    def snapshots(self, *, ticks: int) -> "pl.DataFrame":  # noqa: F821
         import polars as pl
 
         return pl.DataFrame(self._rows)
 
     @property
-    def smokes(self):  # noqa: ANN201
+    def smokes(self):
         import polars as pl
 
         return pl.DataFrame(
@@ -517,7 +517,7 @@ class FakeDemo:
     fires = smokes
 
 
-def _snapshot_row(**over) -> dict:  # noqa: ANN003
+def _snapshot_row(**over) -> dict:
     row = {
         "x": 0.0,
         "y": 0.0,
@@ -533,7 +533,7 @@ def _snapshot_row(**over) -> dict:  # noqa: ANN003
 
 
 @pytest.fixture
-def fake_map_control(monkeypatch: pytest.MonkeyPatch):  # noqa: ANN201
+def fake_map_control(monkeypatch: pytest.MonkeyPatch):
     """Stub out the compute layer and the nav mesh so only the drawing is exercised."""
     import awpy
     import awpy.plot as plot_mod
@@ -557,7 +557,7 @@ def fake_map_control(monkeypatch: pytest.MonkeyPatch):  # noqa: ANN201
 
 def test_map_control_draws_players_with_hp_and_armor(
     cache: Path, fake_map_control, monkeypatch: pytest.MonkeyPatch
-) -> None:  # noqa: ANN001
+) -> None:
     """Players on a map-control plot carry the same detail as on a `frame`.
 
     `map_control` used to build a partial `Player` — hp but no armor — so the armor
@@ -586,7 +586,7 @@ def test_map_control_draws_players_with_hp_and_armor(
     assert all(p.yaw is not None for p in drawn)
 
 
-def test_map_control_player_gets_both_bars(cache: Path, fake_map_control) -> None:  # noqa: ANN001
+def test_map_control_player_gets_both_bars(cache: Path, fake_map_control) -> None:
     """Each drawn player yields both an HP and an armor bar (3 patches each)."""
     demo = FakeDemo([_snapshot_row()])
     fig, ax = plot.map_control(demo, tick=1000, method="vision", legend=False)
@@ -598,7 +598,7 @@ def test_map_control_player_gets_both_bars(cache: Path, fake_map_control) -> Non
     assert len({round(b.get_y(), 3) for b in bars}) == 2
 
 
-def _yaw_tick_offset(ax) -> tuple[float, float]:  # noqa: ANN001
+def _yaw_tick_offset(ax) -> tuple[float, float]:
     """The view tick's offset from the marker, in points (+x right, +y up).
 
     ``textcoords="offset points"`` puts the offset in **display** space, so this is

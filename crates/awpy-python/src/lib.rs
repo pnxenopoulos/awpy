@@ -8,7 +8,7 @@ mod snapshot_columns;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 
 use polars::prelude::*;
 use pyo3::buffer::PyBuffer;
@@ -28,6 +28,7 @@ use awpy::datasets::{
     EventDatasetSelection, EventDatasets, PlayerStatsInputs, ProjectileSelection, Projectiles,
 };
 use awpy::geometry::VisibilityMesh;
+use awpy::lazy::LazyCache;
 use awpy::map_control::{
     Observer, Occluder, Params as McParams, Team, raycast_control, reachability_control,
     vision_control,
@@ -76,7 +77,7 @@ impl TicksArg {
 }
 
 /// Player classes surfaced by [`Demo::ticks`] when `players_only=True`.
-const PLAYER_CLASSES: &[&str] = &["CCSPlayerPawn", "CCSPlayerController"];
+const PLAYER_CLASSES: [&str; 2] = ["CCSPlayerPawn", "CCSPlayerController"];
 
 /// Cached DataFrame properties accepted by [`Demo::load`].
 const VALID_DATASETS: &[&str] = &[
@@ -106,103 +107,59 @@ fn df_from_columns(columns: Vec<Column>) -> PolarsResult<DataFrame> {
 /// Build a nullable `UInt64` column without type inference.
 ///
 /// The data type stays `UInt64` when the input is empty or all null.
-fn nullable_u64_column(name: &'static str, values: impl Iterator<Item = Option<u64>>) -> Column {
+fn nullable_u64_column(name: &str, values: impl Iterator<Item = Option<u64>>) -> Column {
     UInt64Chunked::from_iter_options(name.into(), values).into_column()
 }
 
-/// Fallible, thread-safe lazy initialization for Rust-side dataset groups.
-///
-/// `OnceLock::get_or_try_init` is not available on the crate's minimum Rust
-/// version, so a small mutex supplies the same successful-value-only behavior:
-/// failures are returned and a later call may retry.
-struct LazyCache<T> {
-    value: OnceLock<T>,
-    init: Mutex<()>,
+/// Per-dataset caches. `ensure` decodes every missing requested dataset in one
+/// shared pass.
+macro_rules! dataset_cache {
+    ($cache:ident: $selection:ident => $datasets:ident via $parse:ident {
+        $($field:ident: $row:ty),+ $(,)?
+    }) => {
+        #[derive(Default)]
+        struct $cache {
+            init: Mutex<()>,
+            $($field: OnceLock<Vec<$row>>,)+
+        }
+
+        impl $cache {
+            fn ensure(&self, parser: &Parser, requested: $selection) -> awpy::Result<()> {
+                let _guard = self.init.lock().unwrap_or_else(PoisonError::into_inner);
+                let missing = $selection {
+                    $($field: requested.$field && self.$field.get().is_none(),)+
+                };
+                if missing == $selection::default() {
+                    return Ok(());
+                }
+                let $datasets { $($field,)+ } = parser.$parse(missing)?;
+                $(if missing.$field {
+                    let _ = self.$field.set($field);
+                })+
+                Ok(())
+            }
+        }
+    };
 }
 
-impl<T> Default for LazyCache<T> {
-    fn default() -> Self {
-        Self {
-            value: OnceLock::new(),
-            init: Mutex::new(()),
-        }
-    }
-}
+dataset_cache!(EventDatasetCache: EventDatasetSelection => EventDatasets via event_datasets_selected {
+    kills: Kill,
+    damages: Damage,
+    bomb: BombEvent,
+    blinds: Blind,
+    shots: Shot,
+});
 
-impl<T> LazyCache<T> {
-    fn get_or_try_init<E>(&self, build: impl FnOnce() -> Result<T, E>) -> Result<&T, E> {
-        if let Some(value) = self.value.get() {
-            return Ok(value);
-        }
-        let _guard = self.init.lock().expect("dataset cache lock poisoned");
-        if self.value.get().is_none() {
-            self.value
-                .set(build()?)
-                .unwrap_or_else(|_| unreachable!("dataset cache initialized while locked"));
-        }
-        Ok(self.value.get().expect("dataset cache populated"))
-    }
+dataset_cache!(ProjectileCache: ProjectileSelection => Projectiles via projectiles_selected {
+    grenades: Grenade,
+    fires: Fire,
+    smokes: Smoke,
+});
 
-    fn get(&self) -> Option<&T> {
-        self.value.get()
-    }
-}
-
-/// Incremental cache for independently requested enriched event datasets.
+/// Cached enriched event datasets consumed by the stats aggregator.
 type StatsEventParts<'a> = (&'a [Kill], &'a [Damage], &'a [Blind], &'a [Shot]);
 
-#[derive(Default)]
-struct EventDatasetCache {
-    init: Mutex<()>,
-    kills: OnceLock<Vec<Kill>>,
-    damages: OnceLock<Vec<Damage>>,
-    bomb: OnceLock<Vec<BombEvent>>,
-    blinds: OnceLock<Vec<Blind>>,
-    shots: OnceLock<Vec<Shot>>,
-}
-
 impl EventDatasetCache {
-    fn missing(&self, requested: EventDatasetSelection) -> EventDatasetSelection {
-        EventDatasetSelection {
-            kills: requested.kills && self.kills.get().is_none(),
-            damages: requested.damages && self.damages.get().is_none(),
-            bomb: requested.bomb && self.bomb.get().is_none(),
-            blinds: requested.blinds && self.blinds.get().is_none(),
-            shots: requested.shots && self.shots.get().is_none(),
-        }
-    }
-
-    fn ensure(&self, parser: &Parser, requested: EventDatasetSelection) -> awpy::Result<()> {
-        let _guard = self.init.lock().expect("event dataset cache lock poisoned");
-        let missing = self.missing(requested);
-        if !(missing.kills || missing.damages || missing.bomb || missing.blinds || missing.shots) {
-            return Ok(());
-        }
-        let EventDatasets {
-            kills,
-            damages,
-            bomb,
-            blinds,
-            shots,
-        } = parser.event_datasets_selected(missing)?;
-        if missing.kills {
-            let _ = self.kills.set(kills);
-        }
-        if missing.damages {
-            let _ = self.damages.set(damages);
-        }
-        if missing.bomb {
-            let _ = self.bomb.set(bomb);
-        }
-        if missing.blinds {
-            let _ = self.blinds.set(blinds);
-        }
-        if missing.shots {
-            let _ = self.shots.set(shots);
-        }
-        Ok(())
-    }
-
     fn stats_parts(&self) -> Option<StatsEventParts<'_>> {
         Some((
             self.kills.get()?.as_slice(),
@@ -213,46 +170,19 @@ impl EventDatasetCache {
     }
 }
 
-/// Incremental cache for independently requested projectile datasets.
-#[derive(Default)]
-struct ProjectileCache {
-    init: Mutex<()>,
-    grenades: OnceLock<Vec<Grenade>>,
-    fires: OnceLock<Vec<Fire>>,
-    smokes: OnceLock<Vec<Smoke>>,
-}
-
-impl ProjectileCache {
-    fn missing(&self, requested: ProjectileSelection) -> ProjectileSelection {
-        ProjectileSelection {
-            grenades: requested.grenades && self.grenades.get().is_none(),
-            fires: requested.fires && self.fires.get().is_none(),
-            smokes: requested.smokes && self.smokes.get().is_none(),
-        }
-    }
-
-    fn ensure(&self, parser: &Parser, requested: ProjectileSelection) -> awpy::Result<()> {
-        let _guard = self.init.lock().expect("projectile cache lock poisoned");
-        let missing = self.missing(requested);
-        if !(missing.grenades || missing.fires || missing.smokes) {
-            return Ok(());
-        }
-        let Projectiles {
-            grenades,
-            fires,
-            smokes,
-        } = parser.projectiles_selected(missing)?;
-        if missing.grenades {
-            let _ = self.grenades.set(grenades);
-        }
-        if missing.fires {
-            let _ = self.fires.set(fires);
-        }
-        if missing.smokes {
-            let _ = self.smokes.set(smokes);
-        }
-        Ok(())
-    }
+/// [`Demo::event_frame`] for the event dataset named by `$field`.
+macro_rules! event_frame {
+    ($demo:ident, $py:ident, $field:ident) => {
+        $demo.event_frame(
+            $py,
+            stringify!($field),
+            |cache| &cache.$field,
+            |inputs| {
+                let full = inputs.full_datasets().$field;
+                full.then(|| inputs.event_datasets().$field.as_slice())
+            },
+        )
+    };
 }
 
 fn to_py_err(e: awpy::Error) -> PyErr {
@@ -511,16 +441,6 @@ impl Demo {
             let _ = self.parsed_player_stats_inputs_selected(py, extras)?;
         }
 
-        // Rows prepared by the fused stats pass need not be decoded again.
-        if let Some(inputs) = self.recording.player_stats_inputs_cache.get() {
-            let full = inputs.full_datasets();
-            event_selection.kills &= !full.kills;
-            event_selection.damages &= !full.damages;
-            event_selection.bomb &= !full.bomb;
-            event_selection.blinds &= !full.blinds;
-            event_selection.shots &= !full.shots;
-        }
-
         self.ensure_event_datasets(py, event_selection)?;
         self.ensure_projectiles(py, projectile_selection)?;
 
@@ -767,7 +687,7 @@ impl Demo {
     fn rounds(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         let rounds = self.parsed_rounds(py)?;
         self.cached_frame(py, "rounds", move || {
-            rounds_to_frame(rounds).map_err(polars_err)
+            Rows::frame(rounds).map_err(polars_err)
         })
     }
 
@@ -782,7 +702,7 @@ impl Demo {
     ///     Each kill trades only the earliest qualifying death. A kill can have both flags.
     #[getter]
     fn kills(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.event_frame(py, "kills")
+        event_frame!(self, py, kills)
     }
 
     /// Read cached CS2 player_hurt events and resolved participants.
@@ -791,7 +711,7 @@ impl Demo {
     ///     The cached Polars DataFrame. See the dataset guide for all columns.
     #[getter]
     fn damages(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.event_frame(py, "damages")
+        event_frame!(self, py, damages)
     }
 
     /// Read cached CS2 bomb actions.
@@ -800,7 +720,7 @@ impl Demo {
     ///     The cached Polars DataFrame. See the dataset guide for all columns.
     #[getter]
     fn bomb(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.event_frame(py, "bomb")
+        event_frame!(self, py, bomb)
     }
 
     /// Read cached CS2 grenade trajectories with observed start and end ticks.
@@ -809,7 +729,7 @@ impl Demo {
     ///     The cached Polars DataFrame. See the dataset guide for all columns.
     #[getter]
     fn grenades(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.projectile_frame(py, "grenades")
+        self.projectile_frame(py, "grenades", |cache| &cache.grenades)
     }
 
     /// Read cached CS2 fire intervals.
@@ -818,7 +738,7 @@ impl Demo {
     ///     The cached Polars DataFrame. See the dataset guide for all columns.
     #[getter]
     fn fires(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.projectile_frame(py, "fires")
+        self.projectile_frame(py, "fires", |cache| &cache.fires)
     }
 
     /// Read cached CS2 smoke intervals.
@@ -827,7 +747,7 @@ impl Demo {
     ///     The cached Polars DataFrame. See the dataset guide for all columns.
     #[getter]
     fn smokes(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.projectile_frame(py, "smokes")
+        self.projectile_frame(py, "smokes", |cache| &cache.smokes)
     }
 
     /// Read cached CS2 shots with player and weapon state.
@@ -839,7 +759,7 @@ impl Demo {
     ///     Built in the same single pass as kills / damages / bomb / blinds.
     #[getter]
     fn shots(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.event_frame(py, "shots")
+        event_frame!(self, py, shots)
     }
 
     /// Read cached CS2 match statistics for each player.
@@ -864,7 +784,7 @@ impl Demo {
                     .recording
                     .parser
                     .player_stats_from_parts(kills, damages, blinds, shots, rounds, true);
-                stats_to_frame(&stats).map_err(polars_err)
+                Rows::frame(&stats).map_err(polars_err)
             });
         }
 
@@ -875,7 +795,7 @@ impl Demo {
                 inputs.rounds(),
                 true,
             );
-            stats_to_frame(&stats).map_err(polars_err)
+            Rows::frame(&stats).map_err(polars_err)
         })
     }
 
@@ -902,7 +822,7 @@ impl Demo {
                 inputs.rounds(),
                 false,
             );
-            stats_to_frame(&stats).map_err(polars_err)
+            Rows::frame(&stats).map_err(polars_err)
         })
     }
 
@@ -919,7 +839,7 @@ impl Demo {
     fn players(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         let players = self.parsed_players(py)?;
         self.cached_frame(py, "players", move || {
-            players_to_frame(players).map_err(polars_err)
+            Rows::frame(players).map_err(polars_err)
         })
     }
 
@@ -936,7 +856,7 @@ impl Demo {
     fn round_economy(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.cached_frame(py, "round_economy", || {
             let econ = self.recording.parser.round_economy().map_err(to_py_err)?;
-            round_economy_to_frame(&econ).map_err(polars_err)
+            Rows::frame(&econ).map_err(polars_err)
         })
     }
 
@@ -955,7 +875,7 @@ impl Demo {
     fn chat(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.cached_frame(py, "chat", || {
             let chat = self.recording.parser.chat().map_err(to_py_err)?;
-            chat_to_frame(&chat).map_err(polars_err)
+            Rows::frame(&chat).map_err(polars_err)
         })
     }
 
@@ -972,7 +892,7 @@ impl Demo {
     ///     ``x`` / ``y`` / ``z``, and ``duration`` (blind seconds).
     #[getter]
     fn blinds(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        self.event_frame(py, "blinds")
+        event_frame!(self, py, blinds)
     }
 
     /// Read cached CS2 item purchases, pickups, and drops.
@@ -988,7 +908,7 @@ impl Demo {
     fn item_events(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
         self.cached_frame(py, "item_events", || {
             let items = self.recording.parser.item_events().map_err(to_py_err)?;
-            item_events_to_frame(&items).map_err(polars_err)
+            Rows::frame(&items).map_err(polars_err)
         })
     }
 
@@ -1329,7 +1249,7 @@ impl Demo {
                         key == "stats",
                     );
                 }
-                stats_to_frame(&total.finish()).map_err(polars_err)
+                Rows::frame(&total.finish()).map_err(polars_err)
             });
         }
         if key == "players" {
@@ -1348,7 +1268,7 @@ impl Demo {
                 }
             }
             players.sort_by_key(|p| p.steamid.is_none_or(|id| id == 0));
-            return players_to_frame(&players).map_err(polars_err);
+            return Rows::frame(&players).map_err(polars_err);
         }
         let pistols = if key == "round_economy" {
             Some(self.pistol_rounds(py)?)
@@ -1364,7 +1284,7 @@ impl Demo {
                     let rows = py
                         .detach(|| parser.round_economy_with_pistols(Some(pistols)))
                         .map_err(to_py_err)?;
-                    round_economy_to_frame(&rows).map_err(polars_err)?
+                    Rows::frame(&rows).map_err(polars_err)?
                 } else {
                     part.dataset(py, key)?.bind(py).extract::<PyDataFrame>()?.0
                 };
@@ -1417,11 +1337,21 @@ impl Demo {
         Ok(pistols)
     }
 
+    /// Decode the selected event datasets that are not cached yet. Rows the
+    /// fused stats pass already enriched in full are not decoded again.
     fn ensure_event_datasets(
         &self,
         py: Python<'_>,
-        selection: EventDatasetSelection,
+        mut selection: EventDatasetSelection,
     ) -> PyResult<()> {
+        if let Some(inputs) = self.recording.player_stats_inputs_cache.get() {
+            let full = inputs.full_datasets();
+            selection.kills &= !full.kills;
+            selection.damages &= !full.damages;
+            selection.bomb &= !full.bomb;
+            selection.blinds &= !full.blinds;
+            selection.shots &= !full.shots;
+        }
         py.detach(|| {
             self.recording
                 .event_datasets_cache
@@ -1433,16 +1363,7 @@ impl Demo {
     /// Preserve eager group reuse for ordinary property access. `load()` skips
     /// this helper and prepares exactly the caller's requested union instead.
     fn ensure_default_event_group(&self, py: Python<'_>) -> PyResult<()> {
-        let mut selection = EventDatasetSelection::ALL;
-        if let Some(inputs) = self.recording.player_stats_inputs_cache.get() {
-            let full = inputs.full_datasets();
-            selection.kills &= !full.kills;
-            selection.damages &= !full.damages;
-            selection.bomb &= !full.bomb;
-            selection.blinds &= !full.blinds;
-            selection.shots &= !full.shots;
-        }
-        self.ensure_event_datasets(py, selection)
+        self.ensure_event_datasets(py, EventDatasetSelection::ALL)
     }
 
     fn parsed_player_stats_inputs(&self, py: Python<'_>) -> PyResult<&PlayerStatsInputs> {
@@ -1519,69 +1440,24 @@ impl Demo {
     /// in tick order — identical to a single serial pass. Only the two player
     /// classes are decoded.
     fn ticks_by_player(&self, props: &[String]) -> PyResult<PyDataFrame> {
-        let filter: HashSet<&str> = HashSet::from([PLAYER_CLASSES[0], PLAYER_CLASSES[1]]);
-        let offsets = self
-            .recording
-            .parser
-            .full_packet_offsets()
-            .map_err(to_py_err)?;
+        let filter: HashSet<&str> = HashSet::from(PLAYER_CLASSES);
+        let parser = &self.recording.parser;
 
         // The original controller identifies dead pawns at a cold keyframe.
         // Names can therefore stay parallel and are read at each tick, including
         // name changes. Other controller-only fields retain the serial fallback
         // until their keyframe behavior has been verified independently.
         let needs_serial = {
-            let ctx = self.recording.parser.parse_init().map_err(to_py_err)?;
+            let ctx = parser.parse_init().map_err(to_py_err)?;
             let keys = PlayerTickKeys::resolve(&ctx, props);
             requires_serial_controller(&keys.props, keys.name)
         };
-
-        // One segment per worker: segment 0 from the signon baseline, the rest
-        // cold-restarting at an evenly-spaced full packet. Capped by the keyframe
-        // count and the thread budget (`AWPY_TICK_SEGMENTS` overrides, mainly so a
-        // test can force the serial path and compare).
-        let budget = std::env::var("AWPY_TICK_SEGMENTS")
-            .ok()
-            .and_then(|value| value.parse::<usize>().ok())
-            .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, NonZeroUsize::get));
-        let n = if needs_serial {
-            1
-        } else {
-            budget.clamp(1, offsets.len().max(1))
-        };
-        let segments: Vec<(Option<usize>, i32)> = (0..n)
-            .map(|i| {
-                let start = (i != 0).then(|| offsets[i * offsets.len() / n].0);
-                let end_tick = if i == n - 1 {
-                    i32::MAX
-                } else {
-                    offsets[(i + 1) * offsets.len() / n].1
-                };
-                (start, end_tick)
+        let parts = parser
+            .map_segments(!needs_serial, |segment| {
+                let (start, end_tick) = segment.unwrap_or((None, i32::MAX));
+                run_tick_segment(parser, &filter, props, start, end_tick)
             })
-            .collect();
-
-        let parser = &self.recording.parser;
-        let props_ref = props;
-        let filter_ref = &filter;
-        let parts: Vec<TickSegment> = if n == 1 {
-            let (start, end) = segments[0];
-            vec![run_tick_segment(parser, filter_ref, props_ref, start, end).map_err(to_py_err)?]
-        } else {
-            std::thread::scope(|s| {
-                let handles: Vec<_> = segments
-                    .iter()
-                    .map(|&(start, end)| {
-                        s.spawn(move || run_tick_segment(parser, filter_ref, props_ref, start, end))
-                    })
-                    .collect();
-                handles
-                    .into_iter()
-                    .map(|h| h.join().expect("tick segment panicked"))
-                    .collect::<Result<Vec<_>, _>>()
-            })
-            .map_err(to_py_err)?
-        };
+            .map_err(to_py_err)?;
 
         // A player's Steam id is constant for one pawn identity, so union each
         // segment's map to fill early rows before the sticky controller link
@@ -1649,142 +1525,49 @@ impl Demo {
         Ok(obj)
     }
 
-    /// Fetch one of the five event-based datasets (kills / damages / bomb /
-    /// blinds / shots). Ordinary misses prepare the compatible group; `load()`
-    /// prepares exactly the requested union.
-    fn event_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<Py<PyAny>> {
-        match key {
-            "kills" => {
-                let rows = if let Some(rows) = self.recording.event_datasets_cache.kills.get() {
-                    rows.as_slice()
-                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
-                    && inputs.full_datasets().kills
-                {
-                    inputs.event_datasets().kills.as_slice()
-                } else {
+    /// Frame one enriched event dataset. Rows come from the dataset cache, else
+    /// from a fused stats pass that enriched them in full, else from a fresh
+    /// pass over the default dataset group (`load()` plans its own union).
+    fn event_frame<T: Rows>(
+        &self,
+        py: Python<'_>,
+        key: &'static str,
+        cached: fn(&EventDatasetCache) -> &OnceLock<Vec<T>>,
+        fused: fn(&PlayerStatsInputs) -> Option<&[T]>,
+    ) -> PyResult<Py<PyAny>> {
+        let cache = &self.recording.event_datasets_cache;
+        let rows = match cached(cache).get() {
+            Some(rows) => rows.as_slice(),
+            None => match self
+                .recording
+                .player_stats_inputs_cache
+                .get()
+                .and_then(fused)
+            {
+                Some(rows) => rows,
+                None => {
                     self.ensure_default_event_group(py)?;
-                    self.recording
-                        .event_datasets_cache
-                        .kills
-                        .get()
-                        .expect("kills cache populated")
-                };
-                self.cached_frame(py, key, move || kills_to_frame(rows).map_err(polars_err))
-            }
-            "damages" => {
-                let rows = if let Some(rows) = self.recording.event_datasets_cache.damages.get() {
-                    rows.as_slice()
-                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
-                    && inputs.full_datasets().damages
-                {
-                    inputs.event_datasets().damages.as_slice()
-                } else {
-                    self.ensure_default_event_group(py)?;
-                    self.recording
-                        .event_datasets_cache
-                        .damages
-                        .get()
-                        .expect("damages cache populated")
-                };
-                self.cached_frame(py, key, move || damages_to_frame(rows).map_err(polars_err))
-            }
-            "bomb" => {
-                let rows = if let Some(rows) = self.recording.event_datasets_cache.bomb.get() {
-                    rows.as_slice()
-                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
-                    && inputs.full_datasets().bomb
-                {
-                    inputs.event_datasets().bomb.as_slice()
-                } else {
-                    self.ensure_default_event_group(py)?;
-                    self.recording
-                        .event_datasets_cache
-                        .bomb
-                        .get()
-                        .expect("bomb cache populated")
-                };
-                self.cached_frame(py, key, move || bomb_to_frame(rows).map_err(polars_err))
-            }
-            "blinds" => {
-                let rows = if let Some(rows) = self.recording.event_datasets_cache.blinds.get() {
-                    rows.as_slice()
-                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
-                    && inputs.full_datasets().blinds
-                {
-                    inputs.event_datasets().blinds.as_slice()
-                } else {
-                    self.ensure_default_event_group(py)?;
-                    self.recording
-                        .event_datasets_cache
-                        .blinds
-                        .get()
-                        .expect("blinds cache populated")
-                };
-                self.cached_frame(py, key, move || blinds_to_frame(rows).map_err(polars_err))
-            }
-            "shots" => {
-                let rows = if let Some(rows) = self.recording.event_datasets_cache.shots.get() {
-                    rows.as_slice()
-                } else if let Some(inputs) = self.recording.player_stats_inputs_cache.get()
-                    && inputs.full_datasets().shots
-                {
-                    inputs.event_datasets().shots.as_slice()
-                } else {
-                    self.ensure_default_event_group(py)?;
-                    self.recording
-                        .event_datasets_cache
-                        .shots
-                        .get()
-                        .expect("shots cache populated")
-                };
-                self.cached_frame(py, key, move || shots_to_frame(rows).map_err(polars_err))
-            }
-            _ => unreachable!("unknown event dataset"),
-        }
+                    cached(cache).get().expect("event dataset cached")
+                }
+            },
+        };
+        self.cached_frame(py, key, move || T::frame(rows).map_err(polars_err))
     }
 
-    /// Fetch one of the three projectile datasets (grenades / fires / smokes),
-    /// using eager group reuse or the requested union planned by `load()`.
-    fn projectile_frame(&self, py: Python<'_>, key: &'static str) -> PyResult<Py<PyAny>> {
-        match key {
-            "grenades" => {
-                if self.recording.projectiles_cache.grenades.get().is_none() {
-                    self.ensure_projectiles(py, ProjectileSelection::ALL)?;
-                }
-                let rows = self
-                    .recording
-                    .projectiles_cache
-                    .grenades
-                    .get()
-                    .expect("grenades cache populated");
-                self.cached_frame(py, key, move || grenades_to_frame(rows).map_err(polars_err))
-            }
-            "fires" => {
-                if self.recording.projectiles_cache.fires.get().is_none() {
-                    self.ensure_projectiles(py, ProjectileSelection::ALL)?;
-                }
-                let rows = self
-                    .recording
-                    .projectiles_cache
-                    .fires
-                    .get()
-                    .expect("fires cache populated");
-                self.cached_frame(py, key, move || fires_to_frame(rows).map_err(polars_err))
-            }
-            "smokes" => {
-                if self.recording.projectiles_cache.smokes.get().is_none() {
-                    self.ensure_projectiles(py, ProjectileSelection::ALL)?;
-                }
-                let rows = self
-                    .recording
-                    .projectiles_cache
-                    .smokes
-                    .get()
-                    .expect("smokes cache populated");
-                self.cached_frame(py, key, move || smokes_to_frame(rows).map_err(polars_err))
-            }
-            _ => unreachable!("unknown projectile dataset"),
+    /// Frame one projectile dataset, decoding all three together on a miss
+    /// (`load()` plans its own union).
+    fn projectile_frame<T: Rows>(
+        &self,
+        py: Python<'_>,
+        key: &'static str,
+        cached: fn(&ProjectileCache) -> &OnceLock<Vec<T>>,
+    ) -> PyResult<Py<PyAny>> {
+        let cache = &self.recording.projectiles_cache;
+        if cached(cache).get().is_none() {
+            self.ensure_projectiles(py, ProjectileSelection::ALL)?;
         }
+        let rows = cached(cache).get().expect("projectile dataset cached");
+        self.cached_frame(py, key, move || T::frame(rows).map_err(polars_err))
     }
 }
 
@@ -2056,7 +1839,7 @@ fn resolve_asset_source(
 ///         an empty cache selects the latest release.
 ///
 /// Attributes:
-///     path: The loaded mesh path, or ``None``.
+///     path: The loaded mesh path.
 ///     triangle_count: Number of collision triangles.
 ///
 /// Raises:
@@ -2076,7 +1859,7 @@ fn resolve_asset_source(
 struct VisibilityChecker {
     mesh: VisibilityMesh,
     #[pyo3(get)]
-    path: Option<PathBuf>,
+    path: PathBuf,
 }
 
 #[pymethods]
@@ -2097,10 +1880,7 @@ impl VisibilityChecker {
     ) -> PyResult<Self> {
         let path = resolve_asset_source(py, source, version, ".mesh", "mesh_path")?;
         let mesh = VisibilityMesh::from_file(&path).map_err(mesh_to_py_err)?;
-        Ok(Self {
-            mesh,
-            path: Some(path),
-        })
+        Ok(Self { mesh, path })
     }
 
     /// Describe the loaded Awpy object.
@@ -2108,17 +1888,11 @@ impl VisibilityChecker {
     /// Returns:
     ///     A short object description.
     fn __repr__(&self) -> String {
-        match &self.path {
-            Some(p) => format!(
-                "VisibilityChecker(path={:?}, triangles={})",
-                p,
-                self.mesh.triangle_count()
-            ),
-            None => format!(
-                "VisibilityChecker(triangles={})",
-                self.mesh.triangle_count()
-            ),
-        }
+        format!(
+            "VisibilityChecker(path={:?}, triangles={})",
+            self.path,
+            self.mesh.triangle_count()
+        )
     }
 
     /// Number of triangles in the loaded mesh.
@@ -2398,8 +2172,6 @@ fn read_point_sequence(
     })
 }
 
-/// Resolve a `NavMesh` source to a local `.nav` file.
-///
 /// Parse a `weight` string into a [`PathWeight`].
 fn parse_path_weight(weight: &str) -> PyResult<PathWeight> {
     match weight.to_ascii_lowercase().as_str() {
@@ -2420,7 +2192,7 @@ fn parse_path_weight(weight: &str) -> PyResult<PathWeight> {
 ///         an empty cache selects the latest release.
 ///
 /// Attributes:
-///     path: The loaded navigation file path, or ``None``.
+///     path: The loaded navigation file path.
 ///     version: Navigation file format version.
 ///     sub_version: Navigation file format subversion.
 ///     is_analyzed: Whether the file contains analyzed bot-navigation data.
@@ -2443,7 +2215,7 @@ fn parse_path_weight(weight: &str) -> PyResult<PathWeight> {
 struct NavMesh {
     nav: Nav,
     #[pyo3(get)]
-    path: Option<PathBuf>,
+    path: PathBuf,
 }
 
 impl NavMesh {
@@ -2478,10 +2250,7 @@ impl NavMesh {
     ) -> PyResult<Self> {
         let path = resolve_asset_source(py, source, version, ".nav", "nav_path")?;
         let nav = Nav::from_file(&path).map_err(mesh_to_py_err)?;
-        Ok(Self {
-            nav,
-            path: Some(path),
-        })
+        Ok(Self { nav, path })
     }
 
     /// Describe the loaded Awpy object.
@@ -2489,16 +2258,13 @@ impl NavMesh {
     /// Returns:
     ///     A short object description.
     fn __repr__(&self) -> String {
-        let ver = format!("{}.{}", self.nav.version, self.nav.sub_version);
-        match &self.path {
-            Some(p) => format!(
-                "NavMesh(path={:?}, areas={}, version={})",
-                p,
-                self.nav.area_count(),
-                ver
-            ),
-            None => format!("NavMesh(areas={}, version={})", self.nav.area_count(), ver),
-        }
+        format!(
+            "NavMesh(path={:?}, areas={}, version={}.{})",
+            self.path,
+            self.nav.area_count(),
+            self.nav.version,
+            self.nav.sub_version
+        )
     }
 
     /// Count the loaded entries.
@@ -2662,11 +2428,10 @@ impl NavMesh {
     }
 }
 
-/// One player observation for [`compute_map_control`]:
-/// `(x, y, z, side, crouched, blind)`. `side` is the demo's `"terrorist"` /
-/// `"counter-terrorist"` (or `"t"` / `"ct"`); other sides are dropped.
-/// `(x, y, z, side, crouched, blind, yaw)` for one living player. `yaw` is the
-/// eye-angle yaw in degrees and may be `None`; only `method="vision"` reads it.
+/// One living player for [`compute_map_control`]:
+/// `(x, y, z, side, crouched, blind, yaw)`. `side` is `"terrorist"` /
+/// `"counter-terrorist"` (or `"t"` / `"ct"`); other sides are dropped. `yaw` is
+/// the eye-angle yaw in degrees and may be `None`; only `method="vision"` reads it.
 type PlayerObs = (f32, f32, f32, String, bool, bool, Option<f32>);
 /// A sphere occluder for [`compute_map_control`]: `(x, y, z, radius)`.
 type Sphere = (f32, f32, f32, f32);
@@ -2837,303 +2602,146 @@ fn compute_map_control(
     Ok(d.unbind())
 }
 
-/// Column helper: collect a field from each item via a getter.
-macro_rules! col {
-    ($name:literal, $items:expr, $f:expr) => {
-        Column::new($name.into(), $items.iter().map($f).collect::<Vec<_>>())
-    };
+/// A row field type and the Polars column its values become.
+trait ColumnValue {
+    fn column<'a>(name: &str, values: impl Iterator<Item = &'a Self>) -> Column
+    where
+        Self: 'a;
 }
 
-fn rounds_to_frame(rounds: &[Round]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("round_num", rounds, |r| r.round_num),
-        col!("start_tick", rounds, |r| r.start_tick),
-        col!("freeze_end_tick", rounds, |r| r.freeze_end_tick),
-        col!("end_tick", rounds, |r| r.end_tick),
-        col!("official_end_tick", rounds, |r| r.official_end_tick),
-        col!("winner", rounds, |r| r.winner),
-        col!("winner_side", rounds, |r| r.winner_side.as_str()),
-        col!("reason", rounds, |r| r.reason),
-        col!("reason_name", rounds, |r| r.reason_name.as_str()),
-        col!("is_knife_round", rounds, |r| r.is_knife_round),
-    ])
+macro_rules! copied_columns {
+    ($($ty:ty),+ $(,)?) => {$(
+        impl ColumnValue for $ty {
+            fn column<'a>(name: &str, values: impl Iterator<Item = &'a Self>) -> Column
+            where
+                Self: 'a,
+            {
+                Column::new(name.into(), values.copied().collect::<Vec<_>>())
+            }
+        }
+    )+};
 }
 
-fn round_economy_to_frame(econ: &[RoundEconomy]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("round_num", econ, |e| e.round_num),
-        col!("side", econ, |e| e.side),
-        col!("equipment_value", econ, |e| e.equipment_value),
-        col!("buy_type", econ, |e| e.buy_type),
-        col!("n_players", econ, |e| e.n_players),
-    ])
+copied_columns!(
+    bool,
+    i32,
+    u32,
+    u64,
+    f32,
+    &'static str,
+    Option<bool>,
+    Option<i32>,
+    Option<u32>,
+    Option<f32>,
+);
+
+impl ColumnValue for Option<u64> {
+    fn column<'a>(name: &str, values: impl Iterator<Item = &'a Self>) -> Column {
+        nullable_u64_column(name, values.copied())
+    }
 }
 
-fn kills_to_frame(kills: &[Kill]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("attacker_entity_id", kills, |k| k.attacker_entity_id),
-        col!("attacker_entity_serial", kills, |k| k
-            .attacker_entity_serial),
-        nullable_u64_column("attacker_steamid", kills.iter().map(|k| k.attacker_steamid)),
-        col!("attacker_name", kills, |k| k.attacker_name.as_deref()),
-        col!("attacker_side", kills, |k| k.attacker_side.as_deref()),
-        col!("attacker_x", kills, |k| k.attacker_x),
-        col!("attacker_y", kills, |k| k.attacker_y),
-        col!("attacker_z", kills, |k| k.attacker_z),
-        col!("victim_entity_id", kills, |k| k.victim_entity_id),
-        col!("victim_entity_serial", kills, |k| k.victim_entity_serial),
-        nullable_u64_column("victim_steamid", kills.iter().map(|k| k.victim_steamid)),
-        col!("victim_name", kills, |k| k.victim_name.as_deref()),
-        col!("victim_side", kills, |k| k.victim_side.as_deref()),
-        col!("victim_x", kills, |k| k.victim_x),
-        col!("victim_y", kills, |k| k.victim_y),
-        col!("victim_z", kills, |k| k.victim_z),
-        col!("assister_entity_id", kills, |k| k.assister_entity_id),
-        col!("assister_entity_serial", kills, |k| k
-            .assister_entity_serial),
-        nullable_u64_column("assister_steamid", kills.iter().map(|k| k.assister_steamid)),
-        col!("assister_name", kills, |k| k.assister_name.as_deref()),
-        col!("assister_side", kills, |k| k.assister_side.as_deref()),
-        col!("assister_x", kills, |k| k.assister_x),
-        col!("assister_y", kills, |k| k.assister_y),
-        col!("assister_z", kills, |k| k.assister_z),
-        col!("weapon", kills, |k| k.weapon.as_str()),
-        col!("headshot", kills, |k| k.headshot),
-        col!("assist_flash", kills, |k| k.assist_flash),
-        col!("dominated", kills, |k| k.dominated),
-        col!("noscope", kills, |k| k.noscope),
-        col!("penetrated", kills, |k| k.penetrated),
-        col!("revenge", kills, |k| k.revenge),
-        col!("thrusmoke", kills, |k| k.thrusmoke),
-        col!("hitgroup", kills, |k| k.hitgroup),
-        col!("hitgroup_name", kills, |k| k.hitgroup_name.as_str()),
-        col!("is_trade", kills, |k| k.is_trade),
-        col!("victim_traded", kills, |k| k.victim_traded),
-        col!("tick", kills, |k| k.tick),
-    ])
+impl ColumnValue for String {
+    fn column<'a>(name: &str, values: impl Iterator<Item = &'a Self>) -> Column {
+        Column::new(name.into(), values.map(String::as_str).collect::<Vec<_>>())
+    }
 }
 
-fn damages_to_frame(damages: &[Damage]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("attacker_entity_id", damages, |d| d.attacker_entity_id),
-        col!("attacker_entity_serial", damages, |d| d
-            .attacker_entity_serial),
-        nullable_u64_column(
-            "attacker_steamid",
-            damages.iter().map(|d| d.attacker_steamid),
-        ),
-        col!("attacker_name", damages, |d| d.attacker_name.as_deref()),
-        col!("attacker_side", damages, |d| d.attacker_side.as_deref()),
-        col!("attacker_x", damages, |d| d.attacker_x),
-        col!("attacker_y", damages, |d| d.attacker_y),
-        col!("attacker_z", damages, |d| d.attacker_z),
-        col!("victim_entity_id", damages, |d| d.victim_entity_id),
-        col!("victim_entity_serial", damages, |d| d.victim_entity_serial),
-        nullable_u64_column("victim_steamid", damages.iter().map(|d| d.victim_steamid)),
-        col!("victim_name", damages, |d| d.victim_name.as_deref()),
-        col!("victim_side", damages, |d| d.victim_side.as_deref()),
-        col!("victim_x", damages, |d| d.victim_x),
-        col!("victim_y", damages, |d| d.victim_y),
-        col!("victim_z", damages, |d| d.victim_z),
-        col!("weapon", damages, |d| d.weapon.as_str()),
-        col!("dmg_health", damages, |d| d.dmg_health),
-        col!("dmg_armor", damages, |d| d.dmg_armor),
-        col!("hitgroup", damages, |d| d.hitgroup),
-        col!("hitgroup_name", damages, |d| d.hitgroup_name.as_str()),
-        col!("health_pre", damages, |d| d.health_pre),
-        col!("health_post", damages, |d| d.health_post),
-        col!("armor_pre", damages, |d| d.armor_pre),
-        col!("armor_post", damages, |d| d.armor_post),
-        col!("tick", damages, |d| d.tick),
-    ])
+impl ColumnValue for Option<String> {
+    fn column<'a>(name: &str, values: impl Iterator<Item = &'a Self>) -> Column {
+        Column::new(
+            name.into(),
+            values.map(Option::as_deref).collect::<Vec<_>>(),
+        )
+    }
 }
 
-fn bomb_to_frame(bomb: &[BombEvent]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("tick", bomb, |b| b.tick),
-        col!("event", bomb, |b| b.event.as_str()),
-        col!("entity_id", bomb, |b| b.entity_id),
-        col!("entity_serial", bomb, |b| b.entity_serial),
-        nullable_u64_column("steamid", bomb.iter().map(|b| b.steamid)),
-        col!("name", bomb, |b| b.name.as_deref()),
-        col!("bombsite", bomb, |b| b.bombsite.as_deref()),
-        col!("x", bomb, |b| b.x),
-        col!("y", bomb, |b| b.y),
-        col!("z", bomb, |b| b.z),
-    ])
+/// A dataset row type that becomes one DataFrame column per listed field.
+trait Rows: Sized + Sync {
+    fn frame(rows: &[Self]) -> PolarsResult<DataFrame>;
 }
 
-fn grenades_to_frame(grenades: &[Grenade]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("tick", grenades, |g| g.tick),
-        col!("thrower_name", grenades, |g| g.thrower_name.as_deref()),
-        nullable_u64_column(
-            "thrower_steamid",
-            grenades.iter().map(|g| g.thrower_steamid),
-        ),
-        col!("thrower_side", grenades, |g| g.thrower_side.as_deref()),
-        col!("type", grenades, |g| g.grenade_type.as_str()),
-        col!("entity_id", grenades, |g| g.entity_id),
-        col!("entity_serial", grenades, |g| g.entity_serial),
-        col!("x", grenades, |g| g.x),
-        col!("y", grenades, |g| g.y),
-        col!("z", grenades, |g| g.z),
-        col!("start_tick", grenades, |g| g.start_tick),
-        col!("end_tick", grenades, |g| g.end_tick),
-    ])
+/// Implement [`Rows`] from a column list in output order. `column = field`
+/// names a column after something other than its field.
+macro_rules! rows {
+    (@field $row:ident, $column:ident) => { &$row.$column };
+    (@field $row:ident, $column:ident, $field:ident) => { &$row.$field };
+    ($($ty:ty { $($column:ident $(= $field:ident)?),+ $(,)? })+) => {$(
+        impl Rows for $ty {
+            fn frame(rows: &[Self]) -> PolarsResult<DataFrame> {
+                df_from_columns(vec![$(
+                    ColumnValue::column(
+                        stringify!($column),
+                        rows.iter().map(|row| rows!(@field row, $column $(, $field)?)),
+                    ),
+                )+])
+            }
+        }
+    )+};
 }
 
-fn fires_to_frame(fires: &[Fire]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("start_tick", fires, |f| f.start_tick),
-        col!("end_tick", fires, |f| f.end_tick),
-        col!("thrower_name", fires, |f| f.thrower_name.as_deref()),
-        nullable_u64_column("thrower_steamid", fires.iter().map(|f| f.thrower_steamid)),
-        col!("thrower_side", fires, |f| f.thrower_side.as_deref()),
-        col!("type", fires, |f| f.fire_type.as_str()),
-        col!("entity_id", fires, |f| f.entity_id),
-        col!("entity_serial", fires, |f| f.entity_serial),
-        col!("x", fires, |f| f.x),
-        col!("y", fires, |f| f.y),
-        col!("z", fires, |f| f.z),
-    ])
-}
-
-fn smokes_to_frame(smokes: &[Smoke]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("start_tick", smokes, |s| s.start_tick),
-        col!("end_tick", smokes, |s| s.end_tick),
-        col!("thrower_name", smokes, |s| s.thrower_name.as_deref()),
-        nullable_u64_column("thrower_steamid", smokes.iter().map(|s| s.thrower_steamid)),
-        col!("thrower_side", smokes, |s| s.thrower_side.as_deref()),
-        col!("entity_id", smokes, |s| s.entity_id),
-        col!("entity_serial", smokes, |s| s.entity_serial),
-        col!("x", smokes, |s| s.x),
-        col!("y", smokes, |s| s.y),
-        col!("z", smokes, |s| s.z),
-    ])
-}
-
-fn shots_to_frame(shots: &[Shot]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("tick", shots, |s| s.tick),
-        col!("entity_id", shots, |s| s.entity_id),
-        col!("entity_serial", shots, |s| s.entity_serial),
-        nullable_u64_column("steamid", shots.iter().map(|s| s.steamid)),
-        col!("name", shots, |s| s.name.as_deref()),
-        col!("side", shots, |s| s.side.as_deref()),
-        col!("x", shots, |s| s.x),
-        col!("y", shots, |s| s.y),
-        col!("z", shots, |s| s.z),
-        col!("pitch", shots, |s| s.pitch),
-        col!("yaw", shots, |s| s.yaw),
-        col!("weapon", shots, |s| s.weapon.as_str()),
-        col!("scoped", shots, |s| s.scoped),
-        col!("inaccuracy", shots, |s| s.inaccuracy),
-        col!("num_bullets_remaining", shots, |s| s.num_bullets_remaining),
-    ])
-}
-
-fn players_to_frame(players: &[Player]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("steamid", players, |p| p.steamid),
-        col!("name", players, |p| p.name.as_deref()),
-        col!("side", players, |p| p.side.as_deref()),
-        col!("team_clan_name", players, |p| p.team_clan_name.as_deref()),
-    ])
-}
-
-fn item_events_to_frame(items: &[ItemEvent]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("tick", items, |i| i.tick),
-        col!("entity_id", items, |i| i.entity_id),
-        col!("entity_serial", items, |i| i.entity_serial),
-        col!("action", items, |i| i.action.as_str()),
-        nullable_u64_column("steamid", items.iter().map(|i| i.steamid)),
-        col!("name", items, |i| i.name.as_deref()),
-        col!("side", items, |i| i.side.as_deref()),
-        col!("item", items, |i| i.item.as_str()),
-        col!("x", items, |i| i.x),
-        col!("y", items, |i| i.y),
-        col!("z", items, |i| i.z),
-        nullable_u64_column(
-            "original_owner_steamid",
-            items.iter().map(|i| i.original_owner_steamid),
-        ),
-        col!("cost", items, |i| i.cost),
-        col!("near_buy_zone", items, |i| i.near_buy_zone),
-    ])
-}
-
-fn blinds_to_frame(blinds: &[Blind]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("tick", blinds, |b| b.tick),
-        col!("attacker_entity_id", blinds, |b| b.attacker_entity_id),
-        col!("attacker_entity_serial", blinds, |b| b
-            .attacker_entity_serial),
-        nullable_u64_column(
-            "attacker_steamid",
-            blinds.iter().map(|b| b.attacker_steamid),
-        ),
-        col!("attacker_name", blinds, |b| b.attacker_name.as_deref()),
-        col!("attacker_side", blinds, |b| b.attacker_side.as_deref()),
-        col!("attacker_x", blinds, |b| b.attacker_x),
-        col!("attacker_y", blinds, |b| b.attacker_y),
-        col!("attacker_z", blinds, |b| b.attacker_z),
-        col!("victim_entity_id", blinds, |b| b.victim_entity_id),
-        col!("victim_entity_serial", blinds, |b| b.victim_entity_serial),
-        nullable_u64_column("victim_steamid", blinds.iter().map(|b| b.victim_steamid)),
-        col!("victim_name", blinds, |b| b.victim_name.as_deref()),
-        col!("victim_side", blinds, |b| b.victim_side.as_deref()),
-        col!("victim_x", blinds, |b| b.victim_x),
-        col!("victim_y", blinds, |b| b.victim_y),
-        col!("victim_z", blinds, |b| b.victim_z),
-        col!("duration", blinds, |b| b.duration),
-    ])
-}
-
-fn chat_to_frame(chat: &[ChatMessage]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("tick", chat, |c| c.tick),
-        col!("entity_index", chat, |c| c.entity_index),
-        col!("name", chat, |c| c.name.as_deref()),
-        col!("message", chat, |c| c.message.as_str()),
-        col!("channel", chat, |c| c.channel.as_deref()),
-    ])
-}
-
-fn stats_to_frame(stats: &[PlayerStats]) -> PolarsResult<DataFrame> {
-    df_from_columns(vec![
-        col!("steamid", stats, |s| s.steamid),
-        col!("name", stats, |s| s.name.as_str()),
-        col!("rounds_played", stats, |s| s.rounds_played),
-        col!("kills", stats, |s| s.kills),
-        col!("deaths", stats, |s| s.deaths),
-        col!("assists", stats, |s| s.assists),
-        col!("flash_assists", stats, |s| s.flash_assists),
-        col!("headshot_kills", stats, |s| s.headshot_kills),
-        col!("headshot_pct", stats, |s| s.headshot_pct),
-        col!("opening_kills", stats, |s| s.opening_kills),
-        col!("opening_deaths", stats, |s| s.opening_deaths),
-        col!("traded_deaths", stats, |s| s.traded_deaths),
-        col!("multikill_2k", stats, |s| s.multikill_2k),
-        col!("multikill_3k", stats, |s| s.multikill_3k),
-        col!("multikill_4k", stats, |s| s.multikill_4k),
-        col!("multikill_5k", stats, |s| s.multikill_5k),
-        col!("kast", stats, |s| s.kast),
-        col!("adr", stats, |s| s.adr),
-        col!("clutches_played", stats, |s| s.clutches_played),
-        col!("clutches_won", stats, |s| s.clutches_won),
-        col!("clutch_1v1", stats, |s| s.clutch_1v1),
-        col!("clutch_1v2", stats, |s| s.clutch_1v2),
-        col!("clutch_1v3", stats, |s| s.clutch_1v3),
-        col!("clutch_1v4", stats, |s| s.clutch_1v4),
-        col!("clutch_1v5", stats, |s| s.clutch_1v5),
-        col!("utility_damage", stats, |s| s.utility_damage),
-        col!("flashes_thrown", stats, |s| s.flashes_thrown),
-        col!("enemies_flashed", stats, |s| s.enemies_flashed),
-        col!("flash_duration_dealt", stats, |s| s.flash_duration_dealt),
-    ])
+rows! {
+    Round {
+        round_num, start_tick, freeze_end_tick, end_tick, official_end_tick, winner,
+        winner_side, reason, reason_name, is_knife_round,
+    }
+    RoundEconomy { round_num, side, equipment_value, buy_type, n_players }
+    Kill {
+        attacker_entity_id, attacker_entity_serial, attacker_steamid, attacker_name,
+        attacker_side, attacker_x, attacker_y, attacker_z,
+        victim_entity_id, victim_entity_serial, victim_steamid, victim_name,
+        victim_side, victim_x, victim_y, victim_z,
+        assister_entity_id, assister_entity_serial, assister_steamid, assister_name,
+        assister_side, assister_x, assister_y, assister_z,
+        weapon, headshot, assist_flash, dominated, noscope, penetrated, revenge, thrusmoke,
+        hitgroup, hitgroup_name, is_trade, victim_traded, tick,
+    }
+    Damage {
+        attacker_entity_id, attacker_entity_serial, attacker_steamid, attacker_name,
+        attacker_side, attacker_x, attacker_y, attacker_z,
+        victim_entity_id, victim_entity_serial, victim_steamid, victim_name,
+        victim_side, victim_x, victim_y, victim_z,
+        weapon, dmg_health, dmg_armor, hitgroup, hitgroup_name,
+        health_pre, health_post, armor_pre, armor_post, tick,
+    }
+    BombEvent { tick, event, entity_id, entity_serial, steamid, name, bombsite, x, y, z }
+    Grenade {
+        tick, thrower_name, thrower_steamid, thrower_side, type = grenade_type,
+        entity_id, entity_serial, x, y, z, start_tick, end_tick,
+    }
+    Fire {
+        start_tick, end_tick, thrower_name, thrower_steamid, thrower_side, type = fire_type,
+        entity_id, entity_serial, x, y, z,
+    }
+    Smoke {
+        start_tick, end_tick, thrower_name, thrower_steamid, thrower_side,
+        entity_id, entity_serial, x, y, z,
+    }
+    Shot {
+        tick, entity_id, entity_serial, steamid, name, side, x, y, z, pitch, yaw,
+        weapon, scoped, inaccuracy, num_bullets_remaining,
+    }
+    Player { steamid, name, side, team_clan_name }
+    ItemEvent {
+        tick, entity_id, entity_serial, action, steamid, name, side, item, x, y, z,
+        original_owner_steamid, cost, near_buy_zone,
+    }
+    Blind {
+        tick,
+        attacker_entity_id, attacker_entity_serial, attacker_steamid, attacker_name,
+        attacker_side, attacker_x, attacker_y, attacker_z,
+        victim_entity_id, victim_entity_serial, victim_steamid, victim_name,
+        victim_side, victim_x, victim_y, victim_z,
+        duration,
+    }
+    ChatMessage { tick, entity_index, name, message, channel }
+    PlayerStats {
+        steamid, name, rounds_played, kills, deaths, assists, flash_assists,
+        headshot_kills, headshot_pct, opening_kills, opening_deaths, traded_deaths,
+        multikill_2k, multikill_3k, multikill_4k, multikill_5k, kast, adr,
+        clutches_played, clutches_won, clutch_1v1, clutch_1v2, clutch_1v3, clutch_1v4,
+        clutch_1v5, utility_damage, flashes_thrown, enemies_flashed, flash_duration_dealt,
+    }
 }
 
 /// Resolve each prop name to a packed field key for a given serializer.
@@ -3910,70 +3518,30 @@ mod multipart_tests {
     fn round(number: i32) -> Round {
         Round {
             round_num: number,
-            start_tick: Some(0),
             freeze_end_tick: Some(10),
-            end_tick: 100,
-            official_end_tick: Some(100),
-            winner: 2,
-            winner_side: "terrorist".into(),
-            reason: 0,
-            reason_name: "t_win".into(),
-            is_knife_round: false,
+            ..Default::default()
         }
     }
 
     #[test]
-    fn consecutive_rounds_keep_match_numbers() {
-        assert_eq!(
-            validate_rounds(Some(22), &[round(23), round(24)], (Some(true), Some(true))).unwrap(),
-            24
-        );
-    }
-
-    #[test]
-    fn unknown_boundaries_are_rejected() {
-        assert!(validate_rounds(None, &[round(1)], (None, None)).is_err());
-    }
-
-    #[test]
-    fn live_round_cuts_are_rejected() {
-        assert!(validate_rounds(None, &[round(1)], (Some(true), Some(false))).is_err());
-    }
-
-    #[test]
-    fn missing_round_start_is_rejected() {
-        let mut r = round(1);
-        r.freeze_end_tick = None;
-        assert!(validate_rounds(None, &[r], (Some(true), Some(true))).is_err());
-    }
-
-    #[test]
-    fn empty_match_rounds_are_rejected() {
-        assert!(validate_rounds(None, &[], (Some(true), Some(true))).is_err());
-    }
-
-    #[test]
-    fn overlapping_recordings_are_rejected() {
-        assert!(validate_rounds(Some(22), &[round(22)], (Some(true), Some(true))).is_err());
-    }
-
-    #[test]
-    fn gaps_between_recordings_are_rejected() {
-        assert!(validate_rounds(Some(22), &[round(24)], (Some(true), Some(true))).is_err());
-    }
-
-    #[test]
-    fn gaps_within_a_recording_are_rejected() {
-        assert!(validate_rounds(None, &[round(1), round(3)], (Some(true), Some(true))).is_err());
-    }
-
-    #[test]
-    fn knife_rounds_do_not_interrupt_match_round_numbers() {
+    fn rounds_must_continue_the_previous_recording() {
+        let complete = (Some(true), Some(true));
+        let mut no_start = round(1);
+        no_start.freeze_end_tick = None;
         let mut knife = round(23);
         knife.is_knife_round = true;
-        assert_eq!(
-            validate_rounds(Some(22), &[knife, round(23)], (Some(true), Some(true))).unwrap(),
-            23
-        );
+        for (previous, rounds, coverage, expected) in [
+            (Some(22), vec![round(23), round(24)], complete, Some(24)),
+            (Some(22), vec![knife, round(23)], complete, Some(23)),
+            (None, vec![round(1)], (None, None), None),
+            (None, vec![round(1)], (Some(true), Some(false)), None),
+            (None, vec![no_start], complete, None),
+            (None, vec![], complete, None),
+            (Some(22), vec![round(22)], complete, None),
+            (Some(22), vec![round(24)], complete, None),
+            (None, vec![round(1), round(3)], complete, None),
+        ] {
+            assert_eq!(validate_rounds(previous, &rounds, coverage).ok(), expected);
+        }
     }
 }
