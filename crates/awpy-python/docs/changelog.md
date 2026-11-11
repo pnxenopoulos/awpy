@@ -3,7 +3,8 @@
 ## 3.1.3
 
 - Add Rust `Parser::events_with_players` for legacy game events. Resolve
-  players from the state at the end of each tick.
+  players from the state at the end of each tick. Check the full user ID
+  before using a player slot.
 - Use recorded ammo to count held grenades in `snapshots()`, including zero.
   Count inventory handles when the ammo field is missing.
 - Add a contributor guide for branch names, local checks, and dependency updates.

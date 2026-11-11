@@ -28,7 +28,7 @@ use std::num::NonZeroUsize;
 
 use crate::demo::{Context, GameEvent, Parser};
 use crate::entity::{
-    ENTITY_HANDLE_INDEX_MASK, Entity, EntityChangeKind, EntityContainer, EntityId,
+    ENTITY_HANDLE_INDEX_MASK, Entity, EntityChangeKind, EntityContainer, EntityId, StringTable,
 };
 use crate::error::Result;
 use crate::hitgroups::hitgroup_name;
@@ -489,7 +489,7 @@ pub struct Smoke {
     pub z: f32,
 }
 
-/// One raw game event with its player participants resolved at the event tick.
+/// One legacy game event with participants resolved from completed-tick state.
 /// See [`Parser::events_with_players`].
 #[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct PlayerEvent {
@@ -502,8 +502,8 @@ pub struct PlayerEvent {
     pub players: Vec<EventPlayer>,
 }
 
-/// A [`PlayerEvent`] participant: who they are, and where they stood and looked
-/// at the event tick.
+/// A [`PlayerEvent`] participant's identity, position, and view angles at the
+/// end of the event tick. Unavailable fields are `None`.
 #[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct EventPlayer {
     /// The event key this participant came from (see [`EVENT_PLAYER_ROLES`]).
@@ -1221,7 +1221,6 @@ struct EventPlayerKeys {
     pawn: PawnKeys,
     controller: CtrlKeys,
     angles: Option<u64>,
-    controller_pawn: Option<u64>,
 }
 
 impl EventPlayerKeys {
@@ -1233,20 +1232,40 @@ impl EventPlayerKeys {
                 .serializers()
                 .get(PLAYER_PAWN_CLASS)
                 .and_then(|s| s.resolve_field_key("m_angEyeAngles")),
-            controller_pawn: ctx
-                .serializers()
-                .get(PLAYER_CONTROLLER_CLASS)
-                .and_then(|s| s.resolve_field_key("m_hPlayerPawn")),
         }
     }
 }
 
-/// Resolve one participant of a raw event.
-///
-/// Follows the `<role>_pawn` handle when the event carries one. Otherwise, or
-/// when that pawn is gone, uses the controller in the player slot named by the
-/// user id (controller entity index = slot + 1) and that controller's pawn.
-/// Some events (e.g. `bomb_pickup`) carry only the pawn key.
+/// Use the slot only after confirming the complete user ID in `userinfo`.
+fn event_slot_controller<'a>(
+    entities: &'a EntityContainer,
+    userinfo: &StringTable,
+    user_id: i32,
+    steamid_key: Option<u64>,
+) -> Option<&'a Entity> {
+    use awpy_proto::proto::CMsgPlayerInfo;
+    use prost::Message as _;
+
+    // The low byte locates the slot. The complete ID identifies its occupant.
+    let slot = usize::try_from(user_id).ok()? & 0xff;
+    let info = CMsgPlayerInfo::decode(userinfo.get(slot)?.user_data.as_deref()?).ok()?;
+    if info.userid != Some(user_id) {
+        return None;
+    }
+    let controller = entities
+        .get(slot as i32 + 1)
+        .filter(|entity| entity.active && entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS)?;
+    let steamid = info
+        .steamid
+        .filter(|&id| id != 0)
+        .or(info.xuid.filter(|&id| id != 0));
+    if steamid.is_some_and(|id| controller.get_u64(steamid_key) != Some(id)) {
+        return None;
+    }
+    Some(controller)
+}
+
+/// Resolve one legacy event participant from the state at the end of its tick.
 fn event_player(
     ctx: &Context,
     keys: &Keys,
@@ -1259,21 +1278,30 @@ fn event_player(
         return None;
     }
     let is_pawn = |entity: &&Entity| entity.class_name.contains("PlayerPawn");
-    let controller = user_id
-        .and_then(|id| ctx.entities().get((id & 0xff) + 1))
-        .filter(|entity| entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS);
-    let pawn = keys
+    let event_pawn = keys
         .get(pawn_key)
         .and_then(|value| value.parse::<i64>().ok())
         .and_then(event_entity_handle)
         .and_then(|handle| ctx.entities().get_by_handle(handle))
-        .filter(is_pawn)
-        .or_else(|| {
-            controller?
-                .get_handle(k.controller_pawn)
-                .and_then(|handle| ctx.entities().get_by_handle(handle))
-                .filter(is_pawn)
-        });
+        .filter(is_pawn);
+    let controller = if event_pawn.is_none() {
+        user_id.and_then(|id| {
+            event_slot_controller(
+                ctx.entities(),
+                ctx.string_tables().find_table("userinfo")?,
+                id,
+                k.controller.steamid,
+            )
+        })
+    } else {
+        None
+    };
+    let pawn = event_pawn.or_else(|| {
+        controller?
+            .get_handle(k.controller.player_pawn)
+            .and_then(|handle| ctx.entities().get_by_handle(handle))
+            .filter(is_pawn)
+    });
 
     let mut player = EventPlayer {
         role,
@@ -1293,9 +1321,7 @@ fn event_player(
             player.yaw = Some(angles[1]);
         }
     }
-    if player.steamid.is_none()
-        && let Some(controller) = controller
-    {
+    if let Some(controller) = controller {
         player.steamid = controller.get_u64(k.controller.steamid);
         player.name = controller.get_string(k.controller.name);
     }
@@ -3570,14 +3596,13 @@ impl Parser {
         out
     }
 
-    /// Decode the named game events and resolve each participant
-    /// ([`EVENT_PLAYER_ROLES`]) to a Steam id, name, side, position, and view
-    /// angles at the event tick.
+    /// Read the named legacy game events and resolve [`EVENT_PLAYER_ROLES`]
+    /// from entity and `userinfo` state at the end of each event tick.
     ///
-    /// Participants resolve through the event's `<role>_pawn` handle, the same
-    /// way the kill and damage datasets do. An event without a pawn key falls
-    /// back to the controller in the player slot named by its user id. The raw
-    /// keys are kept, so callers can read any other field of the event.
+    /// Use the event's `<role>_pawn` handle first. If it does not resolve to a
+    /// pawn, use the slot's controller only when the complete event user ID
+    /// matches `userinfo` and any recorded Steam ID agrees with the controller.
+    /// The result keeps the raw keys and leaves unavailable player fields empty.
     pub fn events_with_players(&self, names: &HashSet<&str>) -> Result<Vec<PlayerEvent>> {
         let filter: HashSet<&str> = [PLAYER_PAWN_CLASS, PLAYER_CONTROLLER_CLASS]
             .into_iter()
@@ -3945,16 +3970,74 @@ mod tests {
         }
     }
 
-    /// Resolves event participants on a real demo (set `AWPY_TEST_DEMO`).
+    #[test]
+    fn event_user_id_does_not_follow_a_reused_slot() {
+        use crate::entity::{
+            CreateStringTable, FieldValue, StringTableContainer, StringTableEntry,
+        };
+        use awpy_proto::proto::CMsgPlayerInfo;
+
+        let mut entities = EntityContainer::new();
+        let mut tables = StringTableContainer::new();
+        tables
+            .handle_create(CreateStringTable::new("userinfo", 0, Vec::new()))
+            .unwrap();
+        let write_userinfo = |tables: &mut StringTableContainer, userid, steamid| {
+            let info = CMsgPlayerInfo {
+                userid: Some(userid),
+                steamid: Some(steamid),
+                ..Default::default()
+            };
+            let entry = StringTableEntry::new(Some("0".into()), Some(info.encode_to_vec()));
+            tables
+                .do_full_update([("userinfo".into(), vec![entry])])
+                .unwrap();
+        };
+        let write_controller = |entities: &mut EntityContainer, serial, steamid| {
+            let mut controller = Entity::from_fields(
+                1,
+                serial,
+                0,
+                PLAYER_CONTROLLER_CLASS,
+                true,
+                Default::default(),
+            )
+            .unwrap();
+            controller.fields.insert(0, FieldValue::U64(steamid));
+            entities.insert(controller).unwrap();
+        };
+        let resolve = |entities: &EntityContainer, tables: &StringTableContainer, userid| {
+            event_slot_controller(
+                entities,
+                tables.find_table("userinfo").unwrap(),
+                userid,
+                Some(0),
+            )
+            .and_then(|controller| controller.get_u64(Some(0)))
+        };
+
+        // Both full user IDs map to slot zero.
+        write_controller(&mut entities, 1, 42);
+        write_userinfo(&mut tables, 0x100, 42);
+        assert_eq!(resolve(&entities, &tables, 0x100), Some(42));
+
+        write_controller(&mut entities, 2, 43);
+        assert_eq!(resolve(&entities, &tables, 0x100), None);
+
+        write_userinfo(&mut tables, 0x200, 43);
+        assert_eq!(resolve(&entities, &tables, 0x100), None);
+        assert_eq!(resolve(&entities, &tables, 0), None);
+        assert_eq!(resolve(&entities, &tables, 0x200), Some(43));
+    }
+
+    /// Resolves pawn-backed event participants on a demo (set `AWPY_TEST_DEMO`).
     /// Ignored by default; run with `--ignored`.
     #[test]
     #[ignore = "requires AWPY_TEST_DEMO to point at a real .dem file"]
     fn events_with_players_resolves_participants() {
         let path = std::env::var("AWPY_TEST_DEMO").unwrap();
         let parser = Parser::from_file(std::path::Path::new(&path)).unwrap();
-        let names: HashSet<&str> = ["player_death", "player_blind", "bomb_pickup"]
-            .into_iter()
-            .collect();
+        let names = HashSet::from(["player_death", "bomb_pickup"]);
         let events = parser.events_with_players(&names).unwrap();
         let steamid = |event: &PlayerEvent, role: &str| {
             event
@@ -3973,11 +4056,6 @@ mod tests {
             assert_eq!(steamid(death, "userid"), kill.victim_steamid);
             assert_eq!(steamid(death, "attacker"), kill.attacker_steamid);
         }
-
-        let blinds: Vec<&PlayerEvent> =
-            events.iter().filter(|e| e.name == "player_blind").collect();
-        assert!(!blinds.is_empty());
-        assert!(blinds.iter().all(|e| steamid(e, "userid").is_some()));
 
         // bomb_pickup carries only `userid_pawn`, no `userid`.
         let pickups: Vec<&PlayerEvent> =
