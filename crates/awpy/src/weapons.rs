@@ -112,6 +112,56 @@ pub fn weapon_info(class_name: &str) -> Option<WeaponInfo> {
     None
 }
 
+/// The weapon classes that hold more than one variant (Deagle / Revolver, M4A4 / M4A1-S,
+/// P2000 / USP-S). Their item-definition fields are what tells the variants apart.
+pub(crate) const VARIANT_CLASSES: &[&str] = &[
+    "CDEagle",
+    "CWeaponRevolver",
+    "CWeaponM4A1",
+    "CWeaponM4A1Silencer",
+    "CWeaponHKP2000",
+    "CWeaponUSPSilencer",
+];
+
+/// Field paths that identify a variant on [`VARIANT_CLASSES`] entities.
+pub(crate) const VARIANT_FIELDS: [&str; 2] = [
+    "m_AttributeManager.m_Item.m_iItemDefinitionIndex",
+    "m_nSubclassID",
+];
+
+/// The static name of a variant-class weapon (`usp_silencer`, `m4a1`, ...), if `name` is one.
+pub(crate) fn variant_name(name: &str) -> Option<&'static str> {
+    [
+        "deagle",
+        "revolver",
+        "m4a1",
+        "m4a1_silencer",
+        "hkp2000",
+        "usp_silencer",
+    ]
+    .into_iter()
+    .find(|n| *n == name)
+}
+
+/// The name a `player_hurt` row should carry. The event names the item class
+/// (`hkp2000` for a USP-S hit, `m4a1` for an M4A1-S hit), so when the attacker's
+/// active weapon is a variant of that same class, its name wins. Anything else
+/// (grenades, world, bomb, knife, or no active weapon) keeps the event's name.
+pub(crate) fn damage_weapon_name(event_weapon: String, active: Option<&str>) -> String {
+    let family = |name: &str| -> Option<u8> {
+        match name {
+            "deagle" | "revolver" => Some(0),
+            "m4a1" | "m4a1_silencer" => Some(1),
+            "hkp2000" | "usp_silencer" => Some(2),
+            _ => None,
+        }
+    };
+    match (family(&event_weapon), active) {
+        (Some(f), Some(active)) if family(active) == Some(f) => active.to_string(),
+        _ => event_weapon,
+    }
+}
+
 /// `(projectile class, grenade type)` for thrown grenades in flight — the
 /// entities the [`grenades`](crate::demo::Parser::grenades) trajectory dataset
 /// follows. Distinct from the held-grenade entities in [`WEAPONS`] (a thrown HE
@@ -289,6 +339,30 @@ mod tests {
             subclass: Some(1),
         }
         .info(&entity)
+    }
+
+    #[test]
+    fn damage_name_takes_the_variant_of_the_same_class() {
+        let name = |event: &str, active: Option<&str>| damage_weapon_name(event.into(), active);
+        assert_eq!(name("hkp2000", Some("usp_silencer")), "usp_silencer");
+        assert_eq!(name("m4a1", Some("m4a1_silencer")), "m4a1_silencer");
+        assert_eq!(name("m4a1", Some("m4a1")), "m4a1");
+        assert_eq!(name("deagle", Some("revolver")), "revolver");
+    }
+
+    #[test]
+    fn damage_name_keeps_the_event_name_otherwise() {
+        let name = |event: &str, active: Option<&str>| damage_weapon_name(event.into(), active);
+        // no active weapon, or a different family (swapped to a knife / grenade at the hit tick)
+        assert_eq!(name("hkp2000", None), "hkp2000");
+        assert_eq!(name("m4a1", Some("knife")), "m4a1");
+        assert_eq!(name("deagle", Some("usp_silencer")), "deagle");
+        // grenades, bomb, world, knife are never rewritten
+        assert_eq!(name("hegrenade", Some("usp_silencer")), "hegrenade");
+        assert_eq!(name("inferno", Some("m4a1_silencer")), "inferno");
+        assert_eq!(name("planted_c4", Some("hkp2000")), "planted_c4");
+        assert_eq!(name("world", None), "world");
+        assert_eq!(name("knife", Some("revolver")), "knife");
     }
 
     #[test]
