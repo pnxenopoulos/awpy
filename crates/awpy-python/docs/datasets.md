@@ -161,6 +161,9 @@ For each of `attacker`, `victim`: `<who>_entity_id`, `<who>_entity_serial`,
 `<who>_steamid`, `<who>_name`, `<who>_side`, and `<who>_x` / `_y` / `_z`.
 Other columns: `weapon`, `dmg_health`, `dmg_armor`, `hitgroup`, `hitgroup_name`,
 `health_pre`, `health_post`, `armor_pre`, `armor_post`, and `tick`.
+
+Awpy resolves weapon variants such as `usp_silencer`, `m4a1_silencer`, and
+`revolver` when the replay identifies the weapon.
 Pre-hit values are estimates: `post + damage`, capped at 100.
 They are not recorded pre-hit values. Do not use `health_pre` to cap successive hits.
 Raw damage can exceed the victim's remaining health.
@@ -189,13 +192,17 @@ Bomb actions with the acting player and their position. Columns: `tick`,
 demo.grenades
 ```
 
-Thrown-grenade **trajectories** — one row per tick each grenade projectile is in
-flight (samples stop once it settles). Columns: `tick`, `thrower_name`,
-`thrower_steamid`, `thrower_side`, `type` (`smoke` / `he` / `flashbang` /
-`molotov` / `decoy`), `entity_id`, `entity_serial`, `x`, `y`, `z`,
-`start_tick`, `end_tick`. `start_tick` and `end_tick` bound the projectile's
-lifetime, including ticks it rests without moving (a smoke until its cloud
-expires, an HE until its entity is removed after the blast).
+Awpy records a grenade's first observed position and each position change.
+The columns are `tick`, `thrower_name`, `thrower_steamid`, `thrower_side`,
+`type`, `entity_id`, `entity_serial`, `x`, `y`, `z`, `start_tick`, and
+`end_tick`.
+
+Awpy tries the projectile's thrower handle first and then its owner handle.
+
+The start and end ticks bound each observed trajectory. The end includes
+stationary ticks. When a grenade leaves view and returns, it starts a new
+trajectory with the same entity ID and serial. Use `entity_id`,
+`entity_serial`, and `start_tick` to identify a trajectory within a demo part.
 
 <a id="fires--smokes"></a>
 <a id="fires-smokes"></a>
@@ -211,10 +218,12 @@ demo.smokes   # deployed smoke clouds
 `thrower_name`, `thrower_steamid`, `thrower_side`, `entity_id`,
 `entity_serial`, `x`, `y`, `z`. `fires` also has a `type` column.
 
-The window is the game's own event pair, not the (longer) entity lifetime:
-`inferno_startburn` → `inferno_expire` for fires (the ~7 s burn, cut short when a
-molotov is smoked out) and `smokegrenade_detonate` → `smokegrenade_expired` for
-smokes (the deployed cloud, excluding the throw).
+Fire intervals start at `inferno_startburn`. Smoke intervals start at
+`smokegrenade_detonate`. The expire event sets `end_tick` when present. If a
+round reset removes the effect without an expire event, `end_tick` is the
+last tick when Awpy saw that effect active.
+
+Awpy reads the thrower from the projectile's thrower or owner handle.
 
 Use an interval join to find player samples during fires.
 Apply a spatial filter to test whether a player was inside a fire:
@@ -394,12 +403,12 @@ demo.stats.filter(pl.col("clutches_played") > 0).select(
 demo.round_economy
 ```
 
-One row per (round, side), with equipment value at freeze end and buy type. Columns: `round_num`,
+One row per playing side (T or CT) per round, with equipment value at freeze end and buy type. Columns: `round_num`,
 `side`, `equipment_value`, `buy_type`, `n_players`. `buy_type` is `pistol` / `eco`
 / `force` / `full` — see the {doc}`Reference <reference>` for the thresholds and
 how pistol rounds are detected. (This is the *current* equipment at freeze end —
 the finished buy; the `equipment_value_round_start` snapshot column is the pre-buy
-carry-over.) Knife rounds are excluded.
+carry-over.) Awpy excludes knife rounds and spectators.
 
 ```python
 # Full-buy rounds
@@ -571,9 +580,15 @@ The mapping has synthetic tests but has not yet been checked against a
 demo that contains quiet reloads.
 
 See {doc}`reference` or `awpy.SNAPSHOT_PROPERTIES` for engine properties.
-Snapshot weapon names are short names, such as `ak47` and `usp_silencer`.
-Event weapon strings can differ.
-Dead players have no weapons but retain their last `equipment_value`.
+Snapshot weapon names use item definitions for variants such as the MP5-SD
+and knife models. Event weapon strings can differ.
+
+Awpy counts held grenades from recorded ammo, including zero. When ammo is
+missing, it counts inventory handles.
+
+Dead players have no weapons and keep their last `equipment_value`. Awpy uses
+the controller for the player's identity and current side when it can resolve
+the controller.
 
 ```python
 from awpy import plot

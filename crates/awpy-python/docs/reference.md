@@ -23,7 +23,7 @@ Use {meth}`awpy.Demo.ticks` for supported aliases or raw network fields.
 | --- | --- |
 | `steamid` | `m_steamID` |
 | `name` | `m_iszPlayerName` |
-| `side` | `m_iTeamNum` (2 = terrorist, 3 = counter-terrorist) |
+| `side` | The controller's `m_iTeamNum` (1 = spectator, 2 = terrorist, 3 = counter-terrorist). Use the pawn's team if the controller team is unavailable or unset. |
 | `x` / `y` / `z` | `CBodyComponent…m_cell{X,Y,Z}` + `m_vec{X,Y,Z}` (computed world position) |
 | `pitch` / `yaw` | `m_angEyeAngles` |
 | `velocity_x` / `velocity_y` / `velocity_z` | `m_vecVelocity` components |
@@ -46,7 +46,7 @@ Use {meth}`awpy.Demo.ticks` for supported aliases or raw network fields.
 | `active_weapon` | `m_pWeaponServices.m_hActiveWeapon` |
 | `primary_weapon` | `m_pWeaponServices.m_hMyWeapons` (primary slot) |
 | `secondary_weapon` | `m_pWeaponServices.m_hMyWeapons` (pistol slot) |
-| `fire_grenades` / `smoke_grenades` / `he_grenades` / `flashbangs` / `decoy_grenades` | counts from the `m_pWeaponServices.m_iAmmo` grenade slots (at least one per held grenade in `m_hMyWeapons`) |
+| `fire_grenades` / `smoke_grenades` / `he_grenades` / `flashbangs` / `decoy_grenades` | counts from the `m_pWeaponServices.m_iAmmo` grenade slots, including zero. Count handles in `m_hMyWeapons` when an ammo count is missing. |
 | `inventory` | full loadout (slot order) from `m_pWeaponServices.m_hMyWeapons` |
 
 ### Economy

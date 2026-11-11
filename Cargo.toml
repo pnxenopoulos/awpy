@@ -11,13 +11,13 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "3.1.2"
+version = "3.2.0"
 rust-version = "1.88.0"
 
 [workspace.dependencies]
-awpy = { path = "crates/awpy", version = "3.1.2" }
+awpy = { path = "crates/awpy", version = "3.2.0" }
 awpy-proto = { path = "crates/awpy-proto", version = "0.1" }
-pbdems2 = "0.4.1"
+pbdems2 = "0.4.2"
 anyhow = "1.0"
 prost = "0.14"
 serde = { version = "1.0.228", features = ["derive"] }

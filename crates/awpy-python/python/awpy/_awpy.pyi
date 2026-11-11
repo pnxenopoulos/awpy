@@ -458,7 +458,7 @@ class Demo:
 
     @property
     def grenades(self) -> pl.DataFrame:
-        """Read cached CS2 grenade positions at each tick.
+        """Read cached CS2 grenade trajectories with observed start and end ticks.
 
         Returns:
             The cached Polars DataFrame. See the dataset guide for all columns.
@@ -528,7 +528,7 @@ class VisibilityChecker:
             an empty cache selects the latest release.
 
     Attributes:
-        path: The loaded mesh path, or ``None``.
+        path: The loaded mesh path.
         triangle_count: Number of collision triangles.
 
     Raises:
@@ -546,7 +546,7 @@ class VisibilityChecker:
         >>> clear = checker.is_visible((-158.6, 819.1, 103.7), (1258.0, 455.5, 181.2))
     """
 
-    path: Path | None
+    path: Path
     triangle_count: int
     def __init__(self, source: str | Path, *, version: int | None = None) -> None:
         """Load a CS2 collision mesh and build its spatial index.
@@ -676,7 +676,7 @@ class NavMesh:
             an empty cache selects the latest release.
 
     Attributes:
-        path: The loaded navigation file path, or ``None``.
+        path: The loaded navigation file path.
         version: Navigation file format version.
         sub_version: Navigation file format subversion.
         is_analyzed: Whether the file contains analyzed bot-navigation data.
@@ -697,7 +697,7 @@ class NavMesh:
         >>> route = nav.find_path((-680.0, 1500.0, 0.0), (1200.0, 2400.0, 0.0))
     """
 
-    path: Path | None
+    path: Path
     version: int
     sub_version: int
     is_analyzed: bool

@@ -405,6 +405,31 @@ def test_sampled_snapshots_resolve_weapon_entities(sampled_snapshots: pl.DataFra
     assert every.filter(pl.col("inventory") != "").height > 0
 
 
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+def test_snapshot_flashbang_count_drops_after_throw(match_demo: Demo) -> None:
+    # TipoYaSkrr throws at 17_464. The pawn's ammo drops from 2 to 1 at 17_471.
+    before, after = 17_463, 17_471
+    player = match_demo.snapshots(ticks=[before, after]).filter(
+        pl.col("steamid") == 76_561_199_181_888_914
+    )
+    assert player.select("tick", "flashbangs").sort("tick").rows() == [(before, 2), (after, 1)]
+
+
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+def test_snapshot_flashbang_count_uses_zero_ammo_with_inventory_handle(match_demo: Demo) -> None:
+    # TipoYaSkrr threw the last flashbang at 8_358. Its handle remains at 8_364.
+    player = match_demo.snapshots(ticks=8_364).filter(pl.col("steamid") == 76_561_199_181_888_914)
+    assert "flashbang" in player["inventory"].item().split(",")
+    assert player["flashbangs"].item() == 0
+
+
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+def test_snapshot_keeps_dead_player_identity(match_demo: Demo) -> None:
+    # Dren died at 2_371. At 3_001 the pawn has lost its current controller handle.
+    player = match_demo.snapshots(ticks=3_001).filter(pl.col("steamid") == 76_561_199_054_916_855)
+    assert player.select("name", "health").rows() == [("Dren", 0)]
+
+
 def test_seconds_sampling_converts_to_a_tick_stride(demo: Demo) -> None:
     per_sec = demo.snapshots(seconds=4.0)
     assert per_sec["tick"].unique().sort().diff().drop_nulls().max() == 256
@@ -499,7 +524,7 @@ def test_freeze_end_equipment_has_positive_value(first_snapshot: pl.DataFrame) -
 
 def test_freeze_end_loadouts_include_a_knife(first_snapshot: pl.DataFrame) -> None:
     snap = first_snapshot
-    assert snap["inventory"].str.contains("knife").all()
+    assert snap["inventory"].str.contains(r"(?:^|,)(?:bayonet|knife[^,]*)(?:,|$)").all()
 
 
 def test_pistol_round_loadouts_have_pistols_and_no_primary_weapon(
@@ -848,12 +873,29 @@ def test_grenade_schema(demo: Demo) -> None:
     assert (g["tick"] <= g["end_tick"]).all()
 
 
-def test_projectile_throwers_resolve(demo: Demo) -> None:
-    # Projectiles name their thrower through a networked pawn handle. Allow a
-    # few misses (e.g. a thrower who disconnects mid-flight), not a whole column.
-    for df in (demo.grenades, demo.smokes, demo.fires):
-        assert df["thrower_steamid"].is_not_null().mean() > 0.9
-        assert df["thrower_side"].is_not_null().mean() > 0.9
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+@pytest.mark.parametrize(
+    ("dataset", "start_tick", "entity_id", "steam_id"),
+    [
+        # Dren's smoke throw at 11_473 and darkness01's Molotov throw at 5_772.
+        pytest.param("smokes", 11_697, 440, 76_561_199_054_916_855, id="smoke"),
+        pytest.param("fires", 5_841, 154, 76_561_199_143_010_129, id="inferno"),
+    ],
+)
+def test_projectile_thrower_matches_steam_id(
+    match_demo: Demo, dataset: str, start_tick: int, entity_id: int, steam_id: int
+) -> None:
+    effects = getattr(match_demo, dataset)
+    matching = effects.filter(pl.col("start_tick") == start_tick, pl.col("entity_id") == entity_id)
+    assert matching["thrower_steamid"].to_list() == [steam_id]
+
+
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+def test_grenade_end_tick_includes_stationary_ticks(match_demo: Demo) -> None:
+    # Slot 71, serial 843 stops moving at 24_108 and stays active through 25_267.
+    samples = match_demo.grenades.filter(pl.col("entity_id") == 71, pl.col("entity_serial") == 843)
+    bounds = samples.group_by("start_tick", "end_tick").agg(pl.col("tick").max())
+    assert bounds.rows() == [(23_862, 25_267, 24_108)]
 
 
 def test_smoke_projectiles_keep_their_grenade_role(demo: Demo) -> None:
@@ -885,6 +927,21 @@ def test_fires_and_smokes(demo: Demo) -> None:
         assert df.height == df.select("entity_id", "entity_serial", "start_tick").n_unique()
         # A single burn covers a positive span of ticks.
         assert (df["end_tick"] > df["start_tick"]).all()
+
+
+@pytest.mark.parametrize("match_demo", ["hltv-de_mirage-2394170"], indirect=True)
+def test_smoke_ends_at_round_reset_when_slot_is_reused(match_demo: Demo) -> None:
+    # Slot 288, serial 582 was last active at 87_383, before the round reset at
+    # 87_384. The demo records no expire event before the next smoke in that slot.
+    # Serial 586 appears at 136_811, before its detonation at 137_301.
+    smokes = (
+        match_demo.smokes.filter(
+            (pl.col("entity_id") == 288) & pl.col("start_tick").is_in([86_593, 137_301])
+        )
+        .select("start_tick", "end_tick", "entity_serial")
+        .sort("start_tick")
+    )
+    assert smokes.rows() == [(86_593, 87_383, 582), (137_301, 138_713, 586)]
 
 
 def test_shot_schema(demo: Demo) -> None:

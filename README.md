@@ -229,71 +229,8 @@ See [awpy.readthedocs.io](https://awpy.readthedocs.io):
 
 ## Build and test Awpy
 
-```sh
-# Rust
-cargo fmt --all
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo nextest run --workspace --exclude awpy-python
-
-# Python (from crates/awpy-python)
-uv sync --locked --no-install-project
-uv run --no-sync maturin develop --release
-uv run --no-sync pytest -m "not fixtures"
-uv run --no-sync ruff check python tests
-uv run --no-sync ty check python
-```
-
-Use Python 3.11–3.14 for source builds with `maturin develop`.
-The release workflow builds a stable-ABI wheel with Python 3.14 for Python 3.15.
-
-### Python tests
-
-The `fixtures` marker selects all tests that need demo files, including schema,
-CLI, and example tests. CI runs these tests in a separate job. Run the offline
-tests with `pytest -m "not fixtures"`. Unknown markers and configuration keys
-are errors.
-
-For demo-backed tests, fetch the fixture manifest and allow downloads. Run these
-commands from `crates/awpy-python` after the development install:
-
-```sh
-mkdir -p tests/fixtures
-curl -fSL https://raw.githubusercontent.com/pnxenopoulos/awpy-fixtures/main/manifest.json \
-  -o tests/fixtures/manifest.json
-AWPY_RUN_FIXTURES=1 uv run --no-sync pytest -m fixtures --durations=10
-```
-
-By default, `pytest` uses cached demos and skips unavailable demos.
-`AWPY_RUN_FIXTURES=1` permits downloads and makes missing required demos or an
-empty manifest fail the tests.
-
-For a faster run, prepare the files before starting two test workers:
-
-```sh
-uv run --no-sync python tests/fixture_store.py
-AWPY_RUN_FIXTURES=1 AWPY_TICK_SEGMENTS=2 POLARS_MAX_THREADS=2 \
-  uv run --no-sync pytest -m fixtures -n 2 --dist=loadfile --durations=10
-```
-
-CI uses two workers and assigns complete test files to each worker. This keeps
-module fixtures shared. Use one worker if memory is limited. Avoid `-n auto`:
-each worker can also start parser and Polars threads.
-
-Fixtures verify each demo file once per worker session. Read-only checks share
-a parsed demo within a module or parameter; cache and parser-state tests create
-fresh instances. Do not change the cached DataFrames on a shared demo. Temporary asset
-caches and monkeypatches remain local to each test.
-
-CI installs dependencies from the lockfile and tests the prebuilt wheel with
-`uv run --no-sync`. This prevents uv from replacing the wheel with a source
-build. Keep timing reports enabled when changing fixtures or test scheduling.
-
-Each test checks one behavior. Several assertions can describe the same result.
-Use named tests for independent results and parameters for input variants.
-Share expensive, unchanged query results through module fixtures.
-Keep mutable test doubles, files, and settings local to each test.
-Remove duplicate checks only when the same behavior and parsing path remain covered.
-Use exact DataFrame comparisons when the result must match exactly.
+See [Contribute to Awpy](CONTRIBUTING.md) for branch names, development tools,
+local checks, demo fixtures, and dependency updates.
 
 ### Releases
 

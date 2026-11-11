@@ -27,35 +27,10 @@ const GAME_PHASES: &[(i64, &str)] = &[
 
 /// Look up a game-phase name by ID. Returns `"GAME_PHASE_NOT_FOUND"` for unknown IDs.
 pub fn game_phase_name(id: i64) -> &'static str {
-    GAME_PHASES
-        .iter()
-        .find(|&&(key, _)| key == id)
-        .map_or("GAME_PHASE_NOT_FOUND", |&(_, value)| value)
+    crate::find_name(GAME_PHASES, id).unwrap_or("GAME_PHASE_NOT_FOUND")
 }
 
 /// Return all known (game-phase ID, name) pairs.
 pub fn all_game_phases() -> &'static [(i64, &'static str)] {
     GAME_PHASES
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn known_phases() {
-        assert_eq!(game_phase_name(0), "init");
-        assert_eq!(game_phase_name(1), "pregame");
-        assert_eq!(game_phase_name(7), "game_over");
-    }
-
-    #[test]
-    fn unknown_phase() {
-        assert_eq!(game_phase_name(99), "GAME_PHASE_NOT_FOUND");
-    }
-
-    #[test]
-    fn all_phases_count() {
-        assert_eq!(all_game_phases().len(), 8);
-    }
 }

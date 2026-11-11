@@ -65,20 +65,8 @@
 
 use std::collections::HashSet;
 
-use crate::geometry::VisibilityMesh;
+use crate::geometry::{Vec3, VisibilityMesh, dot, sub};
 use crate::nav::{Nav, NavArea, PathWeight};
-
-type Vec3 = [f32; 3];
-
-#[inline]
-fn sub(a: Vec3, b: Vec3) -> Vec3 {
-    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
-}
-
-#[inline]
-fn dot(a: Vec3, b: Vec3) -> f32 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-}
 
 /// Which side a player is on. (The unassigned / spectator teams don't hold map
 /// control, so callers filter them out before building [`Observer`]s.)

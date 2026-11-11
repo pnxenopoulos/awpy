@@ -2,34 +2,23 @@
 
 ## 3.2.0
 
-- Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
-  segments per call on a rayon pool with the GIL released and return a Boolean
-  Polars Series. Answers match `is_visible` exactly.
-- Rust: add `Parser::events_with_players`, which returns the named game
-  events with each `userid`, `attacker` and `assister` resolved to a Steam
-  id, name, side, position and view angles at the event tick.
-- Name knife models (`knife_karambit`, `bayonet`, `knife_t`, ...) and the
-  MP5-SD, CZ75-Auto and Tec-9 in held weapons and inventories. Knives share
-  one network class, and the MP5-SD can arrive in the MP7 class, so these
-  resolve from the item definition like the M4, USP and R8 families.
-- Keep Steam ids and names for dead players in `snapshots()`. A pawn that
-  lost `m_hController` resolves through the controller whose `m_hPlayerPawn`
-  points at it, and rows report that controller's team, so a player who went
-  to spectate no longer appears on their old team.
-- Count held grenades from the pawn's ammo slots. Two flashbangs are one
-  weapon entity with ammo 2, so `flashbangs` (and the other grenade counts)
-  in `snapshots()` reported 1.
-- Add `start_tick` and `end_tick` to `grenades`: the projectile's lifetime,
-  including ticks it rests without moving. Rows are only emitted while a
-  projectile moves, so the last row is not when it detonated or expired.
-- Fix null `thrower_name`, `thrower_steamid` and `thrower_side` in `grenades`,
-  `smokes` and `fires`. Look up the projectile's networked owner handle as is
-  instead of decoding it as a game-event handle.
+- Use pbdems2 0.4.2 to look up grenade ammo slots.
+- Add Rust `Parser::events_with_players`. Read legacy events using end-of-tick
+  state. Check the full user ID before using a player slot.
+- Keep smoke and fire intervals that end at round reset. Fix thrower attribution.
+- Add `start_tick` and `end_tick` to grenade trajectories.
+- Keep dead players' identities and current teams in snapshots. Count grenades
+  from recorded ammo. Exclude spectators from round economy.
+- Identify knife and weapon variants in snapshots, inventories, and damage rows.
+- Add a contributor guide.
 
 ## 3.1.2
 
 - Add `llms.txt`. Put code examples first in the README and guides. Use clear headings.
 - Add Google-style docstrings and missing type hints. Match native API docstrings to Python stubs.
+- Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
+  segments per call on a rayon pool with the GIL released and return a Boolean
+  Polars Series. Answers match `is_visible` exactly.
 
 ## 3.1.1
 

@@ -105,11 +105,7 @@ impl DemoAdapter for Cs2Adapter {
                         context.create_string_table(create_string_table(message))?
                     }
                     MetadataValue::Update(message) => {
-                        context.update_string_table(UpdateStringTable::new(
-                            message.table_id.unwrap_or_default(),
-                            message.num_changed_entries.unwrap_or_default(),
-                            message.string_data.unwrap_or_default(),
-                        ))?
+                        context.update_string_table(update_string_table(message))?
                     }
                     MetadataValue::TickInterval(interval) => context.set_tick_interval(interval)?,
                     MetadataValue::Descriptor(id, descriptor) => {
@@ -322,11 +318,7 @@ impl Cs2Adapter {
                     if self.metadata_only {
                         self.record_metadata(MetadataValue::Update(message.clone()));
                     }
-                    context.update_string_table(UpdateStringTable::new(
-                        message.table_id.unwrap_or_default(),
-                        message.num_changed_entries.unwrap_or_default(),
-                        message.string_data.unwrap_or_default(),
-                    ))?;
+                    context.update_string_table(update_string_table(message))?;
                 }
                 svc::SERVER_INFO => {
                     let message = CsvcMsgServerInfo::decode(payload)?;
@@ -420,6 +412,14 @@ fn decode_send_tables(command: CDemoSendTables) -> Result<FlattenedSerializer> {
             })
             .collect(),
     ))
+}
+
+fn update_string_table(message: CsvcMsgUpdateStringTable) -> UpdateStringTable {
+    UpdateStringTable::new(
+        message.table_id.unwrap_or_default(),
+        message.num_changed_entries.unwrap_or_default(),
+        message.string_data.unwrap_or_default(),
+    )
 }
 
 fn create_string_table(message: CsvcMsgCreateStringTable) -> CreateStringTable {

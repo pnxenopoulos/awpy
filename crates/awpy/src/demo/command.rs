@@ -110,17 +110,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn command_name_stop() {
+    fn command_names_come_from_the_proto_enum() {
         assert_eq!(command_name(dem::STOP), "DEM_Stop");
-    }
-
-    #[test]
-    fn command_name_file_header() {
         assert_eq!(command_name(dem::FILE_HEADER), "DEM_FileHeader");
-    }
-
-    #[test]
-    fn command_name_unknown() {
         assert_eq!(command_name(9999), "DEM_Unknown");
     }
 
@@ -133,49 +125,38 @@ mod tests {
     }
 
     #[test]
-    fn legacy_user_message_names_stay_compatible() {
+    fn user_message_names_keep_legacy_names_and_fall_back_to_the_id() {
         for (id, name) in [
             (305, "CS_UM_SayText"),
             (306, "CS_UM_SayText2"),
             (307, "CS_UM_TextMsg"),
             (328, "CS_UM_UpdateTeamMoney"),
+            (101, "UM_AchievementEvent"),
+            (99999, "UserMessage_99999"),
         ] {
             assert_eq!(user_message_name(id), name);
+        }
+        for id in [305, 306, 307, 328] {
             assert!(is_user_message_type(id as u32));
         }
     }
 
     #[test]
-    fn user_message_name_known_base() {
-        // 101 is UM_AchievementEvent
-        let name = user_message_name(101);
-        assert!(!name.starts_with("UserMessage_"), "got: {name}");
-    }
-
-    #[test]
-    fn user_message_name_unknown() {
-        let name = user_message_name(99999);
-        assert_eq!(name, "UserMessage_99999");
-    }
-
-    #[test]
-    fn dem_constants_match_expected() {
-        assert_eq!(dem::STOP, 0);
-        assert_eq!(dem::FILE_HEADER, 1);
-        assert_eq!(dem::PACKET, 7);
-        assert_eq!(dem::SIGNON_PACKET, 8);
-    }
-
-    #[test]
-    fn ge_constants() {
-        assert_eq!(ge::SOURCE1_LEGACY_GAME_EVENT_LIST, 205);
-        assert_eq!(ge::SOURCE1_LEGACY_GAME_EVENT, 207);
-    }
-
-    #[test]
-    fn svc_constants() {
-        assert_eq!(svc::SERVER_INFO, 40);
-        assert_eq!(svc::PACKET_ENTITIES, 55);
-        assert_eq!(svc::USER_MESSAGE, 72);
+    fn wire_constants_match_the_demo_format() {
+        assert_eq!(
+            [dem::STOP, dem::FILE_HEADER, dem::PACKET, dem::SIGNON_PACKET],
+            [0, 1, 7, 8]
+        );
+        assert_eq!(
+            [
+                ge::SOURCE1_LEGACY_GAME_EVENT_LIST,
+                ge::SOURCE1_LEGACY_GAME_EVENT
+            ],
+            [205, 207]
+        );
+        assert_eq!(
+            [svc::SERVER_INFO, svc::PACKET_ENTITIES, svc::USER_MESSAGE],
+            [40, 55, 72]
+        );
     }
 }
