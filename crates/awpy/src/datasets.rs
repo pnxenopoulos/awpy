@@ -441,6 +441,11 @@ pub struct Grenade {
     pub x: f32,
     pub y: f32,
     pub z: f32,
+    /// First tick the projectile entity existed.
+    pub start_tick: i32,
+    /// Last tick the projectile entity existed, including ticks it rested
+    /// without moving (rows are only emitted when it moves).
+    pub end_tick: i32,
 }
 
 /// A single burning inferno (molotov / incendiary): one row per fire, with its
@@ -612,12 +617,16 @@ pub struct Projectiles {
 }
 
 /// Fill each trajectory instance's `end_tick` from the last tick its entity
-/// index was seen (grenades have no event window to bound them).
+/// was seen (grenades have no event window to bound them). Rows only exist for
+/// ticks the projectile moved, so the tracker's last-seen tick, already in
+/// `end_tick`, can be later than the last row.
 fn fill_trajectory_ends(rows: &mut [TrackedRow]) {
     let mut ends: HashMap<(EntityId, i32), i32> = HashMap::new();
     for r in rows.iter() {
-        let e = ends.entry((r.entity, r.start_tick)).or_insert(r.tick);
-        *e = (*e).max(r.tick);
+        let e = ends
+            .entry((r.entity, r.start_tick))
+            .or_insert(r.tick.max(r.end_tick));
+        *e = (*e).max(r.tick).max(r.end_tick);
     }
     for r in rows.iter_mut() {
         r.end_tick = ends[&(r.entity, r.start_tick)];
@@ -2189,6 +2198,8 @@ impl Parser {
         let mut prev: HashSet<EntityId> = HashSet::new();
         let mut starts: HashMap<EntityId, i32> = HashMap::new();
         let mut last_pos: HashMap<EntityId, (f32, f32, f32)> = HashMap::new();
+        // Last tick each trajectory entity existed, moving or not.
+        let mut last_seen: HashMap<EntityId, i32> = HashMap::new();
         let mut window_events = HashSet::new();
         for trackers in modes.values() {
             for (_, mode) in trackers {
@@ -2286,6 +2297,7 @@ impl Parser {
                         ProjMode::Trajectory => {
                             let id = e.id();
                             current.insert(id);
+                            last_seen.insert(id, ctx.tick());
                             if !prev.contains(&id) {
                                 starts.insert(id, ctx.tick());
                             }
@@ -2325,7 +2337,12 @@ impl Parser {
         })?;
         rows.retain_mut(|(kind, row)| {
             let window = match *kind {
-                ProjKind::Grenade => return true,
+                ProjKind::Grenade => {
+                    if let Some(&seen) = last_seen.get(&row.entity) {
+                        row.end_tick = seen;
+                    }
+                    return true;
+                }
                 ProjKind::Fire => WindowKind::Fire,
                 ProjKind::Smoke => WindowKind::Smoke,
             };
@@ -2406,6 +2423,8 @@ impl Parser {
                 x: r.x,
                 y: r.y,
                 z: r.z,
+                start_tick: r.start_tick,
+                end_tick: r.end_tick,
             })
             .collect();
         let fires = collapse_instances(fire_rows)
