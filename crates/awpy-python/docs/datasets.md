@@ -189,13 +189,15 @@ Bomb actions with the acting player and their position. Columns: `tick`,
 demo.grenades
 ```
 
-Thrown-grenade **trajectories** — one row per tick each grenade projectile is in
-flight (samples stop once it settles). Columns: `tick`, `thrower_name`,
-`thrower_steamid`, `thrower_side`, `type` (`smoke` / `he` / `flashbang` /
-`molotov` / `decoy`), `entity_id`, `entity_serial`, `x`, `y`, `z`,
-`start_tick`, `end_tick`. `start_tick` and `end_tick` bound the projectile's
-lifetime, including ticks it rests without moving (a smoke until its cloud
-expires, an HE until its entity is removed after the blast).
+Awpy records a grenade's first observed position and each position change.
+The columns are `tick`, `thrower_name`, `thrower_steamid`, `thrower_side`,
+`type`, `entity_id`, `entity_serial`, `x`, `y`, `z`, `start_tick`, and
+`end_tick`.
+
+The start and end ticks bound each observed trajectory. The end includes
+stationary ticks. When a grenade leaves view and returns, it starts a new
+trajectory with the same entity ID and serial. Use `entity_id`,
+`entity_serial`, and `start_tick` to identify a trajectory within a demo part.
 
 <a id="fires--smokes"></a>
 <a id="fires-smokes"></a>
@@ -394,7 +396,7 @@ demo.stats.filter(pl.col("clutches_played") > 0).select(
 demo.round_economy
 ```
 
-One row per (round, side), with equipment value at freeze end and buy type. Columns: `round_num`,
+One row per playing side (T or CT) per round, with equipment value at freeze end and buy type. Columns: `round_num`,
 `side`, `equipment_value`, `buy_type`, `n_players`. `buy_type` is `pistol` / `eco`
 / `force` / `full` — see the {doc}`Reference <reference>` for the thresholds and
 how pistol rounds are detected. (This is the *current* equipment at freeze end —

@@ -2,17 +2,21 @@
 
 ## 3.1.3
 
-- Use pawn ammo to count held grenades in `snapshots()`, including two flashbangs.
+- Use recorded ammo to count held grenades in `snapshots()`, including zero.
+  Count inventory handles when the ammo field is missing.
 - Add a contributor guide for branch names, local checks, and dependency updates.
-- Keep dead players' names and Steam IDs in snapshots. Report the controller's current team.
-- Resolve knife models and weapon variants in snapshots and inventories.
+- Keep dead players' names and Steam IDs in snapshots. Report the controller's
+  current team. Exclude spectators from round economy.
+- Name knife models, MP5-SD, and CZ75-Auto in snapshots and inventories from
+  item definitions.
 - Keep smokes and fires that a round reset removes without an expire event.
 - Fix thrower attribution in `grenades`, `smokes`, and `fires`. Use the
   projectile's networked handles. Try the owner if the thrower handle does not
   resolve to a player pawn.
 - Show USP-S, M4A1-S, and Revolver variants in damage rows. Keep the same weapon
   names in serial and parallel parses.
-- Add observed `start_tick` and `end_tick` to `grenades`, including stationary ticks.
+- Add observed `start_tick` and `end_tick` to `grenades`, including stationary
+  ticks. Start a new trajectory when a grenade returns to view.
 
 ## 3.1.2
 

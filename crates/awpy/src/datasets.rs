@@ -434,8 +434,7 @@ pub struct BombEvent {
     pub z: Option<f32>,
 }
 
-/// One sample of a thrown grenade's trajectory (one row per tick the projectile
-/// is live). See [`Parser::grenades`].
+/// One position sample of a thrown grenade. See [`Parser::grenades`].
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct Grenade {
     pub tick: i32,
@@ -449,10 +448,9 @@ pub struct Grenade {
     pub x: f32,
     pub y: f32,
     pub z: f32,
-    /// First tick the projectile entity existed.
+    /// First tick of this observed trajectory.
     pub start_tick: i32,
-    /// Last tick the projectile entity existed, including ticks it rested
-    /// without moving (rows are only emitted when it moves).
+    /// Last observed tick of this trajectory, including stationary ticks.
     pub end_tick: i32,
 }
 
@@ -662,20 +660,37 @@ pub struct Projectiles {
     pub smokes: Vec<Smoke>,
 }
 
-/// Fill each trajectory instance's `end_tick` from the last tick its entity
-/// was seen (grenades have no event window to bound them). Rows only exist for
-/// ticks the projectile moved, so the tracker's last-seen tick, already in
-/// `end_tick`, can be later than the last row.
-fn fill_trajectory_ends(rows: &mut [TrackedRow]) {
-    let mut ends: HashMap<(EntityId, i32), i32> = HashMap::new();
-    for r in rows.iter() {
-        let e = ends
-            .entry((r.entity, r.start_tick))
-            .or_insert(r.tick.max(r.end_tick));
-        *e = (*e).max(r.tick).max(r.end_tick);
+/// Track each stretch of observed grenade positions separately.
+#[derive(Default)]
+struct TrajectoryTracker {
+    active: HashMap<EntityId, ActiveTrajectory>,
+    ends: HashMap<(EntityId, i32), i32>,
+}
+
+struct ActiveTrajectory {
+    start_tick: i32,
+    position: Option<(f32, f32, f32)>,
+}
+
+impl TrajectoryTracker {
+    /// Return the start tick when this observation needs a new position sample.
+    fn observe(&mut self, entity: EntityId, tick: i32, position: (f32, f32, f32)) -> Option<i32> {
+        let active = self.active.entry(entity).or_insert(ActiveTrajectory {
+            start_tick: tick,
+            position: None,
+        });
+        self.ends.insert((entity, active.start_tick), tick);
+        (active.position.replace(position) != Some(position)).then_some(active.start_tick)
     }
-    for r in rows.iter_mut() {
-        r.end_tick = ends[&(r.entity, r.start_tick)];
+
+    fn finish_tick(&mut self, tick: i32) {
+        // An entity can leave view and later return with the same serial.
+        self.active
+            .retain(|&entity, trajectory| self.ends[&(entity, trajectory.start_tick)] == tick);
+    }
+
+    fn end_tick(&self, entity: EntityId, start_tick: i32) -> i32 {
+        self.ends[&(entity, start_tick)]
     }
 }
 
@@ -832,6 +847,61 @@ impl CtrlKeys {
             player_pawn: key("m_hPlayerPawn"),
             team: key("m_iTeamNum"),
         }
+    }
+}
+
+/// Fill the snapshot identity from the current controller or the pawn's owner.
+fn fill_snapshot_identity<'a>(
+    state: &mut PlayerState,
+    pawn: &Entity,
+    entities: &'a EntityContainer,
+    pk: &PawnKeys,
+    ck: &CtrlKeys,
+    owners: &mut Option<HashMap<EntityId, &'a Entity>>,
+) {
+    let controller = |key| {
+        pawn.get_handle(key)
+            .and_then(|handle| entities.get_by_handle(handle))
+            .filter(|entity| entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS)
+    };
+    let owned_pawn = |controller: &Entity| {
+        controller
+            .get_handle(ck.player_pawn)
+            .and_then(|handle| entities.get_by_handle(handle))
+    };
+    let controller = controller(pk.controller)
+        .or_else(|| {
+            // Dead pawns can lose their current handle. An original controller
+            // is only a match if it still points back to this pawn.
+            controller(pk.original_controller).filter(|controller| {
+                controller.active && owned_pawn(controller).is_some_and(|e| e.id() == pawn.id())
+            })
+        })
+        .or_else(|| {
+            // Build the reverse index once per tick, only if both handles fail.
+            owners
+                .get_or_insert_with(|| {
+                    entities
+                        .iter()
+                        .filter(|(_, e)| {
+                            e.active && e.class_name.as_ref() == PLAYER_CONTROLLER_CLASS
+                        })
+                        .filter_map(|(_, controller)| {
+                            Some((owned_pawn(controller)?.id(), controller))
+                        })
+                        .collect()
+                })
+                .get(&pawn.id())
+                .copied()
+        });
+    if let Some(controller) = controller {
+        let team = controller.get_i64(ck.team);
+        if team > 0 {
+            state.side = Some(team_name(team));
+        }
+        state.steamid = controller.get_u64(ck.steamid);
+        state.name = controller.get_string(ck.name);
+        state.money = i32::try_from(controller.get_i64(ck.money)).unwrap_or_default();
     }
 }
 
@@ -2300,9 +2370,8 @@ impl Parser {
     /// `modes` maps each tracked class to one or more `(destination, sampling)`
     /// pairs — a `CSmokeGrenadeProjectile` feeds both the grenade dataset (its
     /// throw, as a trajectory) and the smoke dataset (its cloud, windowed). Rows
-    /// come back interleaved, each tagged with its [`ProjKind`]; the caller
-    /// splits by tag. Trajectory rows carry a placeholder `end_tick` of `0` —
-    /// fill it with [`fill_trajectory_ends`].
+    /// come back interleaved, each tagged with its [`ProjKind`] and with its
+    /// end tick filled in. The caller splits them by tag.
     fn track_projectiles(
         &self,
         modes: &HashMap<&str, Vec<(ProjKind, ProjMode)>>,
@@ -2322,14 +2391,7 @@ impl Parser {
         // Retry unresolved entries on later ticks.
         let mut throwers: HashMap<EntityId, ResolvedPlayer> = HashMap::new();
 
-        // Trajectory bookkeeping (grenades only): identities seen last tick,
-        // each live instance's start tick, and its last position. Including the
-        // serial prevents a reused entity slot from continuing an old trajectory.
-        let mut prev: HashSet<EntityId> = HashSet::new();
-        let mut starts: HashMap<EntityId, i32> = HashMap::new();
-        let mut last_pos: HashMap<EntityId, (f32, f32, f32)> = HashMap::new();
-        // Last tick each trajectory entity existed, moving or not.
-        let mut last_seen: HashMap<EntityId, i32> = HashMap::new();
+        let mut trajectories = TrajectoryTracker::default();
         let mut window_events = HashSet::new();
         for trackers in modes.values() {
             for (_, mode) in trackers {
@@ -2368,7 +2430,6 @@ impl Parser {
             }
             let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
             let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
-            let mut current: HashSet<EntityId> = HashSet::new();
 
             for (_, e) in ctx.entities().iter() {
                 if !e.active {
@@ -2411,12 +2472,7 @@ impl Parser {
                 };
 
                 for (kind, mode) in trackers {
-                    // Windowed classes only emit inside an active window;
-                    // trajectories derive the start from entity presence and skip
-                    // ticks with no movement. Only trajectories touch prev /
-                    // starts / last_pos, matching the per-class passes this
-                    // replaced.
-                    let (start_tick, end_tick) = match mode {
+                    let start_tick = match mode {
                         ProjMode::Windowed(kind) => {
                             let Some(&start) = active_windows.get(&(*kind, e.index)) else {
                                 continue;
@@ -2425,21 +2481,14 @@ impl Parser {
                                 active_windows.remove(&(*kind, e.index));
                                 continue;
                             }
-                            (start, 0)
+                            start
                         }
                         ProjMode::Trajectory => {
-                            let id = e.id();
-                            current.insert(id);
-                            last_seen.insert(id, ctx.tick());
-                            if !prev.contains(&id) {
-                                starts.insert(id, ctx.tick());
-                            }
-                            let start = *starts.get(&id).unwrap_or(&ctx.tick());
-                            if last_pos.get(&id) == Some(&(x, y, z)) {
+                            let Some(start) = trajectories.observe(entity, ctx.tick(), (x, y, z))
+                            else {
                                 continue;
-                            }
-                            last_pos.insert(id, (x, y, z));
-                            (start, 0)
+                            };
+                            start
                         }
                     };
 
@@ -2454,7 +2503,7 @@ impl Parser {
                             z,
                             thrower: thrower.clone(),
                             start_tick,
-                            end_tick,
+                            end_tick: 0,
                         },
                     ));
                 }
@@ -2464,16 +2513,12 @@ impl Parser {
                     active_windows.remove(&(kind, id));
                 }
             }
-            starts.retain(|id, _| current.contains(id));
-            last_pos.retain(|id, _| current.contains(id));
-            prev = current;
+            trajectories.finish_tick(ctx.tick());
         })?;
         rows.retain_mut(|(kind, row)| {
             let window = match *kind {
                 ProjKind::Grenade => {
-                    if let Some(&seen) = last_seen.get(&row.entity) {
-                        row.end_tick = seen;
-                    }
+                    row.end_tick = trajectories.end_tick(row.entity, row.start_tick);
                     return true;
                 }
                 ProjKind::Fire => WindowKind::Fire,
@@ -2495,10 +2540,9 @@ impl Parser {
     /// decode pass instead of one each.
     ///
     /// They all track projectile entities against player pawn / controller
-    /// state, so one `track_projectiles` pass over
-    /// the union of their classes yields all three. The rows are split by class
-    /// and finished per dataset (trajectory end-fill for grenades; instance
-    /// collapse for fires / smokes).
+    /// state, so one `track_projectiles` pass over the union of their classes
+    /// yields all three. Fire and smoke samples are collapsed to one row per
+    /// effect.
     pub fn projectiles(&self) -> Result<Projectiles> {
         self.projectiles_selected(ProjectileSelection::ALL)
     }
@@ -2542,7 +2586,6 @@ impl Parser {
                 ProjKind::Smoke => smoke_rows.push(row),
             }
         }
-        fill_trajectory_ends(&mut grenade_rows);
 
         let grenades = grenade_rows
             .into_iter()
@@ -2600,8 +2643,9 @@ impl Parser {
         })
     }
 
-    /// Trajectories of thrown grenades: one row per tick each grenade projectile
-    /// is live, with its position and resolved thrower.
+    /// Position samples and observed bounds for thrown grenade trajectories.
+    /// The first observation and each position change emit a sample. A grenade
+    /// that returns to view starts a new trajectory, even with the same handle.
     ///
     /// Use [`Parser::projectiles`] or [`Parser::projectiles_selected`] to
     /// collect several projectile datasets in one pass.
@@ -3205,13 +3249,28 @@ impl Parser {
             ticks.insert(t);
         }
         let states = self.snapshots_query(None, &ticks, i32::MIN, i32::MAX)?;
+        Ok(Self::summarize_round_economy(
+            &rounds,
+            &tick_to_round,
+            &states,
+            pistols,
+        ))
+    }
 
+    fn summarize_round_economy(
+        rounds: &[Round],
+        tick_to_round: &HashMap<i32, usize>,
+        states: &[PlayerState],
+        pistols: Option<&HashSet<i32>>,
+    ) -> Vec<RoundEconomy> {
         // (round index, side) -> (equipment sum, player count), plus each round's
         // per-player side, for detecting the halftime side switch below.
         let mut agg: HashMap<(usize, &'static str), (i32, i32)> = HashMap::new();
         let mut round_sides: HashMap<usize, HashMap<u64, &'static str>> = HashMap::new();
-        for s in &states {
-            if let (Some(&round), Some(side)) = (tick_to_round.get(&s.tick), s.side) {
+        for s in states {
+            if let (Some(&round), Some(side @ ("terrorist" | "counter-terrorist"))) =
+                (tick_to_round.get(&s.tick), s.side)
+            {
                 // Current equipment at freeze end is the finished buy (the
                 // round-start field is the pre-buy carry-over).
                 let e = agg.entry((round, side)).or_insert((0, 0));
@@ -3262,7 +3321,7 @@ impl Parser {
             )
             .collect();
         out.sort_by_key(|r| (r.round_num, r.side));
-        Ok(out)
+        out
     }
 
     /// The ticks on which any of the named game events fired.
@@ -3294,20 +3353,7 @@ impl Parser {
     /// field keys resolved once (see [`SnapshotKeys`]) rather than per tick.
     fn player_states(ctx: &Context, keys: &SnapshotKeys) -> Vec<PlayerState> {
         let (pk, ck) = (&keys.pawn, &keys.ctrl);
-        // Each controller's own pawn. Dead pawns can drop `m_hController`, but
-        // their controller still points at them; a pawn no controller claims
-        // (e.g. left behind by a disconnected player) stays anonymous.
-        let owners: HashMap<EntityId, &Entity> = ctx
-            .entities()
-            .iter()
-            .filter(|(_, e)| e.active && e.class_name.as_ref() == PLAYER_CONTROLLER_CLASS)
-            .filter_map(|(_, controller)| {
-                let pawn = controller
-                    .get_handle(ck.player_pawn)
-                    .and_then(|handle| ctx.entities().get_by_handle(handle))?;
-                Some((pawn.id(), controller))
-            })
-            .collect();
+        let mut owners = None;
         let mut out = Vec::new();
         for (_, pawn) in ctx.entities().iter() {
             if !pawn.active || pawn.class_id != keys.pawn_class {
@@ -3384,11 +3430,8 @@ impl Parser {
                 &mut state.decoy_grenades,
             ];
             for (held, key) in grenades.into_iter().zip(keys.grenade_ammo) {
-                if let Some(ammo) = key
-                    .filter(|key| pawn.fields.contains_key(key))
-                    .and_then(|key| pawn.get_u64(Some(key)))
-                {
-                    *held = (*held).max(i32::try_from(ammo).unwrap_or(i32::MAX));
+                if let Some(ammo) = pawn.get_u64(key) {
+                    *held = i32::try_from(ammo).unwrap_or(i32::MAX);
                 }
             }
             // Skip reserve/uninitialized pawns: the engine keeps spare
@@ -3402,21 +3445,7 @@ impl Parser {
                 continue;
             }
             state.side = Some(team_name(team));
-            let controller = pawn
-                .get_handle(pk.controller)
-                .and_then(|h| ctx.entities().get_by_handle(h))
-                .or_else(|| owners.get(&pawn.id()).copied());
-            if let Some(ctrl) = controller {
-                // The controller holds the player's current team. A player who
-                // went to spectate leaves a dead pawn behind on their old team.
-                let player_team = ctrl.get_i64(ck.team);
-                if player_team > 0 {
-                    state.side = Some(team_name(player_team));
-                }
-                state.steamid = ctrl.get_u64(ck.steamid);
-                state.name = ctrl.get_string(ck.name);
-                state.money = i32::try_from(ctrl.get_i64(ck.money)).unwrap_or_default();
-            }
+            fill_snapshot_identity(&mut state, pawn, ctx.entities(), pk, ck, &mut owners);
             out.push(state);
         }
         out
@@ -3680,6 +3709,24 @@ impl Parser {
 mod tests {
     use super::*;
 
+    #[test]
+    fn grenade_reappearance_starts_a_new_trajectory() {
+        let mut tracker = TrajectoryTracker::default();
+        let entity = EntityId::new(12, 5);
+        let position = (1.0, 2.0, 3.0);
+
+        assert_eq!(tracker.observe(entity, 10, position), Some(10));
+        tracker.finish_tick(10);
+        tracker.finish_tick(11); // The grenade is out of view.
+        assert_eq!(tracker.observe(entity, 12, position), Some(12));
+        tracker.finish_tick(12);
+
+        assert_eq!(
+            (tracker.end_tick(entity, 10), tracker.end_tick(entity, 12)),
+            (10, 12)
+        );
+    }
+
     // ── EffectWindows: smoke / fire windows with no expire event ──────────────
     #[test]
     fn effect_window_without_expire_ends_at_owner_last_tick() {
@@ -3741,28 +3788,91 @@ mod tests {
         }
     }
 
-    /// Dead players keep their Steam id in snapshots (set `AWPY_TEST_DEMO`).
-    /// Ignored by default; run with `--ignored`.
     #[test]
-    #[ignore = "requires AWPY_TEST_DEMO to point at a real .dem file"]
-    fn snapshots_keep_dead_player_identity() {
-        let path = std::env::var("AWPY_TEST_DEMO").unwrap();
-        let parser = Parser::from_file(std::path::Path::new(&path)).unwrap();
-        let states = parser
-            .snapshots_query(Some(64), &HashSet::new(), 0, i32::MAX)
-            .unwrap();
-        let dead: Vec<&PlayerState> = states
+    fn snapshot_identity_follows_controller_into_spectator() {
+        use crate::entity::FieldValue;
+
+        let pk = PawnKeys {
+            cell: [None; 3],
+            offset: [None; 3],
+            team: None,
+            controller: Some(0),
+            original_controller: None,
+        };
+        let ck = CtrlKeys {
+            steamid: Some(0),
+            name: None,
+            money: None,
+            player_pawn: Some(1),
+            team: Some(2),
+        };
+        let mut entities = EntityContainer::new();
+        let mut pawn =
+            Entity::from_fields(7, 1, 0, PLAYER_PAWN_CLASS, true, Default::default()).unwrap();
+        let mut controller =
+            Entity::from_fields(2, 1, 0, PLAYER_CONTROLLER_CLASS, true, Default::default())
+                .unwrap();
+        let handle = |slot| FieldValue::U32((ENTITY_HANDLE_INDEX_MASK + 1) | slot);
+        pawn.fields.insert(0, handle(2));
+        controller.fields.insert(0, FieldValue::U64(42));
+        controller.fields.insert(1, handle(7));
+        controller.fields.insert(2, FieldValue::U32(2));
+        entities.insert(pawn.clone()).unwrap();
+        entities.insert(controller.clone()).unwrap();
+
+        let mut state = PlayerState {
+            side: Some("terrorist"),
+            ..Default::default()
+        };
+        fill_snapshot_identity(&mut state, &pawn, &entities, &pk, &ck, &mut None);
+        assert_eq!((state.steamid, state.side), (Some(42), Some("terrorist")));
+
+        // The old pawn retains its team and loses its controller handle.
+        pawn.fields.insert(0, FieldValue::U32(u32::MAX));
+        controller.fields.insert(2, FieldValue::U32(1));
+        entities.insert(pawn.clone()).unwrap();
+        entities.insert(controller).unwrap();
+        fill_snapshot_identity(&mut state, &pawn, &entities, &pk, &ck, &mut None);
+        assert_eq!((state.steamid, state.side), (Some(42), Some("spectator")));
+    }
+
+    #[test]
+    fn round_economy_ignores_spectator_snapshots() {
+        let rounds = [Round {
+            round_num: 1,
+            start_tick: Some(0),
+            freeze_end_tick: Some(10),
+            end_tick: 100,
+            official_end_tick: None,
+            winner: 2,
+            winner_side: "terrorist".into(),
+            reason: 0,
+            reason_name: String::new(),
+            is_knife_round: false,
+        }];
+        let states = [
+            PlayerState {
+                tick: 10,
+                side: Some("terrorist"),
+                steamid: Some(42),
+                equipment_value: 500,
+                ..Default::default()
+            },
+            PlayerState {
+                tick: 10,
+                side: Some("spectator"),
+                steamid: Some(43),
+                equipment_value: 1_000,
+                ..Default::default()
+            },
+        ];
+        let rows =
+            Parser::summarize_round_economy(&rounds, &HashMap::from([(10, 0)]), &states, None);
+        let totals: Vec<_> = rows
             .iter()
-            .filter(|s| s.health == 0 && s.side != Some("spectator"))
+            .map(|row| (row.side, row.n_players, row.equipment_value))
             .collect();
-        assert!(!dead.is_empty());
-        let missing = dead.iter().filter(|s| s.steamid.is_none()).count();
-        assert_eq!(
-            missing,
-            0,
-            "{missing} of {} dead rows lack a steamid",
-            dead.len()
-        );
+        assert_eq!(totals, [("terrorist", 1, 500)]);
     }
 
     #[test]

@@ -247,8 +247,8 @@ const SMGS: &[WeaponVariant] = &[
         name: "mp5sd",
     },
 ];
-/// The P250 and CZ75-Auto fill the same loadout slot.
-const AUTO_PISTOLS: &[WeaponVariant] = &[
+/// Some demos carry a CZ75-Auto in the P250 network class.
+const P250_VARIANTS: &[WeaponVariant] = &[
     WeaponVariant {
         definition: 36,
         subclass: 1_573_262_270,
@@ -258,19 +258,6 @@ const AUTO_PISTOLS: &[WeaponVariant] = &[
         definition: 63,
         subclass: 3_464_182_751,
         name: "cz75a",
-    },
-];
-/// The Five-SeveN and Tec-9 fill the same loadout slot.
-const SLOT_PISTOLS: &[WeaponVariant] = &[
-    WeaponVariant {
-        definition: 3,
-        subclass: 3_661_698_933,
-        name: "fiveseven",
-    },
-    WeaponVariant {
-        definition: 30,
-        subclass: 884_934_217,
-        name: "tec9",
     },
 ];
 /// Knives share one network class; the item definition names the model.
@@ -413,8 +400,7 @@ impl WeaponIdentity {
             "CWeaponM4A1" | "CWeaponM4A1Silencer" => RIFLES,
             "CWeaponHKP2000" | "CWeaponUSPSilencer" => STARTING_PISTOLS,
             "CWeaponMP7" | "CWeaponMP5SD" => SMGS,
-            "CWeaponP250" | "CWeaponCZ75a" => AUTO_PISTOLS,
-            "CWeaponFiveSeven" | "CWeaponTec9" => SLOT_PISTOLS,
+            "CWeaponP250" => P250_VARIANTS,
             knife if knife.starts_with("CKnife") => KNIVES,
             _ => &[],
         }
@@ -560,8 +546,7 @@ mod tests {
             ("CWeaponHKP2000", STARTING_PISTOLS, Secondary),
             ("CKnife", KNIVES, Melee),
             ("CWeaponMP7", SMGS, Primary),
-            ("CWeaponP250", AUTO_PISTOLS, Secondary),
-            ("CWeaponFiveSeven", SLOT_PISTOLS, Secondary),
+            ("CWeaponP250", P250_VARIANTS, Secondary),
         ] {
             for variant in variants {
                 let info = entity_info(class, Some(variant.definition), None);
@@ -579,8 +564,7 @@ mod tests {
             ("CWeaponHKP2000", STARTING_PISTOLS),
             ("CKnife", KNIVES),
             ("CWeaponMP7", SMGS),
-            ("CWeaponP250", AUTO_PISTOLS),
-            ("CWeaponFiveSeven", SLOT_PISTOLS),
+            ("CWeaponP250", P250_VARIANTS),
         ] {
             for variant in variants {
                 for definition in [None, Some(0), Some(u32::MAX)] {
@@ -640,6 +624,20 @@ mod tests {
             entity_info("CKnifeGG", Some(64), Some(966_714_057)).name,
             "knife"
         );
+    }
+
+    #[test]
+    fn dedicated_pistol_classes_ignore_foreign_item_definitions() {
+        for (class, definition, subclass, name) in [
+            ("CWeaponCZ75a", 36, 1_573_262_270, "cz75a"),
+            ("CWeaponFiveSeven", 30, 884_934_217, "fiveseven"),
+            ("CWeaponTec9", 3, 3_661_698_933, "tec9"),
+        ] {
+            assert_eq!(
+                entity_info(class, Some(definition), Some(subclass)).name,
+                name
+            );
+        }
     }
 
     #[test]

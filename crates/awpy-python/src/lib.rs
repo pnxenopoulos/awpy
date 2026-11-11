@@ -803,7 +803,7 @@ impl Demo {
         self.event_frame(py, "bomb")
     }
 
-    /// Read cached CS2 grenade positions at each tick.
+    /// Read cached CS2 grenade trajectories with observed start and end ticks.
     ///
     /// Returns:
     ///     The cached Polars DataFrame. See the dataset guide for all columns.
@@ -1393,6 +1393,7 @@ impl Demo {
                 let current: HashMap<_, _> = states
                     .iter()
                     .filter(|s| Some(s.tick) == round.freeze_end_tick)
+                    .filter(|s| matches!(s.side, Some("terrorist" | "counter-terrorist")))
                     .filter_map(|s| s.steamid.filter(|&id| id != 0).zip(s.side))
                     .collect();
                 if pistols.is_empty() {

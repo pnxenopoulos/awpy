@@ -41,6 +41,14 @@ def test_shared_class_loadouts(
     _check_loadout(match_demo, weapon, column)
 
 
+@pytest.mark.parametrize("match_demo", ["valve-de_mirage-472514809"], indirect=True)
+def test_snapshot_resolves_widowmaker_knife(match_demo: Demo) -> None:
+    # At tick 1_000, TipoYaSkrr holds a CKnife with item definition 523.
+    player = match_demo.snapshots(ticks=1_000).filter(pl.col("steamid") == 76_561_199_181_888_914)
+    assert player["active_weapon"].to_list() == ["knife_widowmaker"]
+    assert "knife_widowmaker" in player["inventory"].item().split(",")
+
+
 @pytest.fixture(scope="module")
 def legacy_reload_states(match_demo: Demo) -> pl.DataFrame:
     states = match_demo.snapshots(every=64)
@@ -98,7 +106,7 @@ def test_kensizor_round_two_revolver(
     assert states["tick"].to_list() == ticks
     assert states["active_weapon"].to_list() == ["revolver", "revolver"]
     assert states["secondary_weapon"].to_list() == ["revolver", "revolver"]
-    assert states["inventory"].to_list() == ["knife,revolver", "knife,revolver"]
+    assert states["inventory"].to_list() == ["knife_m9_bayonet,revolver"] * len(ticks)
     shots = match_demo.shots.filter(pl.col("tick").is_in(ticks) & (pl.col("name") == "kensizor"))
     assert shots["weapon"].to_list() == ["weapon_revolver", "weapon_revolver"]
 

@@ -458,7 +458,7 @@ class Demo:
 
     @property
     def grenades(self) -> pl.DataFrame:
-        """Read cached CS2 grenade positions at each tick.
+        """Read cached CS2 grenade trajectories with observed start and end ticks.
 
         Returns:
             The cached Polars DataFrame. See the dataset guide for all columns.
