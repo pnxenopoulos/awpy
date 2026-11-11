@@ -876,6 +876,21 @@ def test_fires_and_smokes(demo: Demo) -> None:
         assert (df["end_tick"] > df["start_tick"]).all()
 
 
+@pytest.mark.parametrize("match_demo", ["hltv-de_mirage-2394170"], indirect=True)
+def test_smoke_ends_at_round_reset_when_slot_is_reused(match_demo: Demo) -> None:
+    # Slot 288, serial 582 was last active at 87_383, before the round reset at
+    # 87_384. The demo records no expire event before the next smoke in that slot.
+    # Serial 586 appears at 136_811, before its detonation at 137_301.
+    smokes = (
+        match_demo.smokes.filter(
+            (pl.col("entity_id") == 288) & pl.col("start_tick").is_in([86_593, 137_301])
+        )
+        .select("start_tick", "end_tick", "entity_serial")
+        .sort("start_tick")
+    )
+    assert smokes.rows() == [(86_593, 87_383, 582), (137_301, 138_713, 586)]
+
+
 def test_shot_schema(demo: Demo) -> None:
     shots = demo.shots
     assert isinstance(shots, pl.DataFrame)

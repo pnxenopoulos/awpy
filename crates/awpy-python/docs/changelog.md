@@ -1,15 +1,17 @@
 # Changelog
 
-## 3.2.0
+## 3.1.3
 
-- Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
-  segments per call on a rayon pool with the GIL released and return a Boolean
-  Polars Series. Answers match `is_visible` exactly.
+- Add a contributor guide for branch names, local checks, and dependency updates.
+- Keep smokes and fires that a round reset removes without an expire event.
 
 ## 3.1.2
 
 - Add `llms.txt`. Put code examples first in the README and guides. Use clear headings.
 - Add Google-style docstrings and missing type hints. Match native API docstrings to Python stubs.
+- Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
+  segments per call on a rayon pool with the GIL released and return a Boolean
+  Polars Series. Answers match `is_visible` exactly.
 
 ## 3.1.1
 
