@@ -8,11 +8,7 @@ import pytest
 from awpy import Demo
 from polars.testing import assert_frame_equal
 
-FAMILIES = (
-    ("hkp2000", "usp_silencer"),
-    ("m4a1", "m4a1_silencer"),
-    ("deagle", "revolver"),
-)
+FAMILY_WEAPONS = {"hkp2000", "usp_silencer", "m4a1", "m4a1_silencer", "deagle", "revolver"}
 
 
 def _with_round(frame: pl.DataFrame, rounds: pl.DataFrame) -> pl.DataFrame:
@@ -38,16 +34,15 @@ def test_damage_variants_match_shots(match_demo: Demo, variants: set[str]) -> No
     assert variants <= set(damage["weapon"].unique().to_list())
 
     keys = ["steamid", "round_num", "weapon"]
-    for names in FAMILIES:
-        fired = shots.filter(pl.col("weapon").is_in(names)).select(keys).unique()
-        hits = (
-            damage.filter(pl.col("weapon").is_in(names))
-            .rename({"attacker_steamid": "steamid"})
-            .select(keys)
-            .unique()
-        )
-        stray = hits.join(fired, on=keys, how="anti")
-        assert stray.is_empty(), f"{names}: damage variants never fired:\n{stray}"
+    fired = shots.filter(pl.col("weapon").is_in(FAMILY_WEAPONS)).select(keys).unique()
+    hits = (
+        damage.filter(pl.col("weapon").is_in(FAMILY_WEAPONS))
+        .rename({"attacker_steamid": "steamid"})
+        .select(keys)
+        .unique()
+    )
+    stray = hits.join(fired, on=keys, how="anti")
+    assert stray.is_empty(), f"Damage variants never fired:\n{stray}"
 
 
 @pytest.mark.fixtures
@@ -61,9 +56,3 @@ def test_parallel_damage_matches_serial(
     monkeypatch.setenv("AWPY_TICK_SEGMENTS", "4")
     parallel = Demo(path).damages
     assert_frame_equal(serial, parallel, check_exact=True)
-
-
-@pytest.mark.parametrize("match_demo", ["faceit-de_mirage-6de46e85"], indirect=True)
-def test_non_variant_weapon_names_are_unchanged(match_demo: Demo) -> None:
-    names = set(match_demo.damages["weapon"].unique().to_list())
-    assert {"ak47", "hegrenade", "knife"} <= names

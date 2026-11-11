@@ -23,6 +23,7 @@
 //!   reconstructed from pawn flash state and `flashbang_detonate`.
 //! - [`Parser::chat`] — chat messages, decoded from `SayText` user messages.
 
+use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::num::NonZeroUsize;
 
@@ -558,102 +559,24 @@ struct TrackedRow {
     end_tick: i32,
 }
 
-/// Collapse per-tick projectile samples to one row per instance, keyed by
-/// `(entity index, start tick)`.
-///
-/// Used by the *static* trackers (fires, smokes) where an instance holds one
-/// position for its whole lifetime, so the per-tick rows are redundant. The
-/// thrower is resolved every tick and can degrade to `None` mid-lifetime (e.g.
-/// the thrower dies and their pawn stops resolving), so the first row with a
-/// resolved Steam id wins; the end tick is the latest seen. Instances keep
-/// first-seen (chronological) order.
-fn collapse_instances(rows: Vec<TrackedRow>) -> Vec<TrackedRow> {
-    let mut order: Vec<(EntityId, i32)> = Vec::new();
-    let mut by_key: HashMap<(EntityId, i32), TrackedRow> = HashMap::new();
-    for row in rows {
-        let key = (row.entity, row.start_tick);
-        match by_key.get_mut(&key) {
-            None => {
-                order.push(key);
-                by_key.insert(key, row);
-            }
-            Some(kept) => {
-                kept.end_tick = kept.end_tick.max(row.end_tick);
-                // Recover the thrower from an earlier tick if the kept row's
-                // resolution had already degraded to None.
-                if kept.thrower.steamid.is_none() && row.thrower.steamid.is_some() {
-                    kept.thrower = row.thrower;
-                }
-            }
-        }
-    }
-    order
-        .into_iter()
-        .map(|key| by_key.remove(&key).expect("key inserted above"))
-        .collect()
+/// Identifies an effect opened by a detonation or burn event.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct WindowKey {
+    kind: WindowKind,
+    index: i32,
+    start_tick: i32,
 }
 
-/// A smoke / fire window -- `(kind, entity index, start tick)`, opened by
-/// `smokegrenade_detonate` / `inferno_startburn` -- and the entity it belongs to.
-type WindowKey = (WindowKind, i32, i32);
-
-/// Ownership and last-seen bookkeeping for the smoke / fire windows of
-/// [`Parser::track_projectiles`].
-///
-/// A window belongs to the entity first seen in it. The round reset removes a
-/// smoke / fire that is still up WITHOUT its `smokegrenade_expired` /
-/// `inferno_expire` event; such a window ends at its owner's last active tick
-/// instead of being dropped (it used to be: every late-round smoke vanished
-/// from the dataset). A different entity in the same slot -- a reused index --
-/// means the owner is gone: the caller closes the window, so the newcomer's
-/// flight is never read as the old cloud.
-#[derive(Default)]
-struct EffectWindows {
-    owner: HashMap<WindowKey, EntityId>,
-    last: HashMap<WindowKey, i32>,
-}
-
-impl EffectWindows {
-    /// Record `entity` active at `tick` inside window `key`. False when the slot
-    /// now holds another entity than the window's owner (nothing recorded).
-    fn see(&mut self, key: WindowKey, entity: EntityId, tick: i32) -> bool {
-        if *self.owner.entry(key).or_insert(entity) != entity {
-            return false;
-        }
-        self.last.insert(key, tick);
-        true
-    }
-
-    /// The window's end tick: its expire event's (`expired`), else its owner's
-    /// last active tick; `None` for a window no entity was ever seen in.
-    fn end(&self, key: WindowKey, expired: &HashMap<WindowKey, i32>) -> Option<i32> {
-        expired.get(&key).or_else(|| self.last.get(&key)).copied()
-    }
-}
-
-/// Which projectile dataset a tracked row belongs to. One entity class can feed
-/// more than one — a `CSmokeGrenadeProjectile` is both a grenade (its throw) and
-/// a smoke (its cloud) — so trackers are tagged with their destination.
 #[derive(Clone, Copy)]
-enum ProjKind {
+enum ProjectileKind {
     Grenade,
-    Fire,
-    Smoke,
+    Effect(WindowKind),
 }
 
-/// Event window type for a static projectile effect.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum WindowKind {
     Fire,
     Smoke,
-}
-
-/// How a projectile class is tracked by [`Parser::track_projectiles`].
-enum ProjMode {
-    /// Emit a row while the projectile moves.
-    Trajectory,
-    /// Emit a row while the matching event window is active.
-    Windowed(WindowKind),
 }
 
 /// Select which projectile datasets a parser pass should collect.
@@ -2509,28 +2432,21 @@ impl Parser {
             .bomb)
     }
 
-    /// Track projectile entities tick by tick in one pass, sampling each active
-    /// entity's world position and resolved thrower.
-    ///
-    /// `modes` maps each tracked class to one or more `(destination, sampling)`
-    /// pairs — a `CSmokeGrenadeProjectile` feeds both the grenade dataset (its
-    /// throw, as a trajectory) and the smoke dataset (its cloud, windowed). Rows
-    /// come back interleaved, each tagged with its [`ProjKind`] and with its
-    /// end tick filled in. The caller splits them by tag.
+    /// Collect moving grenade samples and one row per observed smoke or fire
+    /// window. A smoke projectile can contribute both a trajectory and a cloud.
     fn track_projectiles(
         &self,
-        modes: &HashMap<&str, Vec<(ProjKind, ProjMode)>>,
-    ) -> Result<Vec<(ProjKind, TrackedRow)>> {
-        let mut filter: HashSet<&str> = modes.keys().copied().collect();
+        kinds_by_class: &HashMap<&str, Vec<ProjectileKind>>,
+    ) -> Result<Vec<(ProjectileKind, TrackedRow)>> {
+        let mut filter: HashSet<&str> = kinds_by_class.keys().copied().collect();
         filter.insert(PLAYER_PAWN_CLASS);
         filter.insert(PLAYER_CONTROLLER_CLASS);
 
-        let mut rows: Vec<(ProjKind, TrackedRow)> = Vec::new();
+        let mut rows: Vec<(ProjectileKind, TrackedRow)> = Vec::new();
         let mut pawn_keys: Option<PawnKeys> = None;
         let mut ctrl_keys: Option<CtrlKeys> = None;
         let mut pos_keys: HashMap<i32, PositionKeys> = HashMap::new();
-        // (m_hThrower key, m_hOwnerEntity key) per class.
-        let mut thrower_keys: HashMap<i32, (Option<u64>, Option<u64>)> = HashMap::new();
+        let mut thrower_keys: HashMap<i32, [Option<u64>; 2]> = HashMap::new();
         // A projectile's thrower does not change. Cache the resolved player by
         // full entity identity to avoid repeated pawn and controller lookups.
         // Retry unresolved entries on later ticks.
@@ -2538,22 +2454,20 @@ impl Parser {
 
         let mut trajectories = TrajectoryTracker::default();
         let mut window_events = HashSet::new();
-        for trackers in modes.values() {
-            for (_, mode) in trackers {
-                match mode {
-                    ProjMode::Windowed(WindowKind::Fire) => {
-                        window_events.extend(["inferno_startburn", "inferno_expire"]);
-                    }
-                    ProjMode::Windowed(WindowKind::Smoke) => {
-                        window_events.extend(["smokegrenade_detonate", "smokegrenade_expired"]);
-                    }
-                    ProjMode::Trajectory => {}
+        for kind in kinds_by_class.values().flatten() {
+            match kind {
+                ProjectileKind::Effect(WindowKind::Fire) => {
+                    window_events.extend(["inferno_startburn", "inferno_expire"]);
                 }
+                ProjectileKind::Effect(WindowKind::Smoke) => {
+                    window_events.extend(["smokegrenade_detonate", "smokegrenade_expired"]);
+                }
+                ProjectileKind::Grenade => {}
             }
         }
-        let mut active_windows: HashMap<(WindowKind, i32), i32> = HashMap::new();
-        let mut window_ends: HashMap<(WindowKind, i32, i32), i32> = HashMap::new();
-        let mut windows = EffectWindows::default();
+        let mut active_windows = HashMap::new();
+        let mut window_ends = HashMap::new();
+        let mut effect_rows: HashMap<WindowKey, usize> = HashMap::new();
 
         self.run_to_end_with_legacy_events_filtered(&filter, &window_events, |ctx, events| {
             let mut closing = Vec::new();
@@ -2568,9 +2482,14 @@ impl Parser {
                 let id = Keys(&event.keys).i32("entityid");
                 if is_start {
                     active_windows.insert((kind, id), event.tick);
-                } else if let Some(&start) = active_windows.get(&(kind, id)) {
-                    window_ends.insert((kind, id, start), event.tick);
-                    closing.push((kind, id, start));
+                } else if let Some(&start_tick) = active_windows.get(&(kind, id)) {
+                    let key = WindowKey {
+                        kind,
+                        index: id,
+                        start_tick,
+                    };
+                    window_ends.insert(key, event.tick);
+                    closing.push(key);
                 }
             }
             let pk = pawn_keys.get_or_insert_with(|| PawnKeys::resolve(ctx));
@@ -2580,7 +2499,7 @@ impl Parser {
                 if !e.active {
                     continue;
                 }
-                let Some(trackers) = modes.get(e.class_name.as_ref()) else {
+                let Some(kinds) = kinds_by_class.get(e.class_name.as_ref()) else {
                     continue;
                 };
                 let Some(ser) = ctx.serializers().get(&e.class_name) else {
@@ -2593,52 +2512,63 @@ impl Parser {
                     continue;
                 };
 
-                // Grenade projectiles carry `m_hThrower`; infernos instead carry
-                // `m_hOwnerEntity`. Resolve whichever points at a player pawn
-                // (once per entity — every tracker on it shares the thrower).
-                let (tk, ok) = *thrower_keys.entry(e.class_id).or_insert_with(|| {
-                    (
+                let fields = *thrower_keys.entry(e.class_id).or_insert_with(|| {
+                    [
                         ser.resolve_field_key("m_hThrower"),
                         ser.resolve_field_key("m_hOwnerEntity"),
-                    )
+                    ]
                 });
                 let entity = e.id();
-                let thrower = match throwers.get(&entity) {
-                    Some(player) if player.steamid.is_some() || player.name.is_some() => {
-                        player.clone()
-                    }
-                    _ => {
-                        let player = projectile_thrower_pawn(e, ctx.entities(), [tk, ok])
-                            .map(|pawn| resolve_from_pawn(ctx, pawn, pk, ck))
-                            .unwrap_or_default();
-                        throwers.insert(entity, player.clone());
-                        player
-                    }
-                };
+                let thrower = throwers.entry(entity).or_default();
+                if thrower.steamid.is_none() && thrower.name.is_none() {
+                    *thrower = projectile_thrower_pawn(e, ctx.entities(), fields)
+                        .map(|pawn| resolve_from_pawn(ctx, pawn, pk, ck))
+                        .unwrap_or_default();
+                }
 
-                for (kind, mode) in trackers {
-                    let start_tick = match mode {
-                        ProjMode::Windowed(kind) => {
-                            let Some(&start) = active_windows.get(&(*kind, e.index)) else {
-                                continue;
-                            };
-                            if !windows.see((*kind, e.index, start), entity, ctx.tick()) {
-                                active_windows.remove(&(*kind, e.index));
-                                continue;
-                            }
-                            start
-                        }
-                        ProjMode::Trajectory => {
+                for &kind in kinds {
+                    let start_tick = match kind {
+                        ProjectileKind::Grenade => {
                             let Some(start) = trajectories.observe(entity, ctx.tick(), (x, y, z))
                             else {
                                 continue;
                             };
                             start
                         }
+                        ProjectileKind::Effect(window_kind) => {
+                            let slot = (window_kind, e.index);
+                            let Some(&start_tick) = active_windows.get(&slot) else {
+                                continue;
+                            };
+                            let key = WindowKey {
+                                kind: window_kind,
+                                index: e.index,
+                                start_tick,
+                            };
+                            match effect_rows.entry(key) {
+                                Entry::Occupied(entry) => {
+                                    let (_, row) = &mut rows[*entry.get()];
+                                    if row.entity != entity {
+                                        // A reused slot cannot extend the old effect.
+                                        active_windows.remove(&slot);
+                                        continue;
+                                    }
+                                    row.end_tick = ctx.tick();
+                                    if row.thrower.steamid.is_none() && thrower.steamid.is_some() {
+                                        row.thrower = thrower.clone();
+                                    }
+                                    continue;
+                                }
+                                Entry::Vacant(entry) => {
+                                    entry.insert(rows.len());
+                                }
+                            }
+                            start_tick
+                        }
                     };
 
                     rows.push((
-                        *kind,
+                        kind,
                         TrackedRow {
                             tick: ctx.tick(),
                             entity,
@@ -2648,34 +2578,36 @@ impl Parser {
                             z,
                             thrower: thrower.clone(),
                             start_tick,
-                            end_tick: 0,
+                            end_tick: ctx.tick(),
                         },
                     ));
                 }
             }
-            for (kind, id, start) in closing {
-                if active_windows.get(&(kind, id)) == Some(&start) {
-                    active_windows.remove(&(kind, id));
+            for window in closing {
+                let slot = (window.kind, window.index);
+                if active_windows.get(&slot) == Some(&window.start_tick) {
+                    active_windows.remove(&slot);
                 }
             }
             trajectories.finish_tick(ctx.tick());
         })?;
-        rows.retain_mut(|(kind, row)| {
-            let window = match *kind {
-                ProjKind::Grenade => {
+        for (kind, row) in &mut rows {
+            match *kind {
+                ProjectileKind::Grenade => {
                     row.end_tick = trajectories.end_tick(row.entity, row.start_tick);
-                    return true;
                 }
-                ProjKind::Fire => WindowKind::Fire,
-                ProjKind::Smoke => WindowKind::Smoke,
-            };
-            let Some(end) = windows.end((window, row.entity.index, row.start_tick), &window_ends)
-            else {
-                return false;
-            };
-            row.end_tick = end;
-            true
-        });
+                ProjectileKind::Effect(kind) => {
+                    let key = WindowKey {
+                        kind,
+                        index: row.entity.index,
+                        start_tick: row.start_tick,
+                    };
+                    if let Some(&end_tick) = window_ends.get(&key) {
+                        row.end_tick = end_tick;
+                    }
+                }
+            }
+        }
 
         Ok(rows)
     }
@@ -2685,9 +2617,7 @@ impl Parser {
     /// decode pass instead of one each.
     ///
     /// They all track projectile entities against player pawn / controller
-    /// state, so one `track_projectiles` pass over the union of their classes
-    /// yields all three. Fire and smoke samples are collapsed to one row per
-    /// effect.
+    /// state, so one pass over the union of their classes yields all three.
     pub fn projectiles(&self) -> Result<Projectiles> {
         self.projectiles_selected(ProjectileSelection::ALL)
     }
@@ -2701,34 +2631,33 @@ impl Parser {
         // Every grenade projectile class is a grenade trajectory; CInferno is a
         // fire; CSmokeGrenadeProjectile is *also* a smoke (its cloud), so that
         // class carries two trackers.
-        let mut modes: HashMap<&str, Vec<(ProjKind, ProjMode)>> = HashMap::new();
+        let mut kinds_by_class: HashMap<&str, Vec<ProjectileKind>> = HashMap::new();
         if selection.grenades {
-            modes.extend(
-                grenade_projectile_classes()
-                    .map(|class| (class, vec![(ProjKind::Grenade, ProjMode::Trajectory)])),
+            kinds_by_class.extend(
+                grenade_projectile_classes().map(|class| (class, vec![ProjectileKind::Grenade])),
             );
         }
         if selection.fires {
-            modes
+            kinds_by_class
                 .entry(INFERNO_CLASS)
                 .or_default()
-                .push((ProjKind::Fire, ProjMode::Windowed(WindowKind::Fire)));
+                .push(ProjectileKind::Effect(WindowKind::Fire));
         }
         if selection.smokes {
-            modes
+            kinds_by_class
                 .entry(SMOKE_CLASS)
                 .or_default()
-                .push((ProjKind::Smoke, ProjMode::Windowed(WindowKind::Smoke)));
+                .push(ProjectileKind::Effect(WindowKind::Smoke));
         }
 
         let mut grenade_rows = Vec::new();
         let mut fire_rows = Vec::new();
         let mut smoke_rows = Vec::new();
-        for (kind, row) in self.track_projectiles(&modes)? {
+        for (kind, row) in self.track_projectiles(&kinds_by_class)? {
             match kind {
-                ProjKind::Grenade => grenade_rows.push(row),
-                ProjKind::Fire => fire_rows.push(row),
-                ProjKind::Smoke => smoke_rows.push(row),
+                ProjectileKind::Grenade => grenade_rows.push(row),
+                ProjectileKind::Effect(WindowKind::Fire) => fire_rows.push(row),
+                ProjectileKind::Effect(WindowKind::Smoke) => smoke_rows.push(row),
             }
         }
 
@@ -2749,7 +2678,7 @@ impl Parser {
                 end_tick: r.end_tick,
             })
             .collect();
-        let fires = collapse_instances(fire_rows)
+        let fires = fire_rows
             .into_iter()
             .map(|r| Fire {
                 start_tick: r.start_tick,
@@ -2765,7 +2694,7 @@ impl Parser {
                 z: r.z,
             })
             .collect();
-        let smokes = collapse_instances(smoke_rows)
+        let smokes = smoke_rows
             .into_iter()
             .map(|r| Smoke {
                 start_tick: r.start_tick,
@@ -3909,43 +3838,6 @@ mod tests {
         );
     }
 
-    // ── EffectWindows: smoke / fire windows with no expire event ──────────────
-    #[test]
-    fn effect_window_without_expire_ends_at_owner_last_tick() {
-        let mut w = EffectWindows::default();
-        let key = (WindowKind::Smoke, 200, 1000);
-        let smoke = EntityId::new(200, 7);
-        assert!(w.see(key, smoke, 1000));
-        assert!(w.see(key, smoke, 1500));
-        assert!(w.see(key, smoke, 2391)); // the tick before the round reset
-        assert_eq!(w.end(key, &HashMap::new()), Some(2391));
-    }
-
-    #[test]
-    fn effect_window_expire_event_wins() {
-        let mut w = EffectWindows::default();
-        let key = (WindowKind::Fire, 310, 500);
-        assert!(w.see(key, EntityId::new(310, 1), 600));
-        let expired = HashMap::from([(key, 948)]);
-        assert_eq!(w.end(key, &expired), Some(948));
-    }
-
-    #[test]
-    fn effect_window_reused_slot_is_not_the_owner() {
-        let mut w = EffectWindows::default();
-        let key = (WindowKind::Smoke, 411, 41_000);
-        let smoke = EntityId::new(411, 68);
-        let flash = EntityId::new(411, 188); // the same slot, a new grenade
-        assert!(w.see(key, smoke, 41_900));
-        assert!(!w.see(key, flash, 41_920));
-        assert_eq!(w.end(key, &HashMap::new()), Some(41_900));
-    }
-
-    #[test]
-    fn effect_window_never_seen_has_no_end() {
-        let w = EffectWindows::default();
-        assert_eq!(w.end((WindowKind::Smoke, 1, 1), &HashMap::new()), None);
-    }
     use awpy_proto::proto::{CUserMessageSayText, CUserMessageSayText2};
     use prost::Message as _;
 

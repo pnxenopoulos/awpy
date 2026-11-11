@@ -2,24 +2,14 @@
 
 ## 3.1.3
 
-- Add Rust `Parser::events_with_players` for legacy game events. Resolve
-  players from the state at the end of each tick. Check the full user ID
-  before using a player slot.
-- Use recorded ammo to count held grenades in `snapshots()`, including zero.
-  Count inventory handles when the ammo field is missing.
-- Add a contributor guide for branch names, local checks, and dependency updates.
-- Keep dead players' names and Steam IDs in snapshots. Report the controller's
-  current team. Exclude spectators from round economy.
-- Name knife models, MP5-SD, and CZ75-Auto in snapshots and inventories from
-  item definitions.
-- Keep smokes and fires that a round reset removes without an expire event.
-- Fix thrower attribution in `grenades`, `smokes`, and `fires`. Use the
-  projectile's networked handles. Try the owner if the thrower handle does not
-  resolve to a player pawn.
-- Show USP-S, M4A1-S, and Revolver variants in damage rows. Keep the same weapon
-  names in serial and parallel parses.
-- Add observed `start_tick` and `end_tick` to `grenades`, including stationary
-  ticks. Start a new trajectory when a grenade returns to view.
+- Add Rust `Parser::events_with_players`. Read legacy events using end-of-tick
+  state. Check the full user ID before using a player slot.
+- Keep smoke and fire intervals that end at round reset. Fix thrower attribution.
+- Add `start_tick` and `end_tick` to grenade trajectories.
+- Keep dead players' identities and current teams in snapshots. Count grenades
+  from recorded ammo. Exclude spectators from round economy.
+- Identify knife and weapon variants in snapshots, inventories, and damage rows.
+- Add a contributor guide.
 
 ## 3.1.2
 
