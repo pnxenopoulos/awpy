@@ -5,6 +5,10 @@
 - Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
   segments per call on a rayon pool with the GIL released and return a Boolean
   Polars Series. Answers match `is_visible` exactly.
+- Name knife models (`knife_karambit`, `bayonet`, `knife_t`, ...) and the
+  MP5-SD, CZ75-Auto and Tec-9 in held weapons and inventories. Knives share
+  one network class, and the MP5-SD can arrive in the MP7 class, so these
+  resolve from the item definition like the M4, USP and R8 families.
 - Keep Steam ids and names for dead players in `snapshots()`. A pawn that
   lost `m_hController` resolves through the controller whose `m_hPlayerPawn`
   points at it, and rows report that controller's team, so a player who went
