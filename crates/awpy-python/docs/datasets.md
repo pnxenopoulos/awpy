@@ -192,7 +192,10 @@ demo.grenades
 Thrown-grenade **trajectories** — one row per tick each grenade projectile is in
 flight (samples stop once it settles). Columns: `tick`, `thrower_name`,
 `thrower_steamid`, `thrower_side`, `type` (`smoke` / `he` / `flashbang` /
-`molotov` / `decoy`), `entity_id`, `entity_serial`, `x`, `y`, `z`.
+`molotov` / `decoy`), `entity_id`, `entity_serial`, `x`, `y`, `z`,
+`start_tick`, `end_tick`. `start_tick` and `end_tick` bound the projectile's
+lifetime, including ticks it rests without moving (a smoke until its cloud
+expires, an HE until its entity is removed after the blast).
 
 <a id="fires--smokes"></a>
 <a id="fires-smokes"></a>
