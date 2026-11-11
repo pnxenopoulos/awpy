@@ -5,6 +5,10 @@
 - Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
   segments per call on a rayon pool with the GIL released and return a Boolean
   Polars Series. Answers match `is_visible` exactly.
+- Keep Steam ids and names for dead players in `snapshots()`. A pawn that
+  lost `m_hController` resolves through the controller whose `m_hPlayerPawn`
+  points at it, and rows report that controller's team, so a player who went
+  to spectate no longer appears on their old team.
 - Count held grenades from the pawn's ammo slots. Two flashbangs are one
   weapon entity with ammo 2, so `flashbangs` (and the other grenade counts)
   in `snapshots()` reported 1.

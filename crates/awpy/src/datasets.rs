@@ -810,6 +810,8 @@ struct CtrlKeys {
     steamid: Option<u64>,
     name: Option<u64>,
     money: Option<u64>,
+    player_pawn: Option<u64>,
+    team: Option<u64>,
 }
 
 impl CtrlKeys {
@@ -820,6 +822,8 @@ impl CtrlKeys {
             steamid: key("m_steamID"),
             name: key("m_iszPlayerName"),
             money: key("m_pInGameMoneyServices.m_iAccount"),
+            player_pawn: key("m_hPlayerPawn"),
+            team: key("m_iTeamNum"),
         }
     }
 }
@@ -3271,6 +3275,20 @@ impl Parser {
     /// field keys resolved once (see [`SnapshotKeys`]) rather than per tick.
     fn player_states(ctx: &Context, keys: &SnapshotKeys) -> Vec<PlayerState> {
         let (pk, ck) = (&keys.pawn, &keys.ctrl);
+        // Each controller's own pawn. Dead pawns can drop `m_hController`, but
+        // their controller still points at them; a pawn no controller claims
+        // (e.g. left behind by a disconnected player) stays anonymous.
+        let owners: HashMap<EntityId, &Entity> = ctx
+            .entities()
+            .iter()
+            .filter(|(_, e)| e.active && e.class_name.as_ref() == PLAYER_CONTROLLER_CLASS)
+            .filter_map(|(_, controller)| {
+                let pawn = controller
+                    .get_handle(ck.player_pawn)
+                    .and_then(|handle| ctx.entities().get_by_handle(handle))?;
+                Some((pawn.id(), controller))
+            })
+            .collect();
         let mut out = Vec::new();
         for (_, pawn) in ctx.entities().iter() {
             if !pawn.active || pawn.class_id != keys.pawn_class {
@@ -3365,10 +3383,17 @@ impl Parser {
                 continue;
             }
             state.side = Some(team_name(team));
-            if let Some(ctrl) = pawn
+            let controller = pawn
                 .get_handle(pk.controller)
                 .and_then(|h| ctx.entities().get_by_handle(h))
-            {
+                .or_else(|| owners.get(&pawn.id()).copied());
+            if let Some(ctrl) = controller {
+                // The controller holds the player's current team. A player who
+                // went to spectate leaves a dead pawn behind on their old team.
+                let player_team = ctrl.get_i64(ck.team);
+                if player_team > 0 {
+                    state.side = Some(team_name(player_team));
+                }
                 state.steamid = ctrl.get_u64(ck.steamid);
                 state.name = ctrl.get_string(ck.name);
                 state.money = i32::try_from(ctrl.get_i64(ck.money)).unwrap_or_default();
@@ -3695,6 +3720,30 @@ mod tests {
             },
             ..Default::default()
         }
+    }
+
+    /// Dead players keep their Steam id in snapshots (set `AWPY_TEST_DEMO`).
+    /// Ignored by default; run with `--ignored`.
+    #[test]
+    #[ignore = "requires AWPY_TEST_DEMO to point at a real .dem file"]
+    fn snapshots_keep_dead_player_identity() {
+        let path = std::env::var("AWPY_TEST_DEMO").unwrap();
+        let parser = Parser::from_file(std::path::Path::new(&path)).unwrap();
+        let states = parser
+            .snapshots_query(Some(64), &HashSet::new(), 0, i32::MAX)
+            .unwrap();
+        let dead: Vec<&PlayerState> = states
+            .iter()
+            .filter(|s| s.health == 0 && s.side != Some("spectator"))
+            .collect();
+        assert!(!dead.is_empty());
+        let missing = dead.iter().filter(|s| s.steamid.is_none()).count();
+        assert_eq!(
+            missing,
+            0,
+            "{missing} of {} dead rows lack a steamid",
+            dead.len()
+        );
     }
 
     #[test]
