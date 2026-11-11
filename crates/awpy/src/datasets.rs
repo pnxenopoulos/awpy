@@ -36,7 +36,8 @@ use crate::position::cell_to_world;
 use crate::round_end_reasons::round_end_reason_name;
 use crate::teams::team_name;
 use crate::weapons::{
-    WeaponResolver, WeaponSlot, grenade_projectile_classes, grenade_type, weapon_classes,
+    VARIANT_CLASSES, VARIANT_FIELDS, WeaponResolver, WeaponSlot, damage_weapon_name,
+    grenade_projectile_classes, grenade_type, variant_name, weapon_classes,
 };
 
 /// User-id sentinel meaning "no such player" (e.g. no assister).
@@ -441,6 +442,11 @@ pub struct Grenade {
     pub x: f32,
     pub y: f32,
     pub z: f32,
+    /// First tick the projectile entity existed.
+    pub start_tick: i32,
+    /// Last tick the projectile entity existed, including ticks it rested
+    /// without moving (rows are only emitted when it moves).
+    pub end_tick: i32,
 }
 
 /// A single burning inferno (molotov / incendiary): one row per fire, with its
@@ -549,6 +555,44 @@ fn collapse_instances(rows: Vec<TrackedRow>) -> Vec<TrackedRow> {
         .collect()
 }
 
+/// A smoke / fire window -- `(kind, entity index, start tick)`, opened by
+/// `smokegrenade_detonate` / `inferno_startburn` -- and the entity it belongs to.
+type WindowKey = (WindowKind, i32, i32);
+
+/// Ownership and last-seen bookkeeping for the smoke / fire windows of
+/// [`Parser::track_projectiles`].
+///
+/// A window belongs to the entity first seen in it. The round reset removes a
+/// smoke / fire that is still up WITHOUT its `smokegrenade_expired` /
+/// `inferno_expire` event; such a window ends at its owner's last active tick
+/// instead of being dropped (it used to be: every late-round smoke vanished
+/// from the dataset). A different entity in the same slot -- a reused index --
+/// means the owner is gone: the caller closes the window, so the newcomer's
+/// flight is never read as the old cloud.
+#[derive(Default)]
+struct EffectWindows {
+    owner: HashMap<WindowKey, EntityId>,
+    last: HashMap<WindowKey, i32>,
+}
+
+impl EffectWindows {
+    /// Record `entity` active at `tick` inside window `key`. False when the slot
+    /// now holds another entity than the window's owner (nothing recorded).
+    fn see(&mut self, key: WindowKey, entity: EntityId, tick: i32) -> bool {
+        if *self.owner.entry(key).or_insert(entity) != entity {
+            return false;
+        }
+        self.last.insert(key, tick);
+        true
+    }
+
+    /// The window's end tick: its expire event's (`expired`), else its owner's
+    /// last active tick; `None` for a window no entity was ever seen in.
+    fn end(&self, key: WindowKey, expired: &HashMap<WindowKey, i32>) -> Option<i32> {
+        expired.get(&key).or_else(|| self.last.get(&key)).copied()
+    }
+}
+
 /// Which projectile dataset a tracked row belongs to. One entity class can feed
 /// more than one — a `CSmokeGrenadeProjectile` is both a grenade (its throw) and
 /// a smoke (its cloud) — so trackers are tagged with their destination.
@@ -612,12 +656,16 @@ pub struct Projectiles {
 }
 
 /// Fill each trajectory instance's `end_tick` from the last tick its entity
-/// index was seen (grenades have no event window to bound them).
+/// was seen (grenades have no event window to bound them). Rows only exist for
+/// ticks the projectile moved, so the tracker's last-seen tick, already in
+/// `end_tick`, can be later than the last row.
 fn fill_trajectory_ends(rows: &mut [TrackedRow]) {
     let mut ends: HashMap<(EntityId, i32), i32> = HashMap::new();
     for r in rows.iter() {
-        let e = ends.entry((r.entity, r.start_tick)).or_insert(r.tick);
-        *e = (*e).max(r.tick);
+        let e = ends
+            .entry((r.entity, r.start_tick))
+            .or_insert(r.tick.max(r.end_tick));
+        *e = (*e).max(r.tick).max(r.end_tick);
     }
     for r in rows.iter_mut() {
         r.end_tick = ends[&(r.entity, r.start_tick)];
@@ -986,16 +1034,19 @@ fn segment_ranges(offsets: &[(usize, i32)], n: usize) -> Vec<(Option<usize>, i32
         .collect()
 }
 
-/// Resolve a participant from the pawn `CHandle` carried in a game event.
+/// Resolve a participant from a networked pawn `CHandle` read off an entity
+/// field (e.g. a projectile's `m_hThrower` or `m_hOwnerEntity`).
+///
+/// Networked handles already use the entity-system layout that
+/// `get_by_handle` expects, so they must not go through
+/// [`event_entity_handle`]; game-event handles use a different packing and go
+/// through [`resolve_event_player`] instead.
 ///
 /// Follows the handle to the pawn (for world position and side), then the
 /// pawn's controller handle to the controller (for Steam id and name). Returns
 /// an all-`None` [`ResolvedPlayer`] when the handle does not point at a live
 /// player pawn.
-fn resolve_player(ctx: &Context, pawn_handle: i64, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
-    let Some(pawn_handle) = event_entity_handle(pawn_handle) else {
-        return ResolvedPlayer::default();
-    };
+fn resolve_player(ctx: &Context, pawn_handle: u32, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
     let Some(pawn) = ctx.entities().get_by_handle(pawn_handle) else {
         return ResolvedPlayer::default();
     };
@@ -1009,7 +1060,7 @@ fn resolve_player(ctx: &Context, pawn_handle: i64, pk: &PawnKeys, ck: &CtrlKeys)
 ///
 /// Reads side and world position off the pawn, then follows its current or
 /// original controller handle for the persistent Steam id and name. Use [`resolve_player`] when you
-/// only have a pawn `CHandle` (e.g. from a game event).
+/// only have a networked pawn `CHandle` (e.g. from an entity field).
 fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
     let mut player = ResolvedPlayer {
         side: Some(team_name(pawn.get_i64(pk.team)).to_string()),
@@ -1222,7 +1273,9 @@ impl EventDatasetSelection {
         if self.damages {
             names.insert("player_hurt");
         }
-        if self.shots {
+        if self.shots || self.damages {
+            // Damages read the variant the attacker last fired when the
+            // attacker died on the hit tick and has no active weapon left.
             names.insert("weapon_fire");
         }
         if self.blinds {
@@ -1939,14 +1992,10 @@ impl Parser {
             pawn.push("m_flFlashDuration".into());
         }
         if selection.shots && full_shots {
-            pawn.extend(
-                [
-                    "m_angEyeAngles",
-                    "m_bIsScoped",
-                    "m_pWeaponServices.m_hActiveWeapon",
-                ]
-                .map(str::to_owned),
-            );
+            pawn.extend(["m_angEyeAngles", "m_bIsScoped"].map(str::to_owned));
+        }
+        if (selection.shots && full_shots) || selection.damages {
+            pawn.push("m_pWeaponServices.m_hActiveWeapon".into());
         }
         let mut classes = vec![
             (PLAYER_PAWN_CLASS, pawn),
@@ -1963,6 +2012,17 @@ impl Parser {
                 weapon_classes()
                     .map(|class| (class, vec!["m_iClip1".into(), "m_fAccuracyPenalty".into()])),
             );
+        }
+        if selection.damages {
+            // Damage rows name the attacker's active weapon variant, which is read
+            // from the item definition of the variant classes.
+            for class in VARIANT_CLASSES {
+                let fields = VARIANT_FIELDS.map(str::to_owned);
+                match classes.iter_mut().find(|(c, _)| *c == *class) {
+                    Some((_, existing)) => existing.extend(fields),
+                    None => classes.push((*class, fields.to_vec())),
+                }
+            }
         }
         self.property_filter(classes)
     }
@@ -1992,6 +2052,9 @@ impl Parser {
             // Fully enriched shots follow active-weapon handles for accuracy and clip.
             filter.extend(weapon_classes());
         }
+        if selection.damages {
+            filter.extend(VARIANT_CLASSES.iter().copied());
+        }
         if mode == EventDatasetMode::PlayerStats {
             filter.insert(TEAM_CLASS);
             if collect_rounds {
@@ -2009,6 +2072,9 @@ impl Parser {
         let mut prev_flash: HashMap<EntityId, f32> = HashMap::new();
         let mut shot_keys: Option<ShotKeys> = None;
         let mut weapon_keys: HashMap<i32, (Option<u64>, Option<u64>)> = HashMap::new();
+        let mut damage_weapons: Option<(WeaponResolver, Option<u64>)> = None;
+        // Last weapon name each attacker pawn fired or held, per pawn handle.
+        let mut last_weapon: HashMap<u32, &'static str> = HashMap::new();
 
         // These datasets consume legacy key/value pairs only. Select their
         // event names up front so unrelated legacy events and all CS2 user
@@ -2031,6 +2097,15 @@ impl Parser {
                 let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
 
                 for event in events {
+                    if selection.damages && event.name == "weapon_fire" {
+                        let keys = Keys(&event.keys);
+                        let fired = keys.string("weapon");
+                        if let Some(name) =
+                            variant_name(fired.strip_prefix("weapon_").unwrap_or(&fired))
+                        {
+                            last_weapon.insert(keys.i64("userid_pawn") as u32, name);
+                        }
+                    }
                     match event.name.as_str() {
                         "player_death" if selection.kills => {
                             let mut kill = kill_event_fields(event);
@@ -2040,6 +2115,28 @@ impl Parser {
                         "player_hurt" if selection.damages => {
                             let mut damage = damage_event_fields(event);
                             fill_damage(&mut damage, event, ctx, pk, ck);
+                            let (resolver, handle_key) = damage_weapons.get_or_insert_with(|| {
+                                let key = ctx.serializers().get(PLAYER_PAWN_CLASS).and_then(|s| {
+                                    s.resolve_field_key("m_pWeaponServices.m_hActiveWeapon")
+                                });
+                                (WeaponResolver::new(ctx), key)
+                            });
+                            let attacker_pawn = Keys(&event.keys).i64("attacker_pawn") as u32;
+                            let active =
+                                event_entity_handle(Keys(&event.keys).i64("attacker_pawn"))
+                                    .and_then(|h| ctx.entities().get_by_handle(h))
+                                    .and_then(|pawn| pawn.get_handle(*handle_key))
+                                    .and_then(|h| ctx.entities().get_by_handle(h))
+                                    .and_then(|weapon| resolver.info(weapon))
+                                    .map(|info| info.name);
+                            if let Some(name) = active {
+                                last_weapon.insert(attacker_pawn, name);
+                            }
+                            // No weapon entity left (the attacker died this tick): use the
+                            // variant they last held or fired.
+                            let known = active.or_else(|| last_weapon.get(&attacker_pawn).copied());
+                            damage.weapon =
+                                damage_weapon_name(std::mem::take(&mut damage.weapon), known);
                             damages.push(damage);
                         }
                         "flashbang_detonate" if selection.blinds => {
@@ -2206,6 +2303,8 @@ impl Parser {
         let mut prev: HashSet<EntityId> = HashSet::new();
         let mut starts: HashMap<EntityId, i32> = HashMap::new();
         let mut last_pos: HashMap<EntityId, (f32, f32, f32)> = HashMap::new();
+        // Last tick each trajectory entity existed, moving or not.
+        let mut last_seen: HashMap<EntityId, i32> = HashMap::new();
         let mut window_events = HashSet::new();
         for trackers in modes.values() {
             for (_, mode) in trackers {
@@ -2222,6 +2321,7 @@ impl Parser {
         }
         let mut active_windows: HashMap<(WindowKind, i32), i32> = HashMap::new();
         let mut window_ends: HashMap<(WindowKind, i32, i32), i32> = HashMap::new();
+        let mut windows = EffectWindows::default();
 
         self.run_to_end_with_legacy_events_filtered(&filter, &window_events, |ctx, events| {
             let mut closing = Vec::new();
@@ -2280,7 +2380,7 @@ impl Parser {
                         let player = e
                             .get_handle(tk)
                             .or_else(|| e.get_handle(ok))
-                            .map(|handle| resolve_player(ctx, i64::from(handle), pk, ck))
+                            .map(|handle| resolve_player(ctx, handle, pk, ck))
                             .unwrap_or_default();
                         throwers.insert(entity, player.clone());
                         player
@@ -2298,11 +2398,16 @@ impl Parser {
                             let Some(&start) = active_windows.get(&(*kind, e.index)) else {
                                 continue;
                             };
+                            if !windows.see((*kind, e.index, start), entity, ctx.tick()) {
+                                active_windows.remove(&(*kind, e.index));
+                                continue;
+                            }
                             (start, 0)
                         }
                         ProjMode::Trajectory => {
                             let id = e.id();
                             current.insert(id);
+                            last_seen.insert(id, ctx.tick());
                             if !prev.contains(&id) {
                                 starts.insert(id, ctx.tick());
                             }
@@ -2342,11 +2447,17 @@ impl Parser {
         })?;
         rows.retain_mut(|(kind, row)| {
             let window = match *kind {
-                ProjKind::Grenade => return true,
+                ProjKind::Grenade => {
+                    if let Some(&seen) = last_seen.get(&row.entity) {
+                        row.end_tick = seen;
+                    }
+                    return true;
+                }
                 ProjKind::Fire => WindowKind::Fire,
                 ProjKind::Smoke => WindowKind::Smoke,
             };
-            let Some(&end) = window_ends.get(&(window, row.entity.index, row.start_tick)) else {
+            let Some(end) = windows.end((window, row.entity.index, row.start_tick), &window_ends)
+            else {
                 return false;
             };
             row.end_tick = end;
@@ -2423,6 +2534,8 @@ impl Parser {
                 x: r.x,
                 y: r.y,
                 z: r.z,
+                start_tick: r.start_tick,
+                end_tick: r.end_tick,
             })
             .collect();
         let fires = collapse_instances(fire_rows)
@@ -3522,6 +3635,44 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── EffectWindows: smoke / fire windows with no expire event ──────────────
+    #[test]
+    fn effect_window_without_expire_ends_at_owner_last_tick() {
+        let mut w = EffectWindows::default();
+        let key = (WindowKind::Smoke, 200, 1000);
+        let smoke = EntityId::new(200, 7);
+        assert!(w.see(key, smoke, 1000));
+        assert!(w.see(key, smoke, 1500));
+        assert!(w.see(key, smoke, 2391)); // the tick before the round reset
+        assert_eq!(w.end(key, &HashMap::new()), Some(2391));
+    }
+
+    #[test]
+    fn effect_window_expire_event_wins() {
+        let mut w = EffectWindows::default();
+        let key = (WindowKind::Fire, 310, 500);
+        assert!(w.see(key, EntityId::new(310, 1), 600));
+        let expired = HashMap::from([(key, 948)]);
+        assert_eq!(w.end(key, &expired), Some(948));
+    }
+
+    #[test]
+    fn effect_window_reused_slot_is_not_the_owner() {
+        let mut w = EffectWindows::default();
+        let key = (WindowKind::Smoke, 411, 41_000);
+        let smoke = EntityId::new(411, 68);
+        let flash = EntityId::new(411, 188); // the same slot, a new grenade
+        assert!(w.see(key, smoke, 41_900));
+        assert!(!w.see(key, flash, 41_920));
+        assert_eq!(w.end(key, &HashMap::new()), Some(41_900));
+    }
+
+    #[test]
+    fn effect_window_never_seen_has_no_end() {
+        let w = EffectWindows::default();
+        assert_eq!(w.end((WindowKind::Smoke, 1, 1), &HashMap::new()), None);
+    }
     use awpy_proto::proto::{CUserMessageSayText, CUserMessageSayText2};
     use prost::Message as _;
 
