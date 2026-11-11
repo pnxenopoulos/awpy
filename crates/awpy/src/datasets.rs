@@ -36,7 +36,8 @@ use crate::position::cell_to_world;
 use crate::round_end_reasons::round_end_reason_name;
 use crate::teams::team_name;
 use crate::weapons::{
-    WeaponResolver, WeaponSlot, grenade_projectile_classes, grenade_type, weapon_classes,
+    VARIANT_CLASSES, VARIANT_FIELDS, WeaponResolver, WeaponSlot, damage_weapon_name,
+    grenade_projectile_classes, grenade_type, variant_name, weapon_classes,
 };
 
 /// User-id sentinel meaning "no such player" (e.g. no assister).
@@ -1205,7 +1206,9 @@ impl EventDatasetSelection {
         if self.damages {
             names.insert("player_hurt");
         }
-        if self.shots {
+        if self.shots || self.damages {
+            // Damages read the variant the attacker last fired when the
+            // attacker died on the hit tick and has no active weapon left.
             names.insert("weapon_fire");
         }
         if self.blinds {
@@ -1922,14 +1925,10 @@ impl Parser {
             pawn.push("m_flFlashDuration".into());
         }
         if selection.shots && full_shots {
-            pawn.extend(
-                [
-                    "m_angEyeAngles",
-                    "m_bIsScoped",
-                    "m_pWeaponServices.m_hActiveWeapon",
-                ]
-                .map(str::to_owned),
-            );
+            pawn.extend(["m_angEyeAngles", "m_bIsScoped"].map(str::to_owned));
+        }
+        if (selection.shots && full_shots) || selection.damages {
+            pawn.push("m_pWeaponServices.m_hActiveWeapon".into());
         }
         let mut classes = vec![
             (PLAYER_PAWN_CLASS, pawn),
@@ -1946,6 +1945,17 @@ impl Parser {
                 weapon_classes()
                     .map(|class| (class, vec!["m_iClip1".into(), "m_fAccuracyPenalty".into()])),
             );
+        }
+        if selection.damages {
+            // Damage rows name the attacker's active weapon variant, which is read
+            // from the item definition of the variant classes.
+            for class in VARIANT_CLASSES {
+                let fields = VARIANT_FIELDS.map(str::to_owned);
+                match classes.iter_mut().find(|(c, _)| *c == *class) {
+                    Some((_, existing)) => existing.extend(fields),
+                    None => classes.push((*class, fields.to_vec())),
+                }
+            }
         }
         self.property_filter(classes)
     }
@@ -1975,6 +1985,9 @@ impl Parser {
             // Fully enriched shots follow active-weapon handles for accuracy and clip.
             filter.extend(weapon_classes());
         }
+        if selection.damages {
+            filter.extend(VARIANT_CLASSES.iter().copied());
+        }
         if mode == EventDatasetMode::PlayerStats {
             filter.insert(TEAM_CLASS);
             if collect_rounds {
@@ -1992,6 +2005,9 @@ impl Parser {
         let mut prev_flash: HashMap<EntityId, f32> = HashMap::new();
         let mut shot_keys: Option<ShotKeys> = None;
         let mut weapon_keys: HashMap<i32, (Option<u64>, Option<u64>)> = HashMap::new();
+        let mut damage_weapons: Option<(WeaponResolver, Option<u64>)> = None;
+        // Last weapon name each attacker pawn fired or held, per pawn handle.
+        let mut last_weapon: HashMap<u32, &'static str> = HashMap::new();
 
         // These datasets consume legacy key/value pairs only. Select their
         // event names up front so unrelated legacy events and all CS2 user
@@ -2014,6 +2030,15 @@ impl Parser {
                 let ck = ctrl_keys.get_or_insert_with(|| CtrlKeys::resolve(ctx));
 
                 for event in events {
+                    if selection.damages && event.name == "weapon_fire" {
+                        let keys = Keys(&event.keys);
+                        let fired = keys.string("weapon");
+                        if let Some(name) =
+                            variant_name(fired.strip_prefix("weapon_").unwrap_or(&fired))
+                        {
+                            last_weapon.insert(keys.i64("userid_pawn") as u32, name);
+                        }
+                    }
                     match event.name.as_str() {
                         "player_death" if selection.kills => {
                             let mut kill = kill_event_fields(event);
@@ -2023,6 +2048,28 @@ impl Parser {
                         "player_hurt" if selection.damages => {
                             let mut damage = damage_event_fields(event);
                             fill_damage(&mut damage, event, ctx, pk, ck);
+                            let (resolver, handle_key) = damage_weapons.get_or_insert_with(|| {
+                                let key = ctx.serializers().get(PLAYER_PAWN_CLASS).and_then(|s| {
+                                    s.resolve_field_key("m_pWeaponServices.m_hActiveWeapon")
+                                });
+                                (WeaponResolver::new(ctx), key)
+                            });
+                            let attacker_pawn = Keys(&event.keys).i64("attacker_pawn") as u32;
+                            let active =
+                                event_entity_handle(Keys(&event.keys).i64("attacker_pawn"))
+                                    .and_then(|h| ctx.entities().get_by_handle(h))
+                                    .and_then(|pawn| pawn.get_handle(*handle_key))
+                                    .and_then(|h| ctx.entities().get_by_handle(h))
+                                    .and_then(|weapon| resolver.info(weapon))
+                                    .map(|info| info.name);
+                            if let Some(name) = active {
+                                last_weapon.insert(attacker_pawn, name);
+                            }
+                            // No weapon entity left (the attacker died this tick): use the
+                            // variant they last held or fired.
+                            let known = active.or_else(|| last_weapon.get(&attacker_pawn).copied());
+                            damage.weapon =
+                                damage_weapon_name(std::mem::take(&mut damage.weapon), known);
                             damages.push(damage);
                         }
                         "flashbang_detonate" if selection.blinds => {
