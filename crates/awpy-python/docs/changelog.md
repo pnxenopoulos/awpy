@@ -2,6 +2,7 @@
 
 ## 3.1.3
 
+- Use pawn ammo to count held grenades in `snapshots()`, including two flashbangs.
 - Add a contributor guide for branch names, local checks, and dependency updates.
 - Keep smokes and fires that a round reset removes without an expire event.
 - Fix thrower attribution in `grenades`, `smokes`, and `fires`. Use the
