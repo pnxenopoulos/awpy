@@ -5,6 +5,9 @@
 - Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
   segments per call on a rayon pool with the GIL released and return a Boolean
   Polars Series. Answers match `is_visible` exactly.
+- Rust: add `Parser::events_with_players`, which returns the named game
+  events with each `userid`, `attacker` and `assister` resolved to a Steam
+  id, name, side, position and view angles at the event tick.
 - Name knife models (`knife_karambit`, `bayonet`, `knife_t`, ...) and the
   MP5-SD, CZ75-Auto and Tec-9 in held weapons and inventories. Knives share
   one network class, and the MP5-SD can arrive in the MP7 class, so these

@@ -484,6 +484,39 @@ pub struct Smoke {
     pub z: f32,
 }
 
+/// One raw game event with its player participants resolved at the event tick.
+/// See [`Parser::events_with_players`].
+#[derive(Debug, Clone, Default, serde::Serialize)]
+pub struct PlayerEvent {
+    pub tick: i32,
+    pub name: String,
+    /// Raw key/value pairs in descriptor order, as in [`GameEvent::keys`].
+    pub keys: Vec<(String, String)>,
+    /// Resolved participants, in [`EVENT_PLAYER_ROLES`] order. Roles the event
+    /// does not carry, or that name nobody, are left out.
+    pub players: Vec<EventPlayer>,
+}
+
+/// A [`PlayerEvent`] participant: who they are, and where they stood and looked
+/// at the event tick.
+#[derive(Debug, Clone, Default, serde::Serialize)]
+pub struct EventPlayer {
+    /// The event key this participant came from (see [`EVENT_PLAYER_ROLES`]).
+    pub role: &'static str,
+    pub steamid: Option<u64>,
+    pub name: Option<String>,
+    pub side: Option<String>,
+    pub x: Option<f32>,
+    pub y: Option<f32>,
+    pub z: Option<f32>,
+    pub pitch: Option<f32>,
+    pub yaw: Option<f32>,
+}
+
+/// Event keys that name a player and are resolved by
+/// [`Parser::events_with_players`].
+pub const EVENT_PLAYER_ROLES: [&str; 3] = ["userid", "attacker", "assister"];
+
 /// A single shot fired (`weapon_fire` game event), with the shooter's state and
 /// active-weapon state at the shot tick. See [`Parser::shots`].
 #[derive(Debug, Clone, Default, serde::Serialize)]
@@ -1114,6 +1147,92 @@ fn resolve_event_player(
         return (None, ResolvedPlayer::default());
     };
     (Some(pawn.id()), resolve_from_pawn(ctx, pawn, pk, ck))
+}
+
+/// Field keys read by [`Parser::events_with_players`], resolved once per pass.
+struct EventPlayerKeys {
+    pawn: PawnKeys,
+    controller: CtrlKeys,
+    angles: Option<u64>,
+    controller_pawn: Option<u64>,
+}
+
+impl EventPlayerKeys {
+    fn resolve(ctx: &Context) -> Self {
+        Self {
+            pawn: PawnKeys::resolve(ctx),
+            controller: CtrlKeys::resolve(ctx),
+            angles: ctx
+                .serializers()
+                .get(PLAYER_PAWN_CLASS)
+                .and_then(|s| s.resolve_field_key("m_angEyeAngles")),
+            controller_pawn: ctx
+                .serializers()
+                .get(PLAYER_CONTROLLER_CLASS)
+                .and_then(|s| s.resolve_field_key("m_hPlayerPawn")),
+        }
+    }
+}
+
+/// Resolve one participant of a raw event.
+///
+/// Follows the `<role>_pawn` handle when the event carries one. Otherwise, or
+/// when that pawn is gone, uses the controller in the player slot named by the
+/// user id (controller entity index = slot + 1) and that controller's pawn.
+/// Some events (e.g. `bomb_pickup`) carry only the pawn key.
+fn event_player(
+    ctx: &Context,
+    keys: &Keys,
+    role: &'static str,
+    pawn_key: &str,
+    k: &EventPlayerKeys,
+) -> Option<EventPlayer> {
+    let user_id = keys.get(role).and_then(|value| value.parse::<i32>().ok());
+    if user_id == Some(NO_USER_ID) || (user_id.is_none() && keys.get(pawn_key).is_none()) {
+        return None;
+    }
+    let is_pawn = |entity: &&Entity| entity.class_name.contains("PlayerPawn");
+    let controller = user_id
+        .and_then(|id| ctx.entities().get((id & 0xff) + 1))
+        .filter(|entity| entity.class_name.as_ref() == PLAYER_CONTROLLER_CLASS);
+    let pawn = keys
+        .get(pawn_key)
+        .and_then(|value| value.parse::<i64>().ok())
+        .and_then(event_entity_handle)
+        .and_then(|handle| ctx.entities().get_by_handle(handle))
+        .filter(is_pawn)
+        .or_else(|| {
+            controller?
+                .get_handle(k.controller_pawn)
+                .and_then(|handle| ctx.entities().get_by_handle(handle))
+                .filter(is_pawn)
+        });
+
+    let mut player = EventPlayer {
+        role,
+        ..Default::default()
+    };
+    if let Some(pawn) = pawn {
+        let resolved = resolve_from_pawn(ctx, pawn, &k.pawn, &k.controller);
+        player.steamid = resolved.steamid;
+        player.name = resolved.name;
+        player.side = resolved.side;
+        player.x = resolved.x;
+        player.y = resolved.y;
+        player.z = resolved.z;
+        if k.angles.is_some_and(|key| pawn.fields.contains_key(&key)) {
+            let angles = pawn.get_qangle(k.angles);
+            player.pitch = Some(angles[0]);
+            player.yaw = Some(angles[1]);
+        }
+    }
+    if player.steamid.is_none()
+        && let Some(controller) = controller
+    {
+        player.steamid = controller.get_u64(k.controller.steamid);
+        player.name = controller.get_string(k.controller.name);
+    }
+    Some(player)
 }
 
 fn assign_entity_id(id: Option<EntityId>, index: &mut Option<i32>, serial: &mut Option<u32>) {
@@ -3403,6 +3522,44 @@ impl Parser {
         out
     }
 
+    /// Decode the named game events and resolve each participant
+    /// ([`EVENT_PLAYER_ROLES`]) to a Steam id, name, side, position, and view
+    /// angles at the event tick.
+    ///
+    /// Participants resolve through the event's `<role>_pawn` handle, the same
+    /// way the kill and damage datasets do. An event without a pawn key falls
+    /// back to the controller in the player slot named by its user id. The raw
+    /// keys are kept, so callers can read any other field of the event.
+    pub fn events_with_players(&self, names: &HashSet<&str>) -> Result<Vec<PlayerEvent>> {
+        let filter: HashSet<&str> = [PLAYER_PAWN_CLASS, PLAYER_CONTROLLER_CLASS]
+            .into_iter()
+            .collect();
+        let pawn_keys = EVENT_PLAYER_ROLES.map(|role| format!("{role}_pawn"));
+        let mut keys: Option<EventPlayerKeys> = None;
+        let mut rows = Vec::new();
+        self.run_to_end_with_legacy_events_filtered(&filter, names, |ctx, events| {
+            if events.is_empty() {
+                return;
+            }
+            let k = keys.get_or_insert_with(|| EventPlayerKeys::resolve(ctx));
+            for event in events {
+                let raw = Keys(&event.keys);
+                let players = EVENT_PLAYER_ROLES
+                    .iter()
+                    .zip(&pawn_keys)
+                    .filter_map(|(&role, pawn_key)| event_player(ctx, &raw, role, pawn_key, k))
+                    .collect();
+                rows.push(PlayerEvent {
+                    tick: event.tick,
+                    name: event.name.clone(),
+                    keys: event.keys.clone(),
+                    players,
+                });
+            }
+        })?;
+        Ok(rows)
+    }
+
     /// Return chat messages in tick order.
     ///
     /// Decode direct and wrapped `SayText`, `SayText2`, and `SayTextChannel`
@@ -3722,6 +3879,45 @@ mod tests {
         }
     }
 
+    /// Resolves event participants on a real demo (set `AWPY_TEST_DEMO`).
+    /// Ignored by default; run with `--ignored`.
+    #[test]
+    #[ignore = "requires AWPY_TEST_DEMO to point at a real .dem file"]
+    fn events_with_players_resolves_participants() {
+        let path = std::env::var("AWPY_TEST_DEMO").unwrap();
+        let parser = Parser::from_file(std::path::Path::new(&path)).unwrap();
+        let names: HashSet<&str> = ["player_death", "player_blind", "bomb_pickup"]
+            .into_iter()
+            .collect();
+        let events = parser.events_with_players(&names).unwrap();
+        let steamid = |event: &PlayerEvent, role: &str| {
+            event
+                .players
+                .iter()
+                .find(|player| player.role == role)
+                .and_then(|player| player.steamid)
+        };
+
+        let deaths: Vec<&PlayerEvent> =
+            events.iter().filter(|e| e.name == "player_death").collect();
+        let kills = parser.kills().unwrap();
+        assert_eq!(deaths.len(), kills.len());
+        for (death, kill) in deaths.iter().zip(&kills) {
+            assert_eq!(death.tick, kill.tick);
+            assert_eq!(steamid(death, "userid"), kill.victim_steamid);
+            assert_eq!(steamid(death, "attacker"), kill.attacker_steamid);
+        }
+
+        let blinds: Vec<&PlayerEvent> =
+            events.iter().filter(|e| e.name == "player_blind").collect();
+        assert!(!blinds.is_empty());
+        assert!(blinds.iter().all(|e| steamid(e, "userid").is_some()));
+
+        // bomb_pickup carries only `userid_pawn`, no `userid`.
+        let pickups: Vec<&PlayerEvent> =
+            events.iter().filter(|e| e.name == "bomb_pickup").collect();
+        assert!(!pickups.is_empty());
+        assert!(pickups.iter().all(|e| steamid(e, "userid").is_some()));
     /// Dead players keep their Steam id in snapshots (set `AWPY_TEST_DEMO`).
     /// Ignored by default; run with `--ignored`.
     #[test]
