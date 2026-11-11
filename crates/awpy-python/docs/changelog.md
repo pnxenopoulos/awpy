@@ -4,6 +4,9 @@
 
 - Add a contributor guide for branch names, local checks, and dependency updates.
 - Keep smokes and fires that a round reset removes without an expire event.
+- Fix null `thrower_name`, `thrower_steamid` and `thrower_side` in `grenades`,
+  `smokes` and `fires`. Look up the projectile's networked owner handle as is
+  instead of decoding it as a game-event handle.
 
 ## 3.1.2
 
