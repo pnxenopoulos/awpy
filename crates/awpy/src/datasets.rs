@@ -886,6 +886,7 @@ struct SnapshotKeys {
     active_weapon: Option<u64>,
     weapon_count: Option<u64>,
     weapons: Vec<Option<u64>>,
+    grenade_ammo: [Option<u64>; GRENADE_AMMO_SLOTS.len()],
     weapon_resolver: WeaponResolver,
     weapon_reload: HashMap<i32, ReloadKeys>,
 }
@@ -929,8 +930,24 @@ impl SnapshotKeys {
             weapons: (0..MAX_INVENTORY)
                 .map(|i| key(&format!("m_pWeaponServices.m_hMyWeapons.{i}")))
                 .collect(),
+            grenade_ammo: GRENADE_AMMO_SLOTS
+                .map(|slot| array_element_key(key("m_pWeaponServices.m_iAmmo"), slot)),
         }
     }
+}
+
+/// `m_pWeaponServices.m_iAmmo` slots that count held grenades, in the order
+/// HE, flashbang, smoke, fire (molotov or incendiary), decoy. CS2 keeps one
+/// weapon entity per grenade type and counts extra grenades here, so two
+/// flashbangs are one entity with ammo 2.
+const GRENADE_AMMO_SLOTS: [i16; 5] = [13, 14, 15, 16, 17];
+
+/// Key of element `index` of the fixed-size array field whose key is `array`.
+fn array_element_key(array: Option<u64>, index: i16) -> Option<u64> {
+    let mut path = crate::entity::field_path::FieldPath::unpack(array?);
+    path.last += 1;
+    *path.data.get_mut(path.last)? = index;
+    path.try_pack()
 }
 
 /// The entity filter for a snapshot pass: player pawns and controllers, plus
@@ -3209,6 +3226,21 @@ impl Parser {
                 &keys.weapon_resolver,
                 &mut state,
             );
+            let grenades = [
+                &mut state.he_grenades,
+                &mut state.flashbangs,
+                &mut state.smoke_grenades,
+                &mut state.fire_grenades,
+                &mut state.decoy_grenades,
+            ];
+            for (held, key) in grenades.into_iter().zip(keys.grenade_ammo) {
+                if let Some(ammo) = key
+                    .filter(|key| pawn.fields.contains_key(key))
+                    .and_then(|key| pawn.get_u64(Some(key)))
+                {
+                    *held = (*held).max(i32::try_from(ammo).unwrap_or(i32::MAX));
+                }
+            }
             // Skip reserve/uninitialized pawns: the engine keeps spare
             // `CCSPlayerPawn` entities that sit at the world origin with no team.
             // A pawn in play is always on T or CT — dead players keep their team
@@ -3512,6 +3544,19 @@ mod tests {
             },
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn array_element_key_extends_the_array_path() {
+        use crate::entity::field_path::FieldPath;
+        let mut base = FieldPath::default();
+        base.data[0] = 87;
+        base.data[1] = 2;
+        base.last = 1;
+        let element = FieldPath::unpack(array_element_key(base.try_pack(), 14).unwrap());
+        assert_eq!(element.last, 2);
+        assert_eq!(element.data[..3], [87, 2, 14]);
+        assert_eq!(array_element_key(None, 14), None);
     }
 
     #[test]
