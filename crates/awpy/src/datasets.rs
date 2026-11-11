@@ -1007,16 +1007,19 @@ fn segment_ranges(offsets: &[(usize, i32)], n: usize) -> Vec<(Option<usize>, i32
         .collect()
 }
 
-/// Resolve a participant from the pawn `CHandle` carried in a game event.
+/// Resolve a participant from a networked pawn `CHandle` read off an entity
+/// field (e.g. a projectile's `m_hThrower` or `m_hOwnerEntity`).
+///
+/// Networked handles already use the entity-system layout that
+/// `get_by_handle` expects, so they must not go through
+/// [`event_entity_handle`]; game-event handles use a different packing and go
+/// through [`resolve_event_player`] instead.
 ///
 /// Follows the handle to the pawn (for world position and side), then the
 /// pawn's controller handle to the controller (for Steam id and name). Returns
 /// an all-`None` [`ResolvedPlayer`] when the handle does not point at a live
 /// player pawn.
-fn resolve_player(ctx: &Context, pawn_handle: i64, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
-    let Some(pawn_handle) = event_entity_handle(pawn_handle) else {
-        return ResolvedPlayer::default();
-    };
+fn resolve_player(ctx: &Context, pawn_handle: u32, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
     let Some(pawn) = ctx.entities().get_by_handle(pawn_handle) else {
         return ResolvedPlayer::default();
     };
@@ -1030,7 +1033,7 @@ fn resolve_player(ctx: &Context, pawn_handle: i64, pk: &PawnKeys, ck: &CtrlKeys)
 ///
 /// Reads side and world position off the pawn, then follows its current or
 /// original controller handle for the persistent Steam id and name. Use [`resolve_player`] when you
-/// only have a pawn `CHandle` (e.g. from a game event).
+/// only have a networked pawn `CHandle` (e.g. from an entity field).
 fn resolve_from_pawn(ctx: &Context, pawn: &Entity, pk: &PawnKeys, ck: &CtrlKeys) -> ResolvedPlayer {
     let mut player = ResolvedPlayer {
         side: Some(team_name(pawn.get_i64(pk.team)).to_string()),
@@ -2302,7 +2305,7 @@ impl Parser {
                         let player = e
                             .get_handle(tk)
                             .or_else(|| e.get_handle(ok))
-                            .map(|handle| resolve_player(ctx, i64::from(handle), pk, ck))
+                            .map(|handle| resolve_player(ctx, handle, pk, ck))
                             .unwrap_or_default();
                         throwers.insert(entity, player.clone());
                         player

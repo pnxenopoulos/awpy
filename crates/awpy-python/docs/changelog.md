@@ -5,6 +5,9 @@
 - Add `VisibilityChecker.is_visible_many` and `is_occluded_many`. Check many
   segments per call on a rayon pool with the GIL released and return a Boolean
   Polars Series. Answers match `is_visible` exactly.
+- Fix null `thrower_name`, `thrower_steamid` and `thrower_side` in `grenades`,
+  `smokes` and `fires`. Look up the projectile's networked owner handle as is
+  instead of decoding it as a game-event handle.
 
 ## 3.1.2
 
