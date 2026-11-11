@@ -843,6 +843,17 @@ def test_grenade_schema(demo: Demo) -> None:
     assert {"tick", "thrower_name", "type", "entity_id", "x", "y", "z"} <= set(g.columns)
     assert "entity_serial" in g.columns
     assert g["entity_serial"].dtype == pl.UInt32
+    assert {"start_tick", "end_tick"} <= set(g.columns)
+    assert (g["start_tick"] <= g["tick"]).all()
+    assert (g["tick"] <= g["end_tick"]).all()
+
+
+def test_projectile_throwers_resolve(demo: Demo) -> None:
+    # Projectiles name their thrower through a networked pawn handle. Allow a
+    # few misses (e.g. a thrower who disconnects mid-flight), not a whole column.
+    for df in (demo.grenades, demo.smokes, demo.fires):
+        assert df["thrower_steamid"].is_not_null().mean() > 0.9
+        assert df["thrower_side"].is_not_null().mean() > 0.9
 
 
 def test_smoke_projectiles_keep_their_grenade_role(demo: Demo) -> None:

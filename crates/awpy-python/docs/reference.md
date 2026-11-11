@@ -46,7 +46,7 @@ Use {meth}`awpy.Demo.ticks` for supported aliases or raw network fields.
 | `active_weapon` | `m_pWeaponServices.m_hActiveWeapon` |
 | `primary_weapon` | `m_pWeaponServices.m_hMyWeapons` (primary slot) |
 | `secondary_weapon` | `m_pWeaponServices.m_hMyWeapons` (pistol slot) |
-| `fire_grenades` / `smoke_grenades` / `he_grenades` / `flashbangs` / `decoy_grenades` | counts from `m_pWeaponServices.m_hMyWeapons` |
+| `fire_grenades` / `smoke_grenades` / `he_grenades` / `flashbangs` / `decoy_grenades` | counts from the `m_pWeaponServices.m_iAmmo` grenade slots (at least one per held grenade in `m_hMyWeapons`) |
 | `inventory` | full loadout (slot order) from `m_pWeaponServices.m_hMyWeapons` |
 
 ### Economy

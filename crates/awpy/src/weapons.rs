@@ -112,6 +112,56 @@ pub fn weapon_info(class_name: &str) -> Option<WeaponInfo> {
     None
 }
 
+/// The weapon classes that hold more than one variant (Deagle / Revolver, M4A4 / M4A1-S,
+/// P2000 / USP-S). Their item-definition fields are what tells the variants apart.
+pub(crate) const VARIANT_CLASSES: &[&str] = &[
+    "CDEagle",
+    "CWeaponRevolver",
+    "CWeaponM4A1",
+    "CWeaponM4A1Silencer",
+    "CWeaponHKP2000",
+    "CWeaponUSPSilencer",
+];
+
+/// Field paths that identify a variant on [`VARIANT_CLASSES`] entities.
+pub(crate) const VARIANT_FIELDS: [&str; 2] = [
+    "m_AttributeManager.m_Item.m_iItemDefinitionIndex",
+    "m_nSubclassID",
+];
+
+/// The static name of a variant-class weapon (`usp_silencer`, `m4a1`, ...), if `name` is one.
+pub(crate) fn variant_name(name: &str) -> Option<&'static str> {
+    [
+        "deagle",
+        "revolver",
+        "m4a1",
+        "m4a1_silencer",
+        "hkp2000",
+        "usp_silencer",
+    ]
+    .into_iter()
+    .find(|n| *n == name)
+}
+
+/// The name a `player_hurt` row should carry. The event names the item class
+/// (`hkp2000` for a USP-S hit, `m4a1` for an M4A1-S hit), so when the attacker's
+/// active weapon is a variant of that same class, its name wins. Anything else
+/// (grenades, world, bomb, knife, or no active weapon) keeps the event's name.
+pub(crate) fn damage_weapon_name(event_weapon: String, active: Option<&str>) -> String {
+    let family = |name: &str| -> Option<u8> {
+        match name {
+            "deagle" | "revolver" => Some(0),
+            "m4a1" | "m4a1_silencer" => Some(1),
+            "hkp2000" | "usp_silencer" => Some(2),
+            _ => None,
+        }
+    };
+    match (family(&event_weapon), active) {
+        (Some(f), Some(active)) if family(active) == Some(f) => active.to_string(),
+        _ => event_weapon,
+    }
+}
+
 /// `(projectile class, grenade type)` for thrown grenades in flight — the
 /// entities the [`grenades`](crate::demo::Parser::grenades) trajectory dataset
 /// follows. Distinct from the held-grenade entities in [`WEAPONS`] (a thrown HE
@@ -184,6 +234,169 @@ const STARTING_PISTOLS: &[WeaponVariant] = &[
         name: "usp_silencer",
     },
 ];
+/// The MP7 and MP5-SD can share the MP7 network class.
+const SMGS: &[WeaponVariant] = &[
+    WeaponVariant {
+        definition: 33,
+        subclass: 10_406_947,
+        name: "mp7",
+    },
+    WeaponVariant {
+        definition: 23,
+        subclass: 45_975_715,
+        name: "mp5sd",
+    },
+];
+/// The P250 and CZ75-Auto fill the same loadout slot.
+const AUTO_PISTOLS: &[WeaponVariant] = &[
+    WeaponVariant {
+        definition: 36,
+        subclass: 1_573_262_270,
+        name: "p250",
+    },
+    WeaponVariant {
+        definition: 63,
+        subclass: 3_464_182_751,
+        name: "cz75a",
+    },
+];
+/// The Five-SeveN and Tec-9 fill the same loadout slot.
+const SLOT_PISTOLS: &[WeaponVariant] = &[
+    WeaponVariant {
+        definition: 3,
+        subclass: 3_661_698_933,
+        name: "fiveseven",
+    },
+    WeaponVariant {
+        definition: 30,
+        subclass: 884_934_217,
+        name: "tec9",
+    },
+];
+/// Knives share one network class; the item definition names the model.
+/// Names follow the CS2 item names without the `weapon_` prefix.
+const KNIVES: &[WeaponVariant] = &[
+    WeaponVariant {
+        definition: 41,
+        subclass: 338_620_472,
+        name: "knifegg",
+    },
+    WeaponVariant {
+        definition: 42,
+        subclass: 294_910_436,
+        name: "knife",
+    },
+    WeaponVariant {
+        definition: 59,
+        subclass: 1_058_568_214,
+        name: "knife_t",
+    },
+    WeaponVariant {
+        definition: 80,
+        subclass: 839_540_137,
+        name: "knife_ghost",
+    },
+    WeaponVariant {
+        definition: 500,
+        subclass: 3_933_374_535,
+        name: "bayonet",
+    },
+    WeaponVariant {
+        definition: 503,
+        subclass: 3_787_235_507,
+        name: "knife_css",
+    },
+    WeaponVariant {
+        definition: 505,
+        subclass: 4_046_390_180,
+        name: "knife_flip",
+    },
+    WeaponVariant {
+        definition: 506,
+        subclass: 2_047_704_618,
+        name: "knife_gut",
+    },
+    WeaponVariant {
+        definition: 507,
+        subclass: 1_731_408_398,
+        name: "knife_karambit",
+    },
+    WeaponVariant {
+        definition: 508,
+        subclass: 1_638_561_588,
+        name: "knife_m9_bayonet",
+    },
+    WeaponVariant {
+        definition: 509,
+        subclass: 2_282_479_884,
+        name: "knife_tactical",
+    },
+    WeaponVariant {
+        definition: 512,
+        subclass: 3_412_259_219,
+        name: "knife_falchion",
+    },
+    WeaponVariant {
+        definition: 514,
+        subclass: 2_511_498_851,
+        name: "knife_survival_bowie",
+    },
+    WeaponVariant {
+        definition: 515,
+        subclass: 1_353_709_123,
+        name: "knife_butterfly",
+    },
+    WeaponVariant {
+        definition: 516,
+        subclass: 4_269_888_884,
+        name: "knife_push",
+    },
+    WeaponVariant {
+        definition: 517,
+        subclass: 1_105_782_941,
+        name: "knife_cord",
+    },
+    WeaponVariant {
+        definition: 518,
+        subclass: 275_962_944,
+        name: "knife_canis",
+    },
+    WeaponVariant {
+        definition: 519,
+        subclass: 1_338_637_359,
+        name: "knife_ursus",
+    },
+    WeaponVariant {
+        definition: 520,
+        subclass: 3_230_445_913,
+        name: "knife_gypsy_jackknife",
+    },
+    WeaponVariant {
+        definition: 521,
+        subclass: 3_206_681_373,
+        name: "knife_outdoor",
+    },
+    WeaponVariant {
+        definition: 522,
+        subclass: 2_595_277_776,
+        name: "knife_stiletto",
+    },
+    WeaponVariant {
+        definition: 523,
+        subclass: 4_029_975_521,
+        name: "knife_widowmaker",
+    },
+    WeaponVariant {
+        definition: 525,
+        subclass: 365_028_728,
+        name: "knife_skeleton",
+    },
+    WeaponVariant {
+        definition: 526,
+        subclass: 3_845_286_452,
+        name: "knife_kukri",
+    },
+];
 
 /// Field keys and the class fallback for one weapon class.
 struct WeaponIdentity {
@@ -199,6 +412,10 @@ impl WeaponIdentity {
             "CDEagle" | "CWeaponRevolver" => PISTOLS,
             "CWeaponM4A1" | "CWeaponM4A1Silencer" => RIFLES,
             "CWeaponHKP2000" | "CWeaponUSPSilencer" => STARTING_PISTOLS,
+            "CWeaponMP7" | "CWeaponMP5SD" => SMGS,
+            "CWeaponP250" | "CWeaponCZ75a" => AUTO_PISTOLS,
+            "CWeaponFiveSeven" | "CWeaponTec9" => SLOT_PISTOLS,
+            knife if knife.starts_with("CKnife") => KNIVES,
             _ => &[],
         }
     }
@@ -292,11 +509,39 @@ mod tests {
     }
 
     #[test]
+    fn damage_name_takes_the_variant_of_the_same_class() {
+        let name = |event: &str, active: Option<&str>| damage_weapon_name(event.into(), active);
+        assert_eq!(name("hkp2000", Some("usp_silencer")), "usp_silencer");
+        assert_eq!(name("m4a1", Some("m4a1_silencer")), "m4a1_silencer");
+        assert_eq!(name("m4a1", Some("m4a1")), "m4a1");
+        assert_eq!(name("deagle", Some("revolver")), "revolver");
+    }
+
+    #[test]
+    fn damage_name_keeps_the_event_name_otherwise() {
+        let name = |event: &str, active: Option<&str>| damage_weapon_name(event.into(), active);
+        // no active weapon, or a different family (swapped to a knife / grenade at the hit tick)
+        assert_eq!(name("hkp2000", None), "hkp2000");
+        assert_eq!(name("m4a1", Some("knife")), "m4a1");
+        assert_eq!(name("deagle", Some("usp_silencer")), "deagle");
+        // grenades, bomb, world, knife are never rewritten
+        assert_eq!(name("hegrenade", Some("usp_silencer")), "hegrenade");
+        assert_eq!(name("inferno", Some("m4a1_silencer")), "inferno");
+        assert_eq!(name("planted_c4", Some("hkp2000")), "planted_c4");
+        assert_eq!(name("world", None), "world");
+        assert_eq!(name("knife", Some("revolver")), "knife");
+    }
+
+    #[test]
     fn shared_classes_resolve_each_item_definition() {
         for (class, variants, slot) in [
             ("CDEagle", PISTOLS, Secondary),
             ("CWeaponM4A1", RIFLES, Primary),
             ("CWeaponHKP2000", STARTING_PISTOLS, Secondary),
+            ("CKnife", KNIVES, Melee),
+            ("CWeaponMP7", SMGS, Primary),
+            ("CWeaponP250", AUTO_PISTOLS, Secondary),
+            ("CWeaponFiveSeven", SLOT_PISTOLS, Secondary),
         ] {
             for variant in variants {
                 let info = entity_info(class, Some(variant.definition), None);
@@ -312,6 +557,10 @@ mod tests {
             ("CDEagle", PISTOLS),
             ("CWeaponM4A1", RIFLES),
             ("CWeaponHKP2000", STARTING_PISTOLS),
+            ("CKnife", KNIVES),
+            ("CWeaponMP7", SMGS),
+            ("CWeaponP250", AUTO_PISTOLS),
+            ("CWeaponFiveSeven", SLOT_PISTOLS),
         ] {
             for variant in variants {
                 for definition in [None, Some(0), Some(u32::MAX)] {
