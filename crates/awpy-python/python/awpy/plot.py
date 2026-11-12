@@ -20,6 +20,7 @@ import math
 import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import polars as pl
@@ -30,8 +31,11 @@ try:
     import matplotlib.pyplot as plt
     import numpy as np
     from matplotlib.axes import Axes
+    from matplotlib.collections import LineCollection
+    from matplotlib.colors import to_rgba
     from matplotlib.figure import Figure
     from matplotlib.patches import Circle, Patch, Polygon, Rectangle
+    from matplotlib.ticker import PercentFormatter
     from matplotlib.transforms import Affine2D, ScaledTranslation, Transform
 except ImportError as exc:  # pragma: no cover - exercised only without the extra
     _msg = (
@@ -41,7 +45,15 @@ except ImportError as exc:  # pragma: no cover - exercised only without the extr
     raise ImportError(_msg) from exc
 
 from awpy import data
+from awpy._win_prob_features import (
+    ENEMY_ATTACK,
+    SIDES,
+    planted_bombs,
+    recording_for,
+    round_windows,
+)
 from awpy.map_control import LINE_OF_SIGHT_METHODS, MapControlParams, map_control_at
+from awpy.win_prob import DEFAULT_MODEL, RoundEndModel, load_model
 
 if TYPE_CHECKING:
     from awpy import Demo, NavMesh
@@ -68,6 +80,7 @@ __all__ = [
     "nav",
     "pixel_to_world",
     "radar",
+    "round_win_probability",
     "world_to_pixel",
 ]
 
@@ -1093,6 +1106,190 @@ def _map_control_legend(ax: Axes, control: pl.DataFrame) -> None:
         borderpad=0.5,
     )
     legend.set_zorder(20)
+
+
+# --- round win probability -------------------------------------------------------
+
+
+def _draw_win_probability(
+    ax: Axes, seconds: np.ndarray, probabilities: np.ndarray, *, neutral: str
+) -> None:
+    # Each sample holds until the next sample. Split a vertical change that
+    # crosses 50%, so that each part of the change has the correct color.
+    x = np.repeat(seconds, 2)[1:]
+    y = np.repeat(probabilities, 2)[:-1]
+    segments: list[tuple[Point2, Point2]] = []
+    for start, end in pairwise(zip(x, y, strict=True)):
+        if min(start[1], end[1]) < 0.5 < max(start[1], end[1]):
+            crossing = (end[0], 0.5)
+            segments.append((start, crossing))
+            start = crossing
+        segments.append((start, end))
+
+    def color(probability: float) -> str:
+        if probability == 0.5:
+            return neutral
+        return CT_COLOR if probability > 0.5 else T_COLOR
+
+    for mask, shade in ((y > 0.5, CT_COLOR), (y < 0.5, T_COLOR)):
+        ax.fill_between(x, 0.5, y, where=mask.tolist(), interpolate=True, color=shade, alpha=0.12)
+    ax.add_collection(
+        LineCollection(
+            segments,
+            colors=[color((start[1] + end[1]) / 2) for start, end in segments],
+            linewidths=2.1,
+            capstyle="round",
+            zorder=3,
+        )
+    )
+    if seconds.size == 1:
+        ax.scatter(seconds[0], probabilities[0], s=20, color=color(probabilities[0]), zorder=4)
+
+
+def _draw_deaths(ax: Axes, kills: pl.DataFrame, scores: pl.DataFrame, *, edge: str) -> None:
+    # Put a dot in the victim's team color on the line at each enemy kill. If
+    # both teams lose a player on the same tick, the dot is half CT and half T.
+    victim = pl.col("victim_side")
+    deaths = (
+        kills.filter(ENEMY_ATTACK)
+        .group_by("tick")
+        .agg(ct=(victim == SIDES[0]).any(), t=(victim == SIDES[1]).any())
+        .join(scores.select("tick", "seconds", "ct_win_probability"), on="tick")
+        .sort("tick")
+    )
+    labels = {(True, False): "CT Death", (False, True): "T Death", (True, True): "Both Teams"}
+    for (ct, t), label in labels.items():
+        markers = deaths.filter(pl.col("ct") == ct, pl.col("t") == t)
+        if markers.is_empty():
+            continue
+        ax.plot(
+            markers["seconds"],
+            markers["ct_win_probability"],
+            linestyle="none",
+            marker="o",
+            markersize=6,
+            fillstyle="left" if ct and t else "full",
+            markerfacecolor=CT_COLOR if ct else T_COLOR,
+            markerfacecoloralt=T_COLOR if ct and t else None,
+            markeredgecolor=edge,
+            zorder=6,
+            label=label,
+        )
+
+
+def round_win_probability(
+    demo: Demo,
+    round_num: int,
+    *,
+    model: RoundEndModel | str = DEFAULT_MODEL,
+    part: int | None = None,
+    step_seconds: float = 1.0,
+    show_bomb_plants: bool = True,
+    show_kills: bool = True,
+    title: str | None = None,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """Plot the CT win probability through a completed CS2 round.
+
+    Args:
+        demo: CS2 demo to score.
+        round_num: Round number in the selected recording.
+        model: A loaded model, or the ID of a model to load.
+        part: Zero-based recording index. Necessary for a multipart demo.
+        step_seconds: Time between samples. Each kill, plant, and the round
+            end also get a sample.
+        show_bomb_plants: Draw a solid red line at each completed plant.
+        show_kills: Put a dot in the victim's team color at each enemy kill.
+        title: Plot title. The default is ``Round X | filename``.
+        ax: Axes to draw on. If ``None``, make a new figure.
+
+    Returns:
+        The matplotlib figure and axes.
+
+    Raises:
+        ValueError: If the round is not available or has no player snapshots.
+
+    Notes:
+        Install ``awpy[win-prob,plot]``. The line is CT blue above 50% and T
+        gold below 50%. Time starts at freeze end. A tick without a player
+        snapshot gets no sample.
+    """
+    if not math.isfinite(step_seconds) or step_seconds <= 0:
+        raise ValueError("step_seconds must be positive and finite")
+    recording = recording_for(demo, part)
+    _, start, end = round_windows(recording, round_num).row(0)
+    tick_rate = recording.tick_rate
+    recording.load("bomb", "kills")
+    plants = planted_bombs(recording)["_plant_tick"]
+    plants = plants.filter(plants.is_between(start, end))
+    kills = recording.kills.filter(pl.col("tick").is_between(start, end))
+    step = max(1, round(min(step_seconds * tick_rate, end - start + 1)))
+    ticks = sorted({*range(start, end + 1, step), *plants, *kills["tick"], end})
+    loaded = load_model(model) if isinstance(model, str) else model
+    scores = loaded._predict(recording, ticks, allow_missing=True)
+    if scores.is_empty():
+        raise ValueError(f"no CT or T player snapshots for round {round_num}")
+    scores = scores.with_columns(seconds=(pl.col("tick") - start) / tick_rate)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(9.6, 4.6), facecolor="#0B1018")
+        fig.set_layout_engine("constrained", w_pad=0.14, h_pad=0.12)
+    else:
+        fig = cast(Figure, ax.figure)
+    # Use light text on a dark figure and dark text on a light figure.
+    red, green, blue, _ = to_rgba(fig.get_facecolor())
+    dark = 0.2126 * red + 0.7152 * green + 0.0722 * blue < 0.5
+    panel, ink, muted, grid = (
+        ("#111925", "#F1F5F9", "#A8B6C8", "#293649")
+        if dark
+        else ("#F8FAFC", "#0F172A", "#526276", "#DBE3EF")
+    )
+    ax.set_facecolor(panel)
+    ax.axhline(0.5, color=muted, linewidth=0.9, linestyle="--", alpha=0.55)
+    _draw_win_probability(
+        ax, scores["seconds"].to_numpy(), scores["ct_win_probability"].to_numpy(), neutral=muted
+    )
+    if show_bomb_plants:
+        for index, tick in enumerate(plants):
+            ax.axvline(
+                (tick - start) / tick_rate,
+                color=NEUTRAL_COLOR,
+                linestyle="-",
+                linewidth=1.8,
+                alpha=0.9,
+                zorder=5,
+                label=None if index else "Bomb Planted",
+            )
+    if show_kills:
+        _draw_deaths(ax, kills, scores, edge=panel)
+
+    if title is None:
+        title = f"Round {round_num} | {recording.paths[0].name}"
+    ax.set_title(title, loc="left", color=ink, fontsize=16, fontweight="bold", pad=14)
+    ax.set_xlabel("Time Since Freeze End (s)", color=muted, labelpad=8)
+    ax.set_ylabel("CT Win Probability", color=muted, labelpad=10)
+    ax.set_xlim(0, 1.01 * (max(end - start, 1) / tick_rate))
+    ax.set_ylim(0, 1)
+    ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
+    ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
+    ax.set_axisbelow(True)
+    ax.grid(axis="y", color=grid, linewidth=0.65)
+    ax.tick_params(colors=muted, length=0, pad=6, labelsize=9)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    handles, labels = ax.get_legend_handles_labels()
+    if handles:
+        ax.legend(
+            handles,
+            labels,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.17),
+            ncols=len(handles),
+            frameon=False,
+            labelcolor=muted,
+            fontsize=9,
+        )
+    return fig, ax
 
 
 # --- heatmaps --------------------------------------------------------------------

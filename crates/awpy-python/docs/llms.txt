@@ -13,6 +13,7 @@ Awpy does not parse the older CS:GO demo format.
 - [Getting started](https://awpy.readthedocs.io/en/latest/getting-started.html): Install Awpy, parse a local demo, and query Polars results.
 - [Examples](https://awpy.readthedocs.io/en/latest/examples.html): Complete scripts for scoreboards, trades, economy, GIFs, and Parquet output.
 - [Datasets](https://awpy.readthedocs.io/en/latest/datasets.html): Column schemas, loading, snapshot selectors, and multipart recordings.
+- [Round win probability](https://awpy.readthedocs.io/en/latest/win-prob.html): Download a Kumo model, score replay ticks, plot CT win probability, and calculate player WPA.
 - [Metric and property reference](https://awpy.readthedocs.io/en/latest/reference.html): ADR, KAST, trades, snapshot fields, and CS2 game events.
 
 ## Python and command-line APIs

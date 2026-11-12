@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.3.0
+
+- Add the `win-prob` extra. `RoundEndModel.predict` gives the round-end reason
+  and the CT and T win probabilities at demo ticks.
+- Add `RoundEndModel.wpa` to calculate player Win Probability Added (WPA) from
+  damage and kills.
+- Add `plot.round_win_probability` to plot the CT win probability through a round.
+- Add `awpy models get` to download versioned Kumo models.
+- Sync CS2 protobufs to build `2000943`.
+  In `awpy-proto` 0.2, `CsvcMsgCreateStringTable` loses `uncompressed_size`.
+
 ## 3.2.0
 
 - Use pbdems2 0.4.2 to look up grenade ammo slots.

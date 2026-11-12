@@ -49,6 +49,7 @@ Awpy and the Deadlock parser [Boon](https://github.com/pnxenopoulos/boon) use th
 - Read match events, player state, rounds, and statistics as DataFrames.
 - Select the datasets, ticks, or entity properties that you need.
 - Reconstruct rounds from game state, including demos without round events.
+- Predict round outcomes, plot win probability, and calculate player WPA with the [win probability extra](https://awpy.readthedocs.io/en/latest/win-prob.html).
 - Use the Python API, Rust library, or command-line interface.
 
 <a id="installation"></a>
@@ -94,7 +95,7 @@ Add the Awpy Rust crate:
 
 ```toml
 [dependencies]
-awpy = "3.1"
+awpy = "3.3"
 ```
 
 <a id="quick-start"></a>

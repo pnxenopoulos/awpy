@@ -1717,6 +1717,12 @@ pub struct CMsgSource2SystemSpecs {
     pub cpu_model: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "4")]
     pub cpu_num_physical: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "5")]
+    pub cpu_num_logical: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "6")]
+    pub cpu_num_performance: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "7")]
+    pub cpu_num_efficiency: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "21")]
     pub ram_physical_total_mb: ::core::option::Option<u32>,
     #[prost(string, optional, tag = "41")]
@@ -1739,6 +1745,8 @@ pub struct CMsgSource2SystemSpecs {
     pub backbuffer_width: ::core::option::Option<u32>,
     #[prost(uint32, optional, tag = "52")]
     pub backbuffer_height: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "61")]
+    pub thread_pool_workers: ::core::option::Option<u32>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -2744,8 +2752,6 @@ pub struct CsvcMsgCreateStringTable {
     pub flags: ::core::option::Option<i32>,
     #[prost(bytes = "vec", optional, tag = "7")]
     pub string_data: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(int32, optional, tag = "8")]
-    pub uncompressed_size: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "9")]
     pub data_compressed: ::core::option::Option<bool>,
     #[prost(bool, optional, tag = "10")]

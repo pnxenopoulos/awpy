@@ -17,7 +17,7 @@ from awpy import Demo, InvalidDemoError, __version__, data
 
 app = typer.Typer(
     name="awpy",
-    help="Awpy — parse CS2 demos and manage map-data assets from the command line.",
+    help="Awpy — parse CS2 demos and manage map assets and models.",
     epilog="Parser-internals commands (messages, entities, send-tables, string-tables, "
     "classes) live in the Rust developer binary: cargo install --path crates/awpy-dev "
     "(installs `awpy-dev`).",
@@ -236,6 +236,25 @@ def clear(
         raise typer.BadParameter("specify a release to clear, or --all for the whole cache")
     data.clear(None if delete_all else release)
     typer.echo("cleared the whole cache" if delete_all else f"cleared {release}")
+
+
+models = typer.Typer(help="Download versioned win probability models.", no_args_is_help=True)
+app.add_typer(models, name="models")
+
+
+@models.command("get")
+def get_model(
+    model: Annotated[str, typer.Argument(help="Model ID, such as kumo-round-end/v1.0.0.")],
+    force: Annotated[bool, typer.Option("--force", help="Download the context again.")] = False,
+) -> None:
+    """Download and verify a round-end model context."""
+    from awpy.win_prob import get_model as download_model
+
+    try:
+        typer.echo(str(download_model(model, force=force)))
+    except (OSError, ValueError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
 
 
 def main() -> None:
