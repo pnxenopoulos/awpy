@@ -26,6 +26,7 @@ dependencies = ["polars>=2.0,<3", "typer>=0.12"]
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.8"]
+win-prob = ["structured-data-models==0.2.1", "torch>=2.7,<3"]
 
 [project.urls]
 Homepage = "https://github.com/pnxenopoulos/awpy"

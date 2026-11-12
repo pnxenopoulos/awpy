@@ -57,6 +57,16 @@ awpy maps            # maps available in a release
 awpy clear 2000873   # delete one cached release (--all for everything)
 ```
 
+## Download a win probability model with the Awpy CLI
+
+```sh
+awpy models get kumo-round-end/v1.0.0
+```
+
+The command downloads the model context, verifies its checksum, and keeps it in
+the cache. To download the context again, add `--force`. For predictions and
+plots, see {doc}`win-prob`.
+
 <a id="parser-internals-awpy-dev"></a>
 
 ## Inspect Source 2 internals with awpy-dev

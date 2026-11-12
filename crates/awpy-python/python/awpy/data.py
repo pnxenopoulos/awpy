@@ -120,7 +120,7 @@ def local_versions() -> list[str]:
     """
     if not AWPY_DATA_DIR.is_dir():
         return []
-    versions = [p.name for p in AWPY_DATA_DIR.iterdir() if p.is_dir()]
+    versions = [p.name for p in AWPY_DATA_DIR.iterdir() if p.is_dir() and p.name != "models"]
     # ClientVersions are increasing integers; sort numerically when we can.
     return sorted(versions, key=lambda v: (0, int(v)) if v.isdigit() else (1, v))
 

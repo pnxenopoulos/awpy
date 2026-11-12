@@ -19,6 +19,8 @@ pip install 'awpy[plot]'
 Functions take a map name and an optional `version=`.
 Assets use the newest cached release, or the latest release if none is cached.
 
+For the CT win probability plot, see {doc}`win-prob`.
+
 <a id="game-state-frame"></a>
 
 ## Plot CS2 player state with Awpy frame

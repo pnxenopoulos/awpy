@@ -76,6 +76,27 @@ fig, ax = plot.heatmap(demo.header["map_name"], deaths, method="kde")
 fig.savefig("deaths.png")
 ```
 
+## Predict and plot CS2 round outcomes with Awpy
+
+```sh
+uv add 'awpy[win-prob,plot]'
+uv run awpy models get kumo-round-end/v1.0.0
+```
+
+```python
+from awpy import Demo, plot, win_prob
+
+demo = Demo("match.dem")
+model = win_prob.load_model("kumo-round-end/v1.0.0")
+round_num, tick = demo.rounds.select("round_num", "freeze_end_tick").drop_nulls().row(0)
+print(model.predict(demo, ticks=tick))
+fig, _ = plot.round_win_probability(demo, round_num, model=model)
+fig.savefig("round-win.png")
+```
+
+For player WPA and model options, see the
+[win probability guide](https://awpy.readthedocs.io/en/latest/win-prob.html).
+
 ## Use the Awpy command line
 
 ```bash

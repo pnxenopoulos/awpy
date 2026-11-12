@@ -62,6 +62,7 @@ faq
 :caption: Match data
 
 datasets
+win-prob
 reference
 ```
 

@@ -92,6 +92,16 @@ Calculate map control from a nav mesh and player positions.
 .. autofunction:: awpy._awpy.compute_map_control
 ```
 
+## Predict CS2 round outcomes with Awpy
+
+Install `awpy[win-prob]` to predict round outcomes and calculate player WPA.
+For examples, see {doc}`win-prob`.
+
+```{eval-rst}
+.. automodule:: awpy.win_prob
+   :members:
+```
+
 <a id="awpyplot"></a>
 <a id="awpy-plot"></a>
 
