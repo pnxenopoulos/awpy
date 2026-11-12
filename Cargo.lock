@@ -247,7 +247,7 @@ dependencies = [
 
 [[package]]
 name = "awpy-proto"
-version = "0.1.11206718+2000942"
+version = "0.2.11228971+2000943"
 dependencies = [
  "bytes",
  "prost",
