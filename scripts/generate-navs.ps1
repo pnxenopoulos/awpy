@@ -70,44 +70,6 @@ if (Test-Path $zipPath) {
     Write-Host "Error: Zip file was not created." -ForegroundColor Red
 }
 
-# Function to compute a hash based on the contents of all files in a directory.
-function Get-DirectoryContentHash {
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]$DirectoryPath,
-        [string]$Algorithm = "SHA256"
-    )
-    # Get all files recursively and sort them by their full path for consistency.
-    $files = Get-ChildItem -Path $DirectoryPath -File -Recurse | Sort-Object FullName
-
-    # Initialize the hasher.
-    $hasher = [System.Security.Cryptography.HashAlgorithm]::Create($Algorithm)
-
-    # Create a memory stream to accumulate the data.
-    $ms = New-Object System.IO.MemoryStream
-
-    foreach ($file in $files) {
-        # Write the file's relative path (as bytes) to ensure files with identical contents but different names produce different results.
-        $relativePath = $file.FullName.Substring($DirectoryPath.Length).TrimStart('\')
-        $pathBytes = [System.Text.Encoding]::UTF8.GetBytes($relativePath)
-        $ms.Write($pathBytes, 0, $pathBytes.Length)
-
-        # Write the file's contents.
-        $fileBytes = [System.IO.File]::ReadAllBytes($file.FullName)
-        $ms.Write($fileBytes, 0, $fileBytes.Length)
-    }
-
-    # Compute the hash of the combined stream.
-    $ms.Position = 0
-    $hashBytes = $hasher.ComputeHash($ms)
-    $hashHex = [BitConverter]::ToString($hashBytes) -replace '-', ''
-    return $hashHex
-}
-
 # Compute and print the hash of the zip archive using SHA256.
 $fileHash = Get-FileHash -Path $zipPath -Algorithm SHA256
 Write-Host "Zip file hash (SHA256): $($fileHash.Hash)" -ForegroundColor Cyan
-
-# Compute and print the hash of the contents of the output directory (ignoring zip metadata).
-$contentHash = Get-DirectoryContentHash -DirectoryPath $outputDirectory
-Write-Host "Combined content hash of output files: $contentHash" -ForegroundColor Cyan
