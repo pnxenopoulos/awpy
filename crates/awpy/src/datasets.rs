@@ -1272,6 +1272,16 @@ struct RoundTracker {
 }
 
 impl RoundTracker {
+    fn roll_back_to(&mut self, completed_rounds: i32) {
+        // A backup restore can rewind a single round. A full restart rewinds to zero.
+        self.rounds
+            .retain(|round| round.round_num <= completed_rounds);
+        self.start_tick = None;
+        self.freeze_end_tick = None;
+        // A restore can start a new freeze while the discarded round was already frozen.
+        self.prev_freeze = false;
+    }
+
     fn observe(&mut self, ctx: &Context) {
         let Some((_, entity)) = ctx
             .entities()
@@ -1293,17 +1303,11 @@ impl RoundTracker {
             return;
         };
 
-        // A match restart discards warmup/knife-round state and resets the
-        // canonical round counter.
-        if total < self.prev_total {
-            self.rounds.clear();
-            self.start_tick = None;
-            self.freeze_end_tick = None;
-        }
-
         // Emit before processing this tick's freeze transition: the deciding
         // round and post-game freeze can begin on the same tick.
-        if !warmup && total == self.prev_total + 1 {
+        if total < self.prev_total {
+            self.roll_back_to(total);
+        } else if !warmup && total == self.prev_total + 1 {
             let win_status = entity.get_i64(keys.win_status);
             let (Ok(winner), Ok(reason)) = (
                 i32::try_from(win_status),
@@ -3603,6 +3607,33 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn round_rollback_preserves_completed_rounds_until_a_full_restart() {
+        // A recording can begin mid-match, so round numbers need not start at one.
+        let mut tracker = RoundTracker {
+            rounds: (14..=16)
+                .map(|round_num| Round {
+                    round_num,
+                    ..Round::default()
+                })
+                .collect(),
+            start_tick: Some(100),
+            freeze_end_tick: Some(200),
+            prev_freeze: true,
+            ..RoundTracker::default()
+        };
+
+        tracker.roll_back_to(15);
+        let kept: Vec<_> = tracker.rounds.iter().map(|r| r.round_num).collect();
+        assert_eq!(kept, [14, 15]);
+        assert_eq!(tracker.start_tick, None);
+        assert_eq!(tracker.freeze_end_tick, None);
+        assert!(!tracker.prev_freeze);
+
+        tracker.roll_back_to(0);
+        assert!(tracker.rounds.is_empty());
+    }
 
     /// An active entity with no fields.
     fn entity(index: i32, serial: u32, class: &str) -> Entity {
