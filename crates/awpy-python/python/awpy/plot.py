@@ -470,46 +470,28 @@ def _draw_player(ax: Axes, px: float, py: float, player: Player, alpha: float) -
         if value is None:
             continue
         y0 = _BAR_TOP_PT + row * (_BAR_HEIGHT_PT + _BAR_GAP_PT)
-        # Depleted track spans the full width; the filled portion sits on top,
-        # so whatever is missing shows through in the depleted color.
-        ax.add_patch(
-            Rectangle(
-                (bar_left, y0),
-                _BAR_WIDTH_PT,
-                _BAR_HEIGHT_PT,
-                facecolor=depleted,
-                alpha=alpha,
-                zorder=12,
-                transform=trans,
-            )
-        )
         frac = max(0, min(value, 100)) / 100
-        if frac > 0:
+        # Draw the full track, the nonempty fill, then the black border.
+        for width, face, zorder, edgecolor, linewidth in (
+            (1, depleted, 12, None, None),
+            (frac, filled, 13, None, None),
+            (1, "none", 14, "black", 0.8),
+        ):
+            if width <= 0:
+                continue
             ax.add_patch(
                 Rectangle(
                     (bar_left, y0),
-                    _BAR_WIDTH_PT * frac,
+                    _BAR_WIDTH_PT * width,
                     _BAR_HEIGHT_PT,
-                    facecolor=filled,
+                    facecolor=face,
                     alpha=alpha,
-                    zorder=13,
+                    zorder=zorder,
                     transform=trans,
+                    edgecolor=edgecolor,
+                    linewidth=linewidth,
                 )
             )
-        # Black frame on top, so each bar reads as a distinct pill.
-        ax.add_patch(
-            Rectangle(
-                (bar_left, y0),
-                _BAR_WIDTH_PT,
-                _BAR_HEIGHT_PT,
-                facecolor="none",
-                edgecolor="black",
-                linewidth=0.8,
-                alpha=alpha,
-                zorder=14,
-                transform=trans,
-            )
-        )
 
     if player.label:
         # Anchored above the marker by a point offset, so it too stays put on zoom.

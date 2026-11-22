@@ -34,7 +34,7 @@ use crate::error::Result;
 use crate::hitgroups::hitgroup_name;
 use crate::position::cell_to_world;
 use crate::round_end_reasons::round_end_reason_name;
-use crate::teams::team_name;
+use crate::teams::{sides_flipped, team_name};
 use crate::weapons::{
     VARIANT_CLASSES, VARIANT_FIELDS, WeaponResolver, WeaponSlot, damage_weapon_variant,
     grenade_projectile_classes, grenade_type, refine_damage_weapon, variant_name, weapon_classes,
@@ -74,22 +74,6 @@ fn buy_type(team_equipment: i32) -> &'static str {
     } else {
         "full"
     }
-}
-
-/// Whether most players shared between two rounds are on the opposite side in the
-/// later round — the tell-tale of a halftime side switch.
-fn sides_flipped(prev: &HashMap<u64, &str>, cur: &HashMap<u64, &str>) -> bool {
-    let (mut flipped, mut same) = (0, 0);
-    for (steamid, &cur_side) in cur {
-        if let Some(&prev_side) = prev.get(steamid) {
-            if prev_side == cur_side {
-                same += 1;
-            } else {
-                flipped += 1;
-            }
-        }
-    }
-    flipped > same
 }
 
 /// Upper bound on a single purchase's money cost. A larger drop is a money

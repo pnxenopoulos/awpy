@@ -32,6 +32,7 @@ use std::collections::{HashMap, HashSet};
 use crate::datasets::{Blind, Damage, EventDatasets, Kill, Round, Shot, trade_flags, trade_ticks};
 use crate::demo::Parser;
 use crate::error::Result;
+use crate::teams::sides_flipped;
 
 /// Fallback tick rate when the demo does not report playback timing.
 const DEFAULT_TICKRATE: f32 = 64.0;
@@ -352,15 +353,7 @@ fn halves(obs: &SideObservations, total_rounds: usize) -> Vec<usize> {
 
     let mut half = vec![0usize; total_rounds];
     for round in 1..total_rounds {
-        let (prev, cur) = (&by_round[round - 1], &by_round[round]);
-        let shared: Vec<(&str, &str)> = cur
-            .iter()
-            .filter_map(|(id, side)| prev.get(id).map(|before| (*before, *side)))
-            .collect();
-        let flipped = shared.iter().filter(|(before, now)| before != now).count();
-        // A swap moves everyone at once, so a simple majority is decisive; with
-        // nobody in common there is no evidence of a swap.
-        let swapped = !shared.is_empty() && flipped * 2 > shared.len();
+        let swapped = sides_flipped(&by_round[round - 1], &by_round[round]);
         half[round] = half[round - 1] + usize::from(swapped);
     }
     half
