@@ -22,6 +22,7 @@ demo is unavailable. Run the suite with::
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -145,3 +146,26 @@ def test_ground_truth(match_demo: Demo, player: str, stat: str, expected: float)
         )
     else:
         assert actual == expected, f"{player} {stat}: got {actual}, expected {expected}"
+
+
+@pytest.mark.fixtures
+@pytest.mark.parametrize("match_demo", ["hltv-de_nuke-221001"], indirect=True)
+def test_restored_match_final_score(match_demo: Demo) -> None:
+    """Check RED Canids' 13–11 Nuke win, with the restored round counted once."""
+    # Clan names are absent. Identify each team by one player: drop and max.
+    # https://www.hltv.org/stats/matches/mapstatsid/221001/9z-vs-red-canids
+    teams = {76_561_198_388_056_582: "RED Canids", 76_561_198_242_950_384: "9z"}
+    rounds = match_demo.rounds.filter(~pl.col("is_knife_round"))
+    states = match_demo.snapshots(ticks=rounds["freeze_end_tick"].to_list()).filter(
+        pl.col("steamid").is_in(list(teams))
+    )
+    # Read each player's side per round so the halftime swap cannot reverse the score.
+    winners = rounds.join(
+        states.select("tick", "side", "steamid"),
+        left_on=["freeze_end_tick", "winner_side"],
+        right_on=["tick", "side"],
+        how="left",
+        validate="1:1",
+    )["steamid"].to_list()
+    assert None not in winners, "a round winner has no matching team player"
+    assert Counter(teams[steamid] for steamid in winners) == {"RED Canids": 13, "9z": 11}

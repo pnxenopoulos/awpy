@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.3.1
+
+- Keep completed rounds when a match backup is restored. Replace the discarded
+  round with its replay instead of clearing the match history.
+- Add regression tests for RED Canids vs 9z on Nuke. Check rounds 1 through 24,
+  the replayed round 16, and RED Canids' 13–11 win.
+
 ## 3.3.0
 
 - Add the `win-prob` extra. `RoundEndModel.predict` gives the round-end reason
