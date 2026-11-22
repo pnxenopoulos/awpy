@@ -3225,12 +3225,10 @@ impl TickColumn {
     /// widen to float, incompatible mixes fall back to strings, and an all-absent
     /// column stays null.
     fn concat(parts: Vec<TickColumn>) -> TickColumn {
-        let mut it = parts.into_iter();
-        let mut acc = it.next().unwrap_or(TickColumn::Empty(0));
-        for part in it {
-            acc = acc.append(part);
-        }
-        acc
+        parts
+            .into_iter()
+            .reduce(Self::append)
+            .unwrap_or(Self::Empty(0))
     }
 
     fn append(self, other: TickColumn) -> TickColumn {

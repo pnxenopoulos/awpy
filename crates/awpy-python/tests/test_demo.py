@@ -4,6 +4,7 @@ Tests that need demos use the fixtures marker (see conftest).
 The error-handling tests do not need demo files.
 """
 
+from collections.abc import Callable
 from pathlib import Path
 
 import polars as pl
@@ -749,6 +750,23 @@ def test_round_end_ticks_are_ordered(demo: Demo) -> None:
     rounds = demo.rounds
     end = rounds["end_tick"].to_list()
     assert end == sorted(end)
+
+
+@pytest.mark.fixtures
+@pytest.mark.parametrize("first_dataset", ["rounds", "stats"])
+def test_restored_round_keeps_match_history(
+    demo_file: Callable[[str | None], Path], first_dataset: str
+) -> None:
+    """Keep completed rounds and use the replayed round after a backup restore."""
+    # Use a fresh cache to check both direct and stats-first round collection.
+    parsed = Demo(demo_file("hltv-de_nuke-221001"))
+    _ = getattr(parsed, first_dataset)
+    rounds = parsed.rounds
+
+    assert rounds["round_num"].to_list() == list(range(1, 25))
+    replayed = rounds.filter(pl.col("round_num") == 16).row(0, named=True)
+    assert replayed["start_tick"] is not None
+    assert (replayed["freeze_end_tick"], replayed["end_tick"]) == (179_473, 187_154)
 
 
 def test_kill_schema(demo: Demo) -> None:

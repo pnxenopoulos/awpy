@@ -34,7 +34,7 @@ use crate::error::Result;
 use crate::hitgroups::hitgroup_name;
 use crate::position::cell_to_world;
 use crate::round_end_reasons::round_end_reason_name;
-use crate::teams::team_name;
+use crate::teams::{sides_flipped, team_name};
 use crate::weapons::{
     VARIANT_CLASSES, VARIANT_FIELDS, WeaponResolver, WeaponSlot, damage_weapon_variant,
     grenade_projectile_classes, grenade_type, refine_damage_weapon, variant_name, weapon_classes,
@@ -74,22 +74,6 @@ fn buy_type(team_equipment: i32) -> &'static str {
     } else {
         "full"
     }
-}
-
-/// Whether most players shared between two rounds are on the opposite side in the
-/// later round — the tell-tale of a halftime side switch.
-fn sides_flipped(prev: &HashMap<u64, &str>, cur: &HashMap<u64, &str>) -> bool {
-    let (mut flipped, mut same) = (0, 0);
-    for (steamid, &cur_side) in cur {
-        if let Some(&prev_side) = prev.get(steamid) {
-            if prev_side == cur_side {
-                same += 1;
-            } else {
-                flipped += 1;
-            }
-        }
-    }
-    flipped > same
 }
 
 /// Upper bound on a single purchase's money cost. A larger drop is a money
@@ -617,33 +601,31 @@ enum WindowKind {
     Smoke,
 }
 
-/// Select which projectile datasets a parser pass should collect.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct ProjectileSelection {
-    pub grenades: bool,
-    pub fires: bool,
-    pub smokes: bool,
+/// Define a dataset selection and its operations from the same field list.
+macro_rules! dataset_selection {
+    ($(#[$attr:meta])* $name:ident { $($field:ident),+ $(,)? }) => {
+        $(#[$attr])*
+        #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+        pub struct $name { $(pub $field: bool,)+ }
+
+        impl $name {
+            pub const ALL: Self = Self { $($field: true,)+ };
+
+            #[must_use]
+            pub const fn union(self, other: Self) -> Self {
+                Self { $($field: self.$field || other.$field,)+ }
+            }
+
+            const fn any(self) -> bool {
+                false $(|| self.$field)+
+            }
+        }
+    };
 }
 
-impl ProjectileSelection {
-    pub const ALL: Self = Self {
-        grenades: true,
-        fires: true,
-        smokes: true,
-    };
-
-    #[must_use]
-    pub const fn union(self, other: Self) -> Self {
-        Self {
-            grenades: self.grenades || other.grenades,
-            fires: self.fires || other.fires,
-            smokes: self.smokes || other.smokes,
-        }
-    }
-
-    const fn any(self) -> bool {
-        self.grenades || self.fires || self.smokes
-    }
+dataset_selection! {
+    /// Select which projectile datasets a parser pass should collect.
+    ProjectileSelection { grenades, fires, smokes }
 }
 
 /// The selected projectile datasets collected by [`Parser::projectiles_selected`].
@@ -700,25 +682,36 @@ struct ResolvedPlayer {
     z: Option<f32>,
 }
 
-impl ResolvedPlayer {
-    /// Move the resolved fields into a row's `{prefix}_steamid/name/side/x/y/z`.
-    #[allow(clippy::too_many_arguments)]
-    fn assign_to(
-        self,
-        steamid: &mut Option<u64>,
-        name: &mut Option<String>,
-        side: &mut Option<String>,
-        x: &mut Option<f32>,
-        y: &mut Option<f32>,
-        z: &mut Option<f32>,
-    ) {
-        *steamid = self.steamid;
-        *name = self.name;
-        *side = self.side;
-        *x = self.x;
-        *y = self.y;
-        *z = self.z;
-    }
+/// Move one participant into the flat fields shared by kills, damage, and blinds.
+macro_rules! assign_player {
+    ($row:expr, attacker, $id:expr, $player:expr) => {
+        assign_player!(@fields $row, $id, $player;
+            attacker_entity_id, attacker_entity_serial, attacker_steamid,
+            attacker_name, attacker_side, attacker_x, attacker_y, attacker_z)
+    };
+    ($row:expr, victim, $id:expr, $player:expr) => {
+        assign_player!(@fields $row, $id, $player;
+            victim_entity_id, victim_entity_serial, victim_steamid,
+            victim_name, victim_side, victim_x, victim_y, victim_z)
+    };
+    ($row:expr, assister, $id:expr, $player:expr) => {
+        assign_player!(@fields $row, $id, $player;
+            assister_entity_id, assister_entity_serial, assister_steamid,
+            assister_name, assister_side, assister_x, assister_y, assister_z)
+    };
+    (@fields $row:expr, $id:expr, $player:expr;
+        $index:ident, $serial:ident, $steamid:ident, $name:ident, $side:ident,
+        $x:ident, $y:ident, $z:ident) => {{
+        let row = &mut *$row;
+        let player = $player;
+        assign_entity_id($id, &mut row.$index, &mut row.$serial);
+        row.$steamid = player.steamid;
+        row.$name = player.name;
+        row.$side = player.side;
+        row.$x = player.x;
+        row.$y = player.y;
+        row.$z = player.z;
+    }};
 }
 
 /// Build a [`Kill`] from a `player_death` event's own fields, leaving the
@@ -1350,25 +1343,12 @@ impl RoundTracker {
     }
 }
 
-/// Select which player-enriched event datasets a parser pass should collect.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct EventDatasetSelection {
-    pub kills: bool,
-    pub damages: bool,
-    pub bomb: bool,
-    pub blinds: bool,
-    pub shots: bool,
+dataset_selection! {
+    /// Select which player-enriched event datasets a parser pass should collect.
+    EventDatasetSelection { kills, damages, bomb, blinds, shots }
 }
 
 impl EventDatasetSelection {
-    pub const ALL: Self = Self {
-        kills: true,
-        damages: true,
-        bomb: true,
-        blinds: true,
-        shots: true,
-    };
-
     /// Event inputs consumed by the player-stat aggregation.
     pub const PLAYER_STATS: Self = Self {
         kills: true,
@@ -1377,17 +1357,6 @@ impl EventDatasetSelection {
         blinds: true,
         shots: true,
     };
-
-    #[must_use]
-    pub const fn union(self, other: Self) -> Self {
-        Self {
-            kills: self.kills || other.kills,
-            damages: self.damages || other.damages,
-            bomb: self.bomb || other.bomb,
-            blinds: self.blinds || other.blinds,
-            shots: self.shots || other.shots,
-        }
-    }
 
     pub(crate) fn legacy_event_names(self) -> HashSet<&'static str> {
         let mut names = HashSet::new();
@@ -1409,10 +1378,6 @@ impl EventDatasetSelection {
             names.extend(BOMB_EVENTS.iter().map(|(name, _)| *name));
         }
         names
-    }
-
-    const fn any(self) -> bool {
-        self.kills || self.damages || self.bomb || self.blinds || self.shots
     }
 }
 
@@ -1556,45 +1521,9 @@ fn fill_kill(kill: &mut Kill, e: &GameEvent, ctx: &Context, pk: &PawnKeys, ck: &
         resolve_event_player(ctx, k.i32("userid"), k.i64("userid_pawn"), pk, ck);
     let (assister_id, assister) =
         resolve_event_player(ctx, k.i32("assister"), k.i64("assister_pawn"), pk, ck);
-    assign_entity_id(
-        attacker_id,
-        &mut kill.attacker_entity_id,
-        &mut kill.attacker_entity_serial,
-    );
-    assign_entity_id(
-        victim_id,
-        &mut kill.victim_entity_id,
-        &mut kill.victim_entity_serial,
-    );
-    assign_entity_id(
-        assister_id,
-        &mut kill.assister_entity_id,
-        &mut kill.assister_entity_serial,
-    );
-    attacker.assign_to(
-        &mut kill.attacker_steamid,
-        &mut kill.attacker_name,
-        &mut kill.attacker_side,
-        &mut kill.attacker_x,
-        &mut kill.attacker_y,
-        &mut kill.attacker_z,
-    );
-    victim.assign_to(
-        &mut kill.victim_steamid,
-        &mut kill.victim_name,
-        &mut kill.victim_side,
-        &mut kill.victim_x,
-        &mut kill.victim_y,
-        &mut kill.victim_z,
-    );
-    assister.assign_to(
-        &mut kill.assister_steamid,
-        &mut kill.assister_name,
-        &mut kill.assister_side,
-        &mut kill.assister_x,
-        &mut kill.assister_y,
-        &mut kill.assister_z,
-    );
+    assign_player!(kill, attacker, attacker_id, attacker);
+    assign_player!(kill, victim, victim_id, victim);
+    assign_player!(kill, assister, assister_id, assister);
 }
 
 /// Fill a [`Damage`] row from the player-hurt event and entity state.
@@ -1604,32 +1533,8 @@ fn fill_damage(dmg: &mut Damage, e: &GameEvent, ctx: &Context, pk: &PawnKeys, ck
         resolve_event_player(ctx, k.i32("attacker"), k.i64("attacker_pawn"), pk, ck);
     let (victim_id, victim) =
         resolve_event_player(ctx, k.i32("userid"), k.i64("userid_pawn"), pk, ck);
-    assign_entity_id(
-        attacker_id,
-        &mut dmg.attacker_entity_id,
-        &mut dmg.attacker_entity_serial,
-    );
-    assign_entity_id(
-        victim_id,
-        &mut dmg.victim_entity_id,
-        &mut dmg.victim_entity_serial,
-    );
-    attacker.assign_to(
-        &mut dmg.attacker_steamid,
-        &mut dmg.attacker_name,
-        &mut dmg.attacker_side,
-        &mut dmg.attacker_x,
-        &mut dmg.attacker_y,
-        &mut dmg.attacker_z,
-    );
-    victim.assign_to(
-        &mut dmg.victim_steamid,
-        &mut dmg.victim_name,
-        &mut dmg.victim_side,
-        &mut dmg.victim_x,
-        &mut dmg.victim_y,
-        &mut dmg.victim_z,
-    );
+    assign_player!(dmg, attacker, attacker_id, attacker);
+    assign_player!(dmg, victim, victim_id, victim);
 }
 
 /// The active planted-C4's bomb site (0 = A, 1 = B), or `None` when no bomb is
@@ -1814,32 +1719,8 @@ fn detect_blinds(
             duration: cur,
             ..Default::default()
         };
-        assign_entity_id(
-            attacker_id,
-            &mut blind.attacker_entity_id,
-            &mut blind.attacker_entity_serial,
-        );
-        assign_entity_id(
-            Some(pawn.id()),
-            &mut blind.victim_entity_id,
-            &mut blind.victim_entity_serial,
-        );
-        attacker.assign_to(
-            &mut blind.attacker_steamid,
-            &mut blind.attacker_name,
-            &mut blind.attacker_side,
-            &mut blind.attacker_x,
-            &mut blind.attacker_y,
-            &mut blind.attacker_z,
-        );
-        victim.assign_to(
-            &mut blind.victim_steamid,
-            &mut blind.victim_name,
-            &mut blind.victim_side,
-            &mut blind.victim_x,
-            &mut blind.victim_y,
-            &mut blind.victim_z,
-        );
+        assign_player!(&mut blind, attacker, attacker_id, attacker);
+        assign_player!(&mut blind, victim, Some(pawn.id()), victim);
         out.push(blind);
     }
 }
